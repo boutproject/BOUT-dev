@@ -2,12 +2,12 @@ Mesh
 ====
 
 The mesh is used in pretty much all parts of the code, and deals with
-things like the geometry of the mesh (metric tensors etc.), and how the
-mesh is divided between processors (communications). The Mesh class
-(``include/mesh.hxx``) defines an interface, and there are currently two
-implementations:
+things like the geometry of the mesh (metric tensors etc.), and how
+the mesh is divided between processors (communications). The
+:cpp:class:`Mesh` class defines an interface, and there is currently a
+single implementation:
 
--  ``BoutMesh`` (``src/mesh/boutmesh.cxx``) which is backwards
+- :cpp:class:`BoutMesh` (``src/mesh/boutmesh.cxx``) which is backwards
    compatible with the BOUT and BOUT-06 codes. This is a logically
    rectangular mesh so the number of radial points (x) can’t change in
    the poloidal direction (y).
@@ -15,9 +15,9 @@ implementations:
 Grid data sources
 -----------------
 
-All data sources inherit from ``GridDataSource``, defined in
-:doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>` at line 43. They must supply a method to test if a variable
-exists:
+All data sources inherit from :cpp:class:`GridDataSource`, defined in
+:doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>` at
+line 43. They must supply a method to test if a variable exists:
 
 ::
 
@@ -63,12 +63,13 @@ To load in a mesh from a file or other source, there are the commands:
 
 all of which return an error code (0 if successful). ``addSource`` is
 used to add a set of input data sources which inherit from
-``GridDataSource``. ``load()`` loads the mesh from these sources,
-querying each data source in turn for the required variables (in the
-order in which they were added). ``load(GridDataSource)`` loads the mesh
-from only the supplied data source.
+:cpp:class:`GridDataSource`. ``load()`` loads the mesh from these
+sources, querying each data source in turn for the required variables
+(in the order in which they were added). ``load(GridDataSource)``
+loads the mesh from only the supplied data source.
 
-In :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`, this is used to initialise the mesh:
+In :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`, this
+is used to initialise the mesh:
 
 ::
 
@@ -78,8 +79,8 @@ In :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`, this is used to 
       return 1;
     }
 
-which creates a ``GridFile`` object based on the data format of the grid
-file name, then adds that as a source of data for Mesh.
+which creates a :cpp:class:`GridFile` object based on the data format
+of the grid file name, then adds that as a source of data for Mesh.
 
 For post-processing of the results, it’s useful to have mesh quantities
 in the dump files along with the results. To do this, there’s the
@@ -129,8 +130,8 @@ To do this, Mesh provides an overloaded function ``get``:
 
     int get(var, const char *name); // Request data from mesh file
 
-where ``var`` can be just about any BOUT++ datatype (``Field2D``,
-``Vector3D`` etc.).
+where ``var`` can be just about any BOUT++ datatype
+(:cpp:class:`Field2D`, :cpp:class:`Vector3D` etc.).
 
 Implementation: BoutMesh
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,12 +173,12 @@ for doing this:
     // Need to communicate jpar
     mesh->communicate(jpar);
 
-Since this uses the ``FieldData`` interface like Datafile, this can be
-used to communicate all BOUT++ field data types. The limit of 4 is
-because the C-style ``varargs`` system doesn’t work with “non POD”
-variables, i.e. classes. To communicate a larger number of variables,
-create a ``FieldGroup`` object to group fields together, then
-communicate them all together:
+Since this uses the :cpp:class:`FieldData` interface like Datafile,
+this can be used to communicate all BOUT++ field data types. The limit
+of 4 is because the C-style ``varargs`` system doesn’t work with “non
+POD” variables, i.e. classes. To communicate a larger number of
+variables, create a :cpp:class:`FieldGroup` object to group fields
+together, then communicate them all together:
 
 ::
 
@@ -338,7 +339,7 @@ Metrics
 -------
 
 The contravariant and covariant metric tensor components are public
-members of ``Mesh``:
+members of :cpp:class:`Mesh`:
 
 ::
 

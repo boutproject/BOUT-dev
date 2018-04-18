@@ -43,12 +43,13 @@ in the communication routines.
 ``Field``
 ---------
 
-The two main types are ``Field2D``, and ``Field3D``. Their main
-functions are to provide an easy way to manipulate data; they take care
-of all memory management, and most looping over grid-points in algebraic
-expressions. The 2D field implementation is relatively simple, but more
-optimisations are used in the 3D field implementation because they are
-much larger (factor of :math:`\sim 100`).
+The two main types are :cpp:class:`Field2D`, and
+:cpp:class:`Field3D`. Their main functions are to provide an easy way
+to manipulate data; they take care of all memory management, and most
+looping over grid-points in algebraic expressions. The 2D field
+implementation is relatively simple, but more optimisations are used
+in the 3D field implementation because they are much larger (factor of
+:math:`\sim 100`).
 
 To handle time-derivatives, and enable expressions to be written in the
 following form:
@@ -145,11 +146,11 @@ original copy. Using reference counting this copying is eliminated.
 Global field gather / scatter
 -----------------------------
 
-In BOUT++ each processor performs calculations on a sub-set of the mesh,
-and communicates with other processors primarily through exchange of
-guard cells (the ``mesh->commmunicate`` function). If you need to gather
-data from the entire mesh onto a single processor, then this can be done
-using either 2D or 3D ``GlobalFields`` .
+In BOUT++ each processor performs calculations on a sub-set of the
+mesh, and communicates with other processors primarily through
+exchange of guard cells (the ``mesh->commmunicate`` function). If you
+need to gather data from the entire mesh onto a single processor, then
+this can be done using either 2D or 3D :cpp:class:`GlobalFields` .
 
 First include the header file
 
@@ -157,8 +158,9 @@ First include the header file
 
     #include <bout/globalfield.hxx>
 
-which defines both ``GlobalField2D`` and ``GlobalField3D`` . To create a
-3D global field, pass it the mesh pointer:
+which defines both :cpp:class:`GlobalField2D` and
+:cpp:class:`GlobalField3D` . To create a 3D global field, pass it the
+mesh pointer:
 
 ::
 
@@ -292,9 +294,10 @@ Iterating over ranges
 ---------------------
 
 The boundary of a processor’s domain may consist of a set of disjoint
-ranges, so the mesh needs a clean way to tell any code which depends on
-the boundary how to iterate over it. The ``RangeIterator`` class in
-``include/bout/sys/range.hxx`` and ``src/sys/range.cxx`` provides this.
+ranges, so the mesh needs a clean way to tell any code which depends
+on the boundary how to iterate over it. The :cpp:class:`RangeIterator`
+class in ``include/bout/sys/range.hxx`` and ``src/sys/range.cxx``
+provides this.
 
 RangeIterator can represent a single continuous range, constructed by
 passing the minimum and maximum values.
@@ -316,8 +319,8 @@ A more canonical C++ style is also supported, using overloaded ``++``,
 where ``it++`` is the same as ``it.next()``, and ``*it`` the same as
 ``it.ind``.
 
-To iterate over several ranges, ``RangeIterator`` can be constructed
-with the next range as an argument:
+To iterate over several ranges, :cpp:class:`RangeIterator` can be
+constructed with the next range as an argument:
 
 ::
 
@@ -342,10 +345,10 @@ initialised in the constructor.
 Field2D/Field3D Arithmetic Operators
 ------------------------------------
 
-The arithmetic operators (``+``, ``-``, ``/``, ``*``) for ``Field2D``
-and ``Field3D`` are generated automatically using the `Jinja`_
-templating system. This requires Python 3 (2.7 may work, but only 3 is
-supported).
+The arithmetic operators (``+``, ``-``, ``/``, ``*``) for
+:cpp:class:`Field2D` and :cpp:class:`Field3D` are generated
+automatically using the `Jinja`_ templating system. This requires
+Python 3 (2.7 may work, but only 3 is supported).
 
 Because this is fairly low-level code, and we don't expect it to
 change very much, the generated code is kept in the git
@@ -360,12 +363,13 @@ to build BOUT++, only to change the ``Field`` operator code.
 
 The Jinja template is in ``src/field/gen_fieldops.jinja``, and the
 driver is ``src/field/gen_fieldops.py``. The driver loops over every
-combination of ``BoutReal``, ``Field2D``, ``Field3D`` (collectively
-just "fields" here) with the arithmetic operators, and uses the
-template to generate the appropriate code. There is some logic in the
-template to handle certain combinations of the input fields: for
-example, for the binary infix operators, only check the two arguments
-are on identical meshes if neither is ``BoutReal``.
+combination of ``BoutReal``, :cpp:class:`Field2D`,
+:cpp:class:`Field3D` (collectively just "fields" here) with the
+arithmetic operators, and uses the template to generate the
+appropriate code. There is some logic in the template to handle
+certain combinations of the input fields: for example, for the binary
+infix operators, only check the two arguments are on identical meshes
+if neither is ``BoutReal``.
 
 To install Jinja:
 

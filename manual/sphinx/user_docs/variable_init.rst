@@ -233,11 +233,11 @@ file or on the command line.
 
     var = gauss(x-0.5,0.2)*gauss(y)*sin(3*z)
 
-To do this, ``FieldFactory`` implements a recursive descent parser to
-turn a string containing something like
-``"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"`` into values in a ``Field3D`` or
-``Field2D`` object. Examples are given in the ``test-fieldfactory``
-example:
+To do this, :cpp:class:`FieldFactory` implements a recursive descent
+parser to turn a string containing something like
+``"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"`` into values in a
+:cpp:class:`Field3D` or :cpp:class:`Field2D` object. Examples are
+given in the ``test-fieldfactory`` example:
 
 ::
 
@@ -245,8 +245,8 @@ example:
     Field2D b = f.create2D("1 - x");
     Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
 
-This is done by creating a tree of ``FieldGenerator`` objects which then
-generate the field values:
+This is done by creating a tree of :cpp:class:`FieldGenerator` objects
+which then generate the field values:
 
 ::
 
@@ -257,15 +257,16 @@ generate the field values:
       virtual BoutReal generate(int x, int y, int z) = 0;
     };
 
-All classes inheriting from ``FieldGenerator`` must implement a
-``generate`` function, which returns the value at the given ``(x,y,z)``
-position. Classes should also implement a ``clone`` function, which
-takes a list of arguments and creates a new instance of its class. This
-takes as input a list of other ``FieldGenerator`` objects, allowing a
-variable number of arguments.
+All classes inheriting from :cpp:class:`FieldGenerator` must implement
+a ``generate`` function, which returns the value at the given
+``(x,y,z)`` position. Classes should also implement a ``clone``
+function, which takes a list of arguments and creates a new instance
+of its class. This takes as input a list of other
+:cpp:class:`FieldGenerator` objects, allowing a variable number of
+arguments.
 
-The simplest generator is a fixed numerical value, which is represented
-by a ``FieldValue`` object:
+The simplest generator is a fixed numerical value, which is
+represented by a :cpp:class:`FieldValue` object:
 
 ::
 
@@ -280,12 +281,13 @@ by a ``FieldValue`` object:
 Adding a new function
 ---------------------
 
-To add a new function to the FieldFactory, a new ``FieldGenerator``
-class must be defined. Here we will use the example of the ``sinh``
-function, implemented using a class ``FieldSinh`` . This takes a single
-argument as input, but ``FieldPI`` takes no arguments, and
-``FieldGaussian`` takes either one or two. Study these after reading
-this to see how these are handled.
+To add a new function to the FieldFactory, a new
+:cpp:class:`FieldGenerator` class must be defined. Here we will use
+the example of the ``sinh`` function, implemented using a class
+:cpp:class:`FieldSinh` . This takes a single argument as input, but
+:cpp:class:`FieldPI` takes no arguments, and
+:cpp:class:`FieldGaussian` takes either one or two. Study these after
+reading this to see how these are handled.
 
 First, edit ``src/field/fieldgenerators.hxx`` and add a class
 definition:
@@ -303,10 +305,11 @@ definition:
       FieldGenerator *gen;
     };
 
-The ``gen`` member is used to store the input argument, and to make sure
-it’s deleted properly we add some code to the destructor. The
-constructor takes a single input, the ``FieldGenerator`` argument to the
-``sinh`` function, which is stored in the member ``gen`` .
+The ``gen`` member is used to store the input argument, and to make
+sure it’s deleted properly we add some code to the destructor. The
+constructor takes a single input, the :cpp:class:`FieldGenerator`
+argument to the ``sinh`` function, which is stored in the member
+``gen`` .
 
 Next edit ``src/field/fieldgenerators.cxx`` and add the implementation
 of the ``clone`` and ``generate`` functions:
@@ -326,49 +329,52 @@ of the ``clone`` and ``generate`` functions:
     }
 
 The ``clone`` function first checks the number of arguments using
-``args.size()`` . This is used in ``FieldGaussian`` to handle different
-numbers of input, but in this case we throw a ``ParseException`` if the
-number of inputs isn’t one. ``clone`` then creates a new ``FieldSinh``
-object, passing the first argument ( ``args.front()`` ) to the
-constructor (which then gets stored in the ``gen`` member variable).
+``args.size()`` . This is used in :cpp:class:`FieldGaussian` to handle
+different numbers of input, but in this case we throw a
+:cpp:class:`ParseException` if the number of inputs isn’t
+one. ``clone`` then creates a new :cpp:class:`FieldSinh` object,
+passing the first argument ( ``args.front()`` ) to the constructor
+(which then gets stored in the ``gen`` member variable).
 
 The ``generate`` function for ``sinh`` just gets the value of the input
 by calling ``gen->generate(x,y,z)``, calculates ``sinh`` of it and
 returns the result.
 
 The ``clone`` function means that the parsing code can make copies of
-any ``FieldGenerator`` class if it’s given a single instance to start
-with. The final step is therefore to give the ``FieldFactory`` class an
-instance of this new generator. Edit the ``FieldFactory`` constructor
-``FieldFactory::FieldFactory()`` in ``src/field/field_factory.cxx`` and
-add the line:
+any :cpp:class:`FieldGenerator` class if it’s given a single instance
+to start with. The final step is therefore to give the
+:cpp:class:`FieldFactory` class an instance of this new
+generator. Edit the :cpp:class:`FieldFactory` constructor
+``FieldFactory::FieldFactory()`` in ``src/field/field_factory.cxx``
+and add the line:
 
 ::
 
     addGenerator("sinh", new FieldSinh(NULL));
 
 That’s it! This line associates the string ``"sinh"`` with a
-``FieldGenerator`` . Even though ``FieldFactory`` doesn’t know what type
-of ``FieldGenerator`` it is, it can make more copies by calling the
-``clone`` member function. This is a useful technique for polymorphic
-objects in C++ called the “Virtual Constructor” idiom.
+:cpp:class:`FieldGenerator` . Even though :cpp:class:`FieldFactory`
+doesn’t know what type of :cpp:class:`FieldGenerator` it is, it can
+make more copies by calling the ``clone`` member function. This is a
+useful technique for polymorphic objects in C++ called the “Virtual
+Constructor” idiom.
 
 Parser internals
 ----------------
 
-When a ``FieldGenerator`` is added using the ``addGenerator`` function,
-it is entered into a ``std::map`` which maps strings to
-``FieldGenerator`` objects (``include/field_factory.hxx``):
+When a :cpp:class:`FieldGenerator` is added using the ``addGenerator``
+function, it is entered into a ``std::map`` which maps strings to
+:cpp:class:`FieldGenerator` objects (``include/field_factory.hxx``):
 
 ::
 
     map<string, FieldGenerator*> gen;
 
-Parsing a string into a tree of ``FieldGenerator`` objects is done by
-first splitting the string up into separate tokens like operators like
-’\*’, brackets ’(’, names like ’sinh’ and so on, then recognising
-patterns in the stream of tokens. Recognising tokens is done in
-``src/field/field_factory.cxx``:
+Parsing a string into a tree of :cpp:class:`FieldGenerator` objects is
+done by first splitting the string up into separate tokens like
+operators like ’\*’, brackets ’(’, names like ’sinh’ and so on, then
+recognising patterns in the stream of tokens. Recognising tokens is
+done in ``src/field/field_factory.cxx``:
 
 ::
 
@@ -392,8 +398,9 @@ the same value. This can be one of:
    taken care of (see above), this includes brackets and operators like
    ’+’ and ’-’.
 
-The parsing stage turns these tokens into a tree of ``FieldGenerator``
-objects, starting with the ``parse()`` function
+The parsing stage turns these tokens into a tree of
+:cpp:class:`FieldGenerator` objects, starting with the ``parse()``
+function
 
 ::
 

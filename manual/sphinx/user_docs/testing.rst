@@ -137,10 +137,11 @@ derivatives. Common mistakes:
 Timing
 ------
 
-To time parts of the code, and calculate the percentage of time spent in
-communications, file I/O, etc. there is the ``Timer`` class defined in
-``include/bout/sys/timer.hxx``. To use it, just create a ``Timer``
-object at the beginning of the function you want to time:
+To time parts of the code, and calculate the percentage of time spent
+in communications, file I/O, etc. there is the :cpp:class:`Timer`
+class defined in ``include/bout/sys/timer.hxx``. To use it, just
+create a :cpp:class:`Timer` object at the beginning of the function
+you want to time:
 
 ::
 

@@ -226,9 +226,10 @@ is the background *equilibrium* magnetic field.
 | ``Laplace_perp`` | |laplace_perp|                                   |
 +------------------+--------------------------------------------------+
 | ``Delp2``        | | Perpendicular Laplacian, neglecting all        |
-|                  |   :math:`y` derivatives                          |
-|                  | | The ``Laplacian`` solver performs the inverse  |
-|                  |   operation                                      |
+|                  |   :math:`y` derivatives | The                    |
+|                  |   :cpp:class:`Laplacian` solver performs the     |
+|                  |   inverse operation                              |
+|                  |                                                  |
 +------------------+--------------------------------------------------+
 | ``brackets``     | | Poisson brackets                               |
 |                  | | The Arakawa option, neglects the parallel      |
@@ -475,13 +476,14 @@ Operators on a single index
 
 **Note: Experimental**
 
-The standard functions implemented in BOUT++ (such as ``DDX``, or ``bracket``)
-typically operate on a whole field, internally iterating over the entire
-mesh. This is convenient, but leads to many loops over the mesh, which can
-be inefficient due to cache misses. One way to try to improve efficiency
-is to move to a single loop over the mesh. To do this, some operators are implemented
-in ``bout/operators_di.hxx`` which have the same (or similar) names as the standard operators
-but an additional ``DataIterator`` index.
+The standard functions implemented in BOUT++ (such as ``DDX``, or
+``bracket``) typically operate on a whole field, internally iterating
+over the entire mesh. This is convenient, but leads to many loops over
+the mesh, which can be inefficient due to cache misses. One way to try
+to improve efficiency is to move to a single loop over the mesh. To do
+this, some operators are implemented in ``bout/operators_di.hxx``
+which have the same (or similar) names as the standard operators but
+an additional :cpp:class:`DataIterator` index.
 
 For example, in ``examples/blob2d.cxx``
 
@@ -503,11 +505,12 @@ which in ``examples/blob2d-outerloop.cxx`` becomes:
    }
 
 Note that in addition to providing an index ``i`` which is of type
-``DataIterator``, the function name includes the method (``arakawa`` or ``C2``).
-This is so that the function call does not have to contain logic
-to decide the method to use at runtime. The standard operators only have to decide
-which method to use once, then loop over the entire mesh, but these indexed functions
-would have to decide the method for every index.
+:cpp:class:`DataIterator`, the function name includes the method
+(``arakawa`` or ``C2``).  This is so that the function call does not
+have to contain logic to decide the method to use at runtime. The
+standard operators only have to decide which method to use once, then
+loop over the entire mesh, but these indexed functions would have to
+decide the method for every index.
 
 .. _sec-derivatives:
 

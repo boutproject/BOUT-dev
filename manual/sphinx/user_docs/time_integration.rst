@@ -260,7 +260,7 @@ model: Multiple Solver objects can exist besides the main one used for
 time integration. Example code is in ``examples/test-integrate``.
 
 To use this feature, systems of ODEs must be represented by a class
-derived from ``PhysicsModel`` (see :ref:`sec-newapi`).
+derived from :cpp:class:`PhysicsModel` (see :ref:`sec-newapi`).
 
 ::
 
@@ -534,10 +534,10 @@ The second matrix
 
 doesn’t alter :math:`u`, but solves a parabolic equation in the
 parallel direction. There is a solver class to do this called
-``InvertPar`` which solves the equation
-:math:`(A + B\partial_{||}^2)x = b` where :math:`A` and :math:`B`
-are ``Field2D`` or constants [3]_. In ``physics_init`` we create one of
-these solvers:
+:cpp:class:`InvertPar` which solves the equation :math:`(A +
+B\partial_{||}^2)x = b` where :math:`A` and :math:`B` are
+:cpp:class:`Field2D` or constants [3]_. In ``physics_init`` we create
+one of these solvers:
 
 ::
 
@@ -631,10 +631,10 @@ similar way to time integrated variables. For example
 
 The first argument is the variable to be solved for (constrained). The
 second argument is the field to contain the residual (error). In this
-example the time derivative field ``ddt(phi)`` is used, but it could be
-another ``Field3D`` variable. The solver will attempt to find a solution
-to the first argument (``phi`` here) such that the second argument
-(``ddt(phi)``) is zero to within tolerances.
+example the time derivative field ``ddt(phi)`` is used, but it could
+be another :cpp:class:`Field3D` variable. The solver will attempt to
+find a solution to the first argument (``phi`` here) such that the
+second argument (``ddt(phi)``) is zero to within tolerances.
 
 In the RHS function the residual should be calculated. In this example
 (``examples/constraints/drift-wave-constraint``) we have:
@@ -801,9 +801,9 @@ This may in some cases be less efficient.
 Implementation internals
 ------------------------
 
-The solver is the interface between BOUT++ and the time-integration code
-such as SUNDIALS. All solvers implement the ``Solver`` class interface
-(see ``src/solver/generic_solver.hxx``).
+The solver is the interface between BOUT++ and the time-integration
+code such as SUNDIALS. All solvers implement the :cpp:class:`Solver`
+class interface (see ``src/solver/generic_solver.hxx``).
 
 First all the fields which are to be evolved need to be added to the
 solver. These are always done in pairs, the first specifying the field,
@@ -876,6 +876,6 @@ solver along with the number and size of the output steps.
    See paper https://arxiv.org/abs/1209.2054 for an application to
    2-fluid equations
 
-.. [3]
-   This ``InvertPar`` class can handle cases with closed field-lines and
-   twist-shift boundary conditions for tokamak simulations
+.. [3] This :cpp:class:`InvertPar` class can handle cases with closed
+   field-lines and twist-shift boundary conditions for tokamak
+   simulations

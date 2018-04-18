@@ -319,9 +319,9 @@ Two representations are now supported for 3D variables:
    and Fourier representation.
 
 #. Real space, as values on grid points. If ``nz`` is set in the grid
-   file, then 3D variables in the grid file must have size
-   ``nx``\ :math:`\times`\ ``ny``\ :math:`\times`\ ``nz``. These are
-   then read in directly into ``Field3D`` variables as required.
+   file, then 3D variables in the grid file must have size ``nx``\
+   :math:`\times`\ ``ny``\ :math:`\times`\ ``nz``. These are then read
+   in directly into :cpp:class:`Field3D` variables as required.
 
 From EFIT files
 ---------------
