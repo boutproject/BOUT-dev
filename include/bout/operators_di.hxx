@@ -4,6 +4,10 @@
 #ifndef __OPERATORS_DI_H__
 #define __OPERATORS_DI_H__
 
+#include <bout_types.hxx>
+#include <field3d.hxx>
+#include <bout/mesh.hxx>
+
 /// \brief 2nd order central differencing in X
 ///
 /// Performs calculation at a single point. The input field
