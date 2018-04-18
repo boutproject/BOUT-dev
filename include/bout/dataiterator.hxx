@@ -9,6 +9,7 @@
 #include <iterator>
 #include <iostream>
 #include "unused.hxx"
+#include "assert.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -100,8 +101,8 @@ public:
    * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
    */
   DataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze, void* UNUSED(dummy)) :
+               int ys, int ye,
+               int zs, int ze, void* UNUSED(dummy)) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
@@ -197,12 +198,14 @@ public:
   const inline Indices ym(int i=1) const { return {x, y-i, z}; }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline Indices zp(int i=1) const {
+    ASSERT3(i >= 0);
     int zp=z;
     for (int j=0;j<i;++j)
       zp=(zp == zmax ? zmin : zp+1);
     return {x, y, zp }; }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline Indices zm(int i=1) const {
+    ASSERT3(i >= 0);
     int zm=z;
     for (;i!= 0;--i)
       zm = (zm == zmin ? zmax : zm-1);
@@ -251,20 +254,15 @@ private:
   /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP
   const int xstart, ystart, zstart;
+  const int xend, yend, zend;
 #else
   /// start / end : local to THIS processor
   int xstart, ystart, zstart;
+  int xend, yend, zend;
 #endif
   /// min / max : size of the domain
   /// same for all processors
   int xmin, ymin, zmin;
-
-#ifndef _OPENMP
-  const int xend, yend, zend;
-#else
-  int xend, yend, zend;
-#endif
-
   int xmax, ymax, zmax;
 
   const bool isEnd;

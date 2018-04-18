@@ -111,6 +111,15 @@ public:
   bool empty(){
     return n1*n2 == 0;
   }
+
+  /*!
+   * Ensures that this Matrix does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
   
 private:
   unsigned int n1, n2;
@@ -179,6 +188,16 @@ public:
   bool empty(){
     return n1*n2*n3 == 0;
   }
+  
+  /*!
+   * Ensures that this Tensor does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
+ 
 private:
   unsigned int n1, n2, n3;
   Array<T> data;
@@ -402,14 +421,14 @@ inline BoutReal MINMOD(BoutReal a, BoutReal b) {
 
 #if CHECK > 0
 /// Throw an exception if \p f is not finite
-inline void checkData(const BoutReal &f) {
+inline void checkData(BoutReal f) {
   if (!finite(f)) {
     throw BoutException("BoutReal: Operation on non-finite data");
   }
 }
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not finite
-inline void checkData(const BoutReal &UNUSED(f)){};
+inline void checkData(BoutReal UNUSED(f)){};
 #endif
 
 /*!
