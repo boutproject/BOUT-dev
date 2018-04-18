@@ -15,6 +15,7 @@ selected integrated and MMS tests. The easiest way to run this is
 with:
 
 .. code-block:: console
+
    $ make check
 
 We expect that any new feature or function implemented in BOUT++ also
@@ -53,6 +54,7 @@ the unit tests, see ``tests/unit/README.md``.
 You can run the unit tests with:
 
 .. code-block:: console
+
    $ make check-unit-tests
 
 
@@ -69,6 +71,7 @@ request, and the majority on every commit.
 You can run the integrated tests with:
 
 .. code-block:: console
+
    $ make check-integrated-tests
 
 The test suite is in the ``tests/integrated`` directory, and is run
