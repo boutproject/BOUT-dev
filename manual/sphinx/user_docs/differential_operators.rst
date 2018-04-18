@@ -49,7 +49,7 @@ categories:
    -  ``U4``: 4\ :math:`^{th}` order upwinding
 
    -  ``W3``: 3\ :math:`^{rd}` order Weighted Essentially
-      Non-Oscillatory (WENO):raw-latex:`\cite{jiang-1997}`
+      Non-Oscillatory (WENO) :raw-latex:`\cite{jiang-1997}`
 
 -  Flux conserving and limiting methods for terms of the form
    :math:`\frac{d}{dx}(v_x f)`
@@ -58,7 +58,7 @@ categories:
       :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
 
    -  ``NND``: Non-oscillatory, containing No free parameters and
-      Dissipative (NND) scheme:raw-latex:`\cite{nnd-2010}`
+      Dissipative (NND) scheme :raw-latex:`\cite{nnd-2010}`
 
 Both of these methods avoid overshoots (Gibbs phenomena) at sharp
 gradients such as shocks, but the simple 1st-order method has very large
