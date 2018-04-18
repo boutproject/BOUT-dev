@@ -135,11 +135,18 @@ See :ref:`sec-preconditioning`.
 IMEX-BDF2
 ---------
 
-This is an IMplicit-EXplicit time integration solver, which allows the evolving function to be split into two parts: one which has relatively long timescales and can be integrated using explicit methods, and a part which has short timescales and must be integrated implicitly. The order of accuracy is variable (up to 4th-order currently), and an adaptive timestep can be used.
+This is an IMplicit-EXplicit time integration solver, which allows the
+evolving function to be split into two parts: one which has relatively
+long timescales and can be integrated using explicit methods, and a
+part which has short timescales and must be integrated implicitly. The
+order of accuracy is variable (up to 4th-order currently), and an
+adaptive timestep can be used.
 
-To use the IMEX-BDF2 solver, set the solver type to `imexbdf2`, e.g. on the command-line add `solver:type=imexbdf2` or in the options file:
+To use the IMEX-BDF2 solver, set the solver type to ``imexbdf2``,
+e.g. on the command-line add ``solver:type=imexbdf2`` or in the
+options file:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [solver]
     type = imexbdf2
@@ -147,19 +154,25 @@ To use the IMEX-BDF2 solver, set the solver type to `imexbdf2`, e.g. on the comm
 
 The order of the method is set to 2 by default, but can be increased up to a maximum of 4:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [solver]
     type = imexbdf2
     maxOrder = 3
 
-This is a multistep method, so the state from previous steps are
-used to construct the next one. This means that at the start, when there are no previous steps, the order is limited to 1 (backwards Euler method). Similarly, the second step is limited to order 2, and so on. At the moment the order is not adapted, so just increases until reaching `maxOrder`.
+This is a multistep method, so the state from previous steps are used
+to construct the next one. This means that at the start, when there
+are no previous steps, the order is limited to 1 (backwards Euler
+method). Similarly, the second step is limited to order 2, and so
+on. At the moment the order is not adapted, so just increases until
+reaching `maxOrder`.
 
-At each step the explicit (non-stiff) part of the function is
-called, and combined with previous timestep values. The implicit
-part of the function is then solved using PETSc's SNES, which
-consists of a nonlinear solver (usually modified Newton iteration), each iteration of which requires a linear solve (usually GMRES). Settings which affect this implicit part of the solve are:
+At each step the explicit (non-stiff) part of the function is called,
+and combined with previous timestep values. The implicit part of the
+function is then solved using PETSc's SNES, which consists of a
+nonlinear solver (usually modified Newton iteration), each iteration
+of which requires a linear solve (usually GMRES). Settings which
+affect this implicit part of the solve are:
 
 +------------------+-----------+----------------------------------------------------+
 | Option           | Default   |Description                                         |
@@ -200,7 +213,7 @@ This is usually not a good guess.
 
 To diagnose what is happening in the time integration, for example to see why it is
 failing to converge or why timesteps are small, there are two settings which can be
-set to `true` to enable:
+set to ``true`` to enable:
 
 - `diagnose` outputs a summary at each output time, similar to CVODE. This
   contains information like the last timestep, average number of iterations

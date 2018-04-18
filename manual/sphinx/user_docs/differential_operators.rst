@@ -386,10 +386,11 @@ the advection terms.
 
    \frac{\partial}{\partial t}\left(nv_{||}\right) + \nabla_{||}\left(nv_{||}v_{||}\right) = -\partial_{||} p
 
-where :math:`n` is the density, :math:`p` is the pressure, and `nv_{||}` is the
-momentum in the direction parallel to the magnetic field.
-The operator :math:`\nabla_{||}` represents the divergence of a parallel flow (``Div_par``),
-and :math:`\partial_{||} = \mathbf{b}\cdot\nabla` is the gradient in the parallel direction.
+where :math:`n` is the density, :math:`p` is the pressure, and
+:math:`nv_{||}` is the momentum in the direction parallel to the
+magnetic field.  The operator :math:`\nabla_{||}` represents the
+divergence of a parallel flow (``Div_par``), and :math:`\partial_{||}
+= \mathbf{b}\cdot\nabla` is the gradient in the parallel direction.
 
 There is a convergence test using the Method of Manufactured Solutions (MMS) for this example.
 See section :ref:`sec-mms` for details of the testing method. Running the ``runtest``

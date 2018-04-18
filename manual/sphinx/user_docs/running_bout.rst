@@ -647,18 +647,18 @@ just remember to delete the file afterwards.
 Send signal USR1
 ~~~~~~~~~~~~~~~~
 
-Another option is to send signal `user defined signal 1`::
+Another option is to send signal ``user defined signal 1``::
 
     $ mpirun -np 4 ./conduction &
     ...
     $ killall -s USR1 conduction
 
-Note that this will stop all conduction simulation on this node.
-Many HPC systems provide tools to send signals to the simulation
-nodes, such as `qsig` on archer.
+Note that this will stop all conduction simulation on this node.  Many
+HPC systems provide tools to send signals to the simulation nodes,
+such as ``qsig`` on archer.
 
-To just stop one simulation, the `bout-stop-script` can send a signal
-based on the path of the simulation data dir::
+To just stop one simulation, the ``bout-stop-script`` can send a
+signal based on the path of the simulation data dir::
 
     $ mpirun -np 4 ./conduction &
     ...

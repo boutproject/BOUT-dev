@@ -392,9 +392,10 @@ As in the above code, creating an output file consists of the following steps:
 4. Save grids, fields and maps to file
 
 Each of these stages can be customised to handle more complicated
-magnetic fields, more complicated grids, and particular output formats. 
-Details of the functionality available are described in sections below,
-and there are several examples in the `examples/zoidberg` directory.
+magnetic fields, more complicated grids, and particular output
+formats.  Details of the functionality available are described in
+sections below, and there are several examples in the
+``examples/zoidberg`` directory.
 
 Rectangular grids
 ~~~~~~~~~~~~~~~~~

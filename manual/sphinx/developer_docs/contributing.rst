@@ -98,7 +98,9 @@ Creating a feature branch
 
 First get a copy of the
 `BOUT-dev <https://github.com/boutproject/BOUT-dev>`__ repository (or
-git pull to update an existing copy)::
+git pull to update an existing copy):
+
+.. code-block:: console
 
     git clone git@github.com:boutproject/BOUT-dev.git
     cd BOUT-dev
@@ -106,7 +108,7 @@ git pull to update an existing copy)::
 Create a new branch **myfeature**, branching from **next**. Choose a
 descriptive name for **myfeature**, anything except “master” or “next”.
 
-::
+.. code-block:: console
 
     git checkout next
     git pull
@@ -143,14 +145,18 @@ can push your branches there.
 Making changes, commits
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Now you would make changes, commit changes and push as usual::
+Now you would make changes, commit changes and push as usual:
+
+.. code-block:: console
 
     ... make changes ...
     git add <files>
     git commit
     git push   # Pushes to origin/myfeature
 
-You can switch between branches using *checkout*::
+You can switch between branches using *checkout*:
+
+.. code-block:: console
 
     git checkout master    # Switch to "master"
     git checkout myfeature # Switch to "myfeature"
