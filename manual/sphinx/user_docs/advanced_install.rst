@@ -90,15 +90,12 @@ Atlas
 
    ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
 
-
 Cab
 ~~~
 
 .. code-block:: bash
 
    ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
-
-
 
 Edison
 ~~~~~~
@@ -108,7 +105,6 @@ Edison
    module swap PrgEnv-intel PrgEnv-gnu
    module load fftw
    ./configure MPICC=cc MPICXX=CC --with-netcdf=/global/u2/c/chma/PUBLIC/netcdf_edison/netcdf --with-fftw=/opt/fftw/3.3.0.1/x86_64
-
 
 Hoffman2
 ~~~~~~~~
@@ -246,7 +242,7 @@ parallelism through OpenMP. To enable OpenMP, use the
     of Clang, or using the GNU OpenMP library ``libgomp``, but it will
     only run with a single thread.
 
-    
+
 .. note::
     By default PVODE is built without OpenMP support. To enable this
     add ``--enable-pvode-openmp`` to the configure command.
@@ -396,7 +392,7 @@ To configure BOUT++ with PETSc and SUNDIALS, type instead::
 
 
 .. _sec-lapack:
-    
+
 LAPACK
 ------
 
@@ -405,7 +401,7 @@ systems. Some implementations of these solvers (for example Laplacian
 inversion, section :ref:`sec-laplacian`) use LAPACK for efficient
 serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
-cause linking headaches. To enable these routines use:: 
+cause linking headaches. To enable these routines use::
 
     $ ./configure --with-lapack
 
@@ -516,7 +512,7 @@ configure and install the FFTW library into ``$HOME/local`` by running::
     $ make
     $ make install
 
-    
+
 Compiling and running under AIX
 -------------------------------
 
@@ -583,7 +579,7 @@ If you see an error like this
 
 
 then you need to set the environment variable ``OBJECT_MODE``
-  
+
 .. code-block:: bash
 
     export OBJECT_MODE=64
@@ -634,9 +630,6 @@ make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
      sed 's/netcdf/netcdf64/g' make.config > make.config.new
      mv make.config.new make.config
 
-
-    
-   
 Issues
 ------
 
