@@ -3,19 +3,19 @@ Mesh
 
 The mesh is used in pretty much all parts of the code, and deals with
 things like the geometry of the mesh (metric tensors etc.), and how
-the mesh is divided between processors (communications). The
-:cpp:class:`Mesh` class defines an interface, and there is currently a
-single implementation:
+the mesh is divided between processors (communications). The `Mesh`
+class defines an interface, and there is currently a single
+implementation:
 
-- :cpp:class:`BoutMesh` (``src/mesh/boutmesh.cxx``) which is backwards
-   compatible with the BOUT and BOUT-06 codes. This is a logically
-   rectangular mesh so the number of radial points (x) can’t change in
-   the poloidal direction (y).
+- `BoutMesh` (``src/mesh/boutmesh.cxx``) which is backwards compatible
+   with the BOUT and BOUT-06 codes. This is a logically rectangular
+   mesh so the number of radial points (x) can’t change in the
+   poloidal direction (y).
 
 Grid data sources
 -----------------
 
-All data sources inherit from :cpp:class:`GridDataSource`, defined in
+All data sources inherit from `GridDataSource`, defined in
 :doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>` at
 line 43. They must supply a method to test if a variable exists::
 
@@ -53,10 +53,10 @@ To load in a mesh from a file or other source, there are the commands::
 
 all of which return an error code (0 if successful). ``addSource`` is
 used to add a set of input data sources which inherit from
-:cpp:class:`GridDataSource`. ``load()`` loads the mesh from these
-sources, querying each data source in turn for the required variables
-(in the order in which they were added). ``load(GridDataSource)``
-loads the mesh from only the supplied data source.
+`GridDataSource`. ``load()`` loads the mesh from these sources,
+querying each data source in turn for the required variables (in the
+order in which they were added). ``load(GridDataSource)`` loads the
+mesh from only the supplied data source.
 
 In :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`, this
 is used to initialise the mesh::
@@ -67,12 +67,12 @@ is used to initialise the mesh::
       return 1;
     }
 
-which creates a :cpp:class:`GridFile` object based on the data format
-of the grid file name, then adds that as a source of data for Mesh.
+which creates a `GridFile` object based on the data format of the grid
+file name, then adds that as a source of data for Mesh.
 
-For post-processing of the results, it’s useful to have mesh quantities
-in the dump files along with the results. To do this, there’s the
-function
+For post-processing of the results, it’s useful to have mesh
+quantities in the dump files along with the results. To do this,
+there’s the function
 
 ::
 
@@ -113,7 +113,7 @@ To do this, Mesh provides an overloaded function ``get``::
     int get(var, const char *name); // Request data from mesh file
 
 where ``var`` can be just about any BOUT++ datatype
-(:cpp:class:`Field2D`, :cpp:class:`Vector3D` etc.).
+(`Field2D`, `Vector3D` etc.).
 
 Implementation: BoutMesh
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,12 +151,12 @@ for doing this::
     // Need to communicate jpar
     mesh->communicate(jpar);
 
-Since this uses the :cpp:class:`FieldData` interface like Datafile,
-this can be used to communicate all BOUT++ field data types. The limit
-of 4 is because the C-style ``varargs`` system doesn’t work with “non
-POD” variables, i.e. classes. To communicate a larger number of
-variables, create a :cpp:class:`FieldGroup` object to group fields
-together, then communicate them all together::
+Since this uses the `FieldData` interface like Datafile, this can be
+used to communicate all BOUT++ field data types. The limit of 4 is
+because the C-style ``varargs`` system doesn’t work with “non POD”
+variables, i.e. classes. To communicate a larger number of variables,
+create a `FieldGroup` object to group fields together, then
+communicate them all together::
 
     FieldGroup comgrp;  // Group of variables for communication
     Field3D P;
@@ -212,7 +212,8 @@ direction only, and involves quantities which are not in Fields.
     comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
 
 The variables ``NXPE`` and ``PE_XIND`` shouldn’t really be there, but
-are currently needed because the SPT algorithm in :doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`
+are currently needed because the SPT algorithm in
+:doc:`invert_laplace.cxx<../_breathe_autogen/file/invert__laplace_8cxx>`
 needs to know when it’s going to be next and so keep track of which
 processor number is currently working. This logic to pass a problem
 along a chain in X should really be moved into Mesh.
@@ -307,7 +308,7 @@ Metrics
 -------
 
 The contravariant and covariant metric tensor components are public
-members of :cpp:class:`Mesh`::
+members of `Mesh`::
 
     // Contravariant metric tensor (g^{ij})
     Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cxx

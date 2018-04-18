@@ -63,7 +63,7 @@ inversion. The derivation of :math:`\nabla_\perp^2f` for a general
 coordinate system can be found in the ``coordinates`` manual. What is
 important, is to note that if :math:`g_{xy}` and :math:`g_{yz}` are
 non-zero, BOUT++ is neglecting the :math:`y`-parallel derivatives when
-using the solvers :cpp:class:`Laplacian` and :cpp:class:`LaplaceXZ`.
+using the solvers `Laplacian` and `LaplaceXZ`.
 
 By neglecting the :math:`y`-derivatives (or if
 :math:`g_{xy}=g_{yz}=0`), one can solve equation
@@ -74,19 +74,19 @@ equation in :math:`z` (using some assumptions described in section
 :ref:`sec-num-laplace`), and solve a tridiagonal system for each
 mode. These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very
-efficient: :math:`O(n_z \log n_z)` for the FFTs,
-:math:`O(n_x)` for tridiagonal inversion using the Thomas
-algorithm, where :math:`n_x` and :math:`n_z` are the number of
-grid-points in the :math:`x` and :math:`z` directions respectively.
+efficient: :math:`O(n_z \log n_z)` for the FFTs, :math:`O(n_x)` for
+tridiagonal inversion using the Thomas algorithm, where :math:`n_x`
+and :math:`n_z` are the number of grid-points in the :math:`x` and
+:math:`z` directions respectively.
 
 
 In the second approach, the full :math:`2`\ -D system is being solved.
 This requires PETSc to be built with BOUT++.
 
 
-The :cpp:class:`Laplacian` class is defined in ``invert_laplace.hxx``
-and solves problems formulated like equation :eq:`full_laplace_inv` To
-use this class, first create an instance of it::
+The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
+problems formulated like equation :eq:`full_laplace_inv` To use this
+class, first create an instance of it::
 
     Laplacian *lap = Laplacian::create();
 
@@ -100,13 +100,12 @@ these coefficients, there are the ``setCoefA()``, ``setCoefC()``, and
     lap->setCoefA(a);
     lap->setCoefC(0.5);
 
-arguments can be :cpp:class:`Field2D`, :cpp:class:`Field3D`, or real
-values.
+arguments can be `Field2D`, `Field3D`, or `BoutReal` values.
 
 Settings for the inversion can be set in the input file under the
 section ``laplace`` (default) or whichever settings section name was
-specified when the :cpp:class:`Laplacian` class was created. Commonly
-used settings are listed in tables :numref:`tab-laplacesettings` to
+specified when the `Laplacian` class was created. Commonly used
+settings are listed in tables :numref:`tab-laplacesettings` to
 :numref:`tab-laplaceflags`.
 
 In particular boundary conditions on the :math:`x` boundaries can be
@@ -221,13 +220,13 @@ within the physics module using ``setGlobalFlags``,
    |        | order now)                                                           |                            |
    +--------+----------------------------------------------------------------------+----------------------------+
    | 16     | Set boundary condition to values in boundary guard cells of second   | ``INVERT_SET``             |
-   |        | argument, ``x0``, of :cpp:func:`Laplacian::solve(const Field3D &b,   |                            |
+   |        | argument, ``x0``, of `Laplacian::solve(const Field3D &b,             |                            |
    |        | const Field3D &x0) <Laplacian::solve>`. May be combined with any     |                            |
    |        | combination of 0, 1 and 2, i.e. a Dirichlet or Neumann boundary      |                            |
    |        | condition set to values which are :math:`\neq 0` or :math:`f(y)`     |                            |
    +--------+----------------------------------------------------------------------+----------------------------+
    | 32     | Set boundary condition to values in boundary guard cells of RHS,     | ``INVERT_RHS``             |
-   |        | ``b`` in :cpp:func:`Laplacian::solve(const Field3D &b, const Field3D |                            |
+   |        | ``b`` in `Laplacian::solve(const Field3D &b, const Field3D           |                            |
    |        | &x0) <Laplacian::solve>`. May be combined with any combination of 0, |                            |
    |        | 1 and 2, i.e. a Dirichlet or Neumann boundary condition set to values|                            |
    |        | which are :math:`\neq 0` or :math:`f(y)`                             |                            |
@@ -318,7 +317,7 @@ following equation for :math:`f`
 
 BOUT++ is neglecting the :math:`y`-parallel derivatives if
 :math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
-:cpp:class:`Laplacian` and :cpp:class:`LaplaceXZ`. For these two
+`Laplacian` and `LaplaceXZ`. For these two
 solvers, equation :eq:`to_invert` becomes (see ``coordinates`` manual
 for derivation)
 
@@ -663,10 +662,9 @@ serial and parallel versions. Serial inversion can currently either be
 done using a tridiagonal solver (Thomas algorithm), or a band-solver
 (allowing :math:`4^{th}`-order differencing).
 
-To support multiple implementations, a base class
-:cpp:class:`Laplacian` is defined in
-``include/invert_laplace.hxx``. This defines a set of functions which
-all implementations must provide::
+To support multiple implementations, a base class `Laplacian` is
+defined in ``include/invert_laplace.hxx``. This defines a set of
+functions which all implementations must provide::
 
     class Laplacian {
      public:
@@ -682,8 +680,8 @@ and a solve function which operates on a single FieldPerp (X-Y) object
 at once. Several other functions are also virtual, so default code
 exists but can be overridden by an implementation.
 
-For convenience, the :cpp:class:`Laplacian` base class also defines a
-function to calculate coefficients in a Tridiagonal matrix::
+For convenience, the `Laplacian` base class also defines a function to
+calculate coefficients in a Tridiagonal matrix::
 
       void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b,
                        dcomplex &c, const Field2D *ccoef = NULL,
@@ -700,10 +698,10 @@ use the default::
 
       Laplacian* lap = Laplacian::create();
 
-The code for the :cpp:class:`Laplacian` base class is in
+The code for the `Laplacian` base class is in
 ``src/invert/laplace/invert_laplace.cxx``. The actual creation of new
-Laplacian implementations is done in the :cpp:class:`LaplaceFactory`
-class, defined in ``src/invert/laplace/laplacefactory.cxx``. This file
+Laplacian implementations is done in the `LaplaceFactory` class,
+defined in ``src/invert/laplace/laplacefactory.cxx``. This file
 includes all the headers for the implementations, and chooses which
 one to create based on the “type” setting in the input options. This
 factory therefore provides a single point of access to the underlying
@@ -730,10 +728,9 @@ SPT parallel tridiagonal
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a reference code which performs the same operations as the
-serial code. To invert a single XZ slice (:cpp:class:`FieldPerp`
-object), data must pass from the innermost processor (``mesh->PE_XIND
-= 0``) to the outermost ``mesh->PE_XIND = mesh->NXPE-1`` and back
-again.
+serial code. To invert a single XZ slice (`FieldPerp` object), data
+must pass from the innermost processor (``mesh->PE_XIND = 0``) to the
+outermost ``mesh->PE_XIND = mesh->NXPE-1`` and back again.
 
 Some parallelism is achieved by running several inversions
 simultaneously, so while processor 1 is inverting Y=0, processor 0 is
@@ -832,7 +829,7 @@ LaplaceXZ
 ---------
 
 This is a Laplacian inversion code in X-Z, similar to the
-:cpp:class:`Laplacian` solver described in :ref:`sec-laplacian`. The
+`Laplacian` solver described in :ref:`sec-laplacian`. The
 difference is in the form of the Laplacian equation solved, and the
 approach used to derive the finite difference formulae. The equation
 solved is:
@@ -847,7 +844,7 @@ be calculated (e.g. potential), and :math:`\nabla_\perp f` is the same
 as equation (:eq:`nabl_perp_f`), but with negligible
 :math:`y`-parallel derivatives if :math:`g_{xy}`, :math:`g_{yz}` and
 :math:`g_{xz}` is non-vanishing. The Laplacian is written in
-conservative form like the :cpp:class:`LaplaceXY` solver, and
+conservative form like the `LaplaceXY` solver, and
 discretised in terms of fluxes through cell faces.
 
 .. math::
@@ -857,12 +854,12 @@ discretised in terms of fluxes through cell faces.
      g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
 
 The header file is ``include/bout/invert/laplacexz.hxx``. The solver is
-constructed by using the :cpp:func:`LaplaceXZ::create` function::
+constructed by using the `LaplaceXZ::create` function::
 
       LaplaceXZ *lap = LaplaceXZ::create(mesh);
 
-Note that a pointer to a :cpp:class:`Mesh` object must be given, which
-for now is the global variable :cpp:var:`mesh`. By default the
+Note that a pointer to a `Mesh` object must be given, which
+for now is the global variable `mesh`. By default the
 options section ``laplacexz`` is used, so to set the type of solver
 created, set in the options
 
@@ -878,10 +875,9 @@ be set at the same time::
 
       lap->setCoefs(1.0, 0.0);
 
-Constants, :cpp:class:`Field2D` or :cpp:class:`Field3D` values can be
-passed. If the implementation doesn’t support :cpp:class:`Field3D`
-values then the average over :math:`z` will be used as a
-:cpp:class:`Field2D` value.
+Constants, `Field2D` or `Field3D` values can be passed. If the
+implementation doesn’t support `Field3D` values then the average over
+:math:`z` will be used as a `Field2D` value.
 
 To perform the inversion, call the ``solve`` function::
 
@@ -899,7 +895,7 @@ The currently available implementations are:
 
 - ``cyclic``: This implementation assumes coefficients are constant in
   :math:`Z`, and uses FFTs in :math:`z` and a complex tridiagonal solver
-  in :math:`x` for each :math:`z` mode (the :cpp:class:`CyclicReduction`
+  in :math:`x` for each :math:`z` mode (the `CyclicReduction`
   solver). Code in ``src/invert/laplacexz/impls/cyclic/``.
 
 - ``petsc``: This uses the PETSc KSP interface to solve a matrix with
@@ -915,7 +911,7 @@ Test case
 ~~~~~~~~~
 
 The code in ``examples/test-laplacexz`` is a simple test case for
-:cpp:class:`LaplaceXZ` . First it creates a :cpp:class:`LaplaceXZ`
+`LaplaceXZ` . First it creates a `LaplaceXZ`
 object::
 
       LaplaceXZ *inv = LaplaceXZ::create(mesh);
@@ -1061,7 +1057,7 @@ Blob2d comparison
 
 The example ``examples/blob2d-laplacexz`` is the same as
 ``examples/blob2d`` but with ``LaplaceXZ`` rather than
-:cpp:class:`Laplacian`.
+`Laplacian`.
 
 Tests on one processor: Using Boussinesq approximation, so that the
 matrix elements are not changed, the cyclic solver produces output
@@ -1101,7 +1097,7 @@ jacobi preconditioner::
     1.000e+02        128       2.59e+00    22.9   70.8    0.2    0.2    5.9
     2.000e+02         68       1.18e+00    26.5   64.6    0.2    0.6    8.1
 
-For comparison, the :cpp:class:`Laplacian` solver using the
+For comparison, the `Laplacian` solver using the
 tridiagonal solver as preconditioner gives::
 
     1.000e+02        222       5.70e+00    17.4   77.9    0.1    0.1    4.5
@@ -1112,11 +1108,10 @@ or with Jacobi preconditioner::
     1.000e+02        107       3.13e+00    15.8   79.5    0.1    0.2    4.3
     2.000e+02        110       2.14e+00    23.5   69.2    0.2    0.3    6.7
 
-The :cpp:class:`LaplaceXZ` solver does not appear to be dramatically
-faster **in serial** than the :cpp:class:`Laplacian` solver when the
-matrix coefficients are modified every solve. When matrix elements are
-not modified then the solve time is competitive with the tridiagonal
-solver.
+The `LaplaceXZ` solver does not appear to be dramatically faster **in
+serial** than the `Laplacian` solver when the matrix coefficients are
+modified every solve. When matrix elements are not modified then the
+solve time is competitive with the tridiagonal solver.
 
 As a test, timing only the ``setCoefs`` call for the non-Boussinesq case
 gives::

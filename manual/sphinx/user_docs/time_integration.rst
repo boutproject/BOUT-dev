@@ -273,7 +273,7 @@ model: Multiple Solver objects can exist besides the main one used for
 time integration. Example code is in ``examples/test-integrate``.
 
 To use this feature, systems of ODEs must be represented by a class
-derived from :cpp:class:`PhysicsModel`.
+derived from `PhysicsModel`.
 
 ::
 
@@ -294,7 +294,7 @@ derived from :cpp:class:`PhysicsModel`.
       Field3D result;
     };
 
-To solve this ODE, create a new Solver object::
+To solve this ODE, create a new `Solver` object::
 
     Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
 
@@ -537,9 +537,9 @@ The second matrix
 
 doesn’t alter :math:`u`, but solves a parabolic equation in the
 parallel direction. There is a solver class to do this called
-:cpp:class:`InvertPar` which solves the equation :math:`(A +
+`InvertPar` which solves the equation :math:`(A +
 B\partial_{||}^2)x = b` where :math:`A` and :math:`B` are
-:cpp:class:`Field2D` or constants [3]_. In ``physics_init`` we create
+`Field2D` or constants [3]_. In ``physics_init`` we create
 one of these solvers::
 
     InvertPar *inv; // Parallel inversion class
@@ -631,7 +631,7 @@ similar way to time integrated variables. For example
 The first argument is the variable to be solved for (constrained). The
 second argument is the field to contain the residual (error). In this
 example the time derivative field ``ddt(phi)`` is used, but it could
-be another :cpp:class:`Field3D` variable. The solver will attempt to
+be another `Field3D` variable. The solver will attempt to
 find a solution to the first argument (``phi`` here) such that the
 second argument (``ddt(phi)``) is zero to within tolerances.
 
@@ -781,7 +781,7 @@ Implementation internals
 ------------------------
 
 The solver is the interface between BOUT++ and the time-integration
-code such as SUNDIALS. All solvers implement the :cpp:class:`Solver`
+code such as SUNDIALS. All solvers implement the `Solver`
 class interface (see ``src/solver/generic_solver.hxx``).
 
 First all the fields which are to be evolved need to be added to the
@@ -845,6 +845,6 @@ solver along with the number and size of the output steps.
    See paper https://arxiv.org/abs/1209.2054 for an application to
    2-fluid equations
 
-.. [3] This :cpp:class:`InvertPar` class can handle cases with closed
+.. [3] This `InvertPar` class can handle cases with closed
    field-lines and twist-shift boundary conditions for tokamak
    simulations

@@ -212,30 +212,27 @@ where
 
 is the background *equilibrium* magnetic field.
 
-+------------------+--------------------------------------------------+
-| Function         |                     Formula                      |
-+------------------+--------------------------------------------------+
-| ``Grad_par``     | |grad_par|                                       |
-+------------------+--------------------------------------------------+
-| ``Div_par``      | |div_par|                                        |
-+------------------+--------------------------------------------------+
-| ``Grad2_par2``   | |grad2_par2|                                     |
-+------------------+--------------------------------------------------+
-| ``Laplace_par``  | |laplace_par|                                    |
-+------------------+--------------------------------------------------+
-| ``Laplace_perp`` | |laplace_perp|                                   |
-+------------------+--------------------------------------------------+
-| ``Delp2``        | | Perpendicular Laplacian, neglecting all        |
-|                  |   :math:`y` derivatives | The                    |
-|                  |   :cpp:class:`Laplacian` solver performs the     |
-|                  |   inverse operation                              |
-|                  |                                                  |
-+------------------+--------------------------------------------------+
-| ``brackets``     | | Poisson brackets                               |
-|                  | | The Arakawa option, neglects the parallel      |
-|                  |   :math:`y` derivatives if :math:`g_{xy}` and    |
-|                  |   :math:`g_{yz}` are non-zero                    |
-+------------------+--------------------------------------------------+
++------------------+----------------------------------------------------+
+| Function         |                      Formula                       |
++------------------+----------------------------------------------------+
+| ``Grad_par``     | |grad_par|                                         |
++------------------+----------------------------------------------------+
+| ``Div_par``      | |div_par|                                          |
++------------------+----------------------------------------------------+
+| ``Grad2_par2``   | |grad2_par2|                                       |
++------------------+----------------------------------------------------+
+| ``Laplace_par``  | |laplace_par|                                      |
++------------------+----------------------------------------------------+
+| ``Laplace_perp`` | |laplace_perp|                                     |
++------------------+----------------------------------------------------+
+| ``Delp2``        | Perpendicular Laplacian, neglecting all :math:`y`  |
+|                  | derivatives. The `Laplacian` solver performs the   |
+|                  | inverse operation                                  |
++------------------+----------------------------------------------------+
+| ``brackets``     | Poisson brackets. The Arakawa option, neglects the |
+|                  | parallel :math:`y` derivatives if :math:`g_{xy}`   |
+|                  | and :math:`g_{yz}` are non-zero                    |
++------------------+----------------------------------------------------+
 
 .. |grad_par| replace:: :math:`\partial^0_{||} =
    \mathbf{b}_0\cdot\nabla =
@@ -375,7 +372,7 @@ Example and convergence test
 ++++++++++++++++++++++++++++
 
 The example code ``examples/finite-volume/fluid/`` solves the Euler
-equations for a 1D adiabatic fluid, using :cpp:func:`FV::Div_par` for
+equations for a 1D adiabatic fluid, using `FV::Div_par` for
 the advection terms.
 
 .. math::
@@ -398,7 +395,7 @@ script should produce the graph
 
 .. figure:: ../figs/fluid_norm_mc.png
    :name: fluid_norm_mc
-   :alt: Convergence test of the fluid example using :cpp:func:`FV::Div_par` operator
+   :alt: Convergence test of the fluid example using `FV::Div_par` operator
 
    Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
    the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are
@@ -481,7 +478,7 @@ the mesh, which can be inefficient due to cache misses. One way to try
 to improve efficiency is to move to a single loop over the mesh. To do
 this, some operators are implemented in ``bout/operators_di.hxx``
 which have the same (or similar) names as the standard operators but
-an additional :cpp:class:`DataIterator` index.
+an additional `DataIterator` index.
 
 For example, in ``examples/blob2d.cxx``
 
@@ -501,12 +498,12 @@ which in ``examples/blob2d-outerloop.cxx`` becomes::
    }
 
 Note that in addition to providing an index ``i`` which is of type
-:cpp:class:`DataIterator`, the function name includes the method
-(``arakawa`` or ``C2``).  This is so that the function call does not
-have to contain logic to decide the method to use at runtime. The
-standard operators only have to decide which method to use once, then
-loop over the entire mesh, but these indexed functions would have to
-decide the method for every index.
+`DataIterator`, the function name includes the method (``arakawa`` or
+``C2``).  This is so that the function call does not have to contain
+logic to decide the method to use at runtime. The standard operators
+only have to decide which method to use once, then loop over the
+entire mesh, but these indexed functions would have to decide the
+method for every index.
 
 .. _sec-derivatives:
 

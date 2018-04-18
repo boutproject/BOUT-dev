@@ -203,8 +203,8 @@ directory under ``orszag-tang``. The equations to be solved are:
        \nabla\times(\mathbf{v}\times\mathbf{B})
 
 As in the :ref:`heat conduction example <sec-heat-conduction-model>`,
-a class is created which inherits from :cpp:class:`PhysicsModel` and
-defines ``init`` and ``rhs`` functions::
+a class is created which inherits from `PhysicsModel` and defines
+``init`` and ``rhs`` functions::
 
     class MHD : public PhysicsModel {
       private:
@@ -243,9 +243,9 @@ magnetic field :math:`B`::
       ...
     };
 
-Scalar and vector fields behave much as you would expect:
-:cpp:class:`Field3D` objects can be added, subtracted, multiplied and
-divided, so the following examples are all valid operations::
+Scalar and vector fields behave much as you would expect: `Field3D`
+objects can be added, subtracted, multiplied and divided, so the
+following examples are all valid operations::
 
     Field3D a, b, c;
     BoutReal r;
@@ -441,10 +441,10 @@ derivatives are calculated::
 If you need to communicate lots of variables, or want to change at
 run-time which variables are evolved (e.g. depending on input
 options), then you can create a group of variables and communicate
-them later. To do this, first create a :cpp:class:`FieldGroup` object
-, in this case called ``comms`` , then use the add method. This method
-does no communication, but records which variables to transfer when
-the communication is done later.
+them later. To do this, first create a `FieldGroup` object , in this
+case called ``comms`` , then use the add method. This method does no
+communication, but records which variables to transfer when the
+communication is done later.
 
 ::
 
@@ -462,8 +462,7 @@ the communication is done later.
 
 The ``comms.add()`` routine can be given any number of variables at
 once (there’s no practical limit on the total number of variables
-which are added to a :cpp:class:`FieldGroup` ), so this can be
-shortened to
+which are added to a `FieldGroup` ), so this can be shortened to
 
 ::
 
@@ -1022,11 +1021,10 @@ breaking changes which you are likely to come across are:
 * Using round brackets ``()`` instead of square brackets ``[]`` for
   indexing fields
 
-* Moving components of :cpp:class:`Mesh` related to the metric tensor
-  and "real space" out into a new object, :cpp:class:`Coordinates`
+* Moving components of `Mesh` related to the metric tensor and "real
+  space" out into a new object, `Coordinates`
 
-* Changed some :cpp:class:`Field3D` member functions into non-member
-  functions
+* Changed some `Field3D` member functions into non-member functions
 
 * The shifted metric method has changed in version 4, so that fields
   are stored in orthogonal X-Z coordinates rather than field aligned

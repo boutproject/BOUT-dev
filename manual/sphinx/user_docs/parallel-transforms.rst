@@ -25,10 +25,10 @@ stochastic regions. In this case the interpolation becomes 2D (in X
 and Z), and is known as the Flux Coordinate Independent (FCI) method.
 
 To handle these different cases in the same code, the BOUT++ mesh
-implements different :cpp:class:`ParallelTransform` classes. Each
-:cpp:class:`Field3D` class contains a pointer to the values up and
-down in the Y direction, called yup and ydown.  These values are
-calculated during communication::
+implements different `ParallelTransform` classes. Each `Field3D` class
+contains a pointer to the values up and down in the Y direction,
+called yup and ydown.  These values are calculated during
+communication::
 
    Field3D f(0.0);  // f allocated, set to zero
    f.yup();    // error: f.yup not allocated
@@ -57,9 +57,9 @@ Note the use of yp() and ym() to increase and decrease the Y index.
 Slab geometries
 ---------------
 
-The default :cpp:class:`ParallelTransform` is the identity
-transform, which sets yup() and ydown() to point to the same
-field. In the input options the setting is
+The default `ParallelTransform` is the identity transform, which sets
+yup() and ydown() to point to the same field. In the input options the
+setting is
 
 .. code-block:: bash
 
@@ -67,8 +67,8 @@ field. In the input options the setting is
    paralleltransform = identity
 
 
-This then uses the :cpp:class:`ParallelTransformIdentity` class
-to calculate the yup and ydown fields.
+This then uses the `ParallelTransformIdentity` class to calculate the
+yup and ydown fields.
 
 Shifted metric
 --------------
@@ -80,14 +80,14 @@ The shifted metric method is selected using:
    [mesh]
    paralleltransform = shifted
 
-so that mesh uses the :cpp:class:`ShiftedMetric` class to calculate
-parallel transforms.  During initialisation, this class reads a
-quantity zShift from the input or grid file. If zShift is not found
-then qinty is read instead. If qinty is not found then the angle is
-zero, and this method becomes the same as the identity transform.  For
-each X and Z index, the zShift variable should contain the toroidal
-angle of a magnetic field line at :math:`z=0` starting at
-:math:`\phi=0` at a reference location :math:`\theta_0`:
+so that mesh uses the `ShiftedMetric` class to calculate parallel
+transforms.  During initialisation, this class reads a quantity zShift
+from the input or grid file. If zShift is not found then qinty is read
+instead. If qinty is not found then the angle is zero, and this method
+becomes the same as the identity transform.  For each X and Z index,
+the zShift variable should contain the toroidal angle of a magnetic
+field line at :math:`z=0` starting at :math:`\phi=0` at a reference
+location :math:`\theta_0`:
 
 .. math::
 
@@ -107,13 +107,13 @@ To use the FCI method for parallel transforms, set
    [mesh]
    paralleltransform = fci
 
-which causes the :cpp:class:`FCITransform` class to be used for
-parallel transforms.  This reads four variables (3D fields) from the
-input grid: `forward_xt_prime`, `forward_zt_prime`,
-`backward_xt_prime`, and `backward_zt_prime`. These give the cell
-indices, not in general integers, in the forward (yup) and backward
-(ydown) directions. These are arranged so that forward_xt_prime(x,y,z)
-is the x index at y+1. Hence f.yup()(x,y+1,z) is calculated using
+which causes the `FCITransform` class to be used for parallel
+transforms.  This reads four variables (3D fields) from the input
+grid: `forward_xt_prime`, `forward_zt_prime`, `backward_xt_prime`, and
+`backward_zt_prime`. These give the cell indices, not in general
+integers, in the forward (yup) and backward (ydown) directions. These
+are arranged so that forward_xt_prime(x,y,z) is the x index at
+y+1. Hence f.yup()(x,y+1,z) is calculated using
 forward_xt_prime(x,y,z) and forward_zt_prime(x,y,z), whilst
 f.ydown()(x,y-1,z) is calculated using backward_xt_prime(x,y,z) and
 backward_zt_prime(x,y,z).

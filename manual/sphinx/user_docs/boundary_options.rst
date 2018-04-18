@@ -233,33 +233,32 @@ and lower Y boundaries, and a vector of BoundaryRegion objects.
 
     bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
 
-The :cpp:class:`RangeIterator` class is an iterator which allows
-looping over a set of indices. For example, in
-``src/solver/solver.cxx`` to loop over the upper Y boundary of a 2D
-variable ``var``::
+The `RangeIterator` class is an iterator which allows looping over a
+set of indices. For example, in ``src/solver/solver.cxx`` to loop over
+the upper Y boundary of a 2D variable ``var``::
 
     for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
       ...
     }
 
-The :cpp:class:`BoundaryRegion` class is defined in
+The `BoundaryRegion` class is defined in
 ``include/boundary_region.hxx``
 
 Boundary regions
 ----------------
 
 Different regions of the boundary such as “core”, “sol” etc. are
-labelled by the :cpp:class:`Mesh` class (i.e. :cpp:class:`BoutMesh`),
-which implements a member function defined in ``mesh.hxx``::
+labelled by the `Mesh` class (i.e. `BoutMesh`), which implements a
+member function defined in ``mesh.hxx``::
 
       // Boundary regions
       virtual vector<BoundaryRegion*> getBoundaries() = 0;
 
-This returns a vector of pointers to :cpp:class:`BoundaryRegion`
-objects, each of which describes a boundary region with a label, a
-``BndryLoc`` location (i.e. inner x, outer x, lower y, upper y or
-all), and iterator functions for looping over the points. This class
-is defined in ``boundary_region.hxx``::
+This returns a vector of pointers to `BoundaryRegion` objects, each of
+which describes a boundary region with a label, a ``BndryLoc``
+location (i.e. inner x, outer x, lower y, upper y or all), and
+iterator functions for looping over the points. This class is defined
+in ``boundary_region.hxx``::
 
     /// Describes a region of the boundary, and a means of iterating over it
     class BoundaryRegion {
@@ -312,10 +311,10 @@ Boundary operations
 -------------------
 
 On each boundary, conditions must be specified for each variable. The
-different conditions are imposed by :cpp:class:`BoundaryOp`
-objects. These set the values in the boundary region such that they
-obey e.g. Dirichlet or Neumann conditions. The :cpp:class:`BoundaryOp`
-class is defined in ``boundary_op.hxx``::
+different conditions are imposed by `BoundaryOp` objects. These set
+the values in the boundary region such that they obey e.g. Dirichlet
+or Neumann conditions. The `BoundaryOp` class is defined in
+``boundary_op.hxx``::
 
     /// An operation on a boundary
     class BoundaryOp {
@@ -344,7 +343,7 @@ class is defined in ``boundary_op.hxx``::
     };
 
 (where the implementations have been removed for clarity). Which has a
-pointer to a :cpp:class:`BoundaryRegion` object specifying which region this
+pointer to a `BoundaryRegion` object specifying which region this
 boundary is operating on.
 
 Boundary conditions need to be imposed on the initial conditions (after
@@ -401,16 +400,16 @@ operate over::
     BoundaryOp op = new BoundaryOp(bndry);
 
 The ``clone`` function is used to create boundary operations given a
-single object as a template in :cpp:class:`BoundaryFactory`. This can
-take additional arguments as a vector of strings - see explanation in
+single object as a template in `BoundaryFactory`. This can take
+additional arguments as a vector of strings - see explanation in
 :ref:`sec-BoundaryFactory`.
 
 Boundary modifiers
 ------------------
 
-To create more complicated boundary conditions from simple ones (such as
-Neumann conditions above), boundary operations can be modified by
-wrapping them up in a :cpp:class:`BoundaryModifier` object, defined in
+To create more complicated boundary conditions from simple ones (such
+as Neumann conditions above), boundary operations can be modified by
+wrapping them up in a `BoundaryModifier` object, defined in
 ``boundary_op.hxx``::
 
     class BoundaryModifier : public BoundaryOp {
@@ -420,16 +419,15 @@ wrapping them up in a :cpp:class:`BoundaryModifier` object, defined in
       BoundaryOp *op;
     };
 
-Since :cpp:class:`BoundaryModifier` inherits from
-:cpp:class:`BoundaryOp`, modified boundary operations are just a
-different boundary operation and can be treated the same (Decorator
-pattern). Boundary modifiers could also be nested inside each other to
-create even more complicated boundary operations. Note that the
-``clone`` function is different to the :cpp:class:`BoundaryOp` one:
-instead of a :cpp:class:`BoundaryRegion` to operate on, modifiers are
-passed a :cpp:class:`BoundaryOp` to modify.
+Since `BoundaryModifier` inherits from `BoundaryOp`, modified boundary
+operations are just a different boundary operation and can be treated
+the same (Decorator pattern). Boundary modifiers could also be nested
+inside each other to create even more complicated boundary
+operations. Note that the ``clone`` function is different to the
+`BoundaryOp` one: instead of a `BoundaryRegion` to operate on,
+modifiers are passed a `BoundaryOp` to modify.
 
-Currently the only modifier is :cpp:class:`BoundaryRelax`, defined in
+Currently the only modifier is `BoundaryRelax`, defined in
 ``boundary_standard.hxx``::
 
     /// Convert a boundary condition to a relaxing one
@@ -469,10 +467,9 @@ and to delete this singleton, free memory and clean-up at the end use::
 
 Because users should be able to add new boundary conditions during
 ``physics_init()``, boundary conditions are not hard-wired into
-:cpp:class:`BoundaryFactory`. Instead, boundary conditions must be
-registered with the factory, passing an instance which can later be
-cloned. This is done in ``bout++.cxx`` for the standard boundary
-conditions::
+`BoundaryFactory`. Instead, boundary conditions must be registered
+with the factory, passing an instance which can later be cloned. This
+is done in ``bout++.cxx`` for the standard boundary conditions::
 
       BoundaryFactory* bndry = BoundaryFactory::getInstance();
       bndry->add(new BoundaryDirichlet(), "dirichlet");
@@ -480,31 +477,28 @@ conditions::
       bndry->addMod(new BoundaryRelax(10.), "relax");
 
 where the ``add`` function adds BoundaryOp objects, whereas ``addMod``
-adds :cpp:class:`BoundaryModifier` objects. **Note**: The objects
-passed to :cpp:class:`BoundaryFactory` will be deleted when
-``cleanup()`` is called.
+adds `BoundaryModifier` objects. **Note**: The objects passed to
+`BoundaryFactory` will be deleted when ``cleanup()`` is called.
 
 When a boundary operation is added, it is given a name such as
 “dirichlet”, and similarly for the modifiers (“relax” above). These
-labels and object pointers are stored internally in
-:cpp:class:`BoundaryFactory` in maps defined in
-``boundary_factory.hxx``::
+labels and object pointers are stored internally in `BoundaryFactory`
+in maps defined in ``boundary_factory.hxx``::
 
       // Database of available boundary conditions and modifiers
       map<string, BoundaryOp*> opmap;
       map<string, BoundaryModifier*> modmap;
 
-These are then used by :cpp:func:`BoundaryFactory::create`::
+These are then used by `BoundaryFactory::create`::
 
       /// Create a boundary operation object
       BoundaryOp* create(const string &name, BoundaryRegion *region);
       BoundaryOp* create(const char* name, BoundaryRegion *region);
 
-to turn a string such as “relax(dirichlet)” and a
-:cpp:class:`BoundaryRegion` pointer into a :cpp:class:`BoundaryOp`
-object. These functions are implemented in ``boundary_factory.cxx``,
-starting around line 42. The parsing is done recursively by matching
-the input string to one of:
+to turn a string such as “relax(dirichlet)” and a `BoundaryRegion`
+pointer into a `BoundaryOp` object. These functions are implemented in
+``boundary_factory.cxx``, starting around line 42. The parsing is done
+recursively by matching the input string to one of:
 
 -  ``modifier(<expression>, arg1, ...)``
 
@@ -514,9 +508,8 @@ the input string to one of:
 
 -  ``operation``
 
-the ``<expression>`` variable is then resolved into a
-:cpp:class:`BoundaryOp` object by calling ``create(<expression>,
-region)``.
+the ``<expression>`` variable is then resolved into a `BoundaryOp`
+object by calling ``create(<expression>, region)``.
 
 When an operator or modifier is found, it is created from the pointer
 stored in the ``opmap`` or ``modmap`` maps using the ``clone`` method,
@@ -545,13 +538,12 @@ argument to change the value the boundary’s set to. In
 If no arguments are passed i.e. the string was “dirichlet” or
 “dirichlet()” then the ``args`` list is empty, and the default value
 (0.0) is used. If one or more arguments is used then the first
-argument is parsed into a :cpp:type:`BoutReal` type and used to create
-a new :cpp:class:`BoundaryDirichlet` object. If more arguments are
-passed then these are just ignored; probably a warning should be
-printed.
+argument is parsed into a `BoutReal` type and used to create a new
+`BoundaryDirichlet` object. If more arguments are passed then these
+are just ignored; probably a warning should be printed.
 
-To set boundary conditions on a field, :cpp:class:`FieldData` methods
-are defined in ``field_data.hxx``::
+To set boundary conditions on a field, `FieldData` methods are defined
+in ``field_data.hxx``::
 
     // Boundary conditions
       void setBoundary(const string &name); ///< Set the boundary conditions
@@ -561,9 +553,8 @@ are defined in ``field_data.hxx``::
      protected:
       vector<BoundaryOp*> bndry_op; // Boundary conditions
 
-The :cpp:func:`FieldData::setBoundary` method is implemented in
+The `FieldData::setBoundary` method is implemented in
 ``field_data.cxx``. It first gets a vector of pointers to
-:cpp:class:`BoundaryRegion`\ s from the mesh, then loops over these
-calling :cpp:func:`BoundaryFactory::createFromOptions` for each one
-and adding the resulting boundary operator to the
-:cpp:member:`FieldData::bndry_op` vector.
+`BoundaryRegion`\ s from the mesh, then loops over these calling
+`BoundaryFactory::createFromOptions` for each one and adding the
+resulting boundary operator to the `FieldData::bndry_op` vector.
