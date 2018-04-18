@@ -700,7 +700,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   // Allocate memory
   Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
   Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
-  static Laplacian *d2lap = Laplacian::defaultInstance();
+  Laplacian *d2lap = Laplacian::defaultInstance();
   d2lap->calcDelp2Coefs();
 
   // Take forward FFT
