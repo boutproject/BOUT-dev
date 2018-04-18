@@ -158,7 +158,7 @@ public:
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
   void calcDelp2Coefs(); /// Precompute coefficients for Delp2 operator
-  static bool initializedDelp2Coefs;
+  bool initializedDelp2Coefs = false;
   Tensor<dcomplex> a, b, c; // coefficients of Delp2
 
   /*!

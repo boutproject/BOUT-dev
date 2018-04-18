@@ -16,6 +16,7 @@
 #include <interpolation.hxx>
 
 #include <globals.hxx>
+#include <bout/scorepwrapper.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
@@ -628,6 +629,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
+  SCOREP0();
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
@@ -637,25 +639,24 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
   int ncz = localmesh->LocalNz;
 
-  // Allocate memory
-  Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
-  Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
-
-  static Laplacian *d2lap = Laplacian::defaultInstance();
+  Laplacian *d2lap = Laplacian::defaultInstance();
   d2lap->calcDelp2Coefs();
 
+BOUT_OMP(parallel for)
   // Loop over all y indices
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
+    // Allocate memory
+    Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
+    Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
+
     // Take forward FFT
 
-    #pragma omp parallel for
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
       rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
     // Perform x derivative
     // No smoothing in the x direction
-    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -665,7 +666,6 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
 
     // Reverse FFT
-    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
