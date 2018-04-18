@@ -40,6 +40,17 @@ proceed at own risk.
 Manually set compilation flags
 ------------------------------
 
+You can set the following environment variables if you need more
+control over how BOUT++ is built:
+
+- ``LDFLAGS``: extra flags for linking, e.g. ``-L<library dir>``
+
+- ``LIBS``: extra libraries for linking, e.g. ``-l<library>``
+
+- ``CPPFLAGS``: preprocessor flags, e.g. ``-I<include dir>``
+
+- ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
+
 It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
