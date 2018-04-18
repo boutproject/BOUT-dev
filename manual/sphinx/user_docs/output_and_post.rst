@@ -275,9 +275,8 @@ Reading BOUT++ output into IDL
 ------------------------------
 
 There are several routines provided for reading data from BOUT++
-output into IDL (see :ref:`sec-idl-routines` for a more complete
-list). In the directory containing the BOUT++ output files (usually
-``data/``), you can list the variables available using
+output into IDL. In the directory containing the BOUT++ output files
+(usually ``data/``), you can list the variables available using
 
 .. code-block:: idl
 

@@ -21,7 +21,7 @@ provides only those details needed to use BOUT++.
 
 We use doxygen comments to document the code in the source files. This is then
 built using breathe_ and sphinx_ into the document you're reading now. The
-API documentation is in :doc:`../_breathe_autogen/classlist`.
+API documentation is in :ref:`api-ref`.
 
 
 .. _breathe: https://breathe.readthedocs.io

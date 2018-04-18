@@ -268,12 +268,12 @@ The options which control this behaviour are:
 ODE integration
 ---------------
 
-The Solver class can be used to solve systems of ODEs inside a physics
+The `Solver` class can be used to solve systems of ODEs inside a physics
 model: Multiple Solver objects can exist besides the main one used for
 time integration. Example code is in ``examples/test-integrate``.
 
 To use this feature, systems of ODEs must be represented by a class
-derived from :cpp:class:`PhysicsModel` (see :ref:`sec-newapi`).
+derived from :cpp:class:`PhysicsModel`.
 
 ::
 
