@@ -47,7 +47,7 @@ if has_breathe:
                                      dryrun=False,
                                      force=True,
                                      notoc=False,
-                                     outtypes=("class", "file"),
+                                     outtypes=("file"),
                                      project="BOUT++",
                                      rootpath='../doxygen/bout/xml',
                                      suffix='rst')
