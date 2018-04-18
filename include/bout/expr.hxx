@@ -14,6 +14,7 @@
 
 #include <field3d.hxx>
 #include <field2d.hxx>
+#include <bout/mesh.hxx>
 
 /// Literal class to capture BoutReal values in expressions
 class Literal {

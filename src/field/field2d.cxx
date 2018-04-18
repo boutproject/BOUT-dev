@@ -71,7 +71,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   TRACE("Field2D(Field2D&)");
 
 #ifdef TRACK
-  name = rhs.name;
+  name = f.name;
 #endif
 
 #if CHECK > 2
