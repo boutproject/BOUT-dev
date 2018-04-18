@@ -34,15 +34,15 @@ This will try to set appropriate flags, but may not set the best ones.
 This should work well for gcc. Similar to checks, different levels can
 be specified, where 3 is high, and 0 means disabling all
 optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
-for gcc which enables optimization that are not standard conform, so
+for gcc which enables optimizations that are not standard conforming, so
 proceed at own risk.
 
 Manually set compilation flags
 ------------------------------
 
 It is possible to change flags for BOUT++ after running configure, by
-editing the make.config file. Note that this is not recommended, as
-e.g. pvode will not be build with these flags.
+editing the ``make.config`` file. Note that this is not recommended,
+as e.g. PVODE will not be built with these flags.
 
 .. _sec-machine-specific:
 
