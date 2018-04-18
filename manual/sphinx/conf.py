@@ -141,6 +141,9 @@ highlight_language = 'cpp'
 # Turn on figure numbering
 numfig = True
 
+# The default role for text marked up `like this`
+default_role = 'any'
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
