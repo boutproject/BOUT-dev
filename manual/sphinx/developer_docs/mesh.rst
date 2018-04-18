@@ -12,13 +12,6 @@ implementations:
    rectangular mesh so the number of radial points (x) can’t change in
    the poloidal direction (y).
 
--  ``QuiltMesh`` (``src/mesh/quiltmesh.cxx``) is a more general mesh
-   under development (i.e. **not** recommended except for testing). The
-   primary advantage is that it allows the number of points in x to vary
-   between regions so the number of radial grid points in the core no
-   longer needs to be the same as the number in the private flux
-   regions.
-
 Grid data sources
 -----------------
 
@@ -111,9 +104,6 @@ BoutMesh class uses the BOUT indices (which trace back to UEDGE):
 are equal in the case of single-null configurations. The indexing is
 such that all points ``0 <= x < ixseps1`` are inside the separatrix,
 whilst ``ixseps1 <= x < LocalNx`` are outside.
-
-Implementation: QuiltMesh
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Index ranges
 ------------
