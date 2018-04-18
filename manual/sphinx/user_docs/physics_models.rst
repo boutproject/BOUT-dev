@@ -6,20 +6,22 @@ BOUT++ physics models
 Once you have tried some example codes, and generally got the hang of
 running BOUT++ and analysing the results, there will probably come a
 time when you want to change the equations being solved. This section
-demonstrates how a BOUT++ physics model is put together. It assumes you have a working knowledge
-of C or C++, but you don’t need to be an expert - most of the messy code
-is hidden away from the physics model. There are several good books on
-C and C++, but I’d recommend online tutorials over books because there
-are a lot more of them, they’re quicker to scan through, and they’re
-cheaper.
+demonstrates how a BOUT++ physics model is put together. It assumes
+you have a working knowledge of C or C++, but you don’t need to be an
+expert - most of the messy code is hidden away from the physics
+model. There are several good books on C and C++, but I’d recommend
+online tutorials over books because there are a lot more of them,
+they’re quicker to scan through, and they’re cheaper.
 
-Many of the examples which come with BOUT++ are physics models, and can
-be used as a starting point. Some relatively simple examples are ``blob2d``
-(2D plasma filament/blob propagation), ``hasegawa-wakatani`` (2D turbulence),
-``finite-volume/fluid`` (1D compressible fluid) and ``gas-compress``
-(up to 3D compressible fluid). Some of the integrated tests (under ``tests/integrated``)
-use either physics models (e.g. ``test-delp2`` and ``test-drift-instability``), or
-define their own ``main`` function (e.g. ``test-io`` and ``test-cyclic``).
+Many of the examples which come with BOUT++ are physics models, and
+can be used as a starting point. Some relatively simple examples are
+``blob2d`` (2D plasma filament/blob propagation),
+``hasegawa-wakatani`` (2D turbulence), ``finite-volume/fluid`` (1D
+compressible fluid) and ``gas-compress`` (up to 3D compressible
+fluid). Some of the integrated tests (under ``tests/integrated``) use
+either physics models (e.g. ``test-delp2`` and
+``test-drift-instability``), or define their own ``main`` function
+(e.g. ``test-io`` and ``test-cyclic``).
 
 .. _sec-heat-conduction-model:
 
@@ -52,12 +54,14 @@ and then defines a standard main() function using a macro:
 
     BOUTMAIN(Conduction);
 
-You can define your own ``main()`` function, but for most cases this is enough.
-The two methods defined in Conduction, ``init`` and ``rhs``, are both needed to define
-a BOUT++ physics model. The ``init`` function is run once at the start,
-and should set up the simulation and specify which variables are evolving in time. 
-The ``rhs`` function should calculate the time derivative, and is called at least once
-per output timestep, depending on the time integration method used.
+You can define your own ``main()`` function, but for most cases this
+is enough.  The two methods defined in Conduction, ``init`` and
+``rhs``, are both needed to define a BOUT++ physics model. The
+``init`` function is run once at the start, and should set up the
+simulation and specify which variables are evolving in time.  The
+``rhs`` function should calculate the time derivative, and is called
+at least once per output timestep, depending on the time integration
+method used.
 
 To define your own ``main()`` function, see the definition of ``BOUTMAIN``
 in ``include/bout/physicsmodel.hxx``. It expands to something like:
@@ -81,54 +85,60 @@ in ``include/bout/physicsmodel.hxx``. It expands to something like:
         return 0;
       }
 
-where ``Conduction`` was given as an argument to ``BOUTMAIN``. Customising this
-may make combining BOUT++ with other libraries easier.
+where ``Conduction`` was given as an argument to
+``BOUTMAIN``. Customising this may make combining BOUT++ with other
+libraries easier.
 
 Initialisation
 ~~~~~~~~~~~~~~
 
-During initialisation (the ``init`` function), the conduction example first reads an 
-option from the input settings file (BOUT.inp):
+During initialisation (the ``init`` function), the conduction example
+first reads an option from the input settings file (BOUT.inp):
 
 ::
 
     Options *options = Options::getRoot()->getSection("conduction");
     OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
 
-This first gets a section called "conduction", then requests an option called "chi" inside
-this section. If this setting is not found, then the default value of 1.0 will be used.
-To set this value the BOUT.inp file contains:
+This first gets a section called "conduction", then requests an option
+called "chi" inside this section. If this setting is not found, then
+the default value of 1.0 will be used.  To set this value the BOUT.inp
+file contains:
 
 .. code-block:: bash
 
     [conduction]
     chi = 1.0
 
-which defines a section called "conduction", and within that section a variable called "chi". 
-This value can be overridden by specifying the setting on the command line:
+which defines a section called "conduction", and within that section a
+variable called "chi".  This value can be overridden by specifying the
+setting on the command line:
 
 
 .. code-block:: bash
 
     $ ./conduction conduction:chi=2
 
-where "conduction:chi" means the variable "chi" in the section "conduction". When this option is
-read, a message is printed to the BOUT.log files, giving the value used and the source of that value:
+where "conduction:chi" means the variable "chi" in the section
+"conduction". When this option is read, a message is printed to the
+BOUT.log files, giving the value used and the source of that value:
 
 .. code-block:: bash
 
     Option conduction:chi = 1 (data/BOUT.inp)
 
-After reading the chi option, the ``init`` method then specifies which variables to evolve
-using a macro:
+After reading the chi option, the ``init`` method then specifies which
+variables to evolve using a macro:
 
 ::
 
     // Tell BOUT++ to solve T
     SOLVE_FOR(T);
 
-This tells the BOUT++ time integration solver to set the variable T using values from the input settings. 
-It looks in a section with the same name as the variable ("T" here) for variables "scale" and "function":
+This tells the BOUT++ time integration solver to set the variable T
+using values from the input settings.  It looks in a section with the
+same name as the variable ("T" here) for variables "scale" and
+"function":
 
 .. code-block:: bash
 
@@ -137,49 +147,58 @@ It looks in a section with the same name as the variable ("T" here) for variable
     scale = 1.0  # Size of the initial perturbation
     function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
 
-The function is evaluated using expressions which can involve x,y and z coordinates. More details
-are given in section :ref:`sec-init-time-evolved-vars`.
+The function is evaluated using expressions which can involve x,y and
+z coordinates. More details are given in section
+:ref:`sec-init-time-evolved-vars`.
 
-Finally an error code is returned, here 0 indicates no error. If init returns non-zero then 
-the simulation will stop.
+Finally an error code is returned, here 0 indicates no error. If init
+returns non-zero then the simulation will stop.
 
 Time evolution
 ~~~~~~~~~~~~~~
 
-During time evolution, the time integration method (ODE integrator) calculates the system state
-(here "T") at a give time. It then calls the ``rhs`` function, which should calculate the
-time derivative of all the evolving variables. In this case the job of the ``rhs`` function
-is to calculate "ddt(T)", the **partial derivative** of the variable "T" with respect to time, given
-the value of "T": 
+During time evolution, the time integration method (ODE integrator)
+calculates the system state (here "T") at a give time. It then calls
+the ``rhs`` function, which should calculate the time derivative of
+all the evolving variables. In this case the job of the ``rhs``
+function is to calculate "ddt(T)", the **partial derivative** of the
+variable "T" with respect to time, given the value of "T":
 
  .. math::
 
    \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
 
-The first thing the ``rhs`` function function does is communicate the guard (halo) cells:
+The first thing the ``rhs`` function function does is communicate the
+guard (halo) cells:
 
 ::
 
     mesh->communicate(T);
 
-This is because BOUT++ does not (generally) do communications, but leaves it up to the user to decide
-when the most efficient or convenient time to do them is. Before we can take derivatives of a variable (here T),
-the values of the function must be known in the boundaries and guard cells, which requires communication between
-processors. By default the values in the guard cells are set to NaN, so if they are accidentally used without
-first communicating then the code should crash fairly quickly with a non-finite number error.
+This is because BOUT++ does not (generally) do communications, but
+leaves it up to the user to decide when the most efficient or
+convenient time to do them is. Before we can take derivatives of a
+variable (here T), the values of the function must be known in the
+boundaries and guard cells, which requires communication between
+processors. By default the values in the guard cells are set to NaN,
+so if they are accidentally used without first communicating then the
+code should crash fairly quickly with a non-finite number error.
 
-Once the guard cells have been communicated, we calculate the right hand side (RHS) of the equation
-above:
+Once the guard cells have been communicated, we calculate the right
+hand side (RHS) of the equation above:
 
 ::
 
     ddt(T) = Div_par_K_Grad_par(chi, T);
 
 
-The function "Div_par_K_Grad_par" is a function in the BOUT++ library which calculates the divergence
-in the parallel (y) direction of a constant multiplied by the gradient of a function in the parallel direction.
+The function "Div_par_K_Grad_par" is a function in the BOUT++ library
+which calculates the divergence in the parallel (y) direction of a
+constant multiplied by the gradient of a function in the parallel
+direction.
 
-As with the init code, a non-zero return value indicates an error and will stop the simulation.
+As with the init code, a non-zero return value indicates an error and
+will stop the simulation.
 
 Magnetohydrodynamics (MHD)
 --------------------------
@@ -197,9 +216,9 @@ directory under ``orszag-tang``. The equations to be solved are:
        (\nabla\times\mathbf{B})\times\mathbf{B}) \\ {{\frac{\partial \mathbf{B}}{\partial t}}} =&
        \nabla\times(\mathbf{v}\times\mathbf{B})
 
-As in the :ref:`heat conduction example <sec-heat-conduction-model>`, a class
-is created which inherits from ``PhysicsModel`` and defines ``init``
-and ``rhs`` functions:
+As in the :ref:`heat conduction example <sec-heat-conduction-model>`,
+a class is created which inherits from ``PhysicsModel`` and defines
+``init`` and ``rhs`` functions:
 
 ::
 
@@ -214,14 +233,14 @@ and ``rhs`` functions:
     };
 
 
-The ``init`` function is called once at the start of the simulation, and
-should set up the problem, specifying which variables are to be evolved.
-The argument ``restarting`` is false the first time a problem is run,
-and true if loading the state from a restart file.
+The ``init`` function is called once at the start of the simulation,
+and should set up the problem, specifying which variables are to be
+evolved.  The argument ``restarting`` is false the first time a
+problem is run, and true if loading the state from a restart file.
 
-The ``rhs`` function is called every time-step, and
-should calculate the time-derivatives for a given state. In both cases
-returning non-zero tells BOUT++ that an error occurred.
+The ``rhs`` function is called every time-step, and should calculate
+the time-derivatives for a given state. In both cases returning
+non-zero tells BOUT++ that an error occurred.
 
 Variables
 ~~~~~~~~~
@@ -243,8 +262,8 @@ magnetic field :math:`B`:
     };
 
 Scalar and vector fields behave much as you would expect: ``Field3D``
-objects can be added, subtracted, multiplied and divided,
-so the following examples are all valid operations:
+objects can be added, subtracted, multiplied and divided, so the
+following examples are all valid operations:
 
 ::
 
@@ -385,8 +404,8 @@ Input options
 
 Note that in the above equations the extra parameter ``g`` has been
 used for the ratio of specific heats. To enable this to be set in the
-input options file (see :ref:`sec-options`), we use the ``options`` object in the
-initialisation function:
+input options file (see :ref:`sec-options`), we use the ``options``
+object in the initialisation function:
 
 ::
 
@@ -404,23 +423,24 @@ initialisation function:
 
 This specifies that an option called “g” in a section called “mhd”
 should be put into the variable ``gamma``. If the option could not be
-found, or was of the wrong type, the variable should be set to a default
-value of :math:`5/3`. The value used will be printed to the output file,
-so if ``g`` is not set in the input file the following line will appear:
+found, or was of the wrong type, the variable should be set to a
+default value of :math:`5/3`. The value used will be printed to the
+output file, so if ``g`` is not set in the input file the following
+line will appear:
 
 ::
 
           Option mhd:g = 1.66667 (default)
 
-This function can be used to get integers and booleans. To get strings,
-there is the function (``char* options.getString(section, name)``. To
-separate options specific to the physics model, these options should be
-put in a separate section, for example here the “mhd” section has been
-specified. 
+This function can be used to get integers and booleans. To get
+strings, there is the function (``char* options.getString(section,
+name)``. To separate options specific to the physics model, these
+options should be put in a separate section, for example here the
+“mhd” section has been specified.
 
 Most of the time, the name of the variable (e.g. ``g``) will be the
-same as the identifier in the options file (“g”). In this case,
-there is the macro
+same as the identifier in the options file (“g”). In this case, there
+is the macro
 
 ::
 
@@ -440,15 +460,16 @@ Communication
 
 If you plan to run BOUT++ on more than one processor, any operations
 involving derivatives will require knowledge of data stored on other
-processors. To handle the necessary parallel communication, there is the
-``mesh->communicate`` function. This takes care of where the data needs
-to go to/from, and only needs to be told which variables to transfer.
+processors. To handle the necessary parallel communication, there is
+the ``mesh->communicate`` function. This takes care of where the data
+needs to go to/from, and only needs to be told which variables to
+transfer.
 
 If you only need to communicate a small number (up to 5 currently) of
 variables then just call the ``mesh->communicate`` function directly.
-For the MHD code, we need to communicate the variables ``rho,p,v,B`` at
-the beginning of the ``physics_run`` function before any derivatives are
-calculated:
+For the MHD code, we need to communicate the variables ``rho,p,v,B``
+at the beginning of the ``physics_run`` function before any
+derivatives are calculated:
 
 ::
 
@@ -456,12 +477,12 @@ calculated:
       mesh->communicate(rho, p, v, B);
 
 If you need to communicate lots of variables, or want to change at
-run-time which variables are evolved (e.g. depending on input options),
-then you can create a group of variables and communicate them later. To
-do this, first create a ``FieldGroup`` object , in this case called
-``comms`` , then use the add method. This method does no communication,
-but records which variables to transfer when the communication is done
-later.
+run-time which variables are evolved (e.g. depending on input
+options), then you can create a group of variables and communicate
+them later. To do this, first create a ``FieldGroup`` object , in this
+case called ``comms`` , then use the add method. This method does no
+communication, but records which variables to transfer when the
+communication is done later.
 
 ::
 
@@ -477,9 +498,9 @@ later.
         comms.add(B);
         ...
 
-The ``comms.add()`` routine can be given any number of variables at once
-(there’s no practical limit on the total number of variables which are
-added to a ``FieldGroup`` ), so this can be shortened to
+The ``comms.add()`` routine can be given any number of variables at
+once (there’s no practical limit on the total number of variables
+which are added to a ``FieldGroup`` ), so this can be shortened to
 
 ::
 
@@ -499,17 +520,17 @@ the start of the ``rhs`` routine:
       .
       .
 
-In many situations there may be several groups of variables which can be
-communicated at different times. The function ``mesh->communicate``
+In many situations there may be several groups of variables which can
+be communicated at different times. The function ``mesh->communicate``
 consists of a call to ``mesh->send`` followed by ``mesh->wait`` which
 can be done separately to interleave calculations and communications.
 This will speed up the code if parallel communication bandwidth is a
 problem for your simulation.
 
-In our MHD example, the calculation of ``ddt(rho)`` and ``ddt(p)`` does
-not require ``B``, so we could first communicate ``rho``, ``p``, and
-``v``, send ``B`` and do some calculations whilst communications are
-performed:
+In our MHD example, the calculation of ``ddt(rho)`` and ``ddt(p)``
+does not require ``B``, so we could first communicate ``rho``, ``p``,
+and ``v``, send ``B`` and do some calculations whilst communications
+are performed:
 
 ::
 
@@ -544,19 +565,19 @@ communications (and set boundary conditions) first. See
 Error handling
 ~~~~~~~~~~~~~~
 
-Finding where bugs have occurred in a (fairly large) parallel code is a
-difficult problem. This is more of a concern for developers of BOUT++
-(see the developers manual), but it is still useful for the user to be
-able to hunt down bug in their own code, or help narrow down where a bug
-could be occurring.
+Finding where bugs have occurred in a (fairly large) parallel code is
+a difficult problem. This is more of a concern for developers of
+BOUT++ (see the developers manual), but it is still useful for the
+user to be able to hunt down bug in their own code, or help narrow
+down where a bug could be occurring.
 
 If you have a bug which is easily reproduceable i.e. it occurs almost
 immediately every time you run the code, then the easiest way to hunt
 down the bug is to insert lots of ``output.write`` statements (see
-:ref:`sec-logging`). Things get harder when a bug only occurs after
-a long time of running, and/or only occasionally. For this type of
-problem, a useful tool can be the message stack. An easy way to use this message
-stack is to use the ``TRACE`` macro:
+:ref:`sec-logging`). Things get harder when a bug only occurs after a
+long time of running, and/or only occasionally. For this type of
+problem, a useful tool can be the message stack. An easy way to use
+this message stack is to use the ``TRACE`` macro:
 
 ::
 
@@ -565,13 +586,14 @@ stack is to use the ``TRACE`` macro:
 	
 	} // Scope ends, message popped
 
-This will push the message, then pop the message when the current scope ends
-(except when an exception occurs).
-The error message will also have the file name and line number appended, to help find
-where an error occurred. The run-time overhead of this should be small,
-but can be removed entirely if the compile-time flag ``-DCHECK`` is not defined or set to ``0``. This turns off checking,
-and ``TRACE`` becomes an empty macro.
-It is possible to use standard ``printf`` like formatting with the trace macro, for example.
+This will push the message, then pop the message when the current
+scope ends (except when an exception occurs).  The error message will
+also have the file name and line number appended, to help find where
+an error occurred. The run-time overhead of this should be small, but
+can be removed entirely if the compile-time flag ``-DCHECK`` is not
+defined or set to ``0``. This turns off checking, and ``TRACE``
+becomes an empty macro.  It is possible to use standard ``printf``
+like formatting with the trace macro, for example.
  
 ::
 
@@ -596,10 +618,10 @@ Boundary conditions
 
 All evolving variables have boundary conditions applied automatically
 before the ``rhs`` function is called (or afterwards if the boundaries
-are being evolved in time). Which condition is applied
-depends on the options file settings (see :ref:`sec-bndryopts`). If
-you want to disable this and apply your own boundary conditions then set
-boundary condition to ``none`` in the ``BOUT.inp`` options file.
+are being evolved in time). Which condition is applied depends on the
+options file settings (see :ref:`sec-bndryopts`). If you want to
+disable this and apply your own boundary conditions then set boundary
+condition to ``none`` in the ``BOUT.inp`` options file.
 
 In addition to evolving variables, it’s sometimes necessary to impose
 boundary conditions on other quantities which are not explicitly
@@ -614,11 +636,11 @@ so to apply a Dirichlet boundary condition:
       ...
       var.applyBoundary("dirichlet");
 
-The format is exactly the same as in the options file. Each time this is
-called it must parse the text, create and destroy boundary objects. To
-avoid this overhead and have different boundary conditions for each
-region, it’s better to set the boundary conditions you want to use first
-in ``init``, then just apply them every time:
+The format is exactly the same as in the options file. Each time this
+is called it must parse the text, create and destroy boundary
+objects. To avoid this overhead and have different boundary conditions
+for each region, it’s better to set the boundary conditions you want
+to use first in ``init``, then just apply them every time:
 
 ::
 
@@ -641,34 +663,35 @@ in ``init``, then just apply them every time:
 This will look in the options file for a section called ``[myvar]``
 (upper or lower case doesn’t matter) in the same way that evolving
 variables are handled. In fact this is precisely what is done: inside
-``bout_solve`` (or ``SOLVE_FOR``) the ``setBoundary`` method is called,
-and then after ``rhs`` the ``applyBoundary()`` method is called on
-each evolving variable. This method also gives you the flexibility to
-apply different boundary conditions on different boundary regions (e.g.
-radial boundaries and target plates); the first method just applies the
-same boundary condition to all boundaries.
+``bout_solve`` (or ``SOLVE_FOR``) the ``setBoundary`` method is
+called, and then after ``rhs`` the ``applyBoundary()`` method is
+called on each evolving variable. This method also gives you the
+flexibility to apply different boundary conditions on different
+boundary regions (e.g.  radial boundaries and target plates); the
+first method just applies the same boundary condition to all
+boundaries.
 
 Another way to set the boundaries is to copy them from another variable:
 
 ::
 
     Field3D a, b;
-      ...
-      a.setBoundaryTo(b); // Copy b's boundaries into a
-      ...
+    ...
+    a.setBoundaryTo(b); // Copy b's boundaries into a
+    ...
 
 .. _sec-custom-bc:
 
 Custom boundary conditions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The boundary conditions supplied with the BOUT++ library cover the most
-common situations, but cannot cover all of them. If the boundary
+The boundary conditions supplied with the BOUT++ library cover the
+most common situations, but cannot cover all of them. If the boundary
 condition you need isn’t available, then it’s quite straightforward to
-write your own. First you need to make sure that your boundary condition
-isn’t going to be overwritten. To do this, set the boundary condition to
-“none” in the BOUT.inp options file, and BOUT++ will leave that boundary
-alone. For example:
+write your own. First you need to make sure that your boundary
+condition isn’t going to be overwritten. To do this, set the boundary
+condition to “none” in the BOUT.inp options file, and BOUT++ will
+leave that boundary alone. For example:
 
 ::
 
@@ -709,14 +732,15 @@ Note that it might be both if ``NXPE = 1``, or neither if ``NXPE > 2``.
       }
 
 note the size of the local mesh including guard cells is given by
-``mesh->LocalNx``, ``mesh->LocalNy``, and ``mesh->LocalNz``. The functions
-``mesh->firstX()`` and ``mesh->lastX()`` return true only if the current
-processor is on the left or right of the X domain respectively.
+``mesh->LocalNx``, ``mesh->LocalNy``, and ``mesh->LocalNz``. The
+functions ``mesh->firstX()`` and ``mesh->lastX()`` return true only if
+the current processor is on the left or right of the X domain
+respectively.
 
 Setting custom Y boundaries is slightly more complicated than X
 boundaries, because target or limiter plates could cover only part of
-the domain. Rather than use a ``for`` loop to iterate over the points in
-the boundary, we need to use a more general iterator:
+the domain. Rather than use a ``for`` loop to iterate over the points
+in the boundary, we need to use a more general iterator:
 
 ::
 
@@ -731,8 +755,8 @@ the boundary, we need to use a more general iterator:
           }
       }
 
-This would set the time-derivative of ``f`` to zero in a boundary of width 3
-in Y (from 0 to 2 inclusive). In the same way
+This would set the time-derivative of ``f`` to zero in a boundary of
+width 3 in Y (from 0 to 2 inclusive). In the same way
 ``mesh->iterateBndryUpperY()`` can be used to iterate over the upper
 boundary:
 
@@ -750,13 +774,13 @@ boundary:
 Initial profiles
 ~~~~~~~~~~~~~~~~
 
-Up to this point the code is evolving total density, pressure etc. This
-has advantages for clarity, but has problems numerically: For small
-perturbations, rounding error and tolerances in the time-integration
-mean that linear dispersion relations are not calculated correctly. The
-solution to this is to write all equations in terms of an initial
-“background” quantity and a time-evolving perturbation, for example
-:math:`\rho(t) \rightarrow \rho_0 +
+Up to this point the code is evolving total density, pressure
+etc. This has advantages for clarity, but has problems numerically:
+For small perturbations, rounding error and tolerances in the
+time-integration mean that linear dispersion relations are not
+calculated correctly. The solution to this is to write all equations
+in terms of an initial “background” quantity and a time-evolving
+perturbation, for example :math:`\rho(t) \rightarrow \rho_0 +
 \tilde{\rho}(t)`. For this reason, **the initialisation of all
 variables passed to the ``bout_solve`` function is a combination of
 small-amplitude gaussians and waves; the user is expected to have
@@ -775,9 +799,9 @@ function:
       ...
     }
 
-As with the input options, most of the time the name of the variable in
-the physics code will be the same as the name in the grid file to avoid
-confusion. In this case, you can just use
+As with the input options, most of the time the name of the variable
+in the physics code will be the same as the name in the grid file to
+avoid confusion. In this case, you can just use
 
 ::
 
@@ -805,8 +829,8 @@ values to file. For example:
       dump.add(Ni0, "Ni0", 0);
 
 where the ’0’ at the end means the variable should only be written to
-file once at the start of the simulation. For convenience there are some
-macros e.g.
+file once at the start of the simulation. For convenience there are
+some macros e.g.
 
 ::
 
@@ -888,12 +912,14 @@ By default the prefix is “BOUT.dmp”.
 Variable attributes
 ~~~~~~~~~~~~~~~~~~~
 
-An experimental feature is the ability to add attributes to output variables. Do this using::
+An experimental feature is the ability to add attributes to output
+variables. Do this using::
 
    dump.setAttribute(variable, attribute, value);
 
-where ``variable`` is the name of the variable; ``attribute`` is the name of the attribute, and ``value`` can be
-either a string or an integer. For example::
+where ``variable`` is the name of the variable; ``attribute`` is the
+name of the attribute, and ``value`` can be either a string or an
+integer. For example::
 
 
    dump.setAttribute("Ni0", "units", "m^-3"); 
@@ -905,8 +931,8 @@ Reduced MHD
 
 The MHD example presented previously covered some of the functions
 available in BOUT++, which can be used for a wide variety of models.
-There are however several other significant functions and classes which
-are commonly used, which will be illustrated using the
+There are however several other significant functions and classes
+which are commonly used, which will be illustrated using the
 ``reconnect-2field`` example. This is solving equations for
 :math:`A_{||}` and vorticity :math:`U`
 
@@ -986,9 +1012,10 @@ calculating ``jpar`` . Since we will need to take derivatives of
 Logging output
 --------------
 
-Logging should be used to report simulation progress, record information,
-and warn about potential problems. BOUT++ includes a simple logging facility
-which supports both C printf and C++ iostream styles. For example:
+Logging should be used to report simulation progress, record
+information, and warn about potential problems. BOUT++ includes a
+simple logging facility which supports both C printf and C++ iostream
+styles. For example:
 
 ::
 
@@ -996,21 +1023,23 @@ which supports both C printf and C++ iostream styles. For example:
    
    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
 
-Messages sent to ``output`` on processor 0 will be printed to console and saved to
-``BOUT.log.0``. Messages from all other processors will only go to their log files,
-``BOUT.log.#`` where ``#`` is the processor number.
+Messages sent to ``output`` on processor 0 will be printed to console
+and saved to ``BOUT.log.0``. Messages from all other processors will
+only go to their log files, ``BOUT.log.#`` where ``#`` is the
+processor number.
 
-**Note**: If an error occurs on a processor other than processor 0, then the
-error message will usually only be in the log file, not printed to console. If BOUT++
-crashes but no error message is printed, try looking at the ends of all log files:
+**Note**: If an error occurs on a processor other than processor 0,
+then the error message will usually only be in the log file, not
+printed to console. If BOUT++ crashes but no error message is printed,
+try looking at the ends of all log files:
 
 .. code-block:: bash
 
    $ tail BOUT.log.*
 
 
-For finer control over which messages are printed, several outputs are available,
-listed in the table below.
+For finer control over which messages are printed, several outputs are
+available, listed in the table below.
 
 ===================   =================================================================
 Name                  Useage
@@ -1027,18 +1056,21 @@ Name                  Useage
 Controlling logging level
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default all of the outputs except ``output_debug`` are saved to log and printed
-to console (processor 0 only).
+By default all of the outputs except ``output_debug`` are saved to log
+and printed to console (processor 0 only).
 
-To reduce the volume of outputs the command line argument ``-q`` (quiet) reduces
-the output level by one, and ``-v`` (verbose) increases it by one. Running with ``-q``
-in the command line arguments suppresses the ``output_info`` messages, so that they
-will not appear in the console or log file. Running with ``-q -q`` suppresses everything
-except ``output_warn`` and ``output_error``. 
+To reduce the volume of outputs the command line argument ``-q``
+(quiet) reduces the output level by one, and ``-v`` (verbose)
+increases it by one. Running with ``-q`` in the command line arguments
+suppresses the ``output_info`` messages, so that they will not appear
+in the console or log file. Running with ``-q -q`` suppresses
+everything except ``output_warn`` and ``output_error``.
 
-To enable the ``output_debug`` messages, first configure BOUT++ with debug messages enabled
-by adding ``-DDEBUG_ENABLED`` to ``BOUT_FLAGS`` in ``make.config`` and then recompiling
-with ``make clean; make``. When running BOUT++ add a "-v" flag to see ``output_debug`` messages.
+To enable the ``output_debug`` messages, first configure BOUT++ with
+debug messages enabled by adding ``-DDEBUG_ENABLED`` to ``BOUT_FLAGS``
+in ``make.config`` and then recompiling with ``make clean;
+make``. When running BOUT++ add a "-v" flag to see ``output_debug``
+messages.
 
 
 
@@ -1050,41 +1082,44 @@ with ``make clean; make``. When running BOUT++ add a "-v" flag to see ``output_d
 Updating Physics Models from v3 to v4
 -------------------------------------
 
-Version 4.0.0 of BOUT++ introduced several features which break backwards
-compatibility. If you already have physics models, you will most likely need to
-update them to work with version 4. The main breaking changes which you are
-likely to come across are:
+Version 4.0.0 of BOUT++ introduced several features which break
+backwards compatibility. If you already have physics models, you will
+most likely need to update them to work with version 4. The main
+breaking changes which you are likely to come across are:
 
-* Using round brackets ``()`` instead of square brackets ``[]`` for indexing
-  fields
+* Using round brackets ``()`` instead of square brackets ``[]`` for
+  indexing fields
 
-* Moving components of :cpp:class:`Mesh` related to the metric tensor and "real
-  space" out into a new object, :cpp:class:`Coordinates`
+* Moving components of :cpp:class:`Mesh` related to the metric tensor
+  and "real space" out into a new object, :cpp:class:`Coordinates`
 
-* Changed some :cpp:class:`Field3D` member functions into non-member functions
+* Changed some :cpp:class:`Field3D` member functions into non-member
+  functions
 
-* The shifted metric method has changed in version 4, so that fields are
-  stored in orthogonal X-Z coordinates rather than field aligned coordinates.
-  This has implications for boundary conditions and post-processing. See
-  :ref:`sec-parallel-transforms` for more information.
+* The shifted metric method has changed in version 4, so that fields
+  are stored in orthogonal X-Z coordinates rather than field aligned
+  coordinates.  This has implications for boundary conditions and
+  post-processing. See :ref:`sec-parallel-transforms` for more
+  information.
   
-A new tool is provided, ``bin/bout_3to4.py``, which can identify these changes,
-and fix most of them automatically. Simply run this program on your physic model
-to see how to update it to work with version 4:
+A new tool is provided, ``bin/bout_3to4.py``, which can identify these
+changes, and fix most of them automatically. Simply run this program
+on your physic model to see how to update it to work with version 4:
 
 .. code-block:: bash
 
    $ ${BOUT_TOP}/bin/bout_3to4.py my_model.cxx
 
 The output of this command will show you how to fix each problem it
-identifies. To automatically apply them, you can use the ``--replace`` option:
+identifies. To automatically apply them, you can use the ``--replace``
+option:
 
 .. code-block:: bash
 
    $ ${BOUT_TOP}/bin/bout_3to4.py --replace my_model.cxx
 
-Also in version 4 is a new syntax for looping over each point in a field. See
-:ref:`sec-iterating` for more information.
+Also in version 4 is a new syntax for looping over each point in a
+field. See :ref:`sec-iterating` for more information.
 
 
 .. _sec-examples:
@@ -1128,9 +1163,9 @@ interchange-instability
    :alt: Interchange instability test
 
    Interchange instability test. Solid lines are from analytic theory,
-   symbols from BOUT++ simulations, and the RMS density is averaged over
-   :math:`z`. Vertical dashed line marks the reference point, where
-   analytic and simulation results are set equal
+   symbols from BOUT++ simulations, and the RMS density is averaged
+   over :math:`z`. Vertical dashed line marks the reference point,
+   where analytic and simulation results are set equal
 
 
 sod-shock
