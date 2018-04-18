@@ -512,17 +512,13 @@ When a boundary operation is added, it is given a name such as
 “dirichlet”, and similarly for the modifiers (“relax” above). These
 labels and object pointers are stored internally in
 :cpp:class:`BoundaryFactory` in maps defined in
-``boundary_factory.hxx``:
-
-::
+``boundary_factory.hxx``::
 
       // Database of available boundary conditions and modifiers
       map<string, BoundaryOp*> opmap;
       map<string, BoundaryModifier*> modmap;
 
-These are then used by ``BoundaryFactory::create()``:
-
-::
+These are then used by :cpp:func:`BoundaryFactory::create`::
 
       /// Create a boundary operation object
       BoundaryOp* create(const string &name, BoundaryRegion *region);
@@ -542,8 +538,9 @@ the input string to one of:
 
 -  ``operation``
 
-the ``<expression>`` variable is then resolved into a BoundaryOp object
-by calling ``create(<expression, region)``.
+the ``<expression>`` variable is then resolved into a
+:cpp:class:`BoundaryOp` object by calling ``create(<expression>,
+region)``.
 
 When an operator or modifier is found, it is created from the pointer
 stored in the ``opmap`` or ``modmap`` maps using the ``clone`` method,
@@ -574,9 +571,10 @@ argument to change the value the boundary’s set to. In
 If no arguments are passed i.e. the string was “dirichlet” or
 “dirichlet()” then the ``args`` list is empty, and the default value
 (0.0) is used. If one or more arguments is used then the first
-argument is parsed into a ``BoutReal`` type and used to create a new
-:cpp:class:`BoundaryDirichlet` object. If more arguments are passed
-then these are just ignored; probably a warning should be printed.
+argument is parsed into a :cpp:type:`BoutReal` type and used to create
+a new :cpp:class:`BoundaryDirichlet` object. If more arguments are
+passed then these are just ignored; probably a warning should be
+printed.
 
 To set boundary conditions on a field, :cpp:class:`FieldData` methods
 are defined in ``field_data.hxx``:
@@ -591,8 +589,9 @@ are defined in ``field_data.hxx``:
      protected:
       vector<BoundaryOp*> bndry_op; // Boundary conditions
 
-The ``setBoundary(const string &name)`` method is implemented in
+The :cpp:func:`FieldData::setBoundary` method is implemented in
 ``field_data.cxx``. It first gets a vector of pointers to
 :cpp:class:`BoundaryRegion`\ s from the mesh, then loops over these
-calling ``BoundaryFactory::createFromOptions`` for each one and adding
-the resulting boundary operator to the ``bndry_op`` vector.
+calling :cpp:func:`BoundaryFactory::createFromOptions` for each one
+and adding the resulting boundary operator to the
+:cpp:member:`FieldData::bndry_op` vector.

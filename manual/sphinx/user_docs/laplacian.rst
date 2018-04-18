@@ -223,16 +223,16 @@ within the physics module using ``setGlobalFlags``,
    |        | order now)                                                           |                            |
    +--------+----------------------------------------------------------------------+----------------------------+
    | 16     | Set boundary condition to values in boundary guard cells of second   | ``INVERT_SET``             |
-   |        | argument, ``x0``, of ``Laplacian::solve(const Field3D &b, const      |                            |
-   |        | Field3D &x0)`` . May be combined with any combination of 0, 1 and 2, |                            |
-   |        | i.e. a Dirichlet or Neumann boundary condition set to values which   |                            |
-   |        | are :math:`\neq 0` or :math:`f(y)`                                   |                            |
+   |        | argument, ``x0``, of :cpp:func:`Laplacian::solve(const Field3D &b,   |                            |
+   |        | const Field3D &x0) <Laplacian::solve>`. May be combined with any     |                            |
+   |        | combination of 0, 1 and 2, i.e. a Dirichlet or Neumann boundary      |                            |
+   |        | condition set to values which are :math:`\neq 0` or :math:`f(y)`     |                            |
    +--------+----------------------------------------------------------------------+----------------------------+
    | 32     | Set boundary condition to values in boundary guard cells of RHS,     | ``INVERT_RHS``             |
-   |        | ``b`` in ``Laplacian::solve(const Field3D &b, const Field3D &x0)``   |                            |
-   |        | . May be combined with any combination of 0, 1 and 2, i.e. a         |                            |
-   |        | Dirichlet or Neumann boundary condition set to values which are      |                            |
-   |        | :math:`\neq 0` or :math:`f(y)`                                       |                            |
+   |        | ``b`` in :cpp:func:`Laplacian::solve(const Field3D &b, const Field3D |                            |
+   |        | &x0) <Laplacian::solve>`. May be combined with any combination of 0, |                            |
+   |        | 1 and 2, i.e. a Dirichlet or Neumann boundary condition set to values|                            |
+   |        | which are :math:`\neq 0` or :math:`f(y)`                             |                            |
    +--------+----------------------------------------------------------------------+----------------------------+
    | 64     | Zero or decaying Laplacian on DC components                          | ``INVERT_DC_LAP``          |
    |        | (:math:`\frac{\partial^2}{\partial x^2}` vanishes/decays)            |                            |
@@ -861,16 +861,14 @@ discretised in terms of fluxes through cell faces.
      g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
 
 The header file is ``include/bout/invert/laplacexz.hxx``. The solver is
-constructed by using the ``LaplaceXZ::create`` function:
-
-::
+constructed by using the :cpp:func:`LaplaceXZ::create` function::
 
       LaplaceXZ *lap = LaplaceXZ::create(mesh);
 
 Note that a pointer to a :cpp:class:`Mesh` object must be given, which
-for now is the global variable ``mesh`` . By default the options
-section ``laplacexz`` is used, so to set the type of solver created,
-set in the options
+for now is the global variable :cpp:var:`mesh`. By default the
+options section ``laplacexz`` is used, so to set the type of solver
+created, set in the options
 
 .. code-block:: cfg
 

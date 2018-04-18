@@ -378,8 +378,9 @@ A list of available limiters is given in section :ref:`sec-slope-limiters` below
 Example and convergence test
 ++++++++++++++++++++++++++++
 
-The example code ``examples/finite-volume/fluid/`` solves the Euler equations
-for a 1D adiabatic fluid, using ``FV::Div_par`` for the advection terms.
+The example code ``examples/finite-volume/fluid/`` solves the Euler
+equations for a 1D adiabatic fluid, using :cpp:func:`FV::Div_par` for
+the advection terms.
 
 .. math::
 
@@ -400,7 +401,7 @@ script should produce the graph
 
 .. figure:: ../figs/fluid_norm_mc.png
    :name: fluid_norm_mc
-   :alt: Convergence test of the fluid example using ``FV::Div_par`` operator
+   :alt: Convergence test of the fluid example using :cpp:func:`FV::Div_par` operator
 
    Convergence test, showing :math:`l^2` (RMS) and :math:`l^{\infty}` (maximum) error for
    the evolving fields `n` (density), `p` (pressure) and `nv` (momentum). All fields are

@@ -3,9 +3,8 @@ Variable initialisation
 
 Variables in BOUT++ are not initialised automatically, but must be
 explicitly given a value. For example the following code declares a
-``Field3D`` variable then attempts to access a particular element:
-
-::
+:cpp:class:`Field3D` variable then attempts to access a particular
+element::
 
     Field3D f;    // Declare a variable
     f(0,0,0) = 1.0;  // Error!
@@ -42,12 +41,11 @@ has not been allocated. Allocating data can be done in several ways:
 
       f(0,0,0) = 1.0; // g also modified
 
-   To ensure that a field has a unique underlying memory array call the
-   ``allocate`` method before writing to individual indices.
+   To ensure that a field has a unique underlying memory array call
+   the :cpp:func:`Field3D::allocate` method before writing to
+   individual indices.
 
-#. Use ``allocate()`` to allocate memory
-
-   ::
+#. Use :cpp:func:`Field3D::allocate` to allocate memory::
 
       Field3D f;
       f.allocate(); // Allocates memory, values undefined
@@ -258,17 +256,15 @@ which then generate the field values:
     };
 
 All classes inheriting from :cpp:class:`FieldGenerator` must implement
-a ``generate`` function, which returns the value at the given
-``(x,y,z)`` position. Classes should also implement a ``clone``
-function, which takes a list of arguments and creates a new instance
-of its class. This takes as input a list of other
-:cpp:class:`FieldGenerator` objects, allowing a variable number of
-arguments.
+a :cpp:func:`FieldGenerator::generate` function, which returns the
+value at the given ``(x,y,z)`` position. Classes should also implement
+a :cpp:func:`FieldGenerator::clone` function, which takes a list of
+arguments and creates a new instance of its class. This takes as input
+a list of other :cpp:class:`FieldGenerator` objects, allowing a
+variable number of arguments.
 
 The simplest generator is a fixed numerical value, which is
-represented by a :cpp:class:`FieldValue` object:
-
-::
+represented by a :cpp:class:`FieldValue` object::
 
     class FieldValue : public FieldGenerator {
      public:
@@ -284,7 +280,7 @@ Adding a new function
 To add a new function to the FieldFactory, a new
 :cpp:class:`FieldGenerator` class must be defined. Here we will use
 the example of the ``sinh`` function, implemented using a class
-:cpp:class:`FieldSinh` . This takes a single argument as input, but
+:cpp:class:`FieldSinh`. This takes a single argument as input, but
 :cpp:class:`FieldPI` takes no arguments, and
 :cpp:class:`FieldGaussian` takes either one or two. Study these after
 reading this to see how these are handled.
@@ -345,10 +341,8 @@ any :cpp:class:`FieldGenerator` class if it’s given a single instance
 to start with. The final step is therefore to give the
 :cpp:class:`FieldFactory` class an instance of this new
 generator. Edit the :cpp:class:`FieldFactory` constructor
-``FieldFactory::FieldFactory()`` in ``src/field/field_factory.cxx``
-and add the line:
-
-::
+:cpp:func:`FieldFactory::FieldFactory` in
+``src/field/field_factory.cxx`` and add the line::
 
     addGenerator("sinh", new FieldSinh(NULL));
 

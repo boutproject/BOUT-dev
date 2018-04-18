@@ -280,13 +280,13 @@ syntax:
 
 Available regions are:
 
--  ``RGN_ALL``, which is the whole mesh;
+-  :cpp:enumerator:`RGN_ALL`, which is the whole mesh;
 
--  ``RGN_NOBNDRY``, which skips all boundaries;
+-  :cpp:enumerator:`RGN_NOBNDRY`, which skips all boundaries;
 
--  ``RGN_NOX``, which skips the x boundaries
+-  :cpp:enumerator:`RGN_NOX`, which skips the x boundaries
 
--  ``RGN_NOY``, which skips the y boundaries
+-  :cpp:enumerator:`RGN_NOY`, which skips the y boundaries
 
 .. _sec-rangeiterator:
 
@@ -363,13 +363,13 @@ to build BOUT++, only to change the ``Field`` operator code.
 
 The Jinja template is in ``src/field/gen_fieldops.jinja``, and the
 driver is ``src/field/gen_fieldops.py``. The driver loops over every
-combination of ``BoutReal``, :cpp:class:`Field2D`,
+combination of :cpp:type:`BoutReal`, :cpp:class:`Field2D`,
 :cpp:class:`Field3D` (collectively just "fields" here) with the
 arithmetic operators, and uses the template to generate the
 appropriate code. There is some logic in the template to handle
 certain combinations of the input fields: for example, for the binary
 infix operators, only check the two arguments are on identical meshes
-if neither is ``BoutReal``.
+if neither is :cpp:type:`BoutReal`.
 
 To install Jinja:
 
