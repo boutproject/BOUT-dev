@@ -12,9 +12,7 @@ velocities (for example) which are not defined at the same location:
 their grids are staggered.
 
 By default BOUT++ runs with all quantities at cell centre. To enable
-staggered grids, set
-
-::
+staggered grids, set::
 
     StaggerGrids = true
 

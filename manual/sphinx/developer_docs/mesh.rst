@@ -17,9 +17,7 @@ Grid data sources
 
 All data sources inherit from :cpp:class:`GridDataSource`, defined in
 :doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>` at
-line 43. They must supply a method to test if a variable exists:
-
-::
+line 43. They must supply a method to test if a variable exists::
 
     bool GridDataSource::hasVar(const char *name);
 
@@ -29,23 +27,17 @@ a method to get the size of the variable
 
     vector<int> GridDataSource::getSize(const char *name);
 
-To fetch data, first the (x,y,z) origin must be set:
-
-::
+To fetch data, first the (x,y,z) origin must be set::
 
     bool GridDataSource::setOrigin(int x = 0, int y = 0, int z = 0);
 
-and then use methods to fetch integers or reals:
-
-::
+and then use methods to fetch integers or reals::
 
     bool GridDataSource::fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
     bool GridDataSource::fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
 
 In addition, GridDataSource implementations can have methods which
-should be called before and after variables are accessed:
-
-::
+should be called before and after variables are accessed::
 
     void GridDataSource::open(const char *name = NULL);
     void GridDataSource::close();
@@ -53,9 +45,7 @@ should be called before and after variables are accessed:
 Loading a mesh
 --------------
 
-To load in a mesh from a file or other source, there are the commands:
-
-::
+To load in a mesh from a file or other source, there are the commands::
 
     int addSource(GridDataSource);   // Add a data source
     int load();                      // Load from added data sources
@@ -69,9 +59,7 @@ sources, querying each data source in turn for the required variables
 loads the mesh from only the supplied data source.
 
 In :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`, this
-is used to initialise the mesh:
-
-::
+is used to initialise the mesh::
 
     mesh->addSource(new GridFile(data_format(grid_name), grid_name));
     if(mesh->load()) {
@@ -95,9 +83,7 @@ which is called during BOUT++ initialisation.
 Implementation: BoutMesh
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-BoutMesh class uses the BOUT indices (which trace back to UEDGE):
-
-::
+BoutMesh class uses the BOUT indices (which trace back to UEDGE)::
 
     int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
 
@@ -110,9 +96,7 @@ Index ranges
 ------------
 
 The Mesh class includes several public members which describe the size
-of the mesh, and are used all over BOUT++ to loop over variables:
-
-::
+of the mesh, and are used all over BOUT++ to loop over variables::
 
     /// Size of the mesh on this processor including guard/boundary cells
     int LocalNx, LocalNy, LocalNz;
@@ -124,9 +108,7 @@ Getting data
 
 The ``load()`` code above needs to read data for the mesh, and physics
 codes usually need to read their initial profiles during initialisation.
-To do this, Mesh provides an overloaded function ``get``:
-
-::
+To do this, Mesh provides an overloaded function ``get``::
 
     int get(var, const char *name); // Request data from mesh file
 
@@ -154,9 +136,7 @@ Communications
 
 The most common type of communication is to just exchange all guard
 cells with neighboring processors. Mesh provides the following commands
-for doing this:
-
-::
+for doing this::
 
     int communicate(FieldData, ...); // Communicate one or more fields
     int communicate(FieldGroup);     // Communicate a group of fields
@@ -166,9 +146,7 @@ for doing this:
 
 ``communicate(FieldData)`` can (currently) be used to communicate up to
 4 variables together, and makes the code quite clear. For example in
-``examples/DriftInstability/2fluid.cxx`` around line 360:
-
-::
+``examples/DriftInstability/2fluid.cxx`` around line 360::
 
     // Need to communicate jpar
     mesh->communicate(jpar);
@@ -178,9 +156,7 @@ this can be used to communicate all BOUT++ field data types. The limit
 of 4 is because the C-style ``varargs`` system doesn’t work with “non
 POD” variables, i.e. classes. To communicate a larger number of
 variables, create a :cpp:class:`FieldGroup` object to group fields
-together, then communicate them all together:
-
-::
+together, then communicate them all together::
 
     FieldGroup comgrp;  // Group of variables for communication
     Field3D P;
@@ -251,9 +227,7 @@ open and closed surfaces, and that closed surfaces may need a shift in
 the Z direction to match one end onto the other (a twist-shift
 condition).
 
-The simplest operation is to average a quantity over Y:
-
-::
+The simplest operation is to average a quantity over Y::
 
     const Field2D averageY(const Field2D &f); // Average in Y
 
@@ -267,9 +241,7 @@ To test if a particular surface is closed, there is the function
     bool surfaceClosed(int jx, BoutReal &ts); // Test if a surface is closed, and if so get the twist-shift angle
 
 The most general way to access data on surfaces is to use an iterator,
-which can be created using:
-
-::
+which can be created using::
 
     SurfaceIter* iterateSurfaces();
 
@@ -284,9 +256,7 @@ This then allows looping over the surfaces in the usual way
 **NB**: This iterator splits the surfaces between processors, so each
 individual processor will iterate over a different set of surfaces. This
 is to allow automatic load balancing when gathering and scattering data
-from an entire surface onto one processor using:
-
-::
+from an entire surface onto one processor using::
 
     surf->gather(FieldData, BoutReal *recvbuffer);
     surf->scatter(BoutReal *sendbuffer, Field result);
@@ -313,9 +283,7 @@ Initial profiles
 The initial profiles code needs to construct a solution which is smooth
 everywhere, with a form of perturbation specified in the input file for
 each direction. In order to do this, it needs a continuous function to
-use as an index. This is supplied by the functions:
-
-::
+use as an index. This is supplied by the functions::
 
     BoutReal GlobalX(int jx); // Continuous X index between 0 and 1
     BoutReal GlobalY(int jy); // Continuous Y index (0 -> 1)
@@ -339,9 +307,7 @@ Metrics
 -------
 
 The contravariant and covariant metric tensor components are public
-members of :cpp:class:`Mesh`:
-
-::
+members of :cpp:class:`Mesh`::
 
     // Contravariant metric tensor (g^{ij})
     Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cxx
@@ -357,9 +323,7 @@ If only one of these sets is modified by an external code, then
 the other (uses Gauss-Jordan currently).
 
 From the metric tensor components, Mesh calculates several other useful
-quantities:
-
-::
+quantities::
 
     int jacobian(); // Calculate J and Bxy
     Field2D J; // Jacobian
@@ -389,9 +353,7 @@ task and don’t really go anywhere else (yet).
 To perform radial derivatives in tokamak geometry, interpolation is
 needed in the Z direction. This is done by shifting in Z by a phase
 factor, performing the derivatives, then shifting back. The following
-public variables are currently used for this:
-
-::
+public variables are currently used for this::
 
     bool ShiftXderivs; // Use shifted X derivatives
     int  ShiftOrder;   // Order of shifted X derivative interpolation
@@ -410,8 +372,6 @@ twist-shift location, with ``0`` meaning FFT during communication. Since
 this must be 0 at the moment it’s fairly redundant and should be
 removed.
 
-A (currently experimental) feature is
-
-::
+A (currently experimental) feature is::
 
     bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).

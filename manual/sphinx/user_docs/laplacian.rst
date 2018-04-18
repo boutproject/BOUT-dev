@@ -25,7 +25,7 @@ Alternative formulations and ways to invert equation
 
 Several implementations of the Laplacian solver are available, which
 are selected by changing the "type" setting.The currently available
-implementations are listed in table :numref:`tab-laplacetypes`. 
+implementations are listed in table :numref:`tab-laplacetypes`.
 
 .. _tab-laplacetypes:
 .. table:: Laplacian implementation types
@@ -52,7 +52,7 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | shoot       | Shooting method. Experimental                              |                                          |
    +-------------+------------------------------------------------------------+------------------------------------------+
 
-     
+
 Usage of the laplacian inversion
 --------------------------------
 
@@ -94,9 +94,7 @@ By default, this will use the options in a section called “laplace”, but
 can be given a different section as an argument. By default
 :math:`d = 1`, :math:`a = 0`, and the :math:`c=1`. To set the values of
 these coefficients, there are the ``setCoefA()``, ``setCoefC()``, and
-``setCoefD()`` methods:
-
-::
+``setCoefD()`` methods::
 
     Field2D a = ...;
     lap->setCoefA(a);
@@ -110,7 +108,7 @@ section ``laplace`` (default) or whichever settings section name was
 specified when the :cpp:class:`Laplacian` class was created. Commonly
 used settings are listed in tables :numref:`tab-laplacesettings` to
 :numref:`tab-laplaceflags`.
-        
+
 In particular boundary conditions on the :math:`x` boundaries can be
 set using the and ``outer_boundary_flags`` variables, as detailed in
 table :numref:`tab-laplaceBCflags`. Note that DC (‘direct-current’)
@@ -289,9 +287,7 @@ To perform the inversion, there’s the ``solve`` method
     x = lap->solve(b);
 
 If you prefer, there are functions compatible with older versions of the
-BOUT++ code:
-
-::
+BOUT++ code::
 
     Field2D a, c, d;
     invert_laplace(b, x, flags, &a, &c, &d);
@@ -677,7 +673,7 @@ all implementations must provide::
       virtual void setCoefA(const Field2D &val) = 0;
       virtual void setCoefC(const Field2D &val) = 0;
       virtual void setCoefD(const Field2D &val) = 0;
-     
+
       virtual const FieldPerp solve(const FieldPerp &b) = 0;
     }
 
@@ -878,9 +874,7 @@ created, set in the options
 or on the command-line ``laplacexz:type=petsc`` .
 
 The coefficients must be set using ``setCoefs`` . All coefficients must
-be set at the same time:
-
-::
+be set at the same time::
 
       lap->setCoefs(1.0, 0.0);
 
@@ -889,9 +883,7 @@ passed. If the implementation doesn’t support :cpp:class:`Field3D`
 values then the average over :math:`z` will be used as a
 :cpp:class:`Field2D` value.
 
-To perform the inversion, call the ``solve`` function:
-
-::
+To perform the inversion, call the ``solve`` function::
 
       Field3D vort = ...;
 
@@ -924,9 +916,7 @@ Test case
 
 The code in ``examples/test-laplacexz`` is a simple test case for
 :cpp:class:`LaplaceXZ` . First it creates a :cpp:class:`LaplaceXZ`
-object:
-
-::
+object::
 
       LaplaceXZ *inv = LaplaceXZ::create(mesh);
 
@@ -941,18 +931,14 @@ For this test the ``petsc`` implementation is the default:
 
 By default the LU preconditioner is used. PETSc’s built-in factorisation
 only works in serial, so for parallel solves a different package is
-needed. This is set using:
-
-::
+needed. This is set using::
 
       factor_package = superlu_dist
 
 This setting can be “petsc” for the built-in (serial) code, or one of
 “superlu”, “superlu\_dist”, “mumps”, or “cusparse”.
 
-Then we set the coefficients:
-
-::
+Then we set the coefficients::
 
       inv->setCoefs(Field3D(1.0),Field3D(0.0));
 
@@ -977,23 +963,17 @@ which confirms that the matrix element pre-allocation is setting the
 correct number of non-zero elements, since no additional memory
 allocation was needed.
 
-A field to invert is created using FieldFactory:
-
-::
+A field to invert is created using FieldFactory::
 
       Field3D rhs = FieldFactory::get()->create3D("rhs",
                                                   Options::getRoot(),
                                                   mesh);
 
-which is currently set to a simple function in the options:
-
-::
+which is currently set to a simple function in the options::
 
       rhs = sin(x - z)
 
-and then the system is solved:
-
-::
+and then the system is solved::
 
       Field3D x = inv->solve(rhs, 0.0);
 
@@ -1032,15 +1012,11 @@ So after the initial setup and factorisation, the system is solved in
 one iteration using the LU direct solve.
 
 As a test of re-using the preconditioner, the coefficients are then
-modified:
-
-::
+modified::
 
       inv->setCoefs(Field3D(2.0),Field3D(0.1));
 
-and solved again:
-
-::
+and solved again::
 
             SOLVE time             0.00
             Solve flops     8.245800e+04    Mflops     84.15
@@ -1103,47 +1079,35 @@ whilst the PETSc solver with LU preconditioner outputs
     2.000e+02         42       3.30e-01    58.2   20.2    0.4    3.7   17.5
 
 so the PETSc direct solver seems to take only slightly longer than the
-cyclic solver. For comparison, GMRES with Jacobi preconditioning gives:
-
-::
+cyclic solver. For comparison, GMRES with Jacobi preconditioning gives::
 
     1.000e+02        130       2.66e+00    24.1   68.3    0.2    0.8    6.6
     2.000e+02         78       1.16e+00    33.8   54.9    0.3    1.1    9.9
 
-and with SOR preconditioner
-
-::
+and with SOR preconditioner::
 
     1.000e+02        124       1.54e+00    38.6   50.2    0.3    0.4   10.5
     2.000e+02         45       4.51e-01    46.8   37.8    0.3    1.7   13.4
 
 When the Boussinesq approximation is not used, the PETSc solver with LU
-preconditioning, re-setting the preconditioner every 100 solves gives:
-
-::
+preconditioning, re-setting the preconditioner every 100 solves gives::
 
     1.000e+02        142       3.06e+00    23.0   70.7    0.2    0.2    6.0
     2.000e+02         41       9.47e-01    21.0   72.1    0.3    0.6    6.1
 
 i.e. around three times slower than the Boussinesq case. When using
-jacobi preconditioner:
-
-::
+jacobi preconditioner::
 
     1.000e+02        128       2.59e+00    22.9   70.8    0.2    0.2    5.9
     2.000e+02         68       1.18e+00    26.5   64.6    0.2    0.6    8.1
 
 For comparison, the :cpp:class:`Laplacian` solver using the
-tridiagonal solver as preconditioner gives:
-
-::
+tridiagonal solver as preconditioner gives::
 
     1.000e+02        222       5.70e+00    17.4   77.9    0.1    0.1    4.5
     2.000e+02        172       3.84e+00    20.2   74.2    0.2    0.2    5.2
 
-or with Jacobi preconditioner:
-
-::
+or with Jacobi preconditioner::
 
     1.000e+02        107       3.13e+00    15.8   79.5    0.1    0.2    4.3
     2.000e+02        110       2.14e+00    23.5   69.2    0.2    0.3    6.7
@@ -1155,13 +1119,10 @@ not modified then the solve time is competitive with the tridiagonal
 solver.
 
 As a test, timing only the ``setCoefs`` call for the non-Boussinesq case
-gives
-
-::
+gives::
 
     1.000e+02        142       1.86e+00    83.3    9.5    0.2    0.3    6.7
     2.000e+02         41       5.04e-01    83.1    8.0    0.3    1.2    7.3
 
 so around 9% of the run-time is in setting the coefficients, and the
 remaining :math:`\sim 60`\ % in the solve itself.
-

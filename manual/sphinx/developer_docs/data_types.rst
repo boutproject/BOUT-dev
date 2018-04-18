@@ -10,9 +10,7 @@ currently implemented in BOUT++.
 All BOUT++ data types implement a standard interface for accessing their
 data, which is then used in communication and file I/O code. This
 interface is in ``src/field/field_data.hxx``. The mandatory (pure
-virtual) functions are:
-
-::
+virtual) functions are::
 
     bool isReal(); // Returns true if field consists of real values
     bool is3D() const;   // True if variable is 3D
@@ -52,15 +50,11 @@ in the 3D field implementation because they are much larger (factor of
 :math:`\sim 100`).
 
 To handle time-derivatives, and enable expressions to be written in the
-following form:
-
-::
+following form::
 
     ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni);
 
-fields (and vectors, see below) have a function:
-
-::
+fields (and vectors, see below) have a function::
 
     Field3D* timeDeriv();
 
@@ -77,9 +71,7 @@ represent each component.
 To handle time-derivatives of vectors, some care is needed to ensure
 that the time-derivative of each vector component points to the same
 field as the corresponding component of the time-derivative of the
-vector:
-
-::
+vector::
 
     ddt(v.x) = ddt(v).x
 
@@ -160,9 +152,7 @@ First include the header file
 
 which defines both :cpp:class:`GlobalField2D` and
 :cpp:class:`GlobalField3D` . To create a 3D global field, pass it the
-mesh pointer:
-
-::
+mesh pointer::
 
       GlobalField3D g3d(mesh);
 
@@ -173,9 +163,7 @@ specify which processor the data should go to as the second input
 
       GlobalField3D g3d(mesh, processor);
 
-Gather and scatter methods are defined:
-
-::
+Gather and scatter methods are defined::
 
       Field3D localData;
       // Set local data to some value
@@ -205,9 +193,7 @@ return ``true`` only on one processor
 
 The sizes of the global array are available through ``xSize()``,
 ``ySize()`` and ``zSize()`` methods. The data itself can be accessed
-indirectly using ``(x,y,z)`` operators:
-
-::
+indirectly using ``(x,y,z)`` operators::
 
       for(int x=0; x<g3d.xSize(); x++)
         for(int y=0; y<g3d.ySize(); y++)
@@ -217,9 +203,7 @@ indirectly using ``(x,y,z)`` operators:
             g3d(x,y,z) );
 
 or by getting a pointer to the underlying data, which is stored as a 1D
-array:
-
-::
+array::
 
       BoutReal *data = g3d.getData();
       nx = g3d.xSize();
@@ -237,18 +221,14 @@ Iterating over fields
 
 As of BOUT++ 4.0.0, we now have the ability to use C++ range-based
 for-loops. This means that it is possible to iterate over a whole field
-using a single loop:
-
-::
+using a single loop::
 
     Field3D f(0.0);
     for (auto i : f) {
        f[i] = a[i] + b[i];
     }
 
-This replaces the C-style triple-nested loop:
-
-::
+This replaces the C-style triple-nested loop::
 
    Field3D f(0.0);
    for (int i = mesh->xstart; i < mesh->xend; ++i) {
@@ -259,9 +239,7 @@ This replaces the C-style triple-nested loop:
      }
    }
 
-The iterator provides access to the x, y, z indices:
-
-::
+The iterator provides access to the x, y, z indices::
 
     Field3D f(0.0);
     for (auto i : f) {
@@ -269,9 +247,7 @@ The iterator provides access to the x, y, z indices:
     }
 
 It is also possible to specify regions to iterate over using this
-syntax:
-
-::
+syntax::
 
     Field3D f(0.0);
     for (auto i : f.region(RGN_NOBNDRY)) {
@@ -309,9 +285,7 @@ passing the minimum and maximum values.
       cout << it.ind; // Prints 1234
 
 A more canonical C++ style is also supported, using overloaded ``++``,
-``*``, and ``!=`` operators:
-
-::
+``*``, and ``!=`` operators::
 
     for(it.first(); it != RangeIterator::end(); it++)
       cout << *it; // Prints 1234
@@ -320,9 +294,7 @@ where ``it++`` is the same as ``it.next()``, and ``*it`` the same as
 ``it.ind``.
 
 To iterate over several ranges, :cpp:class:`RangeIterator` can be
-constructed with the next range as an argument:
-
-::
+constructed with the next range as an argument::
 
     RangeIterator it(1,4, RangeIterator(6,9));
     for(it.first(); it != RangeIterator::end(); it++)
@@ -330,9 +302,7 @@ constructed with the next range as an argument:
 
 and these can be chained together to an arbitrary depth.
 
-To support statements like
-
-::
+To support statements like::
 
     for(RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++)
       ...

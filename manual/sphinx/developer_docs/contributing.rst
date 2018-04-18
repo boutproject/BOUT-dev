@@ -98,9 +98,7 @@ Creating a feature branch
 
 First get a copy of the
 `BOUT-dev <https://github.com/boutproject/BOUT-dev>`__ repository (or
-git pull to update an existing copy):
-
-::
+git pull to update an existing copy)::
 
     git clone git@github.com:boutproject/BOUT-dev.git
     cd BOUT-dev
@@ -121,9 +119,7 @@ Create a fork on Github following the instructions
 `here <https://help.github.com/articles/fork-a-repo/>`__.
 
 If you want to push your branch to BOUT-dev to share with other
-developers, run:
-
-::
+developers, run::
 
     git push -u yourfork myfeature
 
@@ -133,15 +129,11 @@ branch. After setting up the tracking branch, you can call “git push”
 without any parameters to push updates to **myfeature**.
 
 If another developer wants to try out this branch, they will first need
-to add your repository as a new remote:
-
-::
+to add your repository as a new remote::
 
     git remote add yourfork https://github.com/YourUsername/BOUT-dev.git
 
-then they will be able to checkout your branch:
-
-::
+then they will be able to checkout your branch::
 
     git checkout -b myfeature yourfork/myfeature
 
@@ -151,18 +143,14 @@ can push your branches there.
 Making changes, commits
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Now you would make changes, commit changes and push as usual:
-
-::
+Now you would make changes, commit changes and push as usual::
 
     ... make changes ...
     git add <files>
     git commit
     git push   # Pushes to origin/myfeature
 
-You can switch between branches using *checkout*:
-
-::
+You can switch between branches using *checkout*::
 
     git checkout master    # Switch to "master"
     git checkout myfeature # Switch to "myfeature"
@@ -209,9 +197,7 @@ For documenting what functions and classes do, we use
 
 -  Doxygen comments: use ``///``.
 
-   Doxygen done right:
-
-   ::
+   Doxygen done right::
 
        /// Foo the bar
        ///
@@ -264,9 +250,7 @@ Details
 -  Two spaces for indentation
 -  Spaces after ``if``, ``for``, etc.
 
-   Wrong:
-
-   ::
+   Wrong::
 
        if(expr){
          doSomething();
@@ -274,9 +258,7 @@ Details
          doOtherThing();
        }
 
-   Right:
-
-   ::
+   Right::
 
        if (expr) {
          doSomething();
@@ -288,9 +270,7 @@ Details
    stand out over function calls.
 -  Braces on same line as statement:
 
-   Wrong:
-
-   ::
+   Wrong::
 
        void doFoo(bool expr)
        {
@@ -304,9 +284,7 @@ Details
          }
        }
 
-   Right:
-
-   ::
+   Right::
 
        void doFoo(bool expr) {
          if (expr) {

@@ -51,9 +51,7 @@ code to read and write variables, whilst file formats implement the
       static bool enabled;
     };
 
-The important bits of the DataFormat interface are:
-
-::
+The important bits of the DataFormat interface are::
 
     class DataFormat {
      public:

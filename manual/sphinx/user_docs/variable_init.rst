@@ -12,19 +12,15 @@ element::
 This results in an error because the data array to store values in ``f``
 has not been allocated. Allocating data can be done in several ways:
 
-#. Initialise with a value
-
-   ::
+#. Initialise with a value::
 
       Field3D f = 0.0; // Allocates memory, fills with zeros
       f(0,0,0) = 1.0; // ok
 
-   That this cannot be done at a global scope, since it requires the
-   mesh to already exist and have a defined size.
+   This cannot be done at a global scope, since it requires the mesh
+   to already exist and have a defined size.
 
-#. Set to a scalar value
-
-   ::
+#. Set to a scalar value::
 
       Field3D f;
       f = 0.0; // Allocates memory, fills with zeros
@@ -235,18 +231,14 @@ To do this, :cpp:class:`FieldFactory` implements a recursive descent
 parser to turn a string containing something like
 ``"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"`` into values in a
 :cpp:class:`Field3D` or :cpp:class:`Field2D` object. Examples are
-given in the ``test-fieldfactory`` example:
-
-::
+given in the ``test-fieldfactory`` example::
 
     FieldFactory f(mesh);
     Field2D b = f.create2D("1 - x");
     Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
 
 This is done by creating a tree of :cpp:class:`FieldGenerator` objects
-which then generate the field values:
-
-::
+which then generate the field values::
 
     class FieldGenerator {
      public:
@@ -286,9 +278,7 @@ the example of the ``sinh`` function, implemented using a class
 reading this to see how these are handled.
 
 First, edit ``src/field/fieldgenerators.hxx`` and add a class
-definition:
-
-::
+definition::
 
     class FieldSinh : public FieldGenerator {
      public:
@@ -308,9 +298,7 @@ argument to the ``sinh`` function, which is stored in the member
 ``gen`` .
 
 Next edit ``src/field/fieldgenerators.cxx`` and add the implementation
-of the ``clone`` and ``generate`` functions:
-
-::
+of the ``clone`` and ``generate`` functions::
 
     FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
       if(args.size() != 1) {
@@ -358,9 +346,7 @@ Parser internals
 
 When a :cpp:class:`FieldGenerator` is added using the ``addGenerator``
 function, it is entered into a ``std::map`` which maps strings to
-:cpp:class:`FieldGenerator` objects (``include/field_factory.hxx``):
-
-::
+:cpp:class:`FieldGenerator` objects (``include/field_factory.hxx``)::
 
     map<string, FieldGenerator*> gen;
 
@@ -368,9 +354,7 @@ Parsing a string into a tree of :cpp:class:`FieldGenerator` objects is
 done by first splitting the string up into separate tokens like
 operators like ’\*’, brackets ’(’, names like ’sinh’ and so on, then
 recognising patterns in the stream of tokens. Recognising tokens is
-done in ``src/field/field_factory.cxx``:
-
-::
+done in ``src/field/field_factory.cxx``::
 
     char FieldFactory::nextToken() {
      ...
@@ -394,26 +378,20 @@ the same value. This can be one of:
 
 The parsing stage turns these tokens into a tree of
 :cpp:class:`FieldGenerator` objects, starting with the ``parse()``
-function
-
-::
+function::
 
     FieldGenerator* FieldFactory::parse(const string &input) {
        ...
 
 which puts the input string into a stream so that ``nextToken()`` can
 use it, then calls the ``parseExpression()`` function to do the actual
-parsing:
-
-::
+parsing::
 
     FieldGenerator* FieldFactory::parseExpression() {
        ...
 
 This breaks down expressions in stages, starting with writing every
-expression as
-
-::
+expression as::
 
     expression := primary [ op primary ]
 
@@ -425,9 +403,7 @@ calls ``parsePrimary()`` to parse it. This code also takes care of
 operator precedence by keeping track of the precedence of the current
 operator. Primary expressions are then further broken down and can
 consist of either a number, a name (identifier), a minus sign and a
-primary expression, or brackets around an expression:
-
-::
+primary expression, or brackets around an expression::
 
     primary := number
             := identifier

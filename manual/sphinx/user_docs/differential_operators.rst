@@ -329,9 +329,7 @@ cell is added to another. There are several caveats to this:
 * There will always be a small rounding error, even with double
   precision.
 
-The methods can be used by including the header:
-
-::
+The methods can be used by including the header::
 
    #include "bout/fv_ops.hxx"
 
@@ -365,9 +363,7 @@ wave speed, which multiplies the dissipation term in the method.
 
 
 By default the ``MC`` slope limiter is used to calculate cell edges, but this can
-be changed at compile time e.g:
-
-::
+be changed at compile time e.g::
 
    ddt(n) = -FV::Div_par<FV::Fromm>( n, v, cs );
 
@@ -494,9 +490,7 @@ For example, in ``examples/blob2d.cxx``
             + 2 * DDZ(n) * (rho_s / R_c)
             ;
 
-which in ``examples/blob2d-outerloop.cxx`` becomes:
-
-::
+which in ``examples/blob2d-outerloop.cxx`` becomes::
 
    for(auto &i : n.region(RGN_NOBNDRY)) {
      ...
@@ -584,9 +578,7 @@ specify methods at runtime (DIFF\_C2, defined in
 function pointers (``DDX_C2``), taking into account whether variables
 are shifted or not, BOUT++ uses a set of lookup tables.
 
-To find function pointers, tables of the following type are used:
-
-::
+To find function pointers, tables of the following type are used::
 
     /// Translate between DIFF_METHOD codes, and functions
     struct DiffLookup {
@@ -625,9 +617,7 @@ the method to use for specific operators.
 
 When reading settings from the input file, they are specified as short
 strings like “C2”, and a longer description of the method chosen should
-be written to the output log. To do this, there is a name lookup table:
-
-::
+be written to the output log. To do this, there is a name lookup table::
 
     /// Translate between short names, long names and DIFF_METHOD codes
     struct DiffNameLookup {
@@ -669,9 +659,7 @@ Staggered grids
 
 By default, all quantities in BOUT++ are defined at cell centre, and all
 derivative methods map cell-centred quantities to cell centres.
-Switching on staggered grid support in BOUT.inp:
-
-::
+Switching on staggered grid support in BOUT.inp::
 
     StaggerGrids = true
 

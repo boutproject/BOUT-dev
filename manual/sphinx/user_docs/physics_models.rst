@@ -35,9 +35,7 @@ The ``conduction`` example solves 1D heat conduction
    \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
 
 The source code to solve this is in ``conduction.cxx`` which defines a class
-Conduction:
-
-::
+Conduction::
 
     class Conduction : public PhysicsModel {
      private:
@@ -48,9 +46,7 @@ Conduction:
       }
     };
 
-and then defines a standard main() function using a macro:
-
-::
+and then defines a standard main() function using a macro::
 
     BOUTMAIN(Conduction);
 
@@ -64,9 +60,7 @@ at least once per output timestep, depending on the time integration
 method used.
 
 To define your own ``main()`` function, see the definition of ``BOUTMAIN``
-in ``include/bout/physicsmodel.hxx``. It expands to something like:
-
-::
+in ``include/bout/physicsmodel.hxx``. It expands to something like::
 
       int main(int argc, char **argv) {
         BoutInitialise(argc, argv); // Initialise BOUT++
@@ -93,9 +87,7 @@ Initialisation
 ~~~~~~~~~~~~~~
 
 During initialisation (the ``init`` function), the conduction example
-first reads an option from the input settings file (BOUT.inp):
-
-::
+first reads an option from the input settings file (BOUT.inp)::
 
     Options *options = Options::getRoot()->getSection("conduction");
     OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
@@ -128,9 +120,7 @@ BOUT.log files, giving the value used and the source of that value:
     Option conduction:chi = 1 (data/BOUT.inp)
 
 After reading the chi option, the ``init`` method then specifies which
-variables to evolve using a macro:
-
-::
+variables to evolve using a macro::
 
     // Tell BOUT++ to solve T
     SOLVE_FOR(T);
@@ -169,9 +159,7 @@ variable "T" with respect to time, given the value of "T":
    \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
 
 The first thing the ``rhs`` function function does is communicate the
-guard (halo) cells:
-
-::
+guard (halo) cells::
 
     mesh->communicate(T);
 
@@ -185,9 +173,7 @@ so if they are accidentally used without first communicating then the
 code should crash fairly quickly with a non-finite number error.
 
 Once the guard cells have been communicated, we calculate the right
-hand side (RHS) of the equation above:
-
-::
+hand side (RHS) of the equation above::
 
     ddt(T) = Div_par_K_Grad_par(chi, T);
 
@@ -218,9 +204,7 @@ directory under ``orszag-tang``. The equations to be solved are:
 
 As in the :ref:`heat conduction example <sec-heat-conduction-model>`,
 a class is created which inherits from :cpp:class:`PhysicsModel` and
-defines ``init`` and ``rhs`` functions:
-
-::
+defines ``init`` and ``rhs`` functions::
 
     class MHD : public PhysicsModel {
       private:
@@ -250,9 +234,7 @@ can be used in ``init`` and ``rhs``.
 
 For ideal MHD, we need two 3D scalar fields density :math:`\rho` and
 pressure :math:`p`, and two 3D vector fields velocity :math:`v`, and
-magnetic field :math:`B`:
-
-::
+magnetic field :math:`B`::
 
     class MHD : public PhysicsModel {
       private:
@@ -263,9 +245,7 @@ magnetic field :math:`B`:
 
 Scalar and vector fields behave much as you would expect:
 :cpp:class:`Field3D` objects can be added, subtracted, multiplied and
-divided, so the following examples are all valid operations:
-
-::
+divided, so the following examples are all valid operations::
 
     Field3D a, b, c;
     BoutReal r;
@@ -275,9 +255,7 @@ divided, so the following examples are all valid operations:
     a = b / c; a = b / r; a = r / b;
 
 Similarly, vector objects can be added/subtracted from each other,
-multiplied/divided by scalar fields and real numbers, for example:
-
-::
+multiplied/divided by scalar fields and real numbers, for example::
 
     Vector3D a, b, c;
     Field3D f;
@@ -288,9 +266,7 @@ multiplied/divided by scalar fields and real numbers, for example:
     a = b / f; a = b / r;
 
 In addition the dot and cross products are represented by ``*`` and
-:math:`\wedge` \ symbols:
-
-::
+:math:`\wedge` \ symbols::
 
     Vector3D a, b, c;
     Field3D f;
@@ -300,9 +276,7 @@ In addition the dot and cross products are represented by ``*`` and
 
 For both scalar and vector field operations, so long as the result of an
 operation is of the correct type, the usual C/C++ shorthand notation can
-be used:
-
-::
+be used::
 
     Field3D a, b;
     Vector3D v, w;
@@ -319,9 +293,7 @@ Evolution equations
 
 At this point we can tell BOUT++ which variables to evolve, and where
 the state and time-derivatives will be stored. This is done using the
-``bout_solve(variable, name)`` function in ``physics_init``:
-
-::
+``bout_solve(variable, name)`` function in ``physics_init``::
 
     int physics_init(bool restarting) {
       bout_solve(rho, "density");
@@ -341,9 +313,7 @@ names are also used to initialise the variables.
 
 If the name of the variable in the output file is the same as the
 variable name, you can use a shorthand macro. In this case, we could use
-this shorthand for ``v`` and ``B``:
-
-::
+this shorthand for ``v`` and ``B``::
 
     SOLVE_FOR(v);
     SOLVE_FOR(B);
@@ -374,9 +344,7 @@ The equations to be solved can now be written in the ``rhs``
 function. The value passed to the function (``BoutReal t``) is the
 simulation time - only needed if your equations contain time-dependent
 sources or similar terms. To refer to the time-derivative of a variable
-``var``, use ``ddt(var)``. The ideal MHD equations can be written as:
-
-::
+``var``, use ``ddt(var)``. The ideal MHD equations can be written as::
 
     
     int rhs(BoutReal t) override {
@@ -405,9 +373,7 @@ Input options
 Note that in the above equations the extra parameter ``g`` has been
 used for the ratio of specific heats. To enable this to be set in the
 input options file (see :ref:`sec-options`), we use the ``options``
-object in the initialisation function:
-
-::
+object in the initialisation function::
 
 
     class MHD : public PhysicsModel {
@@ -426,9 +392,7 @@ should be put into the variable ``gamma``. If the option could not be
 found, or was of the wrong type, the variable should be set to a
 default value of :math:`5/3`. The value used will be printed to the
 output file, so if ``g`` is not set in the input file the following
-line will appear:
-
-::
+line will appear::
 
           Option mhd:g = 1.66667 (default)
 
@@ -469,9 +433,7 @@ If you only need to communicate a small number (up to 5 currently) of
 variables then just call the ``mesh->communicate`` function directly.
 For the MHD code, we need to communicate the variables ``rho,p,v,B``
 at the beginning of the ``physics_run`` function before any
-derivatives are calculated:
-
-::
+derivatives are calculated::
 
     int rhs(BoutReal t) override {
       mesh->communicate(rho, p, v, B);
@@ -511,9 +473,7 @@ shortened to
 To perform the actual communication, call the ``mesh->communicate``
 function with the group. In this case we need to communicate all these
 variables before performing any calculations, so call this function at
-the start of the ``rhs`` routine:
-
-::
+the start of the ``rhs`` routine::
 
     int rhs(BoutReal t) override {
       mesh->communicate(comms);
@@ -531,9 +491,7 @@ problem for your simulation.
 In our MHD example, the calculation of ``ddt(rho)`` and ``ddt(p)``
 does not require ``B``, so we could first communicate ``rho``, ``p``,
 and ``v``, send ``B`` and do some calculations whilst communications
-are performed:
-
-::
+are performed::
 
     int rhs(BoutReal t) override {
       mesh->communicate(rho, p, v); // sends and receives rho, p and v
@@ -578,9 +536,7 @@ down the bug is to insert lots of ``output.write`` statements (see
 :ref:`sec-logging`). Things get harder when a bug only occurs after a
 long time of running, and/or only occasionally. For this type of
 problem, a useful tool can be the message stack. An easy way to use
-this message stack is to use the ``TRACE`` macro:
-
-::
+this message stack is to use the ``TRACE`` macro::
 
 	{
       	  TRACE("Some message here"); // message pushed
@@ -604,9 +560,7 @@ like formatting with the trace macro, for example.
 
 In the ``mhd.cxx`` example each part of the ``rhs`` function is
 trace'd. If an error occurs then at least the equation where it
-happened will be printed:
-
-::
+happened will be printed::
 
     {
       TRACE("ddt(rho)");
@@ -629,9 +583,7 @@ boundary conditions on other quantities which are not explicitly
 evolved.
 
 The simplest way to set a boundary condition is to specify it as text,
-so to apply a Dirichlet boundary condition:
-
-::
+so to apply a Dirichlet boundary condition::
 
       Field3D var;
       ...
@@ -641,9 +593,7 @@ The format is exactly the same as in the options file. Each time this
 is called it must parse the text, create and destroy boundary
 objects. To avoid this overhead and have different boundary conditions
 for each region, it’s better to set the boundary conditions you want
-to use first in ``init``, then just apply them every time:
-
-::
+to use first in ``init``, then just apply them every time::
 
     class MHD : public PhysicsModel {
       Field3D var;
@@ -672,9 +622,7 @@ boundary regions (e.g.  radial boundaries and target plates); the
 first method just applies the same boundary condition to all
 boundaries.
 
-Another way to set the boundaries is to copy them from another variable:
-
-::
+Another way to set the boundaries is to copy them from another variable::
 
     Field3D a, b;
     ...
@@ -692,9 +640,7 @@ condition you need isn’t available, then it’s quite straightforward to
 write your own. First you need to make sure that your boundary
 condition isn’t going to be overwritten. To do this, set the boundary
 condition to “none” in the BOUT.inp options file, and BOUT++ will
-leave that boundary alone. For example:
-
-::
+leave that boundary alone. For example::
 
     [P]
     bndry_all = dirichlet
@@ -741,9 +687,7 @@ respectively.
 Setting custom Y boundaries is slightly more complicated than X
 boundaries, because target or limiter plates could cover only part of
 the domain. Rather than use a ``for`` loop to iterate over the points
-in the boundary, we need to use a more general iterator:
-
-::
+in the boundary, we need to use a more general iterator::
 
       Field3D f;
       ...
@@ -759,9 +703,7 @@ in the boundary, we need to use a more general iterator:
 This would set the time-derivative of ``f`` to zero in a boundary of
 width 3 in Y (from 0 to 2 inclusive). In the same way
 ``mesh->iterateBndryUpperY()`` can be used to iterate over the upper
-boundary:
-
-::
+boundary::
 
       RangeIterator it = mesh->iterateBndryUpperY();
       for(it.first(); !it.isDone(); it++) {
@@ -788,9 +730,7 @@ small-amplitude gaussians and waves; the user is expected to have
 performed this separation into background and perturbed quantities.**
 
 To read in a quantity from a grid file, there is the ``mesh->get``
-function:
-
-::
+function::
 
     Field2D Ni0; // Background density
 
@@ -820,9 +760,7 @@ Output variables
 BOUT++ always writes the evolving variables to file, but often it’s
 useful to add other variables to the output. For convenience you might
 want to write the normalised starting profiles or other non-evolving
-values to file. For example:
-
-::
+values to file. For example::
 
       Field2D Ni0;
       ...
@@ -844,9 +782,7 @@ is equivalent to
       dump.add(Ni0, "Ni0", 0);
 
 In some situations you might also want to write some data to a different
-file. To do this, create a Datafile object:
-
-::
+file. To do this, create a Datafile object::
 
     Datafile mydata;
 
@@ -897,15 +833,11 @@ Whenever you want to write values to the file, for example in
     mydata.write();
 
 To collect the data afterwards, you can specify the prefix to collect.
-In Python:
-
-::
+In Python::
 
     >>> var = collect("name", prefix="mydata")
 
-or in IDL:
-
-::
+or in IDL::
 
     IDL> var = collect(var="name", prefix="mydata")
 
@@ -1017,9 +949,7 @@ Logging output
 Logging should be used to report simulation progress, record
 information, and warn about potential problems. BOUT++ includes a
 simple logging facility which supports both C printf and C++ iostream
-styles. For example:
-
-::
+styles. For example::
 
    output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
    

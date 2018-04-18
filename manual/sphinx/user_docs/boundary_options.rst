@@ -127,9 +127,7 @@ at the twist-shift location. If radial derivatives are being done in
 shifted coordinates where :math:`x` and :math:`z` are orthogonal, then
 boundary conditions should also be applied in shifted coordinates. To do
 this, the ``shifted`` boundary modifier applies a :math:`z` shift,
-applies the boundary condition, then shifts back. For example:
-
-::
+applies the boundary condition, then shifts back. For example::
 
     bndry_core = shifted( neumann )
 
@@ -238,9 +236,7 @@ and lower Y boundaries, and a vector of BoundaryRegion objects.
 The :cpp:class:`RangeIterator` class is an iterator which allows
 looping over a set of indices. For example, in
 ``src/solver/solver.cxx`` to loop over the upper Y boundary of a 2D
-variable ``var``:
-
-::
+variable ``var``::
 
     for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
       ...
@@ -254,9 +250,7 @@ Boundary regions
 
 Different regions of the boundary such as “core”, “sol” etc. are
 labelled by the :cpp:class:`Mesh` class (i.e. :cpp:class:`BoutMesh`),
-which implements a member function defined in ``mesh.hxx``:
-
-::
+which implements a member function defined in ``mesh.hxx``::
 
       // Boundary regions
       virtual vector<BoundaryRegion*> getBoundaries() = 0;
@@ -265,9 +259,7 @@ This returns a vector of pointers to :cpp:class:`BoundaryRegion`
 objects, each of which describes a boundary region with a label, a
 ``BndryLoc`` location (i.e. inner x, outer x, lower y, upper y or
 all), and iterator functions for looping over the points. This class
-is defined in ``boundary_region.hxx``:
-
-::
+is defined in ``boundary_region.hxx``::
 
     /// Describes a region of the boundary, and a means of iterating over it
     class BoundaryRegion {
@@ -309,9 +301,7 @@ always be defined.
 Sometimes it’s useful to be able to loop over just one direction along
 the boundary. To do this, it is possible to use ``nextX()`` or
 ``nextY()`` rather than ``next()``. It is also possible to loop over
-both dimensions using:
-
-::
+both dimensions using::
 
       for(bndry->first(); !bndry->isDone(); bndry->nextX())
         for(; !bndry->isDone(); bndry->nextY()) {
@@ -325,9 +315,7 @@ On each boundary, conditions must be specified for each variable. The
 different conditions are imposed by :cpp:class:`BoundaryOp`
 objects. These set the values in the boundary region such that they
 obey e.g. Dirichlet or Neumann conditions. The :cpp:class:`BoundaryOp`
-class is defined in ``boundary_op.hxx``:
-
-::
+class is defined in ``boundary_op.hxx``::
 
     /// An operation on a boundary
     class BoundaryOp {
@@ -372,9 +360,7 @@ component individually, and the ``apply_ddt()`` functions just call the
 ``apply()`` functions.
 
 **Example**: Neumann boundary conditions are defined in
-``boundary_standard.hxx``:
-
-::
+``boundary_standard.hxx``::
 
     /// Neumann (zero-gradient) boundary condition
     class BoundaryNeumann : public BoundaryOp {
@@ -409,9 +395,7 @@ time-derivative, and Neumann conditions for vectors are just Neumann
 conditions on each vector component.
 
 To create a boundary condition, we need to give it a boundary region to
-operate over:
-
-::
+operate over::
 
     BoundaryRegion *bndry = ...
     BoundaryOp op = new BoundaryOp(bndry);
@@ -427,9 +411,7 @@ Boundary modifiers
 To create more complicated boundary conditions from simple ones (such as
 Neumann conditions above), boundary operations can be modified by
 wrapping them up in a :cpp:class:`BoundaryModifier` object, defined in
-``boundary_op.hxx``:
-
-::
+``boundary_op.hxx``::
 
     class BoundaryModifier : public BoundaryOp {
      public:
@@ -448,9 +430,7 @@ instead of a :cpp:class:`BoundaryRegion` to operate on, modifiers are
 passed a :cpp:class:`BoundaryOp` to modify.
 
 Currently the only modifier is :cpp:class:`BoundaryRelax`, defined in
-``boundary_standard.hxx``:
-
-::
+``boundary_standard.hxx``::
 
     /// Convert a boundary condition to a relaxing one
     class BoundaryRelax : public BoundaryModifier {
@@ -483,9 +463,7 @@ boundary factory use
 
       BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
-and to delete this singleton, free memory and clean-up at the end use:
-
-::
+and to delete this singleton, free memory and clean-up at the end use::
 
       BoundaryFactory::cleanup();
 
@@ -494,9 +472,7 @@ Because users should be able to add new boundary conditions during
 :cpp:class:`BoundaryFactory`. Instead, boundary conditions must be
 registered with the factory, passing an instance which can later be
 cloned. This is done in ``bout++.cxx`` for the standard boundary
-conditions:
-
-::
+conditions::
 
       BoundaryFactory* bndry = BoundaryFactory::getInstance();
       bndry->add(new BoundaryDirichlet(), "dirichlet");
@@ -550,9 +526,7 @@ arguments are passed, and to parse them into floats or other types.
 
 **Example**: The Dirichlet boundary condition can take an optional
 argument to change the value the boundary’s set to. In
-``boundary_standard.cxx``:
-
-::
+``boundary_standard.cxx``::
 
     BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string>
     &args) {
@@ -577,9 +551,7 @@ passed then these are just ignored; probably a warning should be
 printed.
 
 To set boundary conditions on a field, :cpp:class:`FieldData` methods
-are defined in ``field_data.hxx``:
-
-::
+are defined in ``field_data.hxx``::
 
     // Boundary conditions
       void setBoundary(const string &name); ///< Set the boundary conditions

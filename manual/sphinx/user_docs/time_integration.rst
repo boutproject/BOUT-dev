@@ -281,9 +281,7 @@ derived from :cpp:class:`PhysicsModel` (see :ref:`sec-newapi`).
       Field3D result;
     };
 
-To solve this ODE, create a new Solver object:
-
-::
+To solve this ODE, create a new Solver object::
 
     Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
 
@@ -303,16 +301,12 @@ or specify a different directory to put the restart files:
     [ode]
     restartdir = ode  # Restart files ode/BOUT.restart.0.nc, ...
 
-Create a model object, and pass it to the solver:
-
-::
+Create a model object, and pass it to the solver::
 
     MyFunction* model = new MyFunction();
     ode->setModel(model);
 
-Finally tell the solver to perform the integration:
-
-::
+Finally tell the solver to perform the integration::
 
     ode->solve(5, 0.1);
 
@@ -333,9 +327,7 @@ options:
     nout = 5
     timestep = 0.1
 
-Finally, delete the model and solver when finished:
-
-::
+Finally, delete the model and solver when finished::
 
     delete model;
     delete solver;
@@ -476,9 +468,7 @@ the system is stored in the state variables (here ``u`` and ``v`` ),
 whilst the vector to be preconditioned is stored in the time derivatives
 (here ``ddt(u)`` and ``ddt(v)`` ). At the end of the preconditioner the
 result should be in the time derivatives. A preconditioner which is just
-the identity matrix and so does nothing is therefore:
-
-::
+the identity matrix and so does nothing is therefore::
 
     int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     }
@@ -537,9 +527,7 @@ parallel direction. There is a solver class to do this called
 :cpp:class:`InvertPar` which solves the equation :math:`(A +
 B\partial_{||}^2)x = b` where :math:`A` and :math:`B` are
 :cpp:class:`Field2D` or constants [3]_. In ``physics_init`` we create
-one of these solvers:
-
-::
+one of these solvers::
 
     InvertPar *inv; // Parallel inversion class
     int physics_init(bool restarting) {
@@ -549,9 +537,7 @@ one of these solvers:
        ...
     }
 
-In the preconditioner we then use this solver to update :math:`v`:
-
-::
+In the preconditioner we then use this solver to update :math:`v`::
 
       inv->setCoefB(-SQ(gamma));
       ddt(v) = inv->solve(ddt(v));
@@ -637,9 +623,7 @@ find a solution to the first argument (``phi`` here) such that the
 second argument (``ddt(phi)``) is zero to within tolerances.
 
 In the RHS function the residual should be calculated. In this example
-(``examples/constraints/drift-wave-constraint``) we have:
-
-::
+(``examples/constraints/drift-wave-constraint``) we have::
 
     ddt(phi) = Delp2(phi) - Vort;
 
@@ -672,9 +656,7 @@ implicit part may fail to converge.
 The implicit part of the problem can be solved matrix-free, in which
 case the Jacobian-vector product is approximated using finite
 differences. This is currently the default, and can be set on the
-command-line using the options:
-
-::
+command-line using the options::
 
      solver:matrix_free=true  -snes_mf
 
@@ -686,9 +668,7 @@ preconditioner is needed to obtain good convergence.
 
 An experimental feature uses PETSc’s ability to calculate the Jacobian
 using finite differences. This can then speed up the linear solve, and
-allows more options for preconditioning. To enable this option:
-
-::
+allows more options for preconditioning. To enable this option::
 
      solver:matrix_free=false
 
@@ -703,9 +683,7 @@ fields. If this is not the case for your problem, then the solver may
 not converge.
 
 The brute force method can be useful for comparing the Jacobian
-structure, so to turn off coloring:
-
-::
+structure, so to turn off coloring::
 
      solver:use_coloring=false
 
@@ -728,9 +706,7 @@ run additional code or write data to a different file, you can add
 monitor function(s).
 
 You can call your output monitor function whatever you like, but it must
-have 4 inputs and return an int:
-
-::
+have 4 inputs and return an int::
 
     int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
       ...
@@ -739,9 +715,7 @@ have 4 inputs and return an int:
 The first input is the solver object, the second is the current
 simulation time, the third is the output number, and the last is the
 total number of outputs requested. To get the solver to call this
-function every output time, put in your ``physics_init`` code:
-
-::
+function every output time, put in your ``physics_init`` code::
 
       solver->addMonitor(my_output_monitor);
 
@@ -751,9 +725,7 @@ If you want to later remove a monitor, you can do so with
 
       solver->removeMonitor(my_output_monitor);
 
-A simple example using this monitor is:
-
-::
+A simple example using this monitor is::
 
     int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
       output.write("My monitor, time = %e, dt = %e\n",
@@ -767,25 +739,19 @@ A simple example using this monitor is:
 See the monitor example (``examples/monitor``) for full code.
 
 **Timestep monitoring**: This works in the same way as output
-monitoring. First define a monitor function:
-
-::
+monitoring. First define a monitor function::
 
     int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
       ...
     }
 
 where ``simtime`` will again contain the current simulation time, and
-``lastdt`` the last timestep taken. Add this function to the solver:
-
-::
+``lastdt`` the last timestep taken. Add this function to the solver::
 
       solver->addTimestepMonitor(my_timestep_monitor);
 
 Timestep monitoring is disabled by default, unlike output monitoring. To
-enable timestep monitoring, set in the options file (BOUT.inp):
-
-::
+enable timestep monitoring, set in the options file (BOUT.inp)::
 
     [solver]
     monitor_timestep = true
@@ -807,17 +773,13 @@ class interface (see ``src/solver/generic_solver.hxx``).
 
 First all the fields which are to be evolved need to be added to the
 solver. These are always done in pairs, the first specifying the field,
-and the second the time-derivative:
-
-::
+and the second the time-derivative::
 
     void add(Field2D &v, Field2D &F_v, const char* name);
 
 This is normally called in the ``physics_init`` initialisation routine.
 Some solvers (e.g. IDA) can support constraints, which need to be added
-in the same way as evolving fields:
-
-::
+in the same way as evolving fields::
 
     bool constraints();
     void constraint(Field2D &v, Field2D &C_v, const char* name);
@@ -830,9 +792,7 @@ error should occur.
 
 If the physics model implements a preconditioner or Jacobian-vector
 multiplication routine, these can be passed to the solver during
-initialisation:
-
-::
+initialisation::
 
     typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
     void setPrecon(PhysicsPrecon f); // Specify a preconditioner
@@ -843,16 +803,12 @@ If the solver doesn’t support these functions then the calls will just
 be ignored.
 
 Once the problem to be solved has been specified, the solver can be
-initialised using:
-
-::
+initialised using::
 
     int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 
 which returns an error code (0 on success). This is currently called in
-:doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`:
-
-::
+:doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
 
     if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
       output.write("Failed to initialise solver. Aborting\n");
