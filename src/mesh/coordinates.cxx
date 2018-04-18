@@ -16,7 +16,6 @@
 #include <interpolation.hxx>
 
 #include <globals.hxx>
-#include <bout/scorepwrapper.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
@@ -629,7 +628,6 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
-  SCOREP0();
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
@@ -647,8 +645,8 @@ BOUT_OMP(parallel for)
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Allocate memory
-    Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
-    Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
     // Take forward FFT
 

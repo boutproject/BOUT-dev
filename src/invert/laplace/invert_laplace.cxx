@@ -43,7 +43,6 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
-#include <bout/scorepwrapper.hxx>
 
 #include "laplacefactory.hxx"
 
@@ -706,7 +705,6 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 }
 
 void Laplacian::calcDelp2Coefs() {
-  SCOREP0();
   TRACE("Laplacian::calcDelp2Coefs");
 
   if( !(*this).initializedDelp2Coefs ){
@@ -719,6 +717,7 @@ void Laplacian::calcDelp2Coefs() {
     b = Tensor<dcomplex>(ny, nx, nz);
     c = Tensor<dcomplex>(ny, nx, nz);
     // compute coefficients
+BOUT_OMP(parallel for collapse(3))
     for (int jy = 0; jy < ny; jy++) {
       for (int jx = 0; jx < nx; jx++) {
         for (int jz = 0; jz < nz; jz++) {

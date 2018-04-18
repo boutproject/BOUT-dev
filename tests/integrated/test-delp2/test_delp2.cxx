@@ -1,5 +1,4 @@
 #include <bout/physicsmodel.hxx>
-#include <bout/scorepwrapper.hxx>
 
 class TestDelp2 : public PhysicsModel {
 protected:
@@ -14,7 +13,6 @@ protected:
   }
 
   int rhs(BoutReal t) {
-    SCOREP0();
     mesh->communicate(n);
   
     ddt(n) = D * Delp2(n);
