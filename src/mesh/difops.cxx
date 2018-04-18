@@ -573,6 +573,9 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
   
   TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
   
+  ASSERT1(phi.getMesh() == A.getMesh());
+
+  Mesh * mesh = phi.getMesh();
   Coordinates *metric = mesh->coordinates();
 
   // Calculate phi derivatives
@@ -594,11 +597,11 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
 }
 
 const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
+  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
+
   ASSERT1(phi.getMesh() == A.getMesh());
 
   Mesh *mesh = phi.getMesh();
-
-  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   Coordinates *metric = mesh->coordinates();
   
@@ -664,6 +667,10 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc) {
   TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
+
+  ASSERT1(phi.getMesh() == A.getMesh());
+
+  Mesh * mesh = phi.getMesh();
 
   Coordinates *metric = mesh->coordinates();
 
