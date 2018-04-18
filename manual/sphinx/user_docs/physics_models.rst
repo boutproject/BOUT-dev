@@ -622,18 +622,20 @@ in ``init``, then just apply them every time:
 
 ::
 
-    Field3D var;
+    class MHD : public PhysicsModel {
+      Field3D var;
 
-    int init(bool restarting) override {
-      ...
-      var.setBoundary("myVar");
-      ...
-    }
+      int init(bool restarting) override {
+        ...
+        var.setBoundary("myVar");
+        ...
+      }
 
-    int rhs(BoutReal t) override {
-      ...
-      var.applyBoundary();
-      ...
+      int rhs(BoutReal t) override {
+        ...
+        var.applyBoundary();
+        ...
+      }
     }
 
 This will look in the options file for a section called ``[myvar]``
