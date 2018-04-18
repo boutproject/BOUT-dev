@@ -247,6 +247,8 @@ parallelism through OpenMP. To enable OpenMP, use the
     By default PVODE is built without OpenMP support. To enable this
     add ``--enable-pvode-openmp`` to the configure command.
 
+.. _sec-sundials:
+
 SUNDIALS
 --------
 
