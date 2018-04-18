@@ -883,9 +883,10 @@ in ``init``, you then:
 
    ::
 
-       mydata.add(variable, "name") ;  // Not evolving. Every time the file is
-       written, this will be overwritten
-       mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
+       // Not evolving. Every time the file is written, this will be overwritten
+       mydata.add(variable, "name");
+       // Evolving. Will output a sequence of values
+       mydata.add(variable2, "name2", 1);
 
 Whenever you want to write values to the file, for example in
 ``rhs`` or a monitor, just call
