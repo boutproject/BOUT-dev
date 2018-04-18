@@ -18,10 +18,6 @@ The documentation is divided into the following sections:
   
 * :ref:`developer-docs`
 
-* :ref:`python-api`
-
-* :ref:`api-ref`
-
      
 .. toctree::
    :maxdepth: 2

@@ -19,11 +19,3 @@ API reference
 
    user_docs/python
    _apidoc/*
-
-.. toctree::
-   :maxdepth: 1
-   :caption: IDL routines
-   :name: api-ref
-   :glob:
-   
-   user_docs/idl
