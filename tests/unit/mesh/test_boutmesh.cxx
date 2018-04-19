@@ -1,46 +1,46 @@
 #include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
 #include "../src/mesh/impls/bout/boutmesh.hxx"
+#include "bout/mesh.hxx"
+#include "output.hxx"
+#include "unused.hxx"
 
-#include "test_extras.hxx"
-
-/// Test fixture to make sure the global mesh is our fake one
-class BoutMeshTest : public ::testing::Test {
-public:
-  BoutMeshTest(){};
-  static const int nx = 3;
-  static const int ny = 5;
-  static const int nz = 7;
-};
-
-class FakeGridDataSource: public GridDataSource {
+class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource(){};
-  virtual ~FakeGridDataSource(){};
-  virtual bool hasVar(const string &name) {return false;} ;
-  //virtual bool GridDataSource::get(Mesh*, int&, const string&)
-  virtual bool get(Mesh *m, int &ival,      const string &name) {
-    ival =1;
-    return true;};
-  virtual bool get(Mesh *m, BoutReal &rval, const string &name) {
-    rval = 1;
-    return true;}
-  virtual bool get(Mesh *m, Field2D &var,   const string &name, BoutReal def=0.0){
-    var=def;
-    return true;}
-  virtual bool get(Mesh *m, Field3D &var,   const string &name, BoutReal def=0.0){
-    var=def;
-    return true;}
-  virtual bool get(Mesh *m, vector<int> &var,      const string &name, int len, int offset=0, Direction dir = GridDataSource::X){
+  ~FakeGridDataSource(){};
+  bool hasVar(const string &UNUSED(name)) { return false; };
+  bool get(Mesh *UNUSED(m), int &UNUSED(ival), const string &UNUSED(name)) {
+    return true;
+  };
+  bool get(Mesh *UNUSED(m), BoutReal &UNUSED(rval), const string &UNUSED(name)) {
     return true;
   }
-  virtual bool get(Mesh *m, vector<BoutReal> &var,      const string &name, int len, int offset=0, Direction dir = GridDataSource::X){
+  bool get(Mesh *UNUSED(m), Field2D &UNUSED(var), const string &UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) {
+    return true;
+  }
+  bool get(Mesh *UNUSED(m), Field3D &UNUSED(var), const string &UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) {
+    return true;
+  }
+  bool get(Mesh *UNUSED(m), vector<int> &UNUSED(var), const string &UNUSED(name),
+           int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) {
+    return true;
+  }
+  bool get(Mesh *UNUSED(m), vector<BoutReal> &UNUSED(var), const string &UNUSED(name),
+           int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) {
     return true;
   }
 };
 
-TEST_F(BoutMeshTest, CreateBoutMesh) {
-  EXPECT_NO_THROW(BoutMesh msh(new FakeGridDataSource,nullptr));
-  
+TEST(BoutMeshTest, NullOptionsCheck) {
+  // Temporarily turn off outputs to make test quiet
+  output_info.disable();
+  output_warn.disable();
+  EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
+  output_info.enable();
+  output_warn.enable();
 }
