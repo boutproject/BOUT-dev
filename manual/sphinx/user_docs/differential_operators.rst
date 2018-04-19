@@ -71,60 +71,60 @@ reconstruction schemes which combine good handling of sharp-gradient
 regions with high accuracy in smooth regions.
 
 To use these differencing operators directly, add the following to the
-top of your physics module
-
-::
+top of your physics module::
 
     #include <derivs.hxx>
 
-+--------------+-----------------------------------------------+
-| Function     | Formula                                       |
-+==============+===============================================+
-| DDX(f)       | :math:`\partial f / \partial x`               |
-+--------------+-----------------------------------------------+
-| DDY(f)       | :math:`\partial f / \partial y`               |
-+--------------+-----------------------------------------------+
-| DDZ(f)       | :math:`\partial f / \partial z`               |
-+--------------+-----------------------------------------------+
-| D2DX2(f)     | :math:`\partial^2 f / \partial x^2`           |
-+--------------+-----------------------------------------------+
-| D2DY2(f)     | :math:`\partial^2 f / \partial y^2`           |
-+--------------+-----------------------------------------------+
-| D2DZ2(f)     | :math:`\partial^2 f / \partial z^2`           |
-+--------------+-----------------------------------------------+
-| D2DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
-+--------------+-----------------------------------------------+
-| D2DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
-+--------------+-----------------------------------------------+
-| D2DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
-+--------------+-----------------------------------------------+
-| D2DXDZ(f)    | :math:`\partial^2 f / \partial x\partial z`   |
-+--------------+-----------------------------------------------+
-| D2DYDZ(f)    | :math:`\partial^2 f / \partial y\partial z`   |
-+--------------+-----------------------------------------------+
-| VDDX(f, g)   | :math:`f \partial g / \partial x`             |
-+--------------+-----------------------------------------------+
-| VDDY(f, g)   | :math:`f \partial g / \partial y`             |
-+--------------+-----------------------------------------------+
-| VDDZ(f, g)   | :math:`f \partial g / \partial z`             |
-+--------------+-----------------------------------------------+
-| FDDX(f, g)   | :math:`\partial/\partial x( f * g )`          |
-+--------------+-----------------------------------------------+
-| FDDY(f, g)   | :math:`\partial/\partial x( f * g )`          |
-+--------------+-----------------------------------------------+
-| FDDZ(f, g)   | :math:`\partial/\partial x( f * g )`          |
-+--------------+-----------------------------------------------+
+.. _tab-coordinate-derivatives:
+.. table:: Coordinate derivatives
 
-Table: Coordinate derivatives
+   +--------------+-----------------------------------------------+
+   | Function     | Formula                                       |
+   +==============+===============================================+
+   | DDX(f)       | :math:`\partial f / \partial x`               |
+   +--------------+-----------------------------------------------+
+   | DDY(f)       | :math:`\partial f / \partial y`               |
+   +--------------+-----------------------------------------------+
+   | DDZ(f)       | :math:`\partial f / \partial z`               |
+   +--------------+-----------------------------------------------+
+   | D2DX2(f)     | :math:`\partial^2 f / \partial x^2`           |
+   +--------------+-----------------------------------------------+
+   | D2DY2(f)     | :math:`\partial^2 f / \partial y^2`           |
+   +--------------+-----------------------------------------------+
+   | D2DZ2(f)     | :math:`\partial^2 f / \partial z^2`           |
+   +--------------+-----------------------------------------------+
+   | D2DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
+   +--------------+-----------------------------------------------+
+   | D2DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
+   +--------------+-----------------------------------------------+
+   | D2DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
+   +--------------+-----------------------------------------------+
+   | D2DXDZ(f)    | :math:`\partial^2 f / \partial x\partial z`   |
+   +--------------+-----------------------------------------------+
+   | D2DYDZ(f)    | :math:`\partial^2 f / \partial y\partial z`   |
+   +--------------+-----------------------------------------------+
+   | VDDX(f, g)   | :math:`f \partial g / \partial x`             |
+   +--------------+-----------------------------------------------+
+   | VDDY(f, g)   | :math:`f \partial g / \partial y`             |
+   +--------------+-----------------------------------------------+
+   | VDDZ(f, g)   | :math:`f \partial g / \partial z`             |
+   +--------------+-----------------------------------------------+
+   | FDDX(f, g)   | :math:`\partial/\partial x( f * g )`          |
+   +--------------+-----------------------------------------------+
+   | FDDY(f, g)   | :math:`\partial/\partial x( f * g )`          |
+   +--------------+-----------------------------------------------+
+   | FDDZ(f, g)   | :math:`\partial/\partial x( f * g )`          |
+   +--------------+-----------------------------------------------+
 
 By default the method used will be the one specified in the options
 input file (see :ref:`sec-diffmethodoptions`), but most of these
-methods can take an optional ``DIFF\_METHOD`` argument, specifying
+methods can take an optional `DIFF_METHOD` argument, specifying
 exactly which method to use.
+
+.. _sec-diffmethod-nonuniform:
 
 Non-uniform meshes
 ------------------
-.. _sec-diffmethod-nonuniform:
 
 **examples/test-nonuniform seems to not work?** Setting
 ``non_uniform = true`` in the BOUT.inp options file enables corrections
@@ -628,7 +628,7 @@ be written to the output log. To do this, there is a name lookup table::
       const char* name;  // Long name
     };
 
-    static DiffNameLookup DiffNameTable[] = { 
+    static DiffNameLookup DiffNameTable[] = {
       {DIFF_U1, "U1", "First order upwinding"},
       {DIFF_C2, "C2", "Second order central"},
       {DIFF_W2, "W2", "Second order WENO"},
