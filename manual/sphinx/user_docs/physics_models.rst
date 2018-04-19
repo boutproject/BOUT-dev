@@ -30,37 +30,185 @@ Heat conduction
 
 The ``conduction`` example solves 1D heat conduction
 
+.. math::
+
+   \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
+
+The source code to solve this is in ``conduction.cxx``, which we show here:
+
+.. literalinclude:: /../../examples/conduction/conduction.cxx
+   :lines: 6-
+   :lineno-match:
+   :name: conduction-cxx
+
+Let's go through it line-by-line. First, we include the header that
+defines the `PhysicsModel` class::
+
+  #include <bout/physicsmodel.hxx>
+
+This also brings in the header files that we need for the rest of the
+code. Next, we need to define a new class, ``Conduction``, that
+inherits from `PhysicsModel` (line 8)::
+
+  class Conduction : public PhysicsModel {
+
+The `PhysicsModel` contains both the physical variables we want to
+evolve, like the temperature::
+
+  Field3D T; // Evolving temperature equation only
+
+as well as any physical or numerical coefficients. In this case, we
+only have the parallel conduction coefficient, ``chi``::
+
+  BoutReal chi; // Parallel conduction coefficient
+
+A `Field3D` represents a 3D scalar quantity, while a `BoutReal`
+represents a single number. See the later section on
+:ref:`sec-variables` for more information.
+
+After declaring our model variables, we need to define two functions:
+an initialisation function, ``init``, that is called to set up the
+simulation and specify which variables are evolving in time; and a
+"right-hand side" function, ``rhs``, that calculates the time
+derivatives of our evolving variables. These are defined in lines 18
+and 21 respectively above::
+
+     int init(bool restarting) override {
+     ...
+     }
+     int rhs(BoutReal time) override {
+     ...
+     }
+
+`PhysicsModel::init` takes as input a ``bool`` (``true`` or ``false``)
+that tells it whether or not the model is being restarted, which can
+be useful if something only needs to be done once before the
+simulation starts properly. The simulation (physical) time is passed
+to `PhyiscsModel::rhs` as a `BoutReal`.
+
+The ``override`` keyword is just to let the compiler know we're
+overriding a method in the base class and is not important to
+understand.
+
+Initialisation
+~~~~~~~~~~~~~~
+
+During initialisation (the ``init`` function), the conduction example
+first reads an option (lines 21 and 24) from the input settings file
+(``data/BOUT.inp`` by default)::
+
+    Options *options = Options::getRoot()->getSection("conduction");
+
+    OPTION(options, chi, 1.0);
+
+This first gets a section called "conduction", then requests an option
+called "chi" inside this section. If this setting is not found, then
+the default value of 1.0 will be used. To set this value the BOUT.inp
+file contains:
+
+.. code-block:: bash
+
+    [conduction]
+    chi = 1.0
+
+which defines a section called "conduction", and within that section a
+variable called "chi". This value can also be overridden by specifying
+the setting on the command line:
+
+.. code-block:: bash
+
+    $ ./conduction conduction:chi=2
+
+where ``conduction:chi`` means the variable "chi" in the section
+"conduction". When this option is read, a message is printed to the
+BOUT.log files, giving the value used and the source of that value:
+
+.. code-block:: bash
+
+    Option conduction:chi = 1 (data/BOUT.inp)
+
+For more information on options and input files, see
+:ref:`sec-options`, as well as the documentation for the `Options`
+class.
+
+After reading the chi option, the ``init`` method then specifies which
+variables to evolve using the `SOLVE_FOR` macro::
+
+    // Tell BOUT++ to solve T
+    SOLVE_FOR(T);
+
+This tells the BOUT++ time integration solver to set the variable
+``T`` using values from the input settings. It looks in a section with
+the same name as the variable (``T`` here) for variables "scale" and
+"function":
+
+.. code-block:: bash
+
+    [T] # Settings for the T variable
+
+    scale = 1.0  # Size of the initial perturbation
+    function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
+
+The function is evaluated using expressions which can involve x,y and
+z coordinates. More details are given in section
+:ref:`sec-init-time-evolved-vars`.
+
+Finally an error code is returned, here 0 indicates no error. If
+``init`` returns non-zero then the simulation will stop.
+
+Time evolution
+~~~~~~~~~~~~~~
+
+During time evolution, the time integration method (ODE integrator)
+calculates the system state (here ``T``) at a give time. It then calls
+the `PhysicsModel::rhs` function, which should calculate the time
+derivative of all the evolving variables. In this case the job of the
+``rhs`` function is to calculate ``ddt(T)``, the **partial
+derivative** of the variable ``T`` with respect to time, given the value
+of ``T``:
+
  .. math::
 
    \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
 
-The source code to solve this is in ``conduction.cxx`` which defines a class
-Conduction::
+The first thing the ``rhs`` function function does is communicate the
+guard (halo) cells using `Mesh::communicate` on line 33::
 
-    class Conduction : public PhysicsModel {
-     private:
-     protected:
-      int init(bool restarting) override {
-      }
-      int rhs(BoutReal t) override {
-      }
-    };
+    mesh->communicate(T);
 
-and then defines a standard main() function using a macro::
+This is because BOUT++ does not (generally) do communications, but
+leaves it up to the user to decide when the most efficient or
+convenient time to do them is. Before we can take derivatives of a
+variable (here ``T``), the values of the function must be known in the
+boundaries and guard cells, which requires communication between
+processors. By default the values in the guard cells are set to
+``NaN``, so if they are accidentally used without first communicating
+then the code should crash fairly quickly with a non-finite number
+error.
 
-    BOUTMAIN(Conduction);
+Once the guard cells have been communicated, we calculate the right
+hand side (RHS) of the equation above (line 35)::
+
+    ddt(T) = Div_par_K_Grad_par(chi, T);
+
+The function `Div_par_K_Grad_par` is a function in the BOUT++ library
+which calculates the divergence in the parallel (y) direction of a
+constant multiplied by the gradient of a function in the parallel
+direction.
+
+As with the ``init`` code, a non-zero return value indicates an error
+and will stop the simulation.
+
+Running the model
+~~~~~~~~~~~~~~~~~
+
+The very last thing we need to do in our physics model is to define a
+``main`` function. Here, we do it with the `BOUTMAIN` macro::
+
+  BOUTMAIN(Conduction);
 
 You can define your own ``main()`` function, but for most cases this
-is enough.  The two methods defined in Conduction, ``init`` and
-``rhs``, are both needed to define a BOUT++ physics model. The
-``init`` function is run once at the start, and should set up the
-simulation and specify which variables are evolving in time.  The
-``rhs`` function should calculate the time derivative, and is called
-at least once per output timestep, depending on the time integration
-method used.
-
-To define your own ``main()`` function, see the definition of ``BOUTMAIN``
-in ``include/bout/physicsmodel.hxx``. It expands to something like::
+is enough. The macro expands to something like::
 
       int main(int argc, char **argv) {
         BoutInitialise(argc, argv); // Initialise BOUT++
@@ -79,112 +227,10 @@ in ``include/bout/physicsmodel.hxx``. It expands to something like::
         return 0;
       }
 
-where ``Conduction`` was given as an argument to
-``BOUTMAIN``. Customising this may make combining BOUT++ with other
-libraries easier.
+This initialises the main BOUT++ library, creates the `PhysicsModel`
+and `Solver`, runs the solver, and finally cleans up the model, solver
+and library.
 
-Initialisation
-~~~~~~~~~~~~~~
-
-During initialisation (the ``init`` function), the conduction example
-first reads an option from the input settings file (BOUT.inp)::
-
-    Options *options = Options::getRoot()->getSection("conduction");
-    OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
-
-This first gets a section called "conduction", then requests an option
-called "chi" inside this section. If this setting is not found, then
-the default value of 1.0 will be used.  To set this value the BOUT.inp
-file contains:
-
-.. code-block:: bash
-
-    [conduction]
-    chi = 1.0
-
-which defines a section called "conduction", and within that section a
-variable called "chi".  This value can be overridden by specifying the
-setting on the command line:
-
-
-.. code-block:: bash
-
-    $ ./conduction conduction:chi=2
-
-where "conduction:chi" means the variable "chi" in the section
-"conduction". When this option is read, a message is printed to the
-BOUT.log files, giving the value used and the source of that value:
-
-.. code-block:: bash
-
-    Option conduction:chi = 1 (data/BOUT.inp)
-
-After reading the chi option, the ``init`` method then specifies which
-variables to evolve using a macro::
-
-    // Tell BOUT++ to solve T
-    SOLVE_FOR(T);
-
-This tells the BOUT++ time integration solver to set the variable T
-using values from the input settings.  It looks in a section with the
-same name as the variable ("T" here) for variables "scale" and
-"function":
-
-.. code-block:: bash
-
-    [T] # Settings for the T variable
-
-    scale = 1.0  # Size of the initial perturbation
-    function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
-
-The function is evaluated using expressions which can involve x,y and
-z coordinates. More details are given in section
-:ref:`sec-init-time-evolved-vars`.
-
-Finally an error code is returned, here 0 indicates no error. If init
-returns non-zero then the simulation will stop.
-
-Time evolution
-~~~~~~~~~~~~~~
-
-During time evolution, the time integration method (ODE integrator)
-calculates the system state (here "T") at a give time. It then calls
-the ``rhs`` function, which should calculate the time derivative of
-all the evolving variables. In this case the job of the ``rhs``
-function is to calculate "ddt(T)", the **partial derivative** of the
-variable "T" with respect to time, given the value of "T":
-
- .. math::
-
-   \frac{\partial T}{\partial t} = \nabla_{||}(\chi\partial_{||} T)
-
-The first thing the ``rhs`` function function does is communicate the
-guard (halo) cells::
-
-    mesh->communicate(T);
-
-This is because BOUT++ does not (generally) do communications, but
-leaves it up to the user to decide when the most efficient or
-convenient time to do them is. Before we can take derivatives of a
-variable (here T), the values of the function must be known in the
-boundaries and guard cells, which requires communication between
-processors. By default the values in the guard cells are set to NaN,
-so if they are accidentally used without first communicating then the
-code should crash fairly quickly with a non-finite number error.
-
-Once the guard cells have been communicated, we calculate the right
-hand side (RHS) of the equation above::
-
-    ddt(T) = Div_par_K_Grad_par(chi, T);
-
-
-The function "Div_par_K_Grad_par" is a function in the BOUT++ library
-which calculates the divergence in the parallel (y) direction of a
-constant multiplied by the gradient of a function in the parallel
-direction.
-
-As with the init code, a non-zero return value indicates an error and
-will stop the simulation.
 
 Magnetohydrodynamics (MHD)
 --------------------------
@@ -226,11 +272,13 @@ The ``rhs`` function is called every time-step, and should calculate
 the time-derivatives for a given state. In both cases returning
 non-zero tells BOUT++ that an error occurred.
 
+.. _sec-variables:
+
 Variables
 ~~~~~~~~~
 
-We need to define the variables to evolve as global variables (so they
-can be used in ``init`` and ``rhs``.
+We need to define the variables to evolve as member variables (so they
+can be used in ``init`` and ``rhs``).
 
 For ideal MHD, we need two 3D scalar fields density :math:`\rho` and
 pressure :math:`p`, and two 3D vector fields velocity :math:`v`, and
@@ -286,8 +334,8 @@ be used::
 
 **Note**: The operator precedence for :math:`\wedge` is lower than
 ``+``, ``*`` and ``/`` so it is recommended to surround ``a ^ b`` with
-braces. 
-    
+braces.
+
 Evolution equations
 ~~~~~~~~~~~~~~~~~~~
 
@@ -339,14 +387,14 @@ Vector quantities can be stored in either covariant or contravariant
 form. The value of the ``covariant`` property when ``bout_solve`` (or
 ``SOLVE_FOR``) is called is the form which is evolved in time and
 saved to the output file.
-    
+
 The equations to be solved can now be written in the ``rhs``
 function. The value passed to the function (``BoutReal t``) is the
 simulation time - only needed if your equations contain time-dependent
 sources or similar terms. To refer to the time-derivative of a variable
 ``var``, use ``ddt(var)``. The ideal MHD equations can be written as::
 
-    
+
     int rhs(BoutReal t) override {
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
       ddt(p) = -V_dot_Grad(v, p) - g*p*Div(v);
@@ -430,9 +478,9 @@ needs to go to/from, and only needs to be told which variables to
 transfer.
 
 If you only need to communicate a small number (up to 5 currently) of
-variables then just call the ``mesh->communicate`` function directly.
+variables then just call the `Mesh::communicate` function directly.
 For the MHD code, we need to communicate the variables ``rho,p,v,B``
-at the beginning of the ``physics_run`` function before any
+at the beginning of the `PhysicsModel::rhs` function before any
 derivatives are calculated::
 
     int rhs(BoutReal t) override {
@@ -466,7 +514,7 @@ which are added to a `FieldGroup` ), so this can be shortened to
 
 ::
 
-    
+
      comms.add(rho, p, v, B);
 
 To perform the actual communication, call the ``mesh->communicate``
@@ -537,10 +585,10 @@ long time of running, and/or only occasionally. For this type of
 problem, a useful tool can be the message stack. An easy way to use
 this message stack is to use the ``TRACE`` macro::
 
-	{
-      	  TRACE("Some message here"); // message pushed
-	
-	} // Scope ends, message popped
+    {
+          TRACE("Some message here"); // message pushed
+
+    } // Scope ends, message popped
 
 This will push the message, then pop the message when the current
 scope ends (except when an exception occurs).  The error message will
@@ -550,12 +598,12 @@ can be removed entirely if the compile-time flag ``-DCHECK`` is not
 defined or set to ``0``. This turns off checking, and ``TRACE``
 becomes an empty macro.  It is possible to use standard ``printf``
 like formatting with the trace macro, for example.
- 
+
 ::
 
-	{
-      	  TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
-	} // Scope ends, message popped
+    {
+          TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
+    } // Scope ends, message popped
 
 In the ``mhd.cxx`` example each part of the ``rhs`` function is
 trace'd. If an error occurs then at least the equation where it
@@ -855,7 +903,7 @@ name of the attribute, and ``value`` can be either a string or an
 integer. For example::
 
 
-   dump.setAttribute("Ni0", "units", "m^-3"); 
+   dump.setAttribute("Ni0", "units", "m^-3");
 
 
 
@@ -889,7 +937,7 @@ they’re communicated
     class TwoField : public PhysicsModel {
       private:
       Field3D U, Apar; // Evolving variables
-      
+
       int init(bool restarting) override {
 
         SOLVE_FOR2(U, Apar);
@@ -951,7 +999,7 @@ simple logging facility which supports both C printf and C++ iostream
 styles. For example::
 
    output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
-   
+
    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
 
 Messages sent to ``output`` on processor 0 will be printed to console
@@ -1031,7 +1079,7 @@ breaking changes which you are likely to come across are:
   coordinates.  This has implications for boundary conditions and
   post-processing. See :ref:`sec-parallel-transforms` for more
   information.
-  
+
 A new tool is provided, ``bin/bout_3to4.py``, which can identify these
 changes, and fix most of them automatically. Simply run this program
 on your physic model to see how to update it to work with version 4:
