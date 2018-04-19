@@ -26,6 +26,10 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("mesh");
+  }
+
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
