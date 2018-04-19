@@ -81,7 +81,8 @@ class Field(object):
 
     """
 
-    def __init__(self, field_type, dimensions, name=None, index_var=None):
+    def __init__(self, field_type, dimensions, name=None, index_var=None,
+                 jz_var='jz', mixed_base_ind_var='base_ind'):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
@@ -90,6 +91,9 @@ class Field(object):
         self.name = name
         # Name of the indexing variable
         self.index_var = index_var
+        # Name of jz variable
+        self.jz_var = jz_var
+        self.mixed_base_ind_var = mixed_base_ind_var
         if self.field_type == "Field3D":
             self.region_type="3D"
         elif self.field_type == "Field2D":
@@ -115,6 +119,19 @@ class Field(object):
         if self.field_type == "BoutReal":
             return "{self.name}".format(self=self)
         else:
+            return "{self.name}[{self.index_var}]".format(self=self)
+
+    @property
+    def mixed_index(self):
+        """Returns "[{index_var} + {jz_var}]" if field_type is Field3D,
+        self.index if Field2D or just returns "" for BoutReal
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        elif self.field_type == "Field3D":
+            return "{self.name}[{self.mixed_base_ind_var} + {self.jz_var}]".format(self=self)
+        else:  # Field2D
             return "{self.name}[{self.index_var}]".format(self=self)
 
     def __eq__(self, other):
@@ -146,7 +163,6 @@ def returnType(f1, f2):
     else:
         return copy(field3D)
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate code for the Field arithmetic operators")
@@ -161,7 +177,8 @@ if __name__ == "__main__":
 
     #Setup
     index_var = 'index'
-
+    jz_var = 'jz'
+    mixed_base_ind_var = "base_ind"
     region_name = '"RGN_ALL"'
     
     if args.noOpenMP:
@@ -171,9 +188,13 @@ if __name__ == "__main__":
         
     # Declare what fields we currently support:
     # Field perp is currently missing
-    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var)
-    field2D = Field('Field2D', ['x', 'y'], index_var=index_var)
-    boutreal = Field('BoutReal', [], index_var=index_var)
+    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    field2D = Field('Field2D', ['x', 'y'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    boutreal = Field('BoutReal', [], index_var=index_var,
+                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    
     fields = [field3D, field2D, boutreal]
 
     with smart_open(args.filename, "w") as f:
@@ -193,11 +214,11 @@ if __name__ == "__main__":
         lhs = copy(lhs)
 
         # The output of the operation. The `larger` of the two fields.
-        out = returnType(rhs, lhs)
+        out = returnType(rhs, lhs)         
         out.name = 'result'
         lhs.name = 'lhs'
         rhs.name = 'rhs'
-
+                
         for operator, operator_name in operators.items():
 
             template_args = {
@@ -210,7 +231,10 @@ if __name__ == "__main__":
                 #
                 'region_loop': region_loop,
                 'region_name': region_name,
-                'index_var': index_var
+                #
+                'index_var': index_var,
+                'mixed_base_ind': mixed_base_ind_var,
+                'jz_var': jz_var,
             }
 
             with smart_open(args.filename, "a") as f:
