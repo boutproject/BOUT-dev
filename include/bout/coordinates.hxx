@@ -97,9 +97,15 @@ public:
 
   // Operators
 
-  const Field2D DDX(const Field2D &f);
-  const Field2D DDY(const Field2D &f);
-  const Field2D DDZ(const Field2D &f);
+  const Field2D DDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
+  const Field2D DDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
+  const Field2D DDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
   
   /// Gradient along magnetic field  b.Grad(f)
   const Field2D Grad_par(const Field2D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
