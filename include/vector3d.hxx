@@ -35,6 +35,7 @@ class Vector3D;
 
 class Field2D; //#include "field2d.hxx"
 #include "field3d.hxx"
+#include "unused.hxx"
 
 class Vector2D; //#include "vector2d.hxx"
 
@@ -211,6 +212,12 @@ class Vector3D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyTDerivBoundary() override;
+  virtual inline const BoutReal& operator[](const Indices &UNUSED(i)) const override {
+    throw BoutException("Indices cannot be handled ...");
+  }
+  virtual inline BoutReal& operator[](const Indices &UNUSED(i)) override {
+    throw BoutException("Indices cannot be handled ...");
+  }
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL
 };

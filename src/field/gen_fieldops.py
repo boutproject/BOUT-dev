@@ -143,6 +143,8 @@ def returnType(f1, f2):
         return copy(f2)
     elif f2 == 'BoutReal':
         return copy(f1)
+    elif fieldperp in [f1,f2]:
+        return copy(fieldperp)
     else:
         return copy(field3D)
 
@@ -163,17 +165,26 @@ if __name__ == "__main__":
     index_var = 'index'
 
     region_name = '"RGN_ALL"'
-    
+
     if args.noOpenMP:
         region_loop = 'BLOCK_REGION_LOOP_SERIAL'
     else:
         region_loop = 'BLOCK_REGION_LOOP'
+
+    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var)
+    field2D = Field('Field2D', ['x', 'y'], index_var=index_var)
+    fieldperp = Field('FieldPerp', ['x', 'z'], index_var=index_var)
+    boutreal = Field('BoutReal', [], index_var=index_var)
+else:
+    field3D = Field('Field3D', ['x', 'y', 'z'])
+    field2D = Field('Field2D', ['x', 'y'])
+    fieldperp = Field('FieldPerp', ['x', 'z'])
+    boutreal = Field('BoutReal', [])
+
+if __name__ == "__main__":
         
     # Declare what fields we currently support:
     # Field perp is currently missing
-    field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var)
-    field2D = Field('Field2D', ['x', 'y'], index_var=index_var)
-    boutreal = Field('BoutReal', [], index_var=index_var)
     fields = [field3D, field2D, boutreal]
 
     with smart_open(args.filename, "w") as f:
@@ -184,6 +195,10 @@ if __name__ == "__main__":
                              trim_blocks=True)
 
     template = env.get_template("gen_fieldops.jinja")
+
+    # Declare what fields we currently support:
+    # Field perp is currently missing
+    fields = [field3D, field2D, boutreal]
 
     for lhs, rhs in itertools.product(fields, fields):
         # We don't have to define BoutReal BoutReal operations

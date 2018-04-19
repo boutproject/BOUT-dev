@@ -61,6 +61,10 @@ class Datafile {
   void addOnce(t &value, std::string name){
     add(value,name.c_str(),false);
   }
+  template <typename F>
+  void add(Flexible<F> & f, const char *name, bool save_repeat = false){
+    add(f.getNonConst(CELL_DEFAULT),name,save_repeat);
+  }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);

@@ -129,6 +129,15 @@ class Field2D : public Field, public FieldData {
    */ 
   Field2D & operator=(BoutReal rhs);
 
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
+
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -168,7 +177,7 @@ class Field2D : public Field, public FieldData {
 
   /// Indices are also used as a lightweight way to specify indexing
   /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
+  inline BoutReal& operator[](const Indices &i) override {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
@@ -262,6 +271,8 @@ class Field2D : public Field, public FieldData {
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
+  CELL_LOC location; ///< Location of the variable in the cell
+
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
