@@ -1055,21 +1055,20 @@ is still very effective.
 Blob2d comparison
 ~~~~~~~~~~~~~~~~~
 
+.. Use bash as the default language for syntax highlighting in this section
+.. highlight:: console
+
 The example ``examples/blob2d-laplacexz`` is the same as
 ``examples/blob2d`` but with ``LaplaceXZ`` rather than
 `Laplacian`.
 
 Tests on one processor: Using Boussinesq approximation, so that the
-matrix elements are not changed, the cyclic solver produces output
-
-::
+matrix elements are not changed, the cyclic solver produces output::
 
     1.000e+02        125       8.28e-01    71.8    8.2    0.4    0.6   18.9
     2.000e+02         44       3.00e-01    69.4    8.1    0.4    2.1   20.0
 
-whilst the PETSc solver with LU preconditioner outputs
-
-::
+whilst the PETSc solver with LU preconditioner outputs::
 
     1.000e+02        146       1.15e+00    61.9   20.5    0.5    0.9   16.2
     2.000e+02         42       3.30e-01    58.2   20.2    0.4    3.7   17.5
