@@ -341,9 +341,10 @@ Evolution equations
 
 At this point we can tell BOUT++ which variables to evolve, and where
 the state and time-derivatives will be stored. This is done using the
-``bout_solve(variable, name)`` function in ``physics_init``::
+`bout_solve(variable, name) <PhysicsModel::bout_solve>` function in
+your physics model `init <PhysicsModel::init>`::
 
-    int physics_init(bool restarting) {
+    int init(bool restarting) {
       bout_solve(rho, "density");
       bout_solve(p,   "pressure");
       v.covariant = true; // evolve covariant components
@@ -366,11 +367,9 @@ this shorthand for ``v`` and ``B``::
     SOLVE_FOR(v);
     SOLVE_FOR(B);
 
-To make this even shorter, we can use macros ``SOLVE_FOR2``,
-``SOLVE_FOR3``, ..., ``SOLVE_FOR6`` to shorten our initialisation code
-to
-
-::
+To make this even shorter, we can use macros `SOLVE_FOR2`,
+`SOLVE_FOR3`, ..., `SOLVE_FOR6` to shorten our initialisation code
+to::
 
     int init(bool restarting) override {
       ...
@@ -384,16 +383,16 @@ to
     }
 
 Vector quantities can be stored in either covariant or contravariant
-form. The value of the ``covariant`` property when ``bout_solve`` (or
-``SOLVE_FOR``) is called is the form which is evolved in time and
-saved to the output file.
+form. The value of the `Vector3D::covariant` property when
+`PhysicsModel::bout_solve` (or `SOLVE_FOR`) is called is the form
+which is evolved in time and saved to the output file.
 
 The equations to be solved can now be written in the ``rhs``
 function. The value passed to the function (``BoutReal t``) is the
 simulation time - only needed if your equations contain time-dependent
-sources or similar terms. To refer to the time-derivative of a variable
-``var``, use ``ddt(var)``. The ideal MHD equations can be written as::
-
+sources or similar terms. To refer to the time-derivative of a
+variable ``var``, use ``ddt(var)``. The ideal MHD equations can be
+written as::
 
     int rhs(BoutReal t) override {
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
@@ -402,13 +401,13 @@ sources or similar terms. To refer to the time-derivative of a variable
       ddt(B) = Curl(v^B);
     }
 
-Where the differential operators ``vector = Grad(scalar)``,
-``scalar = Div(vector)``, and ``vector = Curl(vector)`` are used. For
-the density and pressure equations, the
+Where the differential operators `vector = Grad(scalar) <Grad>`,
+`scalar = Div(vector) <Div>`, and `vector = Curl(vector) <Curl>` are
+used. For the density and pressure equations, the
 :math:`\mathbf{v}\cdot\nabla\rho` term could be written as
 ``v*Grad(rho)``, but this would then use central differencing in the
-Grad operator. Instead, the function ``V_dot_Grad`` uses upwinding
-methods for these advection terms. In addition, the ``Grad`` function
+Grad operator. Instead, the function `V_dot_Grad` uses upwinding
+methods for these advection terms. In addition, the `Grad` function
 will not operate on vector objects (since result is neither scalar nor
 vector), so the :math:`\mathbf{v}\cdot\nabla\mathbf{v}` term CANNOT be
 written as ``v*Grad(v)``.
@@ -420,7 +419,7 @@ Input options
 
 Note that in the above equations the extra parameter ``g`` has been
 used for the ratio of specific heats. To enable this to be set in the
-input options file (see :ref:`sec-options`), we use the ``options``
+input options file (see :ref:`sec-options`), we use the `Options`
 object in the initialisation function::
 
 
@@ -452,15 +451,11 @@ options should be put in a separate section, for example here the
 
 Most of the time, the name of the variable (e.g. ``g``) will be the
 same as the identifier in the options file (“g”). In this case, there
-is the macro
-
-::
+is the macro::
 
     OPTION(options, g, 5.0/3.0);
 
-which is equivalent to
-
-::
+which is equivalent to::
 
     options->get("g", g, 5.0/3.0);
 
@@ -473,9 +468,9 @@ Communication
 If you plan to run BOUT++ on more than one processor, any operations
 involving derivatives will require knowledge of data stored on other
 processors. To handle the necessary parallel communication, there is
-the ``mesh->communicate`` function. This takes care of where the data
-needs to go to/from, and only needs to be told which variables to
-transfer.
+the `mesh->communicate <Mesh::communicate>` function. This takes care
+of where the data needs to go to/from, and only needs to be told which
+variables to transfer.
 
 If you only need to communicate a small number (up to 5 currently) of
 variables then just call the `Mesh::communicate` function directly.
@@ -492,9 +487,7 @@ options), then you can create a group of variables and communicate
 them later. To do this, first create a `FieldGroup` object , in this
 case called ``comms`` , then use the add method. This method does no
 communication, but records which variables to transfer when the
-communication is done later.
-
-::
+communication is done later::
 
     class MHD : public PhysicsModel {
       private:
@@ -508,30 +501,26 @@ communication is done later.
         comms.add(B);
         ...
 
-The ``comms.add()`` routine can be given any number of variables at
-once (there’s no practical limit on the total number of variables
-which are added to a `FieldGroup` ), so this can be shortened to
-
-::
-
+The `comms.add() <FieldGroup::add>` routine can be given any number of
+variables at once (there’s no practical limit on the total number of
+variables which are added to a `FieldGroup` ), so this can be
+shortened to::
 
      comms.add(rho, p, v, B);
 
-To perform the actual communication, call the ``mesh->communicate``
-function with the group. In this case we need to communicate all these
-variables before performing any calculations, so call this function at
-the start of the ``rhs`` routine::
+To perform the actual communication, call the `mesh->communicate
+<Mesh::communicate>` function with the group. In this case we need to
+communicate all these variables before performing any calculations, so
+call this function at the start of the ``rhs`` routine::
 
     int rhs(BoutReal t) override {
       mesh->communicate(comms);
-      .
-      .
-      .
+      ...
 
 In many situations there may be several groups of variables which can
 be communicated at different times. The function ``mesh->communicate``
-consists of a call to ``mesh->send`` followed by ``mesh->wait`` which
-can be done separately to interleave calculations and communications.
+consists of a call to `Mesh::send` followed by `Mesh::wait` which can
+be done separately to interleave calculations and communications.
 This will speed up the code if parallel communication bandwidth is a
 problem for your simulation.
 
@@ -583,7 +572,7 @@ down the bug is to insert lots of ``output.write`` statements (see
 :ref:`sec-logging`). Things get harder when a bug only occurs after a
 long time of running, and/or only occasionally. For this type of
 problem, a useful tool can be the message stack. An easy way to use
-this message stack is to use the ``TRACE`` macro::
+this message stack is to use the `TRACE` macro::
 
     {
           TRACE("Some message here"); // message pushed
@@ -597,9 +586,7 @@ an error occurred. The run-time overhead of this should be small, but
 can be removed entirely if the compile-time flag ``-DCHECK`` is not
 defined or set to ``0``. This turns off checking, and ``TRACE``
 becomes an empty macro.  It is possible to use standard ``printf``
-like formatting with the trace macro, for example.
-
-::
+like formatting with the trace macro, for example::
 
     {
           TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
@@ -661,10 +648,10 @@ to use first in ``init``, then just apply them every time::
 This will look in the options file for a section called ``[myvar]``
 (upper or lower case doesn’t matter) in the same way that evolving
 variables are handled. In fact this is precisely what is done: inside
-``bout_solve`` (or ``SOLVE_FOR``) the ``setBoundary`` method is
-called, and then after ``rhs`` the ``applyBoundary()`` method is
-called on each evolving variable. This method also gives you the
-flexibility to apply different boundary conditions on different
+`PhysicsModel::bout_solve` (or `SOLVE_FOR`) the `Field3D::setBoundary`
+method is called, and then after ``rhs`` the `Field3D::applyBoundary`
+method is called on each evolving variable. This method also gives you
+the flexibility to apply different boundary conditions on different
 boundary regions (e.g.  radial boundaries and target plates); the
 first method just applies the same boundary condition to all
 boundaries.
@@ -726,10 +713,9 @@ Note that it might be both if ``NXPE = 1``, or neither if ``NXPE > 2``.
       }
 
 note the size of the local mesh including guard cells is given by
-``mesh->LocalNx``, ``mesh->LocalNy``, and ``mesh->LocalNz``. The
-functions ``mesh->firstX()`` and ``mesh->lastX()`` return true only if
-the current processor is on the left or right of the X domain
-respectively.
+`Mesh::LocalNx`, `Mesh::LocalNy`, and `Mesh::LocalNz`. The functions
+`Mesh::firstX` and `Mesh::lastX` return true only if the current
+processor is on the left or right of the X domain respectively.
 
 Setting custom Y boundaries is slightly more complicated than X
 boundaries, because target or limiter plates could cover only part of
@@ -772,9 +758,10 @@ calculated correctly. The solution to this is to write all equations
 in terms of an initial “background” quantity and a time-evolving
 perturbation, for example :math:`\rho(t) \rightarrow \rho_0 +
 \tilde{\rho}(t)`. For this reason, **the initialisation of all
-variables passed to the ``bout_solve`` function is a combination of
-small-amplitude gaussians and waves; the user is expected to have
-performed this separation into background and perturbed quantities.**
+variables passed to the `PhysicsModel::bout_solve` function is a
+combination of small-amplitude gaussians and waves; the user is
+expected to have performed this separation into background and
+perturbed quantities.**
 
 To read in a quantity from a grid file, there is the ``mesh->get``
 function::
@@ -789,17 +776,15 @@ function::
 
 As with the input options, most of the time the name of the variable
 in the physics code will be the same as the name in the grid file to
-avoid confusion. In this case, you can just use
-
-::
+avoid confusion. In this case, you can just use::
 
     GRID_LOAD(Ni0);
 
-which is equivalent to
-
-::
+which is equivalent to::
 
     mesh->get(Ni0, "Ni0");
+
+(see `Mesh::get`).
 
 Output variables
 ~~~~~~~~~~~~~~~~
@@ -816,20 +801,16 @@ values to file. For example::
 
 where the ’0’ at the end means the variable should only be written to
 file once at the start of the simulation. For convenience there are
-some macros e.g.
-
-::
+some macros e.g.::
 
       SAVE_ONCE(Ni0);
 
-is equivalent to
-
-::
+is equivalent to::
 
       dump.add(Ni0, "Ni0", 0);
 
-In some situations you might also want to write some data to a different
-file. To do this, create a Datafile object::
+(see `Datafile::add`). In some situations you might also want to write
+some data to a different file. To do this, create a `Datafile` object::
 
     Datafile mydata;
 
@@ -838,34 +819,29 @@ in ``init``, you then:
 #. (optional) Initialise the file, passing it the options to use. If you
    skip this step, default (sane) options will be used. This just allows
    you to enable/disable, use parallel I/O, set whether files are opened
-   and closed every time etc.
-
-   ::
+   and closed every time etc.::
 
        mydata = Datafile(Options::getRoot()->getSection("mydata"));
 
-   which would use options in a section [mydata] in BOUT.inp
+   which would use options in a section ``[mydata]`` in BOUT.inp
 
-#. Open the file for writing
-
-   ::
+#. Open the file for writing::
 
        mydata.openw("mydata.nc")
 
-   By default this only specifies the file name; actual opening of the
-   file happens later when the data is written. If you are not using
-   parallel I/O, the processor number is also inserted into the file
-   name before the last “.”, so mydata.nc” becomes “mydata.0.nc”,
-   “mydata.1.nc” etc. The file format used depends on the extension, so
-   “.nc” will open NetCDF, and “.hdf5” or “.h5” an HDF5 file.
+   (see `Datafile::openw`). By default this only specifies the file
+   name; actual opening of the file happens later when the data is
+   written. If you are not using parallel I/O, the processor number is
+   also inserted into the file name before the last “.”, so mydata.nc”
+   becomes “mydata.0.nc”, “mydata.1.nc” etc. The file format used
+   depends on the extension, so “.nc” will open NetCDF, and “.hdf5” or
+   “.h5” an HDF5 file.
 
    (see e.g. src/fileio/datafile.cxx line 139, which calls
    src/fileio/dataformat.cxx line 23, which then calls the file format
    interface e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
 
-#. Add variables to the file
-
-   ::
+#. Add variables to the file ::
 
        // Not evolving. Every time the file is written, this will be overwritten
        mydata.add(variable, "name");
@@ -873,20 +849,15 @@ in ``init``, you then:
        mydata.add(variable2, "name2", 1);
 
 Whenever you want to write values to the file, for example in
-``rhs`` or a monitor, just call
-
-::
+``rhs`` or a monitor, just call::
 
     mydata.write();
 
-To collect the data afterwards, you can specify the prefix to collect.
-In Python::
+(see `Datafile::write`). To collect the data afterwards, you can
+specify the prefix to collect. In Python (see
+:py:func:`~boutdata.collect.collect`)::
 
     >>> var = collect("name", prefix="mydata")
-
-or in IDL::
-
-    IDL> var = collect(var="name", prefix="mydata")
 
 By default the prefix is “BOUT.dmp”.
 
@@ -894,7 +865,7 @@ Variable attributes
 ~~~~~~~~~~~~~~~~~~~
 
 An experimental feature is the ability to add attributes to output
-variables. Do this using::
+variables. Do this using with `Datafile::setAttribute`::
 
    dump.setAttribute(variable, attribute, value);
 
@@ -902,10 +873,7 @@ where ``variable`` is the name of the variable; ``attribute`` is the
 name of the attribute, and ``value`` can be either a string or an
 integer. For example::
 
-
    dump.setAttribute("Ni0", "units", "m^-3");
-
-
 
 Reduced MHD
 -----------
@@ -930,9 +898,7 @@ with :math:`\phi` and :math:`j_{||}` given by
    U =& \frac{1}{B}\nabla_\perp^2\phi \\ j_{||} =& -\nabla_\perp^2 A_{||}
 
 First create the variables which are going to be evolved, ensure
-they’re communicated
-
-::
+they’re communicated::
 
     class TwoField : public PhysicsModel {
       private:
@@ -1050,11 +1016,6 @@ debug messages enabled by adding ``-DDEBUG_ENABLED`` to ``BOUT_FLAGS``
 in ``make.config`` and then recompiling with ``make clean;
 make``. When running BOUT++ add a "-v" flag to see ``output_debug``
 messages.
-
-
-
-
-
 
 .. _sec-3to4:
 
