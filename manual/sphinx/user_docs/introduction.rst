@@ -178,4 +178,4 @@ that you show professional courtesy when using this code:
       examples
 
 
-.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://doi.org/10.1016/j.cpc.2009.03.008
