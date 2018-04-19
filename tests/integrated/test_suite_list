@@ -21,6 +21,7 @@ test-stopCheck
 test-subdir
 test-interpolate
 test-fci-slab
+!test-include
 # More complex tests
 test-drift-instability
 test-interchange-instability
