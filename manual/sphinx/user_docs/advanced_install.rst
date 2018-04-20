@@ -66,13 +66,13 @@ particular machines.
 Archer
 ~~~~~~
 
-As of 30th April 2014, the following configuration should work
+As of 20th April 2018, the following configuration should work
 
 .. code-block:: bash
 
     $ module swap PrgEnv-cray PrgEnv-gnu/5.1.29
     $ module load fftw
-    $ module load netcdf/4.1.3
+    $ module load archer-netcdf/4.1.3
 
 KNL @ Archer
 ~~~~~~~~~~~~
@@ -142,6 +142,22 @@ With the tcsh shell use
    setenv PETSC_DIR ~farley9/projects/petsc/petsc-3.2-p1
    setenv PETSC_ARCH arch-c
    ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+
+Marconi
+~~~~~~~
+
+.. code-block:: bash
+
+   module load intel intelmpi fftw lapack
+   module load szip zlib/1.2.8--gnu--6.1.0
+   module load hdf5/1.8.17--intel--pe-xe-2017--binary
+   module load netcdf-cxx4
+   module load python
+
+.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4 modules
+          means that you will need to remove ``-lnetcdf`` from ``EXTRA_LIBS`` in
+          ``make.config`` after running ``./configure`` and before running
+          ``make``.
 
 Ubgl
 ~~~~
