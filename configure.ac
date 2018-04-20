@@ -87,6 +87,8 @@ AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(header_change_tracking,       [AS_HELP_STRING([--enable-header-change-tracking],
+        [Enable tracking header file changes for rebuilding. This is only usefull for development enviromenements, and is known to cause build issues.])],,[enable_header_change_tracking=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -972,6 +974,23 @@ Please supply the path using --with-scorep=/path/to/scorep])
 ])
 
 #############################################################
+# Setup Headerfile changes tracking
+#############################################################
+
+AS_IF([test ".$enable_header_change_tracking" = ".yes"], [
+  AS_IF([test ".$HAS_SCOREP" = ".yes"], [
+    AC_MSG_WARN([scorep with header file change tracking is broken - it is suggested to enable only one of the two options])
+    ])
+  DEPENDENCY_TRACKING=yes
+  TRACK_DEPENDENCIES='	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0'
+  CLEAN_DEPENDENCIES='.*.mk'
+], [
+  DEPENDENCY_TRACKING=no
+  TRACK_DEPENDENCIES='# Dependency tracking disabled'
+  CLEAN_DEPENDENCIES=''
+])
+
+#############################################################
 # Download + Build PVODE '98
 #############################################################
 
@@ -1134,6 +1153,8 @@ AC_SUBST(BOUT_VERSION)
 AC_SUBST(GIT_REVISION)
 AC_SUBST(CHECK_LEVEL)
 
+AC_SUBST(TRACK_DEPENDENCIES)
+AC_SUBST(CLEAN_DEPENDENCIES)
 AC_SUBST(HAS_PVODE)
 AC_SUBST(HAS_IDA)
 AC_SUBST(HAS_CVODE)

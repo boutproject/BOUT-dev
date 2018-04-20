@@ -288,7 +288,7 @@ endif
 %.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0
+@TRACK_DEPENDENCIES@
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif
@@ -301,7 +301,7 @@ endif
 ####################################################################
 
 clean::
-	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
+	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET) @CLEAN_DEPENDENCIES@
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
 
