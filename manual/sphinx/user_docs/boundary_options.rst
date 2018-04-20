@@ -347,8 +347,8 @@ pointer to a `BoundaryRegion` object specifying which region this
 boundary is operating on.
 
 Boundary conditions need to be imposed on the initial conditions (after
-``physics_init()``), and on the time-derivatives (after
-``physics_run()``). The ``apply()`` functions are therefore called
+`PhysicsModel::init`), and on the time-derivatives (after
+`PhysicsModel::rhs`). The ``apply()`` functions are therefore called
 during initialisation and given the evolving variables, whilst the
 ``apply_ddt`` functions are passed the time-derivatives.
 
@@ -466,7 +466,7 @@ and to delete this singleton, free memory and clean-up at the end use::
       BoundaryFactory::cleanup();
 
 Because users should be able to add new boundary conditions during
-``physics_init()``, boundary conditions are not hard-wired into
+`PhysicsModel::init`, boundary conditions are not hard-wired into
 `BoundaryFactory`. Instead, boundary conditions must be registered
 with the factory, passing an instance which can later be cloned. This
 is done in ``bout++.cxx`` for the standard boundary conditions::

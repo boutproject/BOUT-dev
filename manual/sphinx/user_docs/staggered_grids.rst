@@ -38,7 +38,7 @@ locations of the evolving variables are::
 
     Field3D n, v;
 
-    int physics_init(bool restart) {
+    int init(bool restart) {
       v.setLocation(CELL_YLOW); // Staggered relative to n
       SOLVE_FOR2(n, v);
       ...

@@ -16,25 +16,27 @@ they fit together.
    running (blue)
 
 The initialisation process is shown in red: basic information is first
-read from the grid file (e.g. size of the grid, topology etc.), then the
-user-supplied initialisation code is called. This code can read other
-variables from the grid, and makes at least one call to ``bout_solve``
-to specify a variable to be evolved. The main thing ``bout_solve`` does
-is to add these variables to the solver.
+read from the grid file (e.g. size of the grid, topology etc.), then
+the user-supplied initialisation code is called. This code can read
+other variables from the grid, and makes at least one call to
+`PhysicsModel::bout_solve` to specify a variable to be evolved. The
+main thing `bout_solve <PhysicsModel::bout_solve>` does is to add
+these variables to the solver.
 
 The process of running a timestep is shown in blue in
 :numref:`fig-layout1`: The main loop calls the solver, which in turn
-calls PVODE. To evolve the system PVODE makes calls to the RHS function
-inside solver. This moves data between PVODE and BOUT++, and calls the
-user-supplied ``physics_run`` code to calculate time-derivatives. Much
-of the work calculating time-derivatives involves differential
-operators.
+calls PVODE. To evolve the system PVODE makes calls to the RHS
+function inside solver. This moves data between PVODE and BOUT++, and
+calls the user-supplied `PhysicsModel::rhs` code to calculate
+time-derivatives. Much of the work calculating time-derivatives
+involves differential operators.
 
-Calculation of the RHS function ``physics_run``, and handling of data in
-BOUT++ involves many different components. :numref:`fig-layout2` shows
-(most) of the classes and functions involved, and the relationships
-between them. Some thought was put into how this should be organised,
-but it has also changed over time, so some parts could be cleaner.
+Calculation of the `RHS function <PhysicsModel::rhs>`, and handling of
+data in BOUT++ involves many different
+components. :numref:`fig-layout2` shows (most) of the classes and
+functions involved, and the relationships between them. Some thought
+was put into how this should be organised, but it has also changed
+over time, so some parts could be cleaner.
 
 .. _fig-layout2:
 .. figure:: ../figs/layout2.*

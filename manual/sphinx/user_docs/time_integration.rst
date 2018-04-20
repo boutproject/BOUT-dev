@@ -537,13 +537,12 @@ The second matrix
 
 doesn’t alter :math:`u`, but solves a parabolic equation in the
 parallel direction. There is a solver class to do this called
-`InvertPar` which solves the equation :math:`(A +
-B\partial_{||}^2)x = b` where :math:`A` and :math:`B` are
-`Field2D` or constants [3]_. In ``physics_init`` we create
-one of these solvers::
+`InvertPar` which solves the equation :math:`(A + B\partial_{||}^2)x =
+b` where :math:`A` and :math:`B` are `Field2D` or constants [3]_. In
+`PhysicsModel::init` we create one of these solvers::
 
     InvertPar *inv; // Parallel inversion class
-    int physics_init(bool restarting) {
+    int init(bool restarting) {
        ...
        inv = InvertPar::Create();
        inv->setCoefA(1.0);
@@ -582,19 +581,15 @@ The final matrix just updates :math:`u` using this new solution for
       ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
 
 Finally, boundary conditions need to be imposed, which should be
-consistent with the conditions used in the RHS
-
-::
+consistent with the conditions used in the RHS::
 
       ddt(u).applyBoundary("dirichlet");
       ddt(v).applyBoundary("dirichlet");
 
 To use the preconditioner, pass the function to the solver in
-``physics_init``
+`PhysicsModel::init`::
 
-::
-
-    int physics_init(bool restarting) {
+    int init(bool restarting) {
       solver->setPrecon(precon);
       ...
     }
@@ -728,13 +723,11 @@ have 4 inputs and return an int::
 The first input is the solver object, the second is the current
 simulation time, the third is the output number, and the last is the
 total number of outputs requested. To get the solver to call this
-function every output time, put in your ``physics_init`` code::
+function every output time, put in your `PhysicsModel::init` code::
 
       solver->addMonitor(my_output_monitor);
 
-If you want to later remove a monitor, you can do so with
-
-::
+If you want to later remove a monitor, you can do so with::
 
       solver->removeMonitor(my_output_monitor);
 
@@ -745,7 +738,7 @@ A simple example using this monitor is::
           simtime, solver->getCurrentTimestep());
     }
 
-    int physics_init(bool restarting) {
+    int init(bool restarting) {
       solver->addMonitor(my_monitor);
     }
 
@@ -790,7 +783,7 @@ and the second the time-derivative::
 
     void add(Field2D &v, Field2D &F_v, const char* name);
 
-This is normally called in the ``physics_init`` initialisation routine.
+This is normally called in the `PhysicsModel::init` initialisation routine.
 Some solvers (e.g. IDA) can support constraints, which need to be added
 in the same way as evolving fields::
 
@@ -823,14 +816,13 @@ initialised using::
 which returns an error code (0 on success). This is currently called in
 :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
 
-    if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
+    if(solver.init(rhs, argc, argv, restart, NOUT, TIMESTEP)) {
       output.write("Failed to initialise solver. Aborting\n");
       return(1);
     }
 
-which passes the (physics module) RHS function ``physics_run`` to the
+which passes the (physics module) RHS function `PhysicsModel::rhs` to the
 solver along with the number and size of the output steps.
-
 
 ::
 
