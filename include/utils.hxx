@@ -247,6 +247,8 @@ DEPRECATED(T **matrix(int xsize, int ysize));
  * no effort to manage memory. Prefer other methods
  * (like standard containers) over this if possible.
  * 
+ * \deprecated
+ *
  * Example
  * -------
  * 
@@ -280,6 +282,7 @@ DEPRECATED(void free_matrix(T **m));
  * Free a matrix, assumed to have been allocated using matrix()
  *
  * @param[in] m  The matrix to free
+ * @deprecated
  *
  * Example
  * -------
@@ -294,31 +297,25 @@ void free_matrix(T **m) {
   delete[] m;
 }
 
-/*!
- * Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
+
+/// Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
 DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Free a 3D BoutReal array, assumed to have been created
- * by r3tensor()
- *
- */
+/// Free a 3D BoutReal array, assumed to have been created by r3tensor
+///
+/// \deprecated
 DEPRECATED(void free_r3tensor(BoutReal ***m));
 
-/*!
- * Allocate a 3D int array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
+/// Allocate a 3D int array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
 DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Free a 3D int array, assumed to have been created
- * by i3tensor()
- */
+/// Free a 3D int array, assumed to have been created by i3tensor()
+///
+/// \deprecated
 DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
@@ -344,31 +341,27 @@ inline int ROUND(BoutReal x){
   return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
-/*!
- * Calculate the maximum of a list of values
- * using a > b operator
- */
+/// Calculate the maximum of a list of values
+/// using a > b operator
 template <typename T>
-T BOUTMAX(T a){
+T BOUTMAX(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMAX(T a,T b,Args... args){
-  T c = BOUTMAX(b,args...);
+T BOUTMAX(T a, T b, Args... args) {
+  T c = BOUTMAX(b, args...);
   return c > a ? c : a;
 }
 
-/*!
- * Calculate the minimum of a list of values
- * using the a < b operator
- */
+/// Calculate the minimum of a list of values
+/// using the a < b operator
 template <typename T>
-T BOUTMIN(T a){
+T BOUTMIN(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMIN(T a,T b,Args... args){
-  T c = BOUTMIN(b,args...);
+T BOUTMIN(T a, T b, Args... args) {
+  T c = BOUTMIN(b, args...);
   return c < a ? c : a;
 }
 
@@ -481,7 +474,7 @@ string trim(const string &s, const string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimLeft(const string &, const string &c=" \t");
+string trimLeft(const string &s, const string &c=" \t");
 
 /*!
  * Strips leading spaces from a string
@@ -489,15 +482,15 @@ string trimLeft(const string &, const string &c=" \t");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimRight(const string &, const string &c=" \t\r");
+string trimRight(const string &s, const string &c=" \t\r");
 
-/*! 
+/*!
  * Strips the comments from a string
- * Removes anything after the first appearance of one 
- * of the characters in \p c
  * 
+ * @param[in] s   The string to trim (not modified)
+ * @param[in] c   Collection of characters to remove
  */
-string trimComments(const string &, const string &c="#;");
+string trimComments(const string &s, const string &c="#;");
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.

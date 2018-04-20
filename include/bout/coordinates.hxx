@@ -85,7 +85,7 @@ public:
   
   Field2D G1, G2, G3;
   
-  Field2D ShiftTorsion; ///< d <pitch angle> / dx. Needed for vector differentials (Curl)
+  Field2D ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
 
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 

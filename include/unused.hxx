@@ -1,6 +1,8 @@
 #ifndef __UNUSED_H__
 #define __UNUSED_H__
 
+/// Mark a function parameter as unused in the function body
+///
 /// Macro taken from http://stackoverflow.com/q/7090998/2043465
 ///
 /// This will add the "unused" attribute to parameters in function
@@ -14,6 +16,11 @@
 ///
 /// A better way to do this might be to detect how to silence the
 /// warning in configure and use that in the macro instead.
+///
+/// Example
+/// -------
+///
+///     void someFunction(int UNUSED(x)) {};
 #ifdef UNUSED
 #elif defined(__GNUC__)
 # define UNUSED(x) UNUSED_ ## x __attribute__((unused))

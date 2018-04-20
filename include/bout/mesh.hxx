@@ -493,7 +493,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the X direction
+  /// @param[in] v  The velocity in the X direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -507,7 +507,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Y direction
+  /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -521,7 +521,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Z direction
+  /// @param[in] v  The velocity in the Z direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
