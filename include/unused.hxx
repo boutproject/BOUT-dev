@@ -3,6 +3,10 @@
 
 /// Mark a function parameter as unused in the function body
 ///
+/// For GCC, expands to
+///
+///     UNUSED_x __attribute__((unused))
+///
 /// Macro taken from http://stackoverflow.com/q/7090998/2043465
 ///
 /// This will add the "unused" attribute to parameters in function
@@ -21,8 +25,7 @@
 /// -------
 ///
 ///     void someFunction(int UNUSED(x)) {};
-#ifdef UNUSED
-#elif defined(__GNUC__)
+#if defined(__GNUC__)
 # define UNUSED(x) UNUSED_ ## x __attribute__((unused))
 #elif defined(__LCLINT__)
 # define UNUSED(x) /*@unused@*/ x

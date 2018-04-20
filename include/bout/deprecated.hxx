@@ -3,6 +3,10 @@
 
 /// Mark functions for future removal
 ///
+/// On gcc, expands to
+///
+///     func __attribute__ ((deprecated))
+///
 /// Example
 /// -------
 ///
