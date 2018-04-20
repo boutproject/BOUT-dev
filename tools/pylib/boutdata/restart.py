@@ -558,6 +558,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
         print(("NPES = ", NPES, " NXPE = ", NXPE))
         outfile.write("NPES", NPES)
         outfile.write("NXPE", NXPE)
+        outfile.write("NYPE", NYPE)
 
         # Get a list of variables
         varnames = infile.list()
