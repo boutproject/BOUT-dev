@@ -37,3 +37,4 @@ aclocal.m4
 *.gcno
 bout-coverage/
 src/.libfast
+.*.mk

@@ -21,9 +21,24 @@
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
-  {{region_loop}}(localmesh->getRegion{{out.region_type}}({{region_name}}),{{index_var}},
+  {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
+    {{region_loop}}(localmesh->getRegion2D({{region_name}}),{{index_var}},
+	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
+	{% if (operator == "/") and (rhs == "Field2D") %}
+           const auto tmp = 1.0 / {{rhs.mixed_index}};
+	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+         	   {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
+        {% else %}
+	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
+        {% endif %}
+	}
+	);
+  {% else %}
+    {{region_loop}}(localmesh->getRegion{{out.region_type}}({{region_name}}),{{index_var}},
 	{{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
 	);
+  {% endif %}
 
   {% if out == 'Field3D' %}
     {{out.name}}.setLocation({{rhs.name if rhs == "Field3D" else lhs.name}}.getLocation());
@@ -56,9 +71,24 @@
     checkData(*this);
     checkData({{rhs.name}});
 
-      {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
-	(*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+  {% if (out == "Field3D") and (rhs =="Field2D") %}  
+    {{region_loop}}(fieldmesh->getRegion2D({{region_name}}),{{index_var}},
+	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+	{% if (operator == "/") and (rhs == "Field2D") %}
+           const auto tmp = 1.0 / {{rhs.mixed_index}};
+	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
+        {% else %}
+           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+        {% endif %}
+	}
+	);
+  {% else %}
+    {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
+      (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
 	);			 
+  {% endif %}
 
     checkData(*this);
 
