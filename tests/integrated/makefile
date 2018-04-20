@@ -9,18 +9,18 @@ BUILD = $(shell grep '^[^\#!]' $(LIST) )
 
 CHECKING = $(shell grep '^[^\#]' $(LIST) | sed s/\!// )
 
+all: $(BUILD)
+
 include $(BOUT_TOP)/make.config
 
 CHECKING_ = $(CHECKING:%=%_checking)
 
 .PHONY: $(BUILD) $(CHECKING_) check
 
-all: $(BUILD)
-
 buildncheck: all check
 
-$(BUILD):
-	@$(MAKE) --no-print-directory -C $@
+$(BUILD): root-main
+	@$(MAKE) -s --no-print-directory -C $@
 
 check: $(CHECKING_)
 	@echo $(CHECKING_)

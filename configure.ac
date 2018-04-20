@@ -1099,8 +1099,12 @@ else
 fi
 
 # Only make.config is altered by configure
-AC_CONFIG_FILES([make.config])
+AC_CONFIG_FILES([make.config.new])
 AC_OUTPUT
+
+AC_CONFIG_FILES([make.config.old])
+AC_OUTPUT
+
 
 #############################################################
 # Use a dummy Makefile to get the cflags and ldflags

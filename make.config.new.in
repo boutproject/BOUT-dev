@@ -1,0 +1,196 @@
+# configuration file for BOUT++
+# September 2008: Converted to use autoconf. Can be manually edited
+# for the (very) rare occasions when autoconf fails
+
+# extra compilation flags:
+# -DCHECK=lvl  Enables a host of additional checks on each operation
+#              such as uninitialised data if lvl is > 0. -DCHECK=3
+#              enables all tests, while -DCHECK=0 disables them.
+#              Helps when debugging
+# -DTRACK      Keeps track of variable names.
+#              Enables more useful error messages
+# for SSE2: -msse2 -mfpmath=sse
+# 
+# This must also specify one or more file formats
+# -DPDBF  PDB format (need to include pdb_format.cxx)
+# -DNCDF  NetCDF format (nc_format.cxx)
+
+BOUT_TOP?=.
+
+# PETSc config variables need to be first, else they may clobber other
+# options (e.g. CXX, CXXFLAGS)
+@PETSC@
+@SLEPC_VARS@
+
+# These lines can be replaced in "make install" to point to install directories
+# They are used in the CXXFLAGS variable below rather than hard-coding the directories
+BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
+BOUT_LIB_PATH=$(BOUT_TOP)/lib
+BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+
+# Created this variable so that a user won't overwrite the CXXFLAGS variable
+# on the command line, just add to this one
+BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
+#Use := here to force a "static" evaluation of the current state of BOUT_FLAGS to
+#avoid infinite recursion that would arise if BOUT_FLAGS appeared on both sides of =
+BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
+
+# Specify the MPI C++ compiler in CXX
+
+CXX		= @MPICXX@
+CC      = $(CXX)
+
+AR		= ar
+ARFLAGS = @ARFLAGS@
+RANLIB	= @RANLIB@
+MKDIR	= @MKDIR_P@
+
+####################################################################
+# Do not need to alter anything below
+####################################################################
+
+LD       = $(CXX)
+LDFLAGS  = @LDFLAGS@
+LIBS     = @LIBS@
+CPPFLAGS = @CPPFLAGS@
+
+####################################################################
+# Extra (optional) source files, includes and libs
+# NOTE: EXTRA_SRC must include a solver (solver.cxx or ida_solver.cxx)
+#       and a file format (nc_format.cxx or pdb_format.cxx)
+####################################################################
+
+EXTRA_INCS	  = $(CPPFLAGS) @EXTRA_INCS@
+EXTRA_LIBS	  = $(LIBS) @EXTRA_LIBS@ @OPENMP_CXXFLAGS@
+
+PRECON_SOURCE = @PRECON_SOURCE@
+
+BOUT_VERSION  = @PACKAGE_VERSION@
+
+
+
+BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
+BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
+
+SRC=$(shell $(BOUT_TOP)/.findallcxx.sh)
+
+OBJ=$(SRC:%.cxx=%.o)
+
+ifneq ("$(SOURCEC)","")
+# Buildinging binaries and the like
+TARGET?= $(SOURCEC:%.cxx=%)
+
+main: root-main $(TARGET)
+
+$(TARGET): $(OBJ)
+	@echo "  Linking" $(TARGET)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
+
+else
+# Building the library
+
+main: static-lib
+
+endif
+
+root-main:
+	@$(MAKE) -s --no-print-directory -C $(BOUT_TOP)
+
+libfast: main
+
+STATLIB=lib/libbout++.a
+$(STATLIB): $(OBJ)
+	@echo "  Creating static lib"
+	@$(AR) $(ARFLAGS) $@ $(OBJ)
+
+static-lib: $(STATLIB)
+
+shared-lib: $(OBJ)
+	@echo "  Creating shared lib"
+	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
+	@$(RM) $(BOUT_TOP)/lib/*.so*
+	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) $(OBJ)
+	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_TOP)/lib/libpvode_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -Wl,--no-whole-archive
+	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_TOP)/lib/libpvpre_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
+	@mv $(BOUT_TOP)/lib/libpvode_.so $(BOUT_TOP)/lib/libpvode.so.1.0.0
+	@mv $(BOUT_TOP)/lib/libpvpre_.so $(BOUT_TOP)/lib/libpvpre.so.1.0.0
+	@ln -s libbout++.so.$(BOUT_VERSION) $(LIB_SO)
+	@ln -s libpvode.so.1.0.0 lib/libpvode.so
+	@ln -s libpvpre.so.1.0.0 lib/libpvpre.so
+
+%.o: %.cxx $(BOUT_CONFIG_FILE)
+	@echo "  Compiling " $(@F:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $< -o $@
+
+
+
+clean::
+	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
+	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@$(RM) -f $(SUB_LIBS)
+
+distclean:: clean clean-tests
+	@echo include cleaned
+# Removing the externalpackage installation. When we have more packages, need a better way
+	@$(RM) -rf $(BOUT_TOP)/include/pvode
+	@echo lib cleaned
+	@$(RM) -rf $(BOUT_TOP)/lib/*
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/lib/*.a
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/source/obj/*.o
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/precon/obj/*.o
+	-@$(RM) -rf $(BOUT_TOP)/autom4te.cache make.config
+	@echo externalpackages cleaned
+	@touch $(BOUT_TOP)/configure
+	@echo autom4te.cache cleaned
+
+clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
+
+clean-unit-tests:
+	@echo "   tests/unit cleaned"
+	@$(MAKE) --no-print-directory -C tests/unit clean
+
+clean-integrated-tests:
+	@echo "   tests/integrated cleaned"
+	@$(MAKE) --no-print-directory -C tests/integrated clean
+
+clean-mms-tests:
+	@echo "   tests/MMS cleaned"
+	@$(MAKE) --no-print-directory -C tests/MMS clean
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	$(MAKE) -C $(MANUAL_DIR) doxygen
+
+breathe-autogen:
+	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
+
+sphinx-docs-html:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-html
+
+sphinx-docs-latex:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
+
+manual:
+	$(MAKE) -C $(MANUAL_DIR)
+
+manual-html:
+	$(MAKE) -C $(MANUAL_DIR) html
+
+manual-pdf:
+	$(MAKE) -C $(MANUAL_DIR) pdf
+
+######################################################################
+# Code coverage
+######################################################################
+
+GCOV = @GCOV@
+LCOV = @LCOV@
+GENHTML = @GENHTML@
+abs_builddir = @abs_builddir@
+
+@CODE_COVERAGE_RULES@
