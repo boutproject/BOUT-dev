@@ -185,11 +185,12 @@ private:
 /**************************************************************************
  * Matrix routines
  **************************************************************************/
-// Explicit inversion of a 3x3 matrix `a`
-// The input small determines how small the determinant must be for
-// us to throw due to the matrix being singular (ill conditioned);
-// If small is less than zero then instead of throwing we return 1.
-// This is ugly but can be used to support some use cases.
+/// Explicit inversion of a 3x3 matrix \p a
+///
+/// The input \p small determines how small the determinant must be for
+/// us to throw due to the matrix being singular (ill conditioned);
+/// If small is less than zero then instead of throwing we return 1.
+/// This is ugly but can be used to support some use cases.
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 

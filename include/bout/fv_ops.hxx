@@ -42,7 +42,7 @@ namespace FV {
    */
   const Field3D D4DY4(const Field3D &d, const Field3D &f);
 
-  /*
+  /*!
    * 4th-order dissipation term
    *
    *

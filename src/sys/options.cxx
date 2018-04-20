@@ -6,7 +6,8 @@
 
 #include <field_factory.hxx> // Used for parsing expressions
 
-const string DEFAULT_SOURCE{"default"}; // The source label given to default values
+/// The source label given to default values
+const string DEFAULT_SOURCE{"default"};
 
 Options::Options() : parent(nullptr) {}
 

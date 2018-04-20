@@ -95,7 +95,9 @@ std::string BoutException::BacktraceGenerate() const{
   return message;
 }
 
-
+/// Common set up for exceptions
+///
+/// Formats the message s using C-style printf formatting
 #define INIT_EXCEPTION(s)                                                                \
   {                                                                                      \
     buflen = 0;                                                                          \
