@@ -91,11 +91,57 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     """
     # Search for BOUT++ dump files
     file_list, parallel, suffix = findFiles(path, prefix)
+
     if parallel:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
+        dimens = f.dimensions(varname)
+        ndims = f.ndims(varname)
+        try:
+            mxg  = f["MXG"]
+        except KeyError:
+            mxg = 0
+            print("MXG not found, setting to {}".format(mxg))
+        try:
+            myg  = f["MYG"]
+        except KeyError:
+            myg = 0
+            print("MXG not found, setting to {}".format(mxg))
+        if tind is not None or xind is not None or yind is not None or zind is not None:
+            raise ValueError("tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
+        if xguards:
+            xstart = 0
+            xlim = None
+        else:
+            xstart = mxg
+            if mxg>0:
+                xlim = -mxg
+            else:
+                xlim = None
+        if yguards:
+            ystart = 0
+            ylim = None
+        else:
+            ystart = mxg
+            if myg>0:
+                ylim = -myg
+            else:
+                ylim = None
 
         data = f.read(varname)
+        if ndims == 2:
+            # Field2D
+            data = data[xstart:xlim, ystart:ylim]
+        elif ndims == 3:
+            if dimens[2] == 'z':
+                # Field3D
+                data = data[xstart:xlim, ystart:ylim, :]
+            else:
+                # evolving Field2D
+                data = data[:, xstart:xlim, ystart:ylim]
+        elif ndims == 4:
+            # evolving Field3D
+            data = data[:, xstart:xlim, ystart:ylim, :]
         return data
     nfiles = len(file_list)
 
