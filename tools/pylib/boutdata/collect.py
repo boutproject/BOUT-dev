@@ -162,14 +162,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             ndims = f.ndims(varname)
 
     # ndims is 0 for reals, and 1 for f.ex. t_array
-    if ndims < 2:
+    if ndims == 0:
         # Just read from file
-        if varname != 't_array':
-            data = f.read(varname)
-        elif (varname == 't_array') and (tind is None):
-            data = f.read(varname)
-        elif (varname == 't_array') and (tind is not None):
-            data = f.read(varname, ranges=[tind[0], tind[1]+1])
+        data = f.read(varname)
         f.close()
         return data
 
@@ -243,8 +238,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     else:
         ny = mysub * nype
 
-    f.close();
-
     # Check ranges
 
     def check_range(r, low, up, name="range"):
@@ -290,6 +283,16 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     ysize = yind[1] - yind[0] + 1
     zsize = zind[1] - zind[0] + 1
     tsize = tind[1] - tind[0] + 1
+
+    if ndims ==1:
+        if tind is None:
+            data = f.read(varname)
+        else:
+            data = f.read(varname, ranges=[tind[0], tind[1]+1])
+        f.close()
+        return data
+
+    f.close();
 
     # Map between dimension names and output size
     sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
