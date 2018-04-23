@@ -13,6 +13,11 @@ try:
 except ImportError:
     raise ImportError("ERROR: restart module needs DataFile")
 
+try:
+    from boututils.boutarray import BoutArray
+except ImportError:
+    raise ImportError("ERROR: restart module needs BoutArray")
+
 import multiprocessing
 import numpy as np
 from numpy import mean, zeros, arange
@@ -272,6 +277,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
             for var in old.list():
                 # Read the data
                 data = old.read(var)
+                attributes = old.attributes(var)
 
                 # Find 3D variables
                 if old.ndims(var) == 3:
@@ -290,6 +296,7 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
 
             for job in jobs:
                 var, newData = job.get()
+                newData = BoutArray(newData, attributes=attributes)
                 if not(mute):
                     print("Writing "+var)
                 new.write(var, newData)
@@ -362,6 +369,7 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
             for var in old.list():
                 # Read the data
                 data = old.read(var)
+                attributes = old.attributes(var)
 
                 # Find 3D variables
                 if old.ndims(var) == 3:
@@ -401,6 +409,8 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                     print("    Copying "+var)
                     newdata = data.copy()
 
+                newdata = BoutArray(newdata, attributes=attributes)
+
                 new.write(var, newdata)
 
     return True
@@ -435,7 +445,7 @@ def addnoise(path=".", var=None, scale=1e-5):
                 for v in d.list():
                     if d.ndims(v) == 3:
                         print(" -> "+v)
-                        data = d.read(v)
+                        data = d.read(v, asBoutArray=True)
                         data += normal(scale=scale, size=data.shape)
                         d.write(v, data)
             else:
@@ -683,6 +693,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 if iy == old_nype-1:
                     iyend = 0
                 data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
+            data = BoutArray(data, attributes=infile_list[0].attributes(v, ensureTypePresent=True))
         elif ndims == 3:
             data = np.zeros( (nx+2*mxg, ny+2*myg, mz) )
             for i in range(old_npes):
@@ -701,6 +712,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 if iy == old_nype-1:
                     iyend = 0
                 data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,:] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend,:]
+            data = BoutArray(data, attributes=infile_list[0].attributes(v, ensureTypePresent=True))
         else:
             print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
             return False

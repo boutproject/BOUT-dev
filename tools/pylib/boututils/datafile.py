@@ -33,6 +33,8 @@ except:
 import numpy as np
 import time
 import getpass
+from boututils.boutwarnings import alwayswarn
+from boututils.boutarray import BoutArray
 
 # Record which library to use
 library = None
@@ -100,9 +102,9 @@ class DataFile:
     def __exit__(self, type, value, traceback):
         self.impl.__exit__(type, value, traceback)
 
-    def read(self, name, ranges=None):
+    def read(self, name, ranges=None, asBoutArray=True):
         """Read a variable from the file."""
-        return self.impl.read(name, ranges=ranges)
+        return self.impl.read(name, ranges=ranges, asBoutArray=asBoutArray)
 
     def list(self):
         """List all variables in the file."""
@@ -123,6 +125,10 @@ class DataFile:
         """List of dimension sizes for a variable."""
         return self.impl.size(varname)
 
+    def type(self, varname):
+        """BOUT++ data type for a variable."""
+        return self.impl.type(varname)
+
     def write(self, name, data, info=False):
         """Writes a variable to file, making guesses for the dimensions"""
         return self.impl.write(name, data, info)
@@ -133,9 +139,9 @@ class DataFile:
     def __setitem__(self, key, value):
         self.impl.__setitem__(key, value)
 
-    def attributes(self, varname):
+    def attributes(self, varname, ensureTypePresent=True):
         """Return a dictionary of attributes"""
-        return self.impl.attributes(varname)
+        return self.impl.attributes(varname, ensureTypePresent)
 
 
 class DataFile_netCDF(DataFile):
@@ -195,13 +201,14 @@ class DataFile_netCDF(DataFile):
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def read(self, name, ranges=None):
+    def read(self, name, ranges=None, asBoutArray=True):
         """Read a variable from the file."""
         if self.handle is None:
             return None
 
         try:
             var = self.handle.variables[name]
+            n = name
         except KeyError:
             # Not found. Try to find using case-insensitive search
             var = None
@@ -212,9 +219,15 @@ class DataFile_netCDF(DataFile):
                     var = self.handle.variables[n]
             if var is None:
                 return None
+
+        if asBoutArray:
+            attributes = self.attributes(n)
+
         ndims = len(var.dimensions)
         if ndims == 0:
             data = var.getValue()
+            if asBoutArray:
+                data = BoutArray(data, attributes=attributes)
             return data  # [0]
         else:
             if ranges is not None:
@@ -254,9 +267,14 @@ class DataFile_netCDF(DataFile):
                                    (ranges[2]):(ranges[3]),
                                    (ranges[4]):(ranges[5]),
                                    (ranges[6]):(ranges[7])]
+                if asBoutArray:
+                    data = BoutArray(data, attributes=attributes)
                 return data
             else:
-                return var[:]
+                data = var[:]
+                if asBoutArray:
+                    data = BoutArray(data, attributes=attributes)
+                return data
 
     def __getitem__(self, name):
         var = self.read(name)
@@ -316,6 +334,27 @@ class DataFile_netCDF(DataFile):
             return 0
         return [dimlen(d) for d in var.dimensions]
 
+    def type(self, varname):
+        """BOUT++ type of a variable"""
+        try:
+            result = self.attributes(varname, ensureTypePresent=False)["type"]
+        except KeyError:
+            dims = self.dimensions(varname)
+            if dims == ('t', 'x', 'y', 'z'):
+                return "Field3D_t"
+            elif dims == ('t', 'x', 'y'):
+                return "Field2D_t"
+            elif dims == ('t',):
+                return "scalar_t"
+            elif dims == ('x', 'y', 'z'):
+                return "Field3D"
+            elif dims == ('x', 'y'):
+                return "Field2D"
+            elif dims == ():
+                return "scalar"
+            else:
+                raise ValueError("Could not find type of variable '" + varname + "'")
+
     def write(self, name, data, info=False):
         """Writes a variable to file, making guesses for the dimensions"""
 
@@ -331,8 +370,8 @@ class DataFile_netCDF(DataFile):
             print("DataFile: None passed as data to write. Ignoring")
             return
 
-        if t == 'ndarray':
-            # Numpy type. Get the data type
+        if t == 'ndarray' or t == 'BoutArray':
+            # Numpy type or BoutArray wrapper for Numpy type. Get the data type
             t = data.dtype.str
 
         if t == 'list':
@@ -454,7 +493,6 @@ class DataFile_netCDF(DataFile):
                 raise Exception("Couldn't create variable")
 
         # Write the data
-
         try:
             # Some libraries allow this for arrays
             var.assignValue(data)
@@ -462,7 +500,14 @@ class DataFile_netCDF(DataFile):
             # And some others only this
             var[:] = data
 
-    def attributes(self, varname):
+        # Write attributes, if present
+        try:
+            for attrname in data.attributes:
+                var.setncattr(attrname, data.attributes[attrname])
+        except AttributeError:
+            pass
+
+    def attributes(self, varname, ensureTypePresent=True):
         """Return a dictionary of variable attributes"""
         if self.handle is None:
             return None
@@ -490,6 +535,10 @@ class DataFile_netCDF(DataFile):
         except:
             print("Error reading attributes")
             # Result will be an empty map
+
+        if ensureTypePresent:
+            if not "type" in result:
+                result["type"] = self.type(varname)
 
         return result
 
@@ -529,13 +578,14 @@ class DataFile_HDF5(DataFile):
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def read(self, name, ranges=None):
+    def read(self, name, ranges=None, asBoutArray=True):
         """Read a variable from the file."""
         if self.handle is None:
             return None
 
         try:
             var = self.handle[name]
+            n = name
         except KeyError:
             # Not found. Try to find using case-insensitive search
             var = None
@@ -546,9 +596,15 @@ class DataFile_HDF5(DataFile):
                     var = self.handle[n]
             if var is None:
                 return None
+
+        if asBoutArray:
+            attributes = self.attributes(n)
+
         ndims = len(var.shape)
         if ndims == 1 and var.shape[0] == 1:
             data = var
+            if asBoutArray:
+                data = BoutArray(data, attributes=attributes)
             return data[0]
         else:
             if ranges is not None:
@@ -570,9 +626,14 @@ class DataFile_HDF5(DataFile):
                                (ranges[2]):(ranges[3]),
                                (ranges[4]):(ranges[5]),
                                (ranges[6]):(ranges[7])]
+                if asBoutArray:
+                    data = BoutArray(data, attributes=attributes)
                 return data
             else:
-                return var[...]
+                data = var[...]
+                if asBoutArray:
+                    data = BoutArray(data, attributes=attributes)
+                return data
 
     def __getitem__(self, name):
         var = self.read(name)
@@ -615,6 +676,18 @@ class DataFile_HDF5(DataFile):
             raise ValueError("Variable type not recognized")
 
     def vartype_from_array(self, data):
+        """
+        Get the type from the array 'data'. If 'data' is a BoutArray, it knows
+        its type, otherwise we have to guess.
+        """
+        try:
+            # If data is a BoutArray, it should have a type attribute that we can use
+            vartype = data.attributes["type"]
+            return vartype
+        except AttributeError:
+            # Otherwise data is a numpy.ndarray and we have to guess the type
+            pass
+
         try:
             ndim = len(data.shape)
         except AttributeError:
@@ -624,6 +697,9 @@ class DataFile_HDF5(DataFile):
         elif ndim == 3:
             # not ideal, 3d field might be time-evolving 2d field,
             # 'Field2D_t', but can't think of a good way to distinguish
+            alwayswarn("Warning: assuming type of 3d array is Field3D. If it "
+                       "should be a time-evolving Field2D, this may cause errors in "
+                       "dimension sizes.")
             return 'Field3D'
         elif ndim == 2:
             return 'Field2D'
@@ -659,13 +735,21 @@ class DataFile_HDF5(DataFile):
             return None
         return var.shape
 
+    def type(self, varname):
+        """BOUT++ type of a variable"""
+        var = self.handle[varname]
+        return str(var.attrs['type'], encoding='utf-8')
+
     def write(self, name, data, info=False):
         """Writes a variable to file"""
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
 
-        vartype = self.vartype_from_array(data)
+        try:
+            vartype = data.attributes["type"]
+        except AttributeError:
+            vartype = self.vartype_from_array(data)
 
         if info:
             print("Creating variable '" + name + "' with type '" + vartype + "'")
@@ -684,16 +768,44 @@ class DataFile_HDF5(DataFile):
         else:
             self.handle.create_dataset(name, data=data)
 
-        # Need encode here to make sure we pass a byte-string to attrs and not
-        # a regular python string.
-        self.handle[name].attrs.create(
-            'type', vartype.encode(encoding='utf-8'))
+        # Need encodes in the following to make sure we pass a byte-string to
+        # attrs and not a regular python string.
 
-    def attributes(self, varname):
+        # Check if the type of the variable will be written when copying
+        # attributes from data, which it should be if data is a BoutArray.
+        # Otherwise, need to write it explicitly
+        try:
+            if (not "type" in data.attributes) or (data.attributes["type"] == None):
+                raise AttributeError("'type' not found in attributes")
+        except AttributeError:
+            self.handle[name].attrs.create(
+                'type', vartype.encode(encoding='utf-8'))
+
+        try:
+            for attrname in data.attributes:
+                attrval = data.attributes[attrname]
+                if type(attrval == str):
+                    attrval = attrval.encode(encoding='utf-8')
+                self.handle[name].attrs.create(attrname, attrval)
+        except AttributeError:
+            # data is not a BoutArray, so doesn't have attributes to write
+            pass
+
+    def attributes(self, varname, ensureTypePresent=True):
         """Return a map of variable attributes"""
         result = {}
         var = self.handle[varname]
         for attrname in var.attrs:
-            result[attrname] = var.attrs[attrname]
+            attribute = var.attrs[attrname]
+            if type(attribute) == bytes:
+                attribute = str(attribute, encoding="utf-8")
+            result[attrname] = attribute
         
+        if ensureTypePresent:
+            if not "type" in result:
+                # for DataFile_HDF5, self.type() looks for the type in the
+                # attributes of the variable, so it should have been found
+                # already
+                raise ValueError("Error: type not found in attributes of "+varname)
+
         return result

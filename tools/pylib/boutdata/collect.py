@@ -17,7 +17,13 @@ except:
 try:
     from boututils.datafile import DataFile
 except ImportError:
-    print("ERROR: boututils.DataFile couldn't be loaded")
+    print("ERROR: boututils.datafile.DataFile couldn't be loaded")
+    raise
+
+try:
+    from boututils.boutarray import BoutArray
+except ImportError:
+    print("ERROR: boutdata.boutarray.BoutArray couldn't be loaded")
     raise
 
 try:
@@ -147,6 +153,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
                 ylim = None
 
         data = f.read(varname)
+        attributes = f.attributes(varname, ensureTypePresent=True)
         if ndims == 2:
             # Field2D
             data = data[xstart:xlim, ystart:ylim]
@@ -160,11 +167,12 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
         elif ndims == 4:
             # evolving Field3D
             data = data[:, xstart:xlim, ystart:ylim, :]
-        return data
+        return BoutArray(data, attributes=attributes)
     nfiles = len(file_list)
 
     # Read data from the first file
     f = getDataFile(0)
+    attributes = f.attributes(varname, ensureTypePresent=True)
 
     try:
         dimens = f.dimensions(varname)
@@ -186,7 +194,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
-        return data
+        return BoutArray(data, attributes=attributes)
 
     if ndims > 4:
         raise ValueError("ERROR: Too many dimensions")
@@ -317,7 +325,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
-        return data
+        return BoutArray(data, attributes=attributes)
 
     if datafile_cache is None:
         # close the DataFile if we are not keeping it in a cache
@@ -499,7 +507,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")
-    return data
+    return BoutArray(data, attributes=attributes)
 
 
 def attributes(varname, path=".", prefix="BOUT.dmp"):
