@@ -8,39 +8,30 @@ from __future__ import print_function
 from __future__ import division
 
 try:
-  from builtins import range
+    from builtins import range
 except:
-  pass
+    pass
 
 try:
-  from past.utils import old_div
+    from past.utils import old_div
 except:
-  def old_div(a,b):
-    return a / b
+    def old_div(a,b):
+        return a / b
 
-try:
-    from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
-    from numpy.fft import rfft, irfft
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
-try:
-    from scipy.signal import convolve
-except ImportError:
-    print("ERROR: scipy.signal module not available")
-    raise
+from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
+from numpy.fft import rfft, irfft
 
 def deriv(*args, **kwargs):
     """Take derivative of 1D array
-    
+
     result = deriv(y)
     result = deriv(x, y)
-     
+
     keywords
-    
+
     periodic = False    Domain is periodic
     """
-     
+
     nargs = len(args)
     if nargs == 1:
         var = args[0]
@@ -50,7 +41,7 @@ def deriv(*args, **kwargs):
         var = args[1]
     else:
         raise RuntimeError("deriv must be given 1 or 2 arguments")
-   
+
     try:
         periodic = kwargs['periodic']
     except:
@@ -105,16 +96,17 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
   s = data.shape
   if axis > len(s)-1:
     raise RuntimeError("ERROR: axis out of bounds for derivative")
- 
-  if noise_suppression:  
+
+  if noise_suppression:
     if s[axis] < 11:
       raise RuntimeError("Data too small to use 11th order method")
     tmp = array([old_div(-1.0,512.0),old_div(-8.0,512.0),old_div(-27.0,512.0),old_div(-48.0,512.0),old_div(-42.0,512.0),0.0,old_div(42.0,512.0),old_div(48.0,512.0),old_div(27.0,512.0),old_div(8.0,512.0),old_div(1.0,512.0)])
   else:
     if s[axis] < 9:
       raise RuntimeError("Data too small to use 9th order method")
-    tmp = array([old_div(1.0,280.0),old_div(-4.0,105.0),old_div(1.0,5.0),old_div(-4.0,5.0),0.0,old_div(4.0,5.0),old_div(-1.0,5.0),old_div(4.0,105.0),old_div(-1.0,280.0)])       
-  
+    tmp = array([old_div(1.0,280.0),old_div(-4.0,105.0),old_div(1.0,5.0),old_div(-4.0,5.0),0.0,old_div(4.0,5.0),old_div(-1.0,5.0),old_div(4.0,105.0),old_div(-1.0,280.0)])
+
+  from scipy.signal import convolve
   N = old_div((tmp.size-1),2)
   if axis==1:
     W = transpose(tmp[:,None])
@@ -122,7 +114,7 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
     for i in range(s[0]):
       data_deriv[i,0:N-1] = old_div(deriv(data[i,0:N-1]),dx)
       data_deriv[i,s[1]-N:] = old_div(deriv(data[i,s[1]-N:]),dx)
-    
+
   elif axis==0:
     W = tmp[:,None]
     data_deriv = convolve(data,W,mode='same')/dx*-1.0
@@ -133,13 +125,13 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
     data_deriv = zeros((s[0],s[1],2))
     if len(dx)==1:
       dx = array([dx,dx])
-    
+
     W = tmp[:,None]#transpose(multiply(tmp,ones((s[1],tmp.size))))
     data_deriv[:,:,0] = convolve(data,W,mode='same')/dx[0]*-1.0
     for i in range(s[1]):
       data_deriv[0:N-1,i,0]  =  old_div(deriv(data[0:N-1,i]),dx[0])
       data_deriv[s[0]-N:s[0]+1,i,0] = old_div(deriv(data[s[0]-N:s[0]+1,i]),dx[0])
-    
+
     W = transpose(tmp[:,None])#multiply(tmp,ones((s[0],tmp.size)))
     data_deriv[:,:,1] = convolve(data,W,mode='same')/dx[1]*-1.0
     for i in range(s[0]):
@@ -150,7 +142,7 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
 
 def integrate(var, periodic=False):
     """Integrate a 1D array
-    
+
     Return array is the same size as the input
     """
     if periodic:
@@ -212,9 +204,9 @@ def simpson_integrate(data,dx,dy,kernel=0.0,weight=1.0):
   """ Integrates 2D data to one value using the simpson method and matrix convolution
 
       result = simpson_integrate(data,dx,dy)
-      
+
       keywords:
-      
+
       kernel - can be supplied if the simpson matrix is calculated ahead of time
 	    - if not supplied, is calculated within this function
 	    - if you need to integrate the same shape data over and over, calculated
@@ -237,7 +229,7 @@ def simpson_integrate(data,dx,dy,kernel=0.0,weight=1.0):
 def simpson_matrix(Nx,Ny,dx,dy):
   """
       Creates a 2D matrix of coefficients for the simpson_integrate function
-      
+
       Call ahead of time if you need to perform integration of the same size data with the
 	same dx and dy
       
