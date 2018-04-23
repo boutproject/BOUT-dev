@@ -1,7 +1,7 @@
 
 /// {{desc}}
 ///
-///   ${{latex}}$
+///   \f${{latex}}\f$
 ///
 {{in_field_desc}}
 /// @param[in] outloc  The cell location where the result is desired. If
@@ -11,9 +11,6 @@
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-///
-///
-///
 const {{field}} {{DD}}({{in_sig}}, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT,
                   REGION region = RGN_NOBNDRY);
