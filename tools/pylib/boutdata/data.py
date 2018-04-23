@@ -339,10 +339,24 @@ class BoutOutputs(object):
         from os import rename, path, mkdir
 
         # use get_processor_layout to get nx, ny
-        old_nxpe, old_nype, old_npes, old_mxsub, old_mysub, nx, ny, mz, mxg, myg = get_processor_layout(DataFile(self._file_list[0]), has_t_dimension=True, mxg=mxg, myg=myg)
+        old_processor_layout = get_processor_layout(DataFile(self._file_list[0]), has_t_dimension=True, mxg=mxg, myg=myg)
+        old_nxpe = old_processor_layout.nxpe
+        old_nype = old_processor_layout.nype
+        old_npes = old_processor_layout.npes
+        old_mxsub = old_processor_layout.mxsub
+        old_mysub = old_processor_layout.mysub
+        nx = old_processor_layout.nx
+        ny = old_processor_layout.ny
+        mz = old_processor_layout.mz
+        mxg = old_processor_layout.mxg
+        myg = old_processor_layout.myg
 
         # calculate new processor layout
-        nxpe, nype, mxsub, mysub = create_processor_layout(npes, nx=nx, ny=ny, nxpe=nxpe, mxg=mxg, myg=myg)
+        new_processor_layout = create_processor_layout(old_processor_layout, npes, nxpe=nxpe)
+        nxpe = new_processor_layout.nxpe
+        nype = new_processor_layout.nype
+        mxsub = new_processor_layout.mxsub
+        mysub = new_processor_layout.mysub
         
         # move existing files to backup directory
         # don't overwrite backup: os.mkdir will raise exception if directory already exists

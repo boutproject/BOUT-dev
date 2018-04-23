@@ -61,54 +61,29 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
 
     # Read old processor layout
     f = DataFile(os.path.join(path, file_list[0]))
+    old_layout = get_processor_layout(f, False)
+    f.close()
 
-    # Get list of variables
-    var_list = f.list()
-    if len(var_list) == 0:
-        print("ERROR: No data found")
-        return False
-
-    old_npes = f.read('NPES')
-    old_nxpe = f.read('NXPE')
-
-    if nfiles != old_npes:
+    if nfiles != old_layout.npes:
         print("WARNING: Number of restart files inconsistent with NPES")
         print("Setting nfiles = " + str(old_npes))
-        nfiles = old_npes
+        nfiles = old_layout.npes
 
-    if old_npes % old_nxpe != 0:
+    if old_layout.npes % old_layout.nxpe != 0:
         print("ERROR: Old NPES is not a multiple of old NXPE")
         return False
 
-    old_nype = int(old_npes/old_nxpe)
-
-    if nype % old_nype != 0:
+    if nype % old_layout.nype != 0:
         print("SORRY: New nype must be a multiple of old nype")
         return False
 
-    if nxpe % old_nxpe != 0:
+    if nxpe % old_layout.nxpe != 0:
         print("SORRY: New nxpe must be a multiple of old nxpe")
         return False
 
-    # Get dimension sizes
-
-    old_mxsub = 0
-    old_mysub = 0
-    mz = 0
-
-    for v in var_list:
-        if f.ndims(v) == 3:
-            s = f.size(v)
-            old_mxsub = s[0] - 2*mxg
-            old_mysub = s[1] - 2*myg
-            mz = s[2]
-            break
-
-    f.close()
-
     # Calculate total size of the grid
-    nx = old_mxsub * old_nxpe
-    ny = old_mysub * old_nype
+    nx = old_layout.mxsub * old_layout.nxpe
+    ny = old_layout.mysub * old_layout.nype
     print(("Grid sizes: ", nx, ny, mz))
 
     # Create the new restart files
@@ -124,7 +99,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         old_y = pey % ys
 
         # Old restart file number
-        old_mype = old_nxpe * old_pey + old_pex
+        old_mype = old_layout.nxpe * old_pey + old_pex
 
         # Calculate indices in old restart file
         xmin = old_x*mxsub
@@ -133,7 +108,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         ymax = ymin + mysub - 1 + 2*myg
 
         print("New: "+str(mype)+" ("+str(pex)+", "+str(pey)+")")
-        print(" =>  "+str(old_mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
+        print(" =>  "+str(old_layout.mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
 
         #
 
@@ -637,13 +612,13 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         print("ERROR: No data found")
         return False
 
-    old_nxpe, old_nype, old_npes, old_mxsub, old_mysub, nx, ny, mz, mxg, myg = get_processor_layout(f, has_t_dimension=False)
-    print("Grid sizes: ", nx, ny, mz)
+    old_processor_layout = get_processor_layout(f, has_t_dimension=False)
+    print("Grid sizes: ", old_processor_layout.nx, old_processor_layout.ny, old_processor_layout.mz)
 
-    if nfiles != old_npes:
+    if nfiles != old_processor_layout.npes:
         print("WARNING: Number of restart files inconsistent with NPES")
-        print("Setting nfiles = " + str(old_npes))
-        nfiles = old_npes
+        print("Setting nfiles = " + str(old_processor_layout.npes))
+        nfiles = old_processor_layout.npes
 
     if nfiles == 0:
         print("ERROR: No restart files found")
@@ -654,9 +629,25 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         outformat = informat
 
     try:
-        nxpe, nype, mxsub, mysub = create_processor_layout(npes, nx=nx, ny=ny, nxpe=nxpe, mxg=mxg, myg=myg)
+        new_processor_layout = create_processor_layout(old_processor_layout, npes, nxpe=nxpe)
     except ValueError as e:
         print("Could not find valid processor split. " + e.what())
+
+    nx = old_processor_layout.nx
+    ny = old_processor_layout.ny
+    mz = old_processor_layout.mz
+    mxg = old_processor_layout.mxg
+    myg = old_processor_layout.myg
+    old_npes = old_processor_layout.npes
+    old_nxpe = old_processor_layout.nxpe
+    old_nype = old_processor_layout.nype
+    old_mxsub = old_processor_layout.mxsub
+    old_mysub = old_processor_layout.mysub
+
+    nxpe = new_processor_layout.nxpe
+    nype = new_processor_layout.nype
+    mxsub = new_processor_layout.mxsub
+    mysub = new_processor_layout.mysub
 
     outfile_list = []
     for i in range(npes):
