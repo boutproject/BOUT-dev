@@ -4,17 +4,12 @@ Introduction
 ============
 
 BOUT++ is a C++ framework for writing plasma fluid simulations with an
-arbitrary number of equations in 3D curvilinear coordinates . It has
-been developed from the original **BOU**\ ndary **T**\ urbulence 3D
+arbitrary number of equations in 3D curvilinear coordinates.
+More specifically, it is a multiblock structured finite difference
+(/volume) code in curvilinear coordinates, with some features to
+support unusual coordinate systems used in fusion plasma physics. It
+has been developed from the original **BOU**\ ndary **T**\ urbulence 3D
 2-fluid edge simulation code written by X.Xu and M.Umansky at LLNL.
-
-Though designed to simulate tokamak edge plasmas, the methods used are
-very general and almost any metric tensor can be specified, allowing the
-code to be used to simulate (for example) plasmas in slab, sheared slab,
-and cylindrical coordinates. The restrictions on the simulation domain
-are that the equilibrium must be axisymmetric (in the z coordinate), and
-that the parallelisation is done in the :math:`x` and :math:`y`
-(parallel to :math:`\mathbf{B}`) directions.
 
 The aim of BOUT++ is to automate the common tasks needed for simulation
 codes, and to separate the complicated (and error-prone) details such as
@@ -25,7 +20,7 @@ knowledge of the inner workings of the code. As far as possible, this
 allows the user to concentrate on the physics, rather than worrying
 about the numerics. This doesn’t mean that users don’t have to think
 about numerical methods, and so selecting differencing schemes and
-boundary conditions is discussed in this manual. The generality of the
+boundary conditions is discussed in this manual. The generality of
 BOUT++ of course also comes with a limitation: although there is a large
 class of problems which can be tackled by this code, there are many more
 problems which require a more specialised solver and which BOUT++ will
@@ -33,12 +28,48 @@ not be able to handle. Hopefully this manual will enable you to test
 whether BOUT++ is suitable for your problem as quickly and painlessly as
 possible.
 
-This manual is written for the user who wants to run (or modify)
-existing plasma models, or specify a new problem (grid and equations) to
-be solved. In either case, it’s assumed that the user isn’t all that
-interested in the details of the code. For a more detailed descriptions
-of the code internals, see the developer and reference guides. After
-describing how to install BOUT++ (section :ref:`sec-install`), run the test
+BOUT++ treats time integration and spatial operators separately,
+an approach called the Method of Lines (MOL). This means that BOUT++
+consists of two main parts:
+
+#. A set of Ordinary Differential Equation (ODE) integrators,
+   including implicit, explicit and IMEX schemes, such as Runge-Kutta
+   and the CVODE solver from SUNDIALS. These don't "know" anything
+   about the equations being solved, only requiring the time
+   derivative of the system state. For example they make no
+   distinction between the different evolving fields, or the number of
+   dimensions in the simulation. This kind of problem-specific
+   information can be used to improve efficiency, and is usually
+   supplied in the form of user-supplied preconditioners. See section
+   :ref:`sec-timeoptions` for more details.
+
+#. A set of operators and data types for calculating time derivatives,
+   given the system state. These calculate things like algebraic
+   operations (+,-,*,/ etc), spatial derivatives, and some integral
+   operators.
+   
+Each of these two parts treats the other as a black box (mostly), and
+they communicate by exchanging arrays of data: The ODE integrator
+finds the system state at a given time and passes it to the
+problem-dependent code, which uses a combination of operators to
+calculate the time derivative. This time derivative is passed back to
+the ODE integrator, which updates the state and the cycle continues.
+This scheme has some advantages in terms of flexibility: Each part of
+the code doesn't depend on thedetails of the other, so can be changed
+without requiring modifications to the other. Unfortunately for many
+problems the details can make a big difference, so ways to provide
+problem-specific information to time integrators, such as
+preconditioners, are also provided.
+
+Though designed to simulate tokamak edge plasmas, the methods used are
+very general and almost any metric tensor can be specified, allowing the
+code to be used to perform simulations in (for example) slab, sheared slab,
+and cylindrical coordinates. The restrictions on the simulation domain
+are that the equilibrium must be axisymmetric (in the z coordinate), and
+that the parallelisation is done in the :math:`x` and :math:`y`
+(parallel to :math:`\mathbf{B}`) directions.
+
+After describing how to install BOUT++ (section :ref:`sec-install`), run the test
 suite (section :ref:`sec-runtestsuite`) and a few examples
 (section :ref:`sec-running`, more detail in section :ref:`sec-examples`),
 increasingly sophisticated ways to modify the problem being solved are
@@ -61,18 +92,11 @@ experimental staggered grid system.
 
 Various sources of documentation are:
 
--  Most directories in the BOUT++ distribution contain a README file.
-   This should describe briefly what the contents of the directory are
-   and how to use them.
+- This manual
 
--  This user’s manual, which goes through BOUT++ from a user’s point of
-   view
-
--  The developer’s manual, which gives details of the internal working
-   of the code.
-
--  The reference guide, which summarises functions, settings etc.
-   Intended more for quick reference rather than a guide.
+- Most directories in the BOUT++ distribution contain a README file.
+  This should describe briefly what the contents of the directory are
+  and how to use them.
 
 - Most of the code contains Doxygen comment tags (which are slowly
   getting better). Running `doxygen <www.doxygen.org>`_ on these files
@@ -154,4 +178,4 @@ that you show professional courtesy when using this code:
       examples
 
 
-.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+.. _B.Dudson et. al. Comp.Phys.Comm 2009: https://doi.org/10.1016/j.cpc.2009.03.008

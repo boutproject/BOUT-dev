@@ -541,7 +541,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the X direction
+  /// @param[in] v       The velocity in the X direction
   /// @param[in] f       The field being advected
   /// @param[in] outloc  The cell location where the result is desired.
   ///                    The default is the same as \p f
@@ -558,7 +558,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Y direction
+  /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -574,7 +574,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Z direction
+  /// @param[in] v  The velocity in the Z direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -700,10 +700,10 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
-  // Initialise derivatives
+  /// Initialise derivatives
   void derivs_init(Options* options);
   
-  // Loop over mesh, applying a stencil in the X direction
+  /// Loop over mesh, applying a stencil in the X direction
   const Field2D applyXdiff(const Field2D &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
