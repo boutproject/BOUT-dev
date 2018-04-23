@@ -171,12 +171,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     if ndims > 4:
         raise ValueError("ERROR: Too many dimensions")
 
-    mxsub = f.read("MXSUB")
-    if mxsub is None:
-        raise ValueError("Missing MXSUB variable")
-    mysub = f.read("MYSUB")
-    mz    = f.read("MZ")
-    myg   = f.read("MYG")
+    def load_and_check(varname):
+        var = f.read(varname)
+        if var is None:
+            raise ValueError("Missing " + varname + " variable")
+        return var
+
+    mxsub = load_and_check("MXSUB")
+    mysub = load_and_check("MYSUB")
+    mz    = load_and_check("MZ")
+    mxg   = load_and_check("MXG")
+    myg   = load_and_check("MYG")
     t_array = f.read("t_array")
     if t_array is None:
         nt = 1
@@ -209,11 +214,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     except KeyError:
         nxpe = 1
         print("NXPE not found, setting to {}".format(nxpe))
-    try:
-        mxg  = f["MXG"]
-    except KeyError:
-        mxg = 0
-        print("MXG not found, setting to {}".format(mxg))
     try:
         nype = f["NYPE"]
     except KeyError:
@@ -542,7 +542,7 @@ def findFiles(path, prefix):
             file_list = files
 
     if file_list_parallel and file_list:
-        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(suffx_parallel, suffix))
+        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(suffix_parallel, suffix))
     elif file_list_parallel:
         return file_list_parallel, True, suffix_parallel
     elif file_list:
