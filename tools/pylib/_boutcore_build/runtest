@@ -40,7 +40,7 @@ if not ((p==pn).all()):
 print(p.shape)
 print(pn.shape)
 diff=boutcore.DDZ(pres)
-boutcore.interp_to(diff,"CELL_YLOW")
+#boutcore.interp_to(diff,"CELL_YLOW")
 shapes=[]
 errors=[]
 #nzs=[4 , 8, 16,32,64,128,256,512,1024,2048,4096,8192,16000,32000,64000,128e3,2**]
