@@ -353,7 +353,8 @@ class DataFile_netCDF(DataFile):
             elif dims == ():
                 return "scalar"
             else:
-                raise ValueError("Could not find type of variable '" + varname + "'")
+                # Unknown type, but still want to be able to read, so give it a value...
+                return None
 
     def write(self, name, data, info=False):
         """Writes a variable to file, making guesses for the dimensions"""
