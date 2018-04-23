@@ -123,9 +123,9 @@ class DataFile:
         """List of dimension sizes for a variable."""
         return self.impl.size(varname)
 
-    def write(self, name, data):
+    def write(self, name, data, info=False):
         """Writes a variable to file, making guesses for the dimensions"""
-        return self.impl.write(name, data)
+        return self.impl.write(name, data, info)
 
     def __getitem__(self, name):
         return self.impl.__getitem__(name)
@@ -659,14 +659,16 @@ class DataFile_HDF5(DataFile):
             return None
         return var.shape
 
-    def write(self, name, data, vartype=None):
+    def write(self, name, data, info=False):
         """Writes a variable to file"""
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
 
-        if vartype is None:
-            vartype = self.vartype_from_array(data)
+        vartype = self.vartype_from_array(data)
+
+        if info:
+            print("Creating variable '" + name + "' with type '" + vartype + "'")
 
         if vartype in ["Field3D_t", "Field2D_t", "scalar_t"]:
             # time evolving fields
