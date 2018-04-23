@@ -106,7 +106,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             myg  = f["MYG"]
         except KeyError:
             myg = 0
-            print("MXG not found, setting to {}".format(mxg))
+            print("MYG not found, setting to {}".format(mxg))
         if tind is not None or xind is not None or yind is not None or zind is not None:
             raise ValueError("tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
         if xguards:
@@ -519,69 +519,34 @@ def findFiles(path, prefix):
 
     """
 
-    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
-    file_list_ncdf = glob.glob(os.path.join(path, prefix+".ncdf"))
-    file_list_cdl = glob.glob(os.path.join(path, prefix+".cdl"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".h5"))
-    file_list_hdf5 = glob.glob(os.path.join(path, prefix+".hdf5"))
-    file_list_hdf = glob.glob(os.path.join(path, prefix+".hdf"))
-    n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
-    if n_file_types > 1:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".h5"
-        file_list = file_list_h5
-    elif file_list_hdf5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_hdf5
-    elif file_list_hdf != []:
-        suffix = ".hdf"
-        file_list = file_list_hdf
-    elif file_list_nc != []:
-        suffix = ".nc"
-        file_list = file_list_nc
-    elif file_list_ncdf != []:
-        suffix = ".ncdf"
-        file_list = file_list_ncdf
-    elif file_list_cdl != []:
-        suffix = ".cdl"
-        file_list = file_list_cdl
-    else:
-        file_list = []
-    if file_list != []:
-        return file_list, True, suffix
+    # Look for parallel dump files
+    suffixes = [".nc", ".hdf5", ".ncdf", ".cdl", ".h5", ".hdf5", ".hdf"]
+    file_list_parallel = None
+    suffix_parallel = ""
+    for test_suffix in suffixes:
+        files = glob.glob(os.path.join(path, prefix+test_suffix))
+        if files:
+            if file_list_parallel: # Already had a list of files
+                raise IOError("Parallel dump files with both {0} and {1} extensions are present. Do not know which to read.".format(suffix, test_suffix))
+            suffix_parallel = test_suffix
+            file_list_parallel = files
 
-    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
-    file_list_ncdf = glob.glob(os.path.join(path, prefix+".*ncdf"))
-    file_list_cdl = glob.glob(os.path.join(path, prefix+".*cdl"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".*h5"))
-    file_list_hdf5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
-    file_list_hdf = glob.glob(os.path.join(path, prefix+".*hdf"))
-    n_file_types = sum([x != [] for x in [file_list_nc, file_list_ncdf, file_list_cdl, file_list_hdf5, file_list_h5, file_list_hdf]])
-    if n_file_types > 1:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".h5"
-        file_list = file_list_h5
-    elif file_list_hdf5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_hdf5
-    elif file_list_hdf != []:
-        suffix = ".hdf"
-        file_list = file_list_hdf
-    elif file_list_nc != []:
-        suffix = ".nc"
-        file_list = file_list_nc
-    elif file_list_ncdf != []:
-        suffix = ".ncdf"
-        file_list = file_list_ncdf
-    elif file_list_cdl != []:
-        suffix = ".cdl"
-        file_list = file_list_cdl
-    else:
-        file_list = []
+    file_list = None
+    suffix = ""
+    for test_suffix in suffixes:
+        files = glob.glob(os.path.join(path, prefix+".*"+test_suffix))
+        if files:
+            if file_list: # Already had a list of files
+                raise IOError("Dump files with both {0} and {1} extensions are present. Do not know which to read.".format(suffix, test_suffix))
+            suffix = test_suffix
+            file_list = files
 
-    file_list.sort()
-    if file_list == []:
+    if file_list_parallel and file_list:
+        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(suffx_parallel, suffix))
+    elif file_list_parallel:
+        return file_list_parallel, True, suffix_parallel
+    elif file_list:
+        file_list.sort()
+        return file_list, False, suffix
+    else:
         raise IOError("ERROR: No data files found in path {0}".format(path) )
-    return file_list, False, suffix
