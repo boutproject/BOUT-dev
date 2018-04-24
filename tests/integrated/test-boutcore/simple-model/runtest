@@ -1,5 +1,5 @@
 from boutcore import *
-init("-d mini -q -q -q")
+init("-d mini")
 
 class MyModel(PhysicsModel):
     def init(self,restart):

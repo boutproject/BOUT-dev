@@ -1,5 +1,6 @@
-all: boutcore.so test
+all: boutcore.so
 PY?=python3
+BOUT_TOP?=../../..
 boutcore.pyx: boutcore.pyx.in helper.py resolve_enum_inv.pyx.in
 setup.py:setup.py.in
 resolve_enum.pxd:resolve_enum.pxd.in
@@ -8,20 +9,15 @@ helper.cxx:helper.cxx.in
 boutcpp.pxd:boutcpp.pxd.in
 
 TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h boutcpp.pxd
-$(TOGEN): Makefile
+$(TOGEN): Makefile $(BOUT_TOP)/make.config
 	@echo "  Generating $@"
-	@PATH=../../../bin:$$PATH PY=$(PY) bash $@.in > $@.tmp \
+	@PATH=$(BOUT_TOP)/bin:$$PATH PY=$(PY) bash $@.in > $@.tmp \
 		|| (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
 	@mv $@.tmp $@
 
 boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
-test: boutcore.so
-	@PYTHONPATH=..:$$PYTHONPATH $(PY) ./runtest 2>&1 > run.log || (ex=$$? ; cat run.log ; exit $$ex)
-	@PYTHONPATH=..:$$PYTHONPATH $(PY) mini.py 2>&1 > run.log || (ex=$$? ; cat run.log ; exit $$ex)
-
-check: test
 .PHONY: clean
 
 clean:
@@ -29,7 +25,7 @@ clean:
 	rm -f $(TOGEN)
 	rm -rf build
 
-pseudoinstall: check
+pseudoinstall: boutcore.so
 	cp boutcore*.so ..
 
 .PHONY: input
