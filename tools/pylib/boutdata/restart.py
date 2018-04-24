@@ -38,6 +38,7 @@ try:
 except ImportError:
     raise ImportError("ERROR: os, sys or glob modules not available")
 
+
 def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, mxg=2, myg=2):
     """Split restart files across NXPE x NYPE processors.
 
@@ -113,9 +114,11 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         ymax = ymin + mysub - 1 + 2*myg
 
         print("New: "+str(mype)+" ("+str(pex)+", "+str(pey)+")")
-        print(" =>  "+str(old_layout.mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
+        print(" =>  "+str(old_layout.mype)+" ("+str(old_pex)+", " +
+              str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
 
         #
+
 
 def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     """
@@ -132,17 +135,18 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
 
     # Unpack the tuple for better readability
     xCoordOld, yCoordOld, zCoordOld,\
-    xCoordNew, yCoordNew, zCoordNew,\
-    newNx, newNy, newNz = coordsAndSizesTuple
+        xCoordNew, yCoordNew, zCoordNew,\
+        newNx, newNy, newNz = coordsAndSizesTuple
 
     if not(mute):
-        print("    Resizing "+var + ' to (nx,ny,nz) = ({},{},{})'.format(newNx, newNy, newNz) )
-
+        print("    Resizing "+var +
+              ' to (nx,ny,nz) = ({},{},{})'.format(newNx, newNy, newNz))
 
     # Make the regular grid function (see examples in
     # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
     # for details)
-    gridInterpolator = RegularGridInterpolator((xCoordOld, yCoordOld, zCoordOld), data, method)
+    gridInterpolator = RegularGridInterpolator(
+        (xCoordOld, yCoordOld, zCoordOld), data, method)
 
     # Need to fill with one exrta z plane (will only contain zeros)
     newData = np.zeros((newNx, newNy, newNz))
@@ -156,9 +160,8 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     return var, newData
 
 
-
-def resize(newNx, newNy, newNz, mxg=2, myg=2,\
-           path="data", output="./", informat="nc", outformat=None,\
+def resize(newNx, newNy, newNz, mxg=2, myg=2,
+           path="data", output="./", informat="nc", outformat=None,
            method='linear', maxProc=None, mute=False):
     """
     Increase/decrease the number of points in restart files.
@@ -269,8 +272,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
             # List of jobs and results
             jobs = []
             # Pack input to resize3DField together
-            coordsAndSizesTuple = (xCoordOld, yCoordOld, zCoordOld,\
-                                   xCoordNew, yCoordNew, zCoordNew,\
+            coordsAndSizesTuple = (xCoordOld, yCoordOld, zCoordOld,
+                                   xCoordNew, yCoordNew, zCoordNew,
                                    newNx, newNy, newNz)
 
             # Loop over the variables in the old file
@@ -283,8 +286,8 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
                 if old.ndims(var) == 3:
 
                     # Asynchronous call (locks first at .get())
-                    jobs.append(pool.apply_async(resize3DField,\
-                               args = (var, data, coordsAndSizesTuple, method, mute, )))
+                    jobs.append(pool.apply_async(resize3DField,
+                                                 args=(var, data, coordsAndSizesTuple, method, mute, )))
 
                 else:
                     if not(mute):
@@ -307,7 +310,6 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,\
             pool.join()
 
     return True
-
 
 
 def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
@@ -364,7 +366,7 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
 
         # Open the restart file in read mode and create the new file
         with DataFile(f) as old,\
-             DataFile(new_f, write=True, create=True) as new:
+                DataFile(new_f, write=True, create=True) as new:
             # Loop over the variables in the old file
             for var in old.list():
                 # Read the data
@@ -380,13 +382,13 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                     newdata = np.zeros((nx, ny, newNz))
                     for x in range(nx):
                         for y in range(ny):
-                            f_old = np.fft.fft(data[x, y,:])
+                            f_old = np.fft.fft(data[x, y, :])
 
                             # Number of points in f is power of 2
-                            f_new = np.zeros(newNz )
+                            f_new = np.zeros(newNz)
 
                             # Copy coefficients across (ignoring Nyquist)
-                            f_new[0] = f_old[0] # DC
+                            f_new[0] = f_old[0]  # DC
                             for m in range(1, int(nz/2)):
                                 # + ve frequencies
                                 f_new[m] = f_old[m]
@@ -394,8 +396,8 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                                 f_new[newNz-m] = f_old[nz-m]
 
                             # Invert fft
-                            newdata[x, y,:] = np.fft.ifft(f_new).real
-                            newdata[x, y,:] = newdata[x, y, 0]
+                            newdata[x, y, :] = np.fft.ifft(f_new).real
+                            newdata[x, y, :] = newdata[x, y, 0]
 
                     # Multiply with the ratio of newNz/nz
                     # This is not needed in the IDL routine as the
@@ -414,7 +416,6 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
                 new.write(var, newdata)
 
     return True
-
 
 
 def addnoise(path=".", var=None, scale=1e-5):
@@ -455,6 +456,7 @@ def addnoise(path=".", var=None, scale=1e-5):
                 data += normal(scale=scale, size=data.shape)
                 d.write(var, data)
 
+
 def scalevar(var, factor, path="."):
     """
     Scales a variable by a given factor, modifying
@@ -480,7 +482,6 @@ def scalevar(var, factor, path="."):
         print(file)
         with DataFile(file, write=True) as d:
             d[var] = d[var] * factor
-
 
 
 def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
@@ -515,7 +516,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
     for i in range(nfiles):
         # Open each data file
-        infname  = os.path.join(path, "BOUT.dmp."+str(i)+"."+informat)
+        infname = os.path.join(path, "BOUT.dmp."+str(i)+"."+informat)
         outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
 
         print((infname, " -> ", outfname))
@@ -557,9 +558,10 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
                 data = infile.read(var)
 
                 if averagelast == 1:
-                    slice = data[final,:,:,:]
+                    slice = data[final, :, :, :]
                 else:
-                    slice = mean(data[(final - averagelast):final,:,:,:], axis=0)
+                    slice = mean(data[(final - averagelast)
+                                 :final, :, :, :], axis=0)
 
                 print(slice.shape)
 
@@ -567,6 +569,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
         infile.close()
         outfile.close()
+
 
 def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None, mxg=2, myg=2):
     """Resize restart files across NPES processors.
@@ -596,7 +599,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     try:
         from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
     except ImportError:
-        raise ImportError("ERROR: restart.redistribute needs boutdata.processor_rearrange")
+        raise ImportError(
+            "ERROR: restart.redistribute needs boutdata.processor_rearrange")
 
     if npes <= 0:
         print("ERROR: Negative or zero number of processors")
@@ -623,7 +627,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         return False
 
     old_processor_layout = get_processor_layout(f, has_t_dimension=False)
-    print("Grid sizes: ", old_processor_layout.nx, old_processor_layout.ny, old_processor_layout.mz)
+    print("Grid sizes: ", old_processor_layout.nx,
+          old_processor_layout.ny, old_processor_layout.mz)
 
     if nfiles != old_processor_layout.npes:
         print("WARNING: Number of restart files inconsistent with NPES")
@@ -639,7 +644,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
         outformat = informat
 
     try:
-        new_processor_layout = create_processor_layout(old_processor_layout, npes, nxpe=nxpe)
+        new_processor_layout = create_processor_layout(
+            old_processor_layout, npes, nxpe=nxpe)
     except ValueError as e:
         print("Could not find valid processor split. " + e.what())
 
@@ -676,9 +682,9 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
             # scalar
             data = f.read(v)
         elif ndims == 2:
-            data = np.zeros( (nx+2*mxg, ny+2*myg) )
+            data = np.zeros((nx+2*mxg, ny+2*myg))
             for i in range(old_npes):
-                ix = i%old_nxpe
+                ix = i % old_nxpe
                 iy = int(i/old_nxpe)
                 ixstart = mxg
                 if ix == 0:
@@ -692,12 +698,14 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 iyend = -myg
                 if iy == old_nype-1:
                     iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v, ensureTypePresent=True))
+                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend,
+                     iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
+            data = BoutArray(data, attributes=infile_list[0].attributes(
+                v, ensureTypePresent=True))
         elif ndims == 3:
-            data = np.zeros( (nx+2*mxg, ny+2*myg, mz) )
+            data = np.zeros((nx+2*mxg, ny+2*myg, mz))
             for i in range(old_npes):
-                ix = i%old_nxpe
+                ix = i % old_nxpe
                 iy = int(i/old_nxpe)
                 ixstart = mxg
                 if ix == 0:
@@ -711,15 +719,17 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 iyend = -myg
                 if iy == old_nype-1:
                     iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,:] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend,:]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v, ensureTypePresent=True))
+                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,
+                     :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
+            data = BoutArray(data, attributes=infile_list[0].attributes(
+                v, ensureTypePresent=True))
         else:
             print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
             return False
 
         # write data
         for i in range(npes):
-            ix = i%nxpe
+            ix = i % nxpe
             iy = int(i/nxpe)
             outfile = outfile_list[i]
             if v == "NPES":
@@ -733,12 +743,15 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 outfile.write(v, data)
             elif ndims == 2:
                 # Field2D
-                outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+                outfile.write(
+                    v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
             elif ndims == 3:
                 # Field3D
-                outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg,:])
+                outfile.write(
+                    v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
             else:
-                print("ERROR: variable found with unexpected number of dimensions,", f.ndims(v))
+                print(
+                    "ERROR: variable found with unexpected number of dimensions,", f.ndims(v))
 
     f.close()
     for infile in infile_list:
@@ -748,7 +761,8 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
 
     return True
 
-def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
+
+def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2):
     """
     Resize all the restart files in Y
     """
@@ -766,7 +780,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
 
     for i in range(nfiles):
         # Open each data file
-        infname  = os.path.join(path, "BOUT.restart."+str(i)+"."+informat)
+        infname = os.path.join(path, "BOUT.restart."+str(i)+"."+informat)
         outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
 
         print("Processing %s -> %s" % (infname, outfname))
@@ -806,8 +820,9 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
 
                 for x in range(nx):
                     for z in range(nz):
-                        f = interp1d(iny, indata[x,:, z], bounds_error=False, fill_value=0.0)
-                        outdata[x,:, z] = f(outy)
+                        f = interp1d(
+                            iny, indata[x, :, z], bounds_error=False, fill_value=0.0)
+                        outdata[x, :, z] = f(outy)
 
                 outfile.write(var, outdata)
             elif infile.ndims(var) == 2:
@@ -826,8 +841,9 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None,myg=2):
                 outdata = zeros([nx, newy])
 
                 for x in range(nx):
-                    f = interp1d(iny, indata[x,:], bounds_error=False, fill_value=0.0)
-                    outdata[x,:] = f(outy)
+                    f = interp1d(iny, indata[x, :],
+                                 bounds_error=False, fill_value=0.0)
+                    outdata[x, :] = f(outy)
 
                 outfile.write(var, outdata)
             else:

@@ -40,6 +40,7 @@ except ImportError:
     print("ERROR: NumPy module not available")
     raise
 
+
 def findVar(varname, varlist):
     """
     Find variable name in a list
@@ -57,18 +58,22 @@ def findVar(varname, varlist):
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
         return v[0]
     elif len(v) > 1:
-        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        print("Variable '"+varname +
+              "' not found, and is ambiguous. Could be one of: "+str(v))
         raise ValueError("Variable '"+varname+"' not found")
 
     # None found. Check if it's an abbreviation
-    v = [name for name in varlist if name[:len(varname)].lower() == varname.lower()]
+    v = [name for name in varlist
+         if name[:len(varname)].lower() == varname.lower()]
     if len(v) == 1:
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
         return v[0]
 
     if len(v) > 1:
-        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        print("Variable '"+varname +
+              "' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
+
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguards=False, xguards=True, info=True, prefix="BOUT.dmp", strict=False, tind_auto=False, datafile_cache=None):
     """Collect a variable from a set of BOUT++ outputs.
@@ -118,27 +123,28 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
 
     if parallel:
         print("Single (parallel) data file")
-        f = getDataFile(0) # Get the file
+        f = getDataFile(0)  # Get the file
         dimens = f.dimensions(varname)
         ndims = f.ndims(varname)
         try:
-            mxg  = f["MXG"]
+            mxg = f["MXG"]
         except KeyError:
             mxg = 0
             print("MXG not found, setting to {}".format(mxg))
         try:
-            myg  = f["MYG"]
+            myg = f["MYG"]
         except KeyError:
             myg = 0
             print("MYG not found, setting to {}".format(mxg))
         if tind is not None or xind is not None or yind is not None or zind is not None:
-            raise ValueError("tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
+            raise ValueError(
+                "tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
         if xguards:
             xstart = 0
             xlim = None
         else:
             xstart = mxg
-            if mxg>0:
+            if mxg > 0:
                 xlim = -mxg
             else:
                 xlim = None
@@ -147,7 +153,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             ylim = None
         else:
             ystart = mxg
-            if myg>0:
+            if myg > 0:
                 ylim = -myg
             else:
                 ylim = None
@@ -207,9 +213,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
 
     mxsub = load_and_check("MXSUB")
     mysub = load_and_check("MYSUB")
-    mz    = load_and_check("MZ")
-    mxg   = load_and_check("MXG")
-    myg   = load_and_check("MYG")
+    mz = load_and_check("MZ")
+    mxg = load_and_check("MXG")
+    myg = load_and_check("MYG")
     t_array = f.read("t_array")
     if t_array is None:
         nt = 1
@@ -317,7 +323,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
     zsize = zind[1] - zind[0] + 1
     tsize = tind[1] - tind[0] + 1
 
-    if ndims ==1:
+    if ndims == 1:
         if tind is None:
             data = f.read(varname)
         else:
@@ -329,7 +335,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
 
     if datafile_cache is None:
         # close the DataFile if we are not keeping it in a cache
-        f.close();
+        f.close()
 
     # Map between dimension names and output size
     sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
@@ -388,7 +394,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             ymax = yind[1] - pe_yind*mysub + myg
 
             if (ymin >= (mysub + myg)) or (ymax < myg):
-                inrange = False # Y out of range
+                inrange = False  # Y out of range
 
             if ymin < myg:
                 ymin = myg
@@ -440,7 +446,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             xmax = xind[1] - pe_xind*mxsub + mxg
 
             if (xmin >= (mxsub + mxg)) or (xmax < mxg):
-                inrange = False # X out of range
+                inrange = False  # X out of range
 
             if xmin < mxg:
                 xmin = mxg
@@ -451,20 +457,19 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             xgmin = xmin + pe_xind * mxsub - mxg
             xgmax = xmax + pe_xind * mxsub - mxg
 
-
         # Number of local values
         nx_loc = xmax - xmin + 1
         ny_loc = ymax - ymin + 1
 
         if not inrange:
-            continue # Don't need this file
+            continue  # Don't need this file
 
         if info:
-            sys.stdout.write("\rReading from " + file_list[i] + ": [" + \
-                                 str(xmin) + "-" + str(xmax) + "][" + \
-                                 str(ymin) + "-" + str(ymax) + "] -> [" + \
-                                 str(xgmin) + "-" + str(xgmax) + "][" + \
-                                 str(ygmin) + "-" + str(ygmax) + "]")
+            sys.stdout.write("\rReading from " + file_list[i] + ": [" +
+                             str(xmin) + "-" + str(xmax) + "][" +
+                             str(ymin) + "-" + str(ymax) + "] -> [" +
+                             str(xgmin) + "-" + str(xgmax) + "][" +
+                             str(ygmin) + "-" + str(ygmax) + "]")
 
         f = getDataFile(i)
 
@@ -473,25 +478,29 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
                                         xmin, xmax+1,
                                         ymin, ymax+1,
                                         zind[0], zind[1]+1])
-            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc),:] = d
+            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
+                 (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
         elif ndims == 3:
             # Could be xyz or txy
 
-            if dimens[2] == 'z': # xyz
+            if dimens[2] == 'z':  # xyz
                 d = f.read(varname, ranges=[xmin, xmax+1,
                                             ymin, ymax+1,
                                             zind[0], zind[1]+1])
-                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc),:] = d
-            else: # txy
+                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
+                     (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+            else:  # txy
                 d = f.read(varname, ranges=[tind[0], tind[1]+1,
                                             xmin, xmax+1,
                                             ymin, ymax+1])
-                data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+                data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
+                     (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
         elif ndims == 2:
             # xy
             d = f.read(varname, ranges=[xmin, xmax+1,
                                         ymin, ymax+1])
-            data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+            data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
+                 (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
 
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
@@ -520,7 +529,7 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
 
     path    = "."          Path to data files
     prefix  = "BOUT.dmp"   File prefix
-    
+
     """
     # Search for BOUT++ dump files in NetCDF format
     file_list, _, _ = findFiles(path, prefix)
@@ -568,8 +577,9 @@ def findFiles(path, prefix):
     for test_suffix in suffixes:
         files = glob.glob(os.path.join(path, prefix+test_suffix))
         if files:
-            if file_list_parallel: # Already had a list of files
-                raise IOError("Parallel dump files with both {0} and {1} extensions are present. Do not know which to read.".format(suffix, test_suffix))
+            if file_list_parallel:  # Already had a list of files
+                raise IOError("Parallel dump files with both {0} and {1} extensions are present. Do not know which to read.".format(
+                    suffix, test_suffix))
             suffix_parallel = test_suffix
             file_list_parallel = files
 
@@ -578,22 +588,26 @@ def findFiles(path, prefix):
     for test_suffix in suffixes:
         files = glob.glob(os.path.join(path, prefix+".*"+test_suffix))
         if files:
-            if file_list: # Already had a list of files
-                raise IOError("Dump files with both {0} and {1} extensions are present. Do not know which to read.".format(suffix, test_suffix))
+            if file_list:  # Already had a list of files
+                raise IOError("Dump files with both {0} and {1} extensions are present. Do not know which to read.".format(
+                    suffix, test_suffix))
             suffix = test_suffix
             file_list = files
 
     if file_list_parallel and file_list:
-        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(suffix_parallel, suffix))
+        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(
+            suffix_parallel, suffix))
     elif file_list_parallel:
         return file_list_parallel, True, suffix_parallel
     elif file_list:
         # make sure files are in the right order
         nfiles = len(file_list)
-        file_list = [os.path.join(path,prefix+"."+str(i)+suffix) for i in range(nfiles)]
+        file_list = [os.path.join(path, prefix+"."+str(i)+suffix)
+                     for i in range(nfiles)]
         return file_list, False, suffix
     else:
-        raise IOError("ERROR: No data files found in path {0}".format(path) )
+        raise IOError("ERROR: No data files found in path {0}".format(path))
+
 
 def create_cache(path, prefix):
     """
@@ -604,7 +618,8 @@ def create_cache(path, prefix):
 
     # define namedtuple to return as the result
     from collections import namedtuple
-    datafile_cache_tuple = namedtuple("datafile_cache", ["file_list", "parallel", "suffix", "datafile_list"])
+    datafile_cache_tuple = namedtuple(
+        "datafile_cache", ["file_list", "parallel", "suffix", "datafile_list"])
 
     file_list, parallel, suffix = findFiles(path, prefix)
 
@@ -612,4 +627,4 @@ def create_cache(path, prefix):
     for f in file_list:
         cache.append(DataFile(f))
 
-    return datafile_cache_tuple(file_list = file_list, parallel=parallel, suffix=suffix, datafile_list=cache)
+    return datafile_cache_tuple(file_list=file_list, parallel=parallel, suffix=suffix, datafile_list=cache)

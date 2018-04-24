@@ -79,7 +79,7 @@ class DataFile:
         elif format == 'HDF5':
             self.impl = DataFile_HDF5(
                 filename=filename, write=write, create=create,
-                                      format=format)
+                format=format)
         else:
             self.impl = DataFile_netCDF(
                 filename=filename, write=write, create=create, format=format)
@@ -191,6 +191,7 @@ class DataFile_netCDF(DataFile):
             raise ImportError(message)
         if filename is not None:
             self.open(filename, write=write, create=create, format=format)
+        self._attributes_cache = {}
 
     def __del__(self):
         self.close()
@@ -510,38 +511,46 @@ class DataFile_netCDF(DataFile):
 
     def attributes(self, varname, ensureTypePresent=True):
         """Return a dictionary of variable attributes"""
-        if self.handle is None:
-            return None
+
         try:
-            var = self.handle.variables[varname]
+            return self._attributes_cache[varname]
         except KeyError:
-            # Not found. Try to find using case-insensitive search
-            var = None
-            for n in list(self.handle.variables.keys()):
-                if n.lower() == varname.lower():
-                    print(
-                        "WARNING: Reading '" + n + "' instead of '" + varname + "'")
-                    var = self.handle.variables[n]
-            if var is None:
+            # Need to build the attributes dictionary for this variable
+            if self.handle is None:
                 return None
+            try:
+                var = self.handle.variables[varname]
+            except KeyError:
+                # Not found. Try to find using case-insensitive search
+                var = None
+                for n in list(self.handle.variables.keys()):
+                    if n.lower() == varname.lower():
+                        print(
+                            "WARNING: Reading '" + n + "' instead of '" + varname + "'")
+                        var = self.handle.variables[n]
+                if var is None:
+                    return None
 
-        result = {}  # Map of attribute names to values
+            attributes = {}  # Map of attribute names to values
 
-        try:
-            # This code tested with NetCDF4 library
-            attribs = var.ncattrs()  # List of attributes
-            for attrname in attribs:
-                result[attrname] = var.getncattr(
-                    attrname)  # Get all values and insert into map
-        except:
-            print("Error reading attributes")
-            # Result will be an empty map
+            try:
+                # This code tested with NetCDF4 library
+                attribs = var.ncattrs()  # List of attributes
+                for attrname in attribs:
+                    attributes[attrname] = var.getncattr(
+                        attrname)  # Get all values and insert into map
+            except:
+                print("Error reading attributes for " + varname)
+                # Result will be an empty map
 
-        if ensureTypePresent:
-            if not "type" in result:
-                result["type"] = self.type(varname)
+            if ensureTypePresent:
+                if not "type" in attributes:
+                    attributes["type"] = self.type(varname)
 
-        return result
+            # Save the attributes for this variable to the cache
+            self._attributes_cache[varname] = attributes
+
+            return attributes
 
 
 class DataFile_HDF5(DataFile):
@@ -569,6 +578,7 @@ class DataFile_HDF5(DataFile):
             raise ImportError(message)
         if filename is not None:
             self.open(filename, write=write, create=create, format=format)
+        self._attributes_cache = {}
 
     def __del__(self):
         self.close()
@@ -753,7 +763,8 @@ class DataFile_HDF5(DataFile):
             vartype = self.vartype_from_array(data)
 
         if info:
-            print("Creating variable '" + name + "' with type '" + vartype + "'")
+            print("Creating variable '" + name +
+                  "' with type '" + vartype + "'")
 
         if vartype in ["Field3D_t", "Field2D_t", "scalar_t"]:
             # time evolving fields
@@ -794,19 +805,29 @@ class DataFile_HDF5(DataFile):
 
     def attributes(self, varname, ensureTypePresent=True):
         """Return a map of variable attributes"""
-        result = {}
-        var = self.handle[varname]
-        for attrname in var.attrs:
-            attribute = var.attrs[attrname]
-            if type(attribute) == bytes:
-                attribute = str(attribute, encoding="utf-8")
-            result[attrname] = attribute
-        
-        if ensureTypePresent:
-            if not "type" in result:
-                # for DataFile_HDF5, self.type() looks for the type in the
-                # attributes of the variable, so it should have been found
-                # already
-                raise ValueError("Error: type not found in attributes of "+varname)
 
-        return result
+        try:
+            return self._attributes_cache[varname]
+        except KeyError:
+            # Need to add attributes for this variable to the cache
+            attributes = {}
+            var = self.handle[varname]
+            for attrname in var.attrs:
+                attribute = var.attrs[attrname]
+                if type(attribute) == bytes:
+                    attribute = str(attribute, encoding="utf-8")
+                attributes[attrname] = attribute
+
+            if ensureTypePresent:
+                if not "type" in attributes:
+                    # for DataFile_HDF5, self.type() looks for the type in the
+                    # attributes of the variable and the type is a required
+                    # attribute for BOUT++ outputs, so it should have been
+                    # found already
+                    raise ValueError(
+                        "Error: type not found in attributes of "+varname)
+
+            # Save the attributes for this variable to the cache
+            self._attributes_cache[varname] = attributes
+
+            return attributes
