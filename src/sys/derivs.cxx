@@ -65,7 +65,7 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION 
 
   if(f.getMesh()->IncIntShear) {
     // Using BOUT-06 style shifting
-    result += f.getMesh()->coordinates()->IntShiftTorsion * DDZ(f, outloc, region);
+    result += f.getMesh()->coordinates()->IntShiftTorsion * DDZ(f, outloc, method, region);
   }
 
   return result;

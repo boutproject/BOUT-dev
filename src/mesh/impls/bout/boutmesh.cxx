@@ -50,11 +50,7 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
-  if (options == NULL) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
+BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile;

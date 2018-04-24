@@ -1,7 +1,7 @@
 .. _sec-output:
 
-Output and post-processing
-==========================
+Post-processing
+===============
 
 The majority of the existing analysis and post-processing code is
 written in Python. Routines to read BOUT++ output data, usually called
@@ -9,13 +9,52 @@ written in Python. Routines to read BOUT++ output data, usually called
 available in IDL, Matlab, Mathematica and Octave. All these
 post-processing routines are in the ``tools`` directory, with Python
 modules in ``tools/pylib``. A summary of available routines is in
-:ref:`sec-python-routines-list`, along with how to :ref:`install the
-requirements <sec-python-requirements>`.
+:ref:`sec-python-routines-list`; see below for how to install the
+requirements.
 
 .. _sec-pythonroutines:
 
 Python routines
 ---------------
+
+.. _sec-python-requirements:
+
+Requirements
+~~~~~~~~~~~~
+
+The Python tools provided with BOUT++ make heavy use of numpy_ and
+scipy_, as well as matplotlib_ for the plotting routines. In order
+to read BOUT++ output in Python, you will need either netcdf4_ or h5py_.
+
+While we try to ensure that the Python tools are compatible with both
+Python 2 and 3, we officially only support Python 3.
+
+If you are developing BOUT++, you may also need Jinja2_ to edit some
+of the generated code(see :ref:`sec-fieldops` for more information).
+
+You can install most of the required Python modules by running
+
+.. code-block:: console
+
+   $ pip3 install --user --requirement requirements.txt
+
+in the directory where you have unpacked BOUT++. This will install
+supported versions of numpy, scipy, netcdf4, matplotlib and jinja2.
+
+.. note:: If you have difficulties installing SciPy, please see their
+          `installation instructions`_
+
+
+.. _numpy: http://www.numpy.org/
+.. _scipy: http://www.scipy.org/
+.. _matplotlib: https://www.matplotlib.org
+.. _netcdf4: http://unidata.github.io/netcdf4-python/
+.. _h5py: http://www.h5py.org
+.. _Jinja2: http://jinja.pocoo.org/
+.. _installation instructions: https://www.scipy.org/install.html
+
+Reading BOUT++ data
+~~~~~~~~~~~~~~~~~~~
 
 To read data from a BOUT++ simulation into Python, there is a ``collect`` routine.
 This gathers together the data from multiple processors, taking care of the correct
@@ -27,7 +66,7 @@ layout.
 
     Ni = collect("Ni")  # Collect the variable "Ni"
 
-The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
+The result is an up to 4D NumPy array, ``Ni`` in this case. This is ordered
 ``[t,x,y,z]``:
 
 .. code-block:: pycon
@@ -38,7 +77,21 @@ The result is a 4D NumPy array, ``Ni`` in this case. This is ordered
 so ``Ni`` would have 10 time slices, 1 point in x, 2 in y, and 3 in z.
 This should correspond to the grid size used in the simulation.
 Since the collected data is a NumPy array, all the useful routines
-in NumPy, SciPy and Matplotlib can be used for further analysis. 
+in NumPy, SciPy and Matplotlib can be used for further analysis.
+
+If the data has less then 4 dimension, it can be checked with
+``dimension`` what dimensions are available:
+
+.. code-block:: python
+
+    from boutdata.collect import dimension
+
+    print(dimension("Ni"))
+    print(dimension("dx"))
+
+The first will print as expected ``[t, x, y, z]`` - while the second
+will print ``[x, y]`` as dx is nether evolved in time, nor does it has
+a ``z`` dependency.
 
 An experimental feature is adding attributes to variables. These can be read using the ``attributes``
 routine:
@@ -222,9 +275,8 @@ Reading BOUT++ output into IDL
 ------------------------------
 
 There are several routines provided for reading data from BOUT++
-output into IDL (see :ref:`sec-idl-routines` for a more complete
-list). In the directory containing the BOUT++ output files (usually
-``data/``), you can list the variables available using
+output into IDL. In the directory containing the BOUT++ output files
+(usually ``data/``), you can list the variables available using
 
 .. code-block:: idl
 

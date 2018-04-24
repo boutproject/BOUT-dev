@@ -22,10 +22,14 @@ Mesh* Mesh::create(Options *opt) {
   return create(NULL, opt);
 }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt) {
-  if(s == NULL)
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+  if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("mesh");
+  }
+
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
@@ -372,4 +376,10 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
+
+  // Construct index lookup for 3D-->2D
+  indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
+  for (const auto &ind3D: getRegion3D("RGN_ALL")){
+    indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
 }

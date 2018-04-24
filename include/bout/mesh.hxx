@@ -541,7 +541,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the X direction
+  /// @param[in] v       The velocity in the X direction
   /// @param[in] f       The field being advected
   /// @param[in] outloc  The cell location where the result is desired.
   ///                    The default is the same as \p f
@@ -558,7 +558,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Y direction
+  /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -574,7 +574,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Z direction
+  /// @param[in] v  The velocity in the Z direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -658,7 +658,22 @@ class Mesh {
   }
   void addRegion3D(const std::string &region_name, Region<Ind3D> region);
   void addRegion2D(const std::string &region_name, Region<Ind2D> region);
- 
+
+  /// Converts an Ind2D to an Ind3D using calculation
+  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){
+    return Ind3D(ind2D.ind * LocalNz + jz);
+  }
+
+  /// Converts an Ind3D to an Ind2D using calculation
+  Ind2D ind3Dto2D(const Ind3D &ind3D){
+    return Ind2D(ind3D.ind / LocalNz);
+  }
+
+  /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
+  int map3Dto2D(const Ind3D &ind3D){
+    return indexLookup3Dto2D[ind3D.ind];
+  }
+  
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
@@ -685,10 +700,10 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
-  // Initialise derivatives
+  /// Initialise derivatives
   void derivs_init(Options* options);
   
-  // Loop over mesh, applying a stencil in the X direction
+  /// Loop over mesh, applying a stencil in the X direction
   const Field2D applyXdiff(const Field2D &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
@@ -716,6 +731,7 @@ private:
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
+  Array<int> indexLookup3Dto2D;
 };
 
 #endif // __MESH_H__

@@ -58,11 +58,23 @@ public:
   Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
+  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+  }
 
+  Matrix& operator=(const Matrix &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    data = other.data;
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+    return *this;
+  }
+  
   T& operator()(unsigned int i1, unsigned int i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
-    data.ensureUnique();
     return data[i1*n2+i2];
   }
   const T& operator()(unsigned int i1, unsigned int i2) const {
@@ -72,7 +84,6 @@ public:
   }
 
   Matrix& operator=(const T&val){
-    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -82,13 +93,11 @@ public:
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(T* operator[](unsigned int i1)) {
     ASSERT2(0<=i1 && i1<n1);
-    data.ensureUnique();
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
   DEPRECATED(const T* operator[](unsigned int i1) const) {
     ASSERT2(0<=i1 && i1<n1);
-    data.ensureUnique();
     return &(data[i1*n2]);
   }
 
@@ -101,6 +110,15 @@ public:
 
   bool empty(){
     return n1*n2 == 0;
+  }
+
+  /*!
+   * Ensures that this Matrix does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
   }
   
 private:
@@ -125,12 +143,25 @@ public:
   Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
     data = Array<T>(n1*n2*n3);
   }
+  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+  }
+
+  Tensor& operator=(const Tensor &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    n3 = other.n3;
+    data = other.data;
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+    return *this;
+  }
 
   T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
-    data.ensureUnique();
     return data[(i1*n2+i2)*n3 + i3];
   }
   const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
@@ -141,7 +172,6 @@ public:
   }
 
   Tensor& operator=(const T&val){
-    data.ensureUnique();
     for(auto &i: data){
       i = val;
     };
@@ -159,6 +189,15 @@ public:
     return n1*n2*n3 == 0;
   }
   
+  /*!
+   * Ensures that this Tensor does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
+ 
 private:
   unsigned int n1, n2, n3;
   Array<T> data;
@@ -167,11 +206,12 @@ private:
 /**************************************************************************
  * Matrix routines
  **************************************************************************/
-// Explicit inversion of a 3x3 matrix `a`
-// The input small determines how small the determinant must be for
-// us to throw due to the matrix being singular (ill conditioned);
-// If small is less than zero then instead of throwing we return 1.
-// This is ugly but can be used to support some use cases.
+/// Explicit inversion of a 3x3 matrix \p a
+///
+/// The input \p small determines how small the determinant must be for
+/// us to throw due to the matrix being singular (ill conditioned);
+/// If small is less than zero then instead of throwing we return 1.
+/// This is ugly but can be used to support some use cases.
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 
@@ -228,6 +268,8 @@ DEPRECATED(T **matrix(int xsize, int ysize));
  * no effort to manage memory. Prefer other methods
  * (like standard containers) over this if possible.
  * 
+ * \deprecated
+ *
  * Example
  * -------
  * 
@@ -261,6 +303,7 @@ DEPRECATED(void free_matrix(T **m));
  * Free a matrix, assumed to have been allocated using matrix()
  *
  * @param[in] m  The matrix to free
+ * @deprecated
  *
  * Example
  * -------
@@ -275,31 +318,25 @@ void free_matrix(T **m) {
   delete[] m;
 }
 
-/*!
- * Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
+
+/// Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
 DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Free a 3D BoutReal array, assumed to have been created
- * by r3tensor()
- *
- */
+/// Free a 3D BoutReal array, assumed to have been created by r3tensor
+///
+/// \deprecated
 DEPRECATED(void free_r3tensor(BoutReal ***m));
 
-/*!
- * Allocate a 3D int array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
+/// Allocate a 3D int array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
 DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Free a 3D int array, assumed to have been created
- * by i3tensor()
- */
+/// Free a 3D int array, assumed to have been created by i3tensor()
+///
+/// \deprecated
 DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
@@ -325,31 +362,27 @@ inline int ROUND(BoutReal x){
   return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
-/*!
- * Calculate the maximum of a list of values
- * using a > b operator
- */
+/// Calculate the maximum of a list of values
+/// using a > b operator
 template <typename T>
-T BOUTMAX(T a){
+T BOUTMAX(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMAX(T a,T b,Args... args){
-  T c = BOUTMAX(b,args...);
+T BOUTMAX(T a, T b, Args... args) {
+  T c = BOUTMAX(b, args...);
   return c > a ? c : a;
 }
 
-/*!
- * Calculate the minimum of a list of values
- * using the a < b operator
- */
+/// Calculate the minimum of a list of values
+/// using the a < b operator
 template <typename T>
-T BOUTMIN(T a){
+T BOUTMIN(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMIN(T a,T b,Args... args){
-  T c = BOUTMIN(b,args...);
+T BOUTMIN(T a, T b, Args... args) {
+  T c = BOUTMIN(b, args...);
   return c < a ? c : a;
 }
 
@@ -462,7 +495,7 @@ string trim(const string &s, const string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimLeft(const string &, const string &c=" \t");
+string trimLeft(const string &s, const string &c=" \t");
 
 /*!
  * Strips leading spaces from a string
@@ -470,15 +503,15 @@ string trimLeft(const string &, const string &c=" \t");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimRight(const string &, const string &c=" \t\r");
+string trimRight(const string &s, const string &c=" \t\r");
 
-/*! 
+/*!
  * Strips the comments from a string
- * Removes anything after the first appearance of one 
- * of the characters in \p c
  * 
+ * @param[in] s   The string to trim (not modified)
+ * @param[in] c   Collection of characters to remove
  */
-string trimComments(const string &, const string &c="#;");
+string trimComments(const string &s, const string &c="#;");
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.

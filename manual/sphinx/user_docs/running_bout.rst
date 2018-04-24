@@ -113,6 +113,13 @@ subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-i
 Analysing the output Using python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+In order to analyse the output of the simulation using Python, you
+will first need to have set up python to use the BOUT++ libraries
+``boutdata`` and ``boututils``; see section
+:ref:`sec-config-python` for how to do this. The analysis routines have
+some requirements such as SciPy; see section
+:ref:`sec-python-requirements` for details. 
+
 To print a list of variables in the output files, one way is to use the ``DataFile``
 class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
 
@@ -640,18 +647,18 @@ just remember to delete the file afterwards.
 Send signal USR1
 ~~~~~~~~~~~~~~~~
 
-Another option is to send signal `user defined signal 1`::
+Another option is to send signal ``user defined signal 1``::
 
     $ mpirun -np 4 ./conduction &
     ...
     $ killall -s USR1 conduction
 
-Note that this will stop all conduction simulation on this node.
-Many HPC systems provide tools to send signals to the simulation
-nodes, such as `qsig` on archer.
+Note that this will stop all conduction simulation on this node.  Many
+HPC systems provide tools to send signals to the simulation nodes,
+such as ``qsig`` on archer.
 
-To just stop one simulation, the `bout-stop-script` can send a signal
-based on the path of the simulation data dir::
+To just stop one simulation, the ``bout-stop-script`` can send a
+signal based on the path of the simulation data dir::
 
     $ mpirun -np 4 ./conduction &
     ...

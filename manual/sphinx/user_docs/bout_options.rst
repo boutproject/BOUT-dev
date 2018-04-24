@@ -340,7 +340,7 @@ Implementation
 
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
-tree structure there is the ``Options`` class defined in
+tree structure there is the `Options` class defined in
 ``bout++/include/options.hxx``::
 
     class Options {
@@ -386,7 +386,7 @@ option, the variable to set, and the default value::
       int nout;
       options->get("nout", nout, 1);
 
-Internally, ``Options`` converts all types to strings and does type
+Internally, `Options` converts all types to strings and does type
 conversion when needed, so the following code would work::
 
       Options *options = Options::getRoot();
@@ -422,7 +422,7 @@ Reading options
 ---------------
 
 To allow different input file formats, each file parser implements the
-``OptionParser`` interface defined in
+`OptionParser` interface defined in
 ``bout++/src/sys/options/optionparser.hxx``::
 
     class OptionParser {
@@ -432,9 +432,9 @@ To allow different input file formats, each file parser implements the
     };
 
 and so just needs to implement a single function which reads a given
-file name and inserts the options into the given ``Options`` object.
+file name and inserts the options into the given `Options` object.
 
-To use these parsers and read in a file, there is the ``OptionsReader``
+To use these parsers and read in a file, there is the `OptionsReader`
 class defined in ``bout++/include/optionsreader.hxx``::
 
     class OptionsReader {
@@ -454,7 +454,7 @@ so to read a file ``BOUT.inp`` in a directory given in a variable
       OptionsReader *reader = OptionsReader::getInstance();
       reader->read(options, "%s/BOUT.inp", data_dir);
 
-To parse command line arguments as options, the ``OptionsReader`` class
+To parse command line arguments as options, the `OptionsReader` class
 has a method::
 
       reader->parseCommandLine(options, argc, argv);
