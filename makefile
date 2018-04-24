@@ -22,7 +22,7 @@ static-lib: $(STATLIB)
 
 $(STATLIB): $(OBJ)
 	@echo "  Creating static lib"
-	$(AR) $(ARFLAGS) $@ $(OBJ)
+	@$(AR) $(ARFLAGS) $@ $(OBJ)
 
 $(SOLIB): $(OBJ)
 	@echo "  Creating shared lib"
@@ -98,23 +98,28 @@ clean-mms-tests:
 MANUAL_DIR=$(BOUT_TOP)/manual
 
 doxygen:
-	$(MAKE) -C $(MANUAL_DIR) doxygen
+	@$(MAKE) -C $(MANUAL_DIR) doxygen
 
 breathe-autogen:
-	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
+	@$(MAKE) -C $(MANUAL_DIR) breathe_autogen
 
 sphinx-docs-html:
-	$(MAKE) -C $(MANUAL_DIR) sphinx-html
+	@$(MAKE) -C $(MANUAL_DIR) sphinx-html
 
 sphinx-docs-latex:
-	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
+	@$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
 
 manual:
-	$(MAKE) -C $(MANUAL_DIR)
+	@$(MAKE) -C $(MANUAL_DIR)
 
 manual-html:
-	$(MAKE) -C $(MANUAL_DIR) html
+	@$(MAKE) -C $(MANUAL_DIR) html
 
 manual-pdf:
-	$(MAKE) -C $(MANUAL_DIR) pdf
+	@$(MAKE) -C $(MANUAL_DIR) pdf
 
+manual-man:
+	@$(MAKE) -C $(MANUAL_DIR) man
+
+manual-all:
+	@$(MAKE) -C $(MANUAL_DIR) man pdf html
