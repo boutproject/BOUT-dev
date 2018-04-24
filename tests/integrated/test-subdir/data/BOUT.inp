@@ -15,7 +15,7 @@ iyseps2_1	= -1
 iyseps2_2	= -1
 
 [All]
-bndry_all = neumann(0)
+#bndry_all = neumann(0)
 bndry_all = dirichlet(3)
 #evolve_bndry = true
 

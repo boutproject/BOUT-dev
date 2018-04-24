@@ -60,8 +60,21 @@ void Options::set(const string &key, const string &val, const string &source) {
   opt.value = val;
   opt.source = source;
   opt.used = false;
-
-  options[lowercase(key)] = opt;
+  string key_l = lowercase(key);
+  if (this->isSet(key_l)) {
+    const OptionValue & oldopt=options[key_l];
+    if (oldopt.value != opt.value) {
+      if (oldopt.source == opt.source) {
+        throw BoutException("Options: Setting a value from same source (%s) to new value %s - old value was %s.",source.c_str(),oldopt.value.c_str(),opt.value.c_str());
+      } else {
+        output_warn << "\tOption " << sectionName << ":" << key << " = " << oldopt.value
+                    << " (" << oldopt.source << ") overwritten with:" << endl
+                    << "\t\t" << sectionName << ":" << key << " = " << opt.value
+                    << " (" << opt.source << ")\n";
+      }
+    }
+  }
+  options[key_l] = opt;
 }
 
 bool Options::isSet(const string &key) {
