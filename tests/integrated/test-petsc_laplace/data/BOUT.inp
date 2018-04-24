@@ -21,7 +21,8 @@ second=C4
 type=petsc
 all_terms=true
 nonuniform=true
-rtol=1.e-10
+rtol=1.e-8
+atol = 1e-6
 include_yguards=false
 maxits=1000
 
@@ -43,7 +44,8 @@ flags      = 49152 # Identity in boundary
 type=petsc
 all_terms=true
 nonuniform=true
-rtol=1.e-10
+rtol=1.e-8
+atol = 1e-6
 include_yguards=false
 maxits=1000
 fourth_order=true
@@ -69,3 +71,8 @@ nonuniform=true
 include_yguards=false
 
 #maxits=10000
+
+[laplace]
+all_terms = true
+nonuniform = true
+

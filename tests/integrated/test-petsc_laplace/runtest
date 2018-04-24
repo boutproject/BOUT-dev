@@ -8,7 +8,7 @@
 from __future__ import print_function
 from builtins import str
 vars = [('max_error1',2.e-4),
-        ('max_error2',2.e-5),
+        ('max_error2',2.e-4),
         ('max_error3',2.e-4),
         ('max_error4',1.e-5),
 	('max_error5',2.e-4),

@@ -63,8 +63,8 @@ int main(int argc, char** argv) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
+	f1(jx, jy, jz) = 0. + exp(-(100.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-100.*pow(-p,2))*x + (-p*exp(-100.*pow(-p,2))-(1-p)*exp(-100.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
 			;
         ASSERT0(finite(f1(jx, jy, jz)));
       }
@@ -74,8 +74,8 @@ int main(int argc, char** argv) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-          f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          f1(jx, jy, jz) = 0. + exp(-(60.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-60.*pow(-p,2))*x + (-p*exp(-60.*pow(-p,2))-(1-p)*exp(-60.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
           ASSERT0(finite(f1(jx, jy, jz)));
 	}
   if (mesh->lastX())
@@ -84,10 +84,12 @@ int main(int argc, char** argv) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-          f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          f1(jx, jy, jz) = 0. + exp(-(60.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-60.*pow(-p,2))*x + (-p*exp(-60.*pow(-p,2))-(1-p)*exp(-60.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
           ASSERT0(finite(f1(jx, jy, jz)));
 	}
+
+  f1.applyBoundary("neumann");
   
   p = 0.512547;
   q = 0.30908712;
@@ -346,6 +348,8 @@ int main(int argc, char** argv) {
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
   invert_SPT = Laplacian::create(SPT_options);
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a3);
   invert_SPT->setCoefC(c3);
   invert_SPT->setCoefD(d3);
@@ -490,7 +494,8 @@ int main(int argc, char** argv) {
 	  BoutReal z = BoutReal(jz)/nz;
 	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}
-    
+
+  f5.applyBoundary("neumann");
   mesh->communicate(f5,a5,c5,d5);
 
   b5 = d5*Delp2(f5) + Grad_perp(c5)*Grad_perp(f5)/c5 + a5*f5;
@@ -646,6 +651,8 @@ int main(int argc, char** argv) {
   dump.add(absolute_error7,"absolute_error7");
   dump.add(max_error7,"max_error7");
 
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a7);
   invert_SPT->setCoefC(c7);
   invert_SPT->setCoefD(d7);
