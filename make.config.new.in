@@ -93,6 +93,8 @@ main: static-lib
 
 endif
 
+checklib: root-main
+
 root-main:
 	@$(MAKE) -s --no-print-directory -C $(BOUT_TOP)
 
