@@ -82,7 +82,9 @@ AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
 AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
-        [Enable building bout++ into an shared object])],,[enable_shared=no])
+        [Enable building bout++ into a shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into a static library. Is enabled if shared is disabled.])],,[enable_static=maybe])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
@@ -332,6 +334,8 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+MAIN_TARGET=
+
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -342,8 +346,30 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    MAIN_TARGET="$MAIN_TARGET shared-lib"
 ])
 
+#############################################################
+# Build into a static library
+#############################################################
+
+# By default enabled, if not building into a shared object
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    MAIN_TARGET="$MAIN_TARGET static-lib"
+], [ AS_IF([test "x$enable_static" = "xmaybe"], [
+        AS_IF([test "x$enable_shared" != "xyes"], [
+            MAIN_TARGET="$MAIN_TARGET static-lib"
+        ])
+     ])
+   ]
+)
+
+AS_IF([test ".$MAIN_TARGET" = "."], [
+   AC_MSG_ERROR([No target requested - need to build at least a static library or a shared object!])
+   ])
+
+AC_SUBST(MAIN_TARGET)
 #############################################################
 # Git revision number
 #############################################################

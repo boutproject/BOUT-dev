@@ -24,7 +24,7 @@
 # They are used in the CXXFLAGS variable below rather than hard-coding the directories
 BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
-BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config.old
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one

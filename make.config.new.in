@@ -26,7 +26,7 @@ BOUT_TOP?=.
 # They are used in the CXXFLAGS variable below rather than hard-coding the directories
 BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
-BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config.new
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
@@ -72,7 +72,19 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
-SRC=$(shell $(BOUT_TOP)/.findallcxx.sh)
+ifndef FINDALLCXX
+SRC=$(shell MAKE=$(MAKE) $(BOUT_TOP)/.findallcxx.sh)
+else
+SRC=nonexistent.cxx /dev/null
+.PHONY: listfiles
+listfiles:
+ifndef CUDIR
+	@for pp in $(DIRS); do $(MAKE) -r -R CUDIR=$$pp --no-print-directory -C $$pp listfiles; done
+else
+	@for pp in $(DIRS); do $(MAKE) -r -R CUDIR=$(CUDIR)/$$pp --no-print-directory -C $$pp listfiles; done
+endif
+	@for ff in $(SOURCEC) ; do echo $(CUDIR)/$$ff; done
+endif
 
 OBJ=$(SRC:%.cxx=%.o)
 
@@ -80,51 +92,33 @@ ifneq ("$(SOURCEC)","")
 # Buildinging binaries and the like
 TARGET?= $(SOURCEC:%.cxx=%)
 
-main: root-main $(TARGET)
+all: root-all $(TARGET)
 
 $(TARGET): $(OBJ)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
 
-else
+else # SOURCEC == ''
 # Building the library
 
-main: static-lib
+all: @MAIN_TARGET@
 
-endif
 
-checklib: root-main
+endif # endof SOUREC == ''
 
-root-main:
-	@$(MAKE) -s --no-print-directory -C $(BOUT_TOP)
-
-libfast: main
-
-STATLIB=lib/libbout++.a
-$(STATLIB): $(OBJ)
-	@echo "  Creating static lib"
-	@$(AR) $(ARFLAGS) $@ $(OBJ)
-
-static-lib: $(STATLIB)
-
-shared-lib: $(OBJ)
-	@echo "  Creating shared lib"
-	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
-	@$(RM) $(BOUT_TOP)/lib/*.so*
-	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) $(OBJ)
-	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_TOP)/lib/libpvode_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -Wl,--no-whole-archive
-	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_TOP)/lib/libpvpre_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
-	@mv $(BOUT_TOP)/lib/libpvode_.so $(BOUT_TOP)/lib/libpvode.so.1.0.0
-	@mv $(BOUT_TOP)/lib/libpvpre_.so $(BOUT_TOP)/lib/libpvpre.so.1.0.0
-	@ln -s libbout++.so.$(BOUT_VERSION) $(LIB_SO)
-	@ln -s libpvode.so.1.0.0 lib/libpvode.so
-	@ln -s libpvpre.so.1.0.0 lib/libpvpre.so
 
 %.o: %.cxx $(BOUT_CONFIG_FILE)
-	@echo "  Compiling " $(@F:.o=.cxx)
+	@echo "  Compiling " $<
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $< -o $@
 
 
+root-all:
+	$(MAKE) -s --no-print-directory -C $(BOUT_TOP)
+
+
+checklib: root-all
+
+libfast: all
 
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)

@@ -7,20 +7,28 @@ TARGET   ?= libfast
 
 include make.config
 
-shared: libfast
-	@echo "Creating libbout++.so"
-	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
-	@#$(CXX) -shared -o $(LIB_SO) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -lpvpre  -Wl,--no-whole-archive
-	@$(RM) $(BOUT_TOP)/lib/*.so*
-	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null)
-	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_TOP)/lib/libpvode_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -Wl,--no-whole-archive
-	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_TOP)/lib/libpvpre_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
-	@mv $(BOUT_TOP)/lib/libpvode_.so $(BOUT_TOP)/lib/libpvode.so.1.0.0
-	@mv $(BOUT_TOP)/lib/libpvpre_.so $(BOUT_TOP)/lib/libpvpre.so.1.0.0
-	@ln -s libbout++.so.$(BOUT_VERSION) $(LIB_SO)
-	@ln -s libpvode.so.1.0.0 lib/libpvode.so
-	@ln -s libpvpre.so.1.0.0 lib/libpvpre.so
+SOLIB=lib/libbout++.so.$(BOUT_VERSION)
+STATLIB=lib/libbout++.a
 
+shared-lib: $(SOLIB)
+
+static-lib: $(STATLIB)
+
+
+$(STATLIB): $(OBJ)
+	@echo "  Creating static lib"
+	$(AR) $(ARFLAGS) $@ $(OBJ)
+
+$(SOLIB): $(OBJ)
+	@echo "  Creating shared lib"
+	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
+	@$(RM) $(BOUT_TOP)/lib/*.so*
+	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_TOP)/lib/libpvode.so.1.0.0 -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -Wl,--no-whole-archive
+	@cd lib ; ln -s libpvode.so.1.0.0 libpvode.so
+	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_TOP)/lib/libpvpre.so.1.0.0 -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
+	@cd lib ; ln -s libpvpre.so.1.0.0 libpvpre.so
+	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(SOLIB) $(OBJ)
+	@cd lib ; ln -s libbout++.so.$(BOUT_VERSION) libbout++.so
 
 ######################################################################
 # Tests
