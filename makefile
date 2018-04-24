@@ -5,7 +5,13 @@ DIRS      = src
 
 TARGET   ?= libfast
 
+all: main-target
+
 include make.config
+
+######################################################################
+# Library
+######################################################################
 
 SOLIB=lib/libbout++.so.$(BOUT_VERSION)
 STATLIB=lib/libbout++.a
@@ -13,7 +19,6 @@ STATLIB=lib/libbout++.a
 shared-lib: $(SOLIB)
 
 static-lib: $(STATLIB)
-
 
 $(STATLIB): $(OBJ)
 	@echo "  Creating static lib"
@@ -29,6 +34,18 @@ $(SOLIB): $(OBJ)
 	@cd lib ; ln -s libpvpre.so.1.0.0 libpvpre.so
 	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(SOLIB) $(OBJ)
 	@cd lib ; ln -s libbout++.so.$(BOUT_VERSION) libbout++.so
+
+distclean:: clean clean-tests
+# Removing the externalpackage installation. When we have more packages, need a better way
+	@$(RM) -rf $(BOUT_TOP)/include/pvode
+	@echo lib cleaned
+	@$(RM) -rf $(BOUT_TOP)/lib/*
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/lib/*.a
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/source/obj/*.o
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/precon/obj/*.o
+	-@$(RM) -rf $(BOUT_TOP)/autom4te.cache make.config.{old,new}
+	@echo externalpackages cleaned
+	@echo autom4te.cache cleaned
 
 ######################################################################
 # Tests
@@ -59,3 +76,45 @@ build-check-integrated-tests: libfast
 
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
+
+clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
+
+clean-unit-tests:
+	@echo "   tests/unit cleaned"
+	@$(MAKE) --no-print-directory -C tests/unit clean
+
+clean-integrated-tests:
+	@echo "   tests/integrated cleaned"
+	@$(MAKE) --no-print-directory -C tests/integrated clean
+
+clean-mms-tests:
+	@echo "   tests/MMS cleaned"
+	@$(MAKE) --no-print-directory -C tests/MMS clean
+
+####################################################################
+# Documentation
+####################################################################
+
+MANUAL_DIR=$(BOUT_TOP)/manual
+
+doxygen:
+	$(MAKE) -C $(MANUAL_DIR) doxygen
+
+breathe-autogen:
+	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
+
+sphinx-docs-html:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-html
+
+sphinx-docs-latex:
+	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
+
+manual:
+	$(MAKE) -C $(MANUAL_DIR)
+
+manual-html:
+	$(MAKE) -C $(MANUAL_DIR) html
+
+manual-pdf:
+	$(MAKE) -C $(MANUAL_DIR) pdf
+
