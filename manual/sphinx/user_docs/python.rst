@@ -3,42 +3,6 @@
 Python routines
 ===============
 
-.. _sec-python-requirements:
-
-Requirements
-------------
-
-The Python tools provided with BOUT++ make heavy use of numpy_ and
-scipy_, as well as matplotlib_ for the plotting routines. In order
-to read BOUT++ output in Python, you will need either netcdf4_ or h5py_.
-
-While we try to ensure that the Python tools are compatible with both
-Python 2 and 3, we officially only support Python 3.
-
-If you are developing BOUT++, you may also need Jinja2_ to edit some
-of the generated code(see :ref:`sec-fieldops` for more information).
-
-You can install most of the required Python modules by running
-
-.. code-block:: console
-
-   $ pip3 install --user --requirement requirements.txt
-
-in the directory where you have unpacked BOUT++. This will install
-supported versions of numpy, scipy, netcdf4, matplotlib and jinja2.
-
-.. note:: If you have difficulties installing SciPy, please see their
-          `installation instructions`_
-
-
-.. _numpy: http://www.numpy.org/
-.. _scipy: http://www.scipy.org/
-.. _matplotlib: https://www.matplotlib.org
-.. _netcdf4: http://unidata.github.io/netcdf4-python/
-.. _h5py: http://www.h5py.org
-.. _Jinja2: http://jinja.pocoo.org/
-.. _installation instructions: https://www.scipy.org/install.html
-
 boututils
 ---------
 

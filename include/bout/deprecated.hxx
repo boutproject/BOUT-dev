@@ -1,21 +1,19 @@
-/*!
- * \file deprecated.hxx
- *
- * Defines a DEPRECATED macro, to mark functions for future removal
- * 
- * Example
- * -------
- * 
- * class SomeClass {
- *  public:
- *   DEPRECATED(int someFunction(const string &input));
- * }
- *
- */
-
 #ifndef __DEPRECATED_H__
 #define __DEPRECATED_H__
 
+/// Mark functions for future removal
+///
+/// On gcc, expands to
+///
+///     func __attribute__ ((deprecated))
+///
+/// Example
+/// -------
+///
+///     class SomeClass {
+///      public:
+///       DEPRECATED(int someFunction(const string &input));
+///     }
 #ifdef __GNUC__
 #define DEPRECATED(func) __attribute__ ((deprecated)) func
 #elif defined(_MSC_VER)
@@ -26,4 +24,3 @@
 #endif
 
 #endif // __DEPRECATED_H__
-

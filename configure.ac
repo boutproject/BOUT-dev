@@ -300,8 +300,7 @@ BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
 BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
-CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
-
+CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
 #############################################################
@@ -342,7 +341,7 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  code. It seems they generate a different code only on m68k,
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
-    CXXFLAGS+=" -fPIC"
+    CXXFLAGS="$CXXFLAGS -fPIC"
 ])
 
 #############################################################
