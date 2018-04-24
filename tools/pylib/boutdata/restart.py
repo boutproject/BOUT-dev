@@ -540,9 +540,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
-        NPES = NXPE * NYPE
-        print(("NPES = ", NPES, " NXPE = ", NXPE))
-        outfile.write("NPES", NPES)
+        print(("NXPE = ", NXPE, " NYPE = ", NYPE))
         outfile.write("NXPE", NXPE)
         outfile.write("NYPE", NYPE)
 
@@ -789,7 +787,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
         outfile = DataFile(outfname, create=True)
 
         # Copy basic information
-        for var in ["hist_hi", "NPES", "NXPE", "tt"]:
+        for var in ["hist_hi", "NXPE", "NYPE", "tt"]:
             data = infile.read(var)
             try:
                 # Convert to scalar if necessary
