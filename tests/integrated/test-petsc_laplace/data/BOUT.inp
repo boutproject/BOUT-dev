@@ -8,8 +8,8 @@ first=C4
 second=C4
 
 [mesh:ddy]
-first=C4
-second=C4
+first=C2
+second=C2
 
 [mesh:ddz]
 first=C4

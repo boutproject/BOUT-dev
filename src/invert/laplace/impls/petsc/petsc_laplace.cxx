@@ -330,6 +330,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  * \returns sol     The solution x of the problem Ax=b.
  */
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
+  TRACE("LaplacePetsc::solve");
+  
   #if CHECK > 0
     // Checking flags are set to something which is not implemented (see
     // constructor for details)
@@ -452,15 +454,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x,y,z);
 
+        ASSERT3(finite(A0));
+        
         // Set the matrix coefficients
         Coeffs( x, y, z, A1, A2, A3, A4, A5 );
 
         BoutReal dx   = coord->dx(x,y);
-        BoutReal dx2  = pow( coord->dx(x,y) , 2.0 );
+        BoutReal dx2  = SQ(coord->dx(x,y));
         BoutReal dz   = coord->dz;
-        BoutReal dz2  = pow( coord->dz, 2.0 );
+        BoutReal dz2  = SQ(coord->dz);
         BoutReal dxdz = coord->dx(x,y) * coord->dz;
-
+        
+        ASSERT3(finite(A1));
+        ASSERT3(finite(A2));
+        ASSERT3(finite(A3));
+        ASSERT3(finite(A4));
+        ASSERT3(finite(A5));
+        
           // Set Matrix Elements
           PetscScalar val=0.;
           if (fourth_order) {
@@ -563,8 +573,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
             // f(i+2,j+2)
             val = A3 / ( 144.0 * dxdz );
             Element(i,x,z, 2, 2, val, MatA );
-          }
-          else {
+          } else {
+            // Second order
+            
             // f(i,j) = f(x,z)
             val = A0 - 2.0*( (A1 / dx2) + (A2 / dz2) );
             Element(i,x,z, 0, 0, val, MatA );
@@ -854,6 +865,13 @@ void LaplacePetsc::Element(int i, int x, int z,
   // Convert to global indices
   int index = (row_new * meshz) + col_new;
 
+#if CHECK > 2
+  if (!finite(ele)) {
+    throw BoutException("Non-finite element at x=%d, z=%d, row=%d, col=%d\n",
+                        x, z, i, index);
+  }
+#endif
+  
   /* Inserts or adds a block of values into a matrix
    * Input:
    * MatA   - The matrix to set the values in
@@ -910,9 +928,12 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
-  if(all_terms) {
+  if (all_terms) {
     coef4 = coord->G1(x,y); // X 1st derivative
     coef5 = coord->G3(x,y); // Z 1st derivative
+
+    ASSERT3(finite(coef4));
+    ASSERT3(finite(coef5));
   }
 
   if(nonuniform) {

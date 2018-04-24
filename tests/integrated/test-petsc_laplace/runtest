@@ -7,14 +7,14 @@
 # Variables to compare
 from __future__ import print_function
 from builtins import str
-vars = [['max_error1',2.e-4],
-        ['max_error2',2.e-5],
-        ['max_error3',2.e-4],
-        ['max_error4',1.e-5],
-	['max_error5',2.e-4],
-	['max_error6',2.e-5],
-	['max_error7',2.e-4],
-	['max_error8',2.e-5]]  
+vars = [('max_error1',2.e-4),
+        ('max_error2',2.e-5),
+        ('max_error3',2.e-4),
+        ('max_error4',1.e-5),
+	('max_error5',2.e-4),
+	('max_error6',2.e-5),
+	('max_error7',2.e-4),
+	('max_error8',2.e-5)]  
 #tol = 1e-4                  # Absolute (?) tolerance
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
@@ -46,13 +46,13 @@ for nproc in [1,2,4]:
   f.close()
   
    # Collect output data
-  for v in vars:
-    stdout.write("      Checking "+v[0]+" ... ")
-    error = collect(v[0], path="data", info=False)
+  for varname, tol in vars:
+    stdout.write("      Checking " + varname + " ... ")
+    error = collect(varname, path="data", info=False)
     if error <= 0:
       print("Convergence error")
       success = False
-    elif error > v[1]:
+    elif error > tol:
       print("Fail, maximum error is = "+str(error))
       success = False
     else:
