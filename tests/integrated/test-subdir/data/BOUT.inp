@@ -15,22 +15,4 @@ iyseps2_1	= -1
 iyseps2_2	= -1
 
 [All]
-#bndry_all = neumann(0)
 bndry_all = dirichlet(3)
-#evolve_bndry = true
-
-[n]
-// y max:
-bndry_yup=dirichlet(1)
-// y min:
-bndry_ydown=dirichlet(2)
-// x min:
-//bndry_core=dirichlet(3)
-bndry_core=neumann(0)
-// x max:
-//bndry_sol=dirichlet(4)
-bndry_sol=neumann(0)
-bndry_xin=dirichlet(5)
-bndry_xout=dirichlet(6)
-bndry_target=dirichlet(7)
-bndry_pf=dirichlet(8)
