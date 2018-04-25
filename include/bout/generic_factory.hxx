@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 /// Generic Factory, adapted from Modern C++ Design/Loki by A. Alexandrescu
 ///
@@ -59,6 +60,17 @@ public:
       return index->second();
     }
     throw std::runtime_error("Could not find " + name);
+  }
+
+  /// List available types that can be created
+  ///
+  /// @returns a vector of IdentifierType
+  std::vector<IdentifierType> listAvailable() {
+    std::vector<IdentifierType> available;
+    for (auto &name : type_map) {
+      available.push_back(name.first);
+    }
+    return available;
   }
 
   /// Get the singleton instance

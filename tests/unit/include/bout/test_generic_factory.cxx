@@ -3,6 +3,7 @@
 #include "bout/generic_factory.hxx"
 
 #include <string>
+#include <vector>
 
 class Base {
 public:
@@ -38,4 +39,11 @@ TEST(GenericFactory, RegisterAndCreate) {
 
   auto derived2_ = Factory<Base>::getInstance().create("derived2");
   EXPECT_EQ(derived2_->foo(), "Derived2");
+}
+
+TEST(GenericFactory, ListAvailable) {
+  auto available = Factory<Base>::getInstance().listAvailable();
+  std::vector<std::string> expected{"base", "derived1", "derived2"};
+
+  EXPECT_EQ(available, expected);
 }
