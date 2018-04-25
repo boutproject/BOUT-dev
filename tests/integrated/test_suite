@@ -37,8 +37,13 @@ from requirements import Requirements
 requirements = Requirements();
 
 if args.set_bool is not None:
+    lookup={'false':False,
+            'no'   :False,
+            'true' :True,
+            'yes'  :True}
     for setbool in args.set_bool:
         k,v=setbool.split("=")
+        v=lookup[v.lower()]
 	requirements.add(k,v,override=True)
 
 try:
