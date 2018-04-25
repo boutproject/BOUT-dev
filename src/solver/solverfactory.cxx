@@ -1,5 +1,5 @@
+#include "bout/solverfactory.hxx"
 
-#include "solverfactory.hxx"
 
 #include "impls/cvode/cvode.hxx"
 #include "impls/arkode/arkode.hxx"
