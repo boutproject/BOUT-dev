@@ -15,45 +15,78 @@ import time
 import glob
 from boututils.run_wrapper import shell
 
+##################################################################
+
+import argparse
+parser = argparse.ArgumentParser(description='Run or build some tests.')
+parser.add_argument("-g","--get-list",action='store_true',
+                    help='Return a list of tests that would be run/build')
+parser.add_argument("-m","--make",action='store_true',
+                    help='Build the tests, rather then run them.')
+parser.add_argument("-b","--set-bool",nargs="+",metavar=('value1=False','value2=True'),
+                    help='Set a bool value for evaluating what scripts can be run.')
+parser.add_argument("-l","--set-list",nargs="+",metavar=('test1','test2'),
+                    help='Set the tests that should be run.')
+
+args=parser.parse_args()
+
+##################################################################
+
 sys.path.append('..')
 from requirements import Requirements
 requirements = Requirements();
-requirements.add('make',False)
 
+if args.set_bool is not None:
+    for setbool in args.set_bool:
+        k,v=setbool.split("=")
+	requirements.add(k,v,override=True)
 
-##################################################################
-
-# Get list of directories containing test cases
-try:
-    # Requires python >= 3.5
-    tests=glob.iglob('**/runtest', recursive=True)
-except:
-    # Fall back - check only a few folders ...
-    tests=glob.glob('*/runtest')
-    tests+=glob.glob('*/*/runtest')
-    tests+=glob.glob('*/*/*/runtest')
-
-tests=[x.rsplit('/',1)[0] for x in tests]
+if requirements.has('make'):
+    raise RuntimeError("The make flag needs to be set by passing --make")
+requirements.add('make',args.make)
 
 ##################################################################
 
-if "--get-list" in sys.argv:
+if args.set_list is None:
+    # Get list of directories containing test cases
+    try:
+        # Requires python >= 3.5
+        tests=glob.iglob('**/runtest', recursive=True)
+    except:
+        # Fall back - check only a few folders ...
+        tests=glob.glob('*/runtest')
+        tests+=glob.glob('*/*/runtest')
+        tests+=glob.glob('*/*/*/runtest')
+
+    tests=[x.rsplit('/',1)[0] for x in tests]
+
+else:
+    # Take the user provided list
+    tests=[x.rstrip('/') for x in args.set_list]
+
+
+if args.get_list:
     for test in tests:
         req_met, req_expr = requirements.check(test+"/runtest")
         if req_met:
             print(test)
-    exit(0)
+    sys.exit(0)
+
+##################################################################
+# Run the actual test
+
+command='./runtest' if not args.make else 'make'
 
 savepath = os.getcwd() # Save current working directory
-npassed = 0
-nfailed = 0
-total = len(tests)
 failed = []
 
 start_time = time.time()
 
 print("======= Starting {0} tests ========".format(savepath.split("/")[-1]))
-print("Running {0} tests".format(total))
+if args.make:
+    print("Making {0} tests".format(len(tests)))
+else:
+    print("Running {0} tests".format(len(tests)))
 
 for t in tests:
     os.chdir(t)
@@ -73,12 +106,10 @@ for t in tests:
     if status != 0:
         # ❌ Failed
         print(u"\u274C", end='') # No newline
-        nfailed = nfailed + 1
         failed.append((t, out))
     else:
         # ✓ Passed
         print(u"\u2713", end='') # No newline
-        npassed = npassed + 1
 
     print(" %7.3f s - %s"%(time.time() - start_time_,t))
     sys.stdout.flush() # Make sure '✓' or '❌' is flushed
@@ -88,13 +119,13 @@ elapsed_time = time.time() - start_time
 
 print("\n")
 
-if nfailed > 0:
+if failed:
     print("======= FAILURES ========")
     for test, output in failed:
         # Note: need Unicode string in case output contains unicode
         print(u"\n----- {0} -----\n{1}".format(test, output))
 
-    print("======= {0} failed in {1:.2f} seconds ========".format(nfailed, elapsed_time))
+    print("======= {0} failed in {1:.2f} seconds ========".format(len(failed), elapsed_time))
 
     sys.exit(1)
 
