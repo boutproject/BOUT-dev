@@ -44,9 +44,7 @@ class Requirements(object):
         self._requirements = {}
         for requirement in requirements_list:
             status,out = shell(os.path.join(path, requirement), pipe=True)
-            self._requirements[requirement] = (status == 0)
-            if verbose:
-                print("{0} => {1}".format(requirement, (status == 0)))
+            self.add(requirement,(status == 0))
 
         with open(selflocation+"/../../bin/bout-config") as configfile:
             config=configfile.read()
@@ -60,10 +58,8 @@ class Requirements(object):
                 except KeyError:
                     print("Error parsing "+match+" - %s is not \"yes\"/\"no\""%match[1])
                 else:
-                    self._requirements[key]=value
-                    if verbose:
-                        print("{0} => {1}".format(key, value))
-                    
+                    self.add(key,value)
+
         # Now have dictionary of requirements, true/false.
 
     def check(self,script):
@@ -94,8 +90,14 @@ class Requirements(object):
 
         return True, "" # Default, if no requirements specified
 
-    def add(self,requirement, value):
-        """Add a requirement value to the dictionary"""
+    def add(self,requirement, value,override=False):
+        """Add a requirement value to the dictionary. If the value is
+        already defined with another value, it will raise an
+        exception, unless override is set to True."""
+        if requirement in self._requirements:
+            old=self._requirements[requirement]
+            if old != value and override is False:
+                raise RuntimeError("Overwriting %s with %s in key %s"%(value,old,requirement))
         self._requirements[requirement]=value
         if self._verbose:
             print("{0} => {1}".format(requirement, value))
