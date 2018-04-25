@@ -4,7 +4,8 @@
 #ifndef __BOUT_GENERIC_FACTORY_H__
 #define __BOUT_GENERIC_FACTORY_H__
 
-#include <exception>
+#include "boutexception.hxx"
+
 #include <functional>
 #include <iostream>
 #include <map>
@@ -27,12 +28,10 @@
 /// TODO: Use std::unique_ptr<BaseType> instead of BaseType*
 ///
 /// @tparam BaseType       The base class that this factory creates
-/// @tparam IdentifierType How different types are identified (default string)
 /// @tparam TypeCreator    The function signature for creating a new BaseType
 ///
 /// MIT Licence
-template <typename BaseType, typename IdentifierType = std::string,
-          typename TypeCreator = std::function<BaseType *()>>
+template <typename BaseType, typename TypeCreator = std::function<BaseType *()>>
 class Factory {
 public:
   /// Add a new type \p name to the factory
@@ -40,7 +39,7 @@ public:
   /// @param[in] name     An identifier for this type
   /// @param[in] creator  A function for creating this type
   /// @returns true if the type was successfully added
-  bool add(const IdentifierType &name, TypeCreator creator) {
+  bool add(const std::string &name, TypeCreator creator) {
     return type_map.insert(std::make_pair(name, creator)).second;
   }
 
@@ -48,7 +47,7 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
-  bool remove(const IdentifierType &name) { return type_map.erase(name) == 1; }
+  bool remove(const std::string &name) { return type_map.erase(name) == 1; }
 
   /// Create a new object of type \p name
   ///
@@ -65,9 +64,9 @@ public:
 
   /// List available types that can be created
   ///
-  /// @returns a vector of IdentifierType
-  std::vector<IdentifierType> listAvailable() {
-    std::vector<IdentifierType> available;
+  /// @returns a vector of std::string
+  std::vector<std::string> listAvailable() {
+    std::vector<std::string> available;
     for (auto &name : type_map) {
       available.push_back(name.first);
     }
@@ -80,8 +79,8 @@ public:
     return instance;
   }
 
-private:
-  std::map<IdentifierType, TypeCreator> type_map;
+protected:
+  std::map<std::string, TypeCreator> type_map;
   Factory() {}
 };
 
@@ -99,11 +98,10 @@ private:
 ///
 /// @tparam BaseType       Which factory to add \p DerivedType to
 /// @tparam DerivedType    The new type to add to Factory<BaseType>
-/// @tparam IdentifierType How different types are identified (default string)
-template <typename BaseType, typename DerivedType, typename IdentifierType = std::string>
+template <typename BaseType, typename DerivedType>
 class RegisterInFactory {
 public:
-  RegisterInFactory(const IdentifierType &name) {
+  RegisterInFactory(const std::string &name) {
     Factory<BaseType>::getInstance().add(name,
                                          []() -> BaseType * { return new DerivedType; });
   }
