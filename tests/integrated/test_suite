@@ -41,9 +41,10 @@ if args.set_bool is not None:
         k,v=setbool.split("=")
 	requirements.add(k,v,override=True)
 
-if requirements.has('make'):
+try:
+    requirements.add('make',args.make)
+except RuntimeError:
     raise RuntimeError("The make flag needs to be set by passing --make")
-requirements.add('make',args.make)
 
 ##################################################################
 
