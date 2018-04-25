@@ -2,21 +2,20 @@
 
 from __future__ import print_function
 from __future__ import division
+
+
+import os
+import sys
+import glob
+
 try:
     from builtins import str
     from builtins import range
 except:
     pass
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    raise ImportError("ERROR: restart module needs DataFile")
-
-try:
-    from boututils.boutarray import BoutArray
-except ImportError:
-    raise ImportError("ERROR: restart module needs BoutArray")
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
 
 import multiprocessing
 import numpy as np
@@ -29,14 +28,6 @@ try:
     from scipy.interpolate import RegularGridInterpolator
 except:
     pass
-
-
-try:
-    import os
-    import sys
-    import glob
-except ImportError:
-    raise ImportError("ERROR: os, sys or glob modules not available")
 
 
 def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, mxg=2, myg=2):

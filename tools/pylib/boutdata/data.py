@@ -11,13 +11,7 @@ import numpy
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
-
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: boututils.datafile.DataFile couldn't be loaded")
-    raise
-
+from boututils.datafile import DataFile
 
 class BoutOptions(object):
     """

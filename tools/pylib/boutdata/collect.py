@@ -14,31 +14,14 @@ except:
 #  - boututils
 #  - NumPy
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: boututils.datafile.DataFile couldn't be loaded")
-    raise
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
 
-try:
-    from boututils.boutarray import BoutArray
-except ImportError:
-    print("ERROR: boutdata.boutarray.BoutArray couldn't be loaded")
-    raise
+import os
+import sys
+import glob
 
-try:
-    import os
-    import sys
-    import glob
-except ImportError:
-    print("ERROR: os, sys or glob modules not available")
-    raise
-
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
+import numpy as np
 
 
 def findVar(varname, varlist):
@@ -135,10 +118,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             myg = f["MYG"]
         except KeyError:
             myg = 0
-            print("MYG not found, setting to {}".format(mxg))
+            print("MYG not found, setting to {}".format(myg))
+            
         if tind is not None or xind is not None or yind is not None or zind is not None:
-            raise ValueError(
-                "tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
+            raise ValueError("tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
+        
         if xguards:
             xstart = 0
             xlim = None
