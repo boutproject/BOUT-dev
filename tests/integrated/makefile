@@ -27,3 +27,6 @@ check: $(CHECKING_)
 
 $(CHECKING_):
 	@$(MAKE) --no-print-directory -C $(@:%_checking=%) runtest
+
+clean::
+	@for p in $(CHECKING) ; do echo cleaning $$p; make --no-print-directory -C $$p clean || :  ;done
