@@ -5,8 +5,6 @@
 *.bbl
 *.blg
 *.config
-make.config.new
-make.config.old
 *.d
 *.dSYM/
 *.ext
