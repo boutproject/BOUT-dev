@@ -54,12 +54,13 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be created
   /// @returns a pointer to the new object
-  BaseType *create(const IdentifierType &name) {
+  template<typename... Args>
+  BaseType *create(const std::string &name, Args&&... args) {
     auto index = type_map.find(name);
     if (index != std::end(type_map)) {
-      return index->second();
+      return index->second(std::forward<Args>(args) ...);
     }
-    throw std::runtime_error("Could not find " + name);
+    throw BoutException("Could not find %s", name.c_str());
   }
 
   /// List available types that can be created
