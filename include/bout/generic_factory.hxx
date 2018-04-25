@@ -39,7 +39,7 @@ public:
   /// @param[in] name     An identifier for this type
   /// @param[in] creator  A function for creating this type
   /// @returns true if the type was successfully added
-  bool add(const std::string &name, TypeCreator creator) {
+  virtual bool add(const std::string &name, TypeCreator creator) {
     return type_map.insert(std::make_pair(name, creator)).second;
   }
 
@@ -47,7 +47,7 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
-  bool remove(const std::string &name) { return type_map.erase(name) == 1; }
+  virtual bool remove(const std::string &name) { return type_map.erase(name) == 1; }
 
   /// Create a new object of type \p name
   ///
@@ -65,7 +65,7 @@ public:
   /// List available types that can be created
   ///
   /// @returns a vector of std::string
-  std::vector<std::string> listAvailable() {
+  virtual std::vector<std::string> listAvailable() {
     std::vector<std::string> available;
     for (auto &name : type_map) {
       available.push_back(name.first);
