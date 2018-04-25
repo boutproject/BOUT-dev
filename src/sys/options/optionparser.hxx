@@ -46,13 +46,16 @@ class OptionParser;
 #include "options.hxx"
 #include <boutexception.hxx>
 
+/// Base class for input file types
 class OptionParser {
  public:
   OptionParser() {}
   virtual ~OptionParser() {}
 
+  /// Read \p filename into \p options
   virtual void read(Options *options, const std::string &filename) = 0;
 
+  /// Write \p options to \p filename
   virtual void write(Options *options, const std::string &filename) = 0;
  private:
 };

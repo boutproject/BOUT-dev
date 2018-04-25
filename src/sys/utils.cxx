@@ -111,7 +111,7 @@ char* copy_string(const char* s) {
   return s2;
 }
 
-/// Convert a string to lower case
+// Convert a string to lower case
 const string lowercase(const string &str) {
   string strlow(str);
 
@@ -119,7 +119,7 @@ const string lowercase(const string &str) {
   return strlow;
 }
 
-/// Convert to lowercase, except for inside strings
+// Convert to lowercase, except for inside strings
 const string lowercasequote(const string &str) {
   string strlow(str);
 

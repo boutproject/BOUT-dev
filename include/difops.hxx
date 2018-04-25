@@ -275,11 +275,15 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 /*!
  * Poisson bracket methods
  */
-enum BRACKET_METHOD {BRACKET_STD=0,   ///< Use b0xGrad_dot_Grad
-                     BRACKET_SIMPLE=1, ///< Keep only terms in X-Z
-                     BRACKET_ARAKAWA=2, ///< Arakawa method in X-Z (optimised)
-                     BRACKET_CTU=3, ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the timestep from the solver
-                     BRACKET_ARAKAWA_OLD=4 ///< Older version, for regression testing of optimised version.
+enum BRACKET_METHOD {
+  BRACKET_STD = 0,        ///< Use b0xGrad_dot_Grad
+  BRACKET_SIMPLE = 1,     ///< Keep only terms in X-Z
+  BRACKET_ARAKAWA = 2,    ///< Arakawa method in X-Z (optimised)
+  BRACKET_CTU = 3,        ///< Corner Transport Upwind (CTU)
+                          /// method. Explicit method only,
+                          /// needs the timestep from the
+                          /// solver
+  BRACKET_ARAKAWA_OLD = 4 ///< Older version, for regression testing of optimised version.
 };
 
 /*!
@@ -291,7 +295,7 @@ enum BRACKET_METHOD {BRACKET_STD=0,   ///< Use b0xGrad_dot_Grad
  * \f]
  * 
  * @param[in] f  The potential
- * @param[in] f  The field being advected
+ * @param[in] g  The field being advected
  * @param[in] method   The method to use
  * @param[in] outloc   The cell location where the result is defined. Default is the same as g
  * @param[in] solver   Pointer to the time integration solver

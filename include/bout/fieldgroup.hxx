@@ -209,7 +209,7 @@ class FieldGroup {
   std::vector<Field3D*>   f3vec; // Vector of 3D fields
 };
 
-
+/// Combine two FieldGroups
 FieldGroup operator+(const FieldGroup &lhs, const FieldGroup &rhs);
 
 #endif // __FIELDGROUP_H__

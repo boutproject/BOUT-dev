@@ -43,7 +43,7 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
-extern Mesh * mesh;
+extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
 #include <string>

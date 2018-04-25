@@ -92,11 +92,11 @@ public:
   std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
 
 protected:
-  vector<BoundaryOp*> bndry_op; // Boundary conditions
-  bool boundaryIsCopy; // True if bndry_op is a copy
-  bool boundaryIsSet; // Set to true when setBoundary called
+  vector<BoundaryOp *> bndry_op; ///< Boundary conditions
+  bool boundaryIsCopy;           ///< True if bndry_op is a copy
+  bool boundaryIsSet;            ///< Set to true when setBoundary called
   // Parallel boundaries
-  vector<BoundaryOpPar*> bndry_op_par; // Boundary conditions
+  vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
   std::map <BndryLoc,std::shared_ptr<FieldGenerator>> bndry_generator;
 };

@@ -410,7 +410,7 @@ const Field2D copy(const Field2D &f);
 /// Sets a floor on var, so minimum of the return value is >= f
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn=RGN_ALL);
 
-/// Power, lhs ** rhs
+/// Raise \p lhs to the power of \p rhs
 Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
 Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
 Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn=RGN_ALL);

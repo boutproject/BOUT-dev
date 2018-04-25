@@ -88,13 +88,18 @@ if args.make:
 else:
     print("Running {0} tests".format(len(tests)))
 
+longest=max([len(s) for s in tests])
+output='%-'+str(longest+1)+'s'
 for t in tests:
     os.chdir(t)
+
+    print(output%t,end='')
+    sys.stdout.flush() # Make sure name is flushed
 
     # Check requirements
     req_met, req_expr = requirements.check("./runtest")
     if not req_met:
-        print("S - {0} - {1} => False".format(t, req_expr))
+        print("S - {0} => False".format( req_expr))
         sys.stdout.flush()
         os.chdir(savepath)
         continue
@@ -111,8 +116,9 @@ for t in tests:
         # ✓ Passed
         print(u"\u2713", end='') # No newline
 
-    print(" %7.3f s - %s"%(time.time() - start_time_,t))
+    print(" %7.3f s"%(time.time() - start_time_))
     sys.stdout.flush() # Make sure '✓' or '❌' is flushed
+
     os.chdir(savepath)
 
 elapsed_time = time.time() - start_time
