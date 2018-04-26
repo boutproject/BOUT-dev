@@ -650,6 +650,8 @@ LTLIBOBJS
 SCOREPPATH
 sundials_config
 SLEPC_VARS
+PETSC_ARCH
+PETSC_DIR
 PETSC
 PARALLELHDF5_TYPE
 PARALLELHDF5_LIBS
@@ -8875,59 +8877,54 @@ fi
 done
 
 ### This still needs to check for PETSC_ARCH
+  if test ".$PETSC_DIR" = "."; then :
+
+      PETSC_DIR="$with_petsc"
+fi
   if test "$with_petsc" != "yes"; then :
 
     PETSC_DIR="$with_petsc"
-    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/conf" >&5
-$as_echo_n "checking for $PETSC_DIR/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
+    if test -d $PETSC_DIR; then :
+
 else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PETSC_DIR/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
+
+      as_fn_error $? "\$PETSC_DIR is not a valid directory" "$LINENO" 5
+
 fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/conf
+    if test -f $with_petsc/include/petsversion.h; then :
+
+        # not known - guess later
+        PETSC_ARCH=""
+
 else
-  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/lib/petsc/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/lib/petsc/conf" >&5
-$as_echo_n "checking for $PETSC_DIR/lib/petsc/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PETSC_DIR/lib/petsc/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
-else
-  as_fn_error $? "*** --with-petsc=$with_petsc was specified but could not find PETSc distribution" "$LINENO" 5
+
+        # Split - last should be arch
+        split=(`echo $PETSC_DIR|tr / ' '`)
+        lasti=`expr ${#split[@]} - 1`
+        PETSC_ARCH=${split[$lasti]}
+        lasti=`expr $lasti - 1`
+        new=
+        for i in `seq 0 $lasti`
+        do
+           new=$new/${split[$i]}
+        done
+        PETSC_DIR=$new
 
 fi
 
 fi
+  if test ".$PETSC_ARCH" = "."; then :
 
-
+    PETSC_ARCH="$(cd $PETSC_DIR; ls -d arch*)"
+    if test $(echo "$PETSC_ARCH" | wc -l) -gt 1; then :
+  as_fn_error $? "\$PETSC_ARCH not defined
 else
+  but several possibilities found. Set to one of $PETSC_ARCH" "$LINENO" 5
 
-    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
+fi
+fi
+
+  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/conf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -8974,7 +8971,6 @@ fi
 fi
 
 
-fi
 
   PETSC_VERSION_MAJOR="0"
   PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
@@ -9081,6 +9077,10 @@ else
 fi
 
 PETSC=$PETSC
+
+PETSC_DIR=$PETSC_DIR
+
+PETSC_ARCH=$PETSC_ARCH
 
 
 if test "$PETSC" != ""; then :
