@@ -54,6 +54,11 @@ class IdaSolver;
 #include <vector>
 using std::vector;
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<IdaSolver> registersolverida("ida");
+}
+
 class IdaSolver : public Solver {
  public:
   IdaSolver(Options *opts = NULL);

@@ -42,6 +42,11 @@ class SNESSolver;
 #include <petsc.h>
 #include <petscsnes.h>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<SNESSolver> registersolversnes("snes");
+}
+
 class SNESSolver : public Solver {
  public:
   SNESSolver(Options *opt = NULL);

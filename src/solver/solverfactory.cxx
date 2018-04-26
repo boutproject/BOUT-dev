@@ -1,5 +1,25 @@
 #include "bout/solverfactory.hxx"
 
+#include "impls/arkode/arkode.hxx"
+#include "impls/cvode/cvode.hxx"
+#include "impls/euler/euler.hxx"
+#include "impls/ida/ida.hxx"
+#include "impls/imex-bdf2/imex-bdf2.hxx"
+#include "impls/karniadakis/karniadakis.hxx"
+#include "impls/petsc-3.1/petsc-3.1.hxx"
+#include "impls/petsc-3.2/petsc-3.2.hxx"
+#include "impls/petsc-3.3/petsc-3.3.hxx"
+#include "impls/petsc-3.4/petsc-3.4.hxx"
+#include "impls/petsc-3.5/petsc-3.5.hxx"
+#include "impls/petsc/petsc.hxx"
+#include "impls/power/power.hxx"
+#include "impls/pvode/pvode.hxx"
+#include "impls/rk3-ssp/rk3-ssp.hxx"
+#include "impls/rk4/rk4.hxx"
+#include "impls/rkgeneric/rkgeneric.hxx"
+#include "impls/slepc-3.4/slepc-3.4.hxx"
+#include "impls/snes/snes.hxx"
+
 SolverFactory* SolverFactory::instance = nullptr;
 
 SolverFactory *SolverFactory::getInstance() {

@@ -38,6 +38,7 @@ private:
   static SolverFactory* instance;
 };
 
+/// Specialisation of Factory registration helper class
 template<typename DerivedType>
 class RegisterInFactory<Solver, DerivedType> {
 public:
@@ -46,6 +47,17 @@ public:
         name, [](Options *options) -> Solver * { return new DerivedType(options); });
   }
 };
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/solverfactory.hxx>
+///     namespace {
+///     RegisterSolver<MySolver> registersolvermine("mysolver");
+///     }
+template<typename DerivedType>
+using RegisterSolver = RegisterInFactory<Solver, DerivedType>;
 
 #endif // __SOLVER_FACTORY_H__
 

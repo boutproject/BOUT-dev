@@ -51,6 +51,10 @@ class SlepcSolver;
 //is in charge of advancing fields
 #define SOLVERSLEPCSELF "self"
 
+namespace {
+RegisterSolver<SlepcSolver> registersolverslepc("slepc");
+}
+
 using std::vector;
 
 class SlepcSolver : public Solver {
