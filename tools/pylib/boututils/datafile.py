@@ -803,7 +803,7 @@ class DataFile_HDF5(DataFile):
             var = self.handle[varname]
             for attrname in var.attrs:
                 attribute = var.attrs[attrname]
-                if type(attribute) == bytes:
+                if type(attribute) in [bytes, np.bytes_]:
                     attribute = str(attribute, encoding="utf-8")
                 attributes[attrname] = attribute
 
