@@ -555,7 +555,7 @@ def findFiles(path, prefix):
         prefix = prefix[:-1]
 
     # Look for parallel dump files
-    suffixes = [".nc", ".hdf5", ".ncdf", ".cdl", ".h5", ".hdf5", ".hdf"]
+    suffixes = [".nc", ".ncdf", ".cdl", ".h5", ".hdf5", ".hdf"]
     file_list_parallel = None
     suffix_parallel = ""
     for test_suffix in suffixes:

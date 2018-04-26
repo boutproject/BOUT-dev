@@ -125,9 +125,9 @@ class DataFile:
         """List of dimension sizes for a variable."""
         return self.impl.size(varname)
 
-    def type(self, varname):
+    def bout_type(self, varname):
         """BOUT++ type of a variable"""
-        return self.attributes(varname)["type"]
+        return self.attributes(varname)["bout_type"]
 
 
     def write(self, name, data, info=False):
@@ -336,7 +336,7 @@ class DataFile_netCDF(DataFile):
             return 0
         return [dimlen(d) for d in var.dimensions]
 
-    def _type_from_dimensions(self, varname):
+    def _bout_type_from_dimensions(self, varname):
         dims = self.dimensions(varname)
         if dims == ('t', 'x', 'y', 'z'):
             return "Field3D_t"
@@ -351,7 +351,7 @@ class DataFile_netCDF(DataFile):
         elif dims == ():
             return "scalar"
         else:
-            # Unknown type, but still want to be able to read, so give it a value...
+            # Unknown bout_type, but still want to be able to read, so give it a value...
             return None
 
     def write(self, name, data, info=False):
@@ -539,8 +539,8 @@ class DataFile_netCDF(DataFile):
                 print("Error reading attributes for " + varname)
                 # Result will be an empty map
 
-            if not "type" in attributes:
-                attributes["type"] = self._type_from_dimensions(varname)
+            if not "bout_type" in attributes:
+                attributes["bout_type"] = self._bout_type_from_dimensions(varname)
 
             # Save the attributes for this variable to the cache
             self._attributes_cache[varname] = attributes
@@ -664,34 +664,33 @@ class DataFile_HDF5(DataFile):
 
     def dimensions(self, varname):
         """Array of dimension names"""
-        var = self.handle[varname]
-        vartype = str(var.attrs['type'], encoding='utf-8')
-        if vartype == 'Field3D_t':
+        bout_type = self.bout_type(varname)
+        if bout_type == 'Field3D_t':
             return ('t', 'x', 'y', 'z')
-        elif vartype == 'Field2D_t':
+        elif bout_type == 'Field2D_t':
             return ('t', 'x', 'y')
-        elif vartype == 'scalar_t':
+        elif bout_type == 'scalar_t':
             return ('t')
-        elif vartype == 'Field3D':
+        elif bout_type == 'Field3D':
             return ('x', 'y', 'z')
-        elif vartype == 'Field2D':
+        elif bout_type == 'Field2D':
             return ('x', 'y')
-        elif vartype == 'scalar':
+        elif bout_type == 'scalar':
             return ()
         else:
-            raise ValueError("Variable type not recognized")
+            raise ValueError("Variable bout_type not recognized")
 
-    def _vartype_from_array(self, data):
+    def _bout_type_from_array(self, data):
         """
-        Get the type from the array 'data'. If 'data' is a BoutArray, it knows
-        its type, otherwise we have to guess.
+        Get the bout_type from the array 'data'. If 'data' is a BoutArray, it knows
+        its bout_type, otherwise we have to guess.
         """
         try:
             # If data is a BoutArray, it should have a type attribute that we can use
-            vartype = data.attributes["type"]
-            return vartype
+            bout_type = data.attributes["bout_type"]
+            return bout_type
         except AttributeError:
-            # Otherwise data is a numpy.ndarray and we have to guess the type
+            # Otherwise data is a numpy.ndarray and we have to guess the bout_type
             pass
 
         try:
@@ -703,7 +702,7 @@ class DataFile_HDF5(DataFile):
         elif ndim == 3:
             # not ideal, 3d field might be time-evolving 2d field,
             # 'Field2D_t', but can't think of a good way to distinguish
-            alwayswarn("Warning: assuming type of 3d array is Field3D. If it "
+            alwayswarn("Warning: assuming bout_type of 3d array is Field3D. If it "
                        "should be a time-evolving Field2D, this may cause errors in "
                        "dimension sizes.")
             return 'Field3D'
@@ -714,7 +713,7 @@ class DataFile_HDF5(DataFile):
         elif ndim == 0:
             return 'scalar'
         else:
-            raise ValueError("Unrecognized variable type, ndims=" + str(ndim))
+            raise ValueError("Unrecognized variable bout_type, ndims=" + str(ndim))
 
     def ndims(self, varname):
         """Number of dimensions for a variable."""
@@ -748,21 +747,21 @@ class DataFile_HDF5(DataFile):
             raise Exception("File not writeable. Open with write=True keyword")
 
         try:
-            vartype = data.attributes["type"]
+            bout_type = data.attributes["bout_type"]
         except AttributeError:
-            vartype = self.vartype_from_array(data)
+            bout_type = self._bout_type_from_array(data)
 
         if info:
             print("Creating variable '" + name +
-                  "' with type '" + vartype + "'")
+                  "' with bout_type '" + bout_type + "'")
 
-        if vartype in ["Field3D_t", "Field2D_t", "scalar_t"]:
+        if bout_type in ["Field3D_t", "Field2D_t", "scalar_t"]:
             # time evolving fields
             shape = list(data.shape)
             # set time dimension to None to make unlimited
             shape[0] = None
             self.handle.create_dataset(name, data=data, maxshape=shape)
-        elif vartype == 'scalar':
+        elif bout_type == 'scalar':
             # Need to create scalars as one element arrays to be compatible
             # with BOUT++ assumptions (maybe it would be better to read/write
             # scalars in BOUT++?)
@@ -773,15 +772,15 @@ class DataFile_HDF5(DataFile):
         # Need encodes in the following to make sure we pass a byte-string to
         # attrs and not a regular python string.
 
-        # Check if the type of the variable will be written when copying
+        # Check if the bout_type of the variable will be written when copying
         # attributes from data, which it should be if data is a BoutArray.
         # Otherwise, need to write it explicitly
         try:
-            if (not "type" in data.attributes) or (data.attributes["type"] == None):
-                raise AttributeError("'type' not found in attributes")
+            if (not "bout_type" in data.attributes):
+                raise AttributeError("'bout_type' not found in attributes")
         except AttributeError:
             self.handle[name].attrs.create(
-                'type', vartype.encode(encoding='utf-8'))
+                'bout_type', bout_type.encode(encoding='utf-8'))
 
         try:
             for attrname in data.attributes:
@@ -808,11 +807,11 @@ class DataFile_HDF5(DataFile):
                     attribute = str(attribute, encoding="utf-8")
                 attributes[attrname] = attribute
 
-            if not "type" in attributes:
-                # type is a required attribute for BOUT++ outputs, so it should
+            if not "bout_type" in attributes:
+                # bout_type is a required attribute for BOUT++ outputs, so it should
                 # have been found
                 raise ValueError(
-                    "Error: type not found in attributes of "+varname)
+                    "Error: bout_type not found in attributes of "+varname)
 
             # Save the attributes for this variable to the cache
             self._attributes_cache[varname] = attributes
