@@ -143,7 +143,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
                 ylim = None
 
         data = f.read(varname)
-        attributes = f.attributes(varname, ensureTypePresent=True)
+        attributes = f.attributes(varname)
         if ndims == 2:
             # Field2D
             data = data[xstart:xlim, ystart:ylim]
@@ -162,7 +162,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
 
     # Read data from the first file
     f = getDataFile(0)
-    attributes = f.attributes(varname, ensureTypePresent=True)
+    attributes = f.attributes(varname)
 
     try:
         dimens = f.dimensions(varname)

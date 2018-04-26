@@ -689,8 +689,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                     iyend = 0
                 data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend,
                      iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
-            data = BoutArray(data, attributes=infile_list[0].attributes(
-                v, ensureTypePresent=True))
+            data = BoutArray(data, attributes=infile_list[0].attributes(v))
         elif ndims == 3:
             data = np.zeros((nx+2*mxg, ny+2*myg, mz))
             for i in range(old_npes):
@@ -710,8 +709,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                     iyend = 0
                 data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,
                      :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
-            data = BoutArray(data, attributes=infile_list[0].attributes(
-                v, ensureTypePresent=True))
+            data = BoutArray(data, attributes=infile_list[0].attributes(v))
         else:
             print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
             return False
