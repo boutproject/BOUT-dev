@@ -282,14 +282,14 @@ AS_IF([test "x$enable_color" != "xno"], [
   AC_MSG_NOTICE([Output coloring disabled])
 ])
 
-AS_IF([test "x$enable_track" = "xyes"], [
+AS_IF([test "x$enable_track" == "xyes"], [
   AC_MSG_NOTICE([Field name tracking enabled])
   CXXFLAGS="$CXXFLAGS -DTRACK"
 ], [
   AC_MSG_NOTICE([Field name tracking disabled])
 ])
 
-AS_IF([test "x$enable_sigfpe" = "xyes"], [
+AS_IF([test "x$enable_sigfpe" == "xyes"], [
   AC_MSG_NOTICE([Signaling floating point exceptions enabled])
   CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
 ], [
@@ -305,22 +305,22 @@ CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSI
 # Enable Backtrace if possible
 #############################################################
 
-AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe"], [
+AS_IF([test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"], [
   AC_CHECK_PROG([works], [addr2line], [yes], [no])
 
-  AS_IF([test $works = yes], [
+  AS_IF([test $works == yes], [
     AC_CHECK_FUNCS([popen backtrace], [works=yes], [works=no; break])
   ])
 
-  AS_IF([test $works = yes], [
+  AS_IF([test $works == yes], [
     AC_CHECK_HEADERS([execinfo.h dlfcn.h], [works=yes], [works=no; break])
   ])
 
-  AS_IF([test $works = yes], [
+  AS_IF([test $works == yes], [
     AC_MSG_NOTICE([Native backtrace enabled])
     CXXFLAGS="$CXXFLAGS -DBACKTRACE"
   ], [
-    AS_IF([test "x$enable_backtrace" = "xyes"], [
+    AS_IF([test "x$enable_backtrace" == "xyes"], [
       AC_MSG_ERROR([backtrace requested, but cannot be enabled])
     ], [
       AC_MSG_WARN([Native backtrace disabled])
@@ -332,7 +332,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
-AS_IF([test "x$enable_shared" = "xyes"], [
+AS_IF([test "x$enable_shared" == "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
     # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
@@ -487,7 +487,7 @@ AS_IF([test "$with_pnetcdf" != "no"], [
   ])
 
   # Find the utilities included with pnetcdf
-  AS_IF([test "x$PNCPATH" = "x"], [
+  AS_IF([test "x$PNCPATH" == "x"], [
     AS_IF([test "x$with_pnetcdf" = "xyes"], [
       AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump])
     ], [
@@ -608,33 +608,12 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
         ))
   ])
 
-  PETSC_HEADER=
-  BOUT_ADDPATH_CHECK_HEADER([petscversion.h], [PETSC_HEADER=
-  PETSC_DIR=],
-    BOUT_ADDPATH_CHECK_HEADER([petsc/petscversion.h],[PETSC_HEADER=petsc/
-    PETSC_DIR=]))
-
-
-  CPPGLAGS_save=$CPPFLAGS
-  AS_IF([test ."$PETSC_DIR$PETSC_ARCH" != .],[
-         CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"])
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MAJOR
-       ]])]
-        , [PETSC_VERSION_MAJOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MINOR
-       ]])]
-        , [PETSC_VERSION_MINOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_RELEASE
-       ]])]
-        , [PETSC_VERSION_RELEASE=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
+  PETSC_VERSION_MAJOR="0"
+  PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_MINOR="0"
+  PETSC_VERSION_MINOR=`grep 'define PETSC_VERSION_MINOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_RELEASE="0"
+  PETSC_VERSION_RELEASE=`grep 'define PETSC_VERSION_RELEASE' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
 
   AS_IF([test $PETSC_VERSION_MAJOR != "3"], [
     AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
@@ -686,14 +665,10 @@ PETSC_VERSION_RELEASE
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
   CPPFLAGS="$save_CPPFLAGS"
 
-  HAS_PETSC="yes"
   # Set the line to be included in the make.conf file
-  AS_IF([test "." != ."$PETSC_CONFDIR"] ,
-    [ PETSC="include ${PETSC_CONFDIR}/variables" ],
-    [ PETSC= ])
+  PETSC="include ${PETSC_CONFDIR}/variables"
 ], [
   PETSC=
-  HAS_PETSC="no"
 ])
 
 AC_SUBST(PETSC, $PETSC)
@@ -703,7 +678,7 @@ AS_IF([test "$PETSC" != ""], [
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  AS_IF([test "$PETSC_HAS_SUNDIALS" = "yes"], [
+  AS_IF([test "$PETSC_HAS_SUNDIALS" == "yes"], [
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   ])
 ])
@@ -717,7 +692,7 @@ SLEPC_VARS=""
 AS_IF([test "$with_slepc" != "" && test "$with_slepc" != "no"], [
   AC_MSG_NOTICE([Searching for SLEPc])
 
-  AS_IF([test "$SLEPC_DIR" = ""], [
+  AS_IF([test "$SLEPC_DIR" == ""], [
     AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
   ])
 
@@ -768,7 +743,7 @@ AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
     MUMPS="$with_mumps"
   ])
 
-  AS_IF([test "$MUMPS" = ""], [
+  AS_IF([test "$MUMPS" == ""], [
     # Look in some standard locations
     AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/",
       AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
@@ -954,7 +929,7 @@ AS_IF([test "$with_scorep" != "no"], [
     AC_PATH_PROG([SCOREPPATH], [scorep], [])
   ])
 
-  AS_IF([test "$SCOREPPATH" = ""], [
+  AS_IF([test "$SCOREPPATH" == ""], [
       AC_MSG_FAILURE([*** Scorep requested, but executable not found.
 Please supply the path using --with-scorep=/path/to/scorep])
   ],[
@@ -1161,7 +1136,7 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  Configuration summary  ])
 AC_MSG_NOTICE([-------------------------])
 
-AS_IF([test "$PETSC" = ""], [
+AS_IF([test "x$PETSC" = "x"], [
   AC_MSG_NOTICE([  PETSc support           : no])
 ], [
   AS_CASE(["$PETSC_VERSION_RELEASE"],
