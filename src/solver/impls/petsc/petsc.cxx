@@ -145,8 +145,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
   PetscReal norm;
   ierr = VecNorm(u,NORM_1,&norm);CHKERRQ(ierr);
-  if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"initial |u| = %g\n",norm);}
-  //ierr = VecView(u,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  output_info << "initial |u| = " << norm << "\n";
 
   PetscBool       J_load;
   MatStructure    J_structure;
@@ -342,7 +341,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   }
 
   // Create Jacobian matrix to be used by preconditioner
-  ierr = PetscPrintf(PETSC_COMM_WORLD," Get Jacobian matrix at simtime %g\n",simtime);CHKERRQ(ierr);
+  output_info << " Get Jacobian matrix at simtime " << simtime << "\n";
 #if PETSC_VERSION_GE(3,7,0)
   ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
 #else 
@@ -350,7 +349,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 #endif
   if(J_load) {
     PetscViewer     fd;
-    ierr = PetscPrintf(PETSC_COMM_WORLD," Load Jmat ...local_N %d, neq %d\n",local_N,neq);CHKERRQ(ierr);
+    output_info << " Load Jmat ...local_N " << local_N << " neq " << neq << "\n";
     ierr = PetscViewerBinaryOpen(comm,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
     ierr = MatCreate(PETSC_COMM_WORLD,&J);CHKERRQ(ierr);
     //ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
@@ -403,20 +402,20 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       MatStructure flg;
 
       ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefault,PETSC_NULL);CHKERRQ(ierr);
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);
+      output_info << "SNESComputeJacobian J by slow fd...\n";
 
 #if PETSC_VERSION_GE(3,5,0)
       ierr = TSComputeRHSJacobian(ts,simtime,u,J,J);CHKERRQ(ierr);
 #else
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
 #endif
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
+      output_info << "compute J by slow fd is done.\n";
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
       throw BoutException("Path followed in PETSc solver not yet implemented in general "
                           "-- experimental hard coded values here. Sorry\n");
 
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+      output_info << "get sparse pattern of the Jacobian...\n";
 
       if(n2Dvars() != 0) throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
 
@@ -468,9 +467,9 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       // Need to figure out how to tell if y is periodic
       bool yperiodic = true;
 
-      printf(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
+      output_info.write(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
       for(k=0;k<nz;k++) {
-        output << "----- " << k << " -----" << endl;
+        output_info << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
           // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
@@ -551,20 +550,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
               stencil[d].c = dof;
             }
             ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
-            //printf("stencil: %d, %d, %d; -- %d %d %d %d\n",gi,gj,k,stencil[0].i,stencil[0].j,stencil[0].k,stencil[0].c);
-
           }
-          // cout << endl;
         }
-        // cout << endl;
       }
 
       ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
       //J(2585:n-1,:) has no entry !!!
-      // ierr = PetscPrintf(PETSC_COMM_WORLD,"Sparse pattern:\n");
-      // ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingDestroy(&ltog);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingDestroy(&ltogb);CHKERRQ(ierr);
     }
@@ -572,7 +565,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Create coloring context of J to be used during time stepping
   
-  ierr = PetscPrintf(PETSC_COMM_WORLD," Create coloring ...\n");
+  output_info << " Create coloring ...\n";
   
 #if PETSC_VERSION_GE(3,5,0)
   ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
@@ -594,7 +587,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 #endif
   if (J_write){
     PetscViewer    viewer;
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n[%d] Test TSComputeRHSJacobian() ...\n",rank);
+    output_info << "\n[" << rank << "] Test TSComputeRHSJacobian() ...\n";
 #if PETSC_VERSION_GE(3,5,0)
     ierr = TSComputeRHSJacobian(ts,simtime,u,J,J);CHKERRQ(ierr);
 #else
@@ -609,10 +602,10 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PetscSynchronizedFlush(comm);CHKERRQ(ierr);
 #endif
     if (J_slowfd) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data/Jrhs_dense.dat...\n",rank);CHKERRQ(ierr);
+      output_info << "[" << rank << "] writing J in binary to data/Jrhs_dense.dat...\n";
       ierr = PetscViewerBinaryOpen(comm,"data/Jrhs_dense.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data/Jrhs_sparse.dat...\n",rank);CHKERRQ(ierr);
+      output_info << "[" << rank << "] writing J in binary to data/Jrhs_sparse.dat...\n";
       ierr = PetscViewerBinaryOpen(comm,"data/Jrhs_sparse.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     }
     ierr = MatView(J,viewer);CHKERRQ(ierr);
@@ -781,17 +774,11 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 #define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
-  //PetscReal      unorm,fnorm;
 
   PetscFunctionBegin;
   ierr = solver_f(ts,t, globalin,globalout, (void *)f_data);CHKERRQ(ierr);
-  //ierr = VecNorm(globalin,NORM_INFINITY,&unorm);
-  //ierr = VecNorm(globalout,NORM_INFINITY,&fnorm);
-  //printf("      solver_if(), t %g, unorm %g, globalout: %g, ",t,unorm,fnorm);
 
   ierr = VecAYPX(globalout,-1.0,globalindot);CHKERRQ(ierr); // globalout = globalindot + (-1)globalout
-  //ierr = VecNorm(globalout,NORM_INFINITY,&fnorm);
-  //printf(" udot-rhs: %g\n",fnorm);
   PetscFunctionReturn(0);
 }
 
@@ -802,8 +789,6 @@ PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat J,Mat Jpre,v
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  //printf("       solver_jacobian ... a dummy function\n");
-  //ierr = MatZeroEntries(*Jpre);CHKERRQ(ierr);
   ierr = MatAssemblyBegin(Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   if (J != Jpre){
@@ -817,8 +802,6 @@ PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  //printf("       solver_jacobian ... a dummy function\n");
-  //ierr = MatZeroEntries(*Jpre);CHKERRQ(ierr);
   ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   if (*J != *Jpre){
@@ -930,7 +913,8 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   ierr = SNESComputeFunction(snes, x, F);CHKERRQ(ierr);
   ierr = VecNorm(F,NORM_2,&fnorm);CHKERRQ(ierr);
   ierr = VecDot(F,Fout,&dot);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD, " (Debug) function norm: %g, P(f) norm %g, F \\cdot Fout %g  ", fnorm, foutnorm, dot);CHKERRQ(ierr);
+  output_info << " (Debug) function norm: " << fnorm << ", P(f) norm " << foutnorm
+              << ", F \\cdot Fout " << dot << "  ";
 #if PETSC_VERSION_GE(3,5,0)
   Vec func;
   ierr = SNESGetFunction(snes,&func,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
