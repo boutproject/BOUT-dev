@@ -93,6 +93,9 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
 	dx = 1.0    axis spacing, must be 2D if 2D deriv is taken - default is [1.0,1.0]
 	noise_suppression = True   noise suppressing coefficients used to take derivative - default = True
   """
+
+  from scipy.signal import convolve
+  
   s = data.shape
   if axis > len(s)-1:
     raise RuntimeError("ERROR: axis out of bounds for derivative")
@@ -105,8 +108,7 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
     if s[axis] < 9:
       raise RuntimeError("Data too small to use 9th order method")
     tmp = array([old_div(1.0,280.0),old_div(-4.0,105.0),old_div(1.0,5.0),old_div(-4.0,5.0),0.0,old_div(4.0,5.0),old_div(-1.0,5.0),old_div(4.0,105.0),old_div(-1.0,280.0)])
-
-  from scipy.signal import convolve
+    
   N = old_div((tmp.size-1),2)
   if axis==1:
     W = transpose(tmp[:,None])
