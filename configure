@@ -636,6 +636,8 @@ HAS_ARKODE
 HAS_CVODE
 HAS_IDA
 HAS_PVODE
+CLEAN_DEPENDENCIES
+TRACK_DEPENDENCIES
 CHECK_LEVEL
 GIT_REVISION
 BOUT_VERSION
@@ -783,6 +785,7 @@ enable_backtrace
 enable_shared
 enable_openmp
 enable_pvode_openmp
+enable_header_change_tracking
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1426,6 +1429,10 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
+  --enable-header-change-tracking
+                          Enable tracking header file changes for rebuilding.
+                          This is only usefull for development
+                          enviromenements, and is known to cause build issues.
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
 
@@ -2636,6 +2643,13 @@ if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
+fi
+
+# Check whether --enable-header_change_tracking was given.
+if test "${enable_header_change_tracking+set}" = set; then :
+  enableval=$enable_header_change_tracking;
+else
+  enable_header_change_tracking=no
 fi
 
 
@@ -11917,6 +11931,30 @@ $as_echo "$as_me: Scorep support disabled" >&6;}
 fi
 
 #############################################################
+# Setup Headerfile changes tracking
+#############################################################
+
+if test ".$enable_header_change_tracking" = ".yes"; then :
+
+  if test ".$HAS_SCOREP" = ".yes"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: scorep with header file change tracking is broken - it is suggested to enable only one of the two options" >&5
+$as_echo "$as_me: WARNING: scorep with header file change tracking is broken - it is suggested to enable only one of the two options" >&2;}
+
+fi
+  DEPENDENCY_TRACKING=yes
+  TRACK_DEPENDENCIES='	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0'
+  CLEAN_DEPENDENCIES='.*.mk'
+
+else
+
+  DEPENDENCY_TRACKING=no
+  TRACK_DEPENDENCIES='# Dependency tracking disabled'
+  CLEAN_DEPENDENCIES=''
+
+fi
+
+#############################################################
 # Download + Build PVODE '98
 #############################################################
 
@@ -13270,6 +13308,8 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
+
 
 
 
