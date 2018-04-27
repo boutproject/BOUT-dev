@@ -97,7 +97,7 @@ class FieldGroup {
 
   /// Add a Vector2D \p v to the group.
   ///
-  /// Pointer's to this vector's components will be stored internally,
+  /// Pointers to this vector's components will be stored internally,
   /// so the lifetime of this variable should be longer than the
   /// lifetime of this group.
   void add(Vector2D &v) {
@@ -108,7 +108,7 @@ class FieldGroup {
 
   /// Add a Vector3D \p v to the group.
   ///
-  /// Pointer's to this vector's components will be stored internally,
+  /// Pointers to this vector's components will be stored internally,
   /// so the lifetime of this variable should be longer than the
   /// lifetime of this group.
   void add(Vector3D &v) {
