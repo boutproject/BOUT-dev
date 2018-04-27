@@ -12,8 +12,9 @@
 #include <set>
 #include <vector>
 
-/// Global mesh
+/// Global meshes
 extern Mesh *mesh;
+Mesh *mesh2; // mesh2 has 2 guard cells
 
 /// Test fixture to make sure the global mesh is our fake one
 class Field3DTest : public ::testing::Test {
@@ -26,11 +27,24 @@ protected:
     }
     mesh = new FakeMesh(nx, ny, nz);
     mesh->createDefaultRegions();
+
+    if (mesh2 != nullptr) {
+      delete mesh2;
+      mesh2 = nullptr;
+    }
+    mesh2 = new FakeMesh(nx, ny, nz);
+    mesh2->createDefaultRegions();
+    mesh2->xstart += 1;
+    mesh2->xend -= 1;
+    mesh2->ystart += 1;
+    mesh2->yend -=1;
   }
 
   static void TearDownTestCase() {
     delete mesh;
     mesh = nullptr;
+    delete mesh2;
+    mesh2 = nullptr;
   }
 
 public:
@@ -275,6 +289,34 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
   EXPECT_EQ(&field, &ydown2);
 }
 
+TEST_F(Field3DTest, SplitThenMergeYupYDown2) {
+  Field3D field(mesh2);
+
+  field = 0.;
+  field.splitYupYdown();
+
+  auto& yup1 = field.yup();
+  EXPECT_NE(&field, &yup1);
+  auto& ydown1 = field.ydown();
+  EXPECT_NE(&field, &ydown1);
+  auto& yup2 = field.yup(2);
+  EXPECT_NE(&field, &yup2);
+  auto& ydown2 = field.ydown(2);
+  EXPECT_NE(&field, &ydown2);
+
+  field.mergeYupYdown();
+
+  auto& yup1_2 = field.yup();
+  EXPECT_EQ(&field, &yup1_2);
+  auto& ydown1_2 = field.ydown();
+  EXPECT_EQ(&field, &ydown1_2);
+
+  auto& yup2_2 = field.yup(2);
+  EXPECT_EQ(&field, &yup2_2);
+  auto& ydown2_2 = field.ydown(2);
+  EXPECT_EQ(&field, &ydown2_2);
+}
+
 TEST_F(Field3DTest, Ynext) {
   Field3D field;
 
@@ -287,7 +329,9 @@ TEST_F(Field3DTest, Ynext) {
   EXPECT_NE(&field, &ydown);
   EXPECT_NE(&yup, &ydown);
 
+#if CHECK > 1
   EXPECT_THROW(field.ynext(99), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, ConstYnext) {
@@ -303,7 +347,56 @@ TEST_F(Field3DTest, ConstYnext) {
   EXPECT_NE(&field2, &ydown);
   EXPECT_NE(&yup, &ydown);
 
+#if CHECK > 1
   EXPECT_THROW(field2.ynext(99), BoutException);
+#endif
+}
+
+TEST_F(Field3DTest, Ynext2) {
+  Field3D field(mesh2);
+
+  field = 0.;
+  field.splitYupYdown();
+
+  auto& yup = field.ynext(1);
+  EXPECT_NE(&field, &yup);
+  auto& ydown = field.ynext(-1);
+  EXPECT_NE(&field, &ydown);
+  EXPECT_NE(&yup, &ydown);
+
+  auto& yup2 = field.ynext(2);
+  EXPECT_NE(&field, &yup2);
+  auto& ydown2 = field.ynext(-2);
+  EXPECT_NE(&field, &ydown2);
+  EXPECT_NE(&yup2, &ydown2);
+
+#if CHECK > 1
+  EXPECT_THROW(field.ynext(99), BoutException);
+#endif
+}
+
+TEST_F(Field3DTest, ConstYnext2) {
+  Field3D field(0., mesh2);
+
+  field.splitYupYdown();
+
+  const Field3D& field2 = field;
+
+  auto& yup = field2.ynext(1);
+  EXPECT_NE(&field2, &yup);
+  auto& ydown = field2.ynext(-1);
+  EXPECT_NE(&field2, &ydown);
+  EXPECT_NE(&yup, &ydown);
+
+  auto& yup2 = field2.ynext(2);
+  EXPECT_NE(&field2, &yup2);
+  auto& ydown2 = field2.ynext(-2);
+  EXPECT_NE(&field2, &ydown2);
+  EXPECT_NE(&yup2, &ydown2);
+
+#if CHECK > 1
+  EXPECT_THROW(field2.ynext(99), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, SetGetLocation) {
