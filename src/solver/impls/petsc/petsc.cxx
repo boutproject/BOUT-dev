@@ -57,7 +57,7 @@ extern PetscErrorCode PhysicsPCApply(PC,Vec x,Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
-PetscSolver::PetscSolver(Options *opts) {
+PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   has_constraints = false; // No constraints
   J = 0;
   Jmf = 0;
@@ -172,8 +172,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ///////////// GET OPTIONS /////////////
   int MXSUB = mesh->xend - mesh->xstart + 1;
 
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   OPTION(options, mudq, n3d*(MXSUB+2));
   OPTION(options, mldq, n3d*(MXSUB+2));
   OPTION(options, mukeep, 0);
