@@ -15,6 +15,8 @@
 # -DPDBF  PDB format (need to include pdb_format.cxx)
 # -DNCDF  NetCDF format (nc_format.cxx)
 
+BOUT_TOP?=.
+
 # PETSc config variables need to be first, else they may clobber other
 # options (e.g. CXX, CXXFLAGS)
 @PETSC@
@@ -65,300 +67,64 @@ PRECON_SOURCE = @PRECON_SOURCE@
 
 BOUT_VERSION  = @PACKAGE_VERSION@
 
-####################################################################
-# These are used for compiling physics modules using BOUT++ library
-####################################################################
 
-# Files that are needed by configure and should be dependencies for 'all'
-
-OBJ    = $(SOURCEC:%.cxx=%.o)
-ifndef RELEASE
-LIB    = $(BOUT_LIB_PATH)/libbout++.a
-LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
-endif
 
 BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
-CHANGED = $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
+ifndef FINDALLCXX
+SRC=$(shell MAKE=$(MAKE) $(BOUT_TOP)/.findallcxx.sh)
+else # FINDALLCXX defined
+SRC=nonexistent.cxx /dev/null
+.PHONY: listfiles
+listfiles:
+ifndef CUDIR
+	@for pp in $(DIRS); do $(MAKE) -r -R CUDIR=$$pp --no-print-directory -C $$pp listfiles; done
+else # CUDIR defined
+	@for pp in $(DIRS); do $(MAKE) -r -R CUDIR=$(CUDIR)/$$pp --no-print-directory -C $$pp listfiles; done
+endif # end of CUDIR
+	@for ff in $(SOURCEC) ; do echo $(CUDIR)/$$ff; done
+endif # end of FINDALLCXX
 
-# This will set a default if no TARGET is provided
-TARGET				?= $(SOURCEC:%.cxx=%)
+OBJ=$(SRC:%.cxx=%.o)
 
-####################################################################
-# Definining stuff for recursive make
-####################################################################
+ifneq ("$(SOURCEC)","")
+# Buildinging binaries and the like
+TARGET?= $(SOURCEC:%.cxx=%)
 
-# Phony targets since they are directory names
-.PHONY: $(DIRS) lib install libfast runtest manual sphinx doxygen
+all: root-all $(TARGET)
 
-ifneq ("$(TARGET)","libfast")
-all: $(BOUT_CONFIG_FILE) $(DIRS) $(TARGET)
-else
-all: $(BOUT_TOP)/config.status $(BOUT_CONFIG_FILE) $(DIRS)
-endif
-libfast: $(BOUT_CONFIG_FILE) $(DIRS)
-
-####################################################################
-# Recursively run make through subdirs
-####################################################################
-
-ifeq ("$(TARGET)" , "lib")
-$(DIRS):
-# make $@ slowly using the old method where parallel builds can cause
-# race conditions that 
-	@$(MAKE) -s --no-print-directory TARGET=lib -C $@ all
-else
-ifeq ("$(TARGET)","libfast")
-$(DIRS):
-# make $@ using the libfast method, where all .o files
-# are only created in the end
-	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
-else
-MODULE_DIR?=$(shell pwd)
-$(DIRS):
-# MODULE_DIR: pass the module directory, where the libraries should be
-# created.
-# SUB_NAME is used for creating a library with the expected name.
-# first a potential trailing slash is removed, and after that the
-# directory name is extracted. This allows to e.g. specify a directory
-# as fuu/bar/ and still get an archive named bar.a
-# The # probably doesn't need to be escaped as everything in the
-# recipy is passed to the shell, even lines starting with #
-	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
-endif
-endif
-
-# Create 'lib' and 'include' incase they don't exist
-$(BOUT_TOP)/include $(BOUT_TOP)/lib:
-	$(MKDIR) $@
-
-####################################################################
-# Install header files and libraries
-####################################################################
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-datarootdir = @datarootdir@
-
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = ${INSTALL}
-INSTALL_DATA = ${INSTALL} -m 644
-
-INSTALL_INCLUDE_PATH = $(DESTDIR)@includedir@/bout++/
-
-install: libfast
-	$(PRE_INSTALL)     # Pre-install commands follow.
-
-	$(NORMAL_INSTALL)  # Normal commands follow.
-
-	$(INSTALL_DATA) -D include/*.hxx -t $(INSTALL_INCLUDE_PATH)
-	$(INSTALL_DATA) -D include/pvode/*.h -t $(INSTALL_INCLUDE_PATH)/pvode/
-	$(INSTALL_DATA) -D include/bout/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/
-	$(INSTALL_DATA) -D include/bout/sys/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/sys/
-	$(INSTALL_DATA) -D include/bout/invert/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/invert/
-	$(INSTALL_DATA) -D lib/libbout++.a -t $(DESTDIR)@libdir@
-	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
-	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
-	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
-	$(INSTALL_PROGRAM) -D bin/bout-log-color -t $(DESTDIR)@bindir@
-	$(INSTALL_DATA) -D tools/idllib/*.pro -t $(DESTDIR)@datadir@/bout++/idllib/
-	$(INSTALL_DATA) -D tools/idllib/README -t $(DESTDIR)@datadir@/bout++/idllib/
-	$(INSTALL_DATA) -D tools/pylib/boutdata/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
-	$(INSTALL_DATA) -D tools/pylib/boututils/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA) -D make.config -t $(DESTDIR)@datadir@/bout++/
-
-	$(POST_INSTALL)    # Post-install commands follow.
-
-	@# Modify paths in the bout-config script 
-	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config 
-	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@bindir@/bout-config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
-	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
-	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
-
-	@# Modify paths in the make.config file
-	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
-
-uninstall:
-	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
-
-	$(NORMAL_UNINSTALL)  # Normal commands follow.
-	$(RM) $(DESTDIR)@datadir@/bout++/make.config
-	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
-	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
-	$(RM) $(DESTDIR)@bindir@/bout-config
-	$(RM) $(DESTDIR)@bindir@/bout-log-color
-	$(RM) $(DESTDIR)@libdir@/libbout++.a
-	$(RM) $(DESTDIR)@libdir@/libpvode.a
-	$(RM) $(DESTDIR)@libdir@/libpvpre.a
-	$(RM) -r  $(DESTDIR)@includedir@/bout++/
-
-	$(POST_UNINSTALL)    # Post-uninstall commands follow.
-
-####################################################################
-# Builds the library with $(OBJ) which is defined from the SOURCEC variable
-####################################################################
-
-ifeq ("$(TARGET)", "libfast")
-libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
-endif
-
-ifeq ("$(TARGET)", "lib")
-lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
-ifneq ("$(OBJ)foo", "foo")
-	@echo "  Adding $(OBJ) to libbout++.a"
-	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
-	@$(RANLIB) $(LIB)
-endif
-endif
-
-
-ifeq ("$(TARGET)", "sub")
-LIB=$(MODULE_DIR)/$(SUB_NAME).a
-sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
-ifneq ("$(OBJ)foo", "foo")
-	@echo "  Adding $(OBJ) to $(LIB)"
-	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
-	@$(RANLIB) $(LIB)
-endif
-endif
-
-runtest:
-	./runtest
-
-
-ifneq ("$(TARGET)", "sub")
-ifneq ("$(TARGET)", "libfast")
-ifneq ("$(TARGET)", "lib")
-ifneq ("$(TARGET)", "runtest")
-
-####################################################################
-# Make libbout++.a if it doesn't exist with the checklib target
-####################################################################
-libbout++.a:
-	@echo "Rebuilding out-of-date bout++ library"
-	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
- 
-####################################################################
-# Make the target (e.g. gas_compress)
-####################################################################
-# first we remove a trailing slash, if present. Note that currently we
-# dont support several trailing slashes, as in fuu/bar/// 
-DIRS_=$(DIRS:%/=%)
-# then we extract the directory name, in case it is a longer path
-# We are not in a recipe, so # needs to be escaped
-# $$ is an escaped $
-DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
-# now we can generate a list of libraries
-SUB_LIBS=$(DIRS__:%=%.a)
-$(SUB_LIBS):$(DIRS__)
-
-$(SOURCEC): checklib
-$(SOURCEC:%.cxx=%.o): $(LIB)
-$(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
+$(TARGET): $(OBJ)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
 
-checklib:
-ifneq ("$(CHANGED)foo", "foo")
-	@echo "Rebuilding out-of-date bout++ library"
-	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
-endif
+else # SOURCEC == ''
 
-endif
-endif
-endif
-endif
+all: $(DIRS)
 
-# Ignore missing requirement files
--include .*.mk
+main-target: @MAIN_TARGET@
 
-# If it is a libfast target, track changes to rebuild library if needed
-#
-# Further track dependencies using gcc's -M feature:
-# -MF  write the generated dependency rule to a file
-# -MG  assume missing headers will be generated and don't stop with an error
-# -MM  generate dependency rule for prerequisite, skipping system headers
-# -MP  add phony target for each header to prevent errors when header is missing
-# -MT  add a target to the generated dependency
-# Ignore failure, in case some compiler does not support this
-%.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0
-ifeq ("$(TARGET)","libfast")
-	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
-endif
 
-####################################################################
-# Clean target. Pretty self explanatory.
-# NOTE: See that double colon (::) below? That's signifies a rule that can be added to later
-# See:
-# http://owen.sj.ca.us/~rk/howto/slides/make/slides/makecolon.html
-####################################################################
+endif # endof SOUREC == ''
+
+
+%.o: %.cxx $(BOUT_CONFIG_FILE)
+	@echo "  Compiling " $<
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $< -o $@
+
+
+root-all:
+	$(MAKE) -s --no-print-directory -C $(BOUT_TOP)
+
+
+checklib: root-all
+
+libfast: all
 
 clean::
-	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
-	@$(RM) -f $(SUB_LIBS)
+	@$(RM) $(OBJ) $(DEPS) $(TARGET) $(SUB_LIBS) .findall.cache
 
 distclean:: clean clean-tests
-	@echo include cleaned
-# Removing the externalpackage installation. When we have more packages, need a better way
-	@$(RM) -rf $(BOUT_TOP)/include/pvode
-	@echo lib cleaned
-	@$(RM) -rf $(BOUT_TOP)/lib/*
-	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/lib/*.a
-	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/source/obj/*.o
-	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/precon/obj/*.o
-	-@$(RM) -rf $(BOUT_TOP)/autom4te.cache make.config
-	@echo externalpackages cleaned
-	@touch $(BOUT_TOP)/configure
-	@echo autom4te.cache cleaned
-
-clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
-
-clean-unit-tests:
-	@echo "   tests/unit cleaned"
-	@$(MAKE) --no-print-directory -C tests/unit clean
-
-clean-integrated-tests:
-	@echo "   tests/integrated cleaned"
-	@$(MAKE) --no-print-directory -C tests/integrated clean
-
-clean-mms-tests:
-	@echo "   tests/MMS cleaned"
-	@$(MAKE) --no-print-directory -C tests/MMS clean
-
-####################################################################
-# Documentation
-####################################################################
-
-MANUAL_DIR=$(BOUT_TOP)/manual
-
-doxygen:
-	$(MAKE) -C $(MANUAL_DIR) doxygen
-
-breathe-autogen:
-	$(MAKE) -C $(MANUAL_DIR) breathe_autogen
-
-sphinx-docs-html:
-	$(MAKE) -C $(MANUAL_DIR) sphinx-html
-
-sphinx-docs-latex:
-	$(MAKE) -C $(MANUAL_DIR) sphinx-pdf
-
-manual:
-	$(MAKE) -C $(MANUAL_DIR)
-
-manual-html:
-	$(MAKE) -C $(MANUAL_DIR) html
-
-manual-pdf:
-	$(MAKE) -C $(MANUAL_DIR) pdf
 
 ######################################################################
 # Code coverage

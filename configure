@@ -675,6 +675,7 @@ AWK
 NCMPIDUMP_PATH
 NCCONF
 fftw_path
+MAIN_TARGET
 works
 COVERAGE_FLAGS
 CODE_COVERAGE_RULES
@@ -781,6 +782,7 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
+enable_static
 enable_openmp
 enable_pvode_openmp
 with_gcov
@@ -1423,7 +1425,9 @@ Optional Features:
                           Enable optimization
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
-  --enable-shared         Enable building bout++ into an shared object
+  --enable-shared         Enable building bout++ into a shared object
+  --enable-static         Enable building bout++ into a static library. Is
+                          enabled if shared is disabled.
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
@@ -2622,6 +2626,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then :
+  enableval=$enable_static;
+else
+  enable_static=maybe
 fi
 
 # Check whether --enable-openmp was given.
@@ -5812,6 +5823,8 @@ fi
 # Build into shared object (pic)
 #############################################################
 
+MAIN_TARGET=
+
 if test "x$enable_shared" = "xyes"; then :
 
     # compile as position independent code.
@@ -5823,8 +5836,40 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    MAIN_TARGET="$MAIN_TARGET shared-lib"
 
 fi
+
+#############################################################
+# Build into a static library
+#############################################################
+
+# By default enabled, if not building into a shared object
+
+if test "x$enable_static" = "xyes"; then :
+
+    MAIN_TARGET="$MAIN_TARGET static-lib"
+
+else
+   if test "x$enable_static" = "xmaybe"; then :
+
+        if test "x$enable_shared" != "xyes"; then :
+
+            MAIN_TARGET="$MAIN_TARGET static-lib"
+
+fi
+
+fi
+
+
+fi
+
+if test ".$MAIN_TARGET" = "."; then :
+
+   as_fn_error $? "No target requested - need to build at least a static library or a shared object!" "$LINENO" 5
+
+fi
+
 
 #############################################################
 # Git revision number

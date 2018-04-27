@@ -19,11 +19,14 @@ all: $(BUILD)
 
 buildncheck: all check
 
-$(BUILD):
-	@$(MAKE) --no-print-directory -C $@
+$(BUILD): root-all
+	@$(MAKE) -s --no-print-directory -C $@
 
 check: $(CHECKING_)
 	@echo $(CHECKING_)
 
 $(CHECKING_):
 	@$(MAKE) --no-print-directory -C $(@:%_checking=%) runtest
+
+clean::
+	@for p in $(CHECKING) ; do echo cleaning $$p; make --no-print-directory -C $$p clean || :  ;done
