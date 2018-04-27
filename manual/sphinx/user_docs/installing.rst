@@ -113,7 +113,7 @@ On Ubuntu or Debian distributions if you have administrator rights then you can 
 MPICH2 and the needed libraries by running::
 
     $ sudo apt-get install mpich2 libmpich2-dev
-    $ sudo apt-get install libfftw3-dev libnetcdf-dev
+    $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
    
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
