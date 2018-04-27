@@ -18,17 +18,34 @@ nz = 1
 [arkode]
 [cvode]
 [euler]
+mxstep = 100000
+nout = 100
+timestep = end / (NOUT * 10000)
 [ida]
 [imexbdf2]
+# This solver currently fails this test without adaptive timestepping
+adaptive = true
+# We should tighten up the default tolerance
+adaptRtol = 1.e-5
 [karniadakis]
+nout = 100
+timestep = end / (NOUT * 10000)
 [petsc]
+# This solver currently fails this test without adaptive timestepping
+adaptive = true
 [power]
 [pvode]
 [rk3ssp]
 [rk4]
+# This solver currently fails this test without adaptive timestepping
+adaptive = true
 [rkgeneric]
+# This solver currently fails this test without adaptive timestepping
+adaptive = true
 [slepc]
 [snes]
+# This solver currently fails this test without adaptive timestepping
+adaptive = true
 
 [field]
 bndry_all = none

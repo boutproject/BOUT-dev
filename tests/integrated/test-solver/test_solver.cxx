@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   Output output_test;
 
-  std::vector<std::string> eigen_solvers = {"power", "slepc"};
+  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
 
   for (auto &eigen_solver : eigen_solvers) {
     if (SolverFactory::getInstance()->remove(eigen_solver)) {
@@ -59,9 +59,6 @@ int main(int argc, char **argv) {
   Output::getInstance()->disable();
 
   for (auto &name : SolverFactory::getInstance()->listAvailable()) {
-
-    // if (name != "arkode") continue;
-    // if (name != "imexbdf2") continue;
 
     output_test << "\n**************************************************\n"
                 << "Now running with: " << name << "\n\n";
