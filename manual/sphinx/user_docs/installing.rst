@@ -131,7 +131,7 @@ Arch Linux
 Fedora
 ~~~~~~
 
-On Fedora the required libraries can be installed with by running:
+On Fedora the required libraries can be installed by running:
 
    $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
    $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
@@ -142,13 +142,13 @@ On Fedora the required libraries can be installed with by running:
 Note that the python2/python3 stack is only required for for post
 processing and the tests, so feel free to install only what you
 actually need.
-Further, only ether mpich or openmpi is required.
+Further, only either mpich or openmpi is required.
 To load an mpi implementation type:
 
    $ module load mpi
 
 After that the mpi library is loaded.
-Precompile binaries are available for fedora as well.
+Precompiled binaries are available for fedora as well.
 To get the latest release run
 
    $ sudo dnf copr enable davidsch/bout
