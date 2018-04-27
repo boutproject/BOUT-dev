@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+// A simple phyics model for integrating sin^2(t)
 class TestSolver : public PhysicsModel {
 public:
   Field3D field;
@@ -23,8 +24,17 @@ public:
 
 int main(int argc, char **argv) {
 
+  // The expected answer to the integral of \f$\int_0^{\pi/2}\sin^2(t)\f$
+  BoutReal expected = PI / 4.;
+  // Absolute tolerance for difference between the actual value and the
+  // expected value
+  BoutReal tolerance = 1.e-5;
+
+  // Our own output to stdout, as main library will only be writing to log files
   Output output_test;
 
+  // Currently hardcode solvers we don't want to test
+  // Should be able to check which solvers aren't suitable
   std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
 
   for (auto &eigen_solver : eigen_solvers) {
@@ -40,11 +50,16 @@ int main(int argc, char **argv) {
   // Explicit flush to make sure list of available solvers gets printed
   output_test << std::endl;
 
-  // TODO: turn off std::cout
-  std::stringstream buffer;
+  // DANGER, hack below! BoutInitialise turns on writing to stdout for rank 0,
+  // and then immediately prints a load of stuff to stdout. We want this test to
+  // be quiet, so we need to hide stdout from the main library before
+  // BoutInitialise. After the call to BoutInitialise, we can turn off the main
+  // library writing to stdout in a nicer way.
+
   // Save cout's buffer here
-  std::streambuf *sbuf = std::cout.rdbuf();
-  // Redirect cout to our stringstream buffer or any other ostream
+  std::stringstream buffer;
+  auto *sbuf = std::cout.rdbuf();
+  // Redirect cout to our buffer
   std::cout.rdbuf(buffer.rdbuf());
 
   int init_err = BoutInitialise(argc, argv);
@@ -54,14 +69,17 @@ int main(int argc, char **argv) {
     return init_err;
   }
 
-  // When done redirect cout to its old self
+  // Now BoutInitialise is done, redirect stdout to its old self
   std::cout.rdbuf(sbuf);
+  // Turn off writing to stdout for the main library
   Output::getInstance()->disable();
+
+  // Solver and its actual value if it didn't pass
+  std::map<std::string, BoutReal> errors;
 
   for (auto &name : SolverFactory::getInstance()->listAvailable()) {
 
-    output_test << "\n**************************************************\n"
-                << "Now running with: " << name << "\n\n";
+    output_test << "Testing " << name << " solver:";
     try {
       // Get specific options section for this solver. Can't just use default
       // "solver" section, as we run into problems when solvers use the same
@@ -79,18 +97,12 @@ int main(int argc, char **argv) {
 
       solver->solve();
 
-      BoutReal expected = PI / 4.;
-      BoutReal tolerance = 1.e-5;
-      output_test << "Solver " << name;
       if (fabs(model->field(1, 1, 0) - expected) > tolerance) {
-        output_test << ": FAILED\n"
-                    << "    Got: "<< model->field(1, 1, 0) << ", expected: " << expected << "\n";
+        output_test << " FAILED\n";
+        errors[name] = model->field(1, 1, 0);
       } else {
-        output_test << ": PASSED\n";
+        output_test << " PASSED\n";
       }
-
-      dump.addOnce(model->field, field_name);
-      dump.write("data/%s.nc", name.c_str());
 
       delete model;
       delete solver;
@@ -104,4 +116,16 @@ int main(int argc, char **argv) {
   }
 
   BoutFinalise();
+
+  if (!errors.empty()) {
+    output_test << "\n => Some failed tests\n\n";
+    for (auto &error : errors) {
+      output_test << "    " << error.first << " got: " << error.second
+                  << ", expected: " << expected << "\n";
+    }
+  } else {
+    output_test << "\n => All tests passed\n";
+  }
+
+  return errors.size();
 }

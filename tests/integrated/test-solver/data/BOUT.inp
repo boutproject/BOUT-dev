@@ -20,7 +20,7 @@ nz = 1
 [euler]
 mxstep = 100000
 nout = 100
-timestep = end / (NOUT * 10000)
+timestep = end / (NOUT * 1000)
 [ida]
 [imexbdf2]
 # This solver currently fails this test without adaptive timestepping
