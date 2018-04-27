@@ -69,10 +69,24 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   DEPRECATED(FCITransform(Mesh &mesh, bool UNUSED(yperiodic), bool zperiodic))
-      : FCITransform(mesh, zperiodic) {}
+      : FCITransform(mesh, zperiodic) {
+        if (mesh.ystart > 1)
+          // FCITransform can only use myg=1 because it only loads grid
+          // information for one point forward or back along the magnetic
+          // field, so it cannot set Field3D::yup2_field or
+          // Field3D::ydown2_field
+          throw BoutException("FCI method must use only one y-guard cell: set option myg=1");
+      }
   FCITransform(Mesh &mesh, bool zperiodic = true)
       : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
-        zperiodic(zperiodic) {}
+        zperiodic(zperiodic) {
+          if (mesh.ystart > 1)
+            // FCITransform can only use myg=1 because it only loads grid
+            // information for one point forward or back along the magnetic
+            // field, so it cannot set Field3D::yup2_field or
+            // Field3D::ydown2_field
+            throw BoutException("FCI method must use only one y-guard cell: set option myg=1");
+        }
 
   void calcYUpDown(Field3D &f) override;
   
