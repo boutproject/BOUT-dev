@@ -155,6 +155,7 @@ files for tokamaks. These can be used by the ``2fluid`` and
 ``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
 the BOUT-06 code.
 
+.. _sec-bout-topology:
 
 BOUT++ Topology
 ---------------
@@ -230,6 +231,7 @@ with ``ixseps1 = ixseps2`` are connected together via communications.
     - ``jyseps1_1 > -1``
     - ``jyseps2_1 >= jyseps1_1 + 1``
     - ``jyseps1_2 >= jyseps2_1``
+    - ``jyseps2_2 >= jyseps1_2``
     - ``jyseps2_2 <= ny - 1``
 
    To ensure that communications work branch cuts must align with
