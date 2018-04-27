@@ -33,7 +33,7 @@ PID=$(cat $path/.BOUT.pid.0 || grep "^pid: [0-9]*\$" $path/BOUT.log.0 | awk '{pr
 # # look for the pids which are associated with the user, and search whether one of them has the log file open.
 # for pid in $(ps -au|tail -n +2|awk '{print $2}')
 # do
-#     if ls -Hil /proc/$pid/fd/* 2>/dev/null | grep $inode &> /dev/null
+#     if ls -Hil /proc/$pid/fd/* 2>/dev/null | grep $inode > /dev/null 2>&1
 #     then
 #         #match
 #         PID=$pid
