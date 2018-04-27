@@ -216,10 +216,13 @@ int BoutMesh::load() {
                       jyseps2_2, ny, ny - 1);
     jyseps2_2 = ny - 1;
   }
-  if (jyseps2_2 < jyseps2_1) {
-    output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
-                      jyseps2_2, jyseps2_1, jyseps2_1);
-    jyseps2_2 = jyseps2_1;
+  if (jyseps2_2 < jyseps1_2) {
+    if (jyseps1_2 >= ny) {
+      throw BoutException("jyseps1_2 (%d) must be < ny (%d).", jyseps1_2, ny);
+    }
+    output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps1_2 (%d). Setting to %d\n",
+                      jyseps2_2, jyseps1_2, jyseps1_2);
+    jyseps2_2 = jyseps1_2;
   }
 
   if (options->isSet("NXPE")) {    // Specified NXPE

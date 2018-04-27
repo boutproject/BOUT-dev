@@ -66,7 +66,7 @@ Implementation: BoutMesh
 the X location of the separatrices, and are equal in the case of
 single-null configurations. The indexing is such that all points ``0
 <= x < ixseps1`` are inside the separatrix, whilst ``ixseps1 <= x <
-LocalNx`` are outside.
+LocalNx`` are outside. See :ref:`sec-bout-topology` for more details.
 
 Index ranges
 ------------
