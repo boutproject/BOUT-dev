@@ -182,10 +182,22 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   OPTION(options, precon_tol, 1.0e-4);
   OPTION(options, diagnose,     false);
 
+  // Set up adaptive time-stepping
+  TSAdapt adapt;
+  ierr = TSGetAdapt(ts, &adapt);CHKERRQ(ierr);
+  OPTION(options, adaptive, false);
+  if (adaptive) {
+    ierr = TSAdaptSetType(adapt, TSADAPTBASIC);CHKERRQ(ierr);
+  } else {
+    ierr = TSAdaptSetType(adapt, TSADAPTNONE);CHKERRQ(ierr);
+  }
+
   BoutReal abstol, reltol;
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
-  //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
+
+  // Set default absolute/relative tolerances
+  ierr = TSSetTolerances(ts, abstol, nullptr, reltol, nullptr);CHKERRQ(ierr);
 
 #ifdef PETSC_HAS_SUNDIALS
   // Set Sundials tolerances

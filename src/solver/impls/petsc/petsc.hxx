@@ -135,6 +135,8 @@ class PetscSolver : public Solver {
   PetscInt prev_linear_its;
   BoutReal bout_snes_time;
   vector<snes_info> snes_list;
+
+  bool adaptive;   ///< Use adaptive timestepping
 };
 
 
