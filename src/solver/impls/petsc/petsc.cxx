@@ -159,6 +159,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
 #ifdef PETSC_HAS_SUNDIALS
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
+#else
+  ierr = TSSetType(ts,TSRK);CHKERRQ(ierr);
 #endif
   ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
