@@ -47,26 +47,29 @@ namespace {
 RegisterSolver<SNESSolver> registersolversnes("snes");
 }
 
+/// Uses PETSc's SNES interface to find a steady state solution to a
+/// nonlinear ODE
 class SNESSolver : public Solver {
  public:
-  SNESSolver(Options *opt = NULL);
-  ~SNESSolver();
+  SNESSolver(Options *opt = nullptr) : Solver(opt) {}
+  ~SNESSolver() {}
   
   int init(int nout, BoutReal tstep) override;
   
   int run() override;
   
-  PetscErrorCode snes_function(Vec x, Vec f); // Nonlinear function
+  PetscErrorCode snes_function(Vec x, Vec f); ///< Nonlinear function
  private:
-  int mxstep; // Maximum number of internal steps between outputs
+  int mxstep; ///< Maximum number of internal steps between outputs
   
-  int nlocal, neq; // Number of variables on local processor and in total
+  int nlocal; ///< Number of variables on local processor
+  int neq; ///< Number of variables in total
   
-  PetscLib lib;     // Handles initialising, finalising PETSc
-  Vec      snes_f;  // Used by SNES to store function
-  Vec      snes_x;  // Result of SNES
-  SNES     snes;    // SNES context
-  Mat      Jmf;     // Matrix-free Jacobian
+  PetscLib lib;     ///< Handles initialising, finalising PETSc
+  Vec      snes_f;  ///< Used by SNES to store function
+  Vec      snes_x;  ///< Result of SNES
+  SNES     snes;    ///< SNES context
+  Mat      Jmf;     ///< Matrix-free Jacobian
   
 };
 

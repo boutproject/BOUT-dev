@@ -14,13 +14,6 @@
 
 #include "petscsnes.h"
 
-SNESSolver::SNESSolver(Options *opt) : Solver(opt) {
-  
-}
-
-SNESSolver::~SNESSolver() {
-}
-
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
