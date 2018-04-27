@@ -6,7 +6,7 @@ BOUT_TOP?=..
 # Some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpful, but at least
 # with this, it should be easy to change:
-sphinx-build?=$(shell which sphinx-build-3 &>/dev/null && echo sphinx-build-3 || echo sphinx-build)
+sphinx-build?=$(shell which sphinx-build-3 >/dev/null 2>&1 && echo sphinx-build-3 || echo sphinx-build)
 
 all: sphinx
 manual: all
