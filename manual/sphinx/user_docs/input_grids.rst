@@ -11,7 +11,7 @@ The simulation mesh describes the number and topology of grid points,
 the spacing between them, and the coordinate system. For many problems,
 a simple mesh can be created using options.
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [mesh]
     nx = 260  # X grid size
@@ -32,7 +32,7 @@ A common use is to make ``x`` and ``z`` dimensions have the same
 number of points, when ``x`` has ``mxg`` boundary cells on each
 boundary but ``z`` does not (since it is usually periodic):
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [mesh]
     nx = nz + 2*mxg  # X grid size
@@ -50,7 +50,7 @@ floating point value is not within 1e-3 of an integer. This is to minimise
 unexpected behaviour. If you want to round any result to an integer,
 use the ``round`` function:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     [mesh]
     nx = 256.4   # Error!
@@ -60,7 +60,7 @@ use the ``round`` function:
 Real (floating-point) values can also be expressions, allowing quite
 complicated analytic inputs. For example in the example ``test-griddata``:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     # Screw pinch
 
@@ -155,6 +155,7 @@ files for tokamaks. These can be used by the ``2fluid`` and
 ``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
 the BOUT-06 code.
 
+.. _sec-bout-topology:
 
 BOUT++ Topology
 ---------------
@@ -230,6 +231,7 @@ with ``ixseps1 = ixseps2`` are connected together via communications.
     - ``jyseps1_1 > -1``
     - ``jyseps2_1 >= jyseps1_1 + 1``
     - ``jyseps1_2 >= jyseps2_1``
+    - ``jyseps2_2 >= jyseps1_2``
     - ``jyseps2_2 <= ny - 1``
 
    To ensure that communications work branch cuts must align with
@@ -251,7 +253,7 @@ branch cuts needed for X-point geometry (see
 In the standard “bout” mesh (``src/mesh/impls/bout/``), the
 communication is controlled by the variables
 
-::
+.. code-block:: cpp
 
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;

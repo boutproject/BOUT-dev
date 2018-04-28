@@ -285,14 +285,19 @@ https://computation.llnl.gov/casc/sundials/main.html.
    ``.tar.gz``, but we will provide a step-by-step guide to install it
    and make it compatible with BOUT++ here
 
+.. warning:: BOUT++ currently only supports SUNDIALS 2.6 - 2.7!
+             Support for versions past 2.7 has yet to be
+             implemented. It is unlikely that we will support versions
+             before 2.6.
+
 ::
 
      $ cd ~
      $ mkdir -p local/examples
      $ mkdir -p install/sundials-install
      $ cd install/sundials-install
-     $ # Move the downloaded sundials-3.0.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-3.0.0.tar.gz
+     $ # Move the downloaded sundials-2.6.0.tar.gz to sundials-install
+     $ tar -xzvf sundials-2.6.0.tar.gz
      $ mkdir build
      $ cd build
 
@@ -303,7 +308,7 @@ https://computation.llnl.gov/casc/sundials/main.html.
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
-       ../sundials-3.0.0
+       ../sundials-2.6.0
 
      $ make
      $ make install
@@ -331,9 +336,8 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.1, 3.2, 3.3 and 3.4
-(support for newer versions are planned for the future). To install
-PETSc version 3.4.5, use the following steps::
+Currently, BOUT++ supports PETSc versions 3.4 - 3.8. To install PETSc
+version 3.4.5, use the following steps::
 
     $ cd ~
     $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
@@ -439,10 +443,15 @@ To enable MUMPS, configure with::
 
     $ ./configure --with-mumps
 
-MUMPS has many dependencies, including ScaLapack and ParMetis, which the
-configuration script assumes are in the same place as MUMPS. The easiest
-way to get MUMPS installed is to install PETSc with MUMPS, as the
-configuration script will check the PETSc directory.
+MUMPS has many dependencies, including ScaLapack and
+ParMetis. Unfortunately, the exact dependencies and configuration of
+MUMPS varies a lot from system to system. The easiest way to get MUMPS
+installed is to install PETSc with MUMPS, or supply the ``CPPFLAGS``,
+``LDFLAGS`` and ``LIBS`` environment variables to ``configure``::
+
+   $ ./configure --with-mumps CPPFLAGS=-I/path/to/mumps/includes \
+       LDFLAGS=-L/path/to/mumps/libs \
+       LIBS="-ldmumps -lmumps_common -lother_libs_needed_for_mumps"
 
 MPI compilers
 -------------

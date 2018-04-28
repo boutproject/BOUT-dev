@@ -476,6 +476,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                            REGION region=RGN_NOBNDRY);
   /// Second derivative in X direction in index space
@@ -488,6 +489,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                            REGION region=RGN_NOBNDRY);
   /// Second derivative in Y direction in index space
@@ -500,6 +502,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
                            DIFF_METHOD method, REGION region);
   const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
@@ -546,7 +549,7 @@ class Mesh {
   /// @param[in] outloc  The cell location where the result is desired.
   ///                    The default is the same as \p f
   /// @param[in] method  The differencing method to use
-  /// @param[in] region  The region of the grid for which the result is calculated.
+  /// @param[in] region  The region of the grid for which the result is calculated
   const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region = RGN_NOBNDRY);
   const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,

@@ -5,9 +5,10 @@ BOUT_TOP = ../..
 
 LIST = test_suite_list
 
-BUILD = $(shell grep '^[^\#!]' $(LIST) )
+BUILD = $(shell ./test_suite_make --get-list)
 
-CHECKING = $(shell grep '^[^\#]' $(LIST) | sed s/\!// )
+CHECKING = $(shell ./test_suite --get-list)
+
 
 include $(BOUT_TOP)/make.config
 

@@ -23,7 +23,8 @@ scalar field :math:`T`:
 There are several files involved:
 
 -  ``conduction.cxx`` contains the source code which specifies the
-   equation to solve
+   equation to solve. See :ref:`sec-heat-conduction-model` for a
+   line-by-line walkthrough of this file
 
 -  ``conduct_grid.nc`` is the grid file, which in this case just
    specifies the number of grid points in :math:`X` and :math:`Y`

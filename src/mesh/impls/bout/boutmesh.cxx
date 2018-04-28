@@ -216,6 +216,14 @@ int BoutMesh::load() {
                       jyseps2_2, ny, ny - 1);
     jyseps2_2 = ny - 1;
   }
+  if (jyseps2_2 < jyseps1_2) {
+    if (jyseps1_2 >= ny) {
+      throw BoutException("jyseps1_2 (%d) must be < ny (%d).", jyseps1_2, ny);
+    }
+    output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps1_2 (%d). Setting to %d\n",
+                      jyseps2_2, jyseps1_2, jyseps1_2);
+    jyseps2_2 = jyseps1_2;
+  }
 
   if (options->isSet("NXPE")) {    // Specified NXPE
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
@@ -226,6 +234,62 @@ int BoutMesh::load() {
     }
 
     NYPE = NPES / NXPE;
+
+    int nyp = NPES / NXPE;
+    int ysub = ny / NYPE;
+
+    // Check size of Y mesh
+    if (ysub < MYG) {
+      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+                        ysub, MYG);
+    }
+    // Check branch cuts
+    if ((jyseps1_1 + 1) % ysub != 0) {
+      throw BoutException(
+          "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+          jyseps1_1 + 1, ysub);
+    }
+
+    if (jyseps2_1 != jyseps1_2) {
+      // Double Null
+
+      if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
+      }
+
+      if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
+      }
+
+      // Check upper legs
+      if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
+        throw BoutException("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
+      }
+      if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
+        throw BoutException("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
+      }
+    } else {
+      // Single Null
+      if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
+      }
+    }
+
+    if ((ny - jyseps2_2 - 1) % ysub != 0) {
+      throw BoutException("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
+                        "multiple of MYSUB (%d)\n",
+                        ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
+    }
   } else {
     // Choose NXPE
 
