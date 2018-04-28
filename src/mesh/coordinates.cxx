@@ -504,11 +504,16 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) { return localmesh->indexDDX(f) / dx; }
+const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+  return localmesh->indexDDX(f, loc, method, region) / dx;
+}
 
-const Field2D Coordinates::DDY(const Field2D &f) { return localmesh->indexDDY(f) / dy; }
+const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+  return localmesh->indexDDY(f, loc, method, region) / dy;
+}
 
-const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
+const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+  ASSERT1(f.getMesh() == localmesh);
   return Field2D(0.0, localmesh);
 }
 
@@ -600,6 +605,11 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
+
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
   if (sg.getLocation() != outloc) {
     localmesh->communicate(sg);
     sg = interp_to(sg, outloc);

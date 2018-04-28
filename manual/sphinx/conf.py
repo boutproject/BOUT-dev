@@ -47,7 +47,7 @@ if has_breathe:
                                      dryrun=False,
                                      force=True,
                                      notoc=False,
-                                     outtypes=("class", "file"),
+                                     outtypes=("file"),
                                      project="BOUT++",
                                      rootpath='../doxygen/bout/xml',
                                      suffix='rst')
@@ -103,7 +103,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'BOUT++'
 copyright = '2017, B. Dudson'
-author = 'B. Dudson'
+author = 'The BOUT++ team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -140,6 +140,9 @@ highlight_language = 'cpp'
 
 # Turn on figure numbering
 numfig = True
+
+# The default role for text marked up `like this`
+default_role = 'any'
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -195,7 +198,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'BOUT.tex', 'BOUT++ Documentation',
-     'B. Dudson', 'manual'),
+     'The BOUT++ team', 'manual'),
 ]
 
 

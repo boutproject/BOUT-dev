@@ -1,26 +1,29 @@
 File I/O
 ========
 
-BOUT++ needs to deal with binary format files to read the grid; read and
-write restart restart files; and write dump files. The two parts of the
-code which need to read and write data are therefore the grid routines
-(:doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>`), and the ``Datafile`` class
-(:doc:`datafile.hxx<../_breathe_autogen/file/datafile_8hxx>` and :doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`). All other parts which need to
-read or write data go through these methods.
+BOUT++ needs to deal with binary format files to read the grid; read
+and write restart restart files; and write dump files. The two parts
+of the code which need to read and write data are therefore the grid
+routines (:doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>`),
+and the `Datafile` class
+(:doc:`datafile.hxx<../_breathe_autogen/file/datafile_8hxx>` and
+:doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`). All
+other parts which need to read or write data go through these methods.
 
-Several different file formats are commonly used, such as HDF, HDF5, and
-netCDF. For historical reasons (inherited from BOUT), BOUT++ originally
-used the Portable Data Binary (PDB) format developed at LLNL [1]_. To
-separate the basic file format functions from the higher level grid and
-Datafile classes, these use an abstract class ``DataFormat``. Any class
-which implements the functions listed in :doc:`dataformat.hxx<../_breathe_autogen/file/dataformat_8hxx>` can
+Several different file formats are commonly used, such as HDF, HDF5,
+and netCDF. For historical reasons (inherited from BOUT), BOUT++
+originally used the Portable Data Binary (PDB) format developed at
+LLNL [1]_. To separate the basic file format functions from the higher
+level grid and Datafile classes, these use an abstract class
+`DataFormat`. Any class which implements the functions listed in
+:doc:`dataformat.hxx<../_breathe_autogen/file/dataformat_8hxx>` can
 therefore be passed to grid or datafile. This makes implementing a new
 file format, and switching between formats at run-time, relatively
 straightforward.
 
 Access to data in files is provided using a Bridge pattern: The
-``Datafile`` class provides an interface to the rest of the code to read
-and write variables, whilst file formats implement the ``Dataformat``
+`Datafile` class provides an interface to the rest of the code to read
+and write variables, whilst file formats implement the `Dataformat`
 interface.
 
 ::
@@ -47,9 +50,7 @@ interface.
       static bool enabled;
     };
 
-The important bits of the DataFormat interface are:
-
-::
+The important bits of the DataFormat interface are::
 
     class DataFormat {
      public:

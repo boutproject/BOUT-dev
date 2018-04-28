@@ -1,12 +1,14 @@
 #include <options.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
-#include <sstream>
 #include <output.hxx>
-
 #include <field_factory.hxx> // Used for parsing expressions
 
-const string DEFAULT_SOURCE{"default"}; // The source label given to default values
+#include <iomanip>
+#include <sstream>
+
+/// The source label given to default values
+const string DEFAULT_SOURCE{"default"};
 
 Options::Options() : parent(nullptr) {}
 
@@ -50,7 +52,8 @@ void Options::set(const string &key, const bool &val, const string &source) {
 
 void Options::set(const string &key, BoutReal val, const string &source) {
   std::stringstream ss;
-  ss << val;
+  // Make sure the precision is large enough to hold a BoutReal
+  ss << std::scientific << std::setprecision(17) << val;
   set(key, ss.str(), source);
 }
 
