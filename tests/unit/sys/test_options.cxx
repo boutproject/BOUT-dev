@@ -323,3 +323,14 @@ TEST_F(OptionsTest, MakeNestedSection) {
   EXPECT_EQ(section2->getParent(), section1);
   EXPECT_EQ(section2->str(), "section1:section2");
 }
+
+TEST_F(OptionsTest, SetSameOptionTwice) {
+  Options options;
+  options.set("key", "value", "code");
+  EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
+  output_warn.disable();
+  options.set("key", "value", "code");
+  options.forceSet("key", "new value", "code");
+  options.set("key", "value", "code",true);
+  output_warn.enable();
+}

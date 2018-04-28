@@ -124,10 +124,18 @@ public:
   static void cleanup();
 
   // Setting options
-  void set(const string &key, const int &val, const string &source="");
-  void set(const string &key, BoutReal val, const string &source="");
-  void set(const string &key, const bool &val, const string &source="");
-  void set(const string &key, const string &val, const string &source = "");
+  template<typename T> void forceSet(const string &key, T t, const string &source=""){
+    set(key,t,source,true);
+  }
+  void set(const string &key, const int &val, const string &source="", bool force=false);
+  void set(const string &key, BoutReal val, const string &source="", bool force=false);
+  void set(const string &key, const bool &val, const string &source="", bool force=false);
+  void set(const string &key, const char * &val, const string &source="", bool force=false) {
+    _set(key,val,source,force);
+  }
+  void set(const string &key, const string &val, const string &source = "", bool force=false) {
+    _set(key,val,source,force);
+  };
 
   /// Set a string with a char* array. This converts to std::string
   /// rather than allow an implicit conversion to bool
@@ -192,6 +200,8 @@ public:
 
   std::map<string, OptionValue> options;
   std::map<string, Options*> sections;
+
+  void _set(const string &key, const string &val, const string &source, bool force);
 };
 
 /// Define for reading options which passes the variable name
