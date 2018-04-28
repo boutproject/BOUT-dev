@@ -5672,7 +5672,7 @@ $as_echo "$as_me: Output coloring disabled" >&6;}
 
 fi
 
-if test "x$enable_track" == "xyes"; then :
+if test "x$enable_track" = "xyes"; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Field name tracking enabled" >&5
 $as_echo "$as_me: Field name tracking enabled" >&6;}
@@ -5685,7 +5685,7 @@ $as_echo "$as_me: Field name tracking disabled" >&6;}
 
 fi
 
-if test "x$enable_sigfpe" == "xyes"; then :
+if test "x$enable_sigfpe" = "xyes"; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions enabled" >&5
 $as_echo "$as_me: Signaling floating point exceptions enabled" >&6;}
@@ -5707,7 +5707,7 @@ CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSI
 # Enable Backtrace if possible
 #############################################################
 
-if test "x$enable_backtrace" == "xyes" || test "x$enable_backtrace" == "xmaybe"; then :
+if test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe"; then :
 
   # Extract the first word of "addr2line", so it can be a program name with args.
 set dummy addr2line; ac_word=$2
@@ -5748,7 +5748,7 @@ fi
 
 
 
-  if test $works == yes; then :
+  if test $works = yes; then :
 
     for ac_func in popen backtrace
 do :
@@ -5767,7 +5767,7 @@ done
 
 fi
 
-  if test $works == yes; then :
+  if test $works = yes; then :
 
     for ac_header in execinfo.h dlfcn.h
 do :
@@ -5787,7 +5787,7 @@ done
 
 fi
 
-  if test $works == yes; then :
+  if test $works = yes; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Native backtrace enabled" >&5
 $as_echo "$as_me: Native backtrace enabled" >&6;}
@@ -5795,7 +5795,7 @@ $as_echo "$as_me: Native backtrace enabled" >&6;}
 
 else
 
-    if test "x$enable_backtrace" == "xyes"; then :
+    if test "x$enable_backtrace" = "xyes"; then :
 
       as_fn_error $? "backtrace requested, but cannot be enabled" "$LINENO" 5
 
@@ -5814,7 +5814,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
-if test "x$enable_shared" == "xyes"; then :
+if test "x$enable_shared" = "xyes"; then :
 
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -6816,7 +6816,7 @@ fi
 fi
 
   # Find the utilities included with pnetcdf
-  if test "x$PNCPATH" == "x"; then :
+  if test "x$PNCPATH" = "x"; then :
 
     if test "x$with_pnetcdf" = "xyes"; then :
 
@@ -8917,9 +8917,7 @@ fi
 
     PETSC_ARCH="$(cd $PETSC_DIR; ls -d arch*)"
     if test $(echo "$PETSC_ARCH" | wc -l) -gt 1; then :
-  as_fn_error $? "\$PETSC_ARCH not defined
-else
-  but several possibilities found. Set to one of $PETSC_ARCH" "$LINENO" 5
+  as_fn_error $? "\$PETSC_ARCH not defined, but several possibilities found. Set to one of $PETSC_ARCH" "$LINENO" 5
 
 fi
 fi
@@ -9089,7 +9087,7 @@ if test "$PETSC" != ""; then :
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"; then :
+  if test "$PETSC_HAS_SUNDIALS" = "yes"; then :
 
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
 
@@ -9108,7 +9106,7 @@ if test "$with_slepc" != "" && test "$with_slepc" != "no"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for SLEPc" >&5
 $as_echo "$as_me: Searching for SLEPc" >&6;}
 
-  if test "$SLEPC_DIR" == ""; then :
+  if test "$SLEPC_DIR" = ""; then :
 
     as_fn_error $? "*** --with-slepc specified but SLEPC_DIR not set" "$LINENO" 5
 
@@ -9216,7 +9214,7 @@ $as_echo "$as_me: Searching for MUMPS" >&6;}
 
 fi
 
-  if test "$MUMPS" == ""; then :
+  if test "$MUMPS" = ""; then :
 
     # Look in some standard locations
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/dmumps_c.h" >&5
@@ -11614,7 +11612,7 @@ fi
 
 fi
 
-  if test "$SCOREPPATH" == ""; then :
+  if test "$SCOREPPATH" = ""; then :
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
