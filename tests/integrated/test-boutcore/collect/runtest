@@ -3,7 +3,9 @@ import boutcore as bc
 import numpy as np
 from boutdata import collect
 
-import numpy as np
+#requires boutcore
+#requires not make
+
 bc.init("-d input".split(" "))
 
 f=bc.Field3D.fromMesh(None)

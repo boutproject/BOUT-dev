@@ -2,6 +2,9 @@
 import boutcore
 import numpy as np
 
+#requires boutcore
+#requires not make
+
 errorlist=""
 boutcore.init("-d data -q -q -q")#+" -f BOUT.settings")
 

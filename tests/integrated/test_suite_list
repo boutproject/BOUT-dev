@@ -24,3 +24,8 @@ test-drift-instability-staggered
 test-interchange-instability
 # test coding style
 test-code-style
+# Boutcore tests:
+test-boutcore/collect
+test-boutcore/legacy-model
+test-boutcore/mms-ddz
+test-boutcore/simple-model
