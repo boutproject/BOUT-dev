@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import boutcore
+import sys
 
 #requires boutcore
 #requires not make
