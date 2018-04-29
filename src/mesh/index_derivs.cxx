@@ -567,8 +567,8 @@ void derivs_set(std::vector<Options *> options, DiffLookup *table, DiffLookup *s
   label = def;
   if (staggerGrids) {
     output_info.write("\tStag. %-6s: ", name.c_str());
-    for (auto &opts : options) {
-      for (auto &_name : {name + "stag", name}) {
+    for (auto &_name : {name + "stag", name}) {
+      for (auto &opts : options) {
         if (opts->isSet(_name)) {
           opts->get(_name, label, "");
           goto endloop;
