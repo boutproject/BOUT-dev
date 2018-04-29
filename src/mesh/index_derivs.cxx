@@ -479,13 +479,13 @@ DiffLookup lookupFunc(DiffLookup * table, DIFF_METHOD method) {
   }
 }
 
-int printFuncName(DIFF_METHOD method) {
+void printFuncName(DIFF_METHOD method) {
   // Find this entry
   int i = 0;
   do {
     if (DiffNameTable[i].method == method) {
       output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
-      return i;
+      return;
     }
     i++;
   } while (DiffNameTable[i].method != DIFF_DEFAULT);

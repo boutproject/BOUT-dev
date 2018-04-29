@@ -141,14 +141,12 @@ BoutReal VDDX_C2_stag(stencil &v, stencil &f);
 BoutReal VDDX_C4_stag(stencil &v, stencil &f);
 BoutReal FDDX_U1_stag(stencil &v, stencil &f);
 
-
-
 TEST_F(MeshTest, SetDerivativesDefault) {
   RESET
   Options opt;
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDX,DDX_C2);
-  EXPECT_EQ(sfDDX,DDX_C2_stag);
+  EXPECT_EQ(fDDX,&DDX_C2);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesDiff) {
@@ -156,8 +154,8 @@ TEST_F(MeshTest, SetDerivativesDiff) {
   Options opt;
   opt.getSection("diff")->set("first","C4","test");
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDY,DDX_C4);
-  EXPECT_EQ(sfDDY,DDX_C4_stag);
+  EXPECT_EQ(fDDY,&DDX_C4);
+  EXPECT_EQ(sfDDY,&DDX_C4_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesDiffStag) {
@@ -166,8 +164,8 @@ TEST_F(MeshTest, SetDerivativesDiffStag) {
   opt.getSection("diff")->set("first","C2","test");
   opt.getSection("diff")->set("firstStag","C4","test");
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDZ,DDX_C2);
-  EXPECT_EQ(sfDDZ,DDX_C4_stag);
+  EXPECT_EQ(fDDZ,&DDX_C2);
+  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesDdxBeforeDiff) {
@@ -176,8 +174,8 @@ TEST_F(MeshTest, SetDerivativesDdxBeforeDiff) {
   opt.getSection("diff")->set("firstStag","C4","test");
   opt.getSection("ddx")->set("firstStag","C2","test");
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDZ,DDX_C4_stag);
-  EXPECT_EQ(sfDDX,DDX_C2_stag);
+  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesDiffStagBeforeDDXNone) {
@@ -186,7 +184,7 @@ TEST_F(MeshTest, SetDerivativesDiffStagBeforeDDXNone) {
   opt.getSection("diff")->set("firstStag","C4","test");
   opt.getSection("ddx")->set("first","C2","test");
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDX,DDX_C4_stag);
+  EXPECT_EQ(sfDDX,&DDX_C4_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesInvalid) {
@@ -198,7 +196,7 @@ TEST_F(MeshTest, SetDerivativesInvalid) {
   opt.getSection("ddy")->set("firstStag","C2","test");
   opt.getSection("ddz")->set("firstStag","C2","test");
   localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDX,DDX_C2_stag);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
 }
 
 TEST_F(MeshTest, SetDerivativesInvalid2) {
