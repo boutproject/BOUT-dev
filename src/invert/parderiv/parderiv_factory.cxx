@@ -12,6 +12,7 @@
 
 ParDerivFactory* ParDerivFactory::instance = NULL;
 
+/// Default Options section to look for configuration
 static const char* default_section = "parderiv";
 
 ParDerivFactory* ParDerivFactory::getInstance() {

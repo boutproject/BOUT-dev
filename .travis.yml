@@ -95,14 +95,10 @@ matrix:
           - *standard_packages
           - libpetsc3.4.2-dev
           - libslepc3.4.2-dev
-          - libmumps-dev
-          - libscalapack-mpi-dev
-          - libparmetis-dev
-          - libmetis-dev
           - liblapack-dev
           - libparpack2-dev
     env:
-      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --with-mumps --enable-openmp'
+      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
       - OMP_NUM_THREADS=2
       - PETSC_DIR=/usr/lib/petscdir/3.4.2
       - PETSC_ARCH=linux-gnu-c-opt

@@ -1,4 +1,3 @@
-all: python2 python3
+all: python3
 python%:
-	$(MAKE) -C _boutcore_build clean
 	PY=$@ $(MAKE) -C _boutcore_build pseudoinstall

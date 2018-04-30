@@ -421,7 +421,7 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
       throw BoutException("Failed to create string type");
     
     // Create attribute and write to it
-    hid_t myatt_in = H5Acreate(dataSet, "type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t myatt_in = H5Acreate(dataSet, "bout_type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
     if (myatt_in < 0)
       throw BoutException("Failed to create attribute");
     if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)
@@ -689,7 +689,7 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
       throw BoutException("Failed to create string type");
     
     // Create attribute and write to it
-    hid_t myatt_in = H5Acreate(dataSet, "type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t myatt_in = H5Acreate(dataSet, "bout_type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
     if (myatt_in < 0)
       throw BoutException("Failed to create attribute");
     if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)

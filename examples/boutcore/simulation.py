@@ -1,17 +1,16 @@
 #!/bin/python3
-import boutcore
+import boutcore as bc
 
-boutcore.init("mesh:n=2")
-mesh=boutcore.Mesh.getGlobal();
-dens=boutcore.Field3D.fromMesh(mesh)
-#dens.set(0)
+bc.init("mesh:n=48")
 
-def rhs(time):
-    n_ddt=dens.ddt()
-    n_ddt.set(1)
+class Model(bc.PhysicsModel):
+    def init(self,restart):
+        self.dens = bc.create3D("sin(x)")
+        self.solve_for(n=self.dens)
 
-model=boutcore.PhysicsModel()
-model.setRhs(rhs)
-model.solve_for(n=dens)
+    def rhs(self,time):
+        self.dens.ddt(bc.DDX(self.dens))
+
+
+model = Model()
 model.solve()
-

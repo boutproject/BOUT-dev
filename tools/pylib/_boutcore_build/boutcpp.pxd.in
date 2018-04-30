@@ -71,7 +71,7 @@ cdef extern from "options.hxx":
         @staticmethod
         Options * getRoot()
         Options * getSection(string fu)
-        void set(string ,string,string)
+        void set(string ,string,string, bool)
         void get(string ,string& ,string)
         void get(string ,double& ,double)
         void get(string ,bool& ,bool)

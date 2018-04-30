@@ -98,18 +98,17 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
 }
 
 /// Laplacian inversion using Parallel Diagonal Dominant (PDD) method
-/*!
- *
- * July 2008: Adapted from serial version to run in parallel (split in X) for tridiagonal system
- * i.e. no 4th order inversion yet.
- *
- * \note This code stores intermediate results and takes significantly more memory than
- * the serial version. This can be balanced against communication time i.e. faster communications
- * can allow less memory use.
- *
- * @param[in] data  Internal data used for multiple calls in parallel mode
- * @param[in] stage Which stage of the inversion, used to overlap calculation and communications.
- */
+///
+/// July 2008: Adapted from serial version to run in parallel (split
+/// in X) for tridiagonal system i.e. no 4th order inversion yet.
+///
+/// \note This code stores intermediate results and takes
+/// significantly more memory than the serial version. This can be
+/// balanced against communication time i.e. faster communications can
+/// allow less memory use.
+///
+/// @param[in]    b  RHS values (Ax = b)
+/// @param[in] data  Internal data used for multiple calls in parallel mode
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   int ix, kz;
   Mesh *mesh = b.getMesh();

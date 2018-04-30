@@ -52,7 +52,10 @@ BoutReal interp(const stencil &s)
 const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
   Mesh * mesh = var.getMesh();
-  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
+  }
+  if (mesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
     TRACE("Interpolating %s -> %s", strLocation(var.getLocation()), strLocation(loc));
@@ -76,6 +79,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
       switch(dir) {
       case CELL_XLOW: {
+        if (mesh->xstart < 2){
+            throw BoutException("Cannot interpolate in X direction\n"
+                                " - Not enough boundary cells\n"
+                                " - at least 2 are needed!");
+        }
         for(const auto &i : result.region(RGN_NOX)) {
 
           // Set stencils
@@ -106,33 +114,20 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
           // the magnetic field
-          s.pp = nan("");
-          s.mm = nan("");
-          throw BoutException("This is wrong!");
-          for(const auto &i : result.region(RGN_NOY)) {
-            // Set stencils
-            s.c = var[i];
-            s.p = var.yup()[i.yp()];
-            s.m = var.ydown()[i.ym()];
-
-            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-              // Producing a stencil centred around a lower Y value
-              s.pp = s.p;
-              s.p  = s.c;
-            } else if(location == CELL_YLOW) {
-              // Stencil centred around a cell centre
-              s.mm = s.m;
-              s.m  = s.c;
-            }
-
-            result[i] = interp(s);
-          }
+          throw BoutException("Cannot interpolate in Y direction\n"
+                              " - Not enough boundary cells\n"
+                              " - at least 2 are needed.\n"
+                              " - split yup/ydown has only one guard cell!");
         }
         else {
           // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 
           Field3D var_fa = mesh->toFieldAligned(var);
-          if (mesh->ystart > 1) {
+          if (mesh->ystart < 2) {
+            throw BoutException("Cannot interpolate in Y direction\n"
+                                " - Not enough boundary cells\n"
+                                " - at least 2 are needed!");
+          }
           // More than one guard cell, so set pp and mm values
           // This allows higher-order methods to be used
           for(const auto &i : result.region(RGN_NOY)) {
@@ -143,46 +138,17 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
             s.pp = var_fa[i.offset(0,2,0)];
             s.mm = var_fa[i.offset(0,-2,0)];
 
-            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            if (location == CELL_CENTRE) {
               // Producing a stencil centred around a lower Y value
               s.pp = s.p;
               s.p  = s.c;
-            } else if(location == CELL_YLOW) {
+            } else {
               // Stencil centred around a cell centre
               s.mm = s.m;
               s.m  = s.c;
             }
 
             result[i] = interp(s);
-          }
-          } else {
-            // Only one guard cell, so no pp or mm values
-            s.pp = nan("");
-            s.mm = nan("");
-            throw BoutException("Cannot interpolate in Y direction\n"
-                                " - Not enough boundary cells\n"
-                                " - at least 2 are needed!");
-            for(const auto &i : result.region(RGN_NOY)) {
-              // Set stencils
-              s.c = var_fa[i];
-              s.p = var_fa[i.yp()];
-              s.m = var_fa[i.ym()];
-
-              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-                // Producing a stencil centred around a lower Y value
-                s.pp = s.p;
-                s.p  = s.c;
-              } else if(location == CELL_YLOW) {
-                // Stencil centred around a cell centre
-                s.mm = s.m;
-                s.m  = s.c;
-              } else {
-                // We should never be here
-                throw BoutException("Please report this bug!");
-              }
-
-              result[i] = interp(s);
-            }
           }
         }
         break;
@@ -196,17 +162,14 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
           s.pp = var[i.offset(0,0,2)];
           s.mm = var[i.offset(0,0,-2)];
 
-          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+          if (location == CELL_CENTRE) {
             // Producing a stencil centred around a lower Z value
             s.pp = s.p;
             s.p  = s.c;
-          } else if(location == CELL_ZLOW) {
+          } else {
             // Stencil centred around a cell centre
             s.mm = s.m;
             s.m  = s.c;
-          } else {
-            // We should never be here
-            throw BoutException("Please report this bug!");
           }
 
           result[i] = interp(s);
@@ -215,7 +178,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       }
       default: {
         // This should never happen
-        throw BoutException("Unsupported method of interpolation\n"
+        throw BoutException("Unsupported direction of interpolation\n"
                             " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
@@ -233,9 +196,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
     result.setLocation(loc);
 
     return result;
-  }
-  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
-    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
   // Nothing to do - just return unchanged
   return var;

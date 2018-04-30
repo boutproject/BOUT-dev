@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#requires not (travis and mpich)
+
 #
 # Run the test, check the error
 #
@@ -18,11 +20,6 @@ from boutdata.collect import collect
 from sys import exit
 
 MPIRUN = getmpirun()
-
-s,mpich=shell("diff /usr/bin/mpirun /usr/bin/mpirun.mpich &>/dev/null",pipe=True)
-if s==0:
-    print("Skipping test-multigrid_laplace with mpich - to slow")
-    exit(42)
 
 print("Making multigrid Laplacian inversion test")
 shell("rm test_multigrid_laplace")

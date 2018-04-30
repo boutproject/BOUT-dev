@@ -1,3 +1,6 @@
+.. Use python as the default language for syntax highlighting in this file
+.. highlight:: python
+
 zoidberg package
 ================
 

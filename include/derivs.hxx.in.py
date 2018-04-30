@@ -6,7 +6,7 @@
 import jinja2
 
 
-print("""\
+file_header="""\
 /*!************************************************************************
  * \\file derivs.hxx
  *
@@ -43,18 +43,14 @@ print("""\
 #include "vector3d.hxx"
 #include "vector2d.hxx"
 
-#include "bout_types.hxx" // See this for code
-""")
+#include "bout_types.hxx"
 
+// Feel free to edit this file (derivs.hxx) rather then the generating
+// files. If this is easier then changing derivx.hxx.in.py or
+// derivs.hxx.in.jinja do so, but please remove the derivs.hxx.in.*
+// files to make clear the file is not auto-generated anymore.
+"""
 
-
-
-env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
-                         trim_blocks=True)
-
-description_template = env.get_template("derivs.hxx.in.description")
-
-function_template = env.get_template("derivs.hxx.in.function")
 
 class Function(object):
     def __init__(self,name,flux=None,desc=None,latex=None):
@@ -64,16 +60,16 @@ class Function(object):
             self.desc=desc
             self.latex=latex
         else:
-            # Copy init
+            # Copy constructor
             self.name=name.name
             self.flux=name.flux
             self.desc=name.desc
             self.latex=name.latex
         if flux:
-            self.in_field_desc = " * @param[in] v       The velocity field\n"
-            self.in_field_desc+= " * @param[in] f       The field of the advected quantity"
+            self.in_field_desc = "/// @param[in] v       The velocity field\n"
+            self.in_field_desc+= "/// @param[in] f       The field of the advected quantity"
         else:
-            self.in_field_desc = " * @param[in] f       The field to be differentiated"
+            self.in_field_desc = "/// @param[in] f       The field to be differentiated"
         if flux:
             self.in_sig="const $f &v, const $f &f"
             self.in_field="v, f"
@@ -92,10 +88,13 @@ class Function(object):
     def render(self):
         args=vars(self)
         args['DD']=self.name
-        global description_template, function_template
-        args['full_desc']=description_template.render(**args)
+        global function_template
         print(function_template.render(**args))
 
+env = jinja2.Environment(loader=jinja2.FileSystemLoader('.'),
+                         trim_blocks=True)
+
+function_template = env.get_template("derivs.hxx.in.jinja")
 
 first=Function('DDd',False,
                 desc="Calculate first partial derivative in $d",
@@ -116,62 +115,23 @@ funcs=[first,
                 desc="for terms of form div(v * f)",
                 latex="\partial (v f) / \partial $d_lower")]
 
-
-for fun in funcs:
-    if fun.name == 'DDd':
-        print("////////// FIRST DERIVATIVES //////////")
-    elif fun.name == 'D2Dd2':
-        print("////////// SECOND DERIVATIVES //////////")
-    elif fun.name == 'D4Dd4':
-        print("////////// FORTH DERIVATIVES //////////")
-    elif fun.name == 'VDDd':
-        print("///////// UPWINDING METHODS /////////////")
-    elif fun.name == 'FDDd':
-        print("///////// FLUX METHODS /////////////")
-    else:
-        print("Unhandeled case")
-        exit(1)
-    for d in ['X', 'Y', 'Z']:
-        for field in ['Field3D', 'Field2D']:
-            # get copy
-            fun.set(d,field).render()
-
-
-
-first.set('Z',"Vector3D").render()
-x='x'
-y='y'
-z='z'
-for DD in [[x,y],[x,z],[y,z]]:
-    for field in ['Field2D', 'Field3D']:
-        cur=second.set('error',field)
-        cur.name="D2D%sD%s"%(DD[0].upper(),DD[1].upper())
-        cur.desc="Calculate mixed partial derivative in %s and %s"%(DD[0],DD[1])
-        cur.latex="\partial^2 / \partial %s \partial %s"%(DD[0],DD[1])
-        cur.render()
-
-
-cur=upwind.set('Z','Field2D')
-cur.in_sig="const Field3D &v, const Field2D &f"
-cur.render()
-
-print("""
+deprecated_methods="""
 // Deprecated methods
-/*
- * Calculate first partial derivative in Z
- *
- *   $\partial / \partial z$
- *
- * @param[in] f       The field to be differentiated
- * @param[in] outloc  The cell location where the result is desired.
- *                    If staggered grids is not enabled then this has no effect
- * @param[in] method  Differencing method to use. This overrides the default
- * @param[in] inc_xbndry  DEPRECATED: use REGION flags
- *                    Determines whether the derivative should be calculated in
- *                    the X boundaries. This allows mixed operators (e.g.
- *                    D2DXDZ) without additional communication
- *
- */
+//
+// Calculate first partial derivative in Z
+//
+//   \f$\partial / \partial z\f$
+//
+// @param[in] f       The field to be differentiated
+// @param[in] outloc  The cell location where the result is desired.
+//                    If staggered grids is not enabled then this has no effect
+// @param[in] method  Differencing method to use. This overrides the default
+// @param[in] inc_xbndry  DEPRECATED: use REGION flags
+//                    Determines whether the derivative should be calculated in
+//                    the X boundaries. This allows mixed operators (e.g.
+//                    D2DXDZ) without additional communication
+
+
 inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
@@ -188,6 +148,56 @@ inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
   return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
 }
 
+"""
 
-#endif // __DERIVS_H__
-""")
+end_of_file="#endif // __DERIVS_H__"
+
+if __name__ == "__main__":
+    print(file_header)
+
+    # Generate normal derivatives for Field3D and Field2D for the
+    # various directions
+    for fun in funcs:
+        if fun.name == 'DDd':
+            print("////////// FIRST DERIVATIVES //////////")
+        elif fun.name == 'D2Dd2':
+            print("////////// SECOND DERIVATIVES //////////")
+        elif fun.name == 'D4Dd4':
+            print("////////// FORTH DERIVATIVES //////////")
+        elif fun.name == 'VDDd':
+            print("///////// UPWINDING METHODS /////////////")
+        elif fun.name == 'FDDd':
+            print("///////// FLUX METHODS /////////////")
+        else:
+            print("Unhandeled case")
+            exit(1)
+        for d in ['X', 'Y', 'Z']:
+            for field in ['Field3D', 'Field2D']:
+                # get copy
+                fun.set(d,field).render()
+
+
+    # Generate header file for the Z derivative of Vector 3D
+    first.set('Z',"Vector3D").render()
+
+    # Generate the mixed derivative
+    x='x'
+    y='y'
+    z='z'
+    for DD in [[x,y],[x,z],[y,z]]:
+        for field in ['Field2D', 'Field3D']:
+            cur=second.set('error',field)
+            cur.name="D2D%sD%s"%(DD[0].upper(),DD[1].upper())
+            cur.desc="Calculate mixed partial derivative in %s and %s"%(DD[0],DD[1])
+            cur.latex="\partial^2 / \partial %s \partial %s"%(DD[0],DD[1])
+            cur.render()
+
+    # Generate a case of mixed Field2D and Field3D for Z upwinding
+    # scheeme
+    cur=upwind.set('Z','Field2D')
+    cur.in_sig="const Field3D &v, const Field2D &f"
+    cur.render()
+
+    print(deprecated_methods)
+
+    print(end_of_file)

@@ -177,11 +177,17 @@ cdef class Field3D:
         :param data: The data to be set
         :param ignoreDataType: Ignore if data is off different type to BoutReal
         """
+        dims=[self.cobj.getNx()
+              ,self.cobj.getNy()
+              ,self.cobj.getNz()]
+        if isinstance(data, (int, float)):
+            data=np.zeros(dims)+data
         if data.dtype != np.dtype('float64'):
             if ignoreDataType:
                 data=data.astype('float64')
             else:
                 raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+        dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
 
@@ -279,6 +285,10 @@ cdef class Field3D:
             raise TypeError("Expected a Field3D or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
+        dims_in=self._checkDims(dims,dims_in)
+        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
+        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+    def _checkDims(self,dims,dims_in):
         if len(dims_in) > 3:
             raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
         if len(dims_in) < 3:
@@ -297,8 +307,7 @@ cdef class Field3D:
         for i in range(3):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
-        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
-        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
@@ -450,8 +459,9 @@ cdef void callback(void * parameter, void * method) with gil:
     try:
         (<object?>method)(time)
     except BaseException, e:
-        str__="Exception in Python callback: type:%s info:%s %s"%(str(type(e)),str(e),str(e.args))
-        print(str__)
+        str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
+        import traceback
+        str__ += traceback.format_exc()
         str_=str__.encode('ascii')
         c.throw_BoutException(str_)
 
@@ -483,26 +493,25 @@ cdef class PhysicsModelBase(object):
     cdef c.PythonModel * cmodel
     cdef c.PythonModelCallback * callback
     cdef c.PythonModelCallback * callbackinit
-    cdef c.bool done_pyinit
+    cdef c.bool _done_pyinit
     def __init__(self):
         checkInit()
         self.cmodel  = new c.PythonModel()
         self.callback= <c.PythonModelCallback*> 0
         self.callbackinit= <c.PythonModelCallback*> 0
-        self.done_pyinit = False
+        self._done_pyinit = False
     def solve(self):
-        if not self.done_pyinit:
+        if self._done_pyinit == False:
+            self._done_pyinit = True
             self.cmodel.pyinit()
-            self.done_pyinit = True
         import sys
         sys.stdout.flush()
         self.cmodel.solve()
-        #self.cmodel.getSolver().solve()
 
     def solve_for(self,**kwargs):
-        if not self.done_pyinit:
+        if self._done_pyinit == False:
+            self._done_pyinit = True
             self.cmodel.pyinit()
-            self.done_pyinit = True
         cdef char * tmp
         cdef c.Field3D * f3d
         for key in kwargs:
@@ -639,8 +648,8 @@ f_desc_vf=":param field: The Field3D object of which to calculate the derivative
     :param velocity: The Field3D object of which the field is advected"
 fun () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL")
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
     Compute the derivative $DD
 
     $f_desc
@@ -677,8 +686,8 @@ done
 
 funbad () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_ALL")
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
     Compute the derivative $DD
 
     $f_desc
@@ -782,20 +791,21 @@ def interp_to(Field3D f3d,location):
     return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
 
 
-def setOption(name, value):
-    """setOption(name, value)
-    Set an option in the global Options tree"""
+def setOption(name, value, source="PyInterface", force=False):
+    """setOption(name, value, source="PyInterface", force=False)
+
+    Set an option in the global Options tree
+    :param name: the name of the value to be set. Can be relative,
+    e.g. \`mesh:ddx:first\`.
+    :param value: the value to be set
+    :param source: The source of the change. Useful for keeping
+    track of where what was set.
+    :param force: If a value is overwritten, an exception is
+    thrown. setting this to \`True\` avoids the exception.
+    """
     checkInit()
-    cdef c.Options * opt = c.Options.getRoot()
-    cdef c.string sec_
-    for sec in name.split(":")[:-1]:
-        sec_=sec.encode('ascii')
-        opt=opt.getSection(sec_)
-    cdef c.string key = name.split(":")[-1].encode('ascii')
-    cdef c.string value_ = value.encode('ascii')
-    cdef c.string source = "PyInterface".encode('ascii')
-    opt.set(key,value_, source)
-    opt.cleanCache()
+    root=Options('')
+    root.set(name,value,source,force)
 
 cdef class Options:
     cdef c.Options * cobj
@@ -808,8 +818,17 @@ cdef class Options:
             sec_=sec.encode('ascii')
             self.cobj=self.cobj.getSection(sec_)
 
-    def set(self,name,value,source="PyInterface"):
-        """set(self,name,value,source="PyInterface")"""
+    def set(self,name,value,source="PyInterface", force=False):
+        """opt.set(name,value,source="PyInterface", force=False)
+
+        :param name: the name of the value to be set. Can be relative,
+        e.g. \`ddx:first\`.
+        :param value: the value to be set
+        :param source: The source of the change. Useful for keeping
+        track of where what was set.
+        :param force: If a value is overwritten, an exception is
+        thrown. setting this to \`True\` avoids the exception.
+        """
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
@@ -818,7 +837,7 @@ cdef class Options:
         cdef c.string key = name.split(":")[-1].encode('ascii')
         cdef c.string value_ = value.encode('ascii')
         cdef c.string source_ = source.encode('ascii')
-        opt.set(key,value_, source_)
+        opt.set(key,value_, source_, force)
         opt.cleanCache()
         return self
 

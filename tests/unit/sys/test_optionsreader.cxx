@@ -325,7 +325,7 @@ TEST_F(OptionsReaderTest, WriteFile) {
   test_file.close();
 
   std::vector<std::string> expected = {"bool_key = true",        "[section1]",
-                                       "int_key = 17",           "real_key = 6.17e+23",
+                                       "int_key = 17",           "real_key = 6.17000000000000006e+23",
                                        "[section1:subsection2]", "string_key = BOUT++"};
 
   for (auto &result : expected) {
