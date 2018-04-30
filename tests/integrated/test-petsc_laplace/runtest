@@ -5,7 +5,7 @@
 #
 
 #requires: petsc
-#requites: slow_tests
+#requires: slow_tests
 
 # Variables to compare
 from __future__ import print_function
