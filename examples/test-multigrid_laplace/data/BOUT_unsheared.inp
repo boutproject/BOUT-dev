@@ -1,12 +1,11 @@
 #grid = "grids/flat_grid.nc"
 dump_format = "nc"
+myg = 0
 
 [mesh]
 nx = 100
 ny = 1
 mz = 128
-
-myg = 0
 
 #############################################
 
