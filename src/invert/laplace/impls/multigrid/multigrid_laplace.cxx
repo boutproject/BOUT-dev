@@ -406,50 +406,98 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   #endif
   // Copy solution into a FieldPerp to return
   for (int i=1; i<lxx+1; i++) {
-    int i2 = i-1+mesh->xstart;
     for (int k=1; k<lzz+1; k++) {
+      int i2 = i-1+mesh->xstart;
       int k2 = k-1;
-      result[i2][k2] = x[i*lz2+k];
+      result(i2, k2) = x[i*lz2+k];
     }
   }
-  if (xProcI == 0) {
+  if (mesh->firstX()) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      int i2 = -1+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result[i2][k2] = x[lz2+k] - x[k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify gradient to set at inner boundary
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lz2+k] - x0(mesh->xstart-1, k2)*sqrt(mesh->g_11(mesh->xstart, yindex))*mesh->dx(mesh->xstart, yindex);
+        }
+      }
+      else {
+        // zero gradient inner boundary condition
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lz2+k];
+        }
       }
     }
     else {
       // Dirichlet boundary condition
-      int i2 = -1+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result[i2][k2] = x[k]- x[lz2+k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify value to set at inner boundary
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = 2.*x0(mesh->xstart-1,k2) - x[lz2+k];
+        }
+      }
+      else {
+        // zero value inner boundary condition
+        int i2 = -1+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = -x[lz2+k];
+        }
       }
     }
   }
-  if (xProcI == xNP-1) {
+  if (mesh->lastX()) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      int i2 = lxx+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result[i2][k2] = x[lxx*lz2+k]-x[(lxx+1)*lz2+k];
+      if ( inner_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify gradient to set at outer boundary
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lxx*lz2+k] + x0(mesh->xend+1, k2)*sqrt(mesh->g_11(mesh->xend, yindex))*mesh->dx(mesh->xend, yindex);
+        }
+      }
+      else {
+        // zero gradient outer boundary condition
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = x[lxx*lz2+k];
+        }
       }
     }
     else {
       // Dirichlet boundary condition
-      int i2 = lxx+mesh->xstart;
-      for (int k=1; k<lzz+1; k++) {
-        int k2 = k-1;
-        result[i2][k2] = x[(lxx+1)*lz2+k]-x[lxx*lz2+k];
+      if ( outer_boundary_flags & INVERT_SET ) {
+        // guard cells of x0 specify value to set at outer boundary
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = 2.*x0(mesh->xend+1,k2) - x[lxx*lz2+k];
+        }
+      }
+      else {
+        // zero value inner boundary condition
+        int i2 = lxx+mesh->xstart;
+        for (int k=1; k<lzz+1; k++) {
+          int k2 = k-1;
+          result(i2, k2) = -x[lxx*lz2+k];
+        }
       }
     }
   }
   result.setIndex(yindex); // Set the index of the FieldPerp to be returned
   
+#if CHECK > 2
+  checkData(result);
+#endif
+
   return result;
   
 }
