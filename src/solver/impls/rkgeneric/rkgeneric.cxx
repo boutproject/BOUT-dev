@@ -12,19 +12,13 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options), f0(nullptr) {
+RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
 }
 
 RKGenericSolver::~RKGenericSolver() {
   delete scheme;
-
-  if(f0 != nullptr) {
-    delete[] f0;
-    delete[] f2;
-    delete[] tmpState;
-  }
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -75,12 +69,12 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   OPTION(options, adaptive, true); // Prefer adaptive scheme
 
   // Allocate memory
-  f0 = new BoutReal[nlocal]; //Input
-  f2 = new BoutReal[nlocal]; //Result--follow order
-  tmpState = new BoutReal[nlocal];
+  f0 = Array<BoutReal>(nlocal); // Input
+  f2 = Array<BoutReal>(nlocal); // Result--follow order
+  tmpState = Array<BoutReal>(nlocal);
 
   // Put starting values into f0
-  save_vars(f0);
+  save_vars(std::begin(f0));
 
   //Initialise scheme
   scheme->init(nlocal,neq,adaptive,atol,rtol,options);
@@ -152,8 +146,8 @@ int RKGenericSolver::run() {
       call_timestep_monitors(simtime, dt);
 
     }while(running);
-    
-    load_vars(f0); // Put result into variables
+
+    load_vars(std::begin(f0)); // Put result into variables
 
     run_rhs(simtime); //Ensure aux. variables are up to date
 
@@ -170,8 +164,9 @@ int RKGenericSolver::run() {
 }
 
 //Returns the evolved state vector along with an error estimate
-BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
-				BoutReal *resultFollow){
+BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt,
+                                    const Array<BoutReal> &start,
+                                    Array<BoutReal> &resultFollow) {
 
   //Calculate the intermediate stages
   for(int curStage=0;curStage<scheme->getStageCount();curStage++){
@@ -180,7 +175,7 @@ BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, co
     scheme->setCurState(start, tmpState, curStage, dt);
 
     //Get derivs for this stage
-    load_vars(tmpState);
+    load_vars(std::begin(tmpState));
     run_rhs(curTime);
     save_derivs(&(scheme->steps(curStage,0)));
   }

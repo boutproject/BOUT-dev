@@ -170,10 +170,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
   
   // Ensure that data is allocated and unique
   result.allocate();
-  
-  if(localmesh->StaggerGrids == false){
-    loc = CELL_CENTRE ;
-  }
+
   result.setLocation(loc);
 
   // Parse expression to create a tree of generators

@@ -3,112 +3,111 @@ dist: trusty
 language: cpp
 compiler: gcc
 
+git:
+  depth: 3
+
 addons:
   apt:
-    packages:
-    - openmpi-bin
-    - libopenmpi-dev
+    # Note &<name> creates a reference that we can refer to later using
+    # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
+    packages: &non-mpi
     - libfftw3-dev
     - libnetcdf-dev
-    - libhdf5-serial-dev
     - netcdf-bin
     - hdf5-tools
+    - python3
+    - python3-pip
+    - python3-numpy
+    - python3-scipy
+    - lcov
+    packages: &standard_packages
+    - *non-mpi
+    - libhdf5-mpi-dev
+    - openmpi-bin
+    - libopenmpi-dev
 
 matrix:
+  fast_finish: true
   include:
-  - env: CONFIGURE_OPTIONS=''
-  - env: CONFIGURE_OPTIONS='--enable-openmp' OMP_NUM_THREADS=2
-  - env: CONFIGURE_OPTIONS='--enable-debug'
-  - env: CONFIGURE_OPTIONS='--enable-shared' MAIN_TARGET=shared
-  - env: CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
-  - env: CONFIGURE_OPTIONS='' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
-  - env: CONFIGURE_OPTIONS='--enable-debug' MPICH_CC=clang MPICH_CXX=clang++ OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
+  - env: &default_env
+      - CONFIGURE_OPTIONS=''
+      - SCRIPT_FLAGS='-uim'
+      - PIP_PACKAGES='netcdf4'
   - addons:
       apt:
-        packages:
-          - openmpi-bin
-          - libopenmpi-dev
-          - libfftw3-dev
-          - libnetcdf-dev
-          - libhdf5-serial-dev
-          - netcdf-bin
-          - hdf5-tools
-          - libpetsc3.4.2-dev
-    env: CONFIGURE_OPTIONS='--with-petsc' PETSC_DIR=/usr/lib/petscdir/3.4.2 PETSC_ARCH=linux-gnu-c-opt
+        packages: &mpich
+         - libmpich-dev
+         - mpich
+         - *non-mpi
+         - libhdf5-serial-dev
+    env:
+      - CONFIGURE_OPTIONS='--enable-shared'
+      - SCRIPT_FLAGS='-uimt python'
+      - PIP_PACKAGES='netcdf4 cython'
+
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-openmp'
+      - OMP_NUM_THREADS=2
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-debug'
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-shared'
+      - SCRIPT_FLAGS="-ut shared"
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
   - addons:
       apt:
         sources:
           - ubuntu-toolchain-r-test
         packages:
           - g++-7
-          - openmpi-bin
-          - libopenmpi-dev
-          - libfftw3-dev
-          - libnetcdf-dev
-          - libhdf5-serial-dev
-          - netcdf-bin
-          - hdf5-tools
-    env: CONFIGURE_OPTIONS='' CC=gcc-7 CXX=g++-7  MATRIX_EVAL="CC=gcc-7 && CXX=g++-7" CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
-    #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
-    #disable a noisy message arising from the relatively old version of openmpi
-    #in use in combination with the relatively new version of gcc. We should be able
-    #to remove this if a newer openmpi version is introduced.
+          - *standard_packages
+    env:
+      - *default_env
+      - CONFIGURE_OPTIONS=''
+      - CC=gcc-7 CXX=g++-7
+      - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+      #The -Wno-literal-suffix flag in CXXFLAGS above is a temporary workaround to
+      #disable a noisy message arising from the relatively old version of openmpi
+      #in use in combination with the relatively new version of gcc. We should be able
+      #to remove this if a newer openmpi version is introduced.
+      - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
+#CLANG
+  - env:
+      - *default_env
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
+    compiler: clang
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS='--enable-debug'
+      - MPICH_CC=clang MPICH_CXX=clang++
+      - OMPI_CC=clang OMPI_CXX=clang++
+    compiler: clang
+#COVERAGE
   - addons:
       apt:
         packages:
-          - openmpi-bin
-          - libopenmpi-dev
-          - libfftw3-dev
-          - libnetcdf-dev
-          - libhdf5-mpi-dev
-          - netcdf-bin
-          - hdf5-tools
-          - lcov
+          - *standard_packages
           - libpetsc3.4.2-dev
           - libslepc3.4.2-dev
-          - libmumps-dev
-          - libscalapack-mpi-dev
-          - libparmetis-dev
-          - libmetis-dev
           - liblapack-dev
           - libparpack2-dev
     env:
-      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-checks=3 --with-petsc --with-lapack --with-slepc --with-mumps --enable-openmp'
+      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
       - OMP_NUM_THREADS=2
       - PETSC_DIR=/usr/lib/petscdir/3.4.2
       - PETSC_ARCH=linux-gnu-c-opt
       - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
       - SLEPC_ARCH=linux-gnu-c-opt
-    script:
-      - ./configure $CONFIGURE_OPTIONS
-      - make -j 2 -k && make -j 2 -k check-unit-tests
-    after_success:
-      # Ensure that there is a corresponding .gcda file for every .gcno file
-      # This is to try and make the coverage report slightly more accurate
-      # It still won't include, e.g. any solvers we don't build with though
-      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-      - bash <(curl -s https://codecov.io/bash)
-  - addons:
-      apt:
-        packages:
-          - openmpi-bin
-          - libopenmpi-dev
-          - libfftw3-dev
-          - libnetcdf-dev
-          - libhdf5-serial-dev
-          - netcdf-bin
-          - hdf5-tools
-          - lcov
-    env:
+      - SCRIPT_FLAGS='-cu'
+  - env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
-    script:
-      - ./configure $CONFIGURE_OPTIONS
-      - make -j 2 -k && make -j 2 -k check-unit-tests
-    after_success:
-      - find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-      - bash <(curl -s https://codecov.io/bash)
+      - SCRIPT_FLAGS='-cu'
 
 before_install:
   ##################################################
@@ -119,19 +118,13 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - echo "${CC} $(${CC} --version)"
   ##################################################
-  # Install Conda for python 3
+  # Install remaining python3 packages using pip
   ##################################################
-  - source .install_miniconda_for_travis.sh
-
-  ##################################################
-
-  # Make sure to use the system NetCDF/HDF5 libraries, or we end up
-  # using the Conda libraries, which causes no end of headaches
-  - export CONFIGURE_OPTIONS="--with-netcdf=/usr/bin/nc-config --with-hdf5=/usr/bin/h5cc $CONFIGURE_OPTIONS"
+  - source .pip_install_for_travis.sh ${PIP_PACKAGES}
 
 script:
   # Configure, compile and run test_suite
-  - "./.travis_script.sh"
+  - "./.travis_script.sh ${SCRIPT_FLAGS}"
 
 notifications:
   # Send a notification to the BOUT++ Slack team

@@ -178,18 +178,12 @@ inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
   return !operator>(lhs, rhs);
 }
 
-/// Arithmetic operators with integers
-inline SpecificInd operator+(SpecificInd lhs, const SpecificInd &rhs) { return lhs += rhs; }
-inline SpecificInd operator+(SpecificInd lhs, int n) { return lhs += n; }
-inline SpecificInd operator+(int n, SpecificInd rhs) { return rhs += n; }
-inline SpecificInd operator-(SpecificInd lhs, int n) { return lhs -= n; }
-inline SpecificInd operator-(SpecificInd lhs, const SpecificInd &rhs) { return lhs -= rhs; }
-
 /// Index-type for `Field3D`s
 class Ind3D : public SpecificInd {
 public:
   Ind3D() : SpecificInd(){};
   Ind3D(int i) : SpecificInd(i){};
+  Ind3D(SpecificInd baseIn) : SpecificInd(baseIn){};
 
   // Note operator= from base class is always hidden
   // by implicit method so have to be explicit
@@ -204,11 +198,19 @@ public:
   }
 };
 
+/// Arithmetic operators with integers
+inline Ind3D operator+(Ind3D lhs, const Ind3D &rhs) { return lhs += rhs; }
+inline Ind3D operator+(Ind3D lhs, int n) { return lhs += n; }
+inline Ind3D operator+(int n, Ind3D rhs) { return rhs += n; }
+inline Ind3D operator-(Ind3D lhs, int n) { return lhs -= n; }
+inline Ind3D operator-(Ind3D lhs, const Ind3D &rhs) { return lhs -= rhs; }
+
 /// Index-type for `Field2D`s
 class Ind2D : public SpecificInd {
 public:
   Ind2D() : SpecificInd(){};
   Ind2D(int i) : SpecificInd(i){};
+  Ind2D(SpecificInd baseIn) : SpecificInd(baseIn){};
 
   Ind2D &operator=(int i) {
     ind = i;
@@ -220,6 +222,13 @@ public:
     return *this;
   }
 };
+
+/// Arithmetic operators with integers
+inline Ind2D operator+(Ind2D lhs, const Ind2D &rhs) { return lhs += rhs; }
+inline Ind2D operator+(Ind2D lhs, int n) { return lhs += n; }
+inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
+inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
+inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
@@ -306,13 +315,13 @@ public:
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz) {
+            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
-    blocks = getContiguousBlocks();
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(RegionIndices &indices) : indices(indices) {
-    blocks = getContiguousBlocks();
+  Region<T>(RegionIndices &indices, int maxregionblocksize = MAXREGIONBLOCKSIZE) : indices(indices) {
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
   Region<T>(ContiguousBlocks &blocks) : blocks(blocks) {
@@ -336,9 +345,9 @@ public:
   RegionIndices getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
-  void setIndices (RegionIndices &indicesIn) {
+  void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
-    blocks = getContiguousBlocks();
+    blocks = getContiguousBlocks(maxregionblocksize);
   };
 
   /// Set the blocks and ensure indices updated
@@ -539,7 +548,8 @@ private:
   /// Limits the maximum size of any contiguous block to maxBlockSize.
   /// A contiguous block is described by the inclusive start and the exclusive end
   /// of the contiguous block.
-  ContiguousBlocks getContiguousBlocks() const {
+  ContiguousBlocks getContiguousBlocks(int maxregionblocksize) const {
+    ASSERT1(maxregionblocksize>0);
     const int npoints = indices.size();
     ContiguousBlocks result;
     int index = 0; // Index within vector of indices
@@ -550,7 +560,7 @@ private:
           1; // We will always have at least startPair in the block so count starts at 1
 
       // Consider if the next point should be added to this block
-      for (index++; count < MAXREGIONBLOCKSIZE; index++) {
+      for (index++; count < maxregionblocksize; index++) {
         if (index >= npoints) {
           break;
         }

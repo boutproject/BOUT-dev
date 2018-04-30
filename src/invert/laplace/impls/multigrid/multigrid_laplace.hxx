@@ -38,6 +38,7 @@
 #include <options.hxx>
 #include <invert_laplace.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 #define MAXGM 15
 
@@ -54,7 +55,7 @@ public:
 
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
-  int *gnx,*gnz,*lnx,*lnz;
+  Array<int> gnx, gnz, lnx, lnz;
   BoutReal **matmg;
 
 protected:
@@ -163,12 +164,12 @@ private:
   Field3D A,C1,C2,D; // ODE Coefficients
   int Nx_local, Nx_global, Nz_local, Nz_global; // Local and global grid sizes
   int yindex; // y-position of the current solution phase
-  BoutReal *x; // solution vector
-  BoutReal *b; // RHS vector
+  Array<BoutReal> x; // solution vector
+  Array<BoutReal> b; // RHS vector
   Multigrid1DP *kMG;
 
   /******* Start implementation ********/
-  int mglevel,mgplag,cftype,mgsm,pcheck,tcheck;
+  int mglevel,mgplag,cftype,mgsm,pcheck;
   int xNP,xProcI;
   int mgcount,mgmpi;
 

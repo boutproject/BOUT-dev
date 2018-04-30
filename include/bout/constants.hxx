@@ -10,6 +10,7 @@
 
 /// Mathematical constant pi
 const BoutReal PI = 3.141592653589793;
+/// Mathematical constant 2 * pi
 const BoutReal TWOPI = 2 * PI;
 
 namespace SI {

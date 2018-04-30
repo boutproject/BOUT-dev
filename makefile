@@ -1,19 +1,15 @@
 
-BOUT_TOP	= .
+BOUT_TOP  = .
 
-DIRS			= src
+DIRS      = src
 
-ifndef TARGET
-TARGET=libfast
-endif
-# Add this to DIRS to have examples compiled
-#examples
+TARGET   ?= libfast
 
 include make.config
 
 shared: libfast
 	@echo "Creating libbout++.so"
-	@echo $(BOUT_FLAGS) | grep -i pic &>/dev/null || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
+	@echo $(BOUT_FLAGS) | grep -i pic > /dev/null 2>&1 || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
 	@#$(CXX) -shared -o $(LIB_SO) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvode -lpvpre  -Wl,--no-whole-archive
 	@$(RM) $(BOUT_TOP)/lib/*.so*
 	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null)
@@ -34,10 +30,12 @@ check-unit-tests: libfast
 	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
 check-mms-tests: libfast
-	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; ./test_suite
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 
 check-integrated-tests: libfast
-	@cd tests/integrated; LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}./test_suite_make
+	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
 	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 

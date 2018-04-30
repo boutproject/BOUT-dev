@@ -57,6 +57,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
   Mesh *fieldmesh = var.getMesh();
   Field3D result(fieldmesh);
 
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+    throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
+  }
   if (fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
 
     // Staggered grids enabled, and need to perform interpolation
@@ -82,6 +85,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
+        ASSERT0(mesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+
         for (const auto &i : result.region(RGN_NOBNDRY)) {
 
           // Set stencils
@@ -106,6 +111,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_YLOW: {
+        ASSERT0(mesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
@@ -148,15 +155,15 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
               s.pp = var_fa[i.offset(0, 2, 0)];
               s.mm = var_fa[i.offset(0, -2, 0)];
 
-              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              if (location == CELL_CENTRE) {
                 // Producing a stencil centred around a lower Y value
                 s.pp = s.p;
-                s.p = s.c;
-              } else if (location == CELL_YLOW) {
-                // Stencil centred around a cell centre
-                s.mm = s.m;
-                s.m = s.c;
-              }
+                s.p  = s.c;
+                } else {
+                  // Stencil centred around a cell centre
+                  s.mm = s.m;
+                  s.m = s.c;
+                }
 
               result[i] = interp(s);
             }
@@ -170,11 +177,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
               s.p = var_fa[i.yp()];
               s.m = var_fa[i.ym()];
 
-              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              if (location == CELL_CENTRE) {
                 // Producing a stencil centred around a lower Y value
                 s.pp = s.p;
                 s.p = s.c;
-              } else if (location == CELL_YLOW) {
+              } else {
                 // Stencil centred around a cell centre
                 s.mm = s.m;
                 s.m = s.c;
@@ -194,11 +201,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           s.pp = var[i.offset(0, 0, 2)];
           s.mm = var[i.offset(0, 0, -2)];
 
-          if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {
+          if (location == CELL_CENTRE) {
             // Producing a stencil centred around a lower Z value
             s.pp = s.p;
             s.p = s.c;
-          } else if (location == CELL_ZLOW) {
+          } else {
             // Stencil centred around a cell centre
             s.mm = s.m;
             s.m = s.c;
@@ -210,18 +217,17 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
       }
       default: {
         // This should never happen
-        throw BoutException("Unrecognized stagger location in interp_to()");
-      }
+        throw BoutException("Unsupported direction of interpolation\n"
+                            " - don't know how to interpolate to %s",strLocation(loc));
       };
 
-      if (dir != CELL_ZLOW) {
-        if (region != RGN_NOBNDRY)
-          fieldmesh->communicate(result);
+      if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY))
+        fieldmesh->communicate(result);
       }
 
     } else {
       // Shifted -> shifted
-      // For now, shift to centre then to shifted
+      // For now, shift to centre then to final location loc
       result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
     }
     result.setLocation(loc);

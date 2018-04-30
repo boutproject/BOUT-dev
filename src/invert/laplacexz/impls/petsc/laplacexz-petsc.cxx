@@ -82,8 +82,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
    * Defualt behaviour:
    * =================-
    * If the boundary flags are not:
-   * - xin will be set to 2nd order neumann as described above
-   * - xout will be set to 2nd order dirichlet as described above
+   * - xin & xout will be set to 2nd order dirichlet as described above
    *
    * Current implementations:
    * ========================
@@ -228,7 +227,11 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
     PC pc;
     KSPGetPC(data.ksp,&pc);
     PCSetType(pc, pctype.c_str());
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,factor_package.c_str());
+#else
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
+#endif
 
     KSPSetFromOptions( data.ksp );
 
@@ -338,16 +341,15 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         }
       }
       else{
-        // Default: Neumann on inner x boundary
+        // Default: Dirichlet on inner x boundary
         /* NOTE: Sign of the elements are opposite of what one might expect,
          *       see note about BC in LaplaceXZ constructor for more details
          */
         for(int z=0; z < mesh->LocalNz; z++) {
-          PetscScalar val = 1.0;
+          PetscScalar val = 0.5;
           MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
-          val = -1.0;
           MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
           row++;
