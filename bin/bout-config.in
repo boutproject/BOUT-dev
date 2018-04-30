@@ -24,7 +24,6 @@ libs="@CONFIG_LDFLAGS@"
 
 version="@BOUT_VERSION@"
 git="@GIT_REVISION@"
-checks="@CHECK_LEVEL@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 

@@ -88,6 +88,35 @@ desktop, and ideally only a few seconds. If you have a large simulation
 which you want to stop anyone breaking, find starting parameters which
 are as sensitive as possible so that the simulation can be run quickly.
 
+Custom test requirements
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some tests require particular libraries or environments, so should be
+skipped if these are not available. To do this, each ``runtest``
+script can contain a line starting with ``#requires``, followed by a
+python expression which evaluates to ``True`` or ``False``. For
+example, the ``integrated/test-multigrid_laplace`` test is turned off
+on Travis when using MPICH using:
+
+.. code-block:: console
+
+   #requires not (travis and mpich)
+
+or if there were a test which required PETSc to be available, it could
+specify
+
+.. code-block:: console
+
+   #requires petsc
+   
+Currently the requirements which can be combined are ``travis``,
+``mpich``, ``netcdf``, ``pnetcdf``, ``hdf5``, ``pvode``, ``cvode``,
+``ida``, ``lapack``, ``petsc``, ``slepc``, ``mumps``, ``arkode``,
+``openmp`` and ``make``. The ``make`` requirement is set to True when
+the tests are being compiled (but not run), and False when the scripts
+are run. It's used for tests which do not have a compilation stage.
+
+
 .. _sec-mms:
 
 Method of Manufactured Solutions

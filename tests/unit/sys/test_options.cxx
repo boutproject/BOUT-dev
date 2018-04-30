@@ -86,6 +86,30 @@ TEST_F(OptionsTest, SetGetReal) {
   EXPECT_DOUBLE_EQ(value, 6.7e8);
 }
 
+TEST_F(OptionsTest, SetGetDouble) {
+  Options options;
+  options.set("real_key", 0.7853981633974483, "code");
+
+  ASSERT_TRUE(options.isSet("real_key"));
+
+  BoutReal value;
+  options.get("real_key", value, -78.0, false);
+
+  EXPECT_DOUBLE_EQ(value, 0.7853981633974483);
+}
+
+TEST_F(OptionsTest, SetGetNegativeDouble) {
+  Options options;
+  options.set("real_key", -0.7853981633974483, "code");
+
+  ASSERT_TRUE(options.isSet("real_key"));
+
+  BoutReal value;
+  options.get("real_key", value, -78.0, false);
+
+  EXPECT_DOUBLE_EQ(value, -0.7853981633974483);
+}
+
 TEST_F(OptionsTest, DefaultValueReal) {
   Options options;
 

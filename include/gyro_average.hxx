@@ -33,14 +33,12 @@
 #define __GYRO_AVERAGE_H__
 
 #include "field3d.hxx"
-// #include "invert_laplace.hxx"
 
-const int GYRO_FLAGS = 64 + 16384 + 32768; // = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style Laplacian inversion flags
-
+const int GYRO_FLAGS = 64 + 16384 + 32768; ///< = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style Laplacian inversion flags
 
 /// Gyro-average using Taylor series approximation
 ///
-/// G(f) = f + rho^2*Delp2(f)
+///     \f$ \Gamma(f) = f + \rho^2 \nabla_\perp^2(f)\f$
 ///
 /// Note: Faster, but less robust than Pade approximations
 ///
@@ -50,7 +48,7 @@ const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho);
 
 /// Gyro-average using Pade approximation
 ///
-/// G_0 = (1 - rho^2*Delp2)g = f
+///     \f$ \Gamma_0 = (1 - \rho^2 \nabla_\perp^2)g = f\f$
 ///
 /// NOTE: Uses Z average of rho for efficient inversion
 ///
@@ -64,7 +62,7 @@ const Field3D gyroPade0(const Field3D &f, const Field2D &rho,
 const Field3D gyroPade0(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
 
-/// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
+/// Pade approximation \f$Gamma_1 = (1 - \frac{1}{2} \rho^2 \nabla_\perp^2)g = f\f$
 ///
 /// Note: Have to use Z average of rho for efficient inversion
 /// 
@@ -83,7 +81,7 @@ const Field2D gyroPade1(const Field2D &f, const Field2D &rho,
 /// Pade approximation 
 ///
 /// \f[
-///    \Gamma_2\left(f\right) = \frac{1}{2}\rho^2 \nabla_\perp^2 \left( 1 - \frac{1}{2} \rho^2 \nabla_\perp^2\right)^{-1}\Gamma_1\left(f\right)
+///    \Gamma_2(f) = \frac{1}{2}\rho^2 \nabla_\perp^2 ( 1 - \frac{1}{2} \rho^2 \nabla_\perp^2)^{-1}\Gamma_1(f)
 /// \f]
 ///
 /// Note: Have to use Z average of rho for efficient inversion
