@@ -68,8 +68,8 @@ for method in methods:
 
             E = interp - solution
 
-            l2 = sqrt(mean(E**2))
-            linf = max(abs(E))
+            l2 = float(sqrt(mean(E**2)))
+            linf = float(max(abs(E)))
 
             error_2[var].append(l2)
             error_inf[var].append(linf)

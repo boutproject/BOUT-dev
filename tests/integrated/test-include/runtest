@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#Requires: slow_tests
 #Requires: not make
 
 BOUT_TOP=../../..

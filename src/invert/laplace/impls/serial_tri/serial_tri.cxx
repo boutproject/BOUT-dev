@@ -66,7 +66,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  * \param[in] x0    Variable used to set BC (if the right flags are set, see
  *                  the user manual)
  *
- * \param[out] x    The inverted variable.
+ * \return          The inverted variable.
  */
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
   Mesh *mesh = b.getMesh();
