@@ -1,0 +1,115 @@
+cat <<EOF
+#include <field3d.hxx>
+#include <globals.hxx>
+#include <derivs.hxx>
+#include <difops.hxx>
+#include <invert_laplace.hxx>
+
+void c_set_f3d_all(Field3D * f3d, const double * data){
+  int j=0;
+  f3d->allocate();
+  for (auto i : (*f3d)){
+    (*f3d)[i]=data[j++];
+  }
+}
+void c_set_f3d_all_(Field3D * f3d, const double data){
+  (*f3d)=data;
+}
+void c_get_f3d_all(const Field3D * f3d, double * data){
+  int j=0;
+  for (auto i : (*f3d)){
+    data[j++]=(*f3d)[i];
+  }
+}
+
+void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        data[j++]=(*f3d)(x,y,z);
+      }
+    }
+  }
+}
+
+void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data[j++];
+      }
+    }
+  }
+}
+void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data;
+      }
+    }
+  }
+}
+
+EOF
+
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
+do
+    n=${f%:*}
+    o=${f#*:}
+    cat <<EOF
+Field3D * f$n( Field3D*a,Field3D*b){
+  Field3D * r=new Field3D(*a);
+  *r $o= *b;
+  return r;
+}
+
+Field3D * f$n( Field3D*a,double b){
+  Field3D * r=new Field3D(*a);
+  *r $o= b;
+  return r;
+}
+
+Field3D * f$n( double b,Field3D*a){
+  return new Field3D(b $o *a);
+}
+
+void fi$n( Field3D*a,Field3D*b){
+  *a $o= *b;
+}
+void fi$n( Field3D*a,double b){
+  *a $o= b;
+}
+EOF
+done
+
+cat <<EOF
+int getNx( Field3D * a){
+  return a->getNx();
+}
+int getNy( Field3D * a){
+  //printf("%d\n",a->getNy());
+  return a->getNy();
+}
+int getNz( Field3D * a){
+  return a->getNz();
+}
+
+Mesh * c_get_global_mesh(){
+  return mesh;
+}
+
+void c_mesh_normalise(Mesh * msh, double norm){
+  //printf("%g\n",norm);
+  auto coord = msh->coordinates();
+  coord->dx/=norm;
+  coord->dy/=norm;
+  coord->dz/=norm;
+  coord->geometry();
+}
+
+EOF

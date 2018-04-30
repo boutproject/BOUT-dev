@@ -216,7 +216,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(direct) {
     KSPGetPC(ksp,&pc);
     PCSetType(pc,PCLU);
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else {
     
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )

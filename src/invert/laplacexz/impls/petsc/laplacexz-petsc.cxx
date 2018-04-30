@@ -227,7 +227,11 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
     PC pc;
     KSPGetPC(data.ksp,&pc);
     PCSetType(pc, pctype.c_str());
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,factor_package.c_str());
+#else
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
+#endif
 
     KSPSetFromOptions( data.ksp );
 

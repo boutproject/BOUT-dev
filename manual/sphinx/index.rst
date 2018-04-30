@@ -18,10 +18,6 @@ The documentation is divided into the following sections:
   
 * :ref:`developer-docs`
 
-* :ref:`python-api`
-
-* :ref:`api-ref`
-
      
 .. toctree::
    :maxdepth: 2
@@ -31,23 +27,17 @@ The documentation is divided into the following sections:
    user_docs/introduction
    user_docs/installing
    user_docs/advanced_install
-   user_docs/machine_install
-   user_docs/aix
    user_docs/running_bout
    
 .. toctree::
    :maxdepth: 2
    :caption: BOUT++ models
    :name: bout-models
-          
-   user_docs/object_orientated_interface
-   user_docs/fluid_equations
-   user_docs/fluid_equations_2
-   user_docs/examples
+      
+   user_docs/physics_models
    user_docs/makefiles
    user_docs/variable_init
    user_docs/boundary_options
-   user_docs/updating_to_4
    user_docs/testing
    
 .. toctree::
@@ -57,7 +47,6 @@ The documentation is divided into the following sections:
    
    user_docs/bout_options
    user_docs/input_grids
-   user_docs/zoidberg
 
 .. toctree::
    :maxdepth: 2
@@ -65,63 +54,34 @@ The documentation is divided into the following sections:
    :name: model-outputs
    
    user_docs/output_and_post
-   user_docs/python
-   user_docs/idl
-   user_docs/logging
+   user_docs/python_boutcore
    
 .. toctree::
    :maxdepth: 2
    :caption: BOUT++ interfaces
    :name: bout-interfaces
    
-   user_docs/overview
    user_docs/time_integration
-   user_docs/iterating
    user_docs/parallel-transforms
    user_docs/laplacian
    user_docs/differential_operators
    user_docs/staggered_grids
-   user_docs/advanced_methods
    user_docs/eigenvalue_solver
-   user_docs/notes
-   user_docs/bout_functions_for_physics
-   user_docs/fourier_transform_derivatives
 
 .. toctree::
    :maxdepth: 1
    :caption: Developer Documentation
    :name: developer-docs
 
-   developer_docs/introduction
-   developer_docs/CONTRIBUTING.md
+   developer_docs/contributing
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
-   developer_docs/code_generation
-   developer_docs/derivatives
-   developer_docs/laplacian_inversion
    developer_docs/mesh
-   developer_docs/boundary_conditions
-   developer_docs/solvers
    developer_docs/file_io
-   developer_docs/misc
 
+   api_reference
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Python routines
-   :name: python-api
-   :glob:
-
-   _apidoc/*
-
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-   :name: api-ref
-   :glob:
-
-   _breathe_autogen/*
 
 Indices and tables
 ==================
