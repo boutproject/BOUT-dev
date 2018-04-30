@@ -1697,6 +1697,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
+  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -1946,6 +1947,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
+  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   ASSERT1(mesh->ystart > 0); // Must have at least one guard cell
 
