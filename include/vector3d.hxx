@@ -150,8 +150,12 @@ class Vector3D : public FieldData {
   Vector3D & operator/=(const Field2D &rhs);
   Vector3D & operator/=(const Field3D &rhs);
 
-  Vector3D & operator^=(const Vector3D &rhs); // Cross product
-  Vector3D & operator^=(const Vector2D &rhs);
+  /// Cross-product of two vectors
+  /// Deprecated: use a=cross(a,b) instead
+  DEPRECATED(Vector3D & operator^=(const Vector3D &rhs);)
+  /// Cross-product of two vectors
+  /// Deprecated: use a=cross(a,b) instead
+  DEPRECATED(Vector3D & operator^=(const Vector2D &rhs);)
   
   // Binary operators
 
@@ -171,22 +175,14 @@ class Vector3D : public FieldData {
 
   const Field3D operator*(const Vector3D &rhs) const; // Dot product
   const Field3D operator*(const Vector2D &rhs) const;
-  
-  /*!
-   * Cross product
-   *
-   * Note: This operator has low precedence in C++,
-   *       lower than multiplication for example
-   */ 
-  const Vector3D operator^(const Vector3D &rhs) const; 
-  
-  /*!
-   * Cross product
-   *
-   * Note: This operator has low precedence in C++,
-   *       lower than multiplication for example
-   */
-  const Vector3D operator^(const Vector2D &rhs) const;
+
+  /// Cross-product of two vectors
+  /// Deprecated: use cross(a,b) instead
+  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
+
+  /// Cross-product of two vectors
+  /// Deprecated: use cross(a,b) instead
+  DEPRECATED(const Vector3D operator^(const Vector2D &rhs) const;)
   
   /*!
    * Set variable cell location
@@ -220,6 +216,13 @@ class Vector3D : public FieldData {
 const Vector3D operator*(BoutReal lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
+
+/// Cross-product of two vectors
+const Vector3D cross(const Vector3D & lhs, const Vector3D &rhs);
+
+/// Cross-product of two vectors
+const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
+
 
 /*!
  * Absolute magnitude (modulus) of a vector  |v|
