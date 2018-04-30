@@ -103,9 +103,11 @@ for opts,label,sym,expected_order in options:
     order = log(error_2[-1] / error_2[-2]) / log(dt[-1] / dt[-2])
     print("Convergence order = %f (expected: %f) %s" % (order,expected_order,label))
     
-    if order < expected_order - 0.2 or order > expected_order + 0.2:
-      success = False
-      print(" -> FAILED")
+    if  expected_order - 0.2 < order < expected_order + 0.2:
+        pass
+    else:
+        success = False
+        print(" -> FAILED")
 
     # plot errors
     if False:
