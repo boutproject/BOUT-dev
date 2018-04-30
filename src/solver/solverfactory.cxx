@@ -31,7 +31,7 @@ SolverFactory *SolverFactory::getInstance() {
 }
 
 inline SolverType SolverFactory::getDefaultSolverType() {
-  SolverType type = NULL;
+  SolverType type;
 
   #if defined BOUT_HAS_CVODE
     type = SOLVERCVODE;
