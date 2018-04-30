@@ -10,12 +10,9 @@ addons:
   apt:
     # Note &<name> creates a reference that we can refer to later using
     # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
-    packages: &standard_packages
-    - openmpi-bin
-    - libopenmpi-dev
+    packages: &non-mpi
     - libfftw3-dev
     - libnetcdf-dev
-    - libhdf5-mpi-dev
     - netcdf-bin
     - hdf5-tools
     - python3
@@ -23,6 +20,11 @@ addons:
     - python3-numpy
     - python3-scipy
     - lcov
+    packages: &standard_packages
+    - *non-mpi
+    - libhdf5-mpi-dev
+    - openmpi-bin
+    - libopenmpi-dev
 
 matrix:
   fast_finish: true
@@ -30,6 +32,19 @@ matrix:
   - env: &default_env
       - CONFIGURE_OPTIONS=''
       - SCRIPT_FLAGS='-uim'
+      - PIP_PACKAGES='netcdf4'
+  - addons:
+      apt:
+        packages: &mpich
+         - libmpich-dev
+         - mpich
+         - *non-mpi
+         - libhdf5-serial-dev
+    env:
+      - CONFIGURE_OPTIONS='--enable-shared'
+      - SCRIPT_FLAGS='-uimt python'
+      - PIP_PACKAGES='netcdf4 cython'
+
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
@@ -105,7 +120,7 @@ before_install:
   ##################################################
   # Install remaining python3 packages using pip
   ##################################################
-  - source .pip_install_for_travis.sh
+  - source .pip_install_for_travis.sh ${PIP_PACKAGES}
 
 script:
   # Configure, compile and run test_suite
