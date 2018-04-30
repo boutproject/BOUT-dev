@@ -1185,12 +1185,8 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   }
 
   result = applyXdiff(f, func, diffloc);
-  result.setLocation(diffloc); // Set the result location
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
+  result.setLocation(diffloc); // Set the result location
 
   return result;
 }
@@ -1243,11 +1239,6 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   result = applyYdiff(f, func, diffloc);
 
   result.setLocation(diffloc); // Set the result location
-
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
@@ -1380,11 +1371,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   result.setLocation(diffloc);
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -1456,12 +1442,8 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   }
 
   result = applyXdiff(f, func);
-  result.setLocation(diffloc);
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1533,12 +1515,8 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
   }
 
   result = applyYdiff(f, func);
-  result.setLocation(diffloc);
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1673,11 +1651,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
   result.setLocation(diffloc);
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -1766,10 +1739,6 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
@@ -1965,11 +1934,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -2160,11 +2124,6 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
@@ -2435,11 +2394,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -2553,11 +2507,6 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -2646,11 +2595,6 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
-
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
@@ -2848,11 +2792,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -2938,11 +2877,6 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
-
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
@@ -3170,11 +3104,6 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
   return result;
 }
 
@@ -3272,11 +3201,6 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-
-  // Cannot interpolate result without communicating and applying boundary
-  // conditions first, instead check that it is at outloc
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
 
   return result;
 }
