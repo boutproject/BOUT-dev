@@ -1,0 +1,928 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=3cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{fancyhdr}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+
+\hypersetup{
+	colorlinks,
+	citecolor=blue,
+	filecolor=blue,
+	linkcolor=blue,
+	urlcolor=blue
+}
+
+
+
+
+%%% SET HEADERS AND FOOTERS
+%\pagestyle{fancy}
+%\fancyfoot{}
+%\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+%	\markright{\thesection.\ #1}}
+%\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+%% pages and right on odd pages
+%\renewcommand{\headrulewidth}{0.3pt}
+%
+%\newcommand{\code}[1]{\texttt{#1}}
+%\newcommand{\file}[1]{\texttt{\bf #1}}
+%\newcommand{\bfile}[1]{\texttt{\bf 1}}
+%
+%\newcommand{\bb}[1]{\mathbf{#1}}
+%\newcommand{\ve}[1]{\ensuremath{\boldsymbol{#1}}}
+
+
+\author{Peter Naylor , University of York}
+\title{VisBOUTIt Users Manual}
+\date{August 2015}
+\begin{document}
+	\maketitle
+	\tableofcontents
+	\section{Introduction}
+	\paragraph{}
+	This document outlines how to use the Python visualisation tool, VisBOUTIt. This tool imports and displays a variable from BOUT++ data in a specified geometry and can render an image sequence with the visualisation package VisIt. VisIt is a visualisation package available from the \href{https://wci.llnl.gov/simulation/computer-codes/visit}{Lawrence Livermore National Laboratory (LLNL)}, the site also contains \href{https://wci.llnl.gov/simulation/computer-codes/visit/manuals}{documentation} on how to use the VisIt software.  This package can import the following from BOUT++ data; specified scalar variables, field parallel vectors and values from the eigen solver. The VisBOUTIt package can convert to the following coordinate systems; Cylindrical geometry Figure (\ref{fig:cylindricalmesh}), Field aligned Toroidal Geometry with Poloidal Planes (Torus) Figure (\ref{fig:torusmesh}) and Field aligned Toroidal Geometry with Toroidal Planes (ELM) Figure (\ref{fig:elmmesh}). 	This manual is divided into an overview on how the package works, instructions on how to use the package and some examples. Where appropriate some commands are used and are in the format shown below.
+	
+	\begin{verbatim}
+	print "Hello World"
+	\end{verbatim}
+
+\begin{figure}[H]
+	\centering
+	\begin{minipage}[H]{0.4\textwidth}
+		\includegraphics[width=\textwidth]{"./images/cylindrical mesh annotated"}
+		\caption{Cylindrical Mesh $(\Psi , \Omega , \theta )$}
+		\label{fig:cylindricalmesh}
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[H]{0.4\textwidth}
+		\includegraphics[width=\textwidth]{"./images/torus mesh annotated"}
+		\caption{Torus Mesh $(\Psi, \Omega, \theta)$}
+		\label{fig:torusmesh}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{"./images/elm mesh annotated"}
+	\caption{ELM Mesh $(\Psi,\Omega, \Phi)$}
+	\label{fig:elmmesh}
+\end{figure}
+
+\subsection{Coordinate Systems}
+The Cylindrical coordinate system $(\Psi , \Omega , \theta )$ , detailed in Figure (\ref{fig:cylindricalmesh}) where;
+\begin{itemize}
+	\item{$\Psi$ Radial coordinate}
+	\item{$\Omega$ Field parallel coordinate (Height of Cylinder)}
+	\item{$\theta$ Azmuthal cooridnate}
+\end{itemize}
+The Torus coordinate system $(\Psi, \Omega, \theta)$ , detailed in Figure (\ref{fig:torusmesh}) where:
+\begin{itemize}
+	\item{$\Psi$ Radial coordinate}
+	\item{$\Omega$ Field parallel coordinate (Toroidal coordinate)}
+	\item{$\theta$ Poloidal coordinate}
+\end{itemize}
+The ELM coordinate system $(\Psi,\Omega, \Phi)$ , detailed in Figure (\ref{fig:elmmesh}) where:
+\begin{itemize}
+	\item{$\Psi$ Radial coordinate}
+	\item{$\Omega$ Field parallel coordinate (Poloidal angle)}
+	\item{$\Phi$ Toroidal angle}
+\end{itemize}
+		
+\section{How the package works}
+		
+	\paragraph{}
+	VisBOUTIt utilises the Python libraries from VisIt, PyEVTK and BOUT++ to import, plot and export an image sequence of BOUT++ data. This works by importing the user specified variable from the BOUT++ data, converting the coordinate system and writing this to time stamped files using the VTK format. VisBOUTIt can import the data into VisIt allowing the user to setup a desired plot before the image sequence is rendered. VisBOUTIt can be used to visualise; scalar, field parallel vector variables and values from the eigensolver. All the  imported values are the raw values from the BOUT++ files, the plotted data does not contain normalisation factors. Within the seperate functions except the eigen functions, there is a capabiltity to find the maximum and minimum of the imported data. This can be used to set the scale for the entire image sequence, instead of using maximum and minimum values for each time slice generated by VisIt.	
+	\paragraph{}
+	The basic procedure for the VisBOUTIt package is detailed below.
+	
+	\begin{enumerate}
+		\item{Run the \textbf{visitsetup} script.}
+		\item{A variable from the BOUT++ data is converted to the desired coordinate system.}
+		\item{The converted data is plotted in a VisIt session automatically or manually.}
+		\item{The dataset is rendered out as an image sequence.}
+	\end{enumerate}
+	
+	\subsection{Requirements}
+		\begin{itemize}
+		\item{The package VisBOUTIt should be located in the BOUT++ directory under \textit{/tools/pylib/}, if VisBOUTIt is not present then update the BOUT repository.}
+		\item{PyEVTK python library, which is available from:
+			
+		\href{https://pypi.python.org/pypi/PyEVTK}{https://pypi.python.org/pypi/PyEVTK}
+		or at \href{https://bitbucket.org/pauloh/pyevtk}{https://bitbucket.org/pauloh/pyevtk}. And can be installed using pip, using the command below.
+			\begin{verbatim}
+				pip install pyevtk
+			\end{verbatim}
+		
+		}
+		\item{An installation of VisIt, available from the LLNL website:
+			
+		\href{https://wci.llnl.gov/simulation/computer-codes/visit}{https://wci.llnl.gov/simulation/computer-codes/visit}}
+		
+		\item{The user's bash profile should contain the python path to BOUT's pylib tools directory. For example the bash profile should contain something similar to the line below. Where usr is placeholder for the path to the directory that contains BOUT-dev.
+			\begin{verbatim}
+				export PYTHONPATH=/usr/BOUT-dev/tools/pylib/:$PYTHONPATH
+			\end{verbatim}
+			
+			}
+		
+		\end{itemize}
+	
+	\subsection{Package Contents}	
+	\paragraph{}
+	The package VisBOUTIt is located within the BOUT++ python tools directory, \textit{BOUT-dev/tools/pylib/visboutit/}. And contains the python files; \textbf{circle.py, draw.py, eigen.py, image.py, vector.py, visitsetup, visual.py} and \textbf{vtk.py}.
+	
+	\subsubsection{circle.py}
+	\paragraph{}
+	The script \textbf{circle.py} contains functions to create a Torus mesh and is used by the VTK writing functions.
+	
+	\subsubsection{draw.py}
+	\paragraph{}
+	The \textbf{draw.py} locates the vtk files in the \textit{batch} directory and presents the data in a VisIt window for the user to orientate the data. The python interface prompts to save a VisIt session of the current view, which is saved in the data directory. This VisIt session is used to import the user's desired plot settings for rendering out the image sequence. Next the script renders out the entire set of vtk files as an image sequence stored under the directory \textit{images/variablename\_sessionname}.
+	
+	The \textbf{draw.py} library contains functions to display converted data in a VisIt session, allowing the user to customise the view before rendering an image sequence.
+	
+	\subsubsection{eigen.py}
+	\paragraph{}
+	The script \textbf{eigen.py} contains functions used to select specific eigenvectors that are then converted to a specified cooridinate system.
+	
+	\subsubsection{image.py}
+	\paragraph{}
+	The \textbf{image.py} script opens a VisIt session and renders out an image sequence into the directory \textit{images/variablename\_sessionname}.
+	
+	\subsubsection{vector.py}
+	\paragraph{}
+	The \textbf{vector.py} contains functions that are used to plot the parallel field vectors along the field lines of the coordinate system.
+	
+	\subsubsection{visisetup}
+	\paragraph{}
+	The \textbf{visitsetup} script finds the users VisIt directory or prompts for the directory if it fails. Also the script asks for the desired image dimensions. The VisIt directory locations and image dimensions are stored in a \textit{visit.ini} text file within the VisBOUTIt directory which can be modified later by the user.
+	
+	\subsubsection{visual.py}
+	\paragraph{}
+	The \textbf{visual.py} file is a library of common functions used by the VisBOUTIt package. 
+	
+	\subsubsection{vtk.py}
+	\paragraph{}
+	The script \textbf{vtk.py} contains functions to convert BOUT++ data into; Cylinder, Torus or ELM coordinates systems and write the corresponding VTK files. These functions place the converted data into a \textit{batch} subdirectory of the raw data. The process of creating \textit{batch} and \textit{image} directories is handled within the various functions.
+
+
+	
+\section{Initial Setup}
+\label{sec:initial}
+\paragraph{}
+	
+Before any data can be imported the \textbf{visitsetup} script needs to be run. This looks for the VisIt directory and writes the file locations to a text file. If the script cannot find the VisIt directories it will prompt for the file paths. The text file is written to VisBOUTIt directory and can be executed with command below (when in the VisBOUTIt directory).
+	
+\begin{verbatim}
+$ ./visitsetup
+\end{verbatim}
+	
+The script will also prompt for the image dimensions for the image sequences, these variables are stored within the \textit{visit.ini} file. This file can be modified if alternate resolutions are required.
+
+	
+	
+\section{Scalar Variables}
+\label{sec:scalar} This section details the procedures for converting and plotting scalar values from BOUT++. Examples on how to use these functions are contained within this section and in Appendix (\ref{example:scalar}).
+	
+	\subsection{Converting Scalar data:}
+	
+	\paragraph{}
+	The data conversion is handled by three seperate python functions \textit{cylinder , torus , elm} within the \textbf{vtk.py} file. The functions can be called within the working directory that contains the data. If the working directory does not contain the data then the path argument must be completed. The converted data is written to a batch folder within the directory of the data, for plotting later.
+
+	If the python path to \textit{BOUT-dev/tools/pylib/} has been added to the bash\_profile for the user then using the following command will import the functions.
+
+	\begin{verbatim}
+		$ from visboutit import vtk
+	\end{verbatim}
+	
+	
+	\subsubsection{ELM}
+	\label{sec:elm_scalar}
+	The \textit{elm} function is designed to convert data to ELM geometry Figure (\ref{fig:elmmesh}). The function has the following arguments;
+		
+	\begin{verbatim}
+	elm(name , time , zShf_int_p = 0.25 , path = None , skip = 1)
+	\end{verbatim}	
+	
+	
+	\begin{itemize}
+		\item{\textbf{Name:} Name of variable, (string).}
+		
+		\item{\textbf{Time:} End time slice to be converted. If the time value is greater than the maximum avaliable time value then the maximum value will be used. Also using  $-1$ will set the time variable to the maximum time value. (integer)}
+		
+		\item{\textbf{zShf\_int\_p:} Zshift interpolation percentage (float, $0\leq zShf\_int\_p \leq 1 $) , zShf\_int\_p is 25\% by default. This value is used to find the tolerance between the maximum and minimum zshift for linear interpolation in the $y$ direction only. The larger the percentage the higher the tolerance value becomes therefore fewer interpolations are performed. The zshift tolerance is calculated by equation (\ref{ztol}) 
+		\begin{equation}
+			\label{ztol}
+			z_{tol} = min_{zshift}\ +\ ((max_{zshift} - \ min_{zshift}) \ \times \ zShf\_int\_p)
+		\end{equation}
+
+		The linear interpolation is performed when an array element set by the Pseudocode below is greater than zero. The integer determines how many points are to be inserted between the two original y slices.
+
+
+		\begin{verbatim}
+			int(abs( (zshift[y] - zshift[y+1] / z_tol ))
+		\end{verbatim}}
+		
+		\item{\textbf{Path:} The path to the BOUT++ data, this can be left blank if the the function has been called within the directory that contains the data. (String)}
+
+		\item{\textbf{Skip:} The gap between time slices. For example a skip value of 10 will convert the t = 0 , 10 , 20, etc slices. (Integer)}
+		
+	\end{itemize}
+	
+	\paragraph{}
+	\textbf{Examples:} The example below will import the variable \textit{"vort"} for every 10th time value across the entire time range.
+	
+	\begin{verbatim}
+	$ vtk.elm('vort', -1 , skip = 10)
+	\end{verbatim}
+		
+	The following example demonstrates how to import data not located within the working directory.
+	
+	\begin{verbatim}
+	$ vtk.elm('vort', -1 , path = '/path/to/data/')
+	\end{verbatim}
+	\paragraph{}
+	
+
+	\subsubsection{Torus}
+	\label{sec:torus_scalar}
+	\paragraph{}
+	The \textit{torus} function is designed to convert data to Toroidal geometry and has the arguments shown below.  \textbf{name, time, path} and \textbf{skip} are the same as for the \textit{elm} function.
+	
+	\begin{verbatim}
+		torus(name , time , step = 0.5 , skip = 1, path = None, R = None, r = None ,
+		dr = None , Bt = None , q = None , isttok = False)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{Step:}
+			The split between points when the function interpolates the data in the $y$ direction. The default value is set to 0.5, if the value is set to 0 then the function will display the raw data without interpolation. (Float $0\leq Step \leq 1 $)}
+		\item{\textbf{R , r , dr , Bt , q:}
+			Settings for generating the Torus mesh. Where R: Major radius, r: Minor radius , dr: Radial width of domain, Bt: Toroidal magnetic field and q: Safety factor. These values require floats.}
+		\item{\textbf{isttok:}
+			Boolean, if True then the ISTTOK specifications are used which are defined below in Equation (\ref{eqn:isttok}).
+			\begin{equation}
+				\label{eqn:isttok}
+				R ,\ r ,\ dr ,\ Bt ,\ q = \ 0.46 ,\ 0.085 ,\ 0.02 , \ 0.5 , \ 5 
+			\end{equation}}
+		\item{\textbf{default:} (Boolean), if True then the default speicifications defined in Equation (\ref{eqn:torusdefault}) will be used to generate the Torus mesh.
+			\begin{equation}
+				\label{eqn:torusdefault}
+				R ,\ r ,\ dr ,\ Bt ,\ q = \ 2.0 ,\ 0.2 ,\ 0.05 , \ 1.0 , \ 5.0
+			\end{equation}}
+	\end{itemize}
+
+	\textbf{Examples:} An example of the \textit{torus} function importing the variable 'P' from t = 0 to t = 50, with the ISTTOK specification is shown below.
+	
+	\begin{verbatim}
+	$ vtk.torus('P' , 50 , isttok = True)
+	\end{verbatim}
+	
+		
+	
+	\subsubsection{Cylinder}
+	\label{sec:cylinder_scalar}
+	\paragraph{}
+	The \textit{cylinder} function is designed to convert data to cylindrical geometry and has the arguments below. The arguments \textbf{name , time , step , path} and \textbf{skip} are the same as the \textit{torus} function.
+	
+	\begin{verbatim}
+		cylinder(name , time , pi_fr = (2./3.) , step = 0.5 , path = None , skip = 1)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{pi\_fr:}
+			The fraction of $\pi$ that the cylinder has been rotated through, i.e. 2$\pi$ is a full cylinder. The default value is $2/3$ . If the value given is above 2$\pi$ then interger values of 2$\pi$ are subtracted until the value is between zero and 2$\pi$ then this value is used. (Float)}
+	\end{itemize}
+		
+	\textbf{Examples:} The following example demonstrates importing a set of cylindrical data for all time slices. The cylindrical mesh has a rotation of $\frac{4}{3} \pi$, where the step between $y$ slices is set to 0.4.
+	
+	\begin{verbatim}
+		$ vtk.cylinder('vort' , -1 , pi_fr = (4./3.) , step = 0.4)
+	\end{verbatim}
+	\paragraph{}
+	
+	
+	\subsection{Plotting Scalar Data}
+	\paragraph{}
+	After the scalar data has been converted there are two options for displaying the data using the VisIt package, automated and manual. The automated method which draws a Pseudocolor plot of the data, allows the user to modify the plot then renders an image sequence. The manual method requires the user to import the converted data into VisIt then after a plot has been setup a VisIt session saved. This session is used to import the settings of the VisIt plot to render the image sequence.
+	
+	Once the user has finished rendering out the image sequence, the directory \textit{batch} along with the VisIt session file can be removed. VisBOUTIt does not automatically remove the VTK files as they can be reused for generating new image sequences.
+	
+	\subsubsection{Automated method}
+	\paragraph{}
+	The \textit{draw} function, within the \textbf{draw.py} file, reads the converted data and creates a Psuedocolor plot of the data within a VisIt window. This allows the user to modify the view as desired (including changing the plot, slice operations, etc). The function will prompt for a session name of the VisIt view and for options regarding setting the maximum and minimum for the image sequence. The image sequence is then rendered to \textit{dir\_with\_data/images/session\_name/}. The filename has the format of: \textit{VariableName\_SessionName\_batch\_Time.PNG} , where the time part is a four digit number to ensure correct ordering. The arguments for the function are shown below.
+	
+	\begin{verbatim}
+		draw(name , skip = 1 , path = None)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{Name:} The variable name to be plotted, (string)}
+		
+		\item{\textbf{Skip:} The gap between the time slices. For example a skip value of 10 will convert the t = 0, 10, 20, etc slices. (Integer)}
+		
+		\item{\textbf{Path:} The path to the data, if the argument is not defined the script uses the working directory. (String)}
+	\end{itemize}
+
+	An example of how to use the function is shown below. These commands import the draw functions and then draw the convert \textit{'vort'} data within a VisIt session and then render out the image sequence.
+	
+	\begin{verbatim}
+		$ from visboutit import draw
+		$ draw.draw('vort')
+	\end{verbatim}
+	
+%	The script will then display the dataset and prompt for a session name. 
+	
+	\subsubsection{Manual method}
+	\paragraph{}
+	This method allows the user to utilise the more advanced VisIt features than the automatic drawing method. This method uses the \textit{image} function contained in the \textbf{image.py} file to render out the image sequence. The function has the same arguments as the draw function contained within \textbf{draw.py}. The script is designed to render out an image sequence of a VisIt session and the arguments are shown below.
+	
+	\begin{verbatim}
+	image(name , skip = 1 , path = None)
+	\end{verbatim}
+		
+	First the converted data needs to be loaded and plotted in VisIt. This is achieved by launching VisIt from its install location and opening the converted data located in the \textit{batch} folder. After customising the plot, a session file needs to be saved into the directory containing the raw BOUT++ data. The \textit{image} function can then be executed to render out the image sequence.	The script will prompt for; a session name and options for using fixed maximum and minimum values (only for Pseudocolor plots). Then render out the image sequence to the directory \textit{data\_directory/images/session\_name/}. The session name should not include the file extension. An example of the functions use is shown below.
+	
+	\begin{verbatim}
+	$ from visboutit import image
+	$ image.image('vort', path = '/path/to/data/dir')
+	Please Enter session name: vslice
+	Use max from max input file? (0 for No, 1 for Yes): 1
+	Use min from min input file? (0 for No, 1 for Yes): 1
+	\end{verbatim}
+	
+	The function will launch a VisIt session with the session loaded and render out the image sequence. The console will print messages from VisIt informing of which image has been written. After the image sequence has been rendered the VisIt window will close.
+		
+\section{Eigen solver data}
+\label{sec:eigen}
+VisBOUTIt's eigen library displays the eigenvectors for a data set and allows the user to select a set of eigen values to convert to a specifed coordinate system. Before proceding ensure the initial setup has been performed detailed in section (\ref{sec:initial}). Examples of how to plot data from BOUT++'s Eigen solver can be found within this section and within Appendix (\ref{example:eigen}).
+	
+	\subsection{Converting Eigenvalues Data}
+	\paragraph{}
+	To plot eigenvalues first the data needs to be converted to the desired coordinate system. The \textit{draw} function within the \textit{eigen.py} script handles the conversion. The \textit{draw} function has the following arguments:
+	
+	\begin{verbatim}
+		draw( name , path = None)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{Name:} Name of the variable to be imported. (String)}
+		\item{\textbf{path:} File path of the BOUT++ data, if it is not within the current working directory. (String)}
+	\end{itemize}
+	
+	\paragraph{}
+	The first step is to call the \textit{draw} function which plots the eigen vectors real and imaginary components on a graph. When the function is called it will prompt for the coorindate system and coordinate system's settings. Then the function displays the eigenvectors on a graph. Second the user must select what values to convert by clicking on or near the points on the graph. There are different prompts for the various coordinate systems which are detailed below.
+	
+	\subsubsection{Cylinder Prompts}
+	\paragraph{}
+	For the Cylinder coordinate system the \textit{eigen.draw} function returns the below prompts.
+	\begin{verbatim}
+	$ from visboutit import eigen
+	$ eigen.draw('P')
+	Enter coordinate system; cylinder, torus or elm: cylinder
+	Enter step value for Interpolation (Default 0.5): 
+	\end{verbatim}
+	
+	\subsubsection{Torus Prompts}
+	\paragraph{}
+	For the Torus coordinate system the \textit{eigen.draw} function returns the below prompts.
+	\begin{verbatim}
+	$ from visboutit import eigen
+	$ eigen.draw('P')
+	Enter coordinate system; cylinder, torus or elm: torus
+	Enter step value for Interpolation (Default 0.5): 
+	Use default specifications (y/n)?: 
+	Use ISTTOK specifications R,r,dr,Bt,q = 0.46, 0.085, 0.02, 0.5, 5 (y/n):
+	\end{verbatim}
+	
+	If \textit{y} is used for the \textit{Use default specifications} option, this sets the variables in Equation (\ref{eqn:torusdefault}) for the Torus model and procedes to drawing the eigenvector plot.
+	
+	\begin{equation}
+	R ,\ r ,\ dr ,\ Bt ,\ q = \ 2.0 ,\ 0.2 ,\ 0.05 , \ 1.0 , \ 5.0
+	\tag{\ref{eqn:torusdefault}}
+	\end{equation}
+
+	 If \textit{n} is set for the defaults then the function prompts asking if the user would like to use the ISTTOK specifications. As shown in Equation (\ref{eqn:isttok}).
+	 
+	 \begin{equation}
+	 R ,\ r ,\ dr ,\ Bt ,\ q = \ 0.46 ,\ 0.085 ,\ 0.02 , \ 0.5 , \ 5
+	 \tag{\ref{eqn:isttok}}
+	 \end{equation}
+	
+	If \textit{n} is selected for the ISTTOK specifications prompt then the user is prompted for the individual settings of torus mesh, as shown below.
+	
+	\begin{verbatim}
+	Enter values for specifications
+	R = 
+	r =
+	dr =
+	Bt = 
+	q = 
+	\end{verbatim}
+	
+	\subsubsection{ELM Prompts}
+	\paragraph{}
+	For the ELM coordinate system the eigen.draw function returns the below prompts.
+	\begin{verbatim}
+	$ from visboutit import eigen
+	$ eigen.draw('P')
+	Enter coordinate system; cylinder, torus or elm: 
+	Enter zShift Interpolation Percent (Default 0.25) :
+	\end{verbatim}
+
+	\subsection{Plotting eigen Data}
+	\paragraph{}
+	The eigen data that has been converted can be plotted automatically using the eigen function within the \textbf{draw.py} library. Or manually using VisIt then the image sequence can be rendered using the eigen function within the \textbf{image.py} library. Both methods create an image sequence of all of the converted data within the \textit{batch} directory.
+	
+	\subsubsection{Automatic Method}
+	\paragraph{}
+	The converted eigen data can be plotted using the eigen function within the \textbf{draw.py} library. The function has the following arguments.
+	
+	\begin{verbatim}
+	eigen(name, path = None)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{Name:} The name of the variable to be imported. (string)}
+		\item{\textbf{Path:} The path that contains the raw data and the \textit{batch} subdirectory. This is only required if the working directory does not contain those files. (string)}
+	\end{itemize}
+	
+	
+	\paragraph{}
+	After the function has been called it will create two windows with the real eigenvalues in one and the imaginary eigenvalues in the second window. The function allows the user to modify the plot of both windows, however when the image sequence is rendered the orientation of the first will be applied to the second window. Please note that any operations need to be applied to both Windows ensuring both windows have the same Dimensions. If the windows do not have the same dimensions then the function will return an error.
+
+	After the session has been saved the image sequence is then rendered out to the directory: \textit{/images/SessionName/}. With the file format of: \textit{VariableName\_i\_SessionName\_image\_time.png} . Where the \textit{i} designates that the image is from imaginary data, an \textit{r} in the place of the \textit{i} designates that the image is from real data.
+
+
+	\subsubsection{Manual Method}
+	The manual method involes opening the data with VisIt, creating a VisIt session with a window for imaginary and another window for real data. After a VisIt session has been saved with the data plotted, then the images can be rendered using the eigen function within the \textbf{image.py} library. Which has the following arguments:
+	
+	\begin{verbatim}
+	eigen(name, path = None)
+	\end{verbatim}
+	
+	\begin{itemize}
+		\item{\textbf{Name:} The name of the variable to be imported, (string)}
+		\item{\textbf{Path:} The path that contains the raw data and the \textit{batch} subdirectory. This is only required if the working directory does not contain those files. (string)}
+	\end{itemize}
+	
+	\paragraph{}
+	After the function has been called it will prompt for the session name and then open the two VisIt windows and renders the image sequence. The image directory and filename have the same format as in the Automatic Method. 
+	
+	\textbf{Directory:} \textit{/images/SessionName/}
+	
+	\textbf{File Name format:} \textit{VariableName\_i\_SessionName\_image\_time.png}.
+	
+\section{Vector data}
+\label{sec:vector}
+\paragraph{}
+The VisBOUTIt package can plot vectors that are parallel to the field lines of the coordinate system. For example flow velocity and parallel current density. Examples of how to plot vector data can be found within this section and within Appendix (\ref{example:vector}).
+
+\subsection{Converting Vector Data}
+\paragraph{}
+The python library \textbf{vector.py} contains the functions; \textbf{vector.cylinder}, \textbf{vector.torus} and \textbf{vector.elm} functions that write the vectors VTK variables.
+
+\subsubsection{Cylinder}
+\paragraph{}
+The cylinder function within the \textbf{vector.py} library converts the scalar data from BOUT++ data, for example parallel current density, into field parallel vectors. Which is achieved by creating an array of unit vectors from the mesh. At each point on the mesh a vector is created by performing a scalar dot product with the unit vector and the imported BOUT++ data. \textbf{vector.cylinder} function has the following arguments:
+
+\begin{verbatim}
+cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{Name:} variable name to import (string)}
+	\item{\textbf{Time:} end time slice to convert to (integer), if -1 entire dataset is imported}
+	\item{\textbf{pi\_fr:} The fraction of $\pi$ that the cylinder has been rotated through, i.e. 2$\pi$ is a full cylinder. The default value for this is $2/3$ . If the value given is above 2$\pi$ then interger values of 2$\pi$ are subtracted until the value is between zero and 2$\pi$ then this value is used.(Float)}
+	\item{\textbf{Step:} The gap between the y slices for the y interpolation, (float  $ 0 \leq Step \leq 1$), if Step = 0 then  the raw data displayed.}
+	\item{\textbf{Path:} File path to data, if blank then the current working directory is used to look for data}
+	\item{\textbf{Skip:} The gap between the time slices. For example a skip value of 10 will convert the t = 0, 10, 20, etc slices. (Integer)}
+\end{itemize}
+
+\subsubsection{Torus}
+\paragraph{}
+The torus function within the \textbf{vector.py} library converts the scalar data from BOUT++ data, for example parallel current density, into field parallel vectors. Which is achieved by creating an array of unit vectors from the mesh. At each point on the mesh a vector is created by performing a scalar dot product with the unit vector and the imported BOUT++ data. \textbf{vector.torus} function has the below arguments. The arguments \textbf{Name, time, step, path} and \textbf{skip} are the same as in the Cylinder function.
+
+\begin{verbatim}
+torus(name, time, step = 0.5, path = None, skip = 1, R = None, r = None , dr = None , Bt = None, q = None , isttok = False, default = False)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{R, r, dr, Bt, q:} Torus settings if left blank defaults in Equation (\ref{eqn:torusdefault}) are used.
+		R: Major radius
+		r: Minor radius
+		dr: Radial width of domain
+		Bt: Toroidal magnetic field
+		q: Safety factor. (All are floats)}
+	\item{\textbf{isttok:} Use the ISTTOK specifications in Equation (\ref{eqn:isttok}), (Boolean)}
+	\item{\textbf{default:} Use the default sepcifications in Equation (\ref{eqn:torusdefault}) , (Boolean)}
+\end{itemize}
+
+
+Once the fuction is called it will import, convert and write the vector variable to the VTK format within the \textit{batch} directory. The example below will convert the variable \textit{Vi} across all the data, with gaps of 20 in the time base.
+
+\begin{verbatim}
+	$ from visboutit import vector
+	$ vector.torus('Vi', -1 , isttok = True , skip = 20)
+\end{verbatim} 
+
+\subsubsection{ELM}
+\paragraph{}
+The elm function within the \textbf{vector.py} library converts a scalar variable from BOUT++ data into field parallel vectors. Which is achieved by creating a mesh of unit vectors along the field lines. Then creates the vector at the points on the mesh by dotting the unit vector with the imported scalar value. The function \textbf{vector.elm} has the below arguments. The arguments \textbf{Name, time, path} and \textbf{skip} are the same as in the Cylinder and Torus functions.
+
+\begin{verbatim}
+elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{zShf\_int\_p:} The zshift interpolation percentage (float, $0\leq zShf\_int\_p \leq 1 $) , zShf\_int\_p is 25\% by default. This value is used to find the tolerance between the maximum and minimum zshift for linear interpolation in the y direction only. The larger the percentage the higher the tolerance value becomes therefore fewer interpolations are performed. The zshift tolerance is calculated by equation (\ref{ztol}). The linear interpolation is performed when an array element set by the Pseudocode below is greater than zero. The integer determines how many points are to be inserted between the two original y slices.
+			
+			
+	\begin{verbatim}
+		int(abs( (zshift[y] - zshift[y+1] / z_tol ))
+	\end{verbatim}} 
+	
+\end{itemize}
+
+\subsection{Plotting Vectors}
+\paragraph{}
+Once the vector variables have been written to VTK format. The vectors can be plotted and image sequence rendered automatically or manually, the methods are detailed below.
+
+
+\subsubsection{Automatical Method}
+\paragraph{}
+The automatic method uses the vector\_draw function within the \textbf{draw.py} library. The function has the below arguments:
+
+\begin{verbatim}
+vector_draw(name , skip = 1, path = None)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{Name:} Name of the variable (string)}
+	\item{\textbf{Skip:} The skip value is the gap between the time values used in the conversion (integer)}
+	\item{\textbf{Path:} File path to data, if blank then the current working directory is used. (String)}
+\end{itemize}
+
+\paragraph{}
+After the converted VTK files have been written to the \textit{batch} directory. The vector\_draw fuction is used to import the converted data and create a vector plot within a VisIt window. The plot can then be customised by the user and then a VisIt session saved using the prompt from the function. The function then renders the image sequence using the settings saved within the VisIt session. The image sequence is rendered into the directory: \textit{/dir/with/data/images/SessionName/}. With the file name of the format: \textit{VariableName\_SessionName\_Time.png}. An example of the use of the code is shown below.
+
+\begin{verbatim}
+$ from visboutit import draw
+$ draw.vector_draw('jpar' , skip = 5)
+\end{verbatim}
+
+\subsubsection{Manual Method}
+\paragraph{}
+The manual method allows the user to utilise advanced features within VisIt. Which is achieved by loading the converted data, creating a plot and saving a session of the plot within VisIt. The vector function within the \textbf{image.py} library, is designed to render the image sequence of the VisIt session file. The function has the following arguments:
+
+\begin{verbatim}
+	vector(name, skip = 1 , path = None)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{Name:} The name of the variable to plot, (String)}
+	\item{\textbf{Skip:} The skip value is the gap between the time values used in the conversion (integer)}
+	\item{\textbf{Path:} File path to data, if blank then the current working directory is used. (String)}
+\end{itemize}
+
+\paragraph{} An example of how to use the image function is displayed below.
+
+\begin{verbatim}
+	$ from visboutit import image
+	$ image.vector('jpar' , skip = 5)
+	Please Enter session name: 
+	Use max from max input file? (0 for No, 1 for Yes):
+	Use min from min input file? (0 for No, 1 for Yes):
+\end{verbatim}
+
+\subsection{Velocity Vectors}
+\label{sec:velocity}
+\paragraph{}
+The VisBOUTIt pacakge can also calculate and write the velocity vectors of particles using Equation (\ref{eqn:vel}). An example can be found within Appendix (\ref{example:velocity}).
+
+\begin{equation}
+\label{eqn:vel}
+\vec{V} = \hat{b} \ {V_{\parallel}} + \frac{\hat{b} \times\bigtriangledown \phi}{B}
+\end{equation}
+
+The \textbf{velocity.py} library contains all the functions to calculate and write the velocity vectors to the VTK format ready to be plotted using VisIt. The gradient function within the velocity library calculates the componenets of the gradient for a point using the matrix in Equation (\ref{eqn:grad_matrix}). The algorithm calculates $\bigtriangledown\phi$ from a point in the positive direction and negative direction and then averages the gradient and stores the gradient for that point.
+
+\begin{equation}
+\label{eqn:grad_matrix}
+\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+1 & (x_{1} - x_{0}) & (y_{1} - y_{0}) & (z_{1} - z_{0}) \\
+1 & (x_{2} - x_{0}) & (y_{2} - y_{0}) & (z_{2} - z_{0}) \\
+1 & (x_{3} - x_{0}) & (y_{3} - y_{0}) & (z_{3} - z_{0}) 
+\end{pmatrix}
+\begin{pmatrix}
+\phi_{0} \\
+\frac{\partial \phi}{\partial x} \\
+\frac{\partial \phi}{\partial y} \\
+\frac{\partial \phi}{\partial z}
+\end{pmatrix}
+=
+\begin{pmatrix}
+\phi(r_{0}) \\
+\phi(r_{1}) \\
+\phi(r_{2}) \\
+\phi(r_{3}) \\
+\end{pmatrix}
+\end{equation}
+
+The velocity vector writing functions import the normalisation variables for $V_{\parallel}$ and $\phi$ to ensure the vectors have standard units. Plotting the vectors using VisIt can be achieved with the \textit{vector} function within the \textbf{draw.py} library with the variable name set to 'velocity'. An image sequence of an existing velocity section can be rendered using the \textit{vector} function within the \textbf{image.py} library, again with the variable name set to 'velocity'.
+
+\subsubsection{Cylinder}
+\label{sec:vel_cylinder}
+\paragraph{}
+To convert cylindrical data the \textit{cylinder} function is used. The agruments are detailed below.
+
+\begin{verbatim}
+cylinder(time = -1, pi_fr = (2./3.), step = 0.5 , path = None, skip = 1):
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{Time:} end time slice to convert to (integer), if -1 entire dataset is imported}
+	\item{\textbf{pi\_fr:} The fraction of $\pi$ that the cylinder has been rotated through, i.e. 2$\pi$ is a full cylinder. The default value for this is $2/3$ . If the value given is above 2$\pi$ then interger values of 2$\pi$ are subtracted until the value is between zero and 2$\pi$ then this value is used.(Float)}
+	\item{\textbf{Step:} The gap between the y slices for the y interpolation, (float  $ 0 \leq Step \leq 1$), if Step = 0 then  the raw data displayed.}
+	\item{\textbf{Path:} File path to data, if blank then the current working directory is used to look for data}
+	\item{\textbf{Skip:} The gap between the time slices. For example a skip value of 10 will convert the t = 0, 10, 20, etc slices. (Integer)}
+\end{itemize}
+
+The variable names from Equation (\ref{eqn:vel}) are automatically imported from a variable list of the data. If the script cannot find the variables then the script will prompt for the relevant variable  and normalisation factor names.
+
+\subsubsection{Torus}
+\label{sec:vel_torus}
+\paragraph{}
+To convert cylindrical data the \textit{torus} function is used. The agruments are detailed below. The arguments \textbf{Time, Step, skip} and \textbf{path} are the same as for the cylinder function. And the variables names from Equation (\ref{eqn:vel}) are again automatically imported like for the cylinder function. 
+
+\begin{verbatim}
+torus(time = -1, step = 0.5, skip = 1 , path = None, R = None, r = None , 
+dr = None , Bt = None, q = None , isttok = True , default = False)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{R, r, dr, Bt, q:} Torus settings if left blank defaults in Equation (\ref{eqn:torusdefault}) are used.
+		R: Major radius
+		r: Minor radius
+		dr: Radial width of domain
+		Bt: Toroidal magnetic field
+		q: Safety factor. (All are floats)}
+	\item{\textbf{isttok:} Use the ISTTOK specifications in Equation (\ref{eqn:isttok}), (Boolean)}
+	\item{\textbf{default:} Use the default sepcifications in Equation (\ref{eqn:torusdefault}) , (Boolean)}
+\end{itemize}
+
+\subsubsection{ELM}
+\label{sec:vel_elm}
+\paragraph{}
+To convert ELM data the \textit{elm} function is used. The agruments are detailed below. The arguments \textbf{Time, skip} and \textbf{path} are the same as for the cylinder function. And the variables names from Equation (\ref{eqn:vel}) are again automatically imported like for the cylinder function. 
+
+\begin{verbatim}
+elm(time = -1, zShf_int_p = 0.25, path = None, skip = 1)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{zShf\_int\_p:} The zshift interpolation percentage (float, $0\leq zShf\_int\_p \leq 1 $) , zShf\_int\_p is 25\% by default. This value is used to find the tolerance between the maximum and minimum zshift for linear interpolation in the y direction only. The larger the percentage the higher the tolerance value becomes therefore fewer interpolations are performed. The zshift tolerance is calculated by Equation (\ref{ztol}). The linear interpolation is performed when an array element set by the Pseudocode below is greater than zero. The integer determines how many points are to be inserted between the two original y slices.
+					
+					
+	\begin{verbatim}
+		int(abs( (zshift[y] - zshift[y+1] / z_tol ))
+	\end{verbatim}} 
+				
+\end{itemize}
+
+
+\section{Acknowledgements}
+The author would like to acknowledge Dr B. Dudson for his work and guidance during the project. Also Michail Anastopoulos for his previous work on the project.
+
+\appendix
+
+\section{Scalar Data Example}
+\label{example:scalar}
+\paragraph{} This section demonstrates how to import and plot scalar data outlined in Section (\ref{sec:scalar}).
+\begin{enumerate}
+	\item{Convert the raw BOUT++ data into the specified geometry using the relevant function within the \textbf{vtk.py} library. The command below imports the library and converts the selected variable from BOUT++ data across the entire data range with gaps of 20 in the timebase into Torus geometry.
+		\begin{verbatim}
+		$ from visboutit import vtk
+		$ vtk.torus('Vort' , -1 , skip = 20, isttok = True)
+		\end{verbatim}}
+	\item{Create a VisIt session of the data either using the automatic method or manual method.}
+	\begin{enumerate}
+		\item{Automatic method uses the \textit{draw} function within the \textbf{draw.py} library. The automatic method will render the image sequence after creating the VisIt window.
+			\begin{verbatim}
+			$ from visboutit import draw
+			$ draw.draw('Vort' , skip = 20)
+			\end{verbatim}
+		}
+		\item{Manually loading the data within VisIt and creating a session. After the session has been saved the \textit{image} function within the \textbf{image.py} library can be used to render out an image sequence of the converted files. The code below will open a session and render out the image sequence.
+			\begin{verbatim}
+			$ from visboutit import image
+			$ image.image('Vort' , skip = 20)
+			Please Enter session name:
+			Use max from max input file? (0 for No, 1 for Yes):
+			Use min from min input file? (0 for No, 1 for Yes):
+			\end{verbatim}
+		}
+	\end{enumerate}
+	\item{The following figures show images from the different geometries.}
+\end{enumerate}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/Cylinder scalar example"}}
+	\caption{Cylinder Geometry plot of the converted scalar BOUT++ data.}
+	\label{fig:cylinder_scalar}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/Torus scalar example"}}
+	\caption{Torus Geometry plot of the converted scalar BOUT++ data.}
+	\label{fig:torus_scalar}
+\end{figure}
+
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/ELM scalar example"}}
+	\caption{ELM Geometry plot of the converted scalar BOUT++ data.}
+	\label{fig:elm_scalar}
+\end{figure}
+
+
+\section{Field Parallel Vectors Data Example}
+\label{example:vector}
+\paragraph{} Below is an example on how to use the cylinder function within the \textbf{vector.py} library to plot field parallel vectors from BOUT++ in cylindrical geometry.
+
+\begin{enumerate}
+	\item{Convert the scalar variable into a parallel field vector using the relevant function within \textbf{vector.py} library.}
+	\begin{enumerate}
+		\label{example:v_cylinder}
+		\item{\textbf{Cylinder Geometry:} The \textit{cylinder} function within the \textbf{vector.py} library is used to convert the coordinate system. The commands below will import a BOUT++ variable across the entire time range with gaps of 10 wihthin the time base and write the VTK files.
+			\begin{verbatim}
+			$ from visboutit import vector
+			$ vector.cylinder('NVi', -1, skip = 10)
+			\end{verbatim}
+		}
+		\item{\textbf{Torus Geometry:} The \textit{torus} function within the \textbf{vector.py} library is used to convert the coordinate system. The commands below will import a BOUT++ variable across the entire time range with gaps of 20 wihthin the time base and write the VTK files.
+			\begin{verbatim}
+			$ from visboutit import vector
+			$ vector.torus('Vi', -1, skip = 20)
+			\end{verbatim}
+		}
+		\item{\textbf{ELM Geometry:} The \textit{elm} function within the \textbf{vector.py} library is used to convert the coordinate system. The commands below will import a BOUT++ variable across the entire time range with gaps of 10 wihthin the time base and write the VTK files.
+			\begin{verbatim}
+			$ from visboutit import vector
+			$ vector.elm('jpar', -1, skip = 10)
+			\end{verbatim}
+		}
+	\end{enumerate}
+	\item{Once the data has been converted a VisIt session needs to be created using the automatic or manual method}
+	\begin{enumerate}
+		\item{The Automatic method uses the \textit{vector} function within the \textbf{draw.py} library to create a vector plot of the imported data within VisIt. This can be modified before saving a session. After saving a session the function will render out an image sequence of the VisIt window. The commands below create an VisIt session and image sequence of the converted data.
+			
+			\begin{verbatim}
+				$ from visboutit import draw
+				$ draw.vector('jpar' , skip = 10)
+			\end{verbatim}}
+		
+		\item{The Manual method involes loading the converted data into VisIt and creating a session of a plot. After the session has been create the \textit{vector} function within the \textbf{image.py} library can be used to render out an image sequence. The commands below open a VisIt session and render out the image sequence.
+			
+			\begin{verbatim}
+			$ from visboutit import image
+			$ image.vector('jpar' , skip = 10)
+			\end{verbatim}
+		}
+			
+	\end{enumerate}
+\end{enumerate}
+The figures below display images of vector plots in the various geometries.
+
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/Cylinder vector example"}}
+	\caption{Cylinder Geometry plot of the converted field parallel vector BOUT++ data.}
+	\label{fig:cylinder_vector}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/Torus vector example"}}
+	\caption{Torus Geometry plot of the converted field parallel vector BOUT++ data.}
+	\label{fig:torus_vector}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.7\textwidth]{"./images/ELM vector example"}}
+	\caption{ELM Geometry plot of the converted field parallel vector BOUT++ data.}
+	\label{fig:elm_vector}
+\end{figure}
+
+\section{Eigen Data Example}
+\label{example:eigen}
+This section demonstrates how to import and plot scalar data from the BOUT++ eigensolver, as outlined in Section (\ref{sec:eigen}).
+
+\begin{enumerate}
+	\item{Call the function \textit{draw} from the \textbf{eigen} library, with the variable name and path if required. Like below;
+		\begin{verbatim}
+			$ from visboutit import eigen
+			$ eigen.draw('P')
+		\end{verbatim}}
+	\item{The function will prompt for the desired coordinate system the coordinate system's settings.}
+	\item{The function then displays the imported eigenvectors from the BOUT++ eigensolver, on a graph like that in Figure (\ref{fig:eigenvector})}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width = 0.8\textwidth]{"./images/eigen vectors"}
+		\caption{A Graph of the Eigenvectors imported from the BOUT++ eigensolver.}
+		\label{fig:eigenvector}
+	\end{figure}
+	\item{An eigenvector point needs to be clicked to convert a set of eigenvalues to the specified geometry.}
+	\item{After converting the data, a plot of the data can be created automatically or manually by the methods detailed below.}
+	\begin{enumerate}
+		\item{\textbf{Automatic} The automatic method uses the function \textit{eigen} within the \textbf{draw.py} library. This function creates two Pseudocolor plots of all of the available converted data, within the VisIt window. One window is for real values and the other is for imaginary values. The function allows the user to modify the plot before saving the session of the VisIt window. After the VisIt session has been saved the images of the plots are then rendered out. The commands below call the function and render out the images:
+			\begin{verbatim}
+			$ from visboutit import draw
+			draw.eigen()
+			\end{verbatim}}
+		
+		\item{\textbf{Manual} The manual method involves the user manually loading the data into two seperate VisIt windows and saving a session of the desired orientation of the plot. The function \textit{eigen} within the \textbf{image.py} library will load the session and render out all the images avaliable.}
+	
+	\end{enumerate}
+	\item{Figure (\ref{fig:eigen_graphs}) is an example of the images that can be produced from the VisBOUTIt package.}
+\end{enumerate}
+
+
+\begin{figure}[H]
+	\centering
+	\begin{minipage}[H]{0.75\textwidth}
+		\fbox{\includegraphics[width=\textwidth]{"./images/eigen real"}}
+		\caption{Real Eigenvalues}
+		\label{fig:eigen_real}
+	\end{minipage}%
+	\hfill
+	\begin{minipage}[H]{0.75\textwidth}
+		\fbox{\includegraphics[width=\textwidth]{"./images/eigen imaginary"}}
+		\caption{Imaginary Eigenvalues}
+		\label{fig:eigen_imaginary}
+	\end{minipage}
+	\caption{A plot of real Fig(\ref{fig:eigen_real}) and imaginary Fig(\ref{fig:eigen_imaginary}) eigenvalues from the BOUT++ eigensolver}
+	\label{fig:eigen_graphs}
+\end{figure}
+
+\section{Velocity Data Example}
+\label{example:velocity}
+This section demonstrates how to import and plot velocity vectors, as outlined in Section (\ref{sec:velocity}).
+
+\begin{enumerate}
+	\item{Call the function relevant function for the coordinate system from the \textbf{velocity} library, with the variable name and path if required. Like below;
+		\begin{verbatim}
+		$ from visboutit import velocity
+		$ velocity.cylinder(-1, skip = 20)
+		\end{verbatim}}
+	\item{The function will import the variables from Equation (\ref{eqn:vel}), if the function cannot find the variables it will prompt for the variale names.}
+	\item{The function then converts the data and exports the vectors to time stamped VTK files within the batch directory. After this the vectors are ready to be plotted with VisIt.}
+	\item{After converting the data, a plot of the data can be created automatically or manually by the methods detailed below.}
+	\begin{enumerate}
+		\item{\textbf{Automatic} The automatic method uses the  \textit{vector} function within the \textbf{draw.py} library. This function creates a vector plot of the data, within the VisIt window. The function allows the user to modify the plot before saving the session of the VisIt window. After the VisIt session has been saved the image sequence is then rendered out. The commands below call the function and render out the images:
+			\begin{verbatim}
+			$ from visboutit import draw
+			draw.velocity('velocity', skip = 20)
+			\end{verbatim}}
+		
+		\item{\textbf{Manual} The manual method involves the user manually loading the data into a VisIt window and saving a session of the desired orientation of the plot. The function \textit{vector} within the \textbf{image.py} library can load the session and render out all the images avaliable.}
+		
+	\end{enumerate}
+	\item{Figures (\ref{fig:cylinder_velocity},\ref{fig:velocity_torus}) are examples of the images that can be produced from the VisBOUTIt package.}
+\end{enumerate}
+
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.6\textwidth]{"./images/Cylinder velocity example"}}
+	\caption{Cylinder Geometry plot of the velocity field from BOUT++ data.}
+	\label{fig:cylinder_velocity}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.6\textwidth]{"./images/Torus velocity example"}}
+	\caption{Torus Geometry plot of the velocity field from BOUT++ data.}
+	\label{fig:velocity_torus}
+\end{figure}
+
+
+\end{document}

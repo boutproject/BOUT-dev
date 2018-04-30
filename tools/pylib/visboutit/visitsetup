@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+#Looks for the visit directory, if doesn't exist prompts user and stores in config file
+
+try:
+    import os
+except:
+    print("No os library found")
+
+try:
+    import ConfigParser
+except:
+    print ("No ConfigParser found")
+
+#Import the libraries
+import os
+import ConfigParser as cp
+
+home_dir = os.path.expanduser('~') # Get the home directory
+
+cfgfile = open("visit.ini",'w') #Create setup file for VisIt
+parser = cp.ConfigParser() # Set ConfigParser Up
+
+#==============================================================================
+# Look for VisIt location
+#==============================================================================
+
+parser.add_section("file_locations") # Add the file locations section
+
+# Look for the Visit Directories
+if os.path.exists(home_dir + "/Downloads/visit2_9_2.linux-x86_64"):
+	visit_path  = home_dir + "/Downloads/visit2_9_2.linux-x86_64"
+	visit_dir = visit_path + "/2.9.2/linux-x86_64/lib/site-packages"
+	visit_bin = visit_path + "/bin"
+if os.path.exists(home_dir + "/visit2_9_2.linux-x86_64"):
+	visit_path = home_dir + "/visit2_9_2.linux-x86_64"
+	visit_dir = visit_path + "/2.9.2/linux-x86_64/lib/site-packages"
+	visit_bin = visit_path + "/bin"
+
+# If cannot find Visit directory prompt the user for the directory
+try:
+	visit_path
+except NameError:
+	print "VisIt directory not found, please enter directory"
+	visit_path = str(raw_input("Enter VisIt directory (i.e. location of visit2_9_2.linux-x86_64): "))
+	print "\n Enter Directory for VisIt site_packages \n For example version_number/version_os/lib/site_packages"
+	visit_dir = str(raw_input("Enter VisIt site-packages directory: "))
+	visit_bin = visit_path + '/bin'
+else:
+	print "VisIt directory located at %s" % visit_path
+
+#Set the VisIt Directory to the setup file
+parser.set('file_locations','visit_dir',visit_dir)
+parser.set('file_locations','visit_bin',visit_bin)
+
+#==============================================================================
+# Image Dimension settings
+# Writes Image settings as str but changed to int on import, 
+#==============================================================================
+img_width = int(raw_input('Enter int for Image Width: '))
+img_height = int(raw_input('Enter int for Image Height: '))
+
+parser.add_section('image_settings')
+parser.set('image_settings','img_width',img_width)
+parser.set('image_settings','img_height',img_height)
+
+# Write the variables to the setup file
+parser.write(cfgfile)
+cfgfile.close()
