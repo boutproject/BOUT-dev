@@ -87,8 +87,6 @@ AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
-AC_ARG_ENABLE(slow-tests,   [AS_HELP_STRING([--enable-slow-tests=no],
-        [Enable some extra (slow) tests to run with make check])],,[enable_slow_tests=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -973,12 +971,6 @@ Please supply the path using --with-scorep=/path/to/scorep])
 ])
 
 #############################################################
-# Are slow tests enabled?
-#############################################################
-
-HAS_SLOW_TESTS=$enable_slow_tests
-
-#############################################################
 # Download + Build PVODE '98
 #############################################################
 
@@ -1156,7 +1148,6 @@ AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(HAS_OPENMP)
-AC_SUBST(HAS_SLOW_TESTS)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT

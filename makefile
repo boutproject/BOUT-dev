@@ -35,14 +35,27 @@ check-mms-tests: libfast
 	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 
+check-mms-tests-all: libfast
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make --set-bool slow_tests=True
+	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite --set-bool slow_tests=True
+
 check-integrated-tests: libfast
 	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
 	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
 
+check-integrated-tests-all: libfast
+	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make --set-bool slow_tests=True
+	@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite --set-bool slow_tests=True
+
 
 check: check-unit-tests check-integrated-tests check-mms-tests
+check-all: check-unit-tests check-integrated-tests-all check-mms-tests-all
 
 build-check-unit-tests: libfast
 	@$(MAKE) --no-print-directory -C tests/unit

@@ -35,6 +35,8 @@ args=parser.parse_args()
 sys.path.append('..')
 from requirements import Requirements
 requirements = Requirements();
+# set default
+requirements.add('slow_tests',False)
 
 if args.set_bool is not None:
     lookup={'false':False,
@@ -44,7 +46,7 @@ if args.set_bool is not None:
     for setbool in args.set_bool:
         k,v=setbool.split("=")
         v=lookup[v.lower()]
-	requirements.add(k,v,override=True)
+        requirements.add(k,v,override=True)
 
 try:
     requirements.add('make',args.make)
@@ -58,7 +60,7 @@ if args.set_list is None:
     try:
         # Requires python >= 3.5
         tests=glob.iglob('**/runtest', recursive=True)
-    except:
+    except KeyError:
         # Fall back - check only a few folders ...
         tests=glob.glob('*/runtest')
         tests+=glob.glob('*/*/runtest')
@@ -73,7 +75,7 @@ else:
 
 if args.get_list:
     for test in tests:
-        req_met, req_expr = requirements.check(test+"/runtest")
+        req_met, _ = requirements.check(test+"/runtest")
         if req_met:
             print(test)
     sys.exit(0)
