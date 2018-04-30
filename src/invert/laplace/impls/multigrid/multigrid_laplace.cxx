@@ -494,10 +494,6 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   }
   result.setIndex(yindex); // Set the index of the FieldPerp to be returned
   
-#if CHECK > 2
-  checkData(result);
-#endif
-
   return result;
   
 }
