@@ -40,7 +40,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
-  opts->get("multigridlevel",mglevel,7,true);
+  opts->get("multigridlevel",mglevel,100,true);
   opts->get("rtol",rtol,pow(10.0,-8),true);
   opts->get("atol",atol,pow(10.0,-20),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
@@ -93,22 +93,52 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
 
 
   // Compute available levels along x-direction
+  if (mglevel >1) {
+    int nn = Nx_global;
+    for (int n = mglevel;n > 1; n--) {
+      if ( nn%2 != 0 )  {
+	output<<"Size of global x-domain is not a multiple of 2^"<<mglevel-1<<" mglevel is changed to "<<mglevel-n+1<<endl;
+        mglevel = mglevel - n + 1;
+        break;
+      }
+      nn = nn/2;
+    }
+    // ... and check the same for z-direction
+    nn = Nz_global;
+    for (int n = mglevel;n > 1; n--) {
+      if ( nn%2 != 0 )  {
+	output<<"Size of global z-domain is not a multiple of 2^ "<<mglevel-1<<" mglevel is changed to "<<mglevel-n+1<<endl;
+        mglevel = mglevel - n + 1;
+        break;
+      }
+      nn = nn/2;
+    }
+  }
+  else mglevel = 1;
+
+  // Compute available levels on each processor along x-direction
+  // aclevel is the number of levels that can be used in parallel, i.e. set by
+  // the grid size on a single processor
+  // If the number of levels is higher than aclevel, then the grid is collected
+  // to a single processor, and a new multigrid solver (called sMG) is created
+  // to run in serial to compute the coarsest (mglevel-aclevel) levels
   int aclevel,adlevel;
   if(mglevel >1) {
     int nn = Nx_local;
     aclevel = mglevel;
     for(int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
-	output<<"Size of local x-domain is not a power of 2^"<<mglevel<<" mglevel is changed to"<<mglevel-n+1<<endl;
+	output<<"Size of local x-domain is not a multiple of 2^"<<aclevel<<" aclevel is changed to"<<aclevel-n+1<<endl;
         aclevel = aclevel - n + 1;
         n = 1;
       }
       nn = nn/2;
     }
+    // ... and check the same for z-direction
     nn = Nz_local;
     for(int n = aclevel;n > 1; n--) {
       if ( nn%2 != 0 )  {
-	output<<"Size of local z-domain is not a power of 2^ "<<aclevel <<" mglevel is changed to "<<aclevel - n + 1<<endl;
+	output<<"Size of local z-domain is not a multiple of 2^ "<<aclevel <<" aclevel is changed to "<<aclevel - n + 1<<endl;
         aclevel = aclevel - n + 1;
         n = 1;
       }
