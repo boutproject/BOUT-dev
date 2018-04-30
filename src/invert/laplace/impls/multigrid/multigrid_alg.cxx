@@ -410,7 +410,15 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
         etest = 0;
         break;
       }
-      if(fabs(perror-error)/error <rtol) {
+      // J. Omotani, 27/2/2018: I think this test is intended to check for slow
+      // convergence of the GMRES solve, and 'abort' if it is converging
+      // slowly. This is OK on a coarse level solver, because at worst it means
+      // the top-level iteration will have to continue but the top level
+      // iteration should only be stopped by the previous test against the
+      // tolerance.
+      // Therefore, check that this is not the top-level solver before applying
+      // this test.
+      if( (level < mglevel-1) && (fabs(perror-error)/error < rtol) ) {
         if(it == 0) etest = 0;
         num -= 1;
         break;
