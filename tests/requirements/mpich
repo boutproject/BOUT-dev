@@ -1,23 +1,31 @@
-#!/usr/bin/env python
+#!/usr/bin/env bash
 
 # Tests if mpich is being used
 # NOTE: A more robust method is needed!
 
-from boututils.run_wrapper import shell
-from sys import exit
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-# Test working on ubuntu
-s, mpich = shell("which mpirun.mpich 2>/dev/null", pipe=True)
-if s == 0:
-    s, _ = shell("diff $(which mpirun) %s &>/dev/null"%mpich,
-                 pipe=True)
-    if s == 0:
-        exit(0)  # True
+cxx=$($SCRIPTPATH/../../bin/bout-config --cxx)
 
-# Test working on fedora
-s, _ = shell("which mpirun | grep mpich &>/dev/null", pipe=True)
+cxx=$(which $cxx)
 
-if s == 0:
-    exit(0)  # True
+cxx_=
+all=
+while :
+do
+    all="$all $cxx"
+    cxx__=$(readlink $cxx)
+    test "$cxx__" || break
+    cxx_=$(which $cxx__)
+    echo $cxx_
+    test ".$cxx_" == ".$cxx" && break
+    cxx=$cxx_
+done
 
-exit(1)  # False
+if echo "$all"|grep mpich
+then
+    exit 0
+else
+    exit 1
+fi
+
