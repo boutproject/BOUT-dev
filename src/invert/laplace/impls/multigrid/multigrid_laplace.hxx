@@ -157,7 +157,7 @@ public:
   void setCoefC2(const Field3D &val) { C2 = val; }
   void setCoefD(const Field3D &val) { D = val; }
   
-  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero; zero = 0.; solve(b, zero); }
+  const FieldPerp solve(const FieldPerp &b) { FieldPerp zero; zero = 0.; return solve(b, zero); }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0);
   
 private:
