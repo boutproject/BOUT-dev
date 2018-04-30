@@ -11,6 +11,7 @@
 
 MeshFactory *MeshFactory::instance = NULL;
 
+/// Name of BoutMesh for Options
 #define MESH_BOUT  "bout"
 
 MeshFactory* MeshFactory::getInstance() {

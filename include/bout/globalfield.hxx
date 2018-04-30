@@ -115,15 +115,18 @@ public:
   ///
   /// @param[in] mesh   The mesh to gather over
   /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
-  GlobalField2D(Mesh *m, int proc = 0);
+  GlobalField2D(Mesh *mesh, int proc = 0);
 
   /// Destructor
   virtual ~GlobalField2D();
   
-  bool valid() const {return data_valid;} ///< Is the data valid and on this processor?
-  
-  void gather(const Field2D &f); ///< Gather all data onto one processor
-  const Field2D scatter() const; ///< Scatter data back from one to many processors
+  /// Is the data valid and on this processor?
+  bool valid() const { return data_valid; }
+
+  /// Gather all data onto one processor
+  void gather(const Field2D &f);
+  /// Scatter data back from one to many processors
+  const Field2D scatter() const;
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors
   /// The scatter assignment operator needs to be a member of Field2D.
@@ -206,18 +209,18 @@ public:
   ///
   /// @param[in] mesh   The mesh to gather over
   /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
-  GlobalField3D(Mesh *m, int proc = 0);
+  GlobalField3D(Mesh *mesh, int proc = 0);
 
   /// Destructor
   virtual ~GlobalField3D();
   
-  /*!
-   * Test if the data is valid i.e. has been allocated
-   */ 
+  /// Test if the data is valid i.e. has been allocated
   bool valid() const {return data_valid;}
   
-  void gather(const Field3D &f); ///< Gather all data onto one processor
-  const Field3D scatter() const; ///< Scatter data back from one to many processors
+  /// Gather all data onto one processor
+  void gather(const Field3D &f);
+  /// Scatter data back from one to many processors
+  const Field3D scatter() const;
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors
   /// The scatter assignment operator needs to be a member of Field2D.

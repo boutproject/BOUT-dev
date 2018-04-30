@@ -15,6 +15,7 @@ selected integrated and MMS tests. The easiest way to run this is
 with:
 
 .. code-block:: console
+
    $ make check
 
 We expect that any new feature or function implemented in BOUT++ also
@@ -53,6 +54,7 @@ the unit tests, see ``tests/unit/README.md``.
 You can run the unit tests with:
 
 .. code-block:: console
+
    $ make check-unit-tests
 
 
@@ -69,6 +71,7 @@ request, and the majority on every commit.
 You can run the integrated tests with:
 
 .. code-block:: console
+
    $ make check-integrated-tests
 
 The test suite is in the ``tests/integrated`` directory, and is run
@@ -84,6 +87,35 @@ the tests before committing changes. A few minutes or less on a typical
 desktop, and ideally only a few seconds. If you have a large simulation
 which you want to stop anyone breaking, find starting parameters which
 are as sensitive as possible so that the simulation can be run quickly.
+
+Custom test requirements
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some tests require particular libraries or environments, so should be
+skipped if these are not available. To do this, each ``runtest``
+script can contain a line starting with ``#requires``, followed by a
+python expression which evaluates to ``True`` or ``False``. For
+example, the ``integrated/test-multigrid_laplace`` test is turned off
+on Travis when using MPICH using:
+
+.. code-block:: console
+
+   #requires not (travis and mpich)
+
+or if there were a test which required PETSc to be available, it could
+specify
+
+.. code-block:: console
+
+   #requires petsc
+   
+Currently the requirements which can be combined are ``travis``,
+``mpich``, ``netcdf``, ``pnetcdf``, ``hdf5``, ``pvode``, ``cvode``,
+``ida``, ``lapack``, ``petsc``, ``slepc``, ``mumps``, ``arkode``,
+``openmp`` and ``make``. The ``make`` requirement is set to True when
+the tests are being compiled (but not run), and False when the scripts
+are run. It's used for tests which do not have a compilation stage.
+
 
 .. _sec-mms:
 
@@ -117,7 +149,7 @@ This will have the following effect:
           will not increase the accuracy. Whereas with finite
           difference methods, accuracy varies smoothly as the grid is
           refined.
-   
+
 Choosing manufactured solutions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -134,12 +166,10 @@ derivatives. Common mistakes:
 Timing
 ------
 
-To time parts of the code, and calculate the percentage of time spent in
-communications, file I/O, etc. there is the ``Timer`` class defined in
-``include/bout/sys/timer.hxx``. To use it, just create a ``Timer``
-object at the beginning of the function you want to time:
-
-::
+To time parts of the code, and calculate the percentage of time spent
+in communications, file I/O, etc. there is the `Timer` class defined
+in ``include/bout/sys/timer.hxx``. To use it, just create a `Timer`
+object at the beginning of the function you want to time::
 
     #include <bout/sys/timer.hxx>
 
@@ -168,9 +198,7 @@ The empty constructor is equivalent to setting ``label = ""`` .
 Constructors call a private function ``getInfo()`` , which looks up the
 ``timer_info`` structure corresponding to the label in a
 ``map<string, timer_info*>`` . If no such structure exists, then one is
-created. This structure is defined as:
-
-::
+created. This structure is defined as::
 
     struct timer_info {
       double time;    ///< Total time
@@ -187,9 +215,7 @@ current time. Whereas ``getTime()`` only returns the time without
 modifying the timer, ``resetTime()`` also resets the timer to zero.
 
 If you don’t have the object, you can still get and reset the time using
-static methods:
-
-::
+static methods::
 
     double Timer::getTime(const std::string &label);
     double Timer::resetTime(const std::string &label);
@@ -197,5 +223,3 @@ static methods:
 These look up the ``timer_info`` structure, and perform the same task as
 their non-static namesakes. These functions are used by the monitor
 function in ``bout++.cxx`` to print the percentage timing information.
-
-

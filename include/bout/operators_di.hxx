@@ -69,8 +69,7 @@ BoutReal Delp2_C2(const Field3D &f, const DataIterator &i) {
 ///
 /// @param[in] f  Field to be differentiated
 /// @param[in] g  Field to be differentiated
-/// @param[in[ i  The point where the result is calculated
-///
+/// @param[in] i  The point where the result is calculated
 BoutReal bracket_arakawa(const Field3D &f, const Field3D &g, const DataIterator &i) {
   Coordinates *metric = mesh->coordinates();
 

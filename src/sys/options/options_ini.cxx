@@ -87,11 +87,15 @@ void OptionINI::read(Options *options, const string &filename) {
 
       if (startpos != string::npos) {
         // A section header
-        if (endpos == string::npos) throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if (endpos == string::npos) {
+          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
 
         buffer = trim(buffer, "[]");
 
-        if(buffer.empty()) throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if(buffer.empty()) {
+          throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
         
         section = options;
         size_t scorepos;

@@ -1,5 +1,3 @@
-
-
 #include <mpi.h>
 #include <bout/sys/timer.hxx>
 
@@ -11,7 +9,7 @@ Timer::Timer() {
   timing->running = true;
 }
 
-Timer::Timer(const string &label) {
+Timer::Timer(const std::string &label) {
   timing = getInfo(label);
   timing->started = MPI_Wtime();
   timing->running = true;
@@ -40,14 +38,14 @@ double Timer::resetTime() {
   return val;
 }
 
-double Timer::getTime(const string &label) {
+double Timer::getTime(const std::string &label) {
   timer_info* t = getInfo(label);
   if(t->running)
     return t->time + (MPI_Wtime() - t->started);
   return t->time;
 }
 
-double Timer::resetTime(const string &label) {
+double Timer::resetTime(const std::string &label) {
   timer_info* t = getInfo(label);
   double val = t->time;
   t->time = 0.0;
@@ -68,9 +66,9 @@ void Timer::cleanup() {
   info.clear();
 }
 
-map<string, Timer::timer_info*> Timer::info;
+map<std::string, Timer::timer_info*> Timer::info;
 
-Timer::timer_info* Timer::getInfo(const string &label) {
+Timer::timer_info* Timer::getInfo(const std::string &label) {
   map<string, timer_info*>::iterator it(info.find(label));
   if(it == info.end()) {
     // Not in map, so create it
@@ -82,4 +80,3 @@ Timer::timer_info* Timer::getInfo(const string &label) {
   }
   return it->second;
 }
-

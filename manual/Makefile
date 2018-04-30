@@ -6,7 +6,7 @@ BOUT_TOP?=..
 # Some distros may provide sphinx-build-3 and sphinx-build-2 instead
 # of sphinx-build. An automatic check would be helpful, but at least
 # with this, it should be easy to change:
-sphinx-build?=$(shell which sphinx-build-3 &>/dev/null && echo sphinx-build-3 || echo sphinx-build)
+sphinx-build?=$(shell which sphinx-build-3 >/dev/null 2>&1 && echo sphinx-build-3 || echo sphinx-build)
 
 all: sphinx
 manual: all
@@ -16,17 +16,17 @@ html: sphinx-html
 man: sphinx-man
 sphinx: sphinx-pdf
 
-sphinx-pdf: 
+sphinx-pdf: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b latex sphinx/ build/
 	cd build && latexmk -pdf BOUT
 	test -e BOUT.pdf || ln -s build/BOUT.pdf .
 	@echo "Documentation is available in `pwd`/BOUT.pdf"
 
-sphinx-html:
+sphinx-html: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
 	@echo "Documentation available in file://`pwd`/html/index.html"
 
-sphinx-man:
+sphinx-man: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
 	@echo "Documentation available in `pwd`/man/bout.1"
 
