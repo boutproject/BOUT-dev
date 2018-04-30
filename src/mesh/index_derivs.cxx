@@ -677,6 +677,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
   ASSERT1(this == var.getMesh());
 
+  CELL_LOC diffloc = var.getLocation();
+
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -763,6 +765,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     }
   }
 
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -781,6 +785,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   // Check that the mesh is correct
   ASSERT1(this == var.getMesh());
+
+  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -868,12 +874,12 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     }
   }
 
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-
-  result.setLocation(loc);
 
   return result;
 }
@@ -890,6 +896,8 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   ASSERT1(this == var.getMesh());
+
+  CELL_LOC diffloc = var.getLocation();
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -924,6 +932,8 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     }
   }
 
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
@@ -942,6 +952,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   ASSERT1(this == var.getMesh());
+
+  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -1089,12 +1101,13 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
     result = mesh->fromFieldAligned(result);
   }
+
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-
-  result.setLocation(loc);
 
   return result;
 }
@@ -1108,6 +1121,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   }
 
   ASSERT1(this == var.getMesh());
+
+  CELL_LOC diffloc = var.getLocation();
 
   if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
@@ -1131,7 +1146,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     result[i] = func(s);
   }
 
-  result.setLocation(loc);
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1143,6 +1158,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 ////////////// X DERIVATIVE /////////////////
 
 const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+
   Mesh::deriv_func func = fDDX; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
@@ -1688,6 +1704,8 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDX(Field2D, Field2D)");
 
+  CELL_LOC diffloc = f.getLocation();
+
   Mesh::upwind_func func = fVDDX;
 
   if (method != DIFF_DEFAULT) {
@@ -1740,6 +1758,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = false;
 #endif
 
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1928,7 +1947,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2120,7 +2139,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2389,7 +2408,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2502,7 +2521,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2519,6 +2538,8 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
+
+  CELL_LOC diffloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL))) {
     // Split into an upwind and a central differencing part
@@ -2787,7 +2808,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     throw BoutException("Error: Derivatives in X requires at least one guard cell");
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2805,6 +2826,8 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
+
+  CELL_LOC diffloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL))) {
     // Split into an upwind and a central differencing part
@@ -2874,6 +2897,8 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // No guard cells
     throw BoutException("Error: Derivatives in Y requires at least one guard cell");
   }
+
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -3099,7 +3124,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -3197,7 +3222,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     result[i] = func(vval, fval);
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
