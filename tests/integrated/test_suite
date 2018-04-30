@@ -60,7 +60,7 @@ if args.set_list is None:
     try:
         # Requires python >= 3.5
         tests=glob.iglob('**/runtest', recursive=True)
-    except KeyError:
+    except TypeError:
         # Fall back - check only a few folders ...
         tests=glob.glob('*/runtest')
         tests+=glob.glob('*/*/runtest')
