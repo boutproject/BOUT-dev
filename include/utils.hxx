@@ -487,7 +487,7 @@ std::list<std::string> strsplit(const std::string &s, char delim);
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trim(const string &s, const string &c=" \t\r");
+std::string trim(const std::string &s, const std::string &c=" \t\r");
 
 /*!
  * Strips leading spaces from a string
@@ -495,7 +495,7 @@ string trim(const string &s, const string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimLeft(const string &s, const string &c=" \t");
+std::string trimLeft(const std::string &s, const std::string &c=" \t");
 
 /*!
  * Strips leading spaces from a string
@@ -503,7 +503,7 @@ string trimLeft(const string &s, const string &c=" \t");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimRight(const string &s, const string &c=" \t\r");
+std::string trimRight(const std::string &s, const std::string &c=" \t\r");
 
 /*!
  * Strips the comments from a string
@@ -511,7 +511,7 @@ string trimRight(const string &s, const string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimComments(const string &s, const string &c="#;");
+std::string trimComments(const std::string &s, const std::string &c="#;");
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.

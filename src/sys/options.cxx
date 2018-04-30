@@ -1,10 +1,11 @@
 #include <options.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
-#include <sstream>
 #include <output.hxx>
-
 #include <field_factory.hxx> // Used for parsing expressions
+
+#include <iomanip>
+#include <sstream>
 
 /// The source label given to default values
 const string DEFAULT_SOURCE{"default"};
@@ -35,33 +36,51 @@ void Options::cleanup() {
   root = nullptr;
 }
 
-void Options::set(const string &key, const int &val, const string &source) {
+void Options::set(const string &key, const int &val, const string &source, bool force) {
   std::stringstream ss;
   ss << val;
-  set(key, ss.str(), source);
+  _set(key, ss.str(), source, force);
 }
 
-void Options::set(const string &key, const bool &val, const string &source) {
+void Options::set(const string &key, const bool &val, const string &source, bool force) {
   if (val) {
-    set(key, "true", source);
+    _set(key, "true", source, force);
   } else {
-    set(key, "false", source);
+    _set(key, "false", source, force);
   }
 }
 
-void Options::set(const string &key, BoutReal val, const string &source) {
+void Options::set(const string &key, BoutReal val, const string &source, bool force) {
   std::stringstream ss;
-  ss << val;
-  set(key, ss.str(), source);
+  // Make sure the precision is large enough to hold a BoutReal
+  ss << std::scientific << std::setprecision(17) << val;
+  _set(key, ss.str(), source, force);
 }
 
-void Options::set(const string &key, const string &val, const string &source) {
+void Options::_set(const string &key, const string &val, const string &source,
+                   bool force) {
   OptionValue opt;
   opt.value = val;
   opt.source = source;
   opt.used = false;
-
-  options[lowercase(key)] = opt;
+  string key_l = lowercase(key);
+  if (this->isSet(key_l)) {
+    const OptionValue &oldopt = options[key_l];
+    if (oldopt.value != opt.value) {
+      if (force or oldopt.source != opt.source) {
+        output_warn << "\tOption " << sectionName << ":" << key << " = " << oldopt.value
+                    << " (" << oldopt.source << ") overwritten with:"
+                    << "\n"
+                    << "\t\t" << sectionName << ":" << key << " = " << opt.value
+                    << " (" << opt.source << ")\n";
+      } else {
+        throw BoutException("Options: Setting a value from same source (%s) to new value "
+                            "'%s' - old value was '%s'.",
+                            source.c_str(), opt.value.c_str(), oldopt.value.c_str());
+      }
+    }
+  }
+  options[key_l] = opt;
 }
 
 bool Options::isSet(const string &key) {

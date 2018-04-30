@@ -1,3 +1,3 @@
 #!/usr/bin/env python3
 
-from requirements import Requirements
+from .requirements import Requirements

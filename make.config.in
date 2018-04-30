@@ -288,7 +288,6 @@ endif
 %.o: $(BOUT_CONFIG_FILE) %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF.$(@F:.o=.mk) -MM -c $(@F:.o=.cxx) || exit 0
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif
@@ -304,6 +303,11 @@ clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
+	@test -f make.config && ( find src | grep '\.o$$' && echo "WARNING: Some object files remain - which might cause issues. Clean with $(MAKE) clean-remove-object-files" ) || exit 0
+
+clean-remove-object-files:
+	find src|grep '\.o$$' | xargs rm
+
 
 distclean:: clean clean-tests
 	@echo include cleaned
@@ -359,6 +363,14 @@ manual-html:
 
 manual-pdf:
 	$(MAKE) -C $(MANUAL_DIR) pdf
+
+python: libfast
+	$(MAKE) -C tools/pylib python3
+
+python2: libfast
+	$(MAKE) -C tools/pylib python2
+
+python-all:python python2
 
 ######################################################################
 # Code coverage

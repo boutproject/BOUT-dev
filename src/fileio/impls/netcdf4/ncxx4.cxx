@@ -297,7 +297,7 @@ const vector<int> Ncxx4::getSize(const char *name) {
   return size;
 }
 
-const vector<int> Ncxx4::getSize(const string &var) {
+const std::vector<int> Ncxx4::getSize(const std::string &var) {
   return getSize(var.c_str());
 }
 
@@ -346,7 +346,7 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::read(int *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::read(int *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
@@ -378,7 +378,7 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::read(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
@@ -432,7 +432,7 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::write(int *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::write(int *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -495,7 +495,7 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::write(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -530,7 +530,7 @@ bool Ncxx4::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::read_rec(int *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::read_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -561,7 +561,7 @@ bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::read_rec(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -627,7 +627,7 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   return true;
 }
 
-bool Ncxx4::write_rec(int *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::write_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -713,7 +713,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   return true;
 }
 
-bool Ncxx4::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool Ncxx4::write_rec(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -722,7 +722,8 @@ bool Ncxx4::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
  * Attributes
  ***************************************************************************/
 
-void Ncxx4::setAttribute(const string &varname, const string &attrname, const string &text) {
+void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname,
+                         const std::string &text) {
   TRACE("Ncxx4::setAttribute(string)");
 
   NcVar var = dataFile->getVar(varname);
@@ -733,7 +734,8 @@ void Ncxx4::setAttribute(const string &varname, const string &attrname, const st
   var.putAtt(attrname, text);
 }
 
-void Ncxx4::setAttribute(const string &varname, const string &attrname, int value) {
+void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname,
+                         int value) {
   TRACE("Ncxx4::setAttribute(int)");
 
   NcVar var = dataFile->getVar(varname);

@@ -723,7 +723,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     // Set the preconditioner
     PCSetType(pc,PCLU);
     // Set the solver type
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else { // If a iterative solver has been chosen
     KSPSetType( ksp, ksptype ); // Set the type of the solver
 

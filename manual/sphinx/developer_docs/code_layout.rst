@@ -300,11 +300,6 @@ The current source code files are:
      some useful routines for creating sources and sinks in physics
      equations.
 
-- precon
-
-   - :doc:`jstruc.cxx<../_breathe_autogen/file/jstruc_8cxx>` is an
-     experimental code for preconditioning using PETSc
-
 - solver
 
    - :doc:`solver.cxx<../_breathe_autogen/file/solver_8cxx>` is the

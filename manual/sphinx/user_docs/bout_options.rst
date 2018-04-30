@@ -21,10 +21,9 @@ BOUT.inp input file
 
 The text input file ``BOUT.inp`` is always in a subdirectory called
 ``data`` for all examples. The files include comments (starting with
-either ’;’ or ’#’) and should be fairly self-explanatory. The format is
+either ``;`` or ``#``) and should be fairly self-explanatory. The format is
 the same as a windows INI file, consisting of ``name = value`` pairs.
-Comments are started with a hash (#) or semi-colon, which comments out
-the rest of the line. values can be:
+Supported value types are:
 
 -  Integers
 
@@ -50,6 +49,39 @@ Subsections can also be used, separated by colons ’:’, e.g.
 .. code-block:: cfg
 
     [section:subsection]
+
+Numerical quantities can be plain numbers or expressions:
+
+.. code-block:: cfg
+
+   short_pi = 3.145
+   foo = 6 * 9
+
+Variables can even reference other variables:
+
+.. code-block:: cfg
+
+   pressure = temperature * density
+   temperature = 12
+   density = 3
+
+Note that variables can be used before their definition; all variables
+are first read, and then processed afterwards.
+
+All expressions are calculated in floating point and then converted to
+an integer when read inside BOUT++. The conversion is done by rounding
+to the nearest integer, but throws an error if the floating point
+value is not within :math:`1e-3` of an integer. This is to minimise
+unexpected behaviour. If you want to round any result to an integer,
+use the ``round`` function:
+
+.. code-block:: cfg
+
+    bad_integer = 256.4
+    ok_integer = round(256.4)
+
+Note that it is still possible to read ``bad_integer`` as a real
+number though.
 
 Have a look through the examples to see how the options are used.
 
