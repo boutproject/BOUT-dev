@@ -671,12 +671,11 @@ void Mesh::derivs_init(Options *options) {
 const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
                                CELL_LOC loc, REGION region) {
   ASSERT1(this == var.getMesh());
+  ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
     return Field2D(0., this);
   }
-
-  ASSERT1(var.isAllocated());
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -773,7 +772,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  result.setLocation(loc);
   return result;
 }
 
@@ -781,15 +779,12 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
                                CELL_LOC loc, REGION region) {
   // Check that the mesh is correct
   ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
     return Field3D(0., this);
   }
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
-
-  // Check that the mesh is correct
-  ASSERT1(this == var.getMesh());
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -894,15 +889,12 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
   ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
     return Field2D(0., this);
   }
-
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
-
-  ASSERT1(this == var.getMesh());
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -952,15 +944,12 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
                                REGION region) {
   ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
     return Field3D(0., this);
   }
-
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
-
-  ASSERT1(this == var.getMesh());
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -1126,12 +1115,13 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
                                REGION region) {
   ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
 
   if (var.getNz() == 1) {
     return Field3D(0., this);
   }
 
-  ASSERT1(this == var.getMesh());
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -1169,6 +1159,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 ////////////// X DERIVATIVE /////////////////
 
 const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+
   Mesh::deriv_func func = fDDX; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
@@ -1548,6 +1539,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   }
 
   result = applyYdiff(f, func, diffloc, region);
+
   result.setLocation(diffloc);
 
   return result;
