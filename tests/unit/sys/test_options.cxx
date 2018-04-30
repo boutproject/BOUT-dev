@@ -354,7 +354,7 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
   EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
   output_warn.disable();
   options.set("key", "value", "code");
-  options.forceSet("key", "new value", "code");
-  options.set("key", "value", "code",true);
+  EXPECT_NO_THROW(options.forceSet("key", "new value", "code"));
+  EXPECT_NO_THROW(options.set("key", "value", "code",true));
   output_warn.enable();
 }
