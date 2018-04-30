@@ -117,6 +117,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
           // the magnetic field
+          throw BoutException("At the moment, fields with yup/ydown cannot use interp_to.\n"
+                              "If we implement a 3-point stencil for interpolate or double-up\n"
+                              "/double-down fields, then we can use this case.");
           s.pp = nan("");
           s.mm = nan("");
 
@@ -169,6 +172,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             }
           } else {
             // Only one guard cell, so no pp or mm values
+            // Note: at the moment we cannot reach this case because of the
+            // 'ASSERT0(mesh->ystart >=2)' above, but if we implement a 3-point
+            // stencil for interp, then this will be useful
             s.pp = nan("");
             s.mm = nan("");
             for (const auto &i : result.region(RGN_NOBNDRY)) {
@@ -228,6 +234,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
     } else {
       // Shifted -> shifted
       // For now, shift to centre then to final location loc
+      // We probably should not rely on this, but it might work if one of the
+      // shifts is in the z-direction where guard cells aren't needed.
       result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
     }
     result.setLocation(loc);
