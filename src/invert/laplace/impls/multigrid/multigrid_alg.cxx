@@ -305,6 +305,14 @@ void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
     if((pcheck == 1) && (rProcI == 0)) {
       output<<numP<<"Don't need to solve. E= "<<ini_e<<endl;
     }
+    // Clean up memory before returning from method 
+    delete [] p; 
+    delete [] q; 
+    delete [] r; 
+    for(int i=0;i<MAXGM+1;i++) { 
+      delete [] v[i]; 
+    } 
+    delete [] v;
     return;
   }
 #pragma omp parallel default(shared)

@@ -364,9 +364,9 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   t1 = MPI_Wtime();
   if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
   soltime += t1-t0;
-  if(mgcount%300 == 0) {
-    output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
-  }
+  //if(mgcount%300 == 0) {
+  //  output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+  //}
   
   FieldPerp result;
   result.allocate();
