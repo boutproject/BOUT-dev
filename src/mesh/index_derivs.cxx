@@ -1441,7 +1441,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
-  result = applyXdiff(f, func);
+  result = applyXdiff(f, func, diffloc);
 
   result.setLocation(diffloc);
 
@@ -1514,7 +1514,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
-  result = applyYdiff(f, func);
+  result = applyYdiff(f, func, diffloc);
 
   result.setLocation(diffloc);
 
@@ -1646,7 +1646,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
   } else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    result = applyZdiff(f, func, diffloc);
   }
 
   result.setLocation(diffloc);
