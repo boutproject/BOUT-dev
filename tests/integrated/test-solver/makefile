@@ -1,4 +1,3 @@
-
 BOUT_TOP	= ../../..
 
 SOURCEC		= test_solver.cxx

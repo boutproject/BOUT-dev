@@ -12,8 +12,11 @@ print("Making solver test")
 shell_safe("make > make.log")
 
 print("Running solver test")
-s, out = launch_safe("./test_solver", runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
+status, out = launch_safe("./test_solver", runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
 with open("run.log", "w") as f:
     f.write(out)
 
-exit(s)
+if status:
+    print(out)
+
+exit(status)

@@ -110,8 +110,10 @@ int main(int argc, char **argv) {
 
     } catch (BoutException &e) {
       // Don't let one bad solver stop us trying the rest
-      output_test << "Error encountered with solver " << name << "\n";
-      output_test << e.what() << endl;
+      output_test << " ERROR\n";
+      output_info << "Error encountered with solver " << name << "\n";
+      output_info << e.what() << endl;
+      errors[name] = 0.;
     }
   }
 
