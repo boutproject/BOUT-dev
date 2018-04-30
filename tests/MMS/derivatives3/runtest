@@ -3,6 +3,7 @@
 import boutcore
 
 #requires boutcore
+#requires not make
 
 import numpy as np
 import itertools
