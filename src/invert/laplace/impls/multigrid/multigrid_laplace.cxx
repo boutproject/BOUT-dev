@@ -531,16 +531,16 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       BoutReal ddz = D[i2][yindex][k2]*mesh->g33[i2][yindex]/mesh->dz/mesh->dz; 
               // coefficient of 2nd derivative stencil (z-direction)
       
-      BoutReal dxdz = D[i2][yindex][k2]*mesh->g13[i2][yindex]/mesh->dx[i2][yindex]/mesh->dz/2.; 
+      BoutReal dxdz = D[i2][yindex][k2]*2.*mesh->g13[i2][yindex]/mesh->dx[i2][yindex]/mesh->dz; 
               // coefficient of mixed derivative stencil (could assume zero, at least initially, 
               // if easier; then check this is true in constructor)
       
-      BoutReal dxd = (D[i2][yindex][k2]*2.*mesh->G1[i2][yindex]
+      BoutReal dxd = (D[i2][yindex][k2]*mesh->G1[i2][yindex]
         + mesh->g11[i2][yindex]*ddx_C
         + mesh->g13[i2][yindex]*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/mesh->dx[i2][yindex]; // coefficient of 1st derivative stencil (x-direction)
       
-      BoutReal dzd = (D[i2][yindex][k2]*2.*mesh->G3[i2][yindex]
+      BoutReal dzd = (D[i2][yindex][k2]*mesh->G3[i2][yindex]
         + mesh->g33[i2][yindex]*ddz_C
         + mesh->g13[i2][yindex]*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/mesh->dz; // coefficient of 1st derivative stencil (z-direction)
