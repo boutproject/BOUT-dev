@@ -20,7 +20,10 @@ from numpy import sqrt, max, abs, mean, array, log, pi
 
 from os.path import join
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt=None
 
 MPIRUN = getmpirun()
 
