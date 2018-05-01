@@ -791,20 +791,21 @@ def interp_to(Field3D f3d,location):
     return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
 
 
-def setOption(name, value):
-    """setOption(name, value)
-    Set an option in the global Options tree"""
+def setOption(name, value, source="PyInterface", force=False):
+    """setOption(name, value, source="PyInterface", force=False)
+
+    Set an option in the global Options tree
+    :param name: the name of the value to be set. Can be relative,
+    e.g. \`mesh:ddx:first\`.
+    :param value: the value to be set
+    :param source: The source of the change. Useful for keeping
+    track of where what was set.
+    :param force: If a value is overwritten, an exception is
+    thrown. setting this to \`True\` avoids the exception.
+    """
     checkInit()
-    cdef c.Options * opt = c.Options.getRoot()
-    cdef c.string sec_
-    for sec in name.split(":")[:-1]:
-        sec_=sec.encode('ascii')
-        opt=opt.getSection(sec_)
-    cdef c.string key = name.split(":")[-1].encode('ascii')
-    cdef c.string value_ = value.encode('ascii')
-    cdef c.string source = "PyInterface".encode('ascii')
-    opt.set(key,value_, source)
-    opt.cleanCache()
+    root=Options('')
+    root.set(name,value,source,force)
 
 cdef class Options:
     cdef c.Options * cobj
@@ -817,8 +818,17 @@ cdef class Options:
             sec_=sec.encode('ascii')
             self.cobj=self.cobj.getSection(sec_)
 
-    def set(self,name,value,source="PyInterface"):
-        """set(self,name,value,source="PyInterface")"""
+    def set(self,name,value,source="PyInterface", force=False):
+        """opt.set(name,value,source="PyInterface", force=False)
+
+        :param name: the name of the value to be set. Can be relative,
+        e.g. \`ddx:first\`.
+        :param value: the value to be set
+        :param source: The source of the change. Useful for keeping
+        track of where what was set.
+        :param force: If a value is overwritten, an exception is
+        thrown. setting this to \`True\` avoids the exception.
+        """
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
@@ -827,7 +837,7 @@ cdef class Options:
         cdef c.string key = name.split(":")[-1].encode('ascii')
         cdef c.string value_ = value.encode('ascii')
         cdef c.string source_ = source.encode('ascii')
-        opt.set(key,value_, source_)
+        opt.set(key,value_, source_, force)
         opt.cleanCache()
         return self
 
