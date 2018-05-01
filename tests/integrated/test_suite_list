@@ -15,6 +15,7 @@ test-vec
 test-griddata
 test-fieldgroup
 test-initial
+test-solver
 test-stopCheck
 test-subdir
 test-interpolate
