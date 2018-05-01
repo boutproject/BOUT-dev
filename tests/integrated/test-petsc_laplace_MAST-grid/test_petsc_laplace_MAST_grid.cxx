@@ -24,7 +24,6 @@
  **************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <bout/constants.hxx>
 // #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -34,7 +33,9 @@
 
 BoutReal max_error_at_ystart(const Field3D &error);
 
-int physics_init(bool restarting) {
+int main(int argc, char** argv) {
+
+  BoutInitialise(argc, argv);
   
   Options *options = Options::getRoot()->getSection("petsc2nd");
   class Laplacian* invert = Laplacian::create(options);
@@ -50,7 +51,7 @@ int physics_init(bool restarting) {
   // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
   // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart - 1;
-  BoutReal nz = mesh->GlobalNz-1;
+  BoutReal nz = mesh->GlobalNz;
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: Gaussian x-profiles, 2nd order Krylov
@@ -173,6 +174,8 @@ int physics_init(bool restarting) {
 	}
   
   mesh->communicate(f1,a1,c1,d1);
+
+  f1.setBoundary("neumann");
   
   b1 = d1*Delp2(f1) + Grad_perp(c1)*Grad_perp(f1)/c1 + a1*f1;
   if (mesh->firstX())
@@ -669,13 +672,8 @@ int physics_init(bool restarting) {
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   
-  return 1;
-  
-}
-
-int physics_run(BoutReal t) {
-  // Doesn't do anything;
-  return 1;
+  BoutFinalise();
+  return 0;
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
