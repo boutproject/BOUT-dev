@@ -24,7 +24,7 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC_DEV
+#ifdef BOUT_HAS_PETSC
 
 class PetscSolver;
 
