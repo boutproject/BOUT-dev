@@ -211,23 +211,7 @@ void printLocation(const Field3D &var) {
 }
 
 const char* strLocation(CELL_LOC loc) {
-  switch(loc) {
-  case CELL_CENTRE: {
-    return " Cell centred";
-  }
-  case CELL_XLOW: {
-    return " Lower X";
-  }
-  case CELL_YLOW: {
-    return " Lower Y";
-  }
-  case CELL_ZLOW: {
-    return " Lower Z";
-  }
-  default: {
-    return " Default (Unknown)";
-  }
-  };
+  return CELL_LOC_STRING(loc).c_str();
 }
 
 // 4-point Lagrangian interpolation
