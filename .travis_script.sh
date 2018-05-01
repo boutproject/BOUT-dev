@@ -71,24 +71,30 @@ fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
 time make $MAIN_TARGET|| exit
+
+exit=0
 if [[ ${TESTS} == 1 ]]
 then
-    time make build-check || exit
+    time make build-check && (exit $exit)
+    exit=$?
 fi
 
 if [[ ${UNIT} == 1 ]]
 then
-    time make check-unit-tests || exit
+    time make check-unit-tests && (exit $exit)
+    exit=$?
 fi
 
 if [[ ${INTEGRATED} == 1 ]]
 then
-    time make check-integrated-tests || exit
+    time make check-integrated-tests && (exit $exit)
+    exit=$?
 fi
 
 if [[ ${MMS} == 1 ]]
 then
-   time make check-mms-tests || exit
+   time make check-mms-tests && (exit $exit)
+   exit=$?
 fi
 
 if [[ ${COVERAGE} == 1 ]]
@@ -99,3 +105,5 @@ then
    find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
    bash <(curl -s https://codecov.io/bash)
 fi
+
+exit $exit
