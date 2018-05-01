@@ -63,33 +63,43 @@ in Y, whilst the density :math:`n` remains cell centred.
           you pass it.
 
 
-Arithmetic operations between staggered quantities are handled by
-interpolating them to the same location according to the algorithm in
-:numref:`fig-stagArith`.
-
-.. _fig-stagArith:
-.. figure:: ../figs/stagArith.*
-   :alt: How the cell location of an arithmetic operation is decided
-
-   How the cell location of an arithmetic operation (``+, -, *, /,
-   \pow``) is decided
-
-
-If performing an operation between variables defined at two different
-locations, the order of the variables matter: the result will be
-defined at the locations of the **left** variable. For example,
-``n*v`` would be `CELL_CENTRE` because this is the location of ``n`` ,
-whilst ``v*n`` would be `CELL_YLOW` . Relying on this behaviour could
-lead to trouble, to make your code clearer it’s probably best to use
-the interpolation routines. Include the header file
+Arithmetic operations can only be performed between variables with the same
+location. When performing a calculation at one location, to include a variable
+from a different location, use the interpolation routines. Include the header
+file
 
 ::
 
     #include <interpolation.hxx>
 
-then use the ``interp_to(field, location)`` function. Using this,
-``interp_to(n, CELL_YLOW)*v`` would be `CELL_YLOW` as ``n`` would be
-interpolated.
+then use the ``interp_to(field, location, region)`` function. For example,
+given a `CELL_CENTRE` field ``n`` and a `CELL_YLOW` field ``v``, to calculate
+``n*v`` at `CELL_YLOW`, call ``interp_to(n, CELL_YLOW)*v`` whose result will be
+`CELL_YLOW` as ``n`` is interpolated.
+
+.. note:: The region argument is optional but useful (see :ref:sec_iterating
+          for more on regions). The default `RGN_ALL` reproduces the historical
+          behaviour of BOUT++, which communicates before returning the result
+          from ``interp_to``. Communication is necessary because the result of
+          interpolation in the guard cells depends on data from another process
+          (except, currently, in the case of interpolation in the z-direction
+          which can be done without communication because all the z-points are
+          on the same process).
+
+          Using RGN_NOBNDRY no communication is performed
+          (so interp_to is faster, potentially significantly faster when using
+          many processes) and all the guard cells are invalid. Whichever region
+          is used, the boundary guard cells are invalid since no boundary
+          condition is applied in interp_to. If the guard cells are needed
+          (e.g. to calculate a derivative) a boundary condition must be applied
+          explicitly to the result.
+
+          RGN_NOX and RGN_NOY currently have identical behaviour to RGN_ALL
+          because at present BOUT++ has no functions for single-direction
+          communication which could in principle be used in these cases (if the
+          combination of region and direction of interpolation allows it). x-
+          or y-interpolation can never be calculated in guard cells without
+          communication because the corner guard cells are never valid.
 
 Differential operators by default return fields which are defined at
 the same location as their inputs, so here ``Grad_par(v)`` would be

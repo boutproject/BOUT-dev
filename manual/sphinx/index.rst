@@ -65,6 +65,7 @@ The documentation is divided into the following sections:
    user_docs/parallel-transforms
    user_docs/laplacian
    user_docs/differential_operators
+   user_docs/algebraic_operators
    user_docs/staggered_grids
    user_docs/eigenvalue_solver
 
