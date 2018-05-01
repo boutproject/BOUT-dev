@@ -31,9 +31,6 @@ class PetscSolver;
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-// Fix error in PETSC_DEPRECATED("Use SNESGetLineSearch()") on Hopper (PETSc-3.4)
-#define PETSC_DEPRECATED(a)
-
 #include <petsc.h>
 
 #include <field2d.hxx>
