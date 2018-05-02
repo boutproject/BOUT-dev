@@ -219,16 +219,23 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal start_timestep;
   OPTION(options, start_timestep, TIMESTEP);
-  ierr = TSSetInitialTimeStep(ts,simtime,start_timestep);CHKERRQ(ierr);
+  ierr = TSSetTime(ts, simtime); CHKERRQ(ierr);
+  ierr = TSSetTimeStep(ts, start_timestep); CHKERRQ(ierr);
   next_output = simtime;
 
   // Maximum number of steps
   int mxstep;
   OPTION(options, mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
-  PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time'=
+  PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time
   output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
+
+#if PETSC_VERSION_GE(3,8,0)
+  ierr = TSSetMaxSteps(ts, mxstep); CHKERRQ(ierr);
+  ierr = TSSetMaxTime(ts, tfinal); CHKERRQ(ierr);
+#else
   ierr = TSSetDuration(ts,mxstep,tfinal);CHKERRQ(ierr);
+#endif
 
   // Set the current solution
   ierr = TSSetSolution(ts,u);CHKERRQ(ierr);
@@ -962,7 +969,12 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
 
   PetscFunctionBegin;
   ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
+
+#if PETSC_VERSION_GE(3, 8, 0)
+  ierr = TSGetMaxTime(ts, &tfinal); CHKERRQ(ierr);
+#else
   ierr = TSGetDuration(ts, PETSC_NULL, &tfinal);CHKERRQ(ierr);
+#endif
 
   /* Duplicate the solution vector X into a work vector */
   ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
