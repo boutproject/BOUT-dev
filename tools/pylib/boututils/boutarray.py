@@ -41,3 +41,9 @@ class BoutArray(numpy.ndarray):
         # but also with arr.view(BoutArray).
         self.attributes = getattr(obj, 'attributes', None)
         # We do not need to return anything
+
+    def __format__(self,str):
+        try:
+            return super().__format__(str)
+        except TypeError:
+            return float(self).__format__(str)
