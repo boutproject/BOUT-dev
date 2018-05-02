@@ -659,14 +659,15 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   TRACE("Running RHS: PetscSolver::rhs(%e)", t);
 
   int flag;
-  BoutReal *udata_array, *dudata_array;
+  const BoutReal *udata_array;
+  BoutReal *dudata_array;
 
   PetscFunctionBegin;
 
   // Load state from PETSc
-  VecGetArray(udata, &udata_array);
-  load_vars(udata_array);
-  VecRestoreArray(udata, &udata_array);
+  VecGetArrayRead(udata, &udata_array);
+  load_vars(const_cast<BoutReal *>(udata_array));
+  VecRestoreArrayRead(udata, &udata_array);
 
   // Call RHS function
   flag = run_rhs(t);
