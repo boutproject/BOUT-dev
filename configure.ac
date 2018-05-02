@@ -476,7 +476,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
 #############################################################
 
 PNCPATH=""
-AS_IF([test "$with_pnetcdf" != "no"], [
+AS_IF([test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ], [
   AC_MSG_NOTICE([Searching for Parallel-NetCDF library])
 
   AS_IF([test "x$with_pnetcdf" != "xyes"], [
