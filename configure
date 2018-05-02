@@ -6773,7 +6773,7 @@ fi
 #############################################################
 
 PNCPATH=""
-if test "$with_pnetcdf" != "no"; then :
+if test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for Parallel-NetCDF library" >&5
 $as_echo "$as_me: Searching for Parallel-NetCDF library" >&6;}

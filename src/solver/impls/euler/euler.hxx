@@ -35,6 +35,11 @@ class EulerSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
+#include "bout/solverfactory.hxx"
+namespace{
+RegisterSolver<EulerSolver> registersolvereuler("euler");
+}
+
 class EulerSolver : public Solver {
  public:
   EulerSolver(Options *options) : Solver(options) {};

@@ -1,6 +1,7 @@
 
 #ifdef BOUT_HAS_PETSC
 
+#include "boutcomm.hxx"
 #include <bout/petsclib.hxx>
 
 #include <output.hxx>
@@ -17,6 +18,7 @@ PetscLib::PetscLib() {
     // Initialise PETSc
     
     output << "Initialising PETSc\n";
+    PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
     PetscInitialize(pargc,pargv,PETSC_NULL,help);
     PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
     PetscLogEventBegin(USER_EVENT,0,0,0,0);
