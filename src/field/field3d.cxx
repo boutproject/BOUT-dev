@@ -709,7 +709,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   
   result.setLocation( lhs.getLocation() );
   
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -731,7 +731,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
 
   result.setLocation( lhs.getLocation() );
   
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -749,7 +749,7 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
 
   result.setLocation( lhs.getLocation() );
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -766,7 +766,7 @@ Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
   
   result.setLocation( lhs.getLocation() );
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -785,7 +785,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   
   result.setLocation( rhs.getLocation() );
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -861,7 +861,7 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
     result.setLocation(f.getLocation());                                                 \
-    checkData(result, rgn);                                                              \
+    checkData(result);                                                                   \
     return result;                                                                       \
   }
 
@@ -913,7 +913,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
   
   result.setLocation(var.getLocation());
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -950,7 +950,7 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
   
   result.setLocation(var.getLocation());
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -989,7 +989,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
   
   result.setLocation(var.getLocation());
   
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -1088,7 +1088,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
     result(i.x, i.y) /= (localmesh->LocalNz);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 

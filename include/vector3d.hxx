@@ -229,7 +229,7 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
-const Field3D abs(const Vector3D &v);
+const Field3D abs(const Vector3D &v, REGION region = RGN_ALL);
 
 /*!
  * @brief Time derivative of 3D vector field

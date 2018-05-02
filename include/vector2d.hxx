@@ -177,7 +177,7 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D &v);
+const Field2D abs(const Vector2D &v, REGION region = RGN_ALL);
 
 /*!
  * @brief Time derivative of 2D vector field

@@ -510,8 +510,8 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v) {
-  return sqrt(v*v);
+const Field3D abs(const Vector3D &v, REGION region) {
+  return sqrt(v*v, region);
 }
 
 /***************************************************************
