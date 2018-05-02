@@ -107,7 +107,8 @@ class Vector2D : public FieldData {
   Vector2D & operator/=(const Field2D &rhs);
 
   /// Cross-product of two vectors
-  Vector2D & operator^=(const Vector2D &rhs);
+  /// Deprecated: use a=cross(a,b) instead
+  DEPRECATED(Vector2D & operator^=(const Vector2D &rhs);)
 
   // Binary operators
   
@@ -128,9 +129,13 @@ class Vector2D : public FieldData {
   const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
-  const Vector2D operator^(const Vector2D &rhs) const; ///< Cross product
-  const Vector3D operator^(const Vector3D &rhs) const; ///< Cross product
-  
+  /// Cross product
+  /// Deprecated: use cross(a,b) instead
+  DEPRECATED(const Vector2D operator^(const Vector2D &rhs) const;)
+  /// Cross product
+  /// Deprecated: use cross(a,b) instead
+  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
+
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;
   
@@ -160,6 +165,12 @@ class Vector2D : public FieldData {
 const Vector2D operator*(BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
+
+
+/// Cross product
+const Vector2D cross(const Vector2D & lhs, const Vector2D &rhs);
+/// Cross product
+const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
 
 /*!
  * Absolute value (Modulus) of given vector \p v

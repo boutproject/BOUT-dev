@@ -291,47 +291,42 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 
 ///////////////// CROSS PRODUCT //////////////////
 
+#define CROSS(v0, v1, v2)                                               \
+                                                                        \
+  const v0 cross(const v1 &lhs, const v2 &rhs) {                       \
+    Mesh *localmesh = lhs.x.getMesh();                                  \
+    v0 result(localmesh);                                               \
+                                                                        \
+    /* Make sure both vector components are covariant */                \
+    v2 rco = rhs;                                                       \
+    rco.toCovariant();                                                  \
+    v1 lco = lhs;                                                       \
+    lco.toCovariant();                                                  \
+                                                                        \
+    Coordinates *metric = localmesh->coordinates();                     \
+                                                                        \
+    /* calculate contravariant components of cross-product */           \
+    result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
+    result.y = (lco.z * rco.x - lco.x * rco.z) / metric->J;             \
+    result.z = (lco.x * rco.y - lco.y * rco.x) / metric->J;             \
+    result.covariant = false;                                           \
+                                                                        \
+    return result;                                                      \
+  };                                                                    \
+
+
+CROSS(Vector3D, Vector3D, Vector3D);
+CROSS(Vector3D, Vector3D, Vector2D);
+CROSS(Vector3D, Vector2D, Vector3D);
+CROSS(Vector2D, Vector2D, Vector2D);
+
 Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  Mesh *localmesh = x.getMesh();
-  Vector3D result(localmesh);
-
-  // Make sure both vector components are covariant
-  Vector3D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-
-  Coordinates *metric = localmesh->coordinates();
-
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
 Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  Mesh *localmesh = x.getMesh();
-  Vector3D result(localmesh);
-
-  // Make sure both vector components are covariant
-  Vector2D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-
-  Coordinates *metric = localmesh->coordinates();
-
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
@@ -470,19 +465,11 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
 ///////////////// CROSS PRODUCT //////////////////
 
 const Vector3D Vector3D::operator^(const Vector3D &rhs) const {
-  Vector3D result = *this;
-  
-  result ^= rhs;
-
-  return result;
+  return cross(*this,rhs);
 }
 
 const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
-  Vector3D result = *this;
-  
-  result ^= rhs;
-
-  return result;
+  return cross(*this,rhs);
 }
 
 /***************************************************************

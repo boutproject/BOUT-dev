@@ -224,25 +224,9 @@ Vector2D & Vector2D::operator/=(const Field2D &rhs) {
 
 ///////////////// CROSS PRODUCT //////////////////
 
+// cross product implementation in vector3d.cxx
 Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
-  Vector2D result(x.getMesh());
-
-  // Make sure both vector components are covariant
-  Vector2D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-
-  Coordinates *metric = x.getMesh()->coordinates();
-
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
@@ -357,13 +341,11 @@ const Field3D Vector2D::operator*(const Vector3D &rhs) const {
 ///////////////// CROSS PRODUCT //////////////////
 
 const Vector2D Vector2D::operator^(const Vector2D &rhs) const {
-  Vector2D result = *this;
-  result ^= rhs;
-  return result;
+  return cross(*this,rhs);
 }
 
 const Vector3D Vector2D::operator^(const Vector3D &rhs) const {
-  return -1.0*rhs^(*this);
+  return cross(*this,rhs);
 }
 
 /***************************************************************
