@@ -595,46 +595,48 @@ AS_IF([test "x$with_lapack" != "xno"], [
 AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   AC_PROG_AWK
 ### This still needs to check for PETSC_ARCH
+  AS_IF([test ".$PETSC_DIR" = "."], [
+      PETSC_DIR="$with_petsc" ])
   AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
-    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
-        ))
-  ], [
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
-        ))
+    AS_IF([test -d $PETSC_DIR], [], [
+      AC_MSG_ERROR([\$PETSC_DIR is not a valid directory])
+      ])
+    AS_IF([test -f $with_petsc/include/petsversion.h], [
+        # not known - guess later
+        PETSC_ARCH=""
+      ], [
+        # Split - last should be arch
+        split=(`echo $PETSC_DIR|tr / ' '`)
+        lasti=`expr ${#split[@]} - 1`
+        PETSC_ARCH=${split[[$lasti]]}
+        lasti=`expr $lasti - 1`
+        new=
+        for i in `seq 0 $lasti`
+        do
+           new=$new/${split[[$i]]}
+        done
+        PETSC_DIR=$new
+      ])
   ])
+  AS_IF([test ".$PETSC_ARCH" = "."], [
+    PETSC_ARCH="$(cd $PETSC_DIR; ls -d arch*)"
+    AS_IF([test $(echo "$PETSC_ARCH" | wc -l) -gt 1],
+      AC_MSG_ERROR([[\$PETSC_ARCH not defined, but several possibilities found. Set to one of $PETSC_ARCH]])
+  )] )
 
-  PETSC_HEADER=
-  BOUT_ADDPATH_CHECK_HEADER([petscversion.h], [PETSC_HEADER=
-  PETSC_DIR=],
-    BOUT_ADDPATH_CHECK_HEADER([petsc/petscversion.h],[PETSC_HEADER=petsc/
-    PETSC_DIR=]))
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
+      AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
+    ))
 
 
-  CPPGLAGS_save=$CPPFLAGS
-  AS_IF([test ."$PETSC_DIR$PETSC_ARCH" != .],[
-         CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"])
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MAJOR
-       ]])]
-        , [PETSC_VERSION_MAJOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MINOR
-       ]])]
-        , [PETSC_VERSION_MINOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_RELEASE
-       ]])]
-        , [PETSC_VERSION_RELEASE=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
+  PETSC_VERSION_MAJOR="0"
+  PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_MINOR="0"
+  PETSC_VERSION_MINOR=`grep 'define PETSC_VERSION_MINOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_RELEASE="0"
+  PETSC_VERSION_RELEASE=`grep 'define PETSC_VERSION_RELEASE' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
 
   AS_IF([test $PETSC_VERSION_MAJOR != "3"], [
     AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
@@ -686,17 +688,15 @@ PETSC_VERSION_RELEASE
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
   CPPFLAGS="$save_CPPFLAGS"
 
-  HAS_PETSC="yes"
   # Set the line to be included in the make.conf file
-  AS_IF([test "." != ."$PETSC_CONFDIR"] ,
-    [ PETSC="include ${PETSC_CONFDIR}/variables" ],
-    [ PETSC= ])
+  PETSC="include ${PETSC_CONFDIR}/variables"
 ], [
   PETSC=
-  HAS_PETSC="no"
 ])
 
 AC_SUBST(PETSC, $PETSC)
+AC_SUBST(PETSC_DIR, $PETSC_DIR)
+AC_SUBST(PETSC_ARCH, $PETSC_ARCH)
 
 AS_IF([test "$PETSC" != ""], [
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
@@ -1161,7 +1161,7 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  Configuration summary  ])
 AC_MSG_NOTICE([-------------------------])
 
-AS_IF([test "$PETSC" = ""], [
+AS_IF([test "x$PETSC" = "x"], [
   AC_MSG_NOTICE([  PETSc support           : no])
 ], [
   AS_CASE(["$PETSC_VERSION_RELEASE"],

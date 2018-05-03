@@ -144,12 +144,12 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_HEADER],[
       AS_IF([test .$BACH_found = .yes], [break;])
     done
   ])
+  CPPFLAGS=$save_CPPFLAGS
 
   AS_IF([test $BACH_found = yes], [
     AC_MSG_RESULT(yes)
   ], [
     AC_MSG_RESULT(no)
-    CPPFLAGS=$save_CPPFLAGS
   ])
   AS_IF([test .$BACH_found = .yes], [$2], [$3])
 ])
