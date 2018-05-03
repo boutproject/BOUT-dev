@@ -225,9 +225,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         // This should never happen
         throw BoutException("Unsupported direction of interpolation\n"
                             " - don't know how to interpolate to %s",strLocation(loc));
+      }
       };
 
-      if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY))
+      if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
         fieldmesh->communicate(result);
       }
 
