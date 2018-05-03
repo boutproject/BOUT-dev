@@ -130,6 +130,8 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
+AC_PROG_GREP
+AC_PROG_SED
 
 # Set MAKE to gmake if possible, otherwise make
 AC_CHECK_PROG(MAKE, gmake, gmake, make)
@@ -601,18 +603,24 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
   AC_MSG_NOTICE([Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
 
-  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf/petscvariables, [
     PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf/petscvariables, [
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
       AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
     ])
   ])
 
+  # PETSc installations are apparently random, so we can't actually
+  # guess what include directories we need even for the simple tests
+  # below. We resort to trying to find what we need in their
+  # overly-complicated "petscvariables" file
+  PETSC_INCLUDES=`$GREP PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | $SED 's/PETSC_CC_INCLUDES *= *//'`
+
   save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
+  CPPFLAGS="$CPPFLAGS $PETSC_INCLUDES"
   AC_MSG_CHECKING([PETSc is at least 3.4.0])
   AC_EGREP_CPP([yes], [
     #include <petscversion.h>
@@ -629,7 +637,7 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   ])
 
   save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
+  CPPFLAGS="$CPPFLAGS $PETSC_INCLUDES"
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
   AC_EGREP_CPP([yes], [
     #include <petscconf.h>
