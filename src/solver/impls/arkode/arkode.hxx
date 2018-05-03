@@ -61,9 +61,9 @@ class ArkodeSolver : public Solver {
     ArkodeSolver(Options *opts = NULL);
     ~ArkodeSolver();
 
-    void setJacobian(Jacobian j) {jacfunc = j; }
-    
-    BoutReal getCurrentTimestep() { return hcur; }
+    void setJacobian(Jacobian j) override { jacfunc = j; }
+
+    BoutReal getCurrentTimestep() override { return hcur; }
 
     int init(int nout, BoutReal tstep) override;
 
