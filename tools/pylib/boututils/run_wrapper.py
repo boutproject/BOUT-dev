@@ -48,7 +48,7 @@ def shell(command, pipe=False):
             # This returns a b'string' which is casted to string in
             # python 2. However, as we want to use f.write() in our
             # runtest, we cast this to utf-8 here
-            output = child.stdout.read().decode("utf-8")
+            output = child.stdout.read().decode("utf-8", "ignore")
             # Wait for the process to finish. Note that child.wait()
             # would have deadlocked the system as stdout is PIPEd, we
             # therefore use communicate, which in the end also waits for
