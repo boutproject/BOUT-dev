@@ -477,11 +477,10 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  //integer steps;
   FILE *fp = NULL;
 
   // Set when the next call to monitor is desired
-  // next_output = simtime + tstep;
+  next_output = simtime + tstep;
 
   PetscFunctionBegin;
 
