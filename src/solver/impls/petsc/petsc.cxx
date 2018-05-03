@@ -413,12 +413,19 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   output_info << " Create coloring ...\n";
   
+  ISColoring iscoloring;
 #if PETSC_VERSION_GE(3,5,0)
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+  MatColoring coloring;
+  MatColoringCreate(Jmf, &coloring);
+  MatColoringSetType(coloring, MATCOLORINGSL);
+  MatColoringSetFromOptions(coloring);
+  // Calculate index sets
+  MatColoringApply(coloring, &iscoloring);
+  MatColoringDestroy(&coloring);
 #else
   ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
 #endif
+  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
