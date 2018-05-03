@@ -566,8 +566,8 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   // Petsc's definition of Jacobian differs by a factor from Sundials'
   PetscErrorCode ierr = VecScale(y, shift); CHKERRQ(ierr);
 
-   return 0;
- }
+  return 0;
+}
 
 /**************************************************************************
  * User-supplied Jacobian function J(state) * x = y
@@ -600,7 +600,7 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   VecRestoreArray(y, &data);
 
   // y = a * x - y
-  int ierr = VecAXPBY(y, shift, -1.0, x);
+  PetscErrorCode ierr = VecAXPBY(y, shift, -1.0, x);CHKERRQ(ierr);
 
   return 0;
 }
