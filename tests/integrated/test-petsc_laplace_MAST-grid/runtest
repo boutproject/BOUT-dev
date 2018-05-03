@@ -4,6 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
+#Requires: petsc
+
 # Variables to compare
 from __future__ import print_function
 from builtins import str
@@ -11,10 +13,10 @@ vars = [['max_error1',2.e-4],
         ['max_error2',1.e-4],
         ['max_error3',1.e-4],
         ['max_error4',1.e-4],
-	['max_error5',2.e-3],
-	['max_error6',3.e-4],
-	['max_error7',2.e-4],
-	['max_error8',1.e-4]]  
+        ['max_error5',2.e-3],
+        ['max_error6',3.e-4],
+        ['max_error7',2.e-4],
+        ['max_error8',1.e-4]]
 #tol = 1e-4                  # Absolute (?) tolerance
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
@@ -35,9 +37,10 @@ for nproc in [1,2,4]:
   #  if nproc > 2:
   #    nxpe = 2
   for jy in [2,34,65,81,113]:
-    
-    cmd = "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis"+str(jy)+".nc"
-    
+
+    cmd = "./test_petsc_laplace_MAST_grid "
+    "grid=grids/grid_MAST_SOL_jyis"+str(jy)+".nc"
+
     shell("rm data/BOUT.dmp.*.nc")
 
     print("   %d processors...." % nproc)
@@ -45,19 +48,19 @@ for nproc in [1,2,4]:
     f = open("run.log."+str(nproc), "w")
     f.write(out)
     f.close()
-    
+
     # Collect output data
     for v in vars:
       stdout.write("      Checking "+v[0]+" ... ")
       error = collect(v[0], path="data", info=False)
       if error <= 0:
-	print("Convergence error")
-	success = False
+        print("Convergence error")
+        success = False
       elif error > v[1]:
-	print("Fail, maximum error is = "+str(error))
-	success = False
+        print("Fail, maximum error is = "+str(error))
+        success = False
       else:
-	print("Pass")
+        print("Pass")
 
 if success:
   print(" => All PETSc Laplacian inversion with non-identity metric (taken from grid for MAST SOL) tests passed")
