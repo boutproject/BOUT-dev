@@ -33,12 +33,13 @@
 #include <vector3d.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
+#include <bout/assert.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr) {}
+    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : x(f.x), y(f.y), z(f.y), covariant(f.covariant), deriv(nullptr) {}
+    : x(f.x), y(f.y), z(f.y), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::~Vector3D() {
   if(deriv != NULL) {
@@ -473,15 +474,29 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
 }
 
 /***************************************************************
- *       Set variable location for staggered meshes
+ *       Get/set variable location for staggered meshes
  ***************************************************************/
 
+CELL_LOC Vector3D::getLocation() const {
+
+  if (location == CELL_VSHIFT) {
+    ASSERT1((x.getLocation() == CELL_XLOW) && (y.getLocation() == CELL_YLOW) &&
+            (z.getLocation() == CELL_ZLOW));
+  } else {
+    ASSERT1((location == x.getLocation()) && (location == y.getLocation()) &&
+            (location == z.getLocation()));
+  }
+
+  return location;
+}
+
 void Vector3D::setLocation(CELL_LOC loc) {
+  location = loc;
   if(loc == CELL_VSHIFT) {
     x.setLocation(CELL_XLOW);
     y.setLocation(CELL_YLOW);
     z.setLocation(CELL_ZLOW);
-  }else {
+  } else {
     x.setLocation(loc);
     y.setLocation(loc);
     z.setLocation(loc);
