@@ -987,7 +987,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
 
     /* Place the interpolated values into the global variables */
     ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);
-    s->load_vars((BoutReal *)x);
+    s->load_vars(const_cast<BoutReal *>(x));
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
     if (s->call_monitors(simtime,i++,s->nout)) {
