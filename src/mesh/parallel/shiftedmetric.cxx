@@ -45,21 +45,27 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   fromAlignedPhs.resize(mesh.LocalNx);
   toAlignedPhs.resize(mesh.LocalNx);
   
-  yupPhs.resize(mesh.LocalNx);
-  ydownPhs.resize(mesh.LocalNx);
+  yupPhs1.resize(mesh.LocalNx);
+  ydownPhs1.resize(mesh.LocalNx);
+  yupPhs2.resize(mesh.LocalNx);
+  ydownPhs2.resize(mesh.LocalNx);
 
   for(int jx=0;jx<mesh.LocalNx;jx++){
     fromAlignedPhs[jx].resize(mesh.LocalNy);
     toAlignedPhs[jx].resize(mesh.LocalNy);
 
-    yupPhs[jx].resize(mesh.LocalNy);
-    ydownPhs[jx].resize(mesh.LocalNy);
+    yupPhs1[jx].resize(mesh.LocalNy);
+    ydownPhs1[jx].resize(mesh.LocalNy);
+    yupPhs2[jx].resize(mesh.LocalNy);
+    ydownPhs2[jx].resize(mesh.LocalNy);
     for(int jy=0;jy<mesh.LocalNy;jy++){
       fromAlignedPhs[jx][jy].resize(nmodes);
       toAlignedPhs[jx][jy].resize(nmodes);
       
-      yupPhs[jx][jy].resize(nmodes);
-      ydownPhs[jx][jy].resize(nmodes);
+      yupPhs1[jx][jy].resize(nmodes);
+      ydownPhs1[jx][jy].resize(nmodes);
+      yupPhs2[jx][jy].resize(nmodes);
+      ydownPhs2[jx][jy].resize(nmodes);
     }
   }
 	
@@ -77,14 +83,30 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //Yup/Ydown phases -- note we don't shift in the boundaries/guards
   for(int jx=0;jx<mesh.LocalNx;jx++){
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++){
-      BoutReal yupShift = zShift(jx,jy) - zShift(jx,jy+1);
-      BoutReal ydownShift = zShift(jx,jy) - zShift(jx,jy-1);
+      BoutReal yupShift1 = zShift(jx,jy) - zShift(jx,jy+1);
+      BoutReal ydownShift1 = zShift(jx,jy) - zShift(jx,jy-1);
       
       for(int jz=0;jz<nmodes;jz++) {
   	BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
 
-  	yupPhs[jx][jy][jz] = dcomplex(cos(kwave*yupShift) , -sin(kwave*yupShift));
-  	ydownPhs[jx][jy][jz] = dcomplex(cos(kwave*ydownShift) , -sin(kwave*ydownShift));
+        yupPhs1[jx][jy][jz] = dcomplex(cos(kwave*yupShift1) , -sin(kwave*yupShift1));
+        ydownPhs1[jx][jy][jz] = dcomplex(cos(kwave*ydownShift1) , -sin(kwave*ydownShift1));
+      }
+    }
+  }
+  if (mesh.ystart>1) {
+    // Need phases for the second yup/ydown fields too
+    for(int jx=0;jx<mesh.LocalNx;jx++){
+      for(int jy=mesh.ystart;jy<=mesh.yend;jy++){
+        BoutReal yupShift2 = zShift(jx,jy) - zShift(jx,jy+2);
+        BoutReal ydownShift2 = zShift(jx,jy) - zShift(jx,jy-2);
+
+        for(int jz=0;jz<nmodes;jz++) {
+          BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+
+          yupPhs2[jx][jy][jz] = dcomplex(cos(kwave*yupShift2) , -sin(kwave*yupShift2));
+          ydownPhs2[jx][jy][jz] = dcomplex(cos(kwave*ydownShift2) , -sin(kwave*ydownShift2));
+        }
       }
     }
   }
@@ -97,21 +119,37 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
 void ShiftedMetric::calcYUpDown(Field3D &f) {
   f.splitYupYdown();
   
-  Field3D& yup = f.yup();
-  yup.allocate();
-
+  Field3D& yup1 = f.yup();
+  yup1.allocate();
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
+      shiftZ(&(f(jx,jy+1,0)), yupPhs1[jx][jy], &(yup1(jx,jy+1,0)));
+    }
+  }
+  if (mesh.ystart>1) {
+    Field3D& yup2 = f.yup(2);
+    yup2.allocate();
+    for(int jx=0;jx<mesh.LocalNx;jx++) {
+      for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+        shiftZ(&(f(jx,jy+2,0)), yupPhs2[jx][jy], &(yup2(jx,jy+2,0)));
+      }
     }
   }
 
-  Field3D& ydown = f.ydown();
-  ydown.allocate();
-
+  Field3D& ydown1 = f.ydown();
+  ydown1.allocate();
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
+      shiftZ(&(f(jx,jy-1,0)), ydownPhs1[jx][jy], &(ydown1(jx,jy-1,0)));
+    }
+  }
+  if (mesh.ystart > 1) {
+    Field3D& ydown2 = f.ydown(2);
+    ydown2.allocate();
+    for(int jx=0;jx<mesh.LocalNx;jx++) {
+      for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
+        shiftZ(&(f(jx,jy-2,0)), ydownPhs2[jx][jy], &(ydown2(jx,jy-2,0)));
+      }
     }
   }
 }

@@ -151,21 +151,21 @@ template <typename F> class Flexible;
 
       Field3D f(0.0); // f allocated, set to zero
 
-      f.yup() // error; f.yup not allocated
+      f.yup(1) // error; f.yup not allocated
 
-      f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
-      f.yup()(0,1,0)  // ok, gives value of f at (0,1,0)
+      f.mergeYupYdown(); // f.yup(i) and f.ydown(i) now point to f
+      f.yup(1)(0,1,0)  // ok, gives value of f at (0,1,0)
 
       To have separate fields for yup and ydown, first call
 
-      f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.splitYupYdown(); // f.yup(i) and f.ydown(i) separate
 
-      f.yup(); // ok
-      f.yup()(0,1,0) // error; f.yup not allocated
+      f.yup(1); // ok
+      f.yup(1)(0,1,0) // error; f.yup not allocated
 
-      f.yup() = 1.0; // Set f.yup() field to 1.0
+      f.yup(1) = 1.0; // Set f.yup() field to 1.0
 
-      f.yup()(0,1,0) // ok
+      f.yup(1)(0,1,0) // ok
 
  */
 class Field3D : public Field, public FieldData {
@@ -242,33 +242,22 @@ class Field3D : public Field, public FieldData {
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+    return (yup1_field != nullptr) && (ydown1_field != nullptr);
   }
 
   /// Return reference to yup field
-  Field3D& yup() { 
-    ASSERT2(yup_field != nullptr); // Check for communicate
-    return *yup_field; 
-  }
-  /// Return const reference to yup field
-  const Field3D& yup() const { 
-    ASSERT2(yup_field != nullptr);
-    return *yup_field; 
-  }
+  Field3D& yup(const int i = 1);
   
+  /// Return const reference to yup field
+  const Field3D& yup(const int i = 1) const;
+
   /// Return reference to ydown field
-  Field3D& ydown() { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field;
-  }
+  Field3D& ydown(const int i = 1);
   
   /// Return const reference to ydown field
-  const Field3D& ydown() const { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field; 
-  }
+  const Field3D& ydown(const int i = 1) const;
 
-  /// Return yup if dir=+1, and ydown if dir=-1
+  /// Return yup(dir) if dir>0, and ydown(-dir) if dir<0
   Field3D& ynext(int dir);
   const Field3D& ynext(int dir) const;
 
@@ -533,8 +522,8 @@ private:
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
-  /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  /// Arrays of pointers to fields containing values along Y
+  Field3D *yup1_field, *ydown1_field, *yup2_field, *ydown2_field;
 };
 
 // Non-member overloaded operators

@@ -143,8 +143,10 @@ private:
   arr3Dvec toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
   arr3Dvec fromAlignedPhs; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
 
-  arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
-  arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
+  arr3Dvec yupPhs1; ///< Cache of phase shifts for calculating yup1 fields
+  arr3Dvec ydownPhs1; ///< Cache of phase shifts for calculating ydown1 fields
+  arr3Dvec yupPhs2; ///< Cache of phase shifts for calculating yup2 fields
+  arr3Dvec ydownPhs2; ///< Cache of phase shifts for calculating ydown2 fields
 
   /*!
    * Shift a 2D field in Z. 
