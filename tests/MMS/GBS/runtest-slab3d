@@ -87,7 +87,9 @@ for var,mark in zip(varlist, markers):
 
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     print("%s Convergence order = %f" % (var, order))
-    if order < 1.9 or order > 2.1:
+    if 1.9 < order < 2.1:
+        pass
+    else:
         success=False
     #plt.plot(dx, error_2[var][-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
