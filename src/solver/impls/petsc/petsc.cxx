@@ -200,6 +200,10 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Set default absolute/relative tolerances
   ierr = TSSetTolerances(ts, abstol, nullptr, reltol, nullptr);CHKERRQ(ierr);
 
+#if PETSC_VERSION_LT(3,5,0)
+  ierr = TSRKSetTolerance(ts, reltol); CHKERRQ(ierr);
+#endif
+
 #ifdef PETSC_HAS_SUNDIALS
   // Set Sundials tolerances
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
