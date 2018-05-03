@@ -26,12 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_ARKODE
+#ifdef BOUT_HAS_ARKODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver ArkodeSolver;
- 
-#else
 class ArkodeSolver;
 
 #ifndef __ARKODE_SOLVER_H__

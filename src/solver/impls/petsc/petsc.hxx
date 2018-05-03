@@ -149,13 +149,3 @@ private:
 #endif // __PETSC_SOLVER_H__
 
 #endif // BOUT_HAS_PETSC
-
-// Finally, if no other PETSc solvers defined
-
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
-
-#include "../emptysolver.hxx"
-typedef EmptySolver PetscSolver;
-
-#endif

@@ -25,12 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_CVODE
+#ifdef BOUT_HAS_CVODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver CvodeSolver;
- 
-#else
 class CvodeSolver;
 
 #ifndef __SUNDIAL_SOLVER_H__
