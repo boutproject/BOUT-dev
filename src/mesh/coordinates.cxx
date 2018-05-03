@@ -795,6 +795,11 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
       f_B.splitYupYdown();
       f_B.yup() = f.yup() / Bxy;
       f_B.ydown() = f.ydown() / Bxy;
+      if (mesh->ystart > 1) {
+        // Have a second yup/ydown field
+        f_B.yup(2) = f.yup(2) / Bxy;
+        f_B.ydown(2) = f.ydown(2) / Bxy;
+      }
     }
     return Bxy * Grad_par(f_B, outloc, method);
   }

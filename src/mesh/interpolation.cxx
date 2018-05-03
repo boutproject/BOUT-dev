@@ -120,29 +120,53 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
           // the magnetic field
-          throw BoutException("At the moment, fields with yup/ydown cannot use interp_to.\n"
-                              "If we implement a 3-point stencil for interpolate or double-up\n"
-                              "/double-down fields, then we can use this case.");
-          s.pp = nan("");
-          s.mm = nan("");
+          // More than one guard cell, so set pp and mm values
+          // This allows higher-order methods to be used
+          if (fieldmesh->ystart > 1) {
+            for(const auto &i : result.region(RGN_NOY)) {
+              // Set stencils
+              s.c = var[i];
+              s.p = var.yup()[i.yp()];
+              s.m = var.ydown()[i.ym()];
+              s.pp = var.yup(2)[i.offset(0,2,0)];
+              s.mm = var.ydown(2)[i.offset(0,-2,0)];
 
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
-            // Set stencils
-            s.c = var[i];
-            s.p = var.yup()[i.yp()];
-            s.m = var.ydown()[i.ym()];
+              if (location == CELL_CENTRE) {
+                // Producing a stencil centred around a lower Y value
+                s.pp = s.p;
+                s.p  = s.c;
+              } else {
+                // Stencil centred around a cell centre
+                s.mm = s.m;
+                s.m  = s.c;
+              }
 
-            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-              // Producing a stencil centred around a lower Y value
-              s.pp = s.p;
-              s.p = s.c;
-            } else if (location == CELL_YLOW) {
-              // Stencil centred around a cell centre
-              s.mm = s.m;
-              s.m = s.c;
+              result[i] = interp(s);
             }
+          } else {
+            // Note: at the moment we cannot reach this case because of the
+            // 'ASSERT0(mesh->ystart >=2)' above, but if we implement a 3-point
+            // stencil for interp, then this will be useful
+            s.pp = nan("");
+            s.mm = nan("");
+            for(const auto &i : result.region(RGN_NOY)) {
+              // Set stencils
+              s.c = var[i];
+              s.p = var.yup()[i.yp()];
+              s.m = var.ydown()[i.ym()];
 
-            result[i] = interp(s);
+              if (location == CELL_CENTRE) {
+                // Producing a stencil centred around a lower Y value
+                s.pp = s.p;
+                s.p  = s.c;
+              } else {
+                // Stencil centred around a cell centre
+                s.mm = s.m;
+                s.m  = s.c;
+              }
+
+              result[i] = interp(s);
+            }
           }
         } else {
           // var has no yup/ydown fields, so we need to shift into field-aligned

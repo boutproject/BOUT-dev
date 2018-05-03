@@ -968,38 +968,78 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       CELL_LOC location = var.getLocation();
 
       stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
-        s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+      if (mesh->ystart==1) {
+        // Only one guard cell, so can only use 3-point stencils
+        s.pp = nan("");
+        s.mm = nan("");
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
+          s.m = var.ydown()[i.ym()];
 
-        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
+          s.m = var.ydown()[i.ym()];
+          s.pp = var.yup(2)[i.offset(0, 2, 0)];
+          s.mm = var.ydown(2)[i.offset(0, -2, 0)];
 
-        result[i] = func(s);
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
+        }
       }
     } else {
       // Non-staggered
       stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
-        s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+      if (mesh->ystart == 1) {
+        // Only one guard cell, so can only use 3-point stencils
+        s.pp = nan("");
+        s.mm = nan("");
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
+          s.m = var.ydown()[i.ym()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
+          // Set stencils
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
+          s.m = var.ydown()[i.ym()];
+          s.pp = var.yup(2)[i.offset(0, 2, 0)];
+          s.mm = var.ydown(2)[i.offset(0, -2, 0)];
+
+          result[i] = func(s);
+        }
       }
     }
   } else {
@@ -2266,33 +2306,66 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Both v and f have up/down fields
 
       stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+      if (mesh->ystart==1) {
+        // Only one guard cell, so can only use 3-point stencils
+        vval.pp = nan("");
+        vval.mm = nan("");
+        fval.pp = nan("");
+        fval.mm = nan("");
+        for (const auto &i : result.region(region)) {
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
+          vval.m = v.ydown()[i.ym()];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
+          fval.m = f.ydown()[i.ym()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
+          vval.m = v.ydown()[i.ym()];
+          vval.pp = v.yup(2)[i.offset(0, 2, 0)];
+          vval.mm = v.ydown(2)[i.offset(0, -2, 0)];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
+          fval.m = f.ydown()[i.ym()];
+          fval.pp = f.yup(2)[i.offset(0, 2, 0)];
+          fval.mm = f.ydown(2)[i.offset(0, -2, 0)];
+
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
+          }
+          result[i] = func(vval, fval);
+        }
       }
     } else if (vUseUpDown) {
       // Only v has up/down fields
@@ -2300,33 +2373,66 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       Field3D f_fa = this->toFieldAligned(f);
 
       stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
-        fval.c = f_fa[i];
-        fval.p = f_fa[i.yp()];
-        fval.m = f_fa[i.ym()];
-        fval.pp = f_fa[i.offset(0, 2, 0)];
-        fval.mm = f_fa[i.offset(0, -2, 0)];
+      if (mesh->ystart==1) {
+        // Only one guard cell, so can only use 3-point stencils
+        vval.pp = nan("");
+        vval.mm = nan("");
+        for (const auto &i : result.region(region)) {
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
+          vval.m = v.ydown()[i.ym()];
+          fval.c = f_fa[i];
+          fval.p = f_fa[i.yp()];
+          fval.m = f_fa[i.ym()];
+          fval.pp = f_fa[i.offset(0, 2, 0)];
+          fval.mm = f_fa[i.offset(0, -2, 0)];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
+          vval.m = v.ydown()[i.ym()];
+          vval.pp = v.yup(2)[i.offset(0, 2, 0)];
+          vval.mm = v.ydown(2)[i.offset(0, -2, 0)];
+          fval.c = f_fa[i];
+          fval.p = f_fa[i.yp()];
+          fval.m = f_fa[i.ym()];
+          fval.pp = f_fa[i.offset(0, 2, 0)];
+          fval.mm = f_fa[i.offset(0, -2, 0)];
+
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
+          }
+          result[i] = func(vval, fval);
+        }
       }
     } else if (fUseUpDown) {
       // Only f has up/down fields
@@ -2334,33 +2440,66 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       Field3D v_fa = this->toFieldAligned(v);
 
       stencil vval, fval;
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.m = v_fa[i.ym()];
-        vval.pp = v_fa[i.offset(0, 2, 0)];
-        vval.mm = v_fa[i.offset(0, -2, 0)];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+      if (mesh->ystart==1) {
+        // Only one guard cell, so can only use 3-point stencils
+        fval.pp = nan("");
+        fval.mm = nan("");
+        for (const auto &i : result.region(region)) {
+          vval.c = v_fa[i];
+          vval.p = v_fa[i.yp()];
+          vval.m = v_fa[i.ym()];
+          vval.pp = v_fa[i.offset(0, 2, 0)];
+          vval.mm = v_fa[i.offset(0, -2, 0)];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
+          fval.m = f.ydown()[i.ym()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
+          vval.c = v_fa[i];
+          vval.p = v_fa[i.yp()];
+          vval.m = v_fa[i.ym()];
+          vval.pp = v_fa[i.offset(0, 2, 0)];
+          vval.mm = v_fa[i.offset(0, -2, 0)];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
+          fval.m = f.ydown()[i.ym()];
+          fval.pp = f.yup(2)[i.offset(0, 2, 0)];
+          fval.mm = f.ydown(2)[i.offset(0, -2, 0)];
+
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
+          }
+          result[i] = func(vval, fval);
+        }
       }
     } else {
       // Both must shift to field aligned
@@ -2412,21 +2551,32 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // f has yup and ydown fields which are distinct
 
       stencil fs;
-      fs.pp = nan("");
-      fs.mm = nan("");
+      if (mesh->ystart==1) {
+        // Only one guard cell, so can only use 3-point stencils
+        fs.pp = nan("");
+        fs.mm = nan("");
 
-      Field3D f_yup = f.yup();
-      Field3D f_ydown = f.ydown();
+        for (const auto &i : result.region(region)) {
 
-      for (const auto &i : result.region(region)) {
+          fs.c = f[i];
+          fs.p = f.yup()[i.yp()];
+          fs.m = f.ydown()[i.ym()];
 
-        fs.c = f[i];
-        fs.p = f_yup[i.yp()];
-        fs.m = f_ydown[i.ym()];
+          result[i] = func(v[i], fs);
+        }
+      } else {
+        // Can use 5-point stencils
+        for (const auto &i : result.region(region)) {
 
-        result[i] = func(v[i], fs);
+          fs.c = f[i];
+          fs.p = f.yup()[i.yp()];
+          fs.m = f.ydown()[i.ym()];
+          fs.pp = f.yup(2)[i.offset(0, 2, 0)];
+          fs.mm = f.ydown(2)[i.offset(0, -2, 0)];
+
+          result[i] = func(v[i], fs);
+        }
       }
-
     } else {
       // Not using yup/ydown fields, so first transform to field-aligned coordinates
 
@@ -3030,35 +3180,71 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
     stencil vval, fval;
-    vval.mm = nan("");
-    vval.pp = nan("");
-    fval.mm = nan("");
-    fval.pp = nan("");
-    for (const auto &i : result.region(region)) {
+    if (mesh->ystart==1) {
+      // Only one guard cell, so can only use 3-point stencils
+      vval.mm = nan("");
+      vval.pp = nan("");
+      fval.mm = nan("");
+      fval.pp = nan("");
+      for (const auto &i : result.region(region)) {
 
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
+    } else {
+      // Can use 5-point stencils
+      for (const auto &i : result.region(region)) {
+
+        fval.mm = f.ydown(2)[i.offset(0, -2, 0)];
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
+        fval.pp = f.yup(2)[i.offset(0, 2, 0)];
+
+        vval.mm = v.ydown(2)[i.offset(0, -2, 0)];
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+        vval.pp = v.yup(2)[i.offset(0, 2, 0)];
+
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
+        }
+        result[i] = func(vval, fval);
+      }
+
     }
   }
   else if (vUseUpDown) {
@@ -3067,37 +3253,72 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Field3D f_fa = this->toFieldAligned(f);
 
     stencil vval;
-    vval.mm = nan("");
-    vval.pp = nan("");
-
     stencil fval;
-    for (const auto &i : result.region(region)) {
+    if (mesh->ystart==1) {
+      // Only one guard cell, so can only use 3-point stencils
+      vval.mm = nan("");
+      vval.pp = nan("");
 
-      fval.mm = f_fa[i.offset(0, -2, 0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0, 2, 0)];
+      for (const auto &i : result.region(region)) {
 
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
+        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.offset(0, 2, 0)];
 
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
+    } else {
+      // Can use 5-point stencils
+      for (const auto &i : result.region(region)) {
+
+        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.offset(0, 2, 0)];
+
+        vval.mm = v.ydown(2)[i.offset(0, -2, 0)];
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
+        vval.pp = v.yup(2)[i.offset(0, 2, 0)];
+
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
+        }
+        result[i] = func(vval, fval);
+      }
     }
   }
   else if (fUseUpDown) {
@@ -3106,38 +3327,72 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Field3D v_fa = this->toFieldAligned(v);
 
     stencil vval;
-
     stencil fval;
-    fval.pp = nan("");
-    fval.mm = nan("");
+    if (mesh->ystart==1) {
+      // Only one guard cell, so can only use 3-point stencils
+      fval.pp = nan("");
+      fval.mm = nan("");
 
-    for (const auto &i : result.region(region)) {
+      for (const auto &i : result.region(region)) {
 
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
+        vval.mm = v_fa[i.offset(0,-2,0)];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.offset(0,2,0)];
 
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
+    } else {
+      // Can use 5-point stencils
+      for (const auto &i : result.region(region)) {
+
+        fval.mm = f.ydown(2)[i.offset(0, -2, 0)];
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
+        fval.pp = f.yup(2)[i.offset(0, 2, 0)];
+
+        vval.mm = v_fa[i.offset(0,-2,0)];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.offset(0,2,0)];
+
+        if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p  = vval.c;
+          }else if(vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m  = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
+        }
+        result[i] = func(vval, fval);
+      }
     }
   }
   else {
