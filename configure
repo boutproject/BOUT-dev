@@ -622,6 +622,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='HAS_OPENMP
+PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
 HAS_SLEPC
 HAS_PETSC
@@ -648,7 +649,6 @@ LTLIBOBJS
 SCOREPPATH
 sundials_config
 SLEPC_VARS
-PETSC
 PARALLELHDF5_TYPE
 PARALLELHDF5_LIBS
 PARALLELHDF5_LDFLAGS
@@ -8966,15 +8966,7 @@ $as_echo "$PETSC_HAS_SUNDIALS" >&6; }
 fi
 
   # Set the line to be included in the make.conf file
-  if test "." != ."$PETSC_CONFDIR"; then :
-
-    PETSC="include ${PETSC_CONFDIR}/variables"
-
-else
-
-    PETSC=
-
-fi
+  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
 
   HAS_PETSC="yes"
 
@@ -8985,13 +8977,11 @@ fi
 
 else
 
-  PETSC=
+  PETSC_MAKE_INCLUDE=
   HAS_PETSC="no"
+  PETSC_HAS_SUNDIALS="no"
 
 fi
-
-PETSC=$PETSC
-
 
 #############################################################
 # SLEPc library
@@ -11717,14 +11707,6 @@ then
   HAS_MUMPS="no"
 fi
 
-if test "$PETSC" = ""
-then
-  HAS_PETSC="no"
-  PETSC_HAS_SUNDIALS="no"
-else
-  HAS_PETSC="yes"
-fi
-
 # Only make.config is altered by configure
 ac_config_files="$ac_config_files make.config"
 
@@ -12923,6 +12905,7 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
 
 
 

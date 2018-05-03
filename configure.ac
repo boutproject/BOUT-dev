@@ -654,11 +654,7 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   ])
 
   # Set the line to be included in the make.conf file
-  AS_IF([test "." != ."$PETSC_CONFDIR"], [
-    PETSC="include ${PETSC_CONFDIR}/variables"
-  ], [
-    PETSC=
-  ])
+  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
 
   HAS_PETSC="yes"
 
@@ -667,11 +663,10 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
 ], [
-  PETSC=
+  PETSC_MAKE_INCLUDE=
   HAS_PETSC="no"
+  PETSC_HAS_SUNDIALS="no"
 ])
-
-AC_SUBST(PETSC, $PETSC)
 
 #############################################################
 # SLEPc library
@@ -1050,14 +1045,6 @@ then
   HAS_MUMPS="no"
 fi
 
-if test "$PETSC" = ""
-then
-  HAS_PETSC="no"
-  PETSC_HAS_SUNDIALS="no"
-else
-  HAS_PETSC="yes"
-fi
-
 # Only make.config is altered by configure
 AC_CONFIG_FILES([make.config])
 AC_OUTPUT
@@ -1106,6 +1093,7 @@ AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(PETSC_MAKE_INCLUDE)
 AC_SUBST(HAS_OPENMP)
 
 AC_CONFIG_FILES([bin/bout-config])
