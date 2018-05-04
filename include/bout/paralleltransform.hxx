@@ -127,13 +127,32 @@ private:
   std::vector<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
   std::vector<dcomplex> cmplxLoc; ///< A temporary array, used for input/output to fft routines
 
-  arr3Dvec toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
-  arr3Dvec fromAlignedPhs; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
+  arr3Dvec getToAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  arr3Dvec getFromAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  arr3Dvec getYupPhs1(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  arr3Dvec getYdownPhs1(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  arr3Dvec getYupPhs2(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  arr3Dvec getYdownPhs2(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
 
-  arr3Dvec yupPhs1; ///< Cache of phase shifts for calculating yup1 fields
-  arr3Dvec ydownPhs1; ///< Cache of phase shifts for calculating ydown1 fields
-  arr3Dvec yupPhs2; ///< Cache of phase shifts for calculating yup2 fields
-  arr3Dvec ydownPhs2; ///< Cache of phase shifts for calculating ydown2 fields
+  arr3Dvec toAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Cell centre version.
+  arr3Dvec fromAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Cell centre version.
+  arr3Dvec toAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_XLOW.
+  arr3Dvec fromAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Interpolated to CELL_XLOW.
+  arr3Dvec toAlignedPhs_YLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_YLOW.
+  arr3Dvec fromAlignedPhs_YLOW; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Interpolated to CELL_YLOW.
+
+  arr3Dvec yupPhs1_CENTRE; ///< Cache of phase shifts for calculating yup1 fields. Cell centre version.
+  arr3Dvec ydownPhs1_CENTRE; ///< Cache of phase shifts for calculating ydown1 fields. Cell centre version.
+  arr3Dvec yupPhs2_CENTRE; ///< Cache of phase shifts for calculating yup2 fields. Cell centre version.
+  arr3Dvec ydownPhs2_CENTRE; ///< Cache of phase shifts for calculating ydown2 fields. Cell centre version.
+  arr3Dvec yupPhs1_XLOW; ///< Cache of phase shifts for calculating yup1 fields. Interpolated to CELL_XLOW.
+  arr3Dvec ydownPhs1_XLOW; ///< Cache of phase shifts for calculating ydown1 fields. Interpolated to CELL_XLOW.
+  arr3Dvec yupPhs2_XLOW; ///< Cache of phase shifts for calculating yup2 fields. Interpolated to CELL_XLOW.
+  arr3Dvec ydownPhs2_XLOW; ///< Cache of phase shifts for calculating ydown2 fields. Interpolated to CELL_XLOW.
+  arr3Dvec yupPhs1_YLOW; ///< Cache of phase shifts for calculating yup1 fields. Interpolated to CELL_YLOW.
+  arr3Dvec ydownPhs1_YLOW; ///< Cache of phase shifts for calculating ydown1 fields. Interpolated to CELL_YLOW.
+  arr3Dvec yupPhs2_YLOW; ///< Cache of phase shifts for calculating yup2 fields. Interpolated to CELL_YLOW.
+  arr3Dvec ydownPhs2_YLOW; ///< Cache of phase shifts for calculating ydown2 fields. Interpolated to CELL_YLOW.
 
   /*!
    * Shift a 2D field in Z. 

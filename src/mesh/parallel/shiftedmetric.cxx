@@ -8,6 +8,7 @@
 
 #include <bout/paralleltransform.hxx>
 #include <bout/mesh.hxx>
+#include <interpolation.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
@@ -23,94 +24,673 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     mesh.get(zShift, "qinty");
   }
 
-  //If we wanted to be efficient we could move the following cached phase setup
-  //into the relevant shifting routines (with static bool first protection)
-  //so that we only calculate the phase if we actually call a relevant shift 
-  //routine -- however as we're only going to do this initialisation once I 
-  //think it's cleaner to put it in the constructor here.
-
-  //As we're attached to a mesh we can expect the z direction to
-  //not change once we've been created so precalculate the complex
-  //phases used in transformations
   int nmodes = mesh.LocalNz/2 + 1;
-  BoutReal zlength = mesh.coordinates()->zlength();
-
   //Allocate storage for complex intermediate
   cmplx.resize(nmodes);
   std::fill(cmplx.begin(), cmplx.end(), 0.0);
+}
 
-  //Allocate storage for our 3d vector structures.
-  //This could be made more succinct but this approach is fairly
-  //verbose --> transparent
-  fromAlignedPhs.resize(mesh.LocalNx);
-  toAlignedPhs.resize(mesh.LocalNx);
-  
-  yupPhs1.resize(mesh.LocalNx);
-  ydownPhs1.resize(mesh.LocalNx);
-  yupPhs2.resize(mesh.LocalNx);
-  ydownPhs2.resize(mesh.LocalNx);
+//As we're attached to a mesh we can expect the z direction to not change
+//once we've been created so cache the complex phases used in transformations
+//the first time they are needed
+ShiftedMetric::arr3Dvec ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
 
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    fromAlignedPhs[jx].resize(mesh.LocalNy);
-    toAlignedPhs[jx].resize(mesh.LocalNy);
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
 
-    yupPhs1[jx].resize(mesh.LocalNy);
-    ydownPhs1[jx].resize(mesh.LocalNy);
-    yupPhs2[jx].resize(mesh.LocalNy);
-    ydownPhs2[jx].resize(mesh.LocalNy);
-    for(int jy=0;jy<mesh.LocalNy;jy++){
-      fromAlignedPhs[jx][jy].resize(nmodes);
-      toAlignedPhs[jx][jy].resize(nmodes);
-      
-      yupPhs1[jx][jy].resize(nmodes);
-      ydownPhs1[jx][jy].resize(nmodes);
-      yupPhs2[jx][jy].resize(nmodes);
-      ydownPhs2[jx][jy].resize(nmodes);
-    }
-  }
-	
-  //To/From field aligned phases
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    for(int jy=0;jy<mesh.LocalNy;jy++){
-      for(int jz=0;jz<nmodes;jz++) {
-  	BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-  	fromAlignedPhs[jx][jy][jz] = dcomplex(cos(kwave*zShift(jx,jy)) , -sin(kwave*zShift(jx,jy)));
-  	toAlignedPhs[jx][jy][jz] =   dcomplex(cos(kwave*zShift(jx,jy)) ,  sin(kwave*zShift(jx,jy)));
+      first_CENTRE = false;
+      fromAlignedPhs_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        fromAlignedPhs_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          fromAlignedPhs_CENTRE[jx][jy].resize(nmodes);
+        }
       }
-    }
-  }
-
-  //Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++){
-      BoutReal yupShift1 = zShift(jx,jy) - zShift(jx,jy+1);
-      BoutReal ydownShift1 = zShift(jx,jy) - zShift(jx,jy-1);
-      
-      for(int jz=0;jz<nmodes;jz++) {
-  	BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-
-        yupPhs1[jx][jy][jz] = dcomplex(cos(kwave*yupShift1) , -sin(kwave*yupShift1));
-        ydownPhs1[jx][jy][jz] = dcomplex(cos(kwave*ydownShift1) , -sin(kwave*ydownShift1));
-      }
-    }
-  }
-  if (mesh.ystart>1) {
-    // Need phases for the second yup/ydown fields too
-    for(int jx=0;jx<mesh.LocalNx;jx++){
-      for(int jy=mesh.ystart;jy<=mesh.yend;jy++){
-        BoutReal yupShift2 = zShift(jx,jy) - zShift(jx,jy+2);
-        BoutReal ydownShift2 = zShift(jx,jy) - zShift(jx,jy-2);
-
-        for(int jz=0;jz<nmodes;jz++) {
-          BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-
-          yupPhs2[jx][jy][jz] = dcomplex(cos(kwave*yupShift2) , -sin(kwave*yupShift2));
-          ydownPhs2[jx][jy][jz] = dcomplex(cos(kwave*ydownShift2) , -sin(kwave*ydownShift2));
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            fromAlignedPhs_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*zShift(jx,jy)) , -sin(kwave*zShift(jx,jy)));
+          }
         }
       }
     }
+    return fromAlignedPhs_CENTRE;
+    break;
   }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
 
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      fromAlignedPhs_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        fromAlignedPhs_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          fromAlignedPhs_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            fromAlignedPhs_XLOW[jx][jy][jz] = dcomplex(cos(kwave*zShift_XLOW(jx,jy)), -sin(kwave*zShift_XLOW(jx,jy)));
+          }
+        }
+      }
+    }
+    return fromAlignedPhs_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      fromAlignedPhs_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        fromAlignedPhs_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          fromAlignedPhs_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            fromAlignedPhs_YLOW[jx][jy][jz] = dcomplex(cos(kwave*zShift_YLOW(jx,jy)), -sin(kwave*zShift_YLOW(jx,jy)));
+          }
+        }
+      }
+    }
+    return fromAlignedPhs_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getFromAlignedPhs(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
+}
+
+ShiftedMetric::arr3Dvec ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
+
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      first_CENTRE = false;
+      toAlignedPhs_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        toAlignedPhs_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          toAlignedPhs_CENTRE[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            toAlignedPhs_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*zShift(jx,jy)), sin(kwave*zShift(jx,jy)));
+          }
+        }
+      }
+    }
+    return toAlignedPhs_CENTRE;
+    break;
+  }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      toAlignedPhs_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        toAlignedPhs_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          toAlignedPhs_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            toAlignedPhs_XLOW[jx][jy][jz] = dcomplex(cos(kwave*zShift_XLOW(jx,jy)), sin(kwave*zShift_XLOW(jx,jy)));
+          }
+        }
+      }
+    }
+    return toAlignedPhs_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      toAlignedPhs_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        toAlignedPhs_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          toAlignedPhs_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            toAlignedPhs_YLOW[jx][jy][jz] = dcomplex(cos(kwave*zShift_YLOW(jx,jy)), sin(kwave*zShift_YLOW(jx,jy)));
+          }
+        }
+      }
+    }
+    return toAlignedPhs_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getToAlignedPhs(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
+}
+
+ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs1(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
+
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      first_CENTRE = false;
+      yupPhs1_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs1_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs1_CENTRE[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift1 = zShift(jx,jy) - zShift(jx,jy+1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs1_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*yupShift1) , -sin(kwave*yupShift1));
+          }
+        }
+      }
+    }
+    return yupPhs1_CENTRE;
+    break;
+  }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      yupPhs1_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs1_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs1_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift1 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy+1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs1_XLOW[jx][jy][jz] = dcomplex(cos(kwave*yupShift1) , -sin(kwave*yupShift1));
+          }
+        }
+      }
+    }
+    return yupPhs1_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      yupPhs1_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs1_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs1_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift1 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy+1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs1_YLOW[jx][jy][jz] = dcomplex(cos(kwave*yupShift1) , -sin(kwave*yupShift1));
+          }
+        }
+      }
+    }
+    return yupPhs1_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getYupPhs1(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
+}
+
+ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs2(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
+
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      first_CENTRE = false;
+      yupPhs2_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs2_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs2_CENTRE[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift2 = zShift(jx,jy) - zShift(jx,jy+2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs2_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*yupShift2) , -sin(kwave*yupShift2));
+          }
+        }
+      }
+    }
+    return yupPhs2_CENTRE;
+    break;
+  }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      yupPhs2_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs2_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs2_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift2 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy+2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs2_XLOW[jx][jy][jz] = dcomplex(cos(kwave*yupShift2) , -sin(kwave*yupShift2));
+          }
+        }
+      }
+    }
+    return yupPhs2_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      yupPhs2_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        yupPhs2_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          yupPhs2_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal yupShift2 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy+2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            yupPhs2_YLOW[jx][jy][jz] = dcomplex(cos(kwave*yupShift2) , -sin(kwave*yupShift2));
+          }
+        }
+      }
+    }
+    return yupPhs2_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getYupPhs1(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
+}
+
+ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs1(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
+
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      first_CENTRE = false;
+      ydownPhs1_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs1_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs1_CENTRE[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift1 = zShift(jx,jy) - zShift(jx,jy-1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs1_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*ydownShift1) , -sin(kwave*ydownShift1));
+          }
+        }
+      }
+    }
+    return ydownPhs1_CENTRE;
+    break;
+  }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      ydownPhs1_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs1_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs1_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift1 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy-1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs1_XLOW[jx][jy][jz] = dcomplex(cos(kwave*ydownShift1) , -sin(kwave*ydownShift1));
+          }
+        }
+      }
+    }
+    return ydownPhs1_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      ydownPhs1_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs1_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs1_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift1 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy-1);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs1_YLOW[jx][jy][jz] = dcomplex(cos(kwave*ydownShift1) , -sin(kwave*ydownShift1));
+          }
+        }
+      }
+    }
+    return ydownPhs1_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getYdownPhs1(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
+}
+
+ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs2(CELL_LOC location) {
+  // bools so we only calculate the cached values the first time for each location
+  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
+
+  switch (location) {
+  case CELL_CENTRE: {
+    if (first_CENTRE) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      first_CENTRE = false;
+      ydownPhs2_CENTRE.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs2_CENTRE[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs2_CENTRE[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift2 = zShift(jx,jy) - zShift(jx,jy-2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs2_CENTRE[jx][jy][jz] = dcomplex(cos(kwave*ydownShift2) , -sin(kwave*ydownShift2));
+          }
+        }
+      }
+    }
+    return ydownPhs2_CENTRE;
+    break;
+  }
+  case CELL_XLOW: {
+    if (first_XLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to XLOW
+      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_XLOW = false;
+      ydownPhs2_XLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs2_XLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs2_XLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift2 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy-2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs2_XLOW[jx][jy][jz] = dcomplex(cos(kwave*ydownShift2) , -sin(kwave*ydownShift2));
+          }
+        }
+      }
+    }
+    return ydownPhs2_XLOW;
+    break;
+  }
+  case CELL_YLOW: {
+    if (first_YLOW) {
+      int nmodes = mesh.LocalNz/2 + 1;
+      BoutReal zlength = mesh.coordinates()->zlength();
+
+      // interpolate zShift to YLOW
+      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+
+      first_YLOW = false;
+      ydownPhs2_YLOW.resize(mesh.LocalNx);
+
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        ydownPhs2_YLOW[jx].resize(mesh.LocalNy);
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          ydownPhs2_YLOW[jx][jy].resize(nmodes);
+        }
+      }
+      //To/From field aligned phases
+      for(int jx=0;jx<mesh.LocalNx;jx++){
+        for(int jy=0;jy<mesh.LocalNy;jy++){
+          BoutReal ydownShift2 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy-2);
+          for(int jz=0;jz<nmodes;jz++) {
+            BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+            ydownPhs2_YLOW[jx][jy][jz] = dcomplex(cos(kwave*ydownShift2) , -sin(kwave*ydownShift2));
+          }
+        }
+      }
+    }
+    return ydownPhs2_YLOW;
+    break;
+  }
+  case CELL_ZLOW: {
+    // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
+    return getYdownPhs1(CELL_CENTRE);
+    break;
+  }
+  default: {
+    // This should never happen
+    throw BoutException("Unsupported stagger of phase shifts\n"
+                        " - don't know how to interpolate to %s",strLocation(location));
+    break;
+  }
+  };
 }
 
 /*!
@@ -118,37 +698,42 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
   f.splitYupYdown();
+  CELL_LOC location = f.getLocation();
   
   Field3D& yup1 = f.yup();
   yup1.allocate();
+  arr3Dvec phases = getYupPhs1(location);
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs1[jx][jy], &(yup1(jx,jy+1,0)));
+      shiftZ(&(f(jx,jy+1,0)), phases[jx][jy], &(yup1(jx,jy+1,0)));
     }
   }
   if (mesh.ystart>1) {
     Field3D& yup2 = f.yup(2);
     yup2.allocate();
+    phases = getYupPhs2(location);
     for(int jx=0;jx<mesh.LocalNx;jx++) {
       for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-        shiftZ(&(f(jx,jy+2,0)), yupPhs2[jx][jy], &(yup2(jx,jy+2,0)));
+        shiftZ(&(f(jx,jy+2,0)), phases[jx][jy], &(yup2(jx,jy+2,0)));
       }
     }
   }
 
   Field3D& ydown1 = f.ydown();
   ydown1.allocate();
+  phases = getYdownPhs1(location);
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs1[jx][jy], &(ydown1(jx,jy-1,0)));
+      shiftZ(&(f(jx,jy-1,0)), phases[jx][jy], &(ydown1(jx,jy-1,0)));
     }
   }
   if (mesh.ystart > 1) {
     Field3D& ydown2 = f.ydown(2);
     ydown2.allocate();
+    phases = getYdownPhs2(location);
     for(int jx=0;jx<mesh.LocalNx;jx++) {
       for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-        shiftZ(&(f(jx,jy-2,0)), ydownPhs2[jx][jy], &(ydown2(jx,jy-2,0)));
+        shiftZ(&(f(jx,jy-2,0)), phases[jx][jy], &(ydown2(jx,jy-2,0)));
       }
     }
   }
@@ -159,7 +744,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
-  return shiftZ(f, toAlignedPhs);
+  return shiftZ(f, getToAlignedPhs(f.getLocation()));
 }
 
 /*!
@@ -167,7 +752,7 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
-  return shiftZ(f, fromAlignedPhs);
+  return shiftZ(f, getFromAlignedPhs(f.getLocation()));
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
@@ -175,8 +760,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
-  Field3D result(&mesh);
-  result.allocate();
+  Field3D result(f); // Initialize from f, mostly so location get set correctly. (Does not copy data because of copy-on-change).
   
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
