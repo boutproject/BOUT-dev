@@ -594,6 +594,8 @@ AS_IF([test "x$with_lapack" != "xno"], [
 
 AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
+  _PETSC_DIR="$PETSC_DIR"
+  _PETSC_ARCH="$PETSC_ARCH"
   AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
     PETSC_ARCH=
@@ -602,17 +604,95 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   AC_MSG_NOTICE([Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
 
   AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
+    conf=conf
     PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
+      conf=lib/petsc/conf
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
       AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
     ])
   ])
 
+  # Check whether everything is in PETSC_DIR - and if so, split
+  AS_IF([! test -f $PETSC_CONFDIR/variables],
+  [
+     AS_IF([! test "$PETSC_ARCH"] , [
+       PETSC_VARDIR=$PETSC_CONFDIR
+       # exit if reached root
+       while test "$PETSC_VARDIR"
+       do
+           if test -f $PETSC_VARDIR/conf/variables
+           then
+               conf=conf
+               break
+           elif test -f $PETSC_VARDIR/lib/petsc/conf/variables
+           then
+               conf=lib/petsc/conf
+               break
+           fi
+           PETSC_VARDIR=${PETSC_VARDIR%/*}
+       done
+       if ! test $PETSC_VARDIR
+       then
+         AC_MSG_ERROR([FUBAR])
+       fi
+       PETSC_DIR=$PETSC_VARDIR
+       PETSC_VARDIR=$PETSC_DIR
+     ] , [
+       AC_MSG_ERROR([It seems PETSC_DIR and/or PETSC_ARCH is wrong.])
+    ])
+  ],[
+      PETSC_VARDIR=$PETSC_DIR
+    ])
+
+  # Make sure we split properly
+  # Try to get it even working on distro installed petsc
+  AS_IF([test "$with_petsc" != "yes"], [
+    TOINC=$(grep ^include $PETSC_VARDIR/$conf/variables| cut -d\  -f 2-)
+    # Start checking our assumptions:
+    AS_IF([test "${TOINC##*/}" = "petscvariables"],[
+      AS_IF([test "${TOINC%/*}" =  "\${PETSC_DIR}/\${PETSC_ARCH}/$conf"],[
+         PETSC_ARCH=${PETSC_CONFDIR#${PETSC_DIR}}
+         PETSC_ARCH=${PETSC_ARCH%${conf}*}
+         PETSC_ARCH=${PETSC_ARCH%%/}
+         PETSC_ARCH=${PETSC_ARCH##/}
+         PETSC_CONFDIR=${PETSC_VARDIR}/$conf
+         PETSC_DIR=$PETSC_VARDIR
+         AC_MSG_NOTICE([Updated PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
+       ],[
+         # Reset to initials
+         PETSC_DIR=$_PETSC_DIR
+         PETSC_ARCH=$_PETSC_ARCH
+      ])
+    ],[
+      # Reset to initials
+      PETSC_DIR=$_PETSC_DIR
+      PETSC_ARCH=$_PETSC_ARCH
+    ])
+  ])
+
+
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  AC_MSG_CHECKING([We can compile with PETSc])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+    #include <petscversion.h>
+  ])],[
+    AC_MSG_RESULT([yes])
+    ],[
+    PETSC_INC=$(grep ^PETSC_CC_INC ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+    CPPFLAGS="$CPPFLAGS $PETSC_INC"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+      #include <petscversion.h>
+    ])],[
+      AC_MSG_RESULT([yes])
+      ],[
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([PETSc requested but cannot compile with PETSc])
+    ])
+  ])
   AC_MSG_CHECKING([PETSc is at least 3.4.0])
   AC_EGREP_CPP([yes], [
     #include <petscversion.h>
@@ -646,7 +726,9 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
   ])
 
   # Set the line to be included in the make.conf file
-  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
+  PETSC_MAKE_INCLUDE="PETSC_DIR=$PETSC_DIR
+PETSC_ARCH=$PETSC_ARCH
+include ${PETSC_CONFDIR}/variables"
 
   HAS_PETSC="yes"
 
@@ -951,8 +1033,14 @@ AS_IF([test "$with_pvode" != "no"], [
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  then
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  fi
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  then
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  fi
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
     AC_MSG_NOTICE([Successfully built PVODE])
@@ -1048,7 +1136,10 @@ AC_OUTPUT
 # as PETSc
 #############################################################
 
-CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+if ! CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+then
+  AC_MSG_ERROR([The makefile is broken. Aborting configure.])
+fi
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
