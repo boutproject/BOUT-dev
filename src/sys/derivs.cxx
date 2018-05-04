@@ -377,19 +377,23 @@ const Field3D VDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
 
 // special case where both are 2D
 const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  SCOREP0();
   return f.getMesh()->indexVDDY(v, f, outloc, method) / f.getMesh()->coordinates()->dy;
 }
 
 const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
+  SCOREP0();
   return VDDY(v, f, CELL_DEFAULT, method);
 }
 
 // general case
 const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  SCOREP0();
   return f.getMesh()->indexVDDY(v, f, outloc, method) / f.getMesh()->coordinates()->dy;
 }
 
 const Field3D VDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+  SCOREP0();
   return VDDY(v, f, outloc, method);
 }
 

@@ -469,6 +469,7 @@ Mesh::upwind_func lookupUpwindFunc(DiffLookup *table, DIFF_METHOD method) {
 }
 
 Mesh::flux_func lookupFluxFunc(DiffLookup *table, DIFF_METHOD method) {
+  SCOREP0();
   int i = 0;
   do {
     if (table[i].method == method)
@@ -882,6 +883,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
+SCOREP0();
   if (var.getNy() == 1) {
     return Field2D(0., this);
   }
@@ -2013,6 +2015,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
+  SCOREP0();
   TRACE("Mesh::indexVDDY");
 
   ASSERT1(this == v.getMesh());
@@ -2202,6 +2205,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 // general case
 const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
+  SCOREP0();
   TRACE("Mesh::indexVDDY(Field3D, Field3D)");
 
   ASSERT1(this == v.getMesh());
@@ -2473,6 +2477,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 // general case
 const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
+  SCOREP0();
   TRACE("Mesh::indexVDDZ");
 
   ASSERT1(this == v.getMesh());
