@@ -11734,8 +11734,14 @@ $as_echo "$as_me: Building PVODE" >&6;}
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  then
+    as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5
+  fi
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  then
+    as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5
+  fi
 
   if test -f externalpackages/PVODE/lib/libpvode.a ; then :
 
@@ -13021,7 +13027,10 @@ fi
 # as PETSc
 #############################################################
 
-CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+if ! CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+then
+  as_fn_error $? "The makefile is broken. Aborting configure." "$LINENO" 5
+fi
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################

@@ -1033,8 +1033,14 @@ AS_IF([test "$with_pvode" != "no"], [
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  then
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  fi
+  if ! CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  then
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  fi
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
     AC_MSG_NOTICE([Successfully built PVODE])
@@ -1130,7 +1136,10 @@ AC_OUTPUT
 # as PETSc
 #############################################################
 
-CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+if ! CONFIG_CFLAGS=`$MAKE cflags -f output.make`
+then
+  AC_MSG_ERROR([The makefile is broken. Aborting configure.])
+fi
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
