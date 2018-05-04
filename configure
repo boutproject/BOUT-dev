@@ -8833,6 +8833,8 @@ fi
 if test "x$with_petsc" != "x" && test "$with_petsc" != "no"; then :
 
 
+  _PETSC_DIR="$PETSC_DIR"
+  _PETSC_ARCH="$PETSC_ARCH"
   if test "$with_petsc" != "yes"; then :
 
     PETSC_DIR="$with_petsc"
@@ -8862,6 +8864,7 @@ eval ac_res=\$$as_ac_File
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
+    conf=conf
     PETSC_CONFDIR=${PETSC_DIR}/conf
 
 else
@@ -8885,6 +8888,7 @@ eval ac_res=\$$as_ac_File
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
+      conf=lib/petsc/conf
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
 
 else
@@ -8897,8 +8901,138 @@ fi
 fi
 
 
+  # Check whether everything is in PETSC_DIR - and if so, split
+  if ! test -f $PETSC_CONFDIR/variables; then :
+
+     if ! test "$PETSC_ARCH" ; then :
+
+       PETSC_VARDIR=$PETSC_CONFDIR
+       # exit if reached root
+       while test "$PETSC_VARDIR"
+       do
+           if test -f $PETSC_VARDIR/conf/variables
+           then
+               conf=conf
+               break
+           elif test -f $PETSC_VARDIR/lib/petsc/conf/variables
+           then
+               conf=lib/petsc/conf
+               break
+           fi
+           PETSC_VARDIR=${PETSC_VARDIR%/*}
+       done
+       if ! test $PETSC_VARDIR
+       then
+         as_fn_error $? "FUBAR" "$LINENO" 5
+       fi
+       PETSC_DIR=$PETSC_VARDIR
+       PETSC_VARDIR=$PETSC_DIR
+
+else
+
+       as_fn_error $? "It seems PETSC_DIR and/or PETSC_ARCH is wrong." "$LINENO" 5
+
+fi
+
+else
+
+      PETSC_VARDIR=$PETSC_DIR
+
+fi
+
+  # Make sure we split properly
+  # Try to get it even working on distro installed petsc
+  if test "$with_petsc" != "yes"; then :
+
+    TOINC=$(grep ^include $PETSC_VARDIR/$conf/variables| cut -d\  -f 2-)
+    # Start checking our assumptions:
+    if test "${TOINC##*/}" = "petscvariables"; then :
+
+      if test "${TOINC%/*}" =  "\${PETSC_DIR}/\${PETSC_ARCH}/$conf"; then :
+
+         PETSC_ARCH=${PETSC_CONFDIR#${PETSC_DIR}}
+         PETSC_ARCH=${PETSC_ARCH%${conf}*}
+         PETSC_ARCH=${PETSC_ARCH%%/}
+         PETSC_ARCH=${PETSC_ARCH##/}
+         PETSC_CONFDIR=${PETSC_VARDIR}/$conf
+         PETSC_DIR=$PETSC_VARDIR
+         { $as_echo "$as_me:${as_lineno-$LINENO}: Updated PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&5
+$as_echo "$as_me: Updated PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&6;}
+
+else
+
+         # Reset to initials
+         PETSC_DIR=$_PETSC_DIR
+         PETSC_ARCH=$_PETSC_ARCH
+
+fi
+
+else
+
+      # Reset to initials
+      PETSC_DIR=$_PETSC_DIR
+      PETSC_ARCH=$_PETSC_ARCH
+
+fi
+
+fi
+
+
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking We can compile with PETSc" >&5
+$as_echo_n "checking We can compile with PETSc... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <petscversion.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+    PETSC_INC=$(grep ^PETSC_CC_INC ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+    CPPFLAGS="$CPPFLAGS $PETSC_INC"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <petscversion.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      as_fn_error $? "PETSc requested but cannot compile with PETSc" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc is at least 3.4.0" >&5
 $as_echo_n "checking PETSc is at least 3.4.0... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -8960,7 +9094,9 @@ $as_echo "$PETSC_HAS_SUNDIALS" >&6; }
 fi
 
   # Set the line to be included in the make.conf file
-  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
+  PETSC_MAKE_INCLUDE="PETSC_DIR=$PETSC_DIR
+PETSC_ARCH=$PETSC_ARCH
+include ${PETSC_CONFDIR}/variables"
 
   HAS_PETSC="yes"
 
