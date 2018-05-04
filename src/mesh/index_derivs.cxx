@@ -65,6 +65,7 @@
 
 #include <bout/mesh.hxx>
 #include <bout/scorepwrapper.hxx>
+#include <bout/indexoffset.hxx>
 
 /*******************************************************************************
  * Limiters
@@ -957,14 +958,17 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
 
+BOUT_OMP(parallel);
+{
       stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+        IndexOffset<Ind3D> offset(*mesh);
+        s.mm = nan("");
+        s.m = var.ydown()[offset.ym(i)];
         s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+        s.p = var.yup()[offset.yp(i)];
+        s.pp = nan("");
 
         if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
           // Producing a stencil centred around a lower Y value
@@ -977,20 +981,25 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         }
 
         result[i] = func(s);
-      }
+);
+}
     } else {
       // Non-staggered
+BOUT_OMP(parallel);
+{
       stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+        IndexOffset<Ind3D> offset(*mesh);
+        s.mm = nan("");
+        s.m = var.ydown()[offset.ym(i)];
         s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+        s.p = var.yup()[offset.yp(i)];
+        s.pp = nan("");
 
         result[i] = func(s);
-      }
+);
+}
     }
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
@@ -1004,16 +1013,19 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       CELL_LOC location = var.getLocation();
 
       if (mesh->ystart > 1) {
+BOUT_OMP(parallel);
+{
+        stencil s;
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        stencil s;
-        for (const auto &i : result.region(region)) {
-          // Set stencils
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+          IndexOffset<Ind3D> offset(*mesh);
+          s.mm = var_fa[offset.ymm(i)];
+          s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = var_fa[i.offset(0, 2, 0)];
-          s.mm = var_fa[i.offset(0, -2, 0)];
+          s.p = var_fa[offset.yp(i)];
+          s.pp = var_fa[offset.ypp(i)];
 
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
             // Producing a stencil centred around a lower Y value
@@ -1026,17 +1038,20 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           }
 
           result[i] = func(s);
-        }
+);
+}
       } else {
-        // Only one guard cell, so no pp or mm values
+BOUT_OMP(parallel);
+{
         stencil s;
-        s.pp = nan("");
-        s.mm = nan("");
-        for (const auto &i : result.region(region)) {
-          // Set stencils
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+          IndexOffset<Ind3D> offset(*mesh);
+          s.mm = nan("");
+          s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
+          s.p = var_fa[offset.yp(i)];
+          s.pp = nan("");
 
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
             // Producing a stencil centred around a lower Y value
@@ -1049,39 +1064,48 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           }
 
           result[i] = func(s);
-        }
+);
+}
       }
 
     } else {
       // Non-staggered differencing
 
       if (mesh->ystart > 1) {
+BOUT_OMP(parallel);
+{
+        stencil s;
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        stencil s;
-        for (const auto &i : result.region(region)) {
-          // Set stencils
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+          IndexOffset<Ind3D> offset(*mesh);
+          s.mm = var_fa[offset.ymm(i)];
+          s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = var_fa[i.offset(0, 2, 0)];
-          s.mm = var_fa[i.offset(0, -2, 0)];
+          s.p = var_fa[offset.yp(i)];
+          s.pp = var_fa[offset.ypp(i)];
 
           result[i] = func(s);
-        }
+);
+}
       } else {
-        // Only one guard cell, so no pp or mm values
+BOUT_OMP(parallel);
+{
         stencil s;
-        s.pp = nan("");
-        s.mm = nan("");
-        for (const auto &i : result.region(region)) {
-          // Set stencils
+        // Only one guard cell, so no pp or mm values
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+          IndexOffset<Ind3D> offset(*mesh);
+          s.mm = nan("");
+          s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
+          s.p = var_fa[offset.yp(i)];
+          s.pp = nan("");
 
           result[i] = func(s);
-        }
+);
+}
       }
     }
 
