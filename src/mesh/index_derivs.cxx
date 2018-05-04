@@ -2264,18 +2264,24 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     if (vUseUpDown && fUseUpDown) {
       // Both v and f have up/down fields
 
+BOUT_OMP(parallel);
+{
       stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+        IndexOffset<Ind3D> offset(*mesh);
+
+        vval.mm = nan("");
+        vval.m = v.ydown()[offset.ym(i)];
         vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
+        vval.p = v.yup()[offset.yp(i)];
+        vval.pp = nan("");
+
+        fval.mm = nan("");
+        fval.m = f.ydown()[offset.ym(i)];
         fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+        fval.p = f.yup()[offset.yp(i)];
+        fval.pp = nan("");
 
         if (diffloc != CELL_DEFAULT) {
           // Non-centred stencil
@@ -2292,24 +2298,30 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           // Could produce warning
         }
         result[i] = func(vval, fval);
-      }
+      //}
+      );
+}
     } else if (vUseUpDown) {
       // Only v has up/down fields
       // f must shift to field aligned coordinates
       Field3D f_fa = mesh->toFieldAligned(f);
 
+BOUT_OMP(parallel);
+{
       stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+        IndexOffset<Ind3D> offset(*mesh);
+        vval.mm = nan("");
+        vval.m = v.ydown()[offset.ym(i)];
         vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
+        vval.p = v.yup()[offset.yp(i)];
+        vval.pp = nan("");
+
+        fval.mm = f_fa[offset.ymm(i)];
+        fval.m = f_fa[offset.ym(i)];
         fval.c = f_fa[i];
-        fval.p = f_fa[i.yp()];
-        fval.m = f_fa[i.ym()];
-        fval.pp = f_fa[i.offset(0, 2, 0)];
-        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.p = f_fa[offset.yp(i)];
+        fval.pp = f_fa[offset.ypp(i)];
 
         if (diffloc != CELL_DEFAULT) {
           // Non-centred stencil
@@ -2326,24 +2338,30 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           // Could produce warning
         }
         result[i] = func(vval, fval);
-      }
+      );
+}
     } else if (fUseUpDown) {
       // Only f has up/down fields
       // v must shift to field aligned coordinates
       Field3D v_fa = mesh->toFieldAligned(v);
 
+BOUT_OMP(parallel);
+{
       stencil vval, fval;
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+        IndexOffset<Ind3D> offset(*mesh);
+
+        vval.mm = v_fa[offset.ymm(i)];
+        vval.m = v_fa[offset.ym(i)];
         vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.m = v_fa[i.ym()];
-        vval.pp = v_fa[i.offset(0, 2, 0)];
-        vval.mm = v_fa[i.offset(0, -2, 0)];
+        vval.p = v_fa[offset.yp(i)];
+        vval.pp = v_fa[offset.ypp(i)];
+
+        fval.mm = nan("");
+        fval.m = f.ydown()[offset.ym(i)];
         fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+        fval.p = f.yup()[offset.yp(i)];
+        fval.pp = nan("");
 
         if (diffloc != CELL_DEFAULT) {
           // Non-centred stencil
@@ -2360,24 +2378,32 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           // Could produce warning
         }
         result[i] = func(vval, fval);
-      }
+      );
+}
     } else {
       // Both must shift to field aligned
       Field3D v_fa = mesh->toFieldAligned(v);
       Field3D f_fa = mesh->toFieldAligned(f);
 
+BOUT_OMP(parallel);
+{
       stencil vval, fval;
-      for (const auto &i : result.region(region)) {
+      IndexOffset<Ind3D> offset(*mesh);
+
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+
+        vval.mm = v_fa[offset.ymm(i)];
+        vval.m = v_fa[offset.ym(i)];
         vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.m = v_fa[i.ym()];
-        vval.pp = v_fa[i.offset(0, 2, 0)];
-        vval.mm = v_fa[i.offset(0, -2, 0)];
+        vval.p = v_fa[offset.yp(i)];
+        vval.pp = v_fa[offset.ypp(i)];
+
+        fval.mm = f_fa[offset.ymm(i)];
+        fval.m = f_fa[offset.ym(i)];
         fval.c = f[i];
-        fval.p = f_fa[i.yp()];
-        fval.m = f_fa[i.ym()];
-        fval.pp = f_fa[i.offset(0, 2, 0)];
-        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.p = f_fa[offset.yp(i)];
+        fval.pp = f_fa[offset.ypp(i)];
 
         if (diffloc != CELL_DEFAULT) {
           // Non-centred stencil
@@ -2394,8 +2420,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           // Could produce warning
         }
         result[i] = func(vval, fval);
-      }
-    }
+    //}
+    );
+}
+}
   } else {
     // Non-staggered case
 
