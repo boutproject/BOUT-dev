@@ -568,7 +568,7 @@ Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
  *******************************************************************************/
 
 /// Set the derivative method, given a table and option name
-void derivs_set(Options *options, DiffLookup *table, const char *name,
+void derivs_set(Options *options, DiffLookup *table, const string name,
                 Mesh::deriv_func &f) {
   TRACE("derivs_set( deriv_func )");
   string label;
@@ -579,7 +579,26 @@ void derivs_set(Options *options, DiffLookup *table, const char *name,
   f = lookupFunc(table, method);                 // Find the function pointer
 }
 
-void derivs_set(Options *options, DiffLookup *table, const char *name,
+void derivs_set(Options *options, DiffLookup *table, DiffLookup *table_stag,
+                const string name, Mesh::deriv_func &f, Mesh::deriv_func &sf) {
+  TRACE("derivs_set( deriv_func )");
+  string label;
+  options->get(name, label, "C2");
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method);                         // Print differential function name
+  f = lookupFunc(table, method);                 // Find the function pointer
+
+  output_info.write("\t   staggered:");
+  string label_stag;
+  options->get(name+"_stag", label_stag, label);
+
+  DIFF_METHOD method_stag = lookupFunc(table_stag, label_stag);
+  printFuncName(method_stag);
+  sf = lookupFunc(table_stag, method);
+}
+
+void derivs_set(Options *options, DiffLookup *table, const string name,
                 Mesh::upwind_func &f) {
   TRACE("derivs_set( upwind_func )");
   string label;
@@ -590,7 +609,26 @@ void derivs_set(Options *options, DiffLookup *table, const char *name,
   f = lookupUpwindFunc(table, method);
 }
 
-void derivs_set(Options *options, DiffLookup *table, const char *name,
+void derivs_set(Options *options, DiffLookup *table, DiffLookup *table_stag,
+                const string name, Mesh::upwind_func &f, Mesh::flux_func &sf) {
+  TRACE("derivs_set( upwind_func )");
+  string label;
+  options->get(name, label, "U1");
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method);                         // Print differential function name
+  f = lookupUpwindFunc(table, method);
+
+  output_info.write("\t   staggered:");
+  string label_stag;
+  options->get(name+"_stag", label_stag, label);
+
+  DIFF_METHOD method_stag = lookupFunc(table_stag, label_stag);
+  printFuncName(method_stag);
+  sf = lookupFluxFunc(table_stag, method_stag);
+}
+
+void derivs_set(Options *options, DiffLookup *table, const string name,
                 Mesh::flux_func &f) {
   TRACE("derivs_set( flux_func )");
   string label;
@@ -601,34 +639,53 @@ void derivs_set(Options *options, DiffLookup *table, const char *name,
   f = lookupFluxFunc(table, method);
 }
 
+void derivs_set(Options *options, DiffLookup *table, DiffLookup *table_stag,
+                const string name, Mesh::flux_func &f, Mesh::flux_func &sf) {
+  TRACE("derivs_set( flux_func )");
+  string label;
+  options->get(name, label, "U1");
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method);                         // Print differential function name
+  f = lookupFluxFunc(table, method);
+
+  output_info.write("\t   staggered:");
+  string label_stag;
+  options->get(name+"_stag", label_stag, label);
+
+  DIFF_METHOD method_stag = lookupFunc(table_stag, label_stag);
+  printFuncName(method_stag);
+  sf = lookupFluxFunc(table_stag, method_stag);
+}
+
 /// Initialise derivatives from options
 void derivs_initialise(Options *options, bool StaggerGrids, Mesh::deriv_func &fdd,
                        Mesh::deriv_func &sfdd, Mesh::deriv_func &fd2d,
                        Mesh::deriv_func &sfd2d, Mesh::upwind_func &fu,
                        Mesh::flux_func &sfu, Mesh::flux_func &ff, Mesh::flux_func &sff) {
   output_info.write("\tFirst       : ");
-  derivs_set(options, FirstDerivTable, "first", fdd);
   if (StaggerGrids) {
-    output_info.write("\tStag. First : ");
-    derivs_set(options, FirstStagDerivTable, "first", sfdd);
+    derivs_set(options, FirstDerivTable, FirstStagDerivTable, "first", fdd, sfdd);
+  } else {
+    derivs_set(options, FirstDerivTable, "first", fdd);
   }
   output_info.write("\tSecond      : ");
-  derivs_set(options, SecondDerivTable, "second", fd2d);
   if (StaggerGrids) {
-    output_info.write("\tStag. Second: ");
-    derivs_set(options, SecondStagDerivTable, "second", sfd2d);
+    derivs_set(options, SecondDerivTable, SecondStagDerivTable, "second", fd2d, sfd2d);
+  } else {
+    derivs_set(options, SecondDerivTable, "second", fd2d);
   }
   output_info.write("\tUpwind      : ");
-  derivs_set(options, UpwindTable, "upwind", fu);
   if (StaggerGrids) {
-    output_info.write("\tStag. Upwind: ");
-    derivs_set(options, UpwindStagTable, "upwind", sfu);
+    derivs_set(options, UpwindTable, UpwindStagTable, "upwind", fu, sfu);
+  } else {
+    derivs_set(options, UpwindTable, "upwind", fu);
   }
   output_info.write("\tFlux        : ");
-  derivs_set(options, FluxTable, "flux", ff);
   if (StaggerGrids) {
-    output_info.write("\tStag. Flux  : ");
-    derivs_set(options, FluxStagTable, "flux", sff);
+    derivs_set(options, FluxTable, FluxStagTable, "flux", ff, sff);
+  } else {
+    derivs_set(options, FluxTable, "flux", ff);
   }
 }
 
