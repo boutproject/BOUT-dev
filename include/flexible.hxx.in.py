@@ -67,8 +67,8 @@ print("""
 #include <boutexception.hxx>
 
 const char * strLocation(CELL_LOC);
-const Field2D interp_to(const Field2D&,CELL_LOC);
-const Field3D interp_to(const Field3D&,CELL_LOC);
+const Field2D interp_to(const Field2D&, CELL_LOC, REGION);
+const Field3D interp_to(const Field3D&, CELL_LOC, REGION);
 
 /// Template for having one field at different locations. If a Field
 /// is not yet known for that location, it will be created and
@@ -92,18 +92,24 @@ public:
   }
   /// Get a reference of the Field at location F
   F & getNonConst(CELL_LOC loc_){
+    // staggered->staggered interpolation is not correct due to corner guard
+    // cells not being set properly, so do not allow here: either mainid is the
+    // field at CELL_CENTRE, or the only other field we can ask for is at
+    // CELL_CENTRE
+    ASSERT1(mainid == 0 || loc_ == CELL_CENTRE);
+
     if (loc_ == CELL_DEFAULT){
       return *fields[mainid];
     }
     uint loc=getId(loc_);
     if (fields[loc] == nullptr){
       // fields[0] is the field at CELL_CENTRE
-      if (fields[0] == nullptr){
-	fields[0]=new F(interp_to((*fields[mainid]),CELL_CENTRE));
+      if (fields[0] == nullptr) {
+	fields[0]=new F(interp_to((*fields[mainid]), CELL_CENTRE, RGN_NOBNDRY));
 	owner[mainid]=true;
       }
       if (loc != mainid) {
-	fields[loc]=new F(interp_to(*fields[mainid],loc_));
+	fields[loc]=new F(interp_to(*fields[mainid], loc_, RGN_NOBNDRY));
 	owner[mainid]=true;
       }
     }
