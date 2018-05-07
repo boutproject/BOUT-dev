@@ -324,8 +324,7 @@ class BoutOutputs(object):
                 self._datacachesize = 0
                 self._datacachemaxsize = self._caching*1.e9
 
-        if self._DataFileCaching:
-            self._DataFileCache = None
+        self._DataFileCache = None
 
     def keys(self):
         """
