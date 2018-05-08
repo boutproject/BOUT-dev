@@ -24,6 +24,7 @@
 
 #include <vector>
 
+/// Size of real numbers
 typedef double BoutReal;
 
 /// 4 possible variable locations. Default is for passing to functions
@@ -35,7 +36,7 @@ enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIF
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
-//jmad Boundary condition function
+/// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

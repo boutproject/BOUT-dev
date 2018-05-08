@@ -77,7 +77,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #include <list>
 using std::string;
 
-#define SolverType const char*
+typedef std::string SolverType;
 #define SOLVERCVODE       "cvode"
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"

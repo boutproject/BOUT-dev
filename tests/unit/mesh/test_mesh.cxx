@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 #include "boutexception.hxx"
 
 #include "test_extras.hxx"
@@ -61,4 +62,39 @@ TEST_F(MeshTest, AddRegion2DToMesh) {
   Region<Ind2D> junk(0, 0, 0, 0, 0, 0, 1, 1);
   EXPECT_NO_THROW(localmesh.addRegion2D("RGN_JUNK_2D", junk));
   EXPECT_THROW(localmesh.addRegion2D("RGN_JUNK_2D", junk), BoutException);
+}
+
+TEST_F(MeshTest, Ind2DTo3D) {
+  Ind2D index2d_0(0);
+  Ind2D index2d_7(7);
+  Ind2D index2d_14(14);
+
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_0, 0), Ind3D(0));
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_0, 1), Ind3D(1));
+
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_7, 0), Ind3D(49));
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_7, 1), Ind3D(50));
+
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_14, 0), Ind3D(98));
+  EXPECT_EQ(localmesh.ind2Dto3D(index2d_14, 1), Ind3D(99));
+}
+
+TEST_F(MeshTest, Ind3DTo2D) {
+  Ind3D index3d_0(0);
+  Ind3D index3d_49(49);
+  Ind3D index3d_98(98);
+
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_0), Ind2D(0));
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_49), Ind2D(7));
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_98), Ind2D(14));
+}
+
+TEST_F(MeshTest, MapInd3DTo2D) {
+  Ind3D index3d_0(0);
+  Ind3D index3d_49(49);
+  Ind3D index3d_98(98);
+
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_0), 0);
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_49), 7);
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_98), 14);
 }

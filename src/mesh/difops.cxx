@@ -157,6 +157,8 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
     }
   }
   
+  ASSERT2(result.getLocation() == f.getLocation());
+
   return result;
 }
 
@@ -196,6 +198,7 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
 
 const Field3D Div_par(const Field3D &f, const Field3D &v) {
   ASSERT1(f.getMesh() == v.getMesh());
+  ASSERT2(v.getLocation() == f.getLocation());
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
@@ -226,6 +229,9 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
       }
     }
+
+  result.setLocation(f.getLocation());
+
   return result;
 }
 
@@ -623,6 +629,8 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
+
+  ASSERT2(result.getLocation() == A.getLocation());
   
   return result;
 }
@@ -653,6 +661,8 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
   
+  ASSERT2(result.getLocation() == A.getLocation());
+
   return result;
 }
 
@@ -676,13 +686,17 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
     vz += metric->IntShiftTorsion * vx;
   }
 
-  Field3D result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+  Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
   result /=  (metric->J*sqrt(metric->g_22));
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
+
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == A.getLocation())) ||
+          (result.getLocation() == outloc));
+
   return result;
 }
 

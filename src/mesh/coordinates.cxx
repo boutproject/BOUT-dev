@@ -505,18 +505,19 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f) { 
+const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
   SCOREP0();
-  return localmesh->indexDDX(f) / dx; 
+  return localmesh->indexDDX(f, loc, method, region) / dx;
 }
 
-const Field2D Coordinates::DDY(const Field2D &f) { 
+const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
   SCOREP0();
-  return localmesh->indexDDY(f) / dy; 
+  return localmesh->indexDDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &UNUSED(f)) {
+const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
   SCOREP0();
+  ASSERT1(f.getMesh() == localmesh);
   return Field2D(0.0, localmesh);
 }
 
@@ -616,6 +617,11 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   sg = sqrt(g_22);
   sg = DDY(1. / sg) / sg;
+
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
   if (sg.getLocation() != outloc) {
     localmesh->communicate(sg);
     sg = interp_to(sg, outloc);
@@ -626,6 +632,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   r2 = D2DY2(f, outloc) / interp_to(g_22, outloc);
 
   result = sg * result + r2;
+
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
 
   return result;
 }
@@ -700,8 +709,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
   }
 
-  // Set the output location
-  result.setLocation(f.getLocation());
+  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }
@@ -781,6 +789,8 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
   Field3D result = G1 * ::DDX(f) + G2 * ::DDY(f) + G3 * ::DDZ(f) + g11 * D2DX2(f) +
                    g22 * D2DY2(f) + g33 * D2DZ2(f) +
                    2.0 * (g12 * D2DXDY(f) + g13 * D2DXDZ(f) + g23 * D2DYDZ(f));
+
+  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }

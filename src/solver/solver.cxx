@@ -31,7 +31,7 @@
 
 #include <field_factory.hxx>
 
-#include "solverfactory.hxx"
+#include "bout/solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
@@ -346,6 +346,11 @@ void Solver::add(Vector3D &v, const char* name) {
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   SCOREP0()
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -359,9 +364,6 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-  
   VarStr<Field2D> d;
   
   d.constraint = true;
@@ -374,6 +376,11 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   SCOREP0()
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0
@@ -387,9 +394,6 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-
   VarStr<Field3D> d;
   
   d.constraint = true;
@@ -402,6 +406,11 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -415,9 +424,6 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-    
   VarStr<Vector2D> d;
   
   d.constraint = true;
@@ -441,6 +447,11 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -453,9 +464,6 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
-
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Vector3D> d;
   

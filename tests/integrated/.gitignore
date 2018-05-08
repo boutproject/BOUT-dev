@@ -4,8 +4,8 @@
 BOUT.settings
 test-cyclic/test_cyclic
 test-delp2/test_delp2
-test-drift-instability/data
-test-drift-instability/2fluid
+test-drift-instability*/data
+test-drift-instability*/2fluid
 test-fieldfactory/test_fieldfactory
 test-griddata/data.*.nc
 test-griddata/test_griddata

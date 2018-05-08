@@ -9,6 +9,7 @@
 #include <iterator>
 #include <iostream>
 #include "unused.hxx"
+#include "assert.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -197,12 +198,14 @@ public:
   const inline Indices ym(int i=1) const { return {x, y-i, z}; }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline Indices zp(int i=1) const {
+    ASSERT3(i >= 0);
     int zp=z;
     for (int j=0;j<i;++j)
       zp=(zp == zmax ? zmin : zp+1);
     return {x, y, zp }; }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline Indices zm(int i=1) const {
+    ASSERT3(i >= 0);
     int zm=z;
     for (;i!= 0;--i)
       zm = (zm == zmin ? zmax : zm-1);

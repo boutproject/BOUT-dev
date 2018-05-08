@@ -3,7 +3,7 @@
  *
  * Perpendicular Laplacian inversion using FFT and Tridiagonal solver
  *
- * Equation solved is: d*\nabla^2_\perp x + (1/c)\nabla_perp c\cdot\nabla_\perp x + a x = b
+ * Equation solved is: \f$d*\nabla^2_\perp x + (1/c)\nabla_perp c\cdot\nabla_\perp x + a x = b\f$
  * 
  * Where a, c and d are functions of x and y only (not z)
  *

@@ -232,7 +232,10 @@ if __name__ == "__main__":
                 #
                 'region_loop': region_loop,
                 'region_name': region_name,
-                'index_var': index_var
+                #
+                'index_var': index_var,
+                'mixed_base_ind': mixed_base_ind_var,
+                'jz_var': jz_var,
             }
 
             with smart_open(args.filename, "a") as f:
