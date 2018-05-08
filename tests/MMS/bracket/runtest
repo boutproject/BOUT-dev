@@ -20,11 +20,9 @@ bc.init("-q -q -q")
 
 
 funcs = [
-#    ['sin(x*2*pi+3*z)', 'x*z' ,'cos(x*2*pi+3*z)']
     ['sin(z)','sin(4*x)' , '4*cos(z)*cos(4*x)' ]
-#    'cos(x*2*pi+3*z)' ,
-#    'sin(x*fac)+sin(10*fac*x)',
 ]
+
 # List of NX values to use
 nlist = [8, 16, 32]
 
@@ -51,6 +49,8 @@ brackets=[["ARAKAWA", 2,{}],
           ["STD", 2 , {"mesh:ddx:upwind":"C2",
                        "mesh:ddz:upwind":"C2"}
            ],
+          # Weno convergence order is currently under discusision:
+          # https://github.com/boutproject/BOUT-dev/issues/1049
           # ["STD", 3 , {"mesh:ddx:upwind":"W3",
           #              "mesh:ddz:upwind":"W3"}
           #  ]
@@ -62,8 +62,6 @@ for in1 , in2, outfunc in funcs:
             mesh=genMesh(n,1,n,**args)
             inf1=bc.create3D(in1,mesh)
             inf2=bc.create3D(in2,mesh)
-            #print(name,order,args)
-            #print(bc.Options().get("mesh:ddx:upwind"))
             inf=bc.bracket(inf1,inf2,method=name)
             outf=bc.create3D(outfunc,mesh)
             err=(inf-outf)
@@ -79,9 +77,6 @@ for in1 , in2, outfunc in funcs:
         else:
             err="{%s,%s} -> %s failed (conv: %f - expected: %f)\n"%(in1,in2,outfunc,conv,order)
             errlist+=err
-
-# Currently broken - there are still objects after finalization :(
-#bc.finalise()
 
 if errlist:
     print(errlist)

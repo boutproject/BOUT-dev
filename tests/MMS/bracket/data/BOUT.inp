@@ -1,9 +1,6 @@
-
 nout=1
 timestep=1
-
 periodicY=true
-
 
 [MESH]
 MXG=2
