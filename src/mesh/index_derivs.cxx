@@ -2202,11 +2202,22 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   return interp_to(result, outloc);
 }
 
-// general case
+// Version which translates REGION to Region<Ind3D>
 const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   SCOREP0();
-  TRACE("Mesh::indexVDDY(Field3D, Field3D)");
+  TRACE("Mesh::indexVDDY(Field3D, Field3D, ..., REGION)");
+
+  Region<Ind3D> regionInd3D = getRegion3D(region);
+  return f.getMesh()->indexVDDY(v, f, outloc, method, regionInd3D);
+
+}
+
+// general case
+const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                              DIFF_METHOD method, Region<Ind3D> region) {
+  SCOREP0();
+  TRACE("Mesh::indexVDDY(Field3D, Field3D, ..., REGION<Ind3D>)");
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
@@ -2268,7 +2279,7 @@ BOUT_OMP(parallel);
 {
       stencil vval, fval;
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+      BLOCK_REGION_LOOP_SERIAL( region, i,
         IndexOffset<Ind3D> offset(*mesh);
 
         vval.mm = nan("");
@@ -2309,7 +2320,7 @@ BOUT_OMP(parallel);
 BOUT_OMP(parallel);
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+      BLOCK_REGION_LOOP_SERIAL(region, i,
         IndexOffset<Ind3D> offset(*mesh);
         vval.mm = nan("");
         vval.m = v.ydown()[offset.ym(i)];
@@ -2348,7 +2359,7 @@ BOUT_OMP(parallel);
 BOUT_OMP(parallel);
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+      BLOCK_REGION_LOOP_SERIAL(region, i,
         IndexOffset<Ind3D> offset(*mesh);
 
         vval.mm = v_fa[offset.ymm(i)];
@@ -2391,7 +2402,7 @@ BOUT_OMP(parallel);
       IndexOffset<Ind3D> offset(*mesh);
 
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
+      BLOCK_REGION_LOOP_SERIAL(region, i,
 
         vval.mm = v_fa[offset.ymm(i)];
         vval.m = v_fa[offset.ym(i)];
@@ -2438,20 +2449,26 @@ BOUT_OMP(parallel);
     if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
       // f has yup and ydown fields which are distinct
 
-      stencil fs;
-      fs.pp = nan("");
-      fs.mm = nan("");
+      BOUT_OMP(parallel);
+      {
+        stencil fs;
+        fs.pp = nan("");
+        fs.mm = nan("");
 
-      Field3D f_yup = f.yup();
-      Field3D f_ydown = f.ydown();
+        Field3D f_yup = f.yup();
+        Field3D f_ydown = f.ydown();
 
-      for (const auto &i : result.region(region)) {
+        IndexOffset<Ind3D> offset(*mesh);
 
-        fs.c = f[i];
-        fs.p = f_yup[i.yp()];
-        fs.m = f_ydown[i.ym()];
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_SERIAL(region, i,
 
-        result[i] = func(v[i], fs);
+          fs.m = f_ydown[offset.ym(i)];
+          fs.c = f[i];
+          fs.p = f_yup[offset.yp(i)];
+
+          result[i] = func(v[i], fs);
+        );
       }
 
     } else {
@@ -2461,28 +2478,42 @@ BOUT_OMP(parallel);
       Field3D v_fa = mesh->toFieldAligned(v);
 
       if (mesh->ystart > 1) {
-        stencil fs;
+        BOUT_OMP(parallel);
+        {
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f_fa[i];
-          fs.p = f_fa[i.yp()];
-          fs.m = f_fa[i.ym()];
-          fs.pp = f_fa[i.offset(0, 2, 0)];
-          fs.mm = f_fa[i.offset(0, -2, 0)];
+          stencil fs;
+          IndexOffset<Ind3D> offset(*mesh);
 
-          result[i] = func(v_fa[i], fs);
+          //for (const auto &i : result.region(region)) {
+          BLOCK_REGION_LOOP_SERIAL(region, i,
+
+            fs.mm = f_fa[offset.ymm(i)];
+            fs.m = f_fa[offset.ym(i)];
+            fs.c = f_fa[i];
+            fs.p = f_fa[offset.yp(i)];
+            fs.pp = f_fa[offset.ypp(i)];
+
+            result[i] = func(v_fa[i], fs);
+          );
         }
       } else {
-        stencil fs;
-        fs.pp = nan("");
-        fs.mm = nan("");
+        BOUT_OMP(parallel);
+        {
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f_fa[i];
-          fs.p = f_fa[i.yp()];
-          fs.m = f_fa[i.ym()];
+          stencil fs;
+          IndexOffset<Ind3D> offset(*mesh);
+          fs.mm = nan("");
+          fs.pp = nan("");
 
-          result[i] = func(v_fa[i], fs);
+          //for (const auto &i : result.region(region)) {
+          BLOCK_REGION_LOOP_SERIAL(region, i,
+
+            fs.m = f_fa[offset.ym(i)];
+            fs.c = f_fa[i];
+            fs.p = f_fa[offset.yp(i)];
+
+            result[i] = func(v_fa[i], fs);
+          );
         }
       }
       // Shift result back

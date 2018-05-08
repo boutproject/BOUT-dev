@@ -323,6 +323,30 @@ Coordinates *Mesh::createDefaultCoordinates() {
   return new Coordinates(this);
 }
 
+std::string Mesh::getRegionString(REGION rgn) {
+  SCOREP0();
+  switch(rgn) {
+  case RGN_ALL: {
+    return "RGN_ALL";
+  }
+  case RGN_NOBNDRY: {
+    return "RGN_NOBNDRY";
+  }
+  case RGN_NOX: {
+    return "RGN_NOX";
+  }
+  case RGN_NOY: {
+    return "RGN_NOY";
+  }
+  default: {
+    throw BoutException("mesh::getRegionString(REGION) : Requested region not implemented");
+  }
+  };
+}
+
+Region<> & Mesh::getRegion3D(const REGION rgn){
+   return getRegion3D(getRegionString(rgn));
+}
 
 Region<> & Mesh::getRegion3D(const std::string &region_name){
    auto found = regionMap3D.find(region_name);

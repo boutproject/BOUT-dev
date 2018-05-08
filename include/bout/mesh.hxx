@@ -514,6 +514,7 @@ class Mesh {
   /// @param[in] region  The region of the grid for which the result is calculated.
   const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, Region<Ind3D> region);
 
   /// Advection operator in index space in Z direction
   ///
@@ -586,6 +587,9 @@ class Mesh {
   Region<Ind3D> &getRegion3D(const std::string &region_name);
   Region<Ind2D> &getRegion2D(const std::string &region_name);
   
+  Region<Ind3D> &getRegion3D(const REGION);
+  std::string getRegionString(const REGION);
+
   /// Add a new region to the region_map for the data iterator
   ///
   /// Outputs an error message if region_name already exists
