@@ -262,23 +262,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc), REGION UNUSED(
 
 void printLocation(const Field3D &var) { output.write(strLocation(var.getLocation())); }
 
-const char *strLocation(CELL_LOC loc) {
-  switch (loc) {
-  case CELL_CENTRE: {
-    return " Cell centred";
-  }
-  case CELL_XLOW: {
-    return " Lower X";
-  }
-  case CELL_YLOW: {
-    return " Lower Y";
-  }
-  case CELL_ZLOW: {
-    return " Lower Z";
-  }
-  default: { return " Default (Unknown)"; }
-  };
-}
+const char *strLocation(CELL_LOC loc) { return CELL_LOC_STRING(loc).c_str(); }
 
 // 4-point Lagrangian interpolation
 // offset must be between 0 and 1

@@ -147,6 +147,12 @@ cdef class Field3D:
             data=data.reshape(data.shape[1:])
         if len(data.shape) != 3:
             raise TypeError("expected 3d data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f3d.setLocation(loc)
         f3d.setAll(data,ignoreDataType=ignoreDataType)
         return f3d
 

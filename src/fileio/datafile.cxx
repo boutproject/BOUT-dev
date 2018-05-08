@@ -552,6 +552,9 @@ bool Datafile::write() {
   for (const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -580,6 +583,9 @@ bool Datafile::write() {
   for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -614,6 +620,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector2D v  = *(var.ptr);
@@ -622,6 +636,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
 
@@ -635,6 +657,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector3D v  = *(var.ptr);
@@ -643,6 +673,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
   
