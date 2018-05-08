@@ -95,6 +95,17 @@
     }                                                                                    \
   }
 
+#define BLOCK_REGION_LOOP_PARALLEL_SECTION(region, index, ...)                                            \
+  {                                                                                      \
+    const auto blocks = region.getBlocks();                                              \
+  BOUT_OMP(for)                                                                 \
+    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
+      for (auto index = block->first; index < block->second; ++index) {                  \
+        __VA_ARGS__                                                                      \
+      }                                                                                  \
+    }                                                                                    \
+  }
+
 #define BLOCK_REGION_LOOP(region, index, ...)                                            \
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \

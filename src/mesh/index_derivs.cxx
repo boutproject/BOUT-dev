@@ -2301,7 +2301,7 @@ BOUT_OMP(parallel);
 {
       stencil vval, fval;
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL( region, i,
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( region, i,
         IndexOffset<Ind3D> offset(*mesh);
 
         vval.mm = nan("");
@@ -2342,7 +2342,7 @@ BOUT_OMP(parallel);
 BOUT_OMP(parallel);
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_SERIAL(region, i,
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
         IndexOffset<Ind3D> offset(*mesh);
         vval.mm = nan("");
         vval.m = v.ydown()[offset.ym(i)];
@@ -2381,7 +2381,7 @@ BOUT_OMP(parallel);
 BOUT_OMP(parallel);
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_SERIAL(region, i,
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
         IndexOffset<Ind3D> offset(*mesh);
 
         vval.mm = v_fa[offset.ymm(i)];
@@ -2424,7 +2424,9 @@ BOUT_OMP(parallel);
       IndexOffset<Ind3D> offset(*mesh);
 
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL(region, i,
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+
+        output << omp_get_thread_num() << " " <<  i.ind ;
 
         vval.mm = v_fa[offset.ymm(i)];
         vval.m = v_fa[offset.ym(i)];
@@ -2483,7 +2485,7 @@ BOUT_OMP(parallel);
         IndexOffset<Ind3D> offset(*mesh);
 
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_SERIAL(region, i,
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
 
           fs.m = f_ydown[offset.ym(i)];
           fs.c = f[i];
@@ -2507,7 +2509,7 @@ BOUT_OMP(parallel);
           IndexOffset<Ind3D> offset(*mesh);
 
           //for (const auto &i : result.region(region)) {
-          BLOCK_REGION_LOOP_SERIAL(region, i,
+          BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
 
             fs.mm = f_fa[offset.ymm(i)];
             fs.m = f_fa[offset.ym(i)];
@@ -2528,7 +2530,7 @@ BOUT_OMP(parallel);
           fs.pp = nan("");
 
           //for (const auto &i : result.region(region)) {
-          BLOCK_REGION_LOOP_SERIAL(region, i,
+          BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
 
             fs.m = f_fa[offset.ym(i)];
             fs.c = f_fa[i];
