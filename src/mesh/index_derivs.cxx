@@ -972,7 +972,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
 
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
       stencil s;
       //for (const auto &i : result.region(region)) {
@@ -999,7 +999,7 @@ BOUT_OMP(parallel);
 }
     } else {
       // Non-staggered
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
       stencil s;
       //for (const auto &i : result.region(region)) {
@@ -1027,7 +1027,7 @@ BOUT_OMP(parallel);
       CELL_LOC location = var.getLocation();
 
       if (this->ystart > 1) {
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
         stencil s;
         // More than one guard cell, so set pp and mm values
@@ -1055,7 +1055,7 @@ BOUT_OMP(parallel);
 );
 }
       } else {
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
         stencil s;
         //for (const auto &i : result.region(region)) {
@@ -1086,7 +1086,7 @@ BOUT_OMP(parallel);
       // Non-staggered differencing
 
       if (this->ystart > 1) {
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
         stencil s;
         // More than one guard cell, so set pp and mm values
@@ -1104,7 +1104,7 @@ BOUT_OMP(parallel);
 );
 }
       } else {
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
         stencil s;
         // Only one guard cell, so no pp or mm values
@@ -2297,7 +2297,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     if (vUseUpDown && fUseUpDown) {
       // Both v and f have up/down fields
 
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
       stencil vval, fval;
       //for (const auto &i : result.region(region)) {
@@ -2339,7 +2339,7 @@ BOUT_OMP(parallel);
       // f must shift to field aligned coordinates
       Field3D f_fa = this->toFieldAligned(f);
 
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
       stencil vval, fval;
       BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
@@ -2378,7 +2378,7 @@ BOUT_OMP(parallel);
       // v must shift to field aligned coordinates
       Field3D v_fa = this->toFieldAligned(v);
 
-BOUT_OMP(parallel);
+BOUT_OMP(parallel)
 {
       stencil vval, fval;
       BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
@@ -2418,47 +2418,45 @@ BOUT_OMP(parallel);
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
 
-BOUT_OMP(parallel);
-{
-      stencil vval, fval;
-      IndexOffset<Ind3D> offset(*mesh);
+      BOUT_OMP(parallel)
+      {
+        stencil vval, fval;
+        IndexOffset<Ind3D> offset(*mesh);
 
-      //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+        //for (const auto &i : result.region(region)) {
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
 
-        output << omp_get_thread_num() << " " <<  i.ind ;
+          vval.mm = v_fa[offset.ymm(i)];
+          vval.m = v_fa[offset.ym(i)];
+          vval.c = v_fa[i];
+          vval.p = v_fa[offset.yp(i)];
+          vval.pp = v_fa[offset.ypp(i)];
 
-        vval.mm = v_fa[offset.ymm(i)];
-        vval.m = v_fa[offset.ym(i)];
-        vval.c = v_fa[i];
-        vval.p = v_fa[offset.yp(i)];
-        vval.pp = v_fa[offset.ypp(i)];
+          fval.mm = f_fa[offset.ymm(i)];
+          fval.m = f_fa[offset.ym(i)];
+          fval.c = f[i];
+          fval.p = f_fa[offset.yp(i)];
+          fval.pp = f_fa[offset.ypp(i)];
 
-        fval.mm = f_fa[offset.ymm(i)];
-        fval.m = f_fa[offset.ym(i)];
-        fval.c = f[i];
-        fval.p = f_fa[offset.yp(i)];
-        fval.pp = f_fa[offset.ypp(i)];
-
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
-        }
-        result[i] = func(vval, fval);
-    //}
-    );
-}
-}
+          result[i] = func(vval, fval);
+        //}
+        );
+      }
+    }
   } else {
     // Non-staggered case
 
@@ -2473,7 +2471,7 @@ BOUT_OMP(parallel);
     if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
       // f has yup and ydown fields which are distinct
 
-      BOUT_OMP(parallel);
+      BOUT_OMP(parallel)
       {
         stencil fs;
         fs.pp = nan("");
@@ -2502,7 +2500,7 @@ BOUT_OMP(parallel);
       Field3D v_fa = this->toFieldAligned(v);
 
       if (this->ystart > 1) {
-        BOUT_OMP(parallel);
+        BOUT_OMP(parallel)
         {
 
           stencil fs;
@@ -2521,7 +2519,7 @@ BOUT_OMP(parallel);
           );
         }
       } else {
-        BOUT_OMP(parallel);
+        BOUT_OMP(parallel)
         {
 
           stencil fs;

@@ -349,10 +349,12 @@ std::string Mesh::getRegionString(REGION rgn) {
 }
 
 Region<> & Mesh::getRegion3D(const REGION rgn){
+   SCOREP0();
    return getRegion3D(getRegionString(rgn));
 }
 
 Region<> & Mesh::getRegion3D(const std::string &region_name){
+   SCOREP0();
    auto found = regionMap3D.find(region_name);
    if (found == end(regionMap3D)) {
      throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
