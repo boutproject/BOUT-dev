@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Generate Sonnet files from BOUT++ grids
 #
 # Ben Dudson, University of York
