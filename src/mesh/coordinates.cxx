@@ -630,18 +630,21 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
                                     DIFF_METHOD UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var, outloc) / sqrt(g_22.get(outloc));
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field3D )");
 
-  return ::DDY(var, outloc, method) / sqrt(g_22);
+  Field3D temp1 = ::DDY(var, outloc, method);
+  Field2D temp2 = sqrt(g_22.get(outloc));
+  Field3D temp3 = temp1 / temp2;
+  return ::DDY(var, outloc, method) / sqrt(g_22.get(outloc));
 }
 
 /////////////////////////////////////////////////////////
@@ -649,23 +652,23 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
-                                         CELL_LOC UNUSED(outloc),
+                                         CELL_LOC outloc,
                                          DIFF_METHOD UNUSED(method)) {
-  return VDDY(v, f) / sqrt(g_22);
+  return VDDY(v, f, outloc) / sqrt(g_22.get(outloc));
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
-  return VDDY(v, f, outloc, method) / sqrt(g_22);
+  return VDDY(v, f, outloc, method) / sqrt(g_22.get(outloc));
 }
 
 /////////////////////////////////////////////////////////
 // Parallel divergence
 
-const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc),
+const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
                                    DIFF_METHOD UNUSED(method)) {
   TRACE("Coordinates::Div_par( Field2D )");
-  return Bxy * Grad_par(f / Bxy);
+  return Bxy * Grad_par(f / Bxy, outloc);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
@@ -714,7 +717,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT){
     outloc = f.getLocation();
   }
-  sg = sqrt(g_22);
+  sg = sqrt(g_22.get(outloc));
   sg = DDY(1. / sg) / sg;
 
   if (outloc == CELL_DEFAULT) {
