@@ -18,15 +18,15 @@
 #include <globals.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(0, mesh), d1_dy(0, mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
       g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
-      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
-      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
-      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh) {
+      g_23(0, mesh), G1_11(0, mesh), G1_22(0, mesh), G1_33(0, mesh), G1_12(0, mesh), G1_13(0, mesh),
+      G1_23(0, mesh), G2_11(0, mesh), G2_22(0, mesh), G2_33(0, mesh), G2_12(0, mesh), G2_13(0, mesh),
+      G2_23(0, mesh), G3_11(0, mesh), G3_22(0, mesh), G3_33(0, mesh), G3_12(0, mesh), G3_13(0, mesh),
+      G3_23(0, mesh), G1(0, mesh), G2(0, mesh), G3(0, mesh), ShiftTorsion(0, mesh),
+      IntShiftTorsion(0, mesh), localmesh(mesh) {
 
 
   if (mesh->get(dx, "dx")) {
@@ -228,6 +228,14 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
+  // More initialization for Bxy, this needs to be called to initialized Bxy as
+  // a Flexible<Field2D> after setting Bxy like a Field2D, so putting here as
+  // geometry() must be called if the user changes geometrical quantities like
+  // the metric, or for example re-normalizes Bxy.
+  if (setBxyBoundaries()) {
+    throw BoutException("Error setting staggered Bxy fields");
+  }
+
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
@@ -413,6 +421,7 @@ int Coordinates::geometry() {
 
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
+  Field2D d1_dx, d1_dy;
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
@@ -420,6 +429,7 @@ int Coordinates::geometry() {
   } else {
     d1_dx = -d2x / (dx * dx);
   }
+  this->d1_dx = d1_dx; // Initialise Flexible<Field2D> with Field2D; there is no assignment operator for Flexible<F>=Flexible<F>
 
   if (localmesh->get(d2y, "d2y")) {
     output_warn.write(
@@ -428,6 +438,7 @@ int Coordinates::geometry() {
   } else {
     d1_dy = -d2y / (dy * dy);
   }
+  this->d1_dy = d1_dy; // Initialise Flexible<Field2D> with Field2D; there is no assignment operator for Flexible<F>=Flexible<F>
 
   return 0;
 }
@@ -496,12 +507,12 @@ int Coordinates::calcCovariant() {
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
 
-  this->g_11.set(g_11,true);
-  this->g_22.set(g_22,true);
-  this->g_33.set(g_33,true);
-  this->g_12.set(g_12,true);
-  this->g_13.set(g_13,true);
-  this->g_23.set(g_23,true);
+  this->g_11 = g_11;
+  this->g_22 = g_22;
+  this->g_33 = g_33;
+  this->g_12 = g_12;
+  this->g_13 = g_13;
+  this->g_23 = g_23;
   return 0;
 }
 
@@ -569,12 +580,12 @@ int Coordinates::calcContravariant() {
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  this->g11.set(g11,true);
-  this->g22.set(g22,true);
-  this->g33.set(g33,true);
-  this->g12.set(g12,true);
-  this->g13.set(g13,true);
-  this->g23.set(g23,true);
+  this->g11 = g11;
+  this->g22 = g22;
+  this->g33 = g33;
+  this->g12 = g12;
+  this->g13 = g13;
+  this->g23 = g23;
   return 0;
 }
 
@@ -602,7 +613,100 @@ int Coordinates::jacobian() {
   if (min(g_22) < 0.0) {
     throw BoutException("g_22 is somewhere less than 0.0");
   }
+
   Bxy = sqrt(g_22) / J;
+
+  return 0;
+}
+
+int Coordinates::setBxyBoundaries() {
+  if (mesh->StaggerGrids) {
+    // Explicitly set staggered fields of Bxy so that we can comunicate and apply
+    // boundary conditions.
+    // This may be required so that we can take derivatives of the staggered
+    // fields, e.g. of f/Bxy in Div_par.
+    if (mesh->xstart >= 2) {
+      // If there are not at least 2 guard cells then we cannot interpolate in
+      // the x-direction but there also cannot be staggered fields in that
+      // direction, so we don't need to set the xlow field.
+      Field2D Bxy_xlow = interp_to(Bxy, CELL_XLOW, RGN_NOBNDRY);
+      // If there is only a single point in a dimension then we need to just copy
+      // the values into the guard cells
+      bool no_x_direction = (mesh->GlobalNx - 2*mesh->xstart) == 1;
+      // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+      // would try to create a new Coordinates object since we have not finished
+      // initializing yet, leading to an infinite recursion
+      if (!no_x_direction && mesh->xstart == mesh->xend) {
+        // Only one grid point: need guard cell to set lower-x boundary
+        mesh->communicate(Bxy_xlow);
+      }
+      for (auto bndry : localmesh->getBoundaries()) {
+        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+          if (bndry->bx < 0 && !no_x_direction) {
+            // Lower x-boundary of x-staggered field.
+            // Set xstart value to be symmetrical with upper x-boundary (CELL_XLOW
+            // at xstart corresponds to CELL_XLOW at xend+1)
+            Bxy_xlow(bndry->x-bndry->bx,bndry->y) = Bxy_xlow(bndry->x-2*bndry->bx, bndry->y-bndry->by);
+          } else {
+            Bxy_xlow(bndry->x,bndry->y) = Bxy_xlow(bndry->x-bndry->bx, bndry->y-bndry->by);
+          }
+          if (bndry->width >= 2){
+            if (bndry->bx < 0 && !no_x_direction) {
+              // Lower x-boundary of x-staggered field.
+              // Set xstart value to be symmetrical with upper x-boundary (CELL_XLOW
+              // at xstart corresponds to CELL_XLOW at xend+1)
+              Bxy_xlow(bndry->x,bndry->y+bndry->by) = Bxy_xlow(bndry->x-2*bndry->bx, bndry->y-bndry->by);
+            } else {
+              Bxy_xlow(bndry->x+bndry->bx,bndry->y+bndry->by) = Bxy_xlow(bndry->x-bndry->bx, bndry->y-bndry->by);
+            }
+          }
+        }
+      }
+      mesh->communicate(Bxy_xlow);
+      Bxy.set(Bxy_xlow);
+    }
+
+    if (mesh->ystart >= 2) {
+      // If there are not at least 2 guard cells then we cannot interpolate in
+      // the y-direction but there also cannot be staggered fields in that
+      // direction, so we don't need to set the xlow field.
+      Field2D Bxy_ylow = interp_to(Bxy, CELL_YLOW, RGN_NOBNDRY);
+      // If there is only a single point in a dimension then we need to just copy
+      // the values into the guard cells
+      bool no_y_direction = (mesh->GlobalNy - 2*mesh->ystart) == 1;
+      // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+      // would try to create a new Coordinates object since we have not finished
+      // initializing yet, leading to an infinite recursion
+      if (!no_y_direction && mesh->ystart == mesh->yend) {
+        // Only one grid point: need guard cell to set lower-y boundary
+        mesh->communicate(Bxy_ylow);
+      }
+      for (auto bndry : localmesh->getBoundaries()) {
+        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+          if (bndry->by < 0 && !no_y_direction) {
+            // Lower y-boundary of y-staggered field.
+            // Set ystart value to be symmetrical with upper y-boundary (CELL_YLOW
+            // at ystart corresponds to CELL_YLOW at yend+1)
+            Bxy_ylow(bndry->x,bndry->y-bndry->by) = Bxy_ylow(bndry->x-bndry->bx, bndry->y-2*bndry->by);
+          } else {
+            Bxy_ylow(bndry->x,bndry->y) = Bxy_ylow(bndry->x-bndry->bx, bndry->y-bndry->by);
+          }
+          if (bndry->width >= 2){
+            if (bndry->by < 0 && !no_y_direction) {
+              // Lower y-boundary of y-staggered field.
+              // Set ystart value to be symmetrical with upper y-boundary (CELL_YLOW
+              // at ystart corresponds to CELL_YLOW at yend+1)
+              Bxy_ylow(bndry->x+bndry->bx,bndry->y) = Bxy_ylow(bndry->x-bndry->bx, bndry->y-2*bndry->by);
+            } else {
+              Bxy_ylow(bndry->x+bndry->bx,bndry->y+bndry->by) = Bxy_ylow(bndry->x-bndry->bx, bndry->y-bndry->by);
+            }
+          }
+        }
+      }
+      mesh->communicate(Bxy_ylow);
+      Bxy.set(Bxy_ylow);
+    }
+  }
 
   return 0;
 }

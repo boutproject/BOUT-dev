@@ -71,7 +71,7 @@ protected:
     // Set dx for the CELL_XLOW location
     // If this would not be set, interp_to would be called.
     // As we have only 1 guard cell, that could fail.
-    coord->dx = dx;
+    coord->dx.set(dx);
     coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
     
     SAVE_ONCE2(Lx,Ly);

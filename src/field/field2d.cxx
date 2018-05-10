@@ -32,6 +32,7 @@
 
 #include <field2d.hxx>
 
+#include <flexible.hxx>
 #include <utils.hxx>
 
 #include <boundary_op.hxx>
@@ -254,6 +255,22 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
     (*this)[i] = rhs;
 
   return *this;
+}
+
+Field2D & Field2D::operator+=(Flexible<Field2D> &rhs) {
+  return *this += rhs.get(location);
+}
+
+Field2D & Field2D::operator-=(Flexible<Field2D> &rhs) {
+  return *this -= rhs.get(location);
+}
+
+Field2D & Field2D::operator*=(Flexible<Field2D> &rhs) {
+  return *this *= rhs.get(location);
+}
+
+Field2D & Field2D::operator/=(Flexible<Field2D> &rhs) {
+  return *this /= rhs.get(location);
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////

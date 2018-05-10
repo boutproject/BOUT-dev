@@ -169,22 +169,13 @@ TYPED_TEST(FlexibleFieldTest, set) {
   TypeParam src;
   Flexible<TypeParam> flex;
   src = 1;
-  // Take copy
-  flex.set(src, true);
+  // Set makes a copy
+  flex.set(src);
   // Changing the source should not change the flexible field
   src = 2;
   TypeParam copy = flex;
   for (auto i : copy) {
     EXPECT_DOUBLE_EQ(1., copy[i]);
-  }
-  src = 3;
-  // Take reference
-  flex.set(src, false);
-  // Changing the source should change the flexible field
-  src = 4;
-  copy = flex;
-  for (auto i : copy) {
-    EXPECT_DOUBLE_EQ(4., copy[i]);
   }
 }
 
@@ -513,10 +504,11 @@ TYPED_TEST(FlexibleFieldTest, BoutRealSize) {
 
 class FakeField : public Field {
 public:
-  FakeField(int i) { location = (CELL_LOC)i; }
+  FakeField(int i=1) { location = (CELL_LOC)i; }
   virtual CELL_LOC getLocation() const override { return location; }
   bool is3D() const { return dim; }
   bool isReal() const { return real; }
+  bool isAllocated() const { return alloc; }
   int byteSize() const { return bs; }
   int BoutRealSize() const { return brs; }
   virtual const IndexRange region(REGION UNUSED(rgn)) const {
@@ -524,6 +516,7 @@ public:
   }
   virtual const BoutReal &operator[](const Indices &) const override { return val; }
   virtual BoutReal &operator[](const Indices &) { return val; }
+  virtual BoutReal& operator[](const DataIterator &) { return val; }
   void allocate() { alloc = true; };
   void accept(FieldVisitor &UNUSED(v)){};
   void doneComms() { coms = true; };
@@ -533,6 +526,9 @@ public:
   bool coms, bndry, alloc;
   CELL_LOC location;
   BoutReal val;
+  const DataIterator iterator() const { return DataIterator(0, 0, 0, 0, 0, 0); }
+  const DataIterator begin() const { return iterator(); }
+  const DataIterator end() const { return iterator(); }
 
 private:
 };
@@ -583,8 +579,9 @@ TEST_F(FlexibleFieldTest2, AccessIntField2D) {
 
 #define PASS_ON_TEST(doneComms, coms)                                                    \
   TEST_F(FlexibleFieldTest2, doneComms) {                                                \
-    Flexible<FakeField> flex(2);                                                         \
-    flex.getNonConst(CELL_CENTRE).coms = false;                                          \
+    FakeField f(2);                                                                      \
+    f.coms = false;                                                                      \
+    Flexible<FakeField> flex(f);                                                         \
     EXPECT_FALSE(flex.get(CELL_CENTRE).coms);                                            \
     flex.doneComms();                                                                    \
     EXPECT_TRUE(flex.get(CELL_CENTRE).coms);                                             \

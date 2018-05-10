@@ -94,6 +94,7 @@ public:
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
+  int setBxyBoundaries(); ///< If mesh->StaggerGrids==true, calculate CELL_XLOW and CELL_YLOW fields of Bxy and set their boundary cells
 
   // Operators
 

@@ -64,7 +64,10 @@ class Datafile {
   }
   template <typename F>
   void add(Flexible<F> & f, const char *name, bool save_repeat = false){
-    add(f.getNonConst(CELL_DEFAULT),name,save_repeat);
+    // Need a const cast here, we allow Datfile to get a non-const reference to
+    // member fields of Flexible objects even though we usually don't allow
+    // this
+    add(const_cast<F &>(f.get(CELL_DEFAULT)), name, save_repeat);
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);

@@ -35,6 +35,7 @@ class Mesh;
 #include "field_data.hxx"
 class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
+template <typename F> class Flexible;
 #include "stencils.hxx"
 
 #include "bout/dataiterator.hxx"
@@ -232,12 +233,16 @@ class Field2D : public Field, public FieldData {
   }
   
   Field2D & operator+=(const Field2D &rhs); ///< In-place addition. Copy-on-write used if data is shared
+  Field2D & operator+=(Flexible<Field2D> &rhs); ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator+=(BoutReal rhs);       ///< In-place addition. Copy-on-write used if data is shared
   Field2D & operator-=(const Field2D &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
+  Field2D & operator-=(Flexible<Field2D> &rhs); ///< In-place subtraction. Copy-on-write used if data is shared
   Field2D & operator-=(BoutReal rhs);       ///< In-place subtraction. Copy-on-write used if data is shared
   Field2D & operator*=(const Field2D &rhs); ///< In-place multiplication. Copy-on-write used if data is shared
+  Field2D & operator*=(Flexible<Field2D> &rhs); ///< In-place multiplication. Copy-on-write used if data is shared
   Field2D & operator*=(BoutReal rhs);       ///< In-place multiplication. Copy-on-write used if data is shared
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
+  Field2D & operator/=(Flexible<Field2D> &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
   // FieldData virtual functions
