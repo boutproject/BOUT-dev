@@ -231,68 +231,70 @@ int Coordinates::geometry() {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+  // Note: calculate geometry terms in local, writable Field2Ds first, then
+  // assign to class member Flexible<Field2D> versions
 
-  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22) +
-          g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g13 * DDZ(g_33);
-  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22) +
-          0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
-          0.5 * g13 * DDX(g_33);
-  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) +
-          0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * g13 * DDY(g_33);
+  Field2D G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+                  g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  Field2D G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22) +
+                  g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  Field2D G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+                  0.5 * g13 * DDZ(g_33);
+  Field2D G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22) +
+                  0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  Field2D G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
+                  0.5 * g13 * DDX(g_33);
+  Field2D G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) +
+                  0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+                  // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+                  // which equals
+                  + 0.5 * g13 * DDY(g_33);
 
-  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22) +
-          g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g23 * DDZ(g_33);
-  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22) +
-          0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G2_13 =
-      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // which equals
-      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-      // which equals
-      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-      // which equals
-      + 0.5 * g23 * DDX(g_33);
-  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22) +
-          0.5 * g23 * DDY(g_33);
+  Field2D G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+                  g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  Field2D G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22) +
+                  g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+  Field2D G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+                  0.5 * g23 * DDZ(g_33);
+  Field2D G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22) +
+                  0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  Field2D G2_13 =
+                  // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+                  // which equals
+                  0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+                  // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+                  // which equals
+                  + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+                  // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+                  // which equals
+                  + 0.5 * g23 * DDX(g_33);
+  Field2D G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22) +
+                  0.5 * g23 * DDY(g_33);
 
-  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22) +
-          g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g33 * DDZ(g_33);
-  G3_12 =
-      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-      // which equals to
-      0.5 * g13 * DDY(g_11)
-      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-      // which equals to
-      + 0.5 * g23 * DDX(g_22)
-      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-      // which equals to
-      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
-          0.5 * g33 * DDX(g_33);
-  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
-          0.5 * g33 * DDY(g_33);
+  Field2D G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+                  g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  Field2D G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22) +
+                  g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  Field2D G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+                  0.5 * g33 * DDZ(g_33);
+  Field2D G3_12 =
+                  // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+                  // which equals to
+                  0.5 * g13 * DDY(g_11)
+                  // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+                  // which equals to
+                  + 0.5 * g23 * DDX(g_22)
+                  //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+                  // which equals to
+                  + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  Field2D G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
+                  0.5 * g33 * DDX(g_33);
+  Field2D G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
+                  0.5 * g33 * DDY(g_33);
 
-  G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
-  G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
-  G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
+  Field2D G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
+  Field2D G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
+  Field2D G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -325,6 +327,84 @@ int Coordinates::geometry() {
   com.add(G3);
 
   localmesh->communicate(com);
+
+  // Copy nearest value into boundaries so that differential geometry
+  // terms can be interpolated if necessary
+  // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+  // would try to create a new Coordinates object since we have not finished
+  // initializing yet, leading to an infinite recursion
+
+  for (auto bndry : localmesh->getBoundaries()) {
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      G1_11(bndry->x,bndry->y) = G1_11(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1_22(bndry->x,bndry->y) = G1_22(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1_33(bndry->x,bndry->y) = G1_33(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1_12(bndry->x,bndry->y) = G1_12(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1_13(bndry->x,bndry->y) = G1_13(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1_23(bndry->x,bndry->y) = G1_23(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_11(bndry->x,bndry->y) = G2_11(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_22(bndry->x,bndry->y) = G2_22(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_33(bndry->x,bndry->y) = G2_33(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_12(bndry->x,bndry->y) = G2_12(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_13(bndry->x,bndry->y) = G2_13(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2_23(bndry->x,bndry->y) = G2_23(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_11(bndry->x,bndry->y) = G3_11(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_22(bndry->x,bndry->y) = G3_22(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_33(bndry->x,bndry->y) = G3_33(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_12(bndry->x,bndry->y) = G3_12(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_13(bndry->x,bndry->y) = G3_13(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3_23(bndry->x,bndry->y) = G3_23(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G1(bndry->x,bndry->y) = G1(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G2(bndry->x,bndry->y) = G2(bndry->x-bndry->bx, bndry->y-bndry->by);
+      G3(bndry->x,bndry->y) = G3(bndry->x-bndry->bx, bndry->y-bndry->by);
+      if (bndry->width >= 2){
+	G1_11(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_11(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1_22(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_22(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1_33(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_33(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1_12(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_12(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1_13(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_13(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1_23(bndry->x + bndry->bx, bndry->y + bndry->by) = G1_23(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_11(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_11(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_22(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_22(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_33(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_33(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_12(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_12(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_13(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_13(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2_23(bndry->x + bndry->bx, bndry->y + bndry->by) = G2_23(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_11(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_11(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_22(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_22(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_33(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_33(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_12(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_12(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_13(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_13(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3_23(bndry->x + bndry->bx, bndry->y + bndry->by) = G3_23(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G1(bndry->x + bndry->bx, bndry->y + bndry->by) = G1(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G2(bndry->x + bndry->bx, bndry->y + bndry->by) = G2(bndry->x - bndry->bx, bndry->y - bndry->by);
+	G3(bndry->x + bndry->bx, bndry->y + bndry->by) = G3(bndry->x - bndry->bx, bndry->y - bndry->by);
+      }
+    }
+  }
+
+  // Set class member variables
+  this->G1_11 = G1_11;
+  this->G1_22 = G1_22;
+  this->G1_33 = G1_33;
+  this->G1_12 = G1_12;
+  this->G1_13 = G1_13;
+  this->G1_23 = G1_23;
+  this->G2_11 = G2_11;
+  this->G2_22 = G2_22;
+  this->G2_33 = G2_33;
+  this->G2_12 = G2_12;
+  this->G2_13 = G2_13;
+  this->G2_23 = G2_23;
+  this->G3_11 = G3_11;
+  this->G3_22 = G3_22;
+  this->G3_33 = G3_33;
+  this->G3_12 = G3_12;
+  this->G3_13 = G3_13;
+  this->G3_23 = G3_23;
+  this->G1 = G1;
+  this->G2 = G2;
+  this->G3 = G3;
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
