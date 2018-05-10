@@ -233,6 +233,9 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   // Copy reference to data
   data = rhs.data;
 
+  // Copy location
+  location = rhs.location;
+
   return *this;
 }
 
@@ -467,6 +470,7 @@ bool finite(const Field2D &f, REGION rgn) {
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
+    result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -509,6 +513,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
+  ASSERT1(lhs.getLocation() == rhs.getLocation());
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
@@ -519,6 +524,8 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   for (const auto &i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
+
+  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
@@ -539,6 +546,8 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
+  result.setLocation(lhs.getLocation());
+
   checkData(result);
   return result;
 }
@@ -557,6 +566,8 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   for(const auto& i: result.region(rgn)) {
     result[i] = ::pow(lhs, rhs[i]);
   }
+
+  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
