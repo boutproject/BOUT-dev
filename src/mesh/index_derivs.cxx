@@ -2011,8 +2011,6 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == f.getMesh());
   ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
-  ASSERT1(this->ystart > 0); // Must have at least one guard cell
-
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -2020,10 +2018,18 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  if (StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (outloc == CELL_DEFAULT) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  if (this->LocalNy == 1){
+    result=0;
+    result.setLocation(outloc);
+    return result;
+  }
+
+  ASSERT1(this->ystart > 0); // Must have at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -2200,8 +2206,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  ASSERT1(this->ystart > 0); // Need at least one guard cell
-
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -2209,10 +2213,18 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  if (StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (outloc == CELL_DEFAULT) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  if (this->LocalNy == 1){
+    result=0;
+    result.setLocation(outloc);
+    return result;
+  }
+
+  ASSERT1(this->ystart > 0); // Need at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
