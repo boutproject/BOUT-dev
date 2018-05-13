@@ -200,7 +200,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionRhsSame) {
   for (CELL_LOC loc : ALL_CELL_LOCS) {
     one.setLocation(loc);
     TypeParam test = one * flex;
-    for (auto i : field) {
+    for (auto i : field.region(RGN_NOBNDRY)) {
       EXPECT_DOUBLE_EQ(field[i], test[i]);
     }
   }
@@ -214,7 +214,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsSame) {
   for (CELL_LOC loc : ALL_CELL_LOCS) {
     one.setLocation(loc);
     TypeParam test = flex * one;
-    for (auto i : field) {
+    for (auto i : field.region(RGN_NOBNDRY)) {
       EXPECT_DOUBLE_EQ(field[i], test[i]);
     }
   }
@@ -230,7 +230,7 @@ TYPED_TEST(FlexibleFieldTest, InterpolationX) {
   TypeParam test = 1.;
   test.setLocation(CELL_XLOW);
   test = test * flex;
-  for (auto i : test.region(RGN_NOX)) {
+  for (auto i : test.region(RGN_NOBNDRY)) {
     EXPECT_DOUBLE_EQ(test[i], i.x - .5);
   }
 }
@@ -245,7 +245,7 @@ TYPED_TEST(FlexibleFieldTest, InterpolationY) {
   TypeParam test = 1.;
   test.setLocation(CELL_YLOW);
   test = test * flex;
-  for (auto i : test.region(RGN_NOY)) {
+  for (auto i : test.region(RGN_NOBNDRY)) {
     EXPECT_DOUBLE_EQ(test[i], i.y - .5);
   }
 }
@@ -304,7 +304,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionRhsField3D) {
     Field3D test = 1.;
     test.setLocation(loc);
     test = test * flex;
-    for (auto i : test) {
+    for (auto i : test.region(RGN_NOBNDRY)) {
       EXPECT_DOUBLE_EQ(test[i], 0);
     }
   }
@@ -326,7 +326,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
     Field3D test = 1.;
     test.setLocation(loc);
     test = flex * test;
-    for (auto i : test) {
+    for (auto i : test.region(RGN_NOBNDRY)) {
       EXPECT_DOUBLE_EQ(test[i], 0);
     }
   }
@@ -349,7 +349,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
       field tmp((BoutReal)in2);                                                          \
       tmp.setLocation(loc);                                                              \
       auto test = flex op tmp;                                                           \
-      for (auto i : test) {                                                              \
+      for (auto i : test.region(RGN_NOBNDRY)) {                                                              \
         EXPECT_DOUBLE_EQ(test[i], res1);                                                 \
       }                                                                                  \
       test = tmp op flex;                                                                \
@@ -368,11 +368,11 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
     flex.set(input);                                                                     \
     BoutReal tmp(in2);                                                                   \
     auto test = flex op tmp;                                                             \
-    for (auto i : test) {                                                                \
+    for (auto i : test.region(RGN_NOBNDRY)) {                                                                \
       EXPECT_DOUBLE_EQ(test[i], res1);                                                   \
     }                                                                                    \
     test = tmp op flex;                                                                  \
-    for (auto i : test) {                                                                \
+    for (auto i : test.region(RGN_NOBNDRY)) {                                                                \
       EXPECT_DOUBLE_EQ(test[i], res2);                                                   \
     }                                                                                    \
   }
@@ -390,7 +390,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
           flex op input;                                                                 \
           TypeParam tmp = flex;                                                          \
           EXPECT_EQ(tmp.getLocation(), loc1);                                            \
-          for (auto i : tmp) {                                                           \
+          for (auto i : tmp.region(RGN_NOBNDRY)) {                                                           \
             EXPECT_DOUBLE_EQ(tmp[i], res1);                                              \
           }                                                                              \
         } else {                                                                         \
@@ -408,7 +408,7 @@ TYPED_TEST(FlexibleFieldTest, MultiplactionLhsField3D) {
       Flexible<TypeParam> flex(input);                                                   \
       BoutReal tmp(in2);                                                                 \
       flex op tmp;                                                                       \
-      for (auto i : input) {                                                             \
+      for (auto i : input.region(RGN_NOBNDRY)) {                                                             \
         EXPECT_DOUBLE_EQ(flex[i], res1);                                                 \
       }                                                                                  \
     }                                                                                    \
