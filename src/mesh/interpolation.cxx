@@ -57,7 +57,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
   Mesh *fieldmesh = var.getMesh();
   Field3D result(fieldmesh);
 
-  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (fieldmesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
   if (fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
@@ -88,7 +88,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
-        ASSERT0(mesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+        ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
 
         for (const auto &i : result.region(RGN_NOBNDRY)) {
 
@@ -114,7 +114,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_YLOW: {
-        ASSERT0(mesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+        ASSERT0(fieldmesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
 
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
@@ -178,7 +178,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           } else {
             // Only one guard cell, so no pp or mm values
             // Note: at the moment we cannot reach this case because of the
-            // 'ASSERT0(mesh->ystart >=2)' above, but if we implement a 3-point
+            // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
             // stencil for interp, then this will be useful
             s.pp = nan("");
             s.mm = nan("");
@@ -263,7 +263,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
   Mesh *fieldmesh = var.getMesh();
   Field2D result(fieldmesh);
 
-  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (fieldmesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
   if (fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
@@ -294,7 +294,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
-        ASSERT0(mesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+        ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
 
         for (const auto &i : result.region(RGN_NOBNDRY)) {
 
@@ -320,7 +320,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_YLOW: {
-        ASSERT0(mesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+        ASSERT0(fieldmesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
 
         if (fieldmesh->ystart > 1) {
 
@@ -349,7 +349,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
         } else {
           // Only one guard cell, so no pp or mm values
           // Note: at the moment we cannot reach this case because of the
-          // 'ASSERT0(mesh->ystart >=2)' above, but if we implement a 3-point
+          // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
           // stencil for interp, then this will be useful
           s.pp = nan("");
           s.mm = nan("");

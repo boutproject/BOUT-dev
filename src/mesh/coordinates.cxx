@@ -620,25 +620,25 @@ int Coordinates::jacobian() {
 }
 
 int Coordinates::setBxyBoundaries() {
-  if (mesh->StaggerGrids) {
+  if (localmesh->StaggerGrids) {
     // Explicitly set staggered fields of Bxy so that we can comunicate and apply
     // boundary conditions.
     // This may be required so that we can take derivatives of the staggered
     // fields, e.g. of f/Bxy in Div_par.
-    if (mesh->xstart >= 2) {
+    if (localmesh->xstart >= 2) {
       // If there are not at least 2 guard cells then we cannot interpolate in
       // the x-direction but there also cannot be staggered fields in that
       // direction, so we don't need to set the xlow field.
       Field2D Bxy_xlow = interp_to(Bxy, CELL_XLOW, RGN_NOBNDRY);
       // If there is only a single point in a dimension then we need to just copy
       // the values into the guard cells
-      bool no_x_direction = (mesh->GlobalNx - 2*mesh->xstart) == 1;
+      bool no_x_direction = (localmesh->GlobalNx - 2*localmesh->xstart) == 1;
       // Note: cannot use applyBoundary("neumann") here because applyBoundary()
       // would try to create a new Coordinates object since we have not finished
       // initializing yet, leading to an infinite recursion
-      if (!no_x_direction && mesh->xstart == mesh->xend) {
+      if (!no_x_direction && localmesh->xstart == localmesh->xend) {
         // Only one grid point: need guard cell to set lower-x boundary
-        mesh->communicate(Bxy_xlow);
+        localmesh->communicate(Bxy_xlow);
       }
       for (auto bndry : localmesh->getBoundaries()) {
         for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
@@ -662,24 +662,24 @@ int Coordinates::setBxyBoundaries() {
           }
         }
       }
-      mesh->communicate(Bxy_xlow);
+      localmesh->communicate(Bxy_xlow);
       Bxy.set(Bxy_xlow);
     }
 
-    if (mesh->ystart >= 2) {
+    if (localmesh->ystart >= 2) {
       // If there are not at least 2 guard cells then we cannot interpolate in
       // the y-direction but there also cannot be staggered fields in that
-      // direction, so we don't need to set the xlow field.
+      // direction, so we don't need to set the ylow field.
       Field2D Bxy_ylow = interp_to(Bxy, CELL_YLOW, RGN_NOBNDRY);
       // If there is only a single point in a dimension then we need to just copy
       // the values into the guard cells
-      bool no_y_direction = (mesh->GlobalNy - 2*mesh->ystart) == 1;
+      bool no_y_direction = (localmesh->GlobalNy - 2*localmesh->ystart) == 1;
       // Note: cannot use applyBoundary("neumann") here because applyBoundary()
       // would try to create a new Coordinates object since we have not finished
       // initializing yet, leading to an infinite recursion
-      if (!no_y_direction && mesh->ystart == mesh->yend) {
+      if (!no_y_direction && localmesh->ystart == localmesh->yend) {
         // Only one grid point: need guard cell to set lower-y boundary
-        mesh->communicate(Bxy_ylow);
+        localmesh->communicate(Bxy_ylow);
       }
       for (auto bndry : localmesh->getBoundaries()) {
         for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
@@ -703,7 +703,7 @@ int Coordinates::setBxyBoundaries() {
           }
         }
       }
-      mesh->communicate(Bxy_ylow);
+      localmesh->communicate(Bxy_ylow);
       Bxy.set(Bxy_ylow);
     }
   }
