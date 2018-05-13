@@ -419,9 +419,9 @@ int Coordinates::geometry() {
 
   OPTION(Options::getRoot(), non_uniform, false);
 
-  Field2D d2x, d2y; // d^2 x / d i^2
+  Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
-  Field2D d1_dx, d1_dy;
+  Field2D d1_dx(localmesh), d1_dy(localmesh);
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");

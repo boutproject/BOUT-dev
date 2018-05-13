@@ -119,6 +119,8 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
  * Succeeds if the variable in the file is 0-D or 2-D
  */
 bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
+  ASSERT1(var.getMesh() == m);
+
   Timer timer("io");
   TRACE("GridFile::get(Field2D)");
 
@@ -235,6 +237,8 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
  * 
  */
 bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
+  ASSERT1(var.getMesh() == m);
+
   Timer timer("io");
   TRACE("GridFile::get(Field3D)");
 
@@ -382,6 +386,8 @@ bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
 bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name, 
 				 int yread, int ydest, int ysize, 
 				 int xge, int xlt, Field3D &var) {
+  ASSERT1(var.getMesh() == m);
+
   /// Check the arguments make sense
   if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
     return false;
@@ -467,6 +473,8 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name, 
 				   int yread, int ydest, int ysize, 
 				   int xge, int xlt, Field3D &var) {
+  ASSERT1(var.getMesh() == m);
+
   /// Check the arguments make sense
   if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
     return false;

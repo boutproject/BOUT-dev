@@ -150,7 +150,7 @@ class Mesh {
   template <typename F>
   int get(Flexible<F> &var, const string &name, BoutReal def=0.0){
     // First read from the file
-    F tempvar;
+    F tempvar(this);
     int retval = get(tempvar, name, def);
     // then initialize the Flexible<F>
     var = tempvar;

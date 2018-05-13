@@ -56,6 +56,12 @@ class Vector2D : public FieldData {
 
   bool covariant; ///< true if the components are covariant (default)
 
+  Mesh* getMesh() const {
+    Mesh* fieldmesh = x.getMesh();
+    ASSERT1(fieldmesh == y.getMesh() && fieldmesh == z.getMesh());
+    return fieldmesh;
+  }
+
   /// In-place conversion to covariant form
   void toCovariant();
 
