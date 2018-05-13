@@ -95,7 +95,7 @@ public:
 
 template <typename T> const int FlexibleFieldTest<T>::nx = 7;
 template <typename T> const int FlexibleFieldTest<T>::ny = 6;
-template <typename T> const int FlexibleFieldTest<T>::nz = 2;
+template <typename T> const int FlexibleFieldTest<T>::nz = 7;
 
 const int FlexibleFieldTest2::nx = 7;
 const int FlexibleFieldTest2::ny = 6;
@@ -188,9 +188,8 @@ TYPED_TEST(FlexibleFieldTest, set) {
   }
 }
 
-// Skip Z - as fix for interpolation hasn't been merged
 #define ALL_CELL_LOCS                                                                    \
-  { CELL_CENTRE, CELL_XLOW, CELL_YLOW } //,CELL_ZLOW}
+  { CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}
 
 TYPED_TEST(FlexibleFieldTest, MultiplactionRhsSame) {
   TypeParam field(3.);
@@ -257,36 +256,50 @@ TYPED_TEST(FlexibleFieldTest, applyTDerivBoundary) {
   EXPECT_THROW(flex.applyTDerivBoundary(), BoutException);
 }
 
-TYPED_TEST(FlexibleFieldTest, InterpolationXY) {
-  TypeParam field(3.);
-  field.setLocation(CELL_XLOW);
-  for (auto i : field) {
-    field[i] = i.x + 3 * i.y;
-  }
-  Flexible<TypeParam> flex(field);
-  TypeParam test = 1.;
-  test.setLocation(CELL_YLOW);
-  test = test * flex;
-  for (auto i : test.region(RGN_NOBNDRY)) {
-    EXPECT_DOUBLE_EQ(test[i], i.x + .5 + 3 * i.y - 1.5);
-  }
-}
-
-// Disabled : fix not yet merged
-// TYPED_TEST(FlexibleFieldTest, InterpolationZ) {
+// Disabled: XLOW->YLOW interpolation is not implemented
+// TYPED_TEST(FlexibleFieldTest, InterpolationXY) {
 //   TypeParam field(3.);
-//   field.setLocation(CELL_CENTRE);
-//   for (auto i:field){
-//     field[i]=i.z*2-1;
+//   field.setLocation(CELL_XLOW);
+//   for (auto i : field) {
+//     field[i] = i.x + 3 * i.y;
 //   }
 //   Flexible<TypeParam> flex(field);
-//   TypeParam test=1.;
-//   test.setLocation(CELL_ZLOW);
+//   TypeParam test = 1.;
+//   test.setLocation(CELL_YLOW);
 //   test = test * flex;
-//   for (auto i:test.region(RGN_NOZ)){
-//     EXPECT_DOUBLE_EQ(test[i] , 0);
+//   for (auto i : test.region(RGN_NOBNDRY)) {
+//     EXPECT_DOUBLE_EQ(test[i], i.x + .5 + 3 * i.y - 1.5);
 //   }
 // }
+
+TYPED_TEST(FlexibleFieldTest, InterpolationZ) {
+  TypeParam field(3.);
+  field.setLocation(CELL_CENTRE);
+  int nz = field.getNz();
+  int breakval = 3;
+  for (auto i:field){
+    field[i]=((i.z + breakval)%nz - breakval)*2-1; // Continuous through zero, discontinuity at nz-breakval
+  }
+  Flexible<TypeParam> flex(field);
+  TypeParam test=1.;
+  test.setLocation(CELL_ZLOW);
+  test = test * flex;
+  if (field.is3D()) {
+    //for (auto i:test.region(RGN_NOZ)){
+    //  EXPECT_DOUBLE_EQ(test[i] , 0);
+    //}
+    for (int i=0; i<nz-breakval-2; i++) {
+      EXPECT_DOUBLE_EQ(test(2,2,i), i*2-2);
+    }
+    for (int i=nz-breakval+2; i<nz; i++) {
+      EXPECT_DOUBLE_EQ(test(2,2,i), (i-nz)*2-2);
+    }
+  } else {
+    for (auto i:test.region(RGN_NOBNDRY)){
+      EXPECT_DOUBLE_EQ(test[i] , field[i]);
+    }
+  }
+}
 
 TYPED_TEST(FlexibleFieldTest, MultiplactionRhsField3D) {
   TypeParam field(3.);

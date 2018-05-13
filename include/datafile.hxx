@@ -18,6 +18,7 @@ class Datafile;
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "flexible.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"

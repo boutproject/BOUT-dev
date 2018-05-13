@@ -66,6 +66,12 @@ public:
   }
   /// Get a reference of the Field at location F
   F &getNonConst(CELL_LOC loc_) {
+    // staggered->staggered interpolation is not correct due to corner guard
+    // cells not being set properly, so do not allow here: either mainid is the
+    // field at CELL_CENTRE, or the only other field we can ask for is at
+    // CELL_CENTRE
+    ASSERT1(mainid == 0 || loc_ == CELL_CENTRE);
+
     if (loc_ == CELL_DEFAULT) {
       return *fields[mainid];
     }
