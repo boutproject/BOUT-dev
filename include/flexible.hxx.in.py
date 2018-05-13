@@ -331,6 +331,7 @@ private:
       if (i != mainid || include_main) {
 #if CHECK>2
         if (fields[i] != nullptr && fields[i]->isAllocated()) {
+          fields[i]->allocate(); // make sure reference to data is unique
           for (auto j : *fields[i]) {
             (*fields[i])[j] = nan("");
           }
