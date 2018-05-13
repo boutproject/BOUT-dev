@@ -351,8 +351,7 @@ private:
   uint getId(CELL_LOC loc_) const {
     uint loc = static_cast<const uint>(loc_) - 1;
     if (loc > num_fields || loc_ == 0) {
-      throw BoutException("Unexpected Fieldlocation!\n (Info: I got %d - %s)", loc,
-                          strLocation(loc_));
+      throw BoutException("Unexpected Fieldlocation!\n (Info: I got %d)", loc);
     }
     return loc;
   };
