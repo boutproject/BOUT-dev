@@ -2158,12 +2158,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    // There are four cases, corresponding to whether or not f and v
-    // have yup, ydown fields.
-
-    // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-    // will be used to calculate a derivative along
-    // the magnetic field
+    // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along the magnetic field
     bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
     bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
@@ -2195,6 +2191,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     } else {
       // Both must shift to field aligned
+      // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+      // multiply them with one in field-aligned and one in non-field-aligned
+      // coordinates)
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
       BOUT_OMP(parallel) {
@@ -2788,12 +2787,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  // There are four cases, corresponding to whether or not f and v
-  // have yup, ydown fields.
-
-  // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-  // will be used to calculate a derivative along
-  // the magnetic field
+  // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+  // will be used to calculate a derivative along the magnetic field
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
@@ -2830,6 +2825,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   } else {
     // Both must shift to field aligned
+    // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+    // multiply them with one in field-aligned and one in non-field-aligned
+    // coordinates)
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
     BOUT_OMP(parallel) {
