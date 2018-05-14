@@ -900,14 +900,9 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
  * result for non-finite numbers
  *
  */
+
 #define F3D_FUNC(name, func)                                                             \
   const Field3D name(const Field3D &f, REGION region) {                                  \
-  SCOREP0();                                                                             \
-                                                                                         \
-  Region<Ind3D> regionInd3D = mesh->getRegion3D(region);                                       \
-  return name(f, regionInd3D);                                                           \
-}                                                                                        \
-  const Field3D name(const Field3D &f, Region<Ind3D> region) {                           \
     SCOREP0();                                                                           \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
@@ -916,7 +911,7 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
     Field3D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    BLOCK_REGION_LOOP( region, d,                                                        \
+    BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(region), d,                         \
       result[d] = func(f[d]);                                                            \
     );                                                                                   \
     result.setLocation(f.getLocation());                                                 \
