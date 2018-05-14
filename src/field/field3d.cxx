@@ -868,9 +868,11 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   
   BoutReal result = f[f.region(rgn).begin()];
   
-  for(const auto& i: f.region(rgn))
+  //for(const auto& i: f.region(rgn))
+  BLOCK_REGION_LOOP( f.getMesh()->getRegion3D(rgn), i,
     if(f[i] > result)
       result = f[i];
+  );
   
   if(allpe) {
     // MPI reduce
@@ -948,6 +950,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
   result.allocate();
 
   for (const auto &i : result.region2D(rgn)) {
+  //BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), i,
 
     rfft(&(var(i.x, i.y, 0)), ncz, f.begin()); // Forward FFT
 
@@ -1129,9 +1132,11 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   SCOREP0();
   Field3D result = copy(var);
   
-  for(const auto& d : result.region(rgn))
+  //for(const auto& d : result.region(rgn))
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), d,
     if(result[d] < f)
       result[d] = f;
+  );
   
   return result;
 }

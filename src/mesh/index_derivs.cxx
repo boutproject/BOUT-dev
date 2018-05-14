@@ -694,6 +694,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
+//TODO
       for (const auto &i : result.region(region)) {
         s.c = var[i];
         s.p = var[i.xp()];
@@ -715,6 +716,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       }
     } else {
       // Only one guard cell, so no pp or mm values
+//TODO
       for (const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
@@ -743,6 +745,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+//TODO
       for (const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
@@ -755,6 +758,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       }
     } else {
       // Only one guard cell, so no pp or mm values
+//TODO
       for (const auto &i : result.region(region)) {
         stencil s;
         s.c = var[i];
@@ -803,6 +807,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
+//TODO
       for (const auto &i : result.region(region)) {
         s.c = var[i];
         s.p = var[i.xp()];
@@ -827,6 +832,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       stencil s;
       s.pp = nan("");
       s.mm = nan("");
+//TODO
       for (const auto &i : result.region(region)) {
         s.c = var[i];
         s.p = var[i.xp()];
@@ -853,6 +859,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
+//TODO
       for (const auto &i : result.region(region)) {
         s.c = var[i];
         s.p = var[i.xp()];
@@ -867,6 +874,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       stencil s;
       s.pp = nan("");
       s.mm = nan("");
+//TODO
       for (const auto &i : result.region(region)) {
         s.c = var[i];
         s.p = var[i.xp()];
@@ -909,6 +917,7 @@ SCOREP0();
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
 
+//TODO
     for (const auto &i : result.region(region)) {
       // Set stencils
       stencil s;
@@ -922,6 +931,7 @@ SCOREP0();
     }
   } else {
     // Only one guard cell, so no pp or mm values
+//TODO
     for (const auto &i : result.region(region)) {
       // Set stencils
       stencil s;
@@ -975,9 +985,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 BOUT_OMP(parallel)
 {
       stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-        IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
         s.mm = nan("");
         s.m = var.ydown()[offset.ym(i)];
         s.c = var[i];
@@ -1002,9 +1012,9 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
       stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-        IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
         s.mm = nan("");
         s.m = var.ydown()[offset.ym(i)];
         s.c = var[i];
@@ -1030,11 +1040,11 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
         stencil s;
+        IndexOffset<Ind3D> offset(*mesh);
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-          IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
           s.mm = var_fa[offset.ymm(i)];
           s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
@@ -1058,9 +1068,9 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
         stencil s;
+        IndexOffset<Ind3D> offset(*mesh);
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-          IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
           s.mm = nan("");
           s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
@@ -1089,11 +1099,11 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
         stencil s;
+        IndexOffset<Ind3D> offset(*mesh);
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-          IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
           s.mm = var_fa[offset.ymm(i)];
           s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
@@ -1107,10 +1117,10 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
         stencil s;
+        IndexOffset<Ind3D> offset(*mesh);
         // Only one guard cell, so no pp or mm values
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-          IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
           s.mm = nan("");
           s.m = var_fa[offset.ym(i)];
           s.c = var_fa[i];
@@ -2229,20 +2239,9 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   return result;
 }
 
-// Version which translates REGION to Region<Ind3D>
-const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                              DIFF_METHOD method, REGION region) {
-  SCOREP0();
-  TRACE("Mesh::indexVDDY(Field3D, Field3D, ..., REGION)");
-
-  Region<Ind3D> regionInd3D = getRegion3D(region);
-  return f.getMesh()->indexVDDY(v, f, outloc, method, regionInd3D);
-
-}
-
 // general case
 const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                              DIFF_METHOD method, Region<Ind3D> region) {
+                              DIFF_METHOD method, REGION region) {
   SCOREP0();
   TRACE("Mesh::indexVDDY(Field3D, Field3D, ..., REGION<Ind3D>)");
 
@@ -2307,7 +2306,7 @@ BOUT_OMP(parallel)
       stencil vval, fval;
       IndexOffset<Ind3D> offset(*mesh);
       //for (const auto &i : result.region(region)) {
-      BLOCK_REGION_LOOP_PARALLEL_SECTION( region, i,
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
         vval.mm = nan("");
         vval.m = v.ydown()[offset.ym(i)];
@@ -2347,8 +2346,8 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
-        IndexOffset<Ind3D> offset(*mesh);
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
         vval.mm = nan("");
         vval.m = v.ydown()[offset.ym(i)];
         vval.c = v[i];
@@ -2386,8 +2385,8 @@ BOUT_OMP(parallel)
 BOUT_OMP(parallel)
 {
       stencil vval, fval;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
-        IndexOffset<Ind3D> offset(*mesh);
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
         vval.mm = v_fa[offset.ymm(i)];
         vval.m = v_fa[offset.ym(i)];
@@ -2429,7 +2428,7 @@ BOUT_OMP(parallel)
         IndexOffset<Ind3D> offset(*mesh);
 
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
           vval.mm = v_fa[offset.ymm(i)];
           vval.m = v_fa[offset.ym(i)];
@@ -2488,7 +2487,7 @@ BOUT_OMP(parallel)
         IndexOffset<Ind3D> offset(*mesh);
 
         //for (const auto &i : result.region(region)) {
-        BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
           fs.m = f_ydown[offset.ym(i)];
           fs.c = f[i];
@@ -2512,7 +2511,7 @@ BOUT_OMP(parallel)
           IndexOffset<Ind3D> offset(*mesh);
 
           //for (const auto &i : result.region(region)) {
-          BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+          BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
             fs.mm = f_fa[offset.ymm(i)];
             fs.m = f_fa[offset.ym(i)];
@@ -2533,7 +2532,7 @@ BOUT_OMP(parallel)
           fs.pp = nan("");
 
           //for (const auto &i : result.region(region)) {
-          BLOCK_REGION_LOOP_PARALLEL_SECTION(region, i,
+          BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
             fs.m = f_fa[offset.ym(i)];
             fs.c = f_fa[i];
