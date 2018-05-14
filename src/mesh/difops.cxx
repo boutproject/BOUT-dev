@@ -365,6 +365,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
       // Right side
       result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
     }
+
+    result = mesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
@@ -376,10 +378,11 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     ASSERT1(var.getLocation() == CELL_YLOW);
   } 
 
-  Field3D result(var.getMesh());
+  Mesh* fieldmesh = var.getMesh();
+  Field3D result(fieldmesh);
   result.allocate();
 
-  Coordinates *metric = var.getMesh()->coordinates();
+  Coordinates *metric = fieldmesh->coordinates();
 
   if (var.hasYupYdown()) {
     for (auto &i : result.region(RGN_NOBNDRY)) {
@@ -388,12 +391,13 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = var.getMesh()->toFieldAligned(var);
+    Field3D var_fa = fieldmesh->toFieldAligned(var);
 
     for(auto &i : result.region(RGN_NOBNDRY)) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
-    result = var.getMesh()->fromFieldAligned(result);
+
+    result = fieldmesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
