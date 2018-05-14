@@ -590,6 +590,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D sqrt(const Field3D &f, Region<Ind3D>);
 
 /// Absolute value (modulus, |f|) of \p f over region \p rgn
 ///
@@ -597,6 +598,7 @@ const Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D abs(const Field3D &f, Region<Ind3D>);
 
 /// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
 /// \p rgn
@@ -605,6 +607,7 @@ const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D exp(const Field3D &f, Region<Ind3D>);
 
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
@@ -616,6 +619,7 @@ const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 ///
 const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D log(const Field3D &f, Region<Ind3D>);
 
 /// Sine trigonometric function.
 ///
@@ -626,6 +630,7 @@ const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D sin(const Field3D &f, Region<Ind3D>);
 
 /// Cosine trigonometric function.
 ///
@@ -636,6 +641,7 @@ const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D cos(const Field3D &f, Region<Ind3D>);
 
 /// Tangent trigonometric function.
 ///
@@ -646,6 +652,7 @@ const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D tan(const Field3D &f, Region<Ind3D>);
 
 /// Hyperbolic sine trigonometric function.
 ///
@@ -656,6 +663,7 @@ const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D sinh(const Field3D &f, Region<Ind3D>);
 
 /// Hyperbolic cosine trigonometric function.
 ///
@@ -666,6 +674,7 @@ const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D cosh(const Field3D &f, Region<Ind3D>);
 
 /// Hyperbolic tangent trigonometric function.
 ///
@@ -676,6 +685,7 @@ const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 const Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
+const Field3D tanh(const Field3D &f, Region<Ind3D>);
 
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by

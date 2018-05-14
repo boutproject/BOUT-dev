@@ -99,7 +99,9 @@
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
     BOUT_OMP(for)                                                                        \
+    _Pragma("ivdep vector always")                                                                     \
     for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
+      _Pragma("ivdep vector always")                                                                   \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \

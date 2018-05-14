@@ -43,6 +43,7 @@
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
 #include <bout/scorepwrapper.hxx>
+#include <bout/mesh.hxx>
 
 /// Constructor
 Field3D::Field3D(Mesh *localmesh)
@@ -389,8 +390,10 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   allocate();
 
   /// Copy data
-  for(const auto& i : (*this))
+  //for(const auto& i : (*this))
+  BLOCK_REGION_LOOP( fieldmesh->getRegion3D("RGN_ALL"), i,
     (*this)[i] = rhs[i];
+  );
   
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
@@ -407,6 +410,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   for(const auto& i : rhs) {
+  //BLOCK_REGION_LOOP( fieldmesh->getRegion3D("RGN_ALL"), i,
     (*this)[i] = rhs[i];
   }
 }
@@ -420,8 +424,10 @@ Field3D & Field3D::operator=(const BoutReal val) {
   if(!finite(val))
     throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
-  for(const auto& i : (*this))
+  //for(const auto& i : (*this))
+  BLOCK_REGION_LOOP( fieldmesh->getRegion3D("RGN_ALL"), i,
     (*this)[i] = val;
+  );
 
   // Only 3D fields have locations
   //location = CELL_CENTRE;
@@ -736,9 +742,10 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   result.allocate();
 
   // Iterate over indices
-  for(const auto& i : result.region(rgn)) {
+  //for(const auto& i : result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), i,
     result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  );
   
   result.setLocation( lhs.getLocation() );
   
@@ -759,9 +766,10 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   result.allocate();
 
   // Iterate over indices
-  for(const auto& i : result.region(rgn)) {
+  //for(const auto& i : result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), i,
     result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  );
 
   result.setLocation( lhs.getLocation() );
   
@@ -779,6 +787,7 @@ Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
 
   // Iterate over indices
   for(const auto& i : result.region(rgn)) {
+  //BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), i,
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
@@ -796,9 +805,10 @@ Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
 
   Field3D result(lhs.getMesh());
   result.allocate();
-  for(const auto& i : result.region(rgn)) {
+  //for(const auto& i : result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), i,
     result[i] = ::pow(lhs[i], rhs);
-  }
+  );
   
   result.setLocation( lhs.getLocation() );
 
@@ -816,9 +826,10 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   Field3D result(rhs.getMesh());
   result.allocate();
 
-  for(const auto& i : result.region(rgn)) {
+  //for(const auto& i : result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion3D(rgn), i,
     result[i] = ::pow(lhs, rhs[i]);
-  }
+  );
   
   result.setLocation( rhs.getLocation() );
 
@@ -834,9 +845,11 @@ BoutReal min(const Field3D &f, bool allpe, REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
   
-  for(const auto& i: f.region(rgn))
+  //for(const auto& i: f.region(rgn))
+  BLOCK_REGION_LOOP( f.getMesh()->getRegion3D(rgn), i,
     if(f[i] < result)
       result = f[i];
+  );
   
   if(allpe) {
     // MPI reduce
@@ -888,7 +901,13 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
  *
  */
 #define F3D_FUNC(name, func)                                                             \
-  const Field3D name(const Field3D &f, REGION rgn) {                                     \
+  const Field3D name(const Field3D &f, REGION region) {                                  \
+  SCOREP0();                                                                             \
+                                                                                         \
+  Region<Ind3D> regionInd3D = mesh->getRegion3D(region);                                       \
+  return name(f, regionInd3D);                                                           \
+}                                                                                        \
+  const Field3D name(const Field3D &f, Region<Ind3D> region) {                           \
     SCOREP0();                                                                           \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
@@ -897,9 +916,9 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
     Field3D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    BLOCK_REGION_LOOP( region, d,                                                        \
       result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    );                                                                                   \
     result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \

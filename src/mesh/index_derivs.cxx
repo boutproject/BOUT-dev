@@ -1165,15 +1165,20 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-  stencil s;
-  for (const auto &i : result.region(region)) {
-    s.c = var[i];
-    s.p = var[i.zp()];
-    s.m = var[i.zm()];
-    s.pp = var[i.offset(0, 0, 2)];
-    s.mm = var[i.offset(0, 0, -2)];
+  BOUT_OMP(parallel)
+  {
+    stencil s;
+    IndexOffset<Ind3D> offset(*mesh);
+    //for (const auto &i : result.region(region)) {
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+      s.mm = var[offset.zmm(i)];
+      s.m = var[offset.zm(i)];
+      s.c = var[i];
+      s.p = var[offset.zp(i)];
+      s.pp = var[offset.zpp(i)];
 
-    result[i] = func(s);
+      result[i] = func(s);
+    );
   }
 
   result.setLocation(diffloc);
@@ -2300,9 +2305,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 BOUT_OMP(parallel)
 {
       stencil vval, fval;
+      IndexOffset<Ind3D> offset(*mesh);
       //for (const auto &i : result.region(region)) {
       BLOCK_REGION_LOOP_PARALLEL_SECTION( region, i,
-        IndexOffset<Ind3D> offset(*mesh);
 
         vval.mm = nan("");
         vval.m = v.ydown()[offset.ym(i)];
