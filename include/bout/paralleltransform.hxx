@@ -8,6 +8,7 @@
 
 #include <datafile.hxx>
 #include <field3d.hxx>
+#include <flexible.hxx>
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
 #include <unused.hxx>
@@ -136,7 +137,6 @@ private:
 
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
-  Field2D zShift;
   std::vector<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
   std::vector<dcomplex> cmplxLoc; ///< A temporary array, used for input/output to fft routines
 
@@ -166,6 +166,7 @@ private:
   arr3Dvec ydownPhs1_YLOW; ///< Cache of phase shifts for calculating ydown1 fields. Interpolated to CELL_YLOW.
   arr3Dvec yupPhs2_YLOW; ///< Cache of phase shifts for calculating yup2 fields. Interpolated to CELL_YLOW.
   arr3Dvec ydownPhs2_YLOW; ///< Cache of phase shifts for calculating ydown2 fields. Interpolated to CELL_YLOW.
+  Flexible<Field2D> zShift;
 
   /*!
    * Shift a 2D field in Z. 
