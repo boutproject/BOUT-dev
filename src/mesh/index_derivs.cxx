@@ -2224,6 +2224,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           result[i] = func(vval, fval);
         }
       }
+
+      result = this->fromFieldAligned(result);
     }
   } else {
     // Non-staggered case
@@ -2860,6 +2862,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         result[i] = func(vval, fval);
       }
     }
+
+    result = this->fromFieldAligned(result);
   }
 
   result.setLocation(outloc);

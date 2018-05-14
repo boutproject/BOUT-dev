@@ -347,8 +347,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
     // (even if one of v and f has yup/ydown fields, it doesn't make sense to
     // multiply them with one in field-aligned and one in non-field-aligned
     // coordinates)
-    Field3D v_fa = mesh->toFieldAligned(v);
-    Field3D f_fa = mesh->toFieldAligned(f);
+    Field3D v_fa = vMesh->toFieldAligned(v);
+    Field3D f_fa = vMesh->toFieldAligned(f);
 
     BOUT_OMP(parallel) {
       stencil fval, vval;
@@ -366,6 +366,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
         // Right side
         result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
       }
+
+    result = vMesh->fromFieldAligned(result);
     }
   }
 
