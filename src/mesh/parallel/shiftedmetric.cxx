@@ -24,6 +24,21 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     mesh.get(zShift, "qinty");
   }
 
+  if (mesh.xstart >=2) {
+    // Can interpolate in x-direction
+    // Calculate staggered field for zShift and apply boundary conditions
+    Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
+    zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells to closest grid cell value
+    zShift.set(zShift_XLOW);
+  }
+  if (mesh.ystart >=2) {
+    // Can interpolate in y-direction
+    // Calculate staggered field for zShift and apply boundary conditions
+    Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
+    zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells to closest grid cell value
+    zShift.set(zShift_YLOW);
+  }
+
   int nmodes = mesh.LocalNz/2 + 1;
   //Allocate storage for complex intermediate
   cmplx.resize(nmodes);
@@ -67,12 +82,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       fromAlignedPhs_XLOW.resize(mesh.LocalNx);
@@ -98,12 +113,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       fromAlignedPhs_YLOW.resize(mesh.LocalNx);
@@ -175,12 +190,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       toAlignedPhs_XLOW.resize(mesh.LocalNx);
@@ -206,12 +221,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       toAlignedPhs_YLOW.resize(mesh.LocalNx);
@@ -284,12 +299,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs1(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       yupPhs1_XLOW.resize(mesh.LocalNx);
@@ -316,12 +331,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs1(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       yupPhs1_YLOW.resize(mesh.LocalNx);
@@ -395,12 +410,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs2(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       yupPhs2_XLOW.resize(mesh.LocalNx);
@@ -427,12 +442,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYupPhs2(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       yupPhs2_YLOW.resize(mesh.LocalNx);
@@ -506,12 +521,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs1(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       ydownPhs1_XLOW.resize(mesh.LocalNx);
@@ -538,12 +553,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs1(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       ydownPhs1_YLOW.resize(mesh.LocalNx);
@@ -617,12 +632,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs2(CELL_LOC location) {
   }
   case CELL_XLOW: {
     if (first_XLOW) {
+      ASSERT1(mesh.xstart>2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to XLOW
-      Field2D zShift_XLOW = interp_to(zShift, CELL_XLOW, RGN_ALL);
-      zShift_XLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at XLOW
+      Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
       first_XLOW = false;
       ydownPhs2_XLOW.resize(mesh.LocalNx);
@@ -649,12 +664,12 @@ ShiftedMetric::arr3Dvec ShiftedMetric::getYdownPhs2(CELL_LOC location) {
   }
   case CELL_YLOW: {
     if (first_YLOW) {
+      ASSERT1(mesh.ystart>2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      // interpolate zShift to YLOW
-      Field2D zShift_YLOW = interp_to(zShift, CELL_YLOW, RGN_ALL);
-      zShift_YLOW.applyBoundary("neumann"); // Set boundary guard cells equal to nearest grid cell
+      // get zShift at YLOW
+      Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
       first_YLOW = false;
       ydownPhs2_YLOW.resize(mesh.LocalNx);
@@ -792,6 +807,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
