@@ -225,8 +225,10 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   if (!finite(rhs))
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
-  for (const auto &i : (*this))
+  //for (const auto &i : (*this))
+  BLOCK_REGION_LOOP( fieldmesh->getRegion2D("RGN_ALL"), i,
     (*this)[i] = rhs;
+  );
 
   return *this;
 }
@@ -372,9 +374,11 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(rgn))
+  //for(const auto& i : f.region(rgn))
+  BLOCK_REGION_LOOP( f.getMesh()->getRegion2D(rgn), i,
     if(f[i] < result)
       result = f[i];
+  );
 
   if(allpe) {
     // MPI reduce
@@ -393,9 +397,11 @@ BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
 
-  for(const auto& i : f.region(rgn))
+  //for(const auto& i : f.region(rgn))
+  BLOCK_REGION_LOOP( f.getMesh()->getRegion2D(rgn), i,
     if(f[i] > result)
       result = f[i];
+  );
 
   if(allpe) {
     // MPI reduce
@@ -452,9 +458,9 @@ bool finite(const Field2D &f, REGION rgn) {
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), d,                            \
       result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    );                                                                                   \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -485,9 +491,11 @@ const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
   SCOREP0();
   Field2D result = copy(var);
 
-  for(const auto& d : result.region(rgn))
+  //for(const auto& d : result.region(rgn))
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), d,
     if(result[d] < f)
       result[d] = f;
+  );
 
   return result;
 }
@@ -505,9 +513,10 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  //for(const auto& i: result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), i,
     result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  );
 
   checkData(result);
   return result;
@@ -524,9 +533,10 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  //for(const auto& i: result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), i,
     result[i] = ::pow(lhs[i], rhs);
-  }
+  );
 
   checkData(result);
   return result;
@@ -543,9 +553,10 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  //for(const auto& i: result.region(rgn)) {
+  BLOCK_REGION_LOOP( result.getMesh()->getRegion2D(rgn), i,
     result[i] = ::pow(lhs, rhs[i]);
-  }
+  );
 
   checkData(result);
   return result;
