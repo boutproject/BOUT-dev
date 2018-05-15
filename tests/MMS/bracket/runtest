@@ -44,10 +44,14 @@ def genMesh(nx,ny,nz,**kwargs):
 errlist=""
 brackets=[["ARAKAWA", 2,{}],
           ["STD", 1 , {"mesh:ddx:upwind":"U1",
-                       "mesh:ddz:upwind":"U1"}
+                       "mesh:ddx:upwind_stag":"U1",
+                       "mesh:ddz:upwind":"U1",
+                       "mesh:ddz:upwind_stag":"U1"}
            ],
           ["STD", 2 , {"mesh:ddx:upwind":"C2",
-                       "mesh:ddz:upwind":"C2"}
+                       "mesh:ddx:upwind_stag":"C2",
+                       "mesh:ddz:upwind":"C2",
+                       "mesh:ddz:upwind_stag":"C2"}
            ],
           # Weno convergence order is currently under discusision:
           # https://github.com/boutproject/BOUT-dev/issues/1049
