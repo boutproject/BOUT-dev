@@ -53,6 +53,7 @@
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options *options) {
+  SCOREP0();
 
   if(options == NULL) {
     // Use the default options
@@ -113,12 +114,14 @@ Laplacian* Laplacian::create(Options *opts) {
 Laplacian* Laplacian::instance = NULL;
 
 Laplacian* Laplacian::defaultInstance() {
+  SCOREP0();
   if(instance == NULL)
     instance = create();
   return instance;
 }
 
 void Laplacian::cleanup() {
+  SCOREP0();
   if(instance == NULL)
     return;
   delete instance;
@@ -172,6 +175,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
 // NB: Really inefficient, but functional
 const Field2D Laplacian::solve(const Field2D &b) {
+  SCOREP0();
   Field3D f = b;
   f = solve(f);
   return DC(f);
@@ -187,6 +191,7 @@ const Field2D Laplacian::solve(const Field2D &b) {
  * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
  */
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
+  SCOREP0();
   TRACE("Laplacian::solve(Field3D, Field3D)");
 
   Timer timer("invert");
@@ -220,6 +225,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 }
 
 const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
+  SCOREP0();
   Field3D f = b, g = x0;
   f = solve(f, g);
   return DC(f);
@@ -232,6 +238,7 @@ const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
 void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
+  SCOREP0();
 
   Coordinates *coord = mesh->coordinates();
 
@@ -271,6 +278,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
+  SCOREP0();
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
   Coordinates *coord = mesh->coordinates();
@@ -333,6 +341,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              dcomplex **bk, int jy, int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
+  SCOREP0();
 
   Coordinates *coord = mesh->coordinates();
 
@@ -391,6 +400,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
+  SCOREP0();
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
@@ -706,6 +716,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 }
 
 void Laplacian::calcDelp2Coefs() {
+  SCOREP0();
   TRACE("Laplacian::calcDelp2Coefs");
 
   static bool initializedDelp2Coefs = false ;
@@ -742,10 +753,12 @@ void Laplacian::calcDelp2Coefs() {
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
                           const Field2D *ccoef, const Field2D *d) {
+  SCOREP0();
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+  SCOREP0();
 
   Laplacian *lap = Laplacian::defaultInstance();
 
@@ -774,6 +787,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 }
 
 int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+  SCOREP0();
 
   Timer timer("invert"); ///< Start timer
 
@@ -805,6 +819,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   return 0;
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+  SCOREP0();
 
   Timer timer("invert"); ///< Start timer
 
@@ -836,6 +851,7 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
 
 // setFlags routine for backwards compatibility with old monolithic flags
 void Laplacian::setFlags(int flags) {
+  SCOREP0();
   global_flags = 0;
   inner_boundary_flags = 0;
   outer_boundary_flags = 0;
