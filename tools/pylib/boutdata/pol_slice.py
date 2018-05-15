@@ -32,7 +32,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
 
     nx, ny, nz = s
 
-    dz = 2.*np.pi / float(n * (nz-1))
+    dz = 2.*np.pi / float(n * nz)
 
     try:
         # Open the grid file
