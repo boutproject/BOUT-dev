@@ -362,6 +362,10 @@ Region<> & Mesh::getRegion3D(const std::string &region_name){
    return found->second;
 }
 
+Region<Ind2D> & Mesh::getRegion2D(const REGION rgn){
+   SCOREP0();
+   return getRegion2D(getRegionString(rgn));
+}
 Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    auto found = regionMap2D.find(region_name);
    if (found == end(regionMap2D)) {

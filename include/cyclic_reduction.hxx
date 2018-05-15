@@ -53,6 +53,7 @@
 #include "output.hxx"
 
 #include "bout/openmpwrap.hxx"
+#include <bout/scorepwrapper.hxx>
 
 template <class T> class CyclicReduce {
 public:
@@ -72,6 +73,7 @@ public:
   /// @param[in] c  The communicator of all processors involved in the solve
   /// @param[in] size  The number of rows on this processor
   void setup(MPI_Comm c, int size) {
+    SCOREP0();
     comm = c;
 
     int np, myp;
@@ -116,6 +118,7 @@ public:
   }
 
   void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
+    SCOREP0();
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
     ASSERT2(a.size() == N);
@@ -143,6 +146,7 @@ public:
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
   void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+    SCOREP0();
     TRACE("CyclicReduce::setCoefs");
 
     int nsys = std::get<0>(a.shape());
@@ -196,6 +200,7 @@ public:
   /// @param[in] rhs Array storing Values of the rhs for a single system
   /// @param[out] x  Array storing the result for a single system
   void solve(Array<T> &rhs, Array<T> &x) {
+    SCOREP0();
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
@@ -226,6 +231,7 @@ public:
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
   void solve(Matrix<T> &rhs, Matrix<T> &x) {
+    SCOREP0();
     TRACE("CyclicReduce::solve");
     ASSERT2(std::get<0>(rhs.shape()) == Nsys);
     ASSERT2(std::get<0>(x.shape()) == Nsys);
@@ -512,6 +518,7 @@ private:
   /// @param[in] nsys  Number of independent systems to solve
   /// @param[in] n     Size of each system of equations
   void allocMemory(int np, int nsys, int n) {
+    SCOREP0();
     if ((nsys == Nsys) && (n == N) && (np == nprocs))
       return; // No need to allocate memory
 
@@ -572,6 +579,7 @@ private:
   /// (              ...         )
   /// (                  an bn cn)
   void reduce(int ns, int nloc, Matrix<T> &co, Matrix<T> &ifc) {
+    SCOREP0();
 #ifdef DIAGNOSE
     if (nloc < 2)
       throw BoutException("CyclicReduce::reduce nloc < 2");
@@ -647,6 +655,7 @@ private:
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
   void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn,
                   Matrix<T> &xa) {
+    SCOREP0();
 
     xa.ensureUnique(); // Going to be modified, so call this outside parallel region
     

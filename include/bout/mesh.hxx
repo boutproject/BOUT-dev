@@ -652,6 +652,7 @@ class Mesh {
   Region<Ind3D> &getRegion3D(const std::string &region_name);
   Region<Ind2D> &getRegion2D(const std::string &region_name);
   
+  Region<Ind2D> &getRegion2D(const REGION);
   Region<Ind3D> &getRegion3D(const REGION);
   std::string getRegionString(const REGION);
 
