@@ -228,7 +228,7 @@ const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
 
 void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d, CELL_LOC outloc) {
 
   Coordinates *coord = mesh->coordinates();
 
@@ -236,12 +236,12 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
-              ccoef, d);
+              ccoef, d, outloc);
 }
 
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d, CELL_LOC outloc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -272,16 +272,26 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   Coordinates *coord = mesh->coordinates();
 
-  coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
-  coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
-  coef3=2.*coord->g13(jx,jy);  ///< X-Z mixed derivative coefficient
+  if (outloc == CELL_DEFAULT) {
+    outloc = CELL_CENTRE;
+  }
+  Field2D g11 = coord->g11.get(outloc);
+  Field2D g33 = coord->g33.get(outloc);
+  Field2D g13 = coord->g13.get(outloc);
+  Field2D G1 = coord->G1.get(outloc);
+  Field2D G3 = coord->G3.get(outloc);
+  Field2D dx = coord->dx.get(outloc);
+
+  coef1=g11(jx,jy);     ///< X 2nd derivative coefficient
+  coef2=g33(jx,jy);     ///< Z 2nd derivative coefficient
+  coef3=2.*g13(jx,jy);  ///< X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if(all_terms) {
-    coef4 = coord->G1(jx,jy); // X 1st derivative
-    coef5 = coord->G3(jx,jy); // Z 1st derivative
+    coef4 = G1(jx,jy); // X 1st derivative
+    coef5 = G3(jx,jy); // Z 1st derivative
   }
 
   if(d != (Field2D*) NULL) {
@@ -296,26 +306,27 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   if(nonuniform) {
     // non-uniform mesh correction
     if((jx != 0) && (jx != (mesh->LocalNx-1))) {
-      coef4 -= 0.5*((coord->dx(jx+1,jy) - coord->dx(jx-1,jy))/SQ(coord->dx(jx,jy)))*coef1;
+      coef4 -= 0.5*((dx(jx+1,jy) - dx(jx-1,jy))/SQ(dx(jx,jy)))*coef1;
     }
   }
 
   if(ccoef != NULL) {
     // A first order derivative term
     if((jx > 0) && (jx < (mesh->LocalNx-1)))
-      coef4 += coord->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coord->dx(jx,jy)*((*ccoef)(jx,jy)));
+      coef4 += g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*dx(jx,jy)*((*ccoef)(jx,jy)));
   }
 
   if(mesh->IncIntShear) {
+    Field2D IntShiftTorsion = coord->IntShiftTorsion.get(outloc);
     // d2dz2 term
-    coef2 += coord->g11(jx,jy) * coord->IntShiftTorsion(jx,jy) * coord->IntShiftTorsion(jx,jy);
+    coef2 += g11(jx,jy) * IntShiftTorsion(jx,jy) * IntShiftTorsion(jx,jy);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
 
-  coef1 /= SQ(coord->dx(jx,jy));
-  coef3 /= 2.*coord->dx(jx,jy);
-  coef4 /= 2.*coord->dx(jx,jy);
+  coef1 /= SQ(dx(jx,jy));
+  coef3 /= 2.*dx(jx,jy);
+  coef4 /= 2.*dx(jx,jy);
 
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
@@ -710,8 +721,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
-                          const Field2D *ccoef, const Field2D *d) {
-  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
+                          const Field2D *ccoef, const Field2D *d, CELL_LOC outloc) {
+  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, outloc);
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {

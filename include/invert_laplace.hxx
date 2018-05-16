@@ -155,7 +155,7 @@ public:
   virtual const Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
-  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
 
   /*!
    * Create a new Laplacian solver
@@ -182,7 +182,7 @@ protected:
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 
-  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
 
   void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                     dcomplex **bk, int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
@@ -204,7 +204,7 @@ private:
 // Legacy interface
 // These will be removed at some point
 
-void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
 int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
