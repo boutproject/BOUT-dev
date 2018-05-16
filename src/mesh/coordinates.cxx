@@ -738,17 +738,18 @@ const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
                                     DIFF_METHOD UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return DDY(var, outloc) / sqrt(g_22.get(outloc));
+  Field2D result = DDY(var, outloc);
+  result /= sqrt(g_22.get(result.getLocation()));
+  return result;
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field3D )");
 
-  Field3D temp1 = ::DDY(var, outloc, method);
-  Field2D temp2 = sqrt(g_22.get(outloc));
-  Field3D temp3 = temp1 / temp2;
-  return ::DDY(var, outloc, method) / sqrt(g_22.get(outloc));
+  Field3D result = ::DDY(var, outloc, method);
+  result /= sqrt(g_22.get(result.getLocation()));
+  return result;
 }
 
 /////////////////////////////////////////////////////////
@@ -758,12 +759,16 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          CELL_LOC outloc,
                                          DIFF_METHOD UNUSED(method)) {
-  return VDDY(v, f, outloc) / sqrt(g_22.get(outloc));
+  Field2D result = VDDY(v, f, outloc);
+  result /= sqrt(g_22.get(result.getLocation()));
+  return result;
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
-  return VDDY(v, f, outloc, method) / sqrt(g_22.get(outloc));
+  Field3D result = VDDY(v, f, outloc, method);
+  result /= sqrt(g_22.get(result.getLocation()));
+  return result;
 }
 
 /////////////////////////////////////////////////////////
@@ -806,7 +811,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 const Field2D Coordinates::Grad2_par2(const Field2D &f) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
 
-  Field2D sg = sqrt(g_22);
+  Field2D sg = sqrt(g_22.get(f.getLocation()));
   Field2D result = DDY(1. / sg) * DDY(f) / sg + D2DY2(f) / g_22;
 
   return result;

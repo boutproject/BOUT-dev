@@ -239,7 +239,9 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = mesh->coordinates();
-  return -metric->Bxy*FDDY(v, f/metric->Bxy, outloc, method)/sqrt(metric->g_22.get(outloc));
+  Field3D result = -metric->Bxy*FDDY(v, f/metric->Bxy, outloc, method);
+  result /= sqrt(metric->g_22.get(result.getLocation()));
+  return result;
 }
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
@@ -658,9 +660,9 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 
   // Upwind A using these velocities
 
-  Field3D result = VDDX(vx, A) + VDDY(vy, A);
+  Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /=  (metric->J*sqrt(metric->g_22.get(outloc)));
+  result /=  (metric->J*sqrt(metric->g_22.get(result.getLocation())));
   
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
@@ -697,7 +699,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /=  (metric->J*sqrt(metric->g_22.get(outloc)));
+  result /=  (metric->J*sqrt(metric->g_22.get(result.getLocation())));
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
