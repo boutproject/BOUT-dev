@@ -57,6 +57,8 @@ public:
   BoundaryRegionPar* boundary; /**< boundary region */
 
   const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
+
+  const Field3D integrate(Field3D &f) const;
 };
 
 /*!

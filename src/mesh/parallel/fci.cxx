@@ -219,6 +219,26 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   interp->setMask(boundary_mask);
 }
 
+const Field3D FCIMap::integrate(Field3D &f) const {
+  // Cell centre values
+  Field3D centre = interp->interpolate(f);
+  
+  // Cell corner values (x+1/2, z+1/2)
+  Field3D corner = interp_corner->interpolate(f);
+
+  Field3D result;
+  result.allocate();
+  
+  for (auto i : f.region(RGN_NOBNDRY)) {
+    result[i] = 0.5 * centre[i] +
+      0.5 * 0.25 * (corner[i] +     // (x+1/2, z+1/2)
+                    corner[i.xm()] +  // (x-1/2, z+1/2)
+                    corner[i.zm()] +  // (x+1/2, z-1/2)
+                    corner[i.offset(-1,0,-1)]); // (x-1/2, z-1/2)
+  }
+  return result;
+}
+
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
@@ -236,5 +256,7 @@ void FCITransform::integrateYUpDown(Field3D &f) {
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 
-  
+  // Integrate f onto yup and ydown fields
+  f.ynext(forward_map.dir) = forward_map.integrate(f);
+  f.ynext(backward_map.dir) = backward_map.integrate(f);
 }
