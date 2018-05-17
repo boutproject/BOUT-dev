@@ -229,3 +229,12 @@ void FCITransform::calcYUpDown(Field3D &f) {
   f.ynext(forward_map.dir) = forward_map.interpolate(f);
   f.ynext(backward_map.dir) = backward_map.interpolate(f);
 }
+
+void FCITransform::integrateYUpDown(Field3D &f) {
+  TRACE("FCITransform::integrateYUpDown");
+  
+  // Ensure that yup and ydown are different fields
+  f.splitYupYdown();
+
+  
+}

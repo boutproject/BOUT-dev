@@ -71,7 +71,9 @@ public:
         zperiodic(zperiodic) {}
 
   void calcYUpDown(Field3D &f) override;
-
+  
+  void integrateYUpDown(Field3D &f) override;
+  
   const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
