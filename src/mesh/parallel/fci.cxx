@@ -59,6 +59,9 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
 
+  interp_corner = InterpolationFactory::getInstance()->create(&mesh);
+  interp_corner->setYOffset(dir);
+  
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
   auto i_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
@@ -94,9 +97,26 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
 
   // Add the boundary region to the mesh's vector of parallel boundaries
   mesh.addBoundaryPar(boundary);
+  
+  // Cell corners
+  Field3D xt_prime_corner(&mesh), zt_prime_corner(&mesh);
+  xt_prime_corner.allocate();
+  zt_prime_corner.allocate();
+
+  for (int x = mesh.xstart; x < mesh.xend; x++) {
+    for (int y = mesh.ystart; y <= mesh.yend; y++) {
+      for (int z = 0; z < mesh.LocalNz - 1; z++) {
+        // Point interpolated from (x+1/2, z+1/2)
+        xt_prime_corner(x, y, z) =
+            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
+                    xt_prime(x + 1, y, z + 1));
+      }
+    }
+  }
 
   interp->calcWeights(xt_prime, zt_prime);
-
+  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 

@@ -38,7 +38,8 @@
  */
 class FCIMap {
   /// Interpolation object
-  Interpolation *interp;
+  Interpolation *interp;        // Cell centre
+  Interpolation *interp_corner; // Cell corner at (x+1, z+1)
 
   /// Private constructor - must be initialised with mesh
   FCIMap();
