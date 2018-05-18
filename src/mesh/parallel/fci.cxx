@@ -110,10 +110,14 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
         xt_prime_corner(x, y, z) =
             0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
                     xt_prime(x + 1, y, z + 1));
+
+        zt_prime_corner(x, y, z) =
+            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
+                    zt_prime(x + 1, y, z + 1));
       }
     }
   }
-
+  
   interp->calcWeights(xt_prime, zt_prime);
   interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
   
