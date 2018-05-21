@@ -94,7 +94,7 @@ class BoutOptions(object):
         """
         Returns all keys, including sections and values
         """
-        return self._sections.keys() + self._keys.keys()
+        return list(self._sections) + list(self._keys)
 
     def sections(self):
         """
