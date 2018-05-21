@@ -94,7 +94,7 @@ class BoutOptions(object):
         """
         Returns all keys, including sections and values
         """
-        return self._sections.keys() + self._keys.keys()
+        return list(self._sections) + list(self._keys)
 
     def sections(self):
         """
@@ -107,6 +107,14 @@ class BoutOptions(object):
         Return a list of values
         """
         return self._keys.keys()
+
+    def as_dict(self):
+        """
+        Return a nested dictionary of all the options.
+        """
+        dicttree = {name:self[name] for name in self.values()}
+        dicttree.update({name:self[name].as_dict() for name in self.sections()})
+        return dicttree
 
     def __len__(self):
         return len(self._sections) + len(self._keys)
