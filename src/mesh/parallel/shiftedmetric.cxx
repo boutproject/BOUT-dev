@@ -438,7 +438,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
   }
   case CELL_ZLOW: {
     // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
-    return getYupPhs1(CELL_CENTRE);
+    return getYupPhs2(CELL_CENTRE);
     break;
   }
   default: {
@@ -642,7 +642,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
   }
   case CELL_ZLOW: {
     // shifts don't depend on z, so are the same for CELL_ZLOW as for CELL_CENTRE
-    return getYdownPhs1(CELL_CENTRE);
+    return getYdownPhs2(CELL_CENTRE);
     break;
   }
   default: {
