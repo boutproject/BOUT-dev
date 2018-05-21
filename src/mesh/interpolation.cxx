@@ -56,6 +56,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
   Mesh *fieldmesh = var.getMesh();
   Field3D result(fieldmesh);
+  result.setLocation(loc);
 
   if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (fieldmesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");

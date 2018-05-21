@@ -190,10 +190,14 @@ void Field3D::splitYupYdown() {
 
   // yup_array and ydown_array null
   yup1_field = new Field3D(fieldmesh);
+  yup1_field->setLocation(location);
   ydown1_field = new Field3D(fieldmesh);
+  ydown1_field->setLocation(location);
   if (fieldmesh->ystart>1) {
     yup2_field = new Field3D(fieldmesh);
+    yup2_field->setLocation(location);
     ydown2_field = new Field3D(fieldmesh);
+    ydown2_field->setLocation(location);
   }
 }
 
