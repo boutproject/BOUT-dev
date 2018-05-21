@@ -1103,7 +1103,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
     // Shift result back
 
-    result = this->fromFieldAligned(result);
+    result = this->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   result.setLocation(diffloc);
@@ -1111,6 +1111,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+  invalidateGuards(result); // extra check: set guard cells to NaN if CHECK>2
 #endif
 
   return result;
@@ -2575,7 +2576,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
       // Shift result back
-      result = this->fromFieldAligned(result);
+      result = this->fromFieldAligned(result, RGN_NOBNDRY);
     }
   }
 
@@ -2584,6 +2585,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+  invalidateGuards(result); // extra check: set guard cells to NaN if CHECK>2
 #endif
 
   return result;

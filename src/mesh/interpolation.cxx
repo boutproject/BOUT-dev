@@ -227,7 +227,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             }
           }
           
-          result = fieldmesh->fromFieldAligned(result_fa);
+          result = fieldmesh->fromFieldAligned(result_fa, RGN_NOBNDRY);
         }
         break;
       }
@@ -259,6 +259,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                             " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
+
+      invalidateGuards(result); // Fill guard cells with NaN so we can check they are not used when unset.
 
       if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
         fieldmesh->communicate(result);
