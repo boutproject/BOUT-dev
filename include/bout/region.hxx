@@ -49,6 +49,7 @@
 
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
+#include <bout/scorepwrapper.hxx>
 
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
 /// performance on specific hardware. It determines what the largest
@@ -100,7 +101,7 @@
     const auto blocks = region.getBlocks();                                              \
     BOUT_OMP(for)                                                                        \
     _Pragma("ivdep vector always")                                                                     \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
+    for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                   \
       _Pragma("ivdep vector always")                                                                   \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
@@ -112,7 +113,7 @@
   {                                                                                      \
     const auto blocks = region.getBlocks();                                              \
   BOUT_OMP(parallel for)                                                                 \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
+    for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                   \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \
@@ -381,7 +382,7 @@ public:
   typename RegionIndices::iterator end() { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
-  ContiguousBlocks getBlocks() const { return blocks; };
+  ContiguousBlocks getBlocks() const { SCOREP0(); return blocks; };
   RegionIndices getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
