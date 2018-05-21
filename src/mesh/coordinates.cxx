@@ -664,25 +664,26 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
   int ncz = localmesh->LocalNz;
 
+  static Laplacian *d2lap = Laplacian::defaultInstance();
+  d2lap->calcDelp2Coefs();
+
+  BOUT_OMP(parallel){
+
   // Allocate memory
   Matrix<dcomplex> delft(localmesh->LocalNx, ncz / 2 + 1);
   Matrix<dcomplex> ft(localmesh->LocalNx, ncz / 2 + 1);
 
-  static Laplacian *d2lap = Laplacian::defaultInstance();
-  d2lap->calcDelp2Coefs();
-
   // Loop over all y indices
+  BOUT_OMP(for)
   for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
     // Take forward FFT
 
-    #pragma omp parallel for
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
       rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
     // Perform x derivative
     // No smoothing in the x direction
-    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -692,7 +693,6 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
 
     // Reverse FFT
-    #pragma omp parallel for
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
       irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
@@ -707,6 +707,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
         result(jx, jy, jz) = 0.0;
       }
     }
+  }
   }
 
   ASSERT2(result.getLocation() == f.getLocation());
