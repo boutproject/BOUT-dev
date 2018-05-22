@@ -810,3 +810,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
 
   irfft(cmplxLoc.begin(), len, out); // Reverse FFT
 }
+
+void ShiftedMetric::outputVars(Datafile &file) {
+  file.add(zShift, "zShift", 0);
+}
