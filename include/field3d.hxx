@@ -166,6 +166,11 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       f.yup()(0,1,0) // ok
 
+  It is also useful to be able to access a version of the field interpolated
+  (in the z-direction) onto a field-aligned grid. This can be
+  calculated/accessed with the Mesh::toFieldAligned() and the main field can be
+  interpolated from a field-aligned one with Mesh::fromFieldAligned().
+
  */
 class Field3D : public Field, public FieldData {
  public:
@@ -244,6 +249,19 @@ class Field3D : public Field, public FieldData {
     return (yup_field != nullptr) && (ydown_field != nullptr);
   }
 
+  /// Check if this field has a field-aligned version
+  bool hasFieldAligned() const {
+    return has_field_aligned;
+  }
+
+  /// Set has_field_aligned
+  void setHasFieldAligned(bool val) {
+    if (val) {
+      ASSERT1(field_fa != nullptr && field_fa->isAllocated());
+    }
+    has_field_aligned = val;
+  }
+
   /// Return reference to yup field
   Field3D& yup() { 
     ASSERT2(yup_field != nullptr); // Check for communicate
@@ -270,6 +288,12 @@ class Field3D : public Field, public FieldData {
   /// Return yup if dir=+1, and ydown if dir=-1
   Field3D& ynext(int dir);
   const Field3D& ynext(int dir) const;
+
+  /// Return reference to field-aligned field
+  Field3D& fieldAligned();
+
+  /// Return const reference to field-aligned field
+  const Field3D& fieldAligned() const;
 
   /// Set variable location for staggered grids to @param new_location
   ///
@@ -524,6 +548,10 @@ private:
 
   /// Pointers to fields containing values along Y
   Field3D *yup_field, *ydown_field;
+
+  /// Pointer to field containing the field-aligned version of the field
+  Field3D *field_fa;
+  bool has_field_aligned;
 };
 
 // Non-member overloaded operators

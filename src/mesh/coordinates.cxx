@@ -690,6 +690,11 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
       f_B.ydown() = f.ydown() / Bxy;
     }
     return Bxy * Grad_par(f_B, outloc, method);
+  } else if (f.hasFieldAligned()) {
+    Field3D f_B = f / Bxy;
+    f_B.fieldAligned() = f.fieldAligned() / Bxy;
+    f_B.setHasFieldAligned(true);
+    return Bxy * Grad_par(f_B, outloc, method);
   }
 
   // No yup/ydown fields. The Grad_par operator will

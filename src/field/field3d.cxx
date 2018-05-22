@@ -46,7 +46,8 @@
 /// Constructor
 Field3D::Field3D(Mesh *localmesh)
     : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+      ydown_field(nullptr),
+      field_fa(nullptr), has_field_aligned(false) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -72,7 +73,8 @@ Field3D::Field3D(Mesh *localmesh)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
       background(nullptr), data(f.data), // This handles references to the data array
-      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr),
+      field_fa(nullptr), has_field_aligned(false) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -101,7 +103,8 @@ Field3D::Field3D(const Field3D &f)
 
 Field3D::Field3D(const Field2D &f)
     : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+      ydown_field(nullptr),
+      field_fa(nullptr), has_field_aligned(false) {
 
   TRACE("Field3D: Copy constructor from Field2D");
 
@@ -119,7 +122,8 @@ Field3D::Field3D(const Field2D &f)
 
 Field3D::Field3D(const BoutReal val, Mesh *localmesh)
     : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+      ydown_field(nullptr),
+      field_fa(nullptr), has_field_aligned(false) {
 
   TRACE("Field3D: Copy constructor from value");
 
@@ -199,15 +203,19 @@ void Field3D::mergeYupYdown() {
 
 void Field3D::deleteYupYdown() {
   // Delete auxiliary fields if they have been set
-  if (yup_field == this && ydown_field == this) {
-    return;
+  if (!(yup_field == this && ydown_field == this)) {
+
+    delete yup_field;
+    yup_field = nullptr;
+
+    delete ydown_field;
+    ydown_field = nullptr;
   }
 
-  delete yup_field;
-  yup_field = nullptr;
-
-  delete ydown_field;
-  ydown_field = nullptr;
+  if (field_fa != this) {
+    delete field_fa;
+  }
+  field_fa = nullptr;
 }
 
 Field3D& Field3D::ynext(int dir) {
@@ -230,6 +238,25 @@ const Field3D& Field3D::ynext(int dir) const {
   default:
     throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
   }
+}
+
+
+Field3D& Field3D::fieldAligned() {
+  if (field_fa == nullptr) {
+    // has_field_aligned should be false now, until field_fa is set to a value.
+    // This should have been set either in the constructor or when field_fa was
+    // deleted.
+    ASSERT1(!has_field_aligned);
+
+    field_fa = new Field3D(getMesh());
+    field_fa->setLocation(location);
+  }
+  return *field_fa;
+}
+
+const Field3D& Field3D::fieldAligned() const {
+  ASSERT1(field_fa != nullptr);
+  return *field_fa;
 }
 
 void Field3D::setLocation(CELL_LOC new_location) {
