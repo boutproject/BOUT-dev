@@ -622,6 +622,8 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='HAS_OPENMP
+PETSC_ARCH
+PETSC_DIR
 PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
 HAS_SLEPC
