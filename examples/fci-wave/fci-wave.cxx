@@ -60,13 +60,17 @@ protected:
 
     n.applyParallelBoundary();
     nv.applyParallelBoundary();
-
+    
     // Momentum
-    ddt(nv) = Grad_par(n) + Grad2_par2(nv);
+    ddt(nv) =
+      - Div_par_integrate(SQ(nv)/floor(n, 1e-4))
+      - Grad_par(n)
+      + Grad2_par2(nv)
+      ;
 
     // Density
     //ddt(n) = Div_par(nv);
-    ddt(n) = Div_par_integrate(nv);
+    ddt(n) = -Div_par_integrate(nv);
     
     return 0;
   }

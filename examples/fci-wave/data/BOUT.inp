@@ -2,7 +2,7 @@
 # 
 
 nout = 100
-timestep = 1
+timestep = 0.1
 
 grid = "tokamak.fci.nc"
 
@@ -23,7 +23,7 @@ bndry_all = neumann
 
 scale = 1e-3
 zl = z / (2*pi)
-function = exp(-((x-0.5)/0.1)^2 - ((zl-0.5)/0.1)^2)
+function = exp(-((x-0.7)/0.1)^2 - ((zl-0.3)/0.1)^2)
 
 bndry_par_yup = parallel_neumann
 bndry_par_ydown = parallel_neumann
