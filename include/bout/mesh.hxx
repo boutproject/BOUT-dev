@@ -609,6 +609,12 @@ class Mesh {
   /// Derivative functions of a velocity field, and field stencil v, f
   typedef BoutReal (*flux_func)(stencil&, stencil &);
 
+  /// Calculate yup/ydown fields in case they can be computed for an
+  /// intermediate variable without communicating
+  void calcYUpDown(Field3D &f) {
+    getParallelTransform().calcYUpDown(f);
+  }
+
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
     return getParallelTransform().toFieldAligned(f, region);
