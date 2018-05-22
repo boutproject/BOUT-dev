@@ -19,15 +19,15 @@ paralleltransform = fci
 bndry_par_all = parallel_neumann
 bndry_all = neumann
 
-[f]
+[n]
 
 scale = 1e-3
 zl = z / (2*pi)
 function = exp(-((x-0.5)/0.1)^2 - ((zl-0.5)/0.1)^2)
 
-bndry_par_all = parallel_neumann
+bndry_par_yup = parallel_neumann
+bndry_par_ydown = parallel_neumann
 
-[g]
-bndry_par_yup = parallel_neumann #parallel_dirichlet(1.0)
-bndry_par_ydown = parallel_neumann #parallel_dirichlet(-1.0)
+[nv]
 
+bndry_par_all = parallel_dirichlet

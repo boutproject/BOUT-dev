@@ -52,6 +52,8 @@ public:
   int dir;                     /**< Direction of map */
 
   BoutMask boundary_mask;      /**< boundary mask - has the field line left the domain */
+  BoutMask corner_boundary_mask; ///< If any of the integration area has left the domain
+  
   Field3D y_prime;             /**< distance to intersection with boundary */
 
   BoundaryRegionPar* boundary; /**< boundary region */

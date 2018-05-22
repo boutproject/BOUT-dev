@@ -54,7 +54,7 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
-    : dir(dir), boundary_mask(mesh), y_prime(&mesh) {
+  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
 
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
@@ -103,10 +103,21 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   xt_prime_corner.allocate();
   zt_prime_corner.allocate();
 
-  for (int x = mesh.xstart; x < mesh.xend; x++) {
+  for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {
       for (int z = 0; z < mesh.LocalNz - 1; z++) {
         // Point interpolated from (x+1/2, z+1/2)
+
+        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
+            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
+          // Hit a boundary
+          corner_boundary_mask(x, y, z) = true;
+          
+          xt_prime_corner(x, y, z) = -1.0;
+          zt_prime_corner(x, y, z) = -1.0;
+          continue;
+        }
+        
         xt_prime_corner(x, y, z) =
             0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
                     xt_prime(x + 1, y, z + 1));
@@ -118,8 +129,10 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     }
   }
   
-  interp->calcWeights(xt_prime, zt_prime);
+  interp_corner->setMask(corner_boundary_mask);
   interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  
+  interp->calcWeights(xt_prime, zt_prime);
   
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
@@ -224,6 +237,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
 }
 
 const Field3D FCIMap::integrate(Field3D &f) const {
+  TRACE("FCIMap::integrate");
+  
   // Cell centre values
   Field3D centre = interp->interpolate(f);
   
@@ -232,13 +247,47 @@ const Field3D FCIMap::integrate(Field3D &f) const {
 
   Field3D result;
   result.allocate();
+
+  int nz = mesh->LocalNz;
   
-  for (auto i : f.region(RGN_NOBNDRY)) {
-    result[i] = 0.5 * centre[i] +
-      0.5 * 0.25 * (corner[i] +     // (x+1/2, z+1/2)
-                    corner[i.xm()] +  // (x-1/2, z+1/2)
-                    corner[i.zm()] +  // (x+1/2, z-1/2)
-                    corner[i.offset(-1,0,-1)]); // (x-1/2, z-1/2)
+  for(int x = mesh->xstart; x <= mesh->xend; x++) {
+    for(int y = mesh->ystart; y <= mesh->yend; y++) {
+      
+      int ynext = y+dir;
+      
+      for(int z = 0; z < nz; z++) {
+        if (boundary_mask(x,y,z))
+          continue;
+        
+        int zm = z - 1;
+        if (z == 0) {
+          zm = nz-1;
+        }
+        
+        BoutReal f_c  = centre(x,ynext,z);
+        
+        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
+            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)) {
+          // One of the corners leaves the domain.
+          // Use the cell centre value, since boundary conditions are not
+          // currently applied to corners.
+          result(x, ynext, z) = f_c;
+
+        } else {
+          BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
+          BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
+          BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
+          BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
+
+          // This uses a simple weighted average of centre and corners
+          // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
+          // which would include cell edges and corners
+          result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
+
+          ASSERT2(finite(result(x,ynext,z)));
+        }
+      }
+    }
   }
   return result;
 }
