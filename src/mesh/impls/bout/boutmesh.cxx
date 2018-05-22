@@ -2548,4 +2548,5 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps2_2, "jyseps2_2", 0);
 
   coordinates()->outputVars(file);
+  getParallelTransform().outputVars(file);
 }

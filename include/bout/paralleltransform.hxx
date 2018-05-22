@@ -6,6 +6,7 @@
 #ifndef __PARALLELTRANSFORM_H__
 #define __PARALLELTRANSFORM_H__
 
+#include <datafile.hxx>
 #include <field3d.hxx>
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
@@ -45,6 +46,9 @@ public:
   virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
+
+  /// Write out ParallelTransform variables to file
+  virtual void outputVars(Datafile &UNUSED(file)) {};
 };
 
 
@@ -80,6 +84,9 @@ public:
   bool canToFromFieldAligned() override{
     return true;
   }
+
+  /// Write out ParallelTransform variables to file
+  virtual void outputVars(Datafile &UNUSED(file)) {};
 };
 
 /*!
@@ -183,6 +190,9 @@ private:
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
+
+  /// Write out ParallelTransform variables to file
+  void outputVars(Datafile &file);
 };
 
 
