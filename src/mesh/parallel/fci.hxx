@@ -69,7 +69,7 @@ public:
       : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
         zperiodic(zperiodic) {}
 
-  void calcYUpDown(Field3D &f) override;
+  void calcYUpDown(Field3D &f, REGION region = RGN_NOX) override;
   
   void integrateYUpDown(Field3D &f) override;
   

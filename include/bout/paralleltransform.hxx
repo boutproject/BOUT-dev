@@ -10,6 +10,7 @@
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
 #include <unused.hxx>
+#include <utils.hxx>
 
 class Mesh;
 
@@ -28,7 +29,7 @@ public:
   virtual ~ParallelTransform() {}
 
   /// Given a 3D field, calculate and set the Y up down fields
-  virtual void calcYUpDown(Field3D &f) = 0;
+  virtual void calcYUpDown(Field3D &f, REGION region = RGN_NOX) = 0;
 
   /// Calculate Yup and Ydown fields by integrating over mapped points
   /// This should be used for parallel divergence operators
@@ -59,7 +60,7 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &f, REGION UNUSED(region) = RGN_NOX) override {f.mergeYupYdown();}
   
   /*!
    * The field is already aligned in Y, so this
@@ -99,7 +100,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by taking FFTs in Z and applying a phase shift.
    */ 
-  void calcYUpDown(Field3D &f) override;
+  void calcYUpDown(Field3D &f, REGION region=RGN_NOX) override;
   
   /*!
    * Uses FFTs and a phase shift to align the grid points
@@ -182,6 +183,114 @@ private:
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
+};
+
+/*!
+ * Alternative shifted metric method
+ * Fields are stored on a grid is orthogonal in X-Z, interpolated onto a
+ * field-aligned grid to calculate parallel derivatives or interpolations
+ *
+ * In this implementation the interpolation is done using FFTs in Z
+ */
+class ShiftToFieldAligned : public ParallelTransform {
+public:
+  ShiftToFieldAligned(Mesh &mesh);
+
+  /*!
+   * Do not set yup() and ydown() fields of f for this method.
+   * Instead, field_fa will be calculated as needed, and cached so
+   * toFieldAligned transforms are not repeated.
+   */
+  void calcYUpDown(Field3D &UNUSED(f), REGION UNUSED(region)=RGN_NOX) override {};
+
+  /*!
+   * Uses FFTs and a phase shift to align the grid points
+   * with the y coordinate (along magnetic field usually).
+   *
+   * Note that the returned field will no longer be orthogonal
+   * in X-Z, and the metric tensor will need to be changed
+   * if X derivatives are used.
+   */
+  const Field3D toFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+
+  /*!
+   * Converts a field back to X-Z orthogonal coordinates
+   * from field aligned coordinates.
+   */
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+
+  bool canToFromFieldAligned() override{
+    return true;
+  }
+
+private:
+  ShiftToFieldAligned();
+
+  Mesh &mesh; ///< The mesh this paralleltransform is part of
+
+  /// This is the shift in toroidal angle (z) which takes a point from
+  /// X-Z orthogonal to field-aligned along Y.
+  Field2D zShift_CENTRE, zShift_XLOW, zShift_YLOW; ///< The angles to shift from orthogonal to field-aligned coordinates
+  Array<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
+  Array<dcomplex> cmplxLoc; ///< A temporary array, used for input/output to fft routines
+
+  Matrix< Array<dcomplex> > getToAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+  Matrix< Array<dcomplex> > getFromAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
+
+  bool has_toAligned_CENTRE, has_toAligned_XLOW, has_toAligned_YLOW; ///< Flags saying whether phases for shifts to field-aligned coordinates have been calculated.
+  bool has_fromAligned_CENTRE, has_fromAligned_XLOW, has_fromAligned_YLOW; ///< Flags saying whether phases for shifts from field-aligned coordinates have been calculated.
+
+  Matrix< Array<dcomplex> > toAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Cell centre version.
+  Matrix< Array<dcomplex> > fromAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Cell centre version.
+  Matrix< Array<dcomplex> > toAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_XLOW.
+  Matrix< Array<dcomplex> > fromAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Interpolated to CELL_XLOW.
+  Matrix< Array<dcomplex> > toAlignedPhs_YLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_YLOW.
+  Matrix< Array<dcomplex> > fromAlignedPhs_YLOW; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Interpolated to CELL_YLOW.
+
+  /*!
+   * Shift a 2D field in Z.
+   * Since 2D fields are constant in Z, this has no effect
+   */
+  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle), const REGION UNUSED(region)=RGN_NOX){return f;};
+
+  /*!
+   * Shift a 3D field \p f in Z by the given \p zangle
+   *
+   * @param[in] f  The field to shift
+   * @param[in] zangle   Toroidal angle (z)
+   *
+   */
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle, const REGION region=RGN_NOX);
+
+  /*!
+   * Shift a 3D field \p f by the given phase \p phs in Z
+   *
+   * Calculates FFT in Z, multiplies by the complex phase
+   * and inverse FFTS.
+   *
+   * @param[in] f  The field to shift
+   * @param[in] phs  The phase to shift by
+   */
+  const Field3D shiftZ(const Field3D &f, const Matrix< Array<dcomplex> > &phs, const REGION region=RGN_NOX);
+
+  /*!
+   * Shift a given 1D array, assumed to be in Z, by the given \p zangle
+   *
+   * @param[in] in  A 1D array of length \p len
+   * @param[in] len  Length of the in and out arrays
+   * @param[in] zangle  The angle (z coordinate) to shift by
+   * @param[out] out  A 1D array of length \p len, already allocated
+   */
+  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
+
+  /*!
+   * Shift a given 1D array, assumed to be in Z, by the given \p zangle
+   *
+   * @param[in] in  A 1D array of length mesh.LocalNz
+   * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
+   * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
+   */
+  void shiftZ(const BoutReal *in, const Array<dcomplex> &phs, BoutReal *out);
 };
 
 
