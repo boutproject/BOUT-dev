@@ -403,14 +403,26 @@ type::
     $ ./configure --with-petsc
 
 You can configure BOUT++ against different PETSc installations either
-through the ``PETSC_DIR/ARCH`` variables as above, or by giving
-``--with-petsc`` a path::
+through the ``PETSC_DIR/ARCH`` variables as above, or by specifying
+them on the command line::
 
-  $ ./configure --with-petsc=/path/to/other/petsc
+  $ ./configure --with-petsc PETSC_DIR=/path/to/other/petsc PETSC_ARCH=other-arch
 
-To configure BOUT++ with PETSc and SUNDIALS, type instead::
+.. note:: Unfortunately, there are a variety of ways PETSc can be
+          installed on a system, and it is hard to automatically work
+          out how to compile against a particular installation. In
+          particular, there are two PETSc-supported ways of installing
+          PETSc that are subtly different.
 
-    $ ./configure --with-petsc --with-sundials
+          The first way is as above, using ``PETSC_DIR`` and
+          ``PETSC_ARCH``. A second way is to use the ``--prefix``
+          argument to ``configure`` (much like the traditional GNU
+          ``configure`` scripts) when building PETSc. In this case,
+          ``PETSC_DIR`` will be the path passed to ``--prefix`` and
+          ``PETSC_ARCH`` will be empty. When configuring BOUT++, one
+          can use ``--with-petsc=$PETSC_DIR`` as a shortcut in this
+          case. This will NOT work if PETSc was installed with a
+          ``PETSC_ARCH``.
 
 
 .. _sec-lapack:

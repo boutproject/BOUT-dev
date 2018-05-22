@@ -8835,6 +8835,8 @@ fi
 if test "x$with_petsc" != "x" && test "$with_petsc" != "no"; then :
 
 
+# Supplying an argument to "--with-petsc" only works if PETSC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   if test "$with_petsc" != "yes"; then :
 
     PETSC_DIR="$with_petsc"
@@ -8845,6 +8847,16 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&5
 $as_echo "$as_me: Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&6;}
 
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# PETSC_ERROR_MESSAGE
+#
+# with no identation
+
+
+# PETSc changed the location of the conf direction in 3.5, so we
+# need to check both locations
   as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/conf... " >&6; }
@@ -8891,7 +8903,12 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
 
-      as_fn_error $? "*** --with-petsc was specified but could not find PETSc distribution" "$LINENO" 5
+      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
 
 fi
 
@@ -8899,8 +8916,85 @@ fi
 fi
 
 
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# petscverion.h
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  ac_fn_cxx_check_header_mongrel "$LINENO" "petscversion.h" "ac_cv_header_petscversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_petscversion_h" = xyes; then :
+  FOUND_PETSC_HEADER=yes
+else
+  FOUND_PETSC_HEADER=no
+
+fi
+
+
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install PETSc in a non-supported fashion. This is really the fault
+# of PETSc for their weird method of installation
+  if test $FOUND_PETSC_HEADER = no; then :
+
+    as_ac_File=`$as_echo "ac_cv_file_${PETSC_CONFDIR}/petscvariables" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${PETSC_CONFDIR}/petscvariables" >&5
+$as_echo_n "checking for ${PETSC_CONFDIR}/petscvariables... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "${PETSC_CONFDIR}/petscvariables"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+
+      as_fn_error $? "Unable to find either petscversion.h or petscvariables
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+fi
+
+
+# This relies on the assumption that PETSC_ARCH is empty
+    PETSC_CC_INCLUDES=$(grep ^PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&5
+$as_echo "$as_me: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&6;}
+
+    $as_unset ac_cv_header_petscversion_h
+
+    CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
+    ac_fn_cxx_check_header_mongrel "$LINENO" "petscversion.h" "ac_cv_header_petscversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_petscversion_h" = xyes; then :
+
+else
+
+      as_fn_error $? "Couldn't find or include petscversion.h.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+fi
+
+
+
+fi
+
+# Now we have the header we want, we can check the version number
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc is at least 3.4.0" >&5
 $as_echo_n "checking PETSc is at least 3.4.0... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -8930,6 +9024,7 @@ $as_echo "$PETSC_VERSION_OK" >&6; }
 
 fi
 
+# Check if PETSc was compiled with SUNDIALS
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc has SUNDIALS support" >&5
@@ -12901,6 +12996,8 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
+
 
 
 

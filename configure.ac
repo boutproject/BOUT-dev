@@ -594,6 +594,8 @@ AS_IF([test "x$with_lapack" != "xno"], [
 
 AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
+# Supplying an argument to "--with-petsc" only works if PETSC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
     PETSC_ARCH=
@@ -601,18 +603,66 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
   AC_MSG_NOTICE([Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
 
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# PETSC_ERROR_MESSAGE
+#
+# with no identation
+  m4_define(PETSC_ERROR_MESSAGE,
+  [  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  ])
+
+# PETSc changed the location of the conf direction in 3.5, so we
+# need to check both locations
   AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
     PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
-      AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
+      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+PETSC_ERROR_MESSAGE])
     ])
   ])
 
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# petscverion.h
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  AC_CHECK_HEADER([petscversion.h],
+    [FOUND_PETSC_HEADER=yes],
+    [FOUND_PETSC_HEADER=no]
+  )
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install PETSc in a non-supported fashion. This is really the fault
+# of PETSc for their weird method of installation
+  AS_IF([test $FOUND_PETSC_HEADER = no], [
+    AC_CHECK_FILE([${PETSC_CONFDIR}/petscvariables], [], [
+      AC_MSG_ERROR([Unable to find either petscversion.h or petscvariables
+PETSC_ERROR_MESSAGE])
+    ])
+
+# This relies on the assumption that PETSC_ARCH is empty
+    PETSC_CC_INCLUDES=$(grep ^PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+
+    AC_MSG_NOTICE([Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables])
+
+    $as_unset ac_cv_header_petscversion_h
+
+    CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
+    AC_CHECK_HEADER([petscversion.h], [], [
+      AC_MSG_ERROR([Couldn't find or include petscversion.h.
+PETSC_ERROR_MESSAGE])
+    ])
+  ], [])
+
+# Now we have the header we want, we can check the version number
   AC_MSG_CHECKING([PETSc is at least 3.4.0])
   AC_EGREP_CPP([yes], [
     #include <petscversion.h>
@@ -628,6 +678,7 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
     AC_MSG_ERROR([PETSc version must be at least 3.4.0])
   ])
 
+# Check if PETSc was compiled with SUNDIALS
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
