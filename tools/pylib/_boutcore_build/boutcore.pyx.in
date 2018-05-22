@@ -596,6 +596,10 @@ cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&)
     void BoutFinalise()
 
+cdef extern from "boutcore_openmpi_compat.hxx":
+    void PyMPI_OPENMPI_dlopen_libmpi()
+    c.bool is_openmpi
+
 _isInit=False
 def init(args=[]):
     """init(args=[])
@@ -615,7 +619,7 @@ def init(args=[]):
         if isinstance(args, basestring):
             args=args.split(" ")
     args.insert(0,"boutcore")
-    cdef char **string_buf = <char **>malloc(len(args) * sizeof(char*))
+    cdef char **string_buf = <char **>malloc((len(args)+1) * sizeof(char*))
     fu=[]
     cdef char * tmp
     for i in range(len(args)):
@@ -623,7 +627,12 @@ def init(args=[]):
         tmp=t2
         fu.append(tmp)
         string_buf[i]=<char*>fu[i]
+    # terminate string_buf with a null pointer for OpenMPI, which requires this
+    # because it iterates through 'argv' with a loop 'for (p = argv; *p; ++p)'
+    string_buf[len(args)] = NULL
     cdef int fuu=len(args)
+    if is_openmpi:
+        PyMPI_OPENMPI_dlopen_libmpi()
     ret=BoutInitialise(fuu,string_buf)
     free(string_buf)
     if ret:
