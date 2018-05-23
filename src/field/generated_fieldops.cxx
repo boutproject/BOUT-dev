@@ -61,6 +61,9 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
   } else {
     (*this) = (*this) * rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -119,6 +122,9 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
   } else {
     (*this) = (*this) / rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -177,6 +183,9 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
   } else {
     (*this) = (*this) + rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -235,6 +244,9 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
   } else {
     (*this) = (*this) - rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -286,6 +298,9 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
   } else {
     (*this) = (*this) * rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -339,6 +354,9 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
   } else {
     (*this) = (*this) / rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -390,6 +408,9 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
   } else {
     (*this) = (*this) + rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -441,6 +462,9 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
   } else {
     (*this) = (*this) - rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -478,6 +502,9 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
   } else {
     (*this) = (*this) * rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -515,6 +542,9 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
   } else {
     (*this) = (*this) / rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -552,6 +582,9 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
   } else {
     (*this) = (*this) + rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -589,6 +622,9 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
   } else {
     (*this) = (*this) - rhs;
   }
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -730,6 +766,7 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
   } else {
     (*this) = (*this) * rhs;
   }
+
   return *this;
 }
 
@@ -771,6 +808,7 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
   } else {
     (*this) = (*this) / rhs;
   }
+
   return *this;
 }
 
@@ -812,6 +850,7 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
   } else {
     (*this) = (*this) + rhs;
   }
+
   return *this;
 }
 
@@ -853,6 +892,7 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
   } else {
     (*this) = (*this) - rhs;
   }
+
   return *this;
 }
 
@@ -888,6 +928,7 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
   } else {
     (*this) = (*this) * rhs;
   }
+
   return *this;
 }
 
@@ -923,6 +964,7 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
   } else {
     (*this) = (*this) / rhs;
   }
+
   return *this;
 }
 
@@ -958,6 +1000,7 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
   } else {
     (*this) = (*this) + rhs;
   }
+
   return *this;
 }
 
@@ -993,6 +1036,7 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
   } else {
     (*this) = (*this) - rhs;
   }
+
   return *this;
 }
 

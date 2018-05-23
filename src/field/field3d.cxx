@@ -146,12 +146,8 @@ Field3D::~Field3D() {
     // Now delete them as part of the deriv vector
     delete deriv;
   }
-  
-  if((yup_field != this) && (yup_field != nullptr))
-    delete yup_field;
-  
-  if((ydown_field != this) && (ydown_field != nullptr))
-    delete ydown_field;
+
+  clearYupYdown();
 }
 
 void Field3D::allocate() {
@@ -195,16 +191,23 @@ void Field3D::mergeYupYdown() {
   if(yup_field == this && ydown_field == this)
     return;
 
-  if(yup_field != nullptr){
-    delete yup_field;
-  }
-
-  if(ydown_field != nullptr) {
-    delete ydown_field;
-  }
+  clearYupYdown();
 
   yup_field = this;
   ydown_field = this;
+}
+
+void Field3D::clearYupYdown() {
+  // Delete auxiliary fields if they have been set
+  if (yup_field != nullptr && yup_field != this) {
+    delete yup_field;
+  }
+  yup_field = nullptr;
+
+  if (ydown_field != nullptr && ydown_field != this) {
+    delete ydown_field;
+  }
+  ydown_field = nullptr;
 }
 
 Field3D& Field3D::ynext(int dir) {
@@ -375,6 +378,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   setLocation(rhs.location);
 
+  clearYupYdown();
   return *this;
 }
 
@@ -393,7 +397,9 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
-  
+
+  clearYupYdown();
+
   return *this;
 }
 
@@ -425,6 +431,8 @@ Field3D & Field3D::operator=(const BoutReal val) {
   // Only 3D fields have locations
   //location = CELL_CENTRE;
   // DON'T RE-SET LOCATION
+
+  clearYupYdown();
 
   return *this;
 }
