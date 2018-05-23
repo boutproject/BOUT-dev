@@ -8973,7 +8973,10 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&5
 $as_echo "$as_me: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&6;}
 
-    $as_unset ac_cv_header_petscversion_h
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    { ac_cv_header_petscversion_h=; unset ac_cv_header_petscversion_h;}
 
     CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
     ac_fn_cxx_check_header_mongrel "$LINENO" "petscversion.h" "ac_cv_header_petscversion_h" "$ac_includes_default"

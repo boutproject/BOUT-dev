@@ -653,7 +653,10 @@ PETSC_ERROR_MESSAGE])
 
     AC_MSG_NOTICE([Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables])
 
-    $as_unset ac_cv_header_petscversion_h
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    AS_UNSET([ac_cv_header_petscversion_h])
 
     CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
     AC_CHECK_HEADER([petscversion.h], [], [
