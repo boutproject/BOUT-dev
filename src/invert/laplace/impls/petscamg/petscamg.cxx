@@ -1,0 +1,199 @@
+/**************************************************************************
+ * Perpendicular Laplacian inversion. 
+ *                           Using Algebraic multigrid Solver
+ *                              with PETSc library
+ *
+ * Equation solved is:
+ *  d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
+ *
+ **************************************************************************
+ * Copyright 2018 K.S. Kang kskang@ipp.mpg.de
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ * 
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************************/
+
+#include "petscamg.hxx"
+
+BoutReal soltime=0.0,settime=0.0;
+
+LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
+  Laplacian(opt),
+  A(0.0), C1(1.0), C2(1.0), D(1.0) {
+
+  TRACE("LaplacePetscAmg::LaplacePetscAmg(Options *opt)");
+  
+  // Get Options in Laplace Section
+  if (!opt) opts = Options::getRoot()->getSection("petscamg");
+  else opts=opt;
+  opts->get("rtol",rtol,pow(10.0,-8),true);
+  opts->get("atol",atol,pow(10.0,-20),true);
+  opts->get("dtol",dtol,pow(10.0,5),true);
+  opts->get("maxits",maxits,100000,true);
+  opts->get("rightpre",rightpre,0,true);
+  opts->get("smtype",mgsm,1,true);
+  opts->get("jacomega",omega,0.8,true);
+  opts->get("checking",fcheck,0,true);
+  opts->get("multigridlevel",mglevel,7,true);
+  opts->get("solvertype",soltype,"gmres");
+
+  // Initialize, allocate memory, etc.
+  comms_tagbase = 385; // Some random number
+  
+  int implemented_global_flags = INVERT_START_NEW;
+  if ( global_flags & ~implemented_global_flags ) {
+    throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in LaplaceMultigrid.");
+  }
+  int implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_DC_GRAD; // INVERT_DC_GRAD does not actually do anything, but harmless to set while comparing to Fourier solver with Neumann boundary conditions
+  if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+    throw BoutException("Attempted to set Laplacian inner boundary inversion flag that is not implemented in LaplaceMultigrid.");
+  }
+  if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+    throw BoutException("Attempted to set Laplacian outer boundary inversion flag that is not implemented in LaplaceMultigrid.");
+  }
+  if (nonuniform) {
+    throw BoutException("nonuniform option is not implemented in LaplaceMultigrid.");
+  }
+  
+  commX = mesh->getXcomm();    // Where to get This mesh //
+  MPI_Comm_size(commX,&xNP);
+  MPI_Comm_rank(commX,&xProcI); 
+  Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
+  Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
+  mxstart = mesh->xstart;
+  
+  if (mgcount == 0) {
+    output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
+  }
+  zNP = 1;
+  zProcI = 0;
+  Nz_global = mesh->GlobalNz;
+  Nz_local = Nz_global;
+  mzstart = 0; //  
+  // No parallelization in z-direction (for now)
+  // 
+  //else {
+  //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
+  //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
+  // }
+  if (mgcount==0) {
+    output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
+  }
+
+  int Nlogal,Nglobal,ig,jg,nzt,nxt,lxs,lzs,ll,lg;
+  // Periodic boundary condition for z-direction
+  // Nz_global = 0
+  //
+  
+  nxt = Nx_local;
+  nzt = Nz_local;
+  xgstart = xProcI*nxt;
+  zgstart = zProcI*nzt;
+  lxs = 0;
+  lzs = 0;
+  if(xNP > 1) {
+    if(xProcI > 0) {
+      lxs += 1;
+      nxt += 1;
+    }
+    if(xProcI < xNP -1) nxt += 1;
+  }
+  if(zNP > 1) {
+    nzt += 2;
+    lzs += 1;
+  }
+  Nlocal = nxt*nzt;
+  Nglobal = Nz_global*Nx_global;
+  gindices = new int[Nlocal];
+
+  for(ig = 0;ig < Nx_local;ig++) {
+    for(jg = 0;jg < Nz_local;jg++) {
+      ll = (ig+lxs)*nzt+jg+lzs;
+      lg = (ig+xgstart)*Nz_global + zgstart + jg;
+      gindices[ll] = lg;
+    }
+  }
+  if(zNP > 1) { // lzs = 1 
+    if(zProcI == 0) { 
+      for(ig = 0;ig < Nx_local;ig++) {
+        ll = (ig+lxs)*nzt;
+        lg = (ig+xgstart+1)*Nz_global - 1;
+        gindices[ll] = lg;
+      }
+    }
+    else {
+      for(ig = 0;ig < Nx_local;ig++) {
+        ll = (ig+lxs)*nzt;
+        lg = (ig+xgstart)*Nz_global + zgstart - 1;
+        gindices[ll] = lg;
+      }
+    }
+    if(zProcI == zNP -1) {
+      for(ig = 0;ig < Nx_local;ig++) {
+        ll = (ig+lxs+1)*nzt - 1;
+        lg = (ig+xgstart)*Nz_global;
+        gindices[ll] = lg;
+      }
+    }
+    else {
+      for(ig = 0;ig < Nx_local;ig++) {
+        ll = (ig+lxs+1)*nzt - 1;
+        lg = (ig+xgstart)*Nz_global + zgstart + Nz_local;
+        gindices[ll] = lg;
+      }
+    }
+  }
+  if(xNP > 1) { // For lzx = 1 
+    if(xProcI > 0) { 
+      for(jg = 0;jg < Nz_local;jg++) {
+        ll = jg + lzs;
+        lg = (xgstart-1)*Nz_global + jg + zgstart;
+        gindices[ll] = lg;
+      }
+      if(zNP > 1) {
+	gindices[0] = (xgstart-1)*Nz_global + zgstart - 1;
+	gindices[nxt-1] = (xgstart-1)*Nz_global + zgstart+Nz_local;
+      }
+    }
+    if(xProcI < xNP - 1) {
+      for(jg = 0;jg < Nz_local;jg++) {
+        ll = (nxt-1)*nzt + jg + lzs;
+        lg = (Nx_local+xgstart)*Nz_global + zgstart+jg;
+        gindices[ll] = lg;
+      }
+      if(zNP > 1) {
+	gindices[(nxt-1)*nzt] = (Nx_local+xgstart)*Nz_global + zgstart - 1;
+	gindices[nxt*nzt-1] = (Nx_local+xgstart)*Nz_global + zgstart+Nz_local;
+      }
+    }
+  }
+  ISLocalToGlobalMappingCreate(commX,1,Nlocal,gindices,PETSC_COPY_VALUES,&mgmapping);
+
+  VecCreateMPI(commX,Nx_local*Nz_local,PETSC_DETERMINE,&xs);
+  VecSetLocalToGlobalMapping(xs,mgmapping);
+  VecSetFromOptions(xs);
+  VecDuplicate(xs,&bs);
+  int diffpre,elemf;
+  opts->get("diffpre",diffpre,0,true);
+  opts->get("elemf",elemf,0,true);
+  generateMatrixA(elemf);
+  if(diffpre > 0) generateMatrixP(elemf);
+  settingSolver(diffpre);
+     
+}
+

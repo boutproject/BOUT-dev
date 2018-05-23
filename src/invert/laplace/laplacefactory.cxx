@@ -14,6 +14,7 @@
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/shoot/shoot_laplace.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
+#include "impls/petscamg/petscamg.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
@@ -24,6 +25,7 @@
 #define LAPLACE_CYCLIC "cyclic"
 #define LAPLACE_SHOOT "shoot"
 #define LAPLACE_MULTIGRID "multigrid"
+#define LAPLACE_PETSCAMG "petscamg"
 
 LaplaceFactory* LaplaceFactory::instance = NULL;
 
@@ -62,6 +64,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
       return new LaplaceShoot(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
       return new LaplaceMultigrid(options);
+    }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
+      return new LaplacePetscAmg(options);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -84,6 +88,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     return new LaplaceShoot(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
       return new LaplaceMultigrid(options);
+  }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
+      return new LaplacePetscAmg(options);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }
