@@ -30,7 +30,7 @@
 
 #include "petscamg.hxx"
 
-BoutReal soltime=0.0,settime=0.0;
+//BoutReal soltime=0.0,settime=0.0;
 
 LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   Laplacian(opt),
