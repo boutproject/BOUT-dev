@@ -424,6 +424,17 @@ them on the command line::
           case. This will NOT work if PETSc was installed with a
           ``PETSC_ARCH``.
 
+          However, there are at least some Linux distributions that
+          install PETSc in yet another way and you may need to set
+          ``PETSC_DIR/ARCH`` differently. For example, for Fedora, as
+          of May 2018, you will need to configure and build BOUT++
+          like so::
+
+            $ ./configure --with-petsc=/usr/lib64/openmpi
+            $ PETSC_DIR=/usr make
+
+          Replace `openmpi` with the correct MPI implementation that
+          you have installed.
 
 .. _sec-lapack:
 
