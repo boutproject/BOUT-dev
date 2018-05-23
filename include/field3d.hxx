@@ -223,6 +223,11 @@ class Field3D : public Field, public FieldData {
    * Ensure that yup and ydown refer to this field
    */
   void mergeYupYdown();
+
+  /*!
+   * Delete all yup/ydown fields and field_fa
+   */
+  void deleteYupYdown();
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {

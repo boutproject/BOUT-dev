@@ -95,6 +95,11 @@
   } else {
     (*this) = (*this) {{operator}} {{rhs.name}};
   }
+
+  {% if (out == "Field3D") %}
+    deleteYupYdown();
+  {% endif %}
+
   return *this;
 }
 {% endif %}
