@@ -1,9 +1,17 @@
 import numpy
 
+
 class BoutArray(numpy.ndarray):
+    """Wrapper for ndarray with extra attributes for BOUT++ fields.
+
+    Parameters
+    ----------
+    input_array : array_like
+        Data to convert to BoutArray
+    attributes : dict
+        Dictionary of extra attributes for BOUT++ fields
     """
-    Wrapper for ndarray with extra attributes for BOUT++ fields.
-    """
+
     # See https://docs.scipy.org/doc/numpy-1.13.0/user/basics.subclassing.html
     # for explanation of the structure of this numpy.ndarray wrapper
 
@@ -28,7 +36,8 @@ class BoutArray(numpy.ndarray):
         #    (we're in the middle of the BoutArray.__new__
         #    constructor, and self.attributes will be set when we return to
         #    BoutArray.__new__)
-        if obj is None: return
+        if obj is None:
+            return
         # From view casting - e.g arr.view(BoutArray):
         #    obj is arr
         #    (type(obj) can be BoutArray)
@@ -42,7 +51,7 @@ class BoutArray(numpy.ndarray):
         self.attributes = getattr(obj, 'attributes', None)
         # We do not need to return anything
 
-    def __format__(self,str):
+    def __format__(self, str):
         try:
             return super().__format__(str)
         except TypeError:
