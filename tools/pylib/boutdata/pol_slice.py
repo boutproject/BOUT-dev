@@ -1,20 +1,32 @@
 from __future__ import print_function
 from __future__ import division
 
-# Takes a 3D variable, and returns a 2D slice at fixed toroidal angle
-#
-# N sets the number of times the data must be repeated for a full
-# torus, e.g. n=2 is half a torus
-# zangle gives the (real) toroidal angle of the result
-
 from boututils.datafile import DataFile
 import numpy as np
 from scipy.ndimage import map_coordinates
 
 
 def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
-    """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0)
-    Set nyInterp to the number of y (theta) points you wish to use in the final result.
+    """Takes a 3D variable, and returns a 2D slice at fixed toroidal angle
+
+    Parameters
+    ----------
+    var3d : array_like
+        The input array. Should be 3D
+    gridfile : str
+        The gridfile containing the coordinate system to used
+    n : int, optional
+        The number of times the data must be repeated for a full torus,
+        e.g. n=2 is half a torus
+    zangle : float, optional
+        The (real) toroidal angle of the result
+    nyInterp : int, optional
+        The number of y (theta) points to use in the final result.
+
+    Returns
+    -------
+    array
+        A 2D-slice of var3d interpolated at a fixed toroidal angle
     """
     n = int(n)
     zangle = float(zangle)
