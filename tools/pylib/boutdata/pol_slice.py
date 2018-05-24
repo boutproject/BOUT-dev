@@ -7,18 +7,10 @@ from __future__ import division
 # torus, e.g. n=2 is half a torus
 # zangle gives the (real) toroidal angle of the result
 
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
+from boututils.datafile import DataFile
+import numpy as np
+from scipy.ndimage import map_coordinates
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: boututils.DataFile not available")
-    print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
-    raise SystemExit
 
 def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
     """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0)
@@ -74,16 +66,6 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
 
     #Setup interpolation if requested
     if doInterp:
-        try:
-            from numpy import linspace, meshgrid, append, newaxis
-        except ImportError:
-            print("ERROR: NumPy module not available")
-            raise
-        try:
-            from scipy.ndimage import map_coordinates
-        except ImportError:
-            print("ERROR: SciPy module not available")
-            raise
 
         varTmp = var3d
         #These are the index space co-ordinates of the output arrays
