@@ -8,39 +8,37 @@ from builtins import zip
 import time
 import os
 
+
 def watch(files, timeout=None, poll=2):
-    """
-    Watch a given file or collection of files
-    until one changes. Uses polling.
+    """Watch a given file or collection of files until one changes. Uses
+    polling.
 
-    Inputs
-    ======
-
-    files - Name of one or more files to watch
-
-    timeout - Optional timeout in seconds
-              (Default is no timeout)
-
-    poll - Optional polling interval in seconds
-           (Default is 2 seconds)
+    Parameters
+    ----------
+    files : str, List[str]
+        Name of one or more files to watch
+    timeout : int, optional
+        Timeout in seconds (default is no timeout)
+    poll : int, optional
+        Polling interval in seconds (default: 2)
 
     Returns
-    =======
-
-    The name of the first changed file,
-    or None if timed out before any changes
+    -------
+    str
+        The name of the first changed file,
+        or None if timed out before any changes
 
     Examples
-    ========
+    --------
 
     To watch one file, timing out after 60 seconds:
-    
+
     >>> watch('file1', timeout=60)
 
     To watch 2 files, never timing out:
-    
+
     >>> watch(['file1', 'file2'])
-    
+
     Author: Ben Dudson <benjamin.dudson@york.ac.uk>
 
     """
