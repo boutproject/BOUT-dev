@@ -1,3 +1,7 @@
+"""Integrate over a volume
+
+"""
+
 from __future__ import print_function
 from __future__ import division
 from builtins import range
@@ -5,10 +9,26 @@ from past.utils import old_div
 import numpy as np
 from boututils import *
 from bunch import bunchify
-# Integrate over a volume
 
 
-def volume_integral( var, g, xr=False):
+def volume_integral(var, g, xr=False):
+    """Integrate a variable over a volume
+
+    Parameters
+    ----------
+    var : array_like
+        Variable to integrate
+    g : dict
+        A dictionary of various grid quantities
+    xr : (int, int), optional
+        Range of x indices (default: all of x)
+
+    Returns
+    -------
+    float
+        Volumne integral of variable
+
+    """
 
     s = np.ndim(var)
 
