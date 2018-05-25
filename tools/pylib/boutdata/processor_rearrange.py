@@ -6,7 +6,32 @@ processors
 from math import sqrt
 from collections import namedtuple
 
-processor_layout = namedtuple("BOUT_processor_layout", ["nxpe", "nype", "npes", "mxsub", "mysub", "nx", "ny", "mz", "mxg", "myg"])
+processor_layout_ = namedtuple("BOUT_processor_layout",
+                               ["nxpe", "nype", "npes", "mxsub", "mysub",
+                                "nx", "ny", "mz", "mxg", "myg"])
+
+
+# Subclass the namedtuple above so we can add a docstring
+class processor_layout(processor_layout_):
+    """A namedtuple describing the processor layout, including grid sizes
+    and guard cells
+
+    Parameters
+    ----------
+
+    nxpe, nype : int
+        The number of processors in x and y
+    npes : int
+        The total number of procesors
+    mxsub, mysub : int
+        The size of the grid in x and y on a single processor
+    nx, ny, mz : int
+        The total size of the grid in x, y and z
+    mxg : int
+        The number of guard cells in x and y
+
+    """
+    pass
 
 
 def get_processor_layout(boutfile, has_t_dimension=True, mxg=2, myg=2):
@@ -24,11 +49,8 @@ def get_processor_layout(boutfile, has_t_dimension=True, mxg=2, myg=2):
 
     Returns
     -------
-    processor_layout : (int, int, int, int, int, int, int, int, int, int)
-        A namedtuple containing the number of processors in x and y;
-        the total number of procesors; the size of the grid in x and y
-        on a single processor; the total size of the grid in x, y and
-        z; and the number of guard cells in x and y
+    processor_layout
+        A description of the processor layout and grid sizes
 
     """
 
@@ -106,11 +128,8 @@ def create_processor_layout(old_processor_layout, npes, nxpe=None):
 
     Returns
     -------
-    processor_layout : (int, int, int, int, int, int, int, int, int, int)
-        A namedtuple containing the number of processors in x and y;
-        the total number of procesors; the size of the grid in x and y
-        on a single processor; the total size of the grid in x, y and
-        z; and the number of guard cells in x and y
+    processor_layout
+        A description of the processor layout and grid sizes
 
     """
 
