@@ -1,33 +1,40 @@
-# Parse BOUT.inp settings file
+"""Parse BOUT.inp settings file
+
+"""
+
 
 def get(filename, name, section=None):
-    """
-    Find and return a single value from a BOUT.inp settings file
-    
-    Inputs
-    ------
-    
-    filename     A string containing a BOUT.inp file name
-    name         The name of the setting
-    section      (optional) The section to look in. 
-                 By default this is None (global)
+    """Find and return a single value from a BOUT.inp settings file
+
+    .. deprecated::3.0
+            `settings.get` has been replaced with
+            `boututils.options.BoutOptions`
+
+    Parameters
+    ----------
+    filename : str
+        Name of the settings file
+    name : str
+        The name of the setting
+    section : str, optional
+        The section to look in (default: the global section)
 
     Note that names and sections are case insensitive
-    
+
     Returns
     -------
-    
-    value of the setting as a string
+    str
+        Value of the setting. If not found, raises a ValueError
 
-    If not found, raises a ValueError
-    
-    Example
-    -------
-    
-    nout = settings.get("BOUT.inp", "nout")
-    
-    compress = settings.get("BOUT.inp", "compress", section="highbeta")
-    
+    Examples
+    --------
+
+    >>> settings.get("BOUT.inp", "nout")
+    '100'
+
+    >>> settings.get("BOUT.inp", "compress", section="highbeta")
+    'true'
+
     """
     with open(filename, "rt") as f:
         if section is not None:
