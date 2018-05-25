@@ -35,6 +35,38 @@ sys.path.append("../../tools/pylib")
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
+if on_readthedocs:
+    import sys
+    from unittest.mock import MagicMock
+
+    class Mock(MagicMock):
+        __all__ = ["foo",]
+        @classmethod
+        def __getattr__(cls, name):
+            return MagicMock()
+
+    MOCK_MODULES = [
+        'boutcore',
+        'bunch',
+        'h5py',
+        'matplotlib',
+        'matplotlib.cm',
+        'matplotlib.mlab',
+        'matplotlib.pyplot',
+        'netCDF4',
+        'numpy',
+        'numpy.fft',
+        'numpy.random',
+        'scipy',
+        'scipy.interpolate',
+        'scipy.integrate',
+        'scipy.ndimage',
+        'scipy.ndimage.filters',
+        'scipy.ndimage.morphology',
+        'scipy.spatial',
+    ]
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
@@ -76,7 +108,9 @@ if has_breathe:
 # ones.
 extensions = ['sphinx.ext.coverage',
               'sphinx.ext.mathjax',
-              'sphinx.ext.autodoc']
+              'sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+]
 
 if has_breathe:
     extensions.append('breathe')
