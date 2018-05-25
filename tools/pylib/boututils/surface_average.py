@@ -8,7 +8,8 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from boututils import *
+from boututils.calculus import deriv
+from boututils.int_func import int_func
 from .idl_tabulate import idl_tabulate
 from bunch import bunchify
 

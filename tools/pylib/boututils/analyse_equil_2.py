@@ -13,9 +13,9 @@ from past.utils import old_div
 
 import numpy
 from bunch import Bunch
-import local_min_max
+from . import local_min_max
 from scipy.interpolate import RectBivariateSpline
-from pylab import contour, gradient,  annotate, plot, draw
+from matplotlib.pyplot import contour, gradient,  annotate, plot, draw
 from crosslines import find_inter
 
 
