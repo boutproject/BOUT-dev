@@ -1,13 +1,35 @@
-"""Routines for redistributing files over different numbers of processors"""
+"""Routines for redistributing files over different numbers of
+processors
+
+"""
 
 from math import sqrt
 from collections import namedtuple
 
 processor_layout = namedtuple("BOUT_processor_layout", ["nxpe", "nype", "npes", "mxsub", "mysub", "nx", "ny", "mz", "mxg", "myg"])
 
+
 def get_processor_layout(boutfile, has_t_dimension=True, mxg=2, myg=2):
-    """
-    Given a BOUT.restart.* or BOUT.dmp.* file (as a DataFile object), return the processor layout for its data
+    """Given a BOUT.restart.* or BOUT.dmp.* file (as a DataFile object),
+    return the processor layout for its data
+
+    Parameters
+    ----------
+    boutfile : DataFile
+        Restart or dump file to read
+    has_t_dimension : bool, optional
+        Does this file have a time dimension?
+    mxg, myg : int, optional
+        Number of x, y guard cells
+
+    Returns
+    -------
+    processor_layout : (int, int, int, int, int, int, int, int, int, int)
+        A namedtuple containing the number of processors in x and y;
+        the total number of procesors; the size of the grid in x and y
+        on a single processor; the total size of the grid in x, y and
+        z; and the number of guard cells in x and y
+
     """
 
     nxpe = boutfile.read('NXPE')
@@ -67,9 +89,29 @@ def get_processor_layout(boutfile, has_t_dimension=True, mxg=2, myg=2):
 
 
 def create_processor_layout(old_processor_layout, npes, nxpe=None):
-    """
-    If nxpe==None, use algorithm from BoutMesh to select optimal nxpe.
+    """Convert one processor layout into another one with a different
+    total number of processors
+
+    If nxpe is None, use algorithm from BoutMesh to select optimal nxpe.
     Otherwise, check nxpe is valid (divides npes)
+
+    Parameters
+    ----------
+    old_processor_layout : processor_layout
+        The processor layout to convert
+    npes : int
+        The new total number of procesors
+    nxpe : int, optional
+        The number of procesors in x to use
+
+    Returns
+    -------
+    processor_layout : (int, int, int, int, int, int, int, int, int, int)
+        A namedtuple containing the number of processors in x and y;
+        the total number of procesors; the size of the grid in x and y
+        on a single processor; the total size of the grid in x, y and
+        z; and the number of guard cells in x and y
+
     """
 
     if nxpe is None:  # Copy algorithm from BoutMesh for selecting nxpe
