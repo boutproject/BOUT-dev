@@ -16,10 +16,8 @@ try:
 except:
     pass
 
-#import numpy as np
-from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
-from matplotlib import animation, cm
+from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, abs, floor, pi, isclose
 from boutdata.collect import collect
 from boututils.boutwarnings import alwayswarn
