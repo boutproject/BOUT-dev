@@ -31,6 +31,26 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
     """Split restart files across NXPE x NYPE processors.
 
     Returns True on success
+
+    TODO: replace printing errors with raising `ValueError`
+    TODO: fix undefined variables!
+    TODO: make informat work like `redistribute`
+
+    Parameters
+    ----------
+    nxpe, nype : int
+        The number of processors in x and y
+    path : str, optional
+        Path to original restart files (default: "data")
+    output : str, optional
+        Path to write new restart files (default: current directory)
+    informat : str, optional
+        File extension of original files (default: "nc")
+    outformat : str, optional
+        File extension of new files (default: use the same as `informat`)
+    mxg, myg : int, optional
+        The number of guard cells in x and y
+
     """
 
     if outformat is None:
@@ -105,20 +125,18 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         print(" =>  "+str(old_layout.mype)+" ("+str(old_pex)+", " +
               str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
 
-        #
-
 
 def resize3DField(var, data, coordsAndSizesTuple, method, mute):
-    """
-    Resizing of the 3D fields.
+    """Resize 3D fields
 
     To be called by resize.
 
-    Written as a function in order to call it using multiprocesse. Must
+    Written as a function in order to call it using multiprocess. Must
     be defined as a top level function in order to be pickable by the
     multiprocess.
 
-    See the function resize for details.
+    See the function resize for details
+
     """
 
     # Unpack the tuple for better readability
@@ -151,47 +169,41 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
 def resize(newNx, newNy, newNz, mxg=2, myg=2,
            path="data", output="./", informat="nc", outformat=None,
            method='linear', maxProc=None, mute=False):
-    """
-    Increase/decrease the number of points in restart files.
+    """Increase/decrease the number of points in restart files.
 
     NOTE: Can't overwrite
     WARNING: Currently only implemented with uniform BOUT++ grid
 
+    TODO: Add 2D field interpolation
+    TODO: replace printing errors with raising `ValueError`
+    TODO: make informat work like `redistribute`
+
     Parameters
-    -----
-    newNx : int
-        nx for the new file (including ghost points)
-    newNy : int
-        ny for the new file (including ghost points)
-    newNz : int
-        nz for the new file (including last unused z-plane)
-    mxg : int
-        Number of ghost points in x. **NOTE:** Default is 2
-    myg : int
-        Number of ghost points in y. **NOTE:** Default is 2
-    path : str
-        Input path
-    output : str
-        Output path
-    informat : str
+    ----------
+    newNx, newNy, newNz : int
+        nx, ny, nz for the new file (including ghost points)
+    mxg, myg : int, optional
+        Number of ghost points in x, y (default: 2)
+    path : str, optional
+        Input path to data files
+    output : str, optional
+        Path to write new files
+    informat : str, optional
         File extension of input
-    outformat : [None|str]
-        File extension of output
-    method : ['linear'|'nearest']
+    outformat : {None, str}, optional
+        File extension of output (default: use the same as `informat`)
+    method : {'linear', 'nearest'}, optional
         What interpolation method to be used
-    maxProc: [None|int]
+    maxProc : {None, int}, optional
         Limits maximum processors to use when interpolating if set
-    mute : [True|False]
+    mute : bool, optional
         Whether or not output should be printed from this function
 
     Returns
     -------
-    return : [True|False]
+    return : bool
         True on success, else False
 
-    Todo
-    ----
-    Add 2D field interpolation
     """
 
     if method is None:
@@ -301,26 +313,33 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,
 
 
 def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
-    """
-    Increase the number of Z points in restart files.
-
-    The python equivalent of ../../idllib/expand_restarts.pro
+    """Increase the number of Z points in restart files
 
     NOTE:
         * Can't overwrite
         * Will not yield a result close to the original if there are
-          aymmetires in the z-direction
+          asymmetries in the z-direction
 
-    Input
-    -----
-    path       Input path
-    output     Output path
-    informat   File extension of input
-    outformat  File extension of output
+    TODO: replace printing errors with raising `ValueError`
+    TODO: make informat work like `redistribute`
+
+    Parameters
+    ----------
+    newNz : int
+        nz for the new file
+    path : str, optional
+        Path to original restart files (default: "data")
+    output : str, optional
+        Path to write new restart files (default: current directory)
+    informat : str, optional
+        File extension of original files (default: "nc")
+    outformat : str, optional
+        File extension of new files (default: use the same as `informat`)
 
     Returns
     -------
     True on success, else False
+
     """
 
     if outformat is None:
@@ -407,20 +426,21 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
 
 
 def addnoise(path=".", var=None, scale=1e-5):
-    """
-    Add random noise to restart files
+    """Add random noise to restart files
 
-    Inputs
-    ------
+    .. warning:: Modifies restart files in place! This is in contrast
+                 to most of the functions in this module!
 
-    path   Path to the restart files
-    var    The variable to modify. By default all 3D variables are modified
-    scale  Amplitude of the noise. Gaussian noise is used, with zero mean
-           and this parameter as the standard deviation
+    Parameters
+    ----------
+    path : str, optional
+        Path to restart files (default: current directory)
+    var : str, optional
+        The variable to modify. By default all 3D variables are modified
+    scale : float
+        Amplitude of the noise. Gaussian noise is used, with zero mean
+        and this parameter as the standard deviation
 
-    Returns
-    -------
-    None
     """
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
     nfiles = len(file_list)
@@ -446,20 +466,21 @@ def addnoise(path=".", var=None, scale=1e-5):
 
 
 def scalevar(var, factor, path="."):
-    """
-    Scales a variable by a given factor, modifying
-    restart files in place
+    """Scales a variable by a given factor, modifying restart files in
+    place
 
-    Inputs
-    ------
+    .. warning:: Modifies restart files in place! This is in contrast
+                 to most of the functions in this module!
 
-    var      Name of the variable  (string)
-    factor   Factor to multiply    (float)
-    path     Path to the restart files
+    Parameters
+    ----------
+    var : str
+        Name of the variable
+    factor : float
+        Factor to multiply
+    path : str, optional
+        Path to the restart files (default: current directory)
 
-    Returns
-    -------
-    None
     """
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
@@ -473,24 +494,23 @@ def scalevar(var, factor, path="."):
 
 
 def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
-    """
-    Create restart files from data (dmp) files.
+    """Create restart files from data (dmp) files.
 
-    Inputs
-    ======
-
-    averagelast   Number of time points to average over.
-                  Default is 1 i.e. just take last time-point
-
-    final         The last time point to use. Default is last (-1)
-
-    path          Path to the input data files
-
-    output        Path where the output restart files should go
-
-    informat      Format of the input data files
-
-    outformat     Format of the output restart files
+    Parameters
+    ----------
+    averagelast : int, optional
+        Number of time points (counting from `final`, inclusive) to
+        average over (default is 1 i.e. just take last time-point)
+    final : int, optional
+        The last time point to use (default is last, -1)
+    path : str, optional
+        Path to original restart files (default: "data")
+    output : str, optional
+        Path to write new restart files (default: current directory)
+    informat : str, optional
+        File extension of original files (default: "nc")
+    outformat : str, optional
+        File extension of new files (default: use the same as `informat`)
 
     """
 
@@ -560,26 +580,39 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None, mxg=2, myg=2):
     """Resize restart files across NPES processors.
 
-    Does not check if new processor arrangement is compatible with the branch cuts. In this respect restart.split is safer. However, BOUT++ checks the topology during initialisation anyway so this is not too serious.
+    Does not check if new processor arrangement is compatible with the
+    branch cuts. In this respect :py:func:`restart.split` is
+    safer. However, BOUT++ checks the topology during initialisation
+    anyway so this is not too serious.
+
+    TODO: replace printing errors with raising `ValueError`
 
     Parameters
     ----------
     npes : int
-        number of processors for the new restart files
-    path : string, optional
-        location of old restart files
+        Number of processors for the new restart files
+    path : str, optional
+        Path to original restart files (default: "data")
     nxpe : int, optional
-        number of processors to use in the x-direction (determines split: npes = nxpe * nype). Default is None which uses the same algorithm as BoutMesh (but without topology information) to determine a suitable value for nxpe.
-    output : string, optional
-        location to save new restart files
-    informat : string, optional
-        specify file format of old restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default uses the format of the first 'BOUT.restart.*' file listed by glob.glob.
-    outformat : string, optional
-        specify file format of new restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default is to use the same as informat.
+        Number of processors to use in the x-direction (determines
+        split: npes = nxpe * nype). Default is None which uses the
+        same algorithm as BoutMesh (but without topology information)
+        to determine a suitable value for nxpe.
+    output : str, optional
+        Location to save new restart files (default: current directory)
+    informat : str, optional
+        Specify file format of old restart files (must be a suffix
+        understood by DataFile, e.g. 'nc'). Default uses the format of
+        the first 'BOUT.restart.*' file listed by glob.glob.
+    outformat : str, optional
+        Specify file format of new restart files (must be a suffix
+        understood by DataFile, e.g. 'nc'). Default is to use the same
+        as informat.
 
     Returns
     -------
     True on success
+
     """
 
     if npes <= 0:
@@ -741,8 +774,33 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
 
 
 def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2):
-    """
-    Resize all the restart files in Y
+    """Increase the number of Y points in restart files
+
+    NOTE:
+        * Can't overwrite
+
+    TODO: replace printing errors with raising `ValueError`
+    TODO: make informat work like `redistribute`
+
+    Parameters
+    ----------
+    newy : int
+        ny for the new file
+    path : str, optional
+        Path to original restart files (default: "data")
+    output : str, optional
+        Path to write new restart files (default: current directory)
+    informat : str, optional
+        File extension of original files (default: "nc")
+    outformat : str, optional
+        File extension of new files (default: use the same as `informat`)
+    myg : int, optional
+        Number of ghost points in y (default: 2)
+
+    Returns
+    -------
+    True on success, else False
+
     """
 
     if outformat is None:
@@ -844,17 +902,24 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
 def addvar(var, value, path="."):
     """Adds a variable with constant value to all restart files.
 
+    .. warning:: Modifies restart files in place! This is in contrast
+                 to most of the functions in this module!
+
     This is useful for restarting simulations whilst turning on new
     equations. By default BOUT++ throws an error if an evolving
     variable is not in the restart file. By setting an option the
     variable can be set to zero. This allows it to start with a
     non-zero value.
 
-    Input
-    -----
-    var      The variable to add
-    value    Constant value for the variable
-    path     Path to directory containing restart files
+    Parameters
+    ----------
+    var : str
+        The name of the variable to add
+    value : float
+        Constant value for the variable
+    path : str, optional
+        Input path to data files (default: current directory)
+
     """
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
