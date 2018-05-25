@@ -20,18 +20,19 @@ except ImportError:
 
 
 class RZline:
-    """
-    Represents (R,Z) coordinates of a periodic line
+    """Represents (R,Z) coordinates of a periodic line
     
-    Members
-    -------
-
-    R      Major radius [m]
-    Z      Height [m]
-    theta  Angle variable [radians]
+    Attributes
+    ----------
+    R : array_like
+        Major radius [m]
+    Z : array_like
+        Height [m]
+    theta : array_like
+        Angle variable [radians]
 
     R,Z and theta all have the same length
- 
+
     """
     def __init__(self, r, z, anticlockwise=True):
         """
@@ -253,9 +254,8 @@ def line_from_points_poly(rarray, zarray, show=False):
     one by one, inserting into the polygon along the nearest
     edge
     
-    Inputs
-    ------
-
+    Parameters
+    ----------
     rarray, zarray   NumPy arrays or lists of r,z coordinates
                      These arrays should be the same length
 
@@ -324,9 +324,8 @@ def line_from_points(rarray, zarray, show=False):
     This function starts at a point, and finds the nearest
     neighbour which is not already in the line
     
-    Inputs
-    ------
-
+    Parameters
+    ----------
     rarray, zarray   NumPy arrays or lists of r,z coordinates
                      These arrays should be the same length
 

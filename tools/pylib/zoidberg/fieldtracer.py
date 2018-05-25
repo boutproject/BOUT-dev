@@ -10,9 +10,10 @@ class FieldTracer(object):
     def __init__(self, field):
         """Create a FieldTracer object
 
-        Inputs
-        ------
-        field - A function specifying the magnetic field function
+        Parameters
+        ----------
+        field
+            A function specifying the magnetic field function
         """
 
         self.field_direction = field.field_direction
@@ -22,29 +23,32 @@ class FieldTracer(object):
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
 
-        Inputs
-        ------
-        x_values - Array-like or scalar of starting x coordinates
-        z_values - Array-like or scalar of starting z coordinates
-        y_values - Array-like of y coordinates to follow the field line to.
-                   y_values[0] is the starting position
+        Parameters
+        ----------
+        x_values : array_like
+            Starting x coordinates
+        z_values : array_like
+            Starting z coordinates
+        y_values : array_like
+            y coordinates to follow the field line to. y_values[0] is
+            the starting position
 
         Returns
         -------
+        result : numpy.ndarray
+            Field line ending coordinates
 
-        Field line ending coordinates
-
-        result - The first dimension is y, the last is (x,z). The
-                 middle dimensions are the same shape as [x|z]:
-                 [0,...] is the initial position
-                 [...,0] are the x-values
-                 [...,1] are the z-values
-                 If x_values is a scalar and z_values a 1D array, then result
-                 has the shape [len(y), len(z), 2], and vice-versa.
-                 If x_values and z_values are 1D arrays, then result has the shape
-                 [len(y), len(x), 2].
-                 If x_values and z_values are 2D arrays, then result has the shape
-                 [len(y), x.shape[0], x.shape[1], 2].
+            The first dimension is y, the last is (x,z). The
+            middle dimensions are the same shape as [x|z]:
+            [0,...] is the initial position
+            [...,0] are the x-values
+            [...,1] are the z-values
+            If x_values is a scalar and z_values a 1D array, then result
+            has the shape [len(y), len(z), 2], and vice-versa.
+            If x_values and z_values are 1D arrays, then result has the shape
+            [len(y), len(x), 2].
+            If x_values and z_values are 2D arrays, then result has the shape
+            [len(y), x.shape[0], x.shape[1], 2].
 
         """
 
@@ -82,8 +86,8 @@ class FieldTracer(object):
         return result.reshape(y_values.shape + array_shape + (2,))
 
 class FieldTracerReversible(object):
-    """
-    Traces magnetic field lines in a reversible way by using trapezoidal integration:
+    """Traces magnetic field lines in a reversible way by using
+    trapezoidal integration:
     
     pos_{n+1} = pos_n + 0.5*( f(pos_n) + f(pos_{n+1}) )*dy
     
@@ -94,8 +98,8 @@ class FieldTracerReversible(object):
     def __init__(self, field, rtol=1e-8, eps=1e-5, nsteps=20):
         """Create a FieldTracer object
 
-        Inputs
-        ------
+        Parameters
+        ---- ------
         field - A function specifying the magnetic field function
         
         rtol    Tolerance applied to changes in dx**2 + dz**2
@@ -113,8 +117,8 @@ class FieldTracerReversible(object):
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
 
-        Inputs
-        ------
+        Parameters
+        ----------
         x_values - Array-like or scalar of starting x coordinates
         z_values - Array-like or scalar of starting z coordinates
         y_values - Array-like of y coordinates to follow the field line to.
@@ -255,8 +259,8 @@ class FieldTracerReversible(object):
 def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=20, nover=20):
     """Plot a Poincare graph of the field lines.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     magnetic_field   Magnetic field object
     
     xpos       Starting X location. Can be scalar or list/array

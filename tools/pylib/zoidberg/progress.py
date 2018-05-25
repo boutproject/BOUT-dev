@@ -11,8 +11,8 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
     A value under 0 represents a 'halt'.
     A value at 1 or bigger represents 100%
 
-    Inputs
-    ------
+    Parameters
+    ----------
     progress  - Number between 0 and 1
     barLength - Length of the progress bar [10]
     ascii     - Use '#' as the progress indicator, otherwise use a Unicode
