@@ -1,16 +1,40 @@
+"""Routines for manipulating grid files
+
+"""
 from __future__ import print_function
-# Routines for manipulating grid files
 
 from boututils.datafile import DataFile
 
 from numpy import ndarray, zeros, concatenate
 
-def slice(infile, outfile, region = None, xind=None, yind=None):
+
+def slice(infile, outfile, region=None, xind=None, yind=None):
+    """Copy an X-Y slice from one DataFile to another
+
+    TODO: rename to not clobber builtin `slice`
+    TODO: better regions?
+
+    Parameters
+    ----------
+    infile : str
+        Name of DataFile to read slice from
+    outfile : str
+        Name of DataFile to write slice to. File will be created, and
+        will be overwritten if it already exists
+    region : {0, 1, 2, 3, 4, 5, None}, optional
+        Copy a whole region. The available regions are:
+            - 0: Lower inner leg
+            - 1: Inner core
+            - 2: Upper inner leg
+            - 3: Upper outer leg
+            - 4: Outer core
+            - 5: Lower outer leg
+    xind, yind : (int, int), optional
+        Index ranges for x and y. Range includes first point, but not
+        last point
+
     """
-    xind, yind - index ranges. Range includes first point, but not last point
-    
-    """
-    
+
     # Open input and output files
     indf = DataFile(infile)
     outdf = DataFile(outfile, create=True)
@@ -91,11 +115,21 @@ def slice(infile, outfile, region = None, xind=None, yind=None):
 
 
 def rotate(gridfile, yshift, output=None):
-    """
-    Shifts a grid file by the specified number of points in y
-    
-    This moves the branch cut around, and can be used
-    to change the limiter location
+    """Shifts a grid file by the specified number of points in y
+
+    This moves the branch cut around, and can be used to change the
+    limiter location
+
+    Parameters
+    ----------
+    gridfile : str
+        Name of DataFile to rotate
+    yshift : int
+        Number of points in y to shift by
+    output : str, optional
+        Name of DataFile to write to. If None, will write to a new
+        file with the same name as `gridfile` + '_rot'
+
     """
 
     if output is None:
@@ -156,32 +190,58 @@ def rotate(gridfile, yshift, output=None):
 import matplotlib.pyplot as plt        
 from numpy import linspace, amin, amax
 
-def gridcontourf(grid, data2d, nlevel=31, show=True, 
+
+def gridcontourf(grid, data2d, nlevel=31, show=True,
                  mind=None, maxd=None, symmetric=False,
                  cmap=None, ax=None,
                  xlabel="Major radius [m]", ylabel="Height [m]",
                  separatrix=False):
-    """
-    Plots a 2D contour plot, taking into account branch cuts (X-points).
-    
+    """Plots a 2D contour plot, taking into account branch cuts
+    (X-points).
+
+    TODO: move into a plotting module
+
+    Parameters
+    ----------
+    grid : DataFile
+        A DataFile object
+    data2d : array_like
+        A 2D (x,y) NumPy array of data to plot
+    nlevel : int, optional
+        Number of levels in the contour plot
+    show : bool, optional
+        If True, will immediately show the plot
+    mind : float, optional
+        Minimum data level
+    maxd : float, optional
+        Maximum data level
+    symmetric : bool, optional
+        Make mind, maxd symmetric about zero
+    cmap : Colormap, optional
+        A matplotlib colormap to use. If None, use the current default
+    ax : Axes, optional
+        A matplotlib axes instance to plot to. If None, create a new
+        figure and axes, and plot to that
+    xlabel, ylabel : str, optional
+        Labels for the x/y axes
+    separatrix : bool, optional
+        Add separatrix
+
+    Returns
+    -------
+    con
+        The contourf instance
+
+    Examples
+    --------
+
     To put a plot into an axis with a color bar:
-    
+
     >>> fig, axis = plt.subplots()
     >>> c = gridcontourf(grid, data, show=False, ax=axis)
     >>> fig.colorbar(c, ax=axis)
     >>> plt.show()
-    
-    Inputs
-    ------
-    grid - A DataFile object
-    data2d - A 2D (x,y) NumPy array of data to plot
-    
-    nlevel - Number of levels in the contour plot
-    mind   - Minimum data level
-    maxd   - Maximum data level
-    symmetric   Make mind, maxd symmetric about zero
-    
-    separatrix  - Add separatrix
+
     """
 
     if cmap is None:
@@ -334,24 +394,25 @@ def gridcontourf(grid, data2d, nlevel=31, show=True,
       
     return con
 
+
 def bout2sonnet(grdname, outf):
-    """
-    Creates a Sonnet format grid from a BOUT++ grid.
-    NOTE: Branch cuts are not yet supported 
-    
-    Inputs
-    ------
-    
-    grdname - Filename of BOUT++ grid file
-    
-    outf    - The file-like object to write to
-    
-    Example
-    -------
-    
-    with open("output.sonnet", "w") as f:
-      bout2sonnet("BOUT.grd.nc", f)
-    
+    """Creates a Sonnet format grid from a BOUT++ grid.
+
+    NOTE: Branch cuts are not yet supported
+
+    Parameters
+    ----------
+    grdname : str
+        Filename of BOUT++ grid file
+    outf : File
+        The file-like object to write to
+
+    Examples
+    --------
+
+    >>> with open("output.sonnet", "w") as f:
+    ...     bout2sonnet("BOUT.grd.nc", f)
+
     """
 
     with DataFile(grdname) as g:
