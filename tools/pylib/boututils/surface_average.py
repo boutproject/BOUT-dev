@@ -1,3 +1,7 @@
+"""Average over a surface
+
+"""
+
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -9,21 +13,24 @@ from .idl_tabulate import idl_tabulate
 from bunch import bunchify
 
 
-#from gen_surface import gen_surface
+def surface_average(var, g, area=None):
+    """Average a variable over a surface
 
+    Parameters
+    ----------
+    var : array_like
+        3-D or 4D variable to integrate (either [x,y,z] or [t,x,y,z])
+    g : dict
+        A dictionary of various grid quantities
+    area : bool
+        Average by flux-surface area = (B/Bp)*dl * R*dz
 
-# Perform surface average
-#
-# var - [x,y,z] or [t,x,y,z]
-#
-#
-# area=area : Average by flux-surface area = (B/Bp)*dl * R*dz
-#
-# By default, averages over poloidal angle such that
-# surface_average(nu) = q
-#
+    Returns
+    -------
+    float
+        Surface average of variable
 
-def surface_average ( var, g, area=None):
+    """
 
     s = np.ndim(var)
 
