@@ -77,6 +77,8 @@ private:
   Laplacian* delp2solver;
   BoutReal rtol, atol;
   int maxits;
+  BoutReal naulinsolver_mean_its;
+  int ncalls;
 
   void copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh);
 };

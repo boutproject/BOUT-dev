@@ -36,14 +36,16 @@
 #include <boutexception.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/sys/timer.hxx>
 #include <derivs.hxx>
+#include <globals.hxx>
 #include <output.hxx>
 
 #include "naulin_laplace.hxx"
 
 LaplaceNaulin::LaplaceNaulin(Options *opt)
     : Laplacian(opt), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
-      delp2solver(nullptr) {
+      delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
   // Get options
   OPTION(opt, rtol, 1.e-7);
@@ -54,6 +56,12 @@ LaplaceNaulin::LaplaceNaulin(Options *opt)
   delp2solver->setGlobalFlags(global_flags);
   delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
   delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
+
+  static bool first = true;
+  if (first) {
+    SAVE_REPEAT(naulinsolver_mean_its);
+    first = false;
+  }
 }
 
 LaplaceNaulin::~LaplaceNaulin() {
@@ -64,6 +72,9 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   // Rearrange equation so first term is just Delp2(x):
   //   D*Delp2(x) + 1/C1*Grad_perp(C2).Grad_perp(phi) = rhs
   //   -> Delp2(x) + 1/(C1*D)*Grad_perp(C2).Grad_perp(phi) = rhs/D
+
+  Timer timer("invert"); ///< Start timer
+
   CELL_LOC location = rhs.getLocation();
   ASSERT1(Dcoef.getLocation() == location);
   ASSERT1(C1coef.getLocation() == location);
@@ -95,12 +106,15 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     error_rel = error_abs / sqrt(mean(SQ(x), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
     x = xnew;
     mesh->communicate(x);
-    output<<"NaulinSolver: "<<count<<" "<<error_rel<<" "<<error_abs<<endl;
+    //output<<"NaulinSolver: "<<count<<" "<<error_rel<<" "<<error_abs<<endl;
 
     count++;
     if (count>maxits)
       throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
   }
+
+  ncalls++;
+  naulinsolver_mean_its = (naulinsolver_mean_its*BoutReal(ncalls-1) + BoutReal(count))/BoutReal(ncalls);
 
   return x;
 }
