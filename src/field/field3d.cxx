@@ -829,6 +829,44 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   return result;
 }
 
+BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
+  TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
+
+  ASSERT2(f.isAllocated());
+
+  Mesh *localmesh = f.getMesh();
+
+  int npoints;
+  switch (rgn) {
+    case RGN_NOBNDRY: npoints = (localmesh->xend - localmesh->xstart + 1)*(localmesh->yend - localmesh->ystart + 1)*localmesh->LocalNz;
+                      break;
+    case RGN_NOX: npoints = (localmesh->xend - localmesh->xstart + 1)*localmesh->LocalNy*localmesh->LocalNz;
+                      break;
+    case RGN_NOY: npoints = localmesh->LocalNx*(localmesh->yend - localmesh->ystart + 1)*localmesh->LocalNz;
+                      break;
+    case RGN_NOZ: npoints = localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz;
+                      break;
+    case RGN_ALL: npoints = localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz;
+                      break;
+    default: throw BoutException("Unrecognized region %i in mean(Field3D)", rgn);
+  }
+  
+  BoutReal result = 0.;
+  
+  for(const auto& i: f.region(rgn))
+    result += f[i];
+
+  result /= npoints;
+  
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+  
+  return result;
+}
+
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 

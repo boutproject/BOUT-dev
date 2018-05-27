@@ -573,6 +573,17 @@ BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /// @param[in] rgn    The region to calculate the result over
 BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
+/// Calculates the mean of a field, excluding the boundary/guard
+/// cells by default (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe to true does a collective Allreduce over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Maximum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
