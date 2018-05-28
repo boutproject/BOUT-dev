@@ -69,17 +69,17 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
 
         varTmp = var3d
         #These are the index space co-ordinates of the output arrays
-        xOut = linspace(0,nx-1,nx)
-        yOut = linspace(0,ny-1,nyInterp)
-        zOut = linspace(0,nz-1,nz)
+        xOut = np.linspace(0,nx-1,nx)
+        yOut = np.linspace(0,ny-1,nyInterp)
+        zOut = np.linspace(0,nz-1,nz)
 
         #Use meshgrid to create 3 length N arrays (N=total number of points)
-        xx,yy,zz = meshgrid(xOut,yOut,zOut,indexing='ij')
+        xx,yy,zz = np.meshgrid(xOut,yOut,zOut,indexing='ij')
         #Interpolate to output positions and make the correct shape
         var3d = map_coordinates(input=varTmp,coordinates=[xx,yy,zz],cval=-999)
 
         #As above
-        xx,yy = meshgrid(xOut,yOut,indexing='ij')
+        xx,yy = np.meshgrid(xOut,yOut,indexing='ij')
         zShift = map_coordinates(zShift,[xx,yy],cval=-999)
 
         #Update shape
