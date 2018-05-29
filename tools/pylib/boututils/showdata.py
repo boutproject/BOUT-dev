@@ -86,17 +86,17 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
 
     Parameters
     ----------
-    vars : array_like, List[array_like]
+    vars : array_like or list of array_like
         Variable or list of variables to plot
-    titles : str, List[str], optional
+    titles : str or list of str, optional
         Title or list of titles for each axis
-    legendlabels : str, List[str], optional
+    legendlabels : str or list of str, optional
         Legend or list of legends for each variable
-    surf : List[int]
+    surf : list of int
         Which axes to plot as a surface plot
-    polar : List[int]
+    polar : list of int
         Which axes to plot as a polar plot
-    tslice : List[int]
+    tslice : list of int
         Use these time values from a dump file (see above)
     movie : int
         If 1, save the animation to file
@@ -108,7 +108,7 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         ???
     Ncolors : int
         Number of levels in contour plots
-    x, y : array_like, List[array_like]
+    x, y : array_like, list of array_like
         X, Y coordinates
     global_colors : bool
         If "vars" is a list the colorlevels are determined from the

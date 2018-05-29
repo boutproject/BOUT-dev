@@ -29,7 +29,7 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, r
         Length of period in y domain
     nplot : int, optional
         Number of equally spaced y-slices to plot
-    y_slices : List[int], optional
+    y_slices : list of int, optional
         List of y-slices to plot; overrides nplot
     revs : int, optional
         Number of revolutions (times around phi)

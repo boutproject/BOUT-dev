@@ -15,7 +15,7 @@ def watch(files, timeout=None, poll=2):
 
     Parameters
     ----------
-    files : str, List[str]
+    files : str or list of str
         Name of one or more files to watch
     timeout : int, optional
         Timeout in seconds (default is no timeout)

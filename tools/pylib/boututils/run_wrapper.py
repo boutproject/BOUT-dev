@@ -42,7 +42,7 @@ def shell(command, pipe=False):
 
     Parameters
     ----------
-    command : List[str]
+    command : list of str
         The command to run, split into (shell) words
     pipe : bool, optional
         Grab the output as text, else just run the command in the

@@ -36,7 +36,7 @@ def findVar(varname, varlist):
     ----------
     varname : str
         Variable name to look for
-    varlist : List[str]
+    varlist : list of str
         List of possible variable names
 
     Returns
@@ -78,7 +78,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     ----------
     varname : str
         Name of the variable
-    xind, yind, zind, tind : int, List[int], optional
+    xind, yind, zind, tind : int, list of int, optional
         Range of X, Y, Z or time indices to collect. Either a single index,
         or [min, max] (inclusive). Default is to fetch all indices
     path : str, optional
@@ -589,7 +589,7 @@ def findFiles(path, prefix):
 
     Returns
     -------
-    tuple : (List[str], bool, str)
+    tuple : (list of str, bool, str)
         The first element of the tuple is the list of files, the second is
         whether the files are a parallel dump file and the last element is
         the file suffix.
@@ -652,7 +652,7 @@ def create_cache(path, prefix):
 
     Returns
     -------
-    namedtuple : (List[str], bool, str, List[DataFile])
+    namedtuple : (list of str, bool, str, list of :py:obj:`~boututils.datafile.DataFile`)
         The cache of DataFiles in a namedtuple along with the file_list,
         and parallel and suffix attributes
 

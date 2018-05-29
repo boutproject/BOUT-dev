@@ -20,7 +20,7 @@ def gen_surface(grid):
 
     Yields
     ------
-    tuple : (int, List[int], bool)
+    tuple : (int, list of int, bool)
         A tuple containing the x index, list of y indices and whether
         this flux surface is periodic
 
