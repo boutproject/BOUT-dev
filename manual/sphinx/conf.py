@@ -178,6 +178,9 @@ numfig = True
 # The default role for text marked up `like this`
 default_role = 'any'
 
+# Handle multiple parameters on one line correctly (in Python docs)
+napoleon_use_param = False
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
