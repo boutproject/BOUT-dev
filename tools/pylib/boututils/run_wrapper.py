@@ -245,7 +245,7 @@ def shell_safe(command, *args, **kwargs):
     ----------
     command : str
         The command to run
-    `*args`, `**kwargs`
+    *args, **kwargs
         Optional arguments passed to `shell`
 
     """
@@ -266,7 +266,7 @@ def launch_safe(command, *args, **kwargs):
     ----------
     command : str
         The command to run
-    `*args`, `**kwargs`
+    *args, **kwargs
         Optional arguments passed to `shell`
 
     """
