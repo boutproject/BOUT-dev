@@ -39,6 +39,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/scorepwrapper.hxx>
 
 /*!
  * Data array type with automatic memory management
@@ -204,6 +205,7 @@ public:
    * on the data.
    */
   void ensureUnique() {
+    SCOREP0();
     if(!ptr || unique())
       return;
 

@@ -610,6 +610,7 @@ class Mesh {
   }
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f) {
+    SCOREP0();
     return getParallelTransform().fromFieldAligned(f);
   }
 

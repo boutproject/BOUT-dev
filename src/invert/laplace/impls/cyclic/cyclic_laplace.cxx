@@ -115,72 +115,85 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     outbndry = 1;
 
   if(dst) {
-    // Loop over X indices, including boundaries but not guard cells. (unless periodic in x)
+///    // Loop over X indices, including boundaries but not guard cells. (unless periodic in x)
+///    for(int ix=xs; ix <= xe; ix++) {
+///      // Take DST in Z direction and put result in k1d
+///
+///      if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+///         ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
+///        // Use the values in x0 in the boundary
+///        DST(x0[ix]+1, mesh->LocalNz-2 , std::begin(k1d));
+///      }else {
+///        DST(rhs[ix]+1, mesh->LocalNz-2 , std::begin(k1d));
+///      }
+///
+///      // Copy into array, transposing so kz is first index
+///      for(int kz = 0; kz < nmode; kz++)
+///        bcmplx(kz, ix-xs) = k1d[kz];
+///    }
+///
+///    // Get elements of the tridiagonal matrix
+///    // including boundary conditions
+///    for(int kz = 0; kz < nmode; kz++) {
+///      BoutReal zlen = coord->dz*(mesh->LocalNz-3);
+///      BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
+///
+///      tridagMatrix(&a(kz,0), &b(kz,0), &c(kz,0), &bcmplx(kz,0), jy,
+///                   kz,    // wave number index
+///                   kwave, // kwave (inverse wave length)
+///                   global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
+///                   &Ccoef, &Dcoef,
+///                   false); // Don't include guard cells in arrays
+///    }
+///
+///    // Solve tridiagonal systems
+///
+///    cr->setCoefs(a, b, c);
+///    cr->solve(bcmplx, xcmplx);
+///
+///    // FFT back to real space
+///    for(int ix=xs; ix <= xe; ix++) {
+///      for(int kz = 0; kz < nmode; kz++)
+///        k1d[kz] = xcmplx(kz, ix-xs);
+///
+///      for(int kz=nmode;kz<(mesh->LocalNz);kz++)
+///        k1d[kz] = 0.0; // Filtering out all higher harmonics
+///
+///      DST_rev(std::begin(k1d), mesh->LocalNz-2, x[ix]+1);
+///
+///      x(ix, 0) = -x(ix, 2);
+///      x(ix, mesh->LocalNz-1) = -x(ix, mesh->LocalNz-3);
+///    }
+  }else {
+
+    //BOUT_OMP(parallel private(x0,rhs,bcmplx,k1d)){
+    // Loop over X indices, including boundaries but not guard cells (unless periodic in x)
+//    Array<dcomplex> x0tmp(mesh->LocalNx*mesh->LocalNz)
+//    Array<dcomplex> rhstmp(mesh->LocalNx*mesh->LocalNz)
+//    x0tmp = x0
+//    rhstmp = rhs
+//    Matrix<dcomplex> k2d( mesh->LocalNx, (mesh->LocalNz)/2 + 1) ;
+    //BOUT_OMP(for)
     for(int ix=xs; ix <= xe; ix++) {
-      // Take DST in Z direction and put result in k1d
+      // Take FFT in Z direction, apply shift, and put result in k1d
 
       if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
          ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
-        DST(x0[ix]+1, mesh->LocalNz-2 , std::begin(k1d));
+        rfft(x0[ix], mesh->LocalNz, std::begin(k1d));
+        //rfft(&x0(ix,0), mesh->LocalNz, &k2d(ix,0));
       }else {
-        DST(rhs[ix]+1, mesh->LocalNz-2 , std::begin(k1d));
+        rfft(rhs[ix], mesh->LocalNz, std::begin(k1d));
+        //rfft(&rhs(ix,0), mesh->LocalNz, &k2d(ix,0));
       }
 
       // Copy into array, transposing so kz is first index
-      for(int kz = 0; kz < nmode; kz++)
+      for(int kz = 0; kz < nmode; kz++){
         bcmplx(kz, ix-xs) = k1d[kz];
-    }
-
-    // Get elements of the tridiagonal matrix
-    // including boundary conditions
-    for(int kz = 0; kz < nmode; kz++) {
-      BoutReal zlen = coord->dz*(mesh->LocalNz-3);
-      BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
-
-      tridagMatrix(&a(kz,0), &b(kz,0), &c(kz,0), &bcmplx(kz,0), jy,
-                   kz,    // wave number index
-                   kwave, // kwave (inverse wave length)
-                   global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                   &Ccoef, &Dcoef,
-                   false); // Don't include guard cells in arrays
-    }
-
-    // Solve tridiagonal systems
-
-    cr->setCoefs(a, b, c);
-    cr->solve(bcmplx, xcmplx);
-
-    // FFT back to real space
-    for(int ix=xs; ix <= xe; ix++) {
-      for(int kz = 0; kz < nmode; kz++)
-        k1d[kz] = xcmplx(kz, ix-xs);
-
-      for(int kz=nmode;kz<(mesh->LocalNz);kz++)
-        k1d[kz] = 0.0; // Filtering out all higher harmonics
-
-      DST_rev(std::begin(k1d), mesh->LocalNz-2, x[ix]+1);
-
-      x(ix, 0) = -x(ix, 2);
-      x(ix, mesh->LocalNz-1) = -x(ix, mesh->LocalNz-3);
-    }
-  }else {
-    // Loop over X indices, including boundaries but not guard cells (unless periodic in x)
-    for(int ix=xs; ix <= xe; ix++) {
-      // Take FFT in Z direction, apply shift, and put result in k1d
-
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
-        // Use the values in x0 in the boundary
-      rfft(x0[ix], mesh->LocalNz, std::begin(k1d));
-    }else {
-      rfft(rhs[ix], mesh->LocalNz, std::begin(k1d));
+        //bcmplx(kz, ix-xs) = k2d(ix,kz);
       }
-
-      // Copy into array, transposing so kz is first index
-      for(int kz = 0; kz < nmode; kz++)
-        bcmplx(kz, ix-xs) = k1d[kz];
     }
+    //}
 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
@@ -200,14 +213,23 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
+    BOUT_OMP(parallel firstprivate(xcmplx)){
+    Matrix<dcomplex> k2dd( mesh->LocalNx, (mesh->LocalNz)/2 + 1) ;
+    BOUT_OMP(for)
     for(int ix=xs; ix <= xe; ix++) {
-      for(int kz = 0; kz < nmode; kz++)
-        k1d[kz] = xcmplx(kz, ix-xs);
+      for(int kz = 0; kz < nmode; kz++){
+        //k1d[kz] = xcmplx(kz, ix-xs);
+        k2dd(ix,kz) = xcmplx(kz, ix-xs);
+      }
 
-      for(int kz=nmode;kz<(mesh->LocalNz)/2 + 1;kz++)
-        k1d[kz] = 0.0; // Filtering out all higher harmonics
+      for(int kz=nmode;kz<(mesh->LocalNz)/2 + 1;kz++){
+        //k1d[kz] = 0.0; // Filtering out all higher harmonics
+        k2dd(ix,kz) = 0.0; // Filtering out all higher harmonics
+      }
 
-      irfft(std::begin(k1d), mesh->LocalNz, x[ix]);
+      //irfft(std::begin(k1d), mesh->LocalNz, x[ix]);
+      irfft(&k2dd(ix,0), mesh->LocalNz, x[ix]);
+    }
     }
   }
   return x;

@@ -16,14 +16,17 @@
 #include <bout/scorepwrapper.hxx>
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
+  SCOREP0();
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
 
 Mesh* Mesh::create(Options *opt) {
+  SCOREP0();
   return create(NULL, opt);
 }
 
 Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+  SCOREP0();
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -57,6 +60,7 @@ Mesh::~Mesh() {
 
 /// Get an integer
 int Mesh::get(int &ival, const string &name) {
+  SCOREP0();
   TRACE("Mesh::get(ival)");
 
   if(!source->get(this, ival, name))
@@ -67,6 +71,7 @@ int Mesh::get(int &ival, const string &name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const string &name) {
+  SCOREP0();
   TRACE("Mesh::get(rval)");
 
   if(!source->get(this, rval, name))
@@ -76,6 +81,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
 }
 
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
+  SCOREP0();
   TRACE("Loading 2D field: Mesh::get(Field2D)");
 
   // Ensure data allocated
@@ -94,6 +100,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
+  SCOREP0();
   TRACE("Loading 3D field: Mesh::get(Field3D)");
 
   // Ensure data allocated
@@ -118,6 +125,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const string &name) {
+  SCOREP0();
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -139,6 +147,7 @@ int Mesh::get(Vector2D &var, const string &name) {
 }
 
 int Mesh::get(Vector3D &var, const string &name) {
+  SCOREP0();
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -160,6 +169,7 @@ int Mesh::get(Vector3D &var, const string &name) {
 }
 
 bool Mesh::sourceHasVar(const string &name) {
+  SCOREP0();
   return source->hasVar(name);
 }
 
@@ -168,6 +178,7 @@ bool Mesh::sourceHasVar(const string &name) {
  **************************************************************************/
 
 void Mesh::communicateXZ(FieldGroup &g) {
+  SCOREP0();
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
@@ -195,6 +206,7 @@ void Mesh::communicate(FieldGroup &g) {
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
 void Mesh::communicate(FieldPerp &f) {
+  SCOREP0();
   comm_handle recv[2];
   
   int nin = xstart; // Number of x points in inner guard cell
@@ -215,6 +227,7 @@ void Mesh::communicate(FieldPerp &f) {
 }
 
 int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+  SCOREP0();
   int len = 0;
 
   /// Loop over variables
@@ -230,10 +243,12 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
 }
 
 bool Mesh::periodicY(int jx) const {
+  SCOREP0();
   BoutReal ts; return periodicY(jx, ts);
 }
 
 int Mesh::ySize(int jx) const {
+  SCOREP0();
   // Get the size of a surface in Y using MPI communicator
   MPI_Comm comm = getYcomm(jx);
 
@@ -244,6 +259,7 @@ int Mesh::ySize(int jx) const {
 }
 
 bool Mesh::hasBndryLowerY() {
+  SCOREP0();
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
@@ -256,6 +272,7 @@ bool Mesh::hasBndryLowerY() {
 }
 
 bool Mesh::hasBndryUpperY() {
+  SCOREP0();
   static bool calc = false, answer;
   if(calc) return answer; // Already calculated
 
@@ -268,6 +285,7 @@ bool Mesh::hasBndryUpperY() {
 }
 
 const vector<int> Mesh::readInts(const string &name, int n) {
+  SCOREP0();
   vector<int> result;
 
   if(source->hasVar(name)) {
@@ -284,6 +302,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
 }
 
 void Mesh::setParallelTransform() {
+  SCOREP0();
 
   string ptstr;
   options->get("paralleltransform", ptstr, "identity");
@@ -314,6 +333,7 @@ void Mesh::setParallelTransform() {
 }
 
 ParallelTransform& Mesh::getParallelTransform() {
+  SCOREP0();
   if(!transform) {
     // No ParallelTransform object yet. Set from options
     setParallelTransform();
@@ -324,6 +344,7 @@ ParallelTransform& Mesh::getParallelTransform() {
 }
 
 Coordinates *Mesh::createDefaultCoordinates() {
+  SCOREP0();
   return new Coordinates(this);
 }
 
@@ -367,6 +388,7 @@ Region<Ind2D> & Mesh::getRegion2D(const REGION rgn){
    return getRegion2D(getRegionString(rgn));
 }
 Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
+  SCOREP0();
    auto found = regionMap2D.find(region_name);
    if (found == end(regionMap2D)) {
      throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
@@ -375,6 +397,7 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
 }
   
 void Mesh::addRegion3D(const std::string &region_name, Region<> region){
+  SCOREP0();
    if (regionMap3D.count(region_name)) {
      throw BoutException("Trying to add an already existing region %s to regionMap3D");
    }
@@ -382,6 +405,7 @@ void Mesh::addRegion3D(const std::string &region_name, Region<> region){
 }
 
 void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
+  SCOREP0();
   if (regionMap2D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
@@ -389,6 +413,7 @@ void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
 }
  
 void Mesh::createDefaultRegions(){
+  SCOREP0();
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));

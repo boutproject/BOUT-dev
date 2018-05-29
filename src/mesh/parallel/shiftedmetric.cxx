@@ -14,8 +14,10 @@
 #include <cmath>
 
 #include <output.hxx>
+#include <bout/scorepwrapper.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+  SCOREP0();
   // Read the zShift angle from the mesh
   
   if(mesh.get(zShift, "zShift")) {
@@ -95,6 +97,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
+  SCOREP0();
   f.splitYupYdown();
   
   Field3D& yup = f.yup();
@@ -121,6 +124,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
+  SCOREP0();
   return shiftZ(f, toAlignedPhs);
 }
 
@@ -129,10 +133,12 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
+  SCOREP0();
   return shiftZ(f, fromAlignedPhs);
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
+  SCOREP0();
   ASSERT1(&mesh == f.getMesh());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
@@ -151,6 +157,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
 }
 
 void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
+  SCOREP0();
   // Take forward FFT
   rfft(in, mesh.LocalNz, &cmplx[0]);
 
@@ -169,6 +176,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
+  SCOREP0();
   ASSERT1(&mesh == f.getMesh());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
@@ -186,6 +194,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
 }
 
 void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out) {
+  SCOREP0();
   int nmodes = len/2 + 1;
 
   // Complex array used for FFTs

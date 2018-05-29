@@ -161,7 +161,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // coordinates
 
           Field3D var_fa = fieldmesh->toFieldAligned(var);
-          Field3D result_fa;
+          Field3D result_fa(fieldmesh);
           result_fa.allocate();
           if (fieldmesh->ystart > 1) {
 
@@ -285,6 +285,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 }
 
 const Field2D interp_to(const Field2D &var, CELL_LOC UNUSED(loc), REGION UNUSED(region)) {
+  SCOREP0();
   // Currently do nothing
   return var;
 }
@@ -395,10 +396,12 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
                           const Field3D &UNUSED(delta_z)) {
+  SCOREP0();
   return interpolate(f, delta_x);
 }
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
+  SCOREP0();
   TRACE("interpolate(Field2D, Field3D)");
 
   Mesh *mesh = f.getMesh();
