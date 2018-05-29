@@ -84,14 +84,6 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
     During animation click once to stop in the current frame. Click again to
     continue.
 
-    - TODO: replace empty lists in signature with None
-    - TODO: use bools in sensible places
-    - TODO: put massive list of arguments in kwargs
-    - TODO: Speed up animations ????
-    - TODO: Look at theta in polar plots - periodic?!?
-    - TODO: Log axes, colorbars
-    - TODO: Figureplot
-
     Parameters
     ----------
     vars : array_like, List[array_like]
@@ -134,6 +126,16 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         False - no plots will clear between frames
     return_animation : bool
         Return the matplotlib animation instance
+
+    TODO
+    ----
+    - Replace empty lists in signature with None
+    - Use bools in sensible places
+    - Put massive list of arguments in kwargs
+    - Speed up animations ????
+    - Look at theta in polar plots - periodic?!?
+    - Log axes, colorbars
+    - Figureplot
 
     """
     plt.ioff()

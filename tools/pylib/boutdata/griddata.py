@@ -11,9 +11,6 @@ from numpy import ndarray, zeros, concatenate
 def slice(infile, outfile, region=None, xind=None, yind=None):
     """Copy an X-Y slice from one DataFile to another
 
-    TODO: rename to not clobber builtin `slice`
-    TODO: better regions?
-
     Parameters
     ----------
     infile : str
@@ -32,6 +29,11 @@ def slice(infile, outfile, region=None, xind=None, yind=None):
     xind, yind : (int, int), optional
         Index ranges for x and y. Range includes first point, but not
         last point
+
+    TODO
+    ----
+    - Rename to not clobber builtin `slice`
+    - Better regions?
 
     """
 
@@ -199,8 +201,6 @@ def gridcontourf(grid, data2d, nlevel=31, show=True,
     """Plots a 2D contour plot, taking into account branch cuts
     (X-points).
 
-    TODO: move into a plotting module
-
     Parameters
     ----------
     grid : DataFile
@@ -241,6 +241,10 @@ def gridcontourf(grid, data2d, nlevel=31, show=True,
     >>> c = gridcontourf(grid, data, show=False, ax=axis)
     >>> fig.colorbar(c, ax=axis)
     >>> plt.show()
+
+    TODO
+    ----
+    - Move into a plotting module
 
     """
 

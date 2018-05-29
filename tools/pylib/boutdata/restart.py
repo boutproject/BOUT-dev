@@ -32,10 +32,6 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
 
     Returns True on success
 
-    TODO: replace printing errors with raising `ValueError`
-    TODO: fix undefined variables!
-    TODO: make informat work like `redistribute`
-
     Parameters
     ----------
     nxpe, nype : int
@@ -50,6 +46,12 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, m
         File extension of new files (default: use the same as `informat`)
     mxg, myg : int, optional
         The number of guard cells in x and y
+
+    TODO
+    ----
+    - Replace printing errors with raising `ValueError`
+    - Fix undefined variables!
+    - Make informat work like `redistribute`
 
     """
 
@@ -174,10 +176,6 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,
     NOTE: Can't overwrite
     WARNING: Currently only implemented with uniform BOUT++ grid
 
-    TODO: Add 2D field interpolation
-    TODO: replace printing errors with raising `ValueError`
-    TODO: make informat work like `redistribute`
-
     Parameters
     ----------
     newNx, newNy, newNz : int
@@ -203,6 +201,12 @@ def resize(newNx, newNy, newNz, mxg=2, myg=2,
     -------
     return : bool
         True on success, else False
+
+    TODO
+    ----
+    - Add 2D field interpolation
+    - Replace printing errors with raising `ValueError`
+    - Make informat work like `redistribute`
 
     """
 
@@ -320,9 +324,6 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
         * Will not yield a result close to the original if there are
           asymmetries in the z-direction
 
-    TODO: replace printing errors with raising `ValueError`
-    TODO: make informat work like `redistribute`
-
     Parameters
     ----------
     newNz : int
@@ -339,6 +340,11 @@ def resizeZ(newNz, path="data", output="./", informat="nc", outformat=None):
     Returns
     -------
     True on success, else False
+
+    TODO
+    ----
+    - Replace printing errors with raising `ValueError`
+    - Make informat work like `redistribute`
 
     """
 
@@ -585,8 +591,6 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     safer. However, BOUT++ checks the topology during initialisation
     anyway so this is not too serious.
 
-    TODO: replace printing errors with raising `ValueError`
-
     Parameters
     ----------
     npes : int
@@ -612,6 +616,10 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     Returns
     -------
     True on success
+
+    TODO
+    ----
+    - Replace printing errors with raising `ValueError`
 
     """
 
@@ -779,9 +787,6 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
     NOTE:
         * Can't overwrite
 
-    TODO: replace printing errors with raising `ValueError`
-    TODO: make informat work like `redistribute`
-
     Parameters
     ----------
     newy : int
@@ -800,6 +805,11 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
     Returns
     -------
     True on success, else False
+
+    TODO
+    ----
+    - Replace printing errors with raising `ValueError`
+    - Make informat work like `redistribute`
 
     """
 

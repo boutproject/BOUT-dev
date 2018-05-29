@@ -110,6 +110,7 @@ extensions = ['sphinx.ext.coverage',
               'sphinx.ext.mathjax',
               'sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
+              'sphinx.ext.todo',
 ]
 
 if has_breathe:
