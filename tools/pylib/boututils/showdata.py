@@ -120,10 +120,10 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         Use equal aspect ratio in plots
     cmap : colormap
         A matplotlib colormap instance to use
-    clear_between_frames : {None, bool}
-        None - all plots except line plots will clear between frames
-        True - all plots will clear between frames
-        False - no plots will clear between frames
+    clear_between_frames : bool, optional
+        - Default (None) - all plots except line plots will clear between frames
+        - True - all plots will clear between frames
+        - False - no plots will clear between frames
     return_animation : bool
         Return the matplotlib animation instance
 
