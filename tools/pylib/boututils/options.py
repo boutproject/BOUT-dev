@@ -1,51 +1,62 @@
-"""
-Module to allow BOUT.inp files to be read into python and
+"""Module to allow BOUT.inp files to be read into python and
 manipulated with ease.
 
 
 Nick Walkden, June 2015
 nick.walkden@ccfe.ac.uk
-"""
 
+"""
 
 from copy import copy
 import os
 
-class BOUTOptions(object):
-    """
-    Class to store and interact with options from BOUT++
 
-    instantiate with
-        myOpts = BOUTOptions()
-        myOpts.read_inp('path_to_inp_file')
+class BOUTOptions(object):
+    """Class to store and interact with options from BOUT++
+
+    Parameters
+    ----------
+    inp_path : str, optional
+        Path to BOUT++ options file
+
+    Examples
+    --------
+
+    Instantiate with
+
+    >>> myOpts = BOUTOptions()
+    >>> myOpts.read_inp('path/to/input/file')
+
     or
-        myOpts = BOUTOptions('path_to_inp_file')
+
+    >>> myOpts = BOUTOptions('path/to/input/file')
 
     To get a list of sections use
-        section_list = myOpts.list_sections
-    or
-        section_list = myOpts.list_sections(verbose=True)
-    to print to screen too
 
-    Each section of the input is stored as a dictionary attribute so that,
-    if you want all the settings in the section [ddx]
+    >>> section_list = myOpts.list_sections
+    >>> # Also print to screen:
+    >>> section_list = myOpts.list_sections(verbose=True)
 
-        ddx_opt_dict = myOpts.ddx
+    Each section of the input is stored as a dictionary attribute so
+    that, if you want all the settings in the section [ddx]:
+
+    >> ddx_opt_dict = myOpts.ddx
 
     and access individual settings by
 
-        ddx_setting = myOpts.ddx['first']
+    >>> ddx_setting = myOpts.ddx['first']
 
     Any settings in BOUT.inp without a section are stored in
 
-        root_dict = myOpts.root
+    >>> root_dict = myOpts.root
+
+    TODO
+    ----
+    - Merge this and BoutOptionsFile or replace with better class
+
     """
 
-
-    def __init__(self,inp_path=None):
-        """
-        Initialize with the path to the BOUT.inp file. If None initialize as empty.
-        """
+    def __init__(self, inp_path=None):
 
         self._sections = ['root']
 
@@ -55,7 +66,15 @@ class BOUTOptions(object):
         if inp_path is not None:
             self.read_inp(inp_path)
 
-    def read_inp(self,inp_path=''):
+    def read_inp(self, inp_path=''):
+        """Read a BOUT++ input file
+
+        Parameters
+        ----------
+        inp_path : str, optional
+            Path to the input file (default: current directory)
+
+        """
 
         try:
             inpfile = open(os.path.join(inp_path, 'BOUT.inp'),'r')
@@ -93,18 +112,51 @@ class BOUTOptions(object):
                 else:
                     pass
 
-    def add_section(self,section):
+    def add_section(self, section):
+        """Add a section to the options
+
+        Parameters
+        ----------
+        section : str
+            The name of a new section
+
+        TODO
+        ----
+        - Guard against wrong type
+        """
         self._sections.append(section)
         super(BOUTOptions,self).__setattr__(section,{})
 
-    def remove_section(self,section):
+    def remove_section(self, section):
+        """Remove a section from the options
+
+        Parameters
+        ----------
+        section : str
+            The name of a section to remove
+
+        TODO
+        ----
+        - Fix undefined variable
+        """
         if section in self._sections:
             self._sections.pop(self._sections.index(sections))
             super(BOUTOptions,self).__delattr__(section)
         else:
             print("WARNING: Section "+section+" not found.\n")
 
-    def list_sections(self,verbose=False):
+    def list_sections(self, verbose=False):
+        """Return all the sections in the options
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            If True, print sections to screen
+
+        TODO
+        ----
+        - Better pretty-print
+        """
         if verbose:
             print("Sections Contained: \n")
             for section in self._sections:
