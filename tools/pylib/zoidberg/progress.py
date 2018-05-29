@@ -13,10 +13,14 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
 
     Parameters
     ----------
-    progress  - Number between 0 and 1
-    barLength - Length of the progress bar [10]
-    ascii     - Use '#' as the progress indicator, otherwise use a Unicode
-                character [False]
+    progress : float
+        Number between 0 and 1
+    barLength : int, optional
+        Length of the progress bar
+    ascii : bool, optional
+        If True, use '#' as the progress indicator, otherwise use a
+        Unicode character (the default)
+
     """
 
     if ascii:

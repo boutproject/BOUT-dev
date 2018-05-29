@@ -13,60 +13,138 @@ try:
 except ImportError:
     import boundary
 
+
 class MagneticField(object):
     """Represents a magnetic field in either Cartesian or cylindrical
     geometry
 
+    This is the base class, you probably don't want to instantiate one
+    of these directly. Instead, create an instance of one of the
+    subclasses.
+
     Functions which can be overridden
 
-    Bxfunc = Function for magnetic field in x
-    Bzfunc = Function for magnetic field in z
-    Byfunc = Function for magnetic field in y (default = 1.)
-    Rfunc = Function for major radius. If None, y is in meters
+    - Bxfunc = Function for magnetic field in x
+    - Bzfunc = Function for magnetic field in z
+    - Byfunc = Function for magnetic field in y (default = 1.)
+    - Rfunc = Function for major radius. If None, y is in meters
 
-    boundary = An object with an "outside" function. See boundary.py
+    Attributes
+    ----------
+    boundary
+        An object with an "outside" function. See :py:obj:`zoidberg.boundary`
+
+    See Also
+    --------
+    Slab : A straight field in normal Cartesian coordinates
+    CurvedSlab : A field in curvilinear coordinates
+    StraightStellarator : A rotating ellipse stellarator without curvature
+    VMEC : A numerical field from a VMEC equilibrium file
+    GEQDSK : A numerical field from an EFIT g-file
 
     """
 
     boundary = boundary.NoBoundary() # An optional Boundary object
 
-    def Bxfunc(self, x,z,phi):
-        """
-        Magnetic field in y direction at given coordinates
+    def Bxfunc(self, x, z, phi):
+        """Magnetic field in x direction at given coordinates
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            X-component of the magnetic field
+
         """
         return np.zeros(x.shape)
 
-    def Byfunc(self, x,z,phi):
-        """
-        Magnetic field in y direction at given coordinates
+    def Byfunc(self, x, z, phi):
+        """Magnetic field in y direction at given coordinates
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            Y-component of the magnetic field
+
         """
         return np.ones(x.shape)
 
-    def Bzfunc(self, x,z,phi):
-        """
-        Magnetic field in z direction at given coordinates
+    def Bzfunc(self, x, z, phi):
+        """Magnetic field in z direction at given coordinates
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            Z-component of the magnetic field
+
         """
         return np.zeros(x.shape)
 
-    def Rfunc(self, x,z,phi):
-        """
-        Major radius [meters]
+    def Rfunc(self, x, z, phi):
+        """Major radius [meters]
 
         Returns None if in Cartesian coordinates
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            The major radius
+
         """
         return None
 
-    def pressure(self, x,z,phi):
-        """
-        Pressure [Pascals]
+    def pressure(self, x, z, phi):
+        """Pressure [Pascals]
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            The plasma pressure
 
         """
         return 0.0
 
-    def Bmag(self, x,z,phi):
-        """
-        Magnitude of the magnetic field
-        Bmag = sqrt(Bx**2 + By**2 + Bz**2)
+    def Bmag(self, x, z, phi):
+        """Magnitude of the magnetic field
+
+        .. math ::
+
+           Bmag = \sqrt(B_x^2 + B_y^2 + B_z^2)
+
+        Parameters
+        ----------
+        x, z, phi : array_like
+            X, Z, and toroidal coordinates
+
+        Returns
+        -------
+        ndarray
+            The magnitude of the magnetic field
+
         """
         return np.sqrt( self.Bxfunc(x,z,phi)**2 + self.Byfunc(x,z,phi)**2 + self.Bzfunc(x,z,phi)**2 )
 
@@ -76,16 +154,23 @@ class MagneticField(object):
 
         Parameters
         ----------
-        pos : array_like
-            [x,z]  with x and z in meters
+        pos : ndarray
+            2-D NumPy array, with the second dimension being [x,z],
+            with x and z in meters
         ycoord : float
-            Toroidal angle in radians if cylindrical coordinates, meters if Cartesian
+            Toroidal angle in radians if cylindrical coordinates,
+            metres if Cartesian
+        flatten : bool, optional
+            If True, return a flattened form of the vector
+            components. This is useful for passing to
+            :py:obj:`~zoidberg.fieldtracer.FieldTracer`
 
         Returns
         -------
+        (dx/dy, dz/dy) : list of floats or ndarray
+            - ``= (R*Bx/Bphi, R*Bz/Bphi)`` if cylindrical
+            - ``= (Bx/By, Bz/By)`` if Cartesian
 
-        (dx/dy, dz/dy) = ( R*Bx/Bphi, R*Bz/Bphi )  if cylindrical
-                       = ( Bx/By, Bz/By)  if Cartesian
         """
 
         if flatten:
@@ -130,19 +215,19 @@ class MagneticField(object):
 class Slab(MagneticField):
     """Represents a magnetic field in an infinite flat slab
 
-    Magnetic field in z = Bz + (x-xcentre)*Bzprime
+    Magnetic field in ``z = Bz + (x - xcentre) * Bzprime``
 
-    Coordinates (x,y,z) assumed to be Cartesian, all in meters
+    Coordinates (x,y,z) assumed to be Cartesian, all in metres
 
     Parameters
     ----------
-    By : float
+    By : float, optional
         Magnetic field in y direction
-    Bz : float
-        Magnetic field in z at xcentre (float)
-    xcentre : float
+    Bz : float, optional
+        Magnetic field in z at xcentre
+    xcentre : float, optional
         Reference x coordinate
-    Bzprime : float
+    Bzprime : float, optional
         Rate of change of Bz with x
 
     """
@@ -172,7 +257,7 @@ class CurvedSlab(MagneticField):
     """
     Represents a magnetic field in a curved slab geometry
 
-    Magnetic field in z = Bz + (x-xcentre)*Bzprime
+    Magnetic field in ``z = Bz + (x - xcentre) * Bzprime``
 
     x  - Distance in radial direction [m]
     y  - Azimuthal (toroidal) angle
@@ -215,19 +300,36 @@ class CurvedSlab(MagneticField):
     def Bxfunc(self, x, z, phi):
         return np.zeros(x.shape)
 
-    def Byfunc(self, x,z,phi):
+    def Byfunc(self, x, z, phi):
         return np.full(x.shape, self.By)
 
     def Bzfunc(self, x, z, phi):
         return self.Bz + (x - self.xcentre)*self.Bzprime
 
-    def Rfunc(self, x,z,phi):
+    def Rfunc(self, x, z, phi):
         return np.full(x.shape, self.Rmaj)
 
 try:
     from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
 
     class StraightStellarator(MagneticField):
+        """A "rotating ellipse" stellarator without curvature
+
+        Parameters
+        ----------
+        xcentre : float, optional
+            Middle of the domain in x [m]
+        zcentre : float, optional
+            Middle of the domain in z [m]
+        radius : float, optional
+            Radius of coils [meters]
+        yperiod : float, optional
+            The period over which the coils return to their original position
+        I_coil : float, optional
+            Current in each coil
+
+        """
+
         def coil(self, xcentre, zcentre, radius, angle, iota, I):
             """Defines a single coil
 
@@ -252,24 +354,6 @@ try:
 
         def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, yperiod=np.pi,
                      I_coil=0.05, smooth=False, smooth_args={}):
-            """
-
-            Parameters
-            ----------
-
-            xcentre : float, optional
-                Middle of the domain in x [m]
-            zcentre : float, optional
-                Middle of the domain in z [m]
-            radius : float, optional
-                Radius of coils [meters]
-            yperiod : float, optional
-                The period over which the coils return to their original position
-            I_coil : float, optional
-                Current in each coil
-
-            """
-
             xcentre = float(xcentre)
             zcentre = float(zcentre)
             radius = float(radius)
@@ -329,7 +413,7 @@ except ImportError:
 
 
 class VMEC(MagneticField):
-    """Read a VMEC equilibrium file
+    """A numerical magnetic field from a VMEC equilibrium file
 
     Parameters
     ----------
@@ -521,7 +605,7 @@ class VMEC(MagneticField):
         phi = np.mod(phi, 2.*np.pi)
         return self.bphi_interp((x, z, phi))
 
-    def Rfunc(self, x,z,phi):
+    def Rfunc(self, x, z, phi):
         """
         Major radius
         """
@@ -575,7 +659,7 @@ class SmoothedMagneticField(MagneticField):
     def Bxfunc(self, x, z, phi):
         pass
 
-    def Rfunc(self, x,z,phi):
+    def Rfunc(self, x, z, phi):
         return self.field.Rfunc(x, z, phi)
 
     def smooth_field_line(self, xa, za):
@@ -624,6 +708,7 @@ class GEQDSK(MagneticField):
     ----------
     gfile : str
         Name of the file to open
+
     """
 
     def __init__(self, gfile):
@@ -701,25 +786,12 @@ class GEQDSK(MagneticField):
             self.boundary = boundary.PolygonBoundaryXZ(rlim,zlim)
 
     def Bxfunc(self, x, z, phi):
-        """
-        Radial magnetic field
-        Br = -1/R dpsi/dZ
-        """
         return -self.psi_func(x,z,dy=1,grid=False)/x
 
     def Bzfunc(self, x, z, phi):
-        """
-        Vertical magnetic field
-        Bz = (1/R) dpsi/dR
-        """
-
         return self.psi_func(x,z,dx=1,grid=False)/x
 
     def Byfunc(self, x, z, phi):
-        """
-        Toroidal magnetic field
-        """
-
         # Interpolate to get flux surface normalised psi
         psinorm = self.psinorm_func(x,z, grid=False)
 
@@ -730,16 +802,9 @@ class GEQDSK(MagneticField):
         return f_spl(psinorm) / x  # f = R*Bt
 
     def Rfunc(self, x, z, phi):
-        """
-        Major radius
-        """
         return x
 
-    def pressure(self, x,z,phi):
-        """
-        Pressure in Pascals
-        """
-
+    def pressure(self, x, z, phi):
         # Interpolate to get flux surface normalised psi
         psinorm = self.psinorm_func(x,z, grid=False)
 

@@ -14,8 +14,8 @@ except ImportError:
     except ImportError:
         have_evtk = False
 
-from . import grid
-from . import field
+# from . import grid
+# from . import field
 from . import fieldtracer
 from .progress import update_progress
 
@@ -31,7 +31,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         Zoidberg magnetic field object
     quiet : bool
         Don't display progress bar
-    **kwargs
+    kwargs
         Optional arguments for field line tracing, etc.
 
     Returns
