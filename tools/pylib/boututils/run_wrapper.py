@@ -1,5 +1,6 @@
 """Collection of functions which can be used to make a BOUT++ run"""
 
+from builtins import str
 import os
 import re
 import subprocess
@@ -12,10 +13,6 @@ except:
     # Use os.system (depreciated)
     from os import popen4, system
     lib = "system"
-try:
-  from builtins import str
-except:
-  pass
 
 
 def getmpirun( default="mpirun -np" ):

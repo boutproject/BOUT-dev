@@ -9,12 +9,7 @@ Additional functionality by George Breyiannis 26/12/2014
 """
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-    from builtins import chr
-    from builtins import range
-except:
-    pass
+from builtins import str, chr, range
 
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d

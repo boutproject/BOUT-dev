@@ -1,18 +1,7 @@
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-except:
-    print("Warning: No str in builtins")
 
-try:
-    from builtins import range
-except:
-    print("Warning: No range in builtins")
-
-# Requires:
-#  - boututils
-#  - NumPy
+from builtins import str, range
 
 from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray

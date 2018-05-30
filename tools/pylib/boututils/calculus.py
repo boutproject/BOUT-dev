@@ -7,10 +7,7 @@ B.Dudson, University of York, Nov 2009
 from __future__ import print_function
 from __future__ import division
 
-try:
-    from builtins import range
-except:
-    pass
+from builtins import range
 
 try:
     from past.utils import old_div

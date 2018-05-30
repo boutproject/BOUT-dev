@@ -1,8 +1,5 @@
-try:
-    from builtins import object
-except:
-    pass
-    
+from builtins import object
+
 # from math import pi, atan, cos, sin
 
 import numpy as np

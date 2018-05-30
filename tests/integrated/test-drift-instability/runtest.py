@@ -7,11 +7,7 @@
 from __future__ import print_function
 from __future__ import division
 
-try:
-  from builtins import str
-  from builtins import range
-except:
-  pass
+from builtins import str, range
 
 from math import isnan
 

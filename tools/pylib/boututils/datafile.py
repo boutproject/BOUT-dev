@@ -22,13 +22,7 @@ scipy.io.netcdf
 """
 
 from __future__ import print_function
-try:
-    from builtins import map
-    from builtins import zip
-    from builtins import str
-    from builtins import object
-except:
-    pass
+from builtins import map, zip, str, object
 
 import numpy as np
 import time
