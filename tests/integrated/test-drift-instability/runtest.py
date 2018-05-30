@@ -24,7 +24,7 @@ from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
 import numpy as np
-from sys import stdout, exit ,argv
+from sys import exit ,argv
 
 nthreads=1
 MPIRUN = getmpirun()
