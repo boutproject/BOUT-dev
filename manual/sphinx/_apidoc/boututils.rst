@@ -42,6 +42,7 @@ boututils.boutarray module
 .. automodule:: boututils.boutarray
     :members:
     :undoc-members:
+    :show-inheritance:
 
 boututils.boutgrid module
 -------------------------
