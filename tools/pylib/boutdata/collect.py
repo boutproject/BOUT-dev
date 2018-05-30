@@ -3,14 +3,14 @@ from __future__ import division
 
 from builtins import str, range
 
-from boututils.datafile import DataFile
-from boututils.boutarray import BoutArray
-
 import os
 import sys
 import glob
 
 import numpy as np
+
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
 
 
 def findVar(varname, varlist):
