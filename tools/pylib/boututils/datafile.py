@@ -40,18 +40,18 @@ from boututils.boutarray import BoutArray
 library = None
 
 try:
-    from netCDF4 import Dataset
+    from netCDF4 import Dataset, Variable as ncVariableType
     library = "netCDF4"
     has_netCDF = True
 except ImportError:
     try:
-        from Scientific.IO.NetCDF import NetCDFFile as Dataset
+        from Scientific.IO.NetCDF import NetCDFFile as Dataset, NetCDFVariable as ncVariableType
         from Scientific.N import Int, Float, Float32
         library = "Scientific"
         has_netCDF = True
     except ImportError:
         try:
-            from scipy.io.netcdf import netcdf_file as Dataset
+            from scipy.io.netcdf import netcdf_file as Dataset, netcdf_variable as ncVariableType
             library = "scipy"
             has_netCDF = True
             if hasattr(Dataset, "create_dimension"):
@@ -331,13 +331,17 @@ class DataFile(object):
     def __setitem__(self, key, value):
         self.impl.__setitem__(key, value)
 
-    def attributes(self, varname):
+    def attributes(self, name="/"):
         """Return a dictionary of attributes
+
+        These are attributes for varname if varname is specified. If varname is
+        "/" which stands for the root group (default case) then the attributes of the file are
+        returned.
 
         Parameters
         ----------
-        varname : str
-            The name of the variable
+        name : str
+            The name of the variable or group
 
         Returns
         -------
@@ -345,7 +349,7 @@ class DataFile(object):
             The attribute names and their values
 
         """
-        return self.impl.attributes(varname)
+        return self.impl.attributes(name)
 
 
 class DataFile_netCDF(DataFile):
@@ -668,43 +672,64 @@ class DataFile_netCDF(DataFile):
         except AttributeError:
             pass
 
-    def attributes(self, varname):
+    def attributes(self, name="/"):
         try:
-            return self._attributes_cache[varname]
+            return self._attributes_cache[name]
         except KeyError:
-            # Need to build the attributes dictionary for this variable
+            # Need to build the attributes dictionary for this variable or group
             if self.handle is None:
                 return None
+
+            if name=="/":
+                # need to get the file attributes
+                attributes = self.handle.ncattrs()
+                self._attributes_cache[name] = attributes
+                return attributes
+
+            # try and get attributes for a variable
             try:
-                var = self.handle.variables[varname]
+                x = self.handle.variables[name]
             except KeyError:
                 # Not found. Try to find using case-insensitive search
-                var = None
+                x = None
                 for n in list(self.handle.variables.keys()):
-                    if n.lower() == varname.lower():
+                    if n.lower() == name.lower():
                         print(
-                            "WARNING: Reading '" + n + "' instead of '" + varname + "'")
-                        var = self.handle.variables[n]
-                if var is None:
-                    return None
+                            "WARNING: Reading '" + n + "' instead of '" + name + "'")
+                        x = self.handle.variables[n]
+            if x is None:
+                # Have not found variable, try to find group instead
+                try:
+                    x = self.handle.groups[name]
+                except KeyError:
+                    # Not found. Try to find using case-insensitive search
+                    x = None
+                    for n in list(self.handle.groups.keys()):
+                        if n.lower() == name.lower():
+                            print(
+                                "WARNING: Reading '" + n + "' instead of '" + name + "'")
+                            x = self.handle.groups[n]
+
+            if x is None:
+                return None
 
             attributes = {}  # Map of attribute names to values
 
             try:
                 # This code tested with NetCDF4 library
-                attribs = var.ncattrs()  # List of attributes
+                attribs = x.ncattrs()  # List of attributes
                 for attrname in attribs:
-                    attributes[attrname] = var.getncattr(
+                    attributes[attrname] = x.getncattr(
                         attrname)  # Get all values and insert into map
             except:
-                print("Error reading attributes for " + varname)
+                print("Error reading attributes for " + name)
                 # Result will be an empty map
 
-            if "bout_type" not in attributes:
-                attributes["bout_type"] = self._bout_type_from_dimensions(varname)
+            if type(x) is ncVariableType and "bout_type" not in attributes:
+                attributes["bout_type"] = self._bout_type_from_dimensions(name)
 
             # Save the attributes for this variable to the cache
-            self._attributes_cache[varname] = attributes
+            self._attributes_cache[name] = attributes
 
             return attributes
 
@@ -959,27 +984,27 @@ class DataFile_HDF5(DataFile):
             # data is not a BoutArray, so doesn't have attributes to write
             pass
 
-    def attributes(self, varname):
+    def attributes(self, name="/"):
 
         try:
-            return self._attributes_cache[varname]
+            return self._attributes_cache[name]
         except KeyError:
-            # Need to add attributes for this variable to the cache
+            # Need to add attributes for this variable or group to the cache
             attributes = {}
-            var = self.handle[varname]
-            for attrname in var.attrs:
-                attribute = var.attrs[attrname]
+            x = self.handle[name]
+            for attrname in x.attrs:
+                attribute = x.attrs[attrname]
                 if type(attribute) in [bytes, np.bytes_]:
                     attribute = str(attribute, encoding="utf-8")
                 attributes[attrname] = attribute
 
-            if not "bout_type" in attributes:
+            if type(x) is h5py.Dataset and not "bout_type" in attributes:
                 # bout_type is a required attribute for BOUT++ outputs, so it should
                 # have been found
                 raise ValueError(
-                    "Error: bout_type not found in attributes of "+varname)
+                    "Error: bout_type not found in attributes of "+name)
 
-            # Save the attributes for this variable to the cache
-            self._attributes_cache[varname] = attributes
+            # Save the attributes for this variable or group to the cache
+            self._attributes_cache[name] = attributes
 
             return attributes
