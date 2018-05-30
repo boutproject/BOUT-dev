@@ -395,6 +395,19 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    }
    return found->second;
 }
+
+Region<IndPerp> & Mesh::getRegionPerp(const REGION rgn){
+   SCOREP0();
+   return getRegionPerp(getRegionString(rgn));
+}
+Region<IndPerp> & Mesh::getRegionPerp(const std::string &region_name){
+  SCOREP0();
+   auto found = regionMapPerp.find(region_name);
+   if (found == end(regionMapPerp)) {
+     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+   }
+   return found->second;
+}
   
 void Mesh::addRegion3D(const std::string &region_name, Region<> region){
   SCOREP0();
@@ -410,6 +423,14 @@ void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
   regionMap2D[region_name] = region;
+}
+
+void Mesh::addRegionPerp(const std::string &region_name, Region<IndPerp> region){
+  SCOREP0();
+  if (regionMapPerp.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMapPerp");
+  }
+  regionMapPerp[region_name] = region;
 }
  
 void Mesh::createDefaultRegions(){
@@ -434,9 +455,26 @@ void Mesh::createDefaultRegions(){
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
 
+  //Perp regions
+  addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                       maxregionblocksize));
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                           maxregionblocksize));
+  addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                       maxregionblocksize));
+  addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                       maxregionblocksize));
+
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   for (const auto &ind3D: getRegion3D("RGN_ALL")){
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+
+  indexLookupPerpto3D = Matrix<int>(LocalNx*LocalNz,LocalNy);
+  for (const auto &ind3D: getRegion3D("RGN_ALL")){
+    int jperp = ind3DtoPerp(ind3D).ind;
+    int jy = (ind3D.ind / LocalNz) % LocalNy;
+    indexLookupPerpto3D(jperp,jy) = ind3D.ind;
   }
 }

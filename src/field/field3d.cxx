@@ -353,6 +353,14 @@ const IndexRange Field3D::region2D(REGION rgn) const {
   };
 }
 
+// Access Field3D with IndPerp 
+BoutReal& Field3D::operator()(const IndPerp &d, int jy) {
+  return data[fieldmesh->mapPerpto3D(d,jy)];
+}
+const BoutReal& Field3D::operator()(const IndPerp &d, int jy) const {
+  return data[fieldmesh->mapPerpto3D(d,jy)];
+}
+
 /////////////////// ASSIGNMENT ////////////////////
 
 Field3D & Field3D::operator=(const Field3D &rhs) {

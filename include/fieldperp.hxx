@@ -33,6 +33,7 @@ class FieldPerp;
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -102,6 +103,12 @@ class FieldPerp : public Field {
   }
   const BoutReal& operator[](const Indices &i) const override{
     return operator()(i.x, i.z);
+  }
+  BoutReal& operator[](const IndPerp &i) {
+    return data[i.ind];
+  }
+  const BoutReal& operator[](const IndPerp &i) const {
+    return data[i.ind];
   }
   
   /*!

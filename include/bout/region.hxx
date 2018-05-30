@@ -244,7 +244,7 @@ inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
 inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
 inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
-/// Index-type for `Field2D`s
+/// Index-type for `FieldPerp`s
 class IndPerp : public SpecificInd {
 public:
   IndPerp() : SpecificInd(){};

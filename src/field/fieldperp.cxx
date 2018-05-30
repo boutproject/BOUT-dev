@@ -51,12 +51,14 @@ FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
 }
 
 FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh), yindex(-1) {
+  SCOREP0();
   nx = fieldmesh->LocalNx;
   nz = fieldmesh->LocalNz;
   *this = val;
 }
 
 void FieldPerp::allocate() {
+  SCOREP0();
   if (data.empty()) {
     if (!fieldmesh) {
       /// If no mesh, use the global
@@ -177,6 +179,7 @@ FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
 const IndexRange FieldPerp::region(REGION rgn) const {
+  SCOREP0();
   switch (rgn) {
   case RGN_ALL:
   case RGN_NOZ:
@@ -291,6 +294,7 @@ FPERP_REAL_OP_FPERP(/);
  */
 #define FPERP_FUNC(name, func)                                                           \
   const FieldPerp name(const FieldPerp &f, REGION rgn) {                                 \
+    SCOREP0();                                                                           \
     TRACE(#name "(FieldPerp)");                                                          \
     /* Check if the input is allocated */                                                \
     ASSERT1(f.isAllocated());                                                            \
@@ -328,6 +332,7 @@ const FieldPerp copy(const FieldPerp &f) {
 }
 
 const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
+  SCOREP0();
   FieldPerp result = copy(var);
 
   for (const auto &d : result.region(rgn))
@@ -348,13 +353,16 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   result.allocate();
   result.setIndex(y);
 
-  for(auto i : result)
-    result[i] = f[i];
+  //for(auto i : result)
+  BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp("RGN_ALL"), i,
+    result[i] = f(i,y);
+  );
   
   return result;
 }
 
 BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
+  SCOREP0();
   TRACE("FieldPerp::Min() %s", allpe ? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
@@ -375,6 +383,7 @@ BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
 }
 
 BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
+  SCOREP0();
   TRACE("FieldPerp::Max() %s", allpe ? "over all PEs" : "");
 
   ASSERT2(f.isAllocated());
@@ -396,6 +405,7 @@ BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
 
 bool finite(const FieldPerp &f, REGION rgn) {
   TRACE("finite(FieldPerp)");
+  SCOREP0();
 
   if (!f.isAllocated()) {
     return false;
@@ -411,6 +421,7 @@ bool finite(const FieldPerp &f, REGION rgn) {
 }
 
 FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
+  SCOREP0();
   TRACE("pow(FieldPerp, FieldPerp)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -431,6 +442,7 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
 }
 
 FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
+  SCOREP0();
   TRACE("pow(FieldPerp, BoutReal)");
   // Check if the inputs are allocated
   ASSERT1(lhs.isAllocated());
@@ -449,6 +461,7 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
 }
 
 FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
+  SCOREP0();
   TRACE("pow(lhs, FieldPerp)");
   // Check if the inputs are allocated
   ASSERT1(rhs.isAllocated());
