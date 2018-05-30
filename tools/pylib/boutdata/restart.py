@@ -1,4 +1,12 @@
-"""Routines for manipulating restart files"""
+"""Routines for manipulating restart files
+
+TODO
+----
+
+- Don't import ``numpy.random.normal`` directly, just the ``random``
+  submodule, or sphinx includes the documentation for ``normal``
+
+"""
 
 from __future__ import print_function
 from __future__ import division
