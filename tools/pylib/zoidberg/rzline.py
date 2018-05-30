@@ -5,7 +5,7 @@ Routines and classes for representing periodic lines in R-Z poloidal planes
 
 import numpy as np
 
-from numpy import pi, linspace, sqrt, cos, sin, append, zeros, argmin
+from numpy import pi, linspace, sqrt, cos, sin, append, argmin
 from scipy.interpolate import splrep, splev, interp1d
 from scipy.integrate import cumtrapz
 

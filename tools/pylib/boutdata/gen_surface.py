@@ -1,11 +1,7 @@
 from __future__ import print_function
 # Flux surface generator for tokamak grid files
 
-from boututils.datafile import DataFile
-import glob
 import numpy as np
-import os
-import sys
 
 
 def gen_surface(grid):

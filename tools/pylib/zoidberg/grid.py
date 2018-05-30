@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 
 # Import classes representing poloidal grids
-from .poloidal_grid import RectangularPoloidalGrid, StructuredPoloidalGrid
+from .poloidal_grid import RectangularPoloidalGrid
 
 class Grid(object):
     """
