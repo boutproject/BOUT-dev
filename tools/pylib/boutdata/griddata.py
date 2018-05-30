@@ -1,9 +1,10 @@
 from __future__ import print_function
 # Routines for manipulating grid files
 
-from boututils.datafile import DataFile
+from numpy import ndarray, zeros, concatenate, linspace, amin, amax
+import matplotlib.pyplot as plt
 
-from numpy import ndarray, zeros, concatenate
+from boututils.datafile import DataFile
 
 def slice(infile, outfile, region = None, xind=None, yind=None):
     """
@@ -153,8 +154,6 @@ def rotate(gridfile, yshift, output=None):
                     print("Copying '%s' (%d dimensions)" % (varname, ndims))
                     out.write(varname, d[varname])
 
-import matplotlib.pyplot as plt        
-from numpy import linspace, amin, amax
 
 def gridcontourf(grid, data2d, nlevel=31, show=True, 
                  mind=None, maxd=None, symmetric=False,
