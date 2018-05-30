@@ -36,7 +36,6 @@ sys.path.append("../../tools/pylib")
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
 if on_readthedocs:
-    import sys
     from unittest.mock import MagicMock
 
     class Mock(MagicMock):
