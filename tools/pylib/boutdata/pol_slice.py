@@ -40,10 +40,8 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
 
     dz = 2.*np.pi / float(n * nz)
 
-    try:
-        # Open the grid file
-        gf = DataFile(gridfile)
-
+    # Open the grid file
+    with DataFile(gridfile) as gf:
         # Check the grid size is correct
         if gf.read("nx") != nx:
             print("ERROR: Grid X size is different to the variable")
@@ -64,11 +62,6 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
             else:
                 print("ERROR: Neither qinty nor zShift found")
                 return None
-
-        gf.close()
-    except:
-        print("ERROR: pol_slice couldn't read grid file")
-        return None
 
     #Decide if we've asked to do interpolation
     doInterp = False
