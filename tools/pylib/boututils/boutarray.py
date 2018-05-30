@@ -1,3 +1,7 @@
+"""Wrapper for ndarray with extra attributes for BOUT++ fields.
+
+"""
+
 import numpy
 
 
@@ -10,6 +14,17 @@ class BoutArray(numpy.ndarray):
         Data to convert to BoutArray
     attributes : dict
         Dictionary of extra attributes for BOUT++ fields
+
+        Notably, these attributes should contain
+        ``bout_type``. Possible values are:
+
+        - scalar
+        - Field2D
+        - Field3D
+
+        If the variable is an evolving variable (i.e. has a time
+        dimension), then it is appended with a "_t"
+
     """
 
     # See https://docs.scipy.org/doc/numpy-1.13.0/user/basics.subclassing.html
