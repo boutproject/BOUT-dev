@@ -501,6 +501,8 @@ class BoutOutputs(object):
     ----------
     attributes : dict
                  dictionary of attributes from the first DataFile
+    evolvingVariables : list
+                        list of time-evolving variables
 
     Examples
     --------
@@ -558,7 +560,7 @@ class BoutOutputs(object):
         # Available variables
         self.varNames = []
         self.dimensions = {}
-        self.evolvingVariableNames = []
+        self.evolvingVariables = []
 
         with DataFile(latest_file) as f:
             self.attributes = f.attributes()
@@ -579,7 +581,7 @@ class BoutOutputs(object):
                 dimensions = f.dimensions(name)
                 self.dimensions[name] = dimensions
                 if name != "t_array" and "t" in dimensions:
-                    self.evolvingVariableNames.append(name)
+                    self.evolvingVariables.append(name)
 
         # Private variables
         if self._caching:
@@ -603,12 +605,6 @@ class BoutOutputs(object):
 
         """
         return self.varNames
-
-    def evolvingVariables(self):
-        """Return a list of names of time-evolving variables
-
-        """
-        return self.evolvingVariableNames
 
     def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
         """Create a new set of dump files for npes processors.
