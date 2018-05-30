@@ -408,34 +408,7 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     if(ly != 0) datatype = "Field2D";
     if(lz != 0) datatype = "Field3D";
     
-    // Create new dataspace for attribute
-    hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
-    if (attribute_dataspace < 0)
-      throw BoutException("Failed to create attribute_dataspace");
-    
-    // Create new string datatype for attribute
-    hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
-    if (variable_length_string_type < 0)
-      throw BoutException("Failed to create variable_length_string_type");
-    if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
-      throw BoutException("Failed to create string type");
-    
-    // Create attribute and write to it
-    hid_t myatt_in = H5Acreate(dataSet, "bout_type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
-    if (myatt_in < 0)
-      throw BoutException("Failed to create attribute");
-    if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)
-      throw BoutException("Failed to write attribute");
-    
-    if (H5Sclose(init_space) < 0)
-      throw BoutException("Failed to close init_space");
-    if (H5Sclose(attribute_dataspace) < 0)
-      throw BoutException("Failed to close attribute_dataspace");
-    if (H5Tclose(variable_length_string_type) < 0)
-      throw BoutException("Failed to close variable_length_string_type");
-    if (H5Aclose(myatt_in) < 0)
-      throw BoutException("Failed to close myatt_in");
-    
+    setAttribute(dataSet, "bout_type", datatype);
   }
   
   hid_t dataSpace = H5Dget_space(dataSet);
@@ -732,6 +705,100 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     throw BoutException("Failed to close dataSet");
   
   return true;
+}
+
+
+/***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
+                         const std::string &text) {
+  TRACE("H5Format::setAttribute(varname, attrname, string)");
+
+  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    // Negative value indicates error, i.e. variable does not exist
+    throw BoutException("Trying to create attribute for variable that does not exist");
+  }
+
+  setAttribute(dataSet, attrname, text);
+
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+}
+
+void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
+                         int value) {
+  TRACE("H5Format::setAttribute(varname, attrname, int)");
+
+  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    // Negative value indicates error, i.e. variable does not exist
+    throw BoutException("Trying to create attribute for variable that does not exist");
+  }
+
+  setAttribute(dataSet, attrname, value);
+
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+}
+
+void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
+                         const std::string &text) {
+  TRACE("H5Format::setAttribute(dataSet, attrname, string)");
+
+  // Create new dataspace for attribute
+  hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+  if (attribute_dataspace < 0)
+    throw BoutException("Failed to create attribute_dataspace");
+
+  // Create new string datatype for attribute
+  hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
+  if (variable_length_string_type < 0)
+    throw BoutException("Failed to create variable_length_string_type");
+  if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
+    throw BoutException("Failed to create string type");
+
+  // Create attribute if it does not exist and write to it
+  hid_t myatt_in = H5Aopen(dataSet, attrname.c_str(), H5P_DEFAULT);
+  if (myatt_in < 0) {
+    // Need to create attribute
+    myatt_in = H5Acreate(dataSet, attrname.c_str(), variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    if (myatt_in < 0)
+      throw BoutException("Failed to create attribute");
+  }
+  if (H5Awrite(myatt_in, variable_length_string_type, &text) < 0)
+    throw BoutException("Failed to write attribute");
+
+  if (H5Sclose(attribute_dataspace) < 0)
+    throw BoutException("Failed to close attribute_dataspace");
+  if (H5Tclose(variable_length_string_type) < 0)
+    throw BoutException("Failed to close variable_length_string_type");
+  if (H5Aclose(myatt_in) < 0)
+    throw BoutException("Failed to close myatt_in");
+}
+
+void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
+                         int value) {
+  TRACE("H5Format::setAttribute(dataSet, attrname, int)");
+
+  // Create new dataspace for attribute
+  hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+  if (attribute_dataspace < 0)
+    throw BoutException("Failed to create attribute_dataspace");
+
+  // Create attribute and write to it
+  hid_t myatt_in = H5Acreate(dataSet, attrname.c_str(), H5T_NATIVE_INT, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+  if (myatt_in < 0)
+    throw BoutException("Failed to create attribute");
+  if (H5Awrite(myatt_in, H5T_NATIVE_INT, &value) < 0)
+    throw BoutException("Failed to write attribute");
+
+  if (H5Sclose(attribute_dataspace) < 0)
+    throw BoutException("Failed to close attribute_dataspace");
+  if (H5Aclose(myatt_in) < 0)
+    throw BoutException("Failed to close myatt_in");
 }
 
 #endif // HDF5

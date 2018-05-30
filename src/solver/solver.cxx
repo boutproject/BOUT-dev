@@ -31,7 +31,7 @@
 
 #include <field_factory.hxx>
 
-#include "solverfactory.hxx"
+#include "bout/solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>

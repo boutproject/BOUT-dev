@@ -164,6 +164,7 @@ that you show professional courtesy when using this code:
       fluid_equations_2
       object_orientated_interface
       differential_operators
+      algebraic_operators
       staggered_grids
       advanced_methods
       eigenvalue_solver

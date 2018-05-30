@@ -66,10 +66,12 @@ layout.
 
     Ni = collect("Ni")  # Collect the variable "Ni"
 
-The result is an up to 4D NumPy array, ``Ni`` in this case. This is ordered
-``[t,x,y,z]``:
+The result is an up to 4D array, ``Ni`` in this case. The array is a BoutArray
+object: BoutArray is a wrapper class for Numpy's ndarray which adds an
+'attributes' member variable containing a dictionary of attributes.  The array
+is ordered ``[t,x,y,z]``:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> Ni.shape
     [10,1,2,3]
@@ -78,6 +80,33 @@ so ``Ni`` would have 10 time slices, 1 point in x, 2 in y, and 3 in z.
 This should correspond to the grid size used in the simulation.
 Since the collected data is a NumPy array, all the useful routines
 in NumPy, SciPy and Matplotlib can be used for further analysis.
+
+The attributes of the data give:
+
+- the ``bout_type`` of the variable
+
+  - {``'Field3D_t'``, ``'Field2D_t'``, ``'scalar_t'``} for time-evolving variables
+
+  - {``'Field3D'``, ``'Field2D'``, ``'scalar'``} for time-independent variables
+
+- its location, one of {``'CELL_CENTRE'``, ``'CELL_XLOW'``, ``'CELL_YLOW'``, ``'CELL_ZLOW'``}. See :ref:`sec-staggergrids`.
+
+.. code-block:: python
+
+    >>> Ni.attributes("bout_type")
+    'Field3D_t'
+    >>> Ni.attributes("location")
+    'CELL_CENTRE'
+
+Attributes can also be read using the ``attributes`` routine:
+
+.. code-block:: python
+
+    from boutdata.collect import attributes
+
+    attribs = attributes("Ni")
+
+The result is a dictionary (map) of attribute name to attribute value.
 
 If the data has less then 4 dimension, it can be checked with
 ``dimension`` what dimensions are available:
@@ -93,17 +122,6 @@ The first will print as expected ``[t, x, y, z]`` - while the second
 will print ``[x, y]`` as dx is nether evolved in time, nor does it has
 a ``z`` dependency.
 
-An experimental feature is adding attributes to variables. These can be read using the ``attributes``
-routine:
-
-.. code-block:: python
-
-    from boutdata.collect import attributes
-    
-    attribs = attributes("Ni")
-
-The result is a dictionary (map) of attribute name to attribute value.
-                
 To access both the input options (in the BOUT.inp file) and output data, there
 is the ``BoutData`` class.
 

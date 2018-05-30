@@ -39,14 +39,9 @@ from __future__ import print_function
 from __future__ import division
 from builtins import range
 
-try:
-    from numpy import arange,zeros,exp,power,transpose,sin,cos,linspace,min,max
-    from scipy import fftpack,pi
-    from scipy import pi
+from numpy import arange, zeros, exp, power, transpose, sin, cos, linspace, min, max
+from scipy import fftpack, pi
 
-except ImportError:
-    print("ERROR: NumPy or SciPy module not available")
-    raise
 
 def spectrogram(data, dx, sigma, clip=1.0, optimise_clipping=True, nskip=1.0):
     n = data.size
@@ -97,15 +92,12 @@ def spectrogram(data, dx, sigma, clip=1.0, optimise_clipping=True, nskip=1.0):
     return (transpose(spectra), omega, xxnew)
 
 def test_spectrogram(n, d, s):
-
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        print("ERROR: MatPlotLib module not available")
-        raise
     """
     Function used to test the performance of spectrogram with various values of sigma
     """
+
+    import matplotlib.pyplot as plt
+
     nskip = 10
     xx = arange(n)/d
     test_data = sin(2.0*pi*512.0*xx * ( 1.0 + 0.005*cos(xx*50.0))) + 0.5*exp(xx)*cos(2.0*pi*100.0*power(xx,2))

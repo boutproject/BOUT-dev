@@ -125,9 +125,8 @@ A real example - unstagger data:
 
    import boutcore
    boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   # uses location from dump - is already staggered
    upar=boutcore.Field3D.fromCollect("Upar")
-   # location not part of dump file
-   upar.setLocation("CELL_YLOW")
    upar=boutcore.interp_to(upar,"CELL_CENTRE")
    # convert to numpy array
    upar=upar.getAll()

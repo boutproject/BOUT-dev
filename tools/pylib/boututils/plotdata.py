@@ -1,15 +1,11 @@
 from __future__ import print_function
 # Plot a data set
 
-try:
-    import numpy as np
-    import matplotlib
-    import matplotlib.cm as cm
-    import matplotlib.mlab as mlab
-    import matplotlib.pyplot as plt
-except ImportError:
-    print("ERROR: plotdata needs numpy and matplotlib to work")
-    raise
+import numpy as np
+import matplotlib
+import matplotlib.cm as cm
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 matplotlib.rcParams['xtick.direction'] = 'out'
 matplotlib.rcParams['ytick.direction'] = 'out'

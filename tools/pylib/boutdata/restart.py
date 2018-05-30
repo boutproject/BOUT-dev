@@ -3,30 +3,27 @@
 from __future__ import print_function
 from __future__ import division
 
-
 import os
-import sys
 import glob
 
 try:
-    from builtins import str
-    from builtins import range
-except:
+    from builtins import str, range
+except ImportError:
     pass
 
 from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
+from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
 
 import multiprocessing
 import numpy as np
 from numpy import mean, zeros, arange
-from math import sqrt
 from numpy.random import normal
 
 from scipy.interpolate import interp1d
 try:
     from scipy.interpolate import RegularGridInterpolator
-except:
+except ImportError:
     pass
 
 
@@ -584,12 +581,6 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     -------
     True on success
     """
-
-    try:
-        from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
-    except ImportError:
-        raise ImportError(
-            "ERROR: restart.redistribute needs boutdata.processor_rearrange")
 
     if npes <= 0:
         print("ERROR: Negative or zero number of processors")

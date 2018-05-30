@@ -1246,13 +1246,15 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
 
 // f = (x - gamma*G(x)) - rhs
 PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
-  BoutReal *xdata, *fdata;
+  const BoutReal *xdata;
+  BoutReal *fdata;
   int ierr;
 
   // Get data from PETSc into BOUT++ fields
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
 
-  loadVars(xdata);
+  // Hacky
+  loadVars(const_cast<BoutReal*>(xdata));
 
   // Call RHS function
   run_diffusive(implicit_curtime, linear);
@@ -1281,7 +1283,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
 
   // Restore data arrays to PETSc
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   return 0;
 }

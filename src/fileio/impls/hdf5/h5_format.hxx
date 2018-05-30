@@ -109,6 +109,13 @@ class H5Format : public DataFormat {
   
   void setLowPrecision() override { lowPrecision = true; }
 
+  // Attributes
+
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    const std::string &text) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    int value) override;
+
  private:
 
   char *fname; ///< Current file name
@@ -129,6 +136,13 @@ class H5Format : public DataFormat {
   bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write_rec(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+
+  // Attributes
+
+  void setAttribute(const hid_t &dataSet, const std::string &attrname,
+                    const std::string &text);
+  void setAttribute(const hid_t &dataSet, const std::string &attrname,
+                    int value);
 };
 
 #endif // __H5FORMAT_H__

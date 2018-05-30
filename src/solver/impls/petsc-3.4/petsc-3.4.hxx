@@ -45,6 +45,11 @@ class PetscSolver;
 
 #include <vector>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<PetscSolver> registersolverpetsc("petsc");
+}
+
 typedef PetscScalar BoutReal;
 typedef PetscInt integer;
 typedef PetscBool boole;

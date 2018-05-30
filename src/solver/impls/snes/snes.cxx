@@ -14,13 +14,6 @@
 
 #include "petscsnes.h"
 
-SNESSolver::SNESSolver(Options *opt) : Solver(opt) {
-  
-}
-
-SNESSolver::~SNESSolver() {
-}
-
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
@@ -139,12 +132,12 @@ int SNESSolver::run() {
   //output << "Number of SNES iterations: " << its << endl;
   
   // Put the result into variables
-  BoutReal *xdata;
+  const BoutReal *xdata;
   int ierr;
-  ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  load_vars(xdata);
-  ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
+  ierr = VecGetArrayRead(snes_x,&xdata);CHKERRQ(ierr);
+  load_vars(const_cast<BoutReal*>(xdata));
+  ierr = VecRestoreArrayRead(snes_x,&xdata);CHKERRQ(ierr);
+
   run_rhs(0.0); // Run RHS to calculate auxilliary variables
     
   /// Call the monitor function
@@ -158,13 +151,14 @@ int SNESSolver::run() {
 
 // f = rhs
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
-  BoutReal *xdata, *fdata;
+  const BoutReal *xdata;
+  BoutReal *fdata;
   int ierr;
-  
+
   // Get data from PETSc into BOUT++ fields
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_vars(xdata);  
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_vars(const_cast<BoutReal*>(xdata));
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   // Call RHS function
   run_rhs(0.0);

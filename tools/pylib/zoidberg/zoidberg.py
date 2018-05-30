@@ -1,8 +1,4 @@
 from __future__ import division
-try:
-    from builtins import object
-except ImportError:
-    pass
 
 import numpy as np
 from boututils import datafile as bdata
