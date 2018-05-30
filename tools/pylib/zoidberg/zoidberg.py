@@ -67,7 +67,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
     # TODO: if axisymmetric, don't loop, do one slice and copy
     for j in range(ny):
-        if not quiet:
+        if (not quiet) and (ny > 1):
             update_progress(float(j)/float(ny-1), **kwargs)
 
         # Get this poloidal grid
