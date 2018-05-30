@@ -48,21 +48,7 @@ if on_readthedocs:
         'boutcore',
         'bunch',
         'h5py',
-        'matplotlib',
-        'matplotlib.cm',
-        'matplotlib.mlab',
-        'matplotlib.pyplot',
         'netCDF4',
-        'numpy',
-        'numpy.fft',
-        'numpy.random',
-        'scipy',
-        'scipy.interpolate',
-        'scipy.integrate',
-        'scipy.ndimage',
-        'scipy.ndimage.filters',
-        'scipy.ndimage.morphology',
-        'scipy.spatial',
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
