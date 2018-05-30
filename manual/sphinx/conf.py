@@ -67,7 +67,8 @@ if has_breathe:
                                      outtypes=("file"),
                                      project="BOUT++",
                                      rootpath='../doxygen/bout/xml',
-                                     suffix='rst')
+                                     suffix='rst',
+                                     quiet=False)
     apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
     if not os.path.isdir(apidoc_args.destdir):
         if not apidoc_args.dryrun:
