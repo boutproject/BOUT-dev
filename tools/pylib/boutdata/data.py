@@ -497,6 +497,11 @@ class BoutOutputs(object):
     **kwargs
         keyword arguments that are passed through to _caching_collect()
 
+    Attributes
+    ----------
+    attributes : dict
+                 dictionary of attributes from the first DataFile
+
     Examples
     --------
 
@@ -515,7 +520,6 @@ class BoutOutputs(object):
     BoutArray([[[[...]]]])
 
     >>> d = BoutOutputs(".", prefix="BOUT.dmp", caching=True) # Turn on caching
-
     """
 
     def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False,
@@ -557,6 +561,7 @@ class BoutOutputs(object):
         self.evolvingVariableNames = []
 
         with DataFile(latest_file) as f:
+            self.attributes = f.attributes()
             npes = f.read("NXPE")*f.read("NYPE")
             if len(self._file_list) != npes:
                 alwayswarn("Too many data files, reading most recent ones")
