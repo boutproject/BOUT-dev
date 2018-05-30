@@ -155,6 +155,7 @@ public:
     allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
+    BOUT_OMP(parallel for collapse(2))
     for (int j = 0; j < Nsys; j++)
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i) = a(j, i);
