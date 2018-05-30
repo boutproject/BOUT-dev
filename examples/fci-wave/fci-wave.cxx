@@ -26,10 +26,10 @@ private:
       
       for (reg->first(); !reg->isDone(); reg->next()) {
         f_B_next(reg->x, reg->y+reg->dir, reg->z) =
-          f_next(reg->x, reg->y+reg->dir, reg->z) / B_next(reg->x, reg->y, reg->z);
+          f_next(reg->x, reg->y+reg->dir, reg->z) / B_next(reg->x, reg->y+reg->dir, reg->z);
       }
     }
-
+    
     Field3D result;
     result.allocate();
     
