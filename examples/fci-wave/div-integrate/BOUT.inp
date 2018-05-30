@@ -1,0 +1,39 @@
+#
+# 
+
+nout = 100
+timestep = 0.1
+
+grid = "tokamak.fci.nc"
+
+myg = 1
+nxpe=1
+
+[mesh]
+
+paralleltransform = fci
+
+[solver]  # Time integration solver
+
+#atol = 1e-6
+#rtol = 1e-3
+
+[fci-wave]
+div_integrate = true
+
+[all]
+bndry_par_all = parallel_neumann
+bndry_all = neumann
+
+[n]
+
+scale = 1e-3
+zl = z / (2*pi)
+function = exp(-((x-0.7)/0.1)^2 - ((zl-0.3)/0.1)^2)
+
+bndry_par_yup = parallel_neumann
+bndry_par_ydown = parallel_neumann
+
+[nv]
+
+bndry_par_all = parallel_dirichlet

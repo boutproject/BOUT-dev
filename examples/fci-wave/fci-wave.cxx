@@ -6,6 +6,8 @@ private:
   Field3D n, nv; //< Evolving density, momentum
 
   Field3D Bxyz; ///< Total magnetic field
+
+  bool div_integrate;
   
   /// Parallel divergence, using integration over projected cells
   Field3D Div_par_integrate(const Field3D &f) {
@@ -58,6 +60,8 @@ protected:
     // Get the magnetic field
     mesh->get(Bxyz, "B");
 
+    Options::getRoot()->getSection("fci-wave")->get("div_integrate", div_integrate, true);
+    
     // Neumann boundaries simplifies parallel derivatives
     Bxyz.applyBoundary("neumann");
     Bxyz.applyParallelBoundary("parallel_neumann");
@@ -91,8 +95,11 @@ protected:
       ;
 
     // Density
-    //ddt(n) = Div_par(nv);
-    ddt(n) = -Div_par_integrate(nv);
+    if (div_integrate) {
+      ddt(n) = - Div_par_integrate(nv);
+    } else {
+      ddt(n) = - Div_par(nv);
+    }
     
     return 0;
   }
