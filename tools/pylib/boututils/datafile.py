@@ -59,7 +59,7 @@ except ImportError:
     has_h5py = False
 
 
-class DataFile:
+class DataFile(object):
     impl = None
 
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
