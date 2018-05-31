@@ -18,15 +18,28 @@ paralleltransform = fci
 #atol = 1e-6
 #rtol = 1e-3
 
+[fciwave]
+div_integrate = true  # Use area integration for divergence in density equation?
+
+log_density = true  # Evolve log(n)?
+
+background = 1e-6   # Background density
+
 [all]
 bndry_par_all = parallel_neumann
 bndry_all = neumann
 
 [n]
 
-scale = 1e-3
 zl = z / (2*pi)
-function = exp(-((x-0.7)/0.1)^2 - ((zl-0.3)/0.1)^2)
+function = fciwave:background + 1e-3*exp(-((x-0.7)/0.1)^2 - ((zl-0.3)/0.1)^2)
+
+bndry_par_yup = parallel_neumann
+bndry_par_ydown = parallel_neumann
+
+[logn]
+
+function = log(n:function)
 
 bndry_par_yup = parallel_neumann
 bndry_par_ydown = parallel_neumann

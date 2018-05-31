@@ -4,10 +4,14 @@
 class FCIwave : public PhysicsModel {
 private:
   Field3D n, nv; //< Evolving density, momentum
-
+  Field3D logn;
+  
   Field3D Bxyz; ///< Total magnetic field
 
-  bool div_integrate;
+  bool div_integrate;  ///< Use area integration for divergence operator in density
+  bool log_density;   ///< Evolve logarithm of density
+  BoutReal background; ///< background density floor
+  BoutReal log_background; // Log(background)
   
   /// Parallel divergence, using integration over projected cells
   Field3D Div_par_integrate(const Field3D &f) {
@@ -60,24 +64,43 @@ protected:
     // Get the magnetic field
     mesh->get(Bxyz, "B");
 
-    Options::getRoot()->getSection("fci-wave")->get("div_integrate", div_integrate, true);
+    Options::getRoot()->getSection("fciwave")->get("div_integrate", div_integrate, true);
+    Options::getRoot()->getSection("fciwave")->get("log_density", log_density, false);
+    Options::getRoot()->getSection("fciwave")->get("background", background, false);
+    log_background = log(background);
     
     // Neumann boundaries simplifies parallel derivatives
     Bxyz.applyBoundary("neumann");
     Bxyz.applyParallelBoundary("parallel_neumann");
     SAVE_ONCE(Bxyz);
     
-    SOLVE_FOR2(n,nv);
-
-    SAVE_REPEAT2(ddt(n), ddt(nv));
+    SOLVE_FOR(nv);
+    if (log_density) {
+      SOLVE_FOR(logn);
+      SAVE_REPEAT(n);
+    } else {
+      SOLVE_FOR(n);
+    }
     
     return 0;
   }
   
   int rhs(BoutReal t) override {
-    mesh->communicate(n,nv);
-
-    n.applyParallelBoundary();
+    if (log_density) {
+      mesh->communicate(logn, nv);
+      // Apply boundary condition to log(n)
+      // rather than n to prevent negative densities
+      logn.applyParallelBoundary();
+      
+      n = exp(logn);
+      n.splitYupYdown();
+      n.yup() = exp(logn.yup());
+      n.ydown() = exp(logn.ydown());
+    } else {
+      mesh->communicate(n,nv);
+      
+      n.applyParallelBoundary();
+    }
     nv.applyParallelBoundary();
 
     // Calculate momentum flux
@@ -99,6 +122,18 @@ protected:
       ddt(n) = - Div_par_integrate(nv);
     } else {
       ddt(n) = - Div_par(nv);
+    }
+
+    if (log_density) {
+      ddt(logn) = ddt(n) / floor(n, background);
+      
+      // Apply a soft floor to the density
+      // Hard floors (setting ddt = 0) can slow convergence of solver
+      for (auto i : logn.region(RGN_NOBNDRY)) {
+        if (ddt(logn)[i] < 0.0) {
+          ddt(logn)[i] *= (1. - exp(log_background - logn[i]));
+        }
+      }
     }
     
     return 0;

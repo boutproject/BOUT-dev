@@ -4,8 +4,14 @@ from boutdata import collect
 import numpy as np
 
 run = True  # Run the simulations?
+nproc = 2
 
-paths = ["div-integrate", "div"]
+data = [
+    ("div-integrate", "Area integration")
+    ,("div", "Point interpolation")
+    ,("logn", "Log density")
+    #,("../fci-wave-logn/div-integrate", "Velocity & Log density")
+]
 
 if run:
     from boututils.run_wrapper import shell_safe, launch_safe, getmpirun
@@ -13,13 +19,13 @@ if run:
     shell_safe("make > make.log")
     MPIRUN=getmpirun()
     
-    for path in paths:
+    for path,label in data:
         launch_safe("./fci-wave -d "+path, runcmd=MPIRUN, nproc=nproc, pipe=False)
 
 # Collect the results into a dictionary 
 sum_n_B = {}
 
-for path in paths:
+for path,label in data:
     n = collect("n", path=path)
     Bxyz = collect("Bxyz", path=path)
 
@@ -47,9 +53,9 @@ for path in paths:
 # Make a plot comparing total sum density / B
     
 plt.figure()
-for path in paths:
+for path,label in data:
     time, n_B = sum_n_B[path]
-    plt.plot(time, n_B, label=path)
+    plt.plot(time, n_B, label=label)
 plt.legend()
 plt.xlabel("Time")
 plt.ylabel("Sum(n / B)")
