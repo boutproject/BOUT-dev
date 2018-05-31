@@ -527,21 +527,16 @@ class DataFile_netCDF(DataFile):
 
     def _bout_type_from_dimensions(self, varname):
         dims = self.dimensions(varname)
-        if dims == ('t', 'x', 'y', 'z'):
-            return "Field3D_t"
-        elif dims == ('t', 'x', 'y'):
-            return "Field2D_t"
-        elif dims == ('t',):
-            return "scalar_t"
-        elif dims == ('x', 'y', 'z'):
-            return "Field3D"
-        elif dims == ('x', 'y'):
-            return "Field2D"
-        elif dims == ():
-            return "scalar"
-        else:
-            # Unknown bout_type, but still want to be able to read, so give it a value...
-            return None
+        dims_dict = {
+            ('t', 'x', 'y', 'z'): "Field3D_t",
+            ('t', 'x', 'y'): "Field2D_t",
+            ('t',): "scalar_t",
+            ('x', 'y', 'z'): "Field3D",
+            ('x', 'y'): "Field2D",
+            (): "scalar",
+        }
+
+        return dims_dict.get(dims, None)
 
     def write(self, name, data, info=False):
 
@@ -726,7 +721,7 @@ class DataFile_netCDF(DataFile):
                 print("Error reading attributes for " + varname)
                 # Result will be an empty map
 
-            if not "bout_type" in attributes:
+            if "bout_type" not in attributes:
                 attributes["bout_type"] = self._bout_type_from_dimensions(varname)
 
             # Save the attributes for this variable to the cache
@@ -848,20 +843,19 @@ class DataFile_HDF5(DataFile):
 
     def dimensions(self, varname):
         bout_type = self.bout_type(varname)
-        if bout_type == 'Field3D_t':
-            return ('t', 'x', 'y', 'z')
-        elif bout_type == 'Field2D_t':
-            return ('t', 'x', 'y')
-        elif bout_type == 'scalar_t':
-            return ('t')
-        elif bout_type == 'Field3D':
-            return ('x', 'y', 'z')
-        elif bout_type == 'Field2D':
-            return ('x', 'y')
-        elif bout_type == 'scalar':
-            return ()
-        else:
-            raise ValueError("Variable bout_type not recognized")
+        dims_dict = {
+            "Field3D_t": ('t', 'x', 'y', 'z'),
+            "Field2D_t": ('t', 'x', 'y'),
+            "scalar_t": ('t',),
+            "Field3D": ('x', 'y', 'z'),
+            "Field2D": ('x', 'y'),
+            "scalar": (),
+        }
+        try:
+            return dims_dict[bout_type]
+        except KeyError:
+            raise ValueError("Variable bout_type not recognized (got {})"
+                             .format(bout_type))
 
     def _bout_type_from_array(self, data):
         """Get the bout_type from the array 'data'
@@ -883,11 +877,14 @@ class DataFile_HDF5(DataFile):
         --------
         - `DataFile.bout_type`
 
+        TODO
+        ----
+        - Make standalone function
+
         """
         try:
             # If data is a BoutArray, it should have a type attribute that we can use
-            bout_type = data.attributes["bout_type"]
-            return bout_type
+            return data.attributes["bout_type"]
         except AttributeError:
             # Otherwise data is a numpy.ndarray and we have to guess the bout_type
             pass
