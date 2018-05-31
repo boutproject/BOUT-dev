@@ -48,7 +48,7 @@ except ImportError:
             from scipy.io.netcdf import netcdf_file as Dataset
             library = "scipy"
             has_netCDF = True
-        except:
+        except ImportError:
             raise ImportError(
                 "DataFile: No supported NetCDF modules available")
 
