@@ -405,8 +405,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   int ncx = xe - xs; // Total number of points in x to be used
 
   // Setting the width of the boundary.
-  // NOTE: The default is a width of 2 guard cells
-  int inbndry = 2, outbndry=2;
+  // NOTE: The default is a width of (mesh->xstart) guard cells
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
   if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
