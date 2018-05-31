@@ -6,12 +6,23 @@ import numpy as np
 run = True  # Run the simulations?
 nproc = 2
 
-data = [
-    ("div-integrate", "Area integration")
-    ,("div", "Point interpolation")
-    ,("logn", "Log density")
-    #,("../fci-wave-logn/div-integrate", "Velocity & Log density")
+# Note: Data from fci-wave-logn examples commented out.
+
+data_noboundary = [
+    ("div", "Model 1 (density, point interpolation)")
+    ,("div-integrate", "Model 2 (density, area integration)")
+    ,("logn", "Model 3 (log density, area integration)")
+    #,("../fci-wave-logn/div-integrate", "Model 5 (velocity, log density, area integration)")
 ]
+
+data_boundary = [
+    ("boundary", "Model 2 (density, momentum)")
+    ,("boundary-logn", "Model 3 (log density, momentum)")
+    #,("../fci-wave-logn/boundary", "Model 5 (log density, velocity)")
+    ]
+
+# Change this to select no boundary or boundary cases
+data = data_noboundary
 
 if run:
     from boututils.run_wrapper import shell_safe, launch_safe, getmpirun
@@ -46,7 +57,7 @@ for path,label in data:
     plt.colorbar()
     plt.xlabel("Major radius")
     plt.ylabel("Height")
-    plt.title("Density n, "+path)
+    plt.title("Density n, "+label)
     plt.savefig(path+".pdf")
     plt.show()
 
