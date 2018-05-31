@@ -3,10 +3,14 @@
 
 class FCIwave : public PhysicsModel {
 private:
-  Field3D logn, nv; //< Evolving density, momentum
-  Field3D n, v;
+  Field3D logn, v; //< Evolving density, momentum
+  Field3D n;
   
   Field3D Bxyz; ///< Total magnetic field
+
+  bool expand_divergence;
+  BoutReal background; ///< background density floor
+  BoutReal log_background; // Log(background)
   
   /// Parallel divergence, using integration over projected cells
   Field3D Div_par_integrate(const Field3D &f) {
@@ -63,52 +67,77 @@ protected:
     Bxyz.applyBoundary("neumann");
     Bxyz.applyParallelBoundary("parallel_neumann");
     SAVE_ONCE(Bxyz);
-    
-    SOLVE_FOR2(logn,nv);
 
-    SAVE_REPEAT2(n, v)
+    Options::getRoot()->getSection("fciwave")->get("expand_divergence", expand_divergence, true);
+    Options::getRoot()->getSection("fciwave")->get("background", background, 1e-6);
+    log_background = log(background);
     
-    SAVE_REPEAT2(ddt(logn), ddt(nv));
+    SOLVE_FOR2(logn,v);
+
+    SAVE_REPEAT(n);
     
-    v.setBoundary("v");
+    SAVE_REPEAT2(ddt(logn), ddt(v));
     
     return 0;
   }
   
   int rhs(BoutReal t) override {
-    mesh->communicate(logn,nv);
+    mesh->communicate(logn,v);
 
     // Boundary condition applied to log(n) to prevent negative densities
     logn.applyParallelBoundary();
-    nv.applyParallelBoundary();
+    v.applyParallelBoundary();
 
     n = exp(logn);
-    v = nv / n;
-
-    mesh->communicate(v);
-    // Apply boundary condition to velocity v
-    v.applyParallelBoundary("parallel_dirichlet");
-    
-    // Calculate momentum flux
-    Field3D momflux = nv * v;
-    momflux.splitYupYdown();
-    momflux.yup().allocate();
-    momflux.ydown().allocate();
-    momflux.applyParallelBoundary("parallel_dirichlet");
     
     // Momentum
-    ddt(nv) =
-      - Div_par_integrate(momflux)
-      - n * Grad_par(logn)
-      + Grad2_par2(nv)
+    ddt(v) =
+      - v*Grad_par(v)
+      - Grad_par(logn)
+      + Grad2_par2(v)
       ;
 
-    // Density
-    //ddt(n) = Div_par(nv);
-    ddt(logn) =
-      //-Div_par_integrate(nv) / n;
-      -v * Grad_par(logn) - Div_par_integrate(v);
-    
+    if (expand_divergence) {
+      // Split the divergence of flux into two terms 
+      ddt(logn) =
+        -v * Grad_par(logn) - Div_par(v);
+      
+    } else {
+      // Calculate the flux divergence using Div_par_integrate
+      
+      Field3D nv = n * v;
+      nv.splitYupYdown();
+      for (const auto &reg : mesh->getBoundariesPar()) {
+        Field3D &nv_next = nv.ynext(reg->dir);
+        nv_next.allocate();
+        
+        const Field3D &logn_next = logn.ynext(reg->dir);
+        const Field3D &v_next = v.ynext(reg->dir);
+        
+        for (reg->first(); !reg->isDone(); reg->next()) {
+          BoutReal n_b = exp(0.5*(logn_next(reg->x, reg->y+reg->dir, reg->z) +
+                                  logn(reg->x, reg->y, reg->z)));
+          BoutReal v_b = 0.5*(v_next(reg->x, reg->y+reg->dir, reg->z) +
+                              v(reg->x, reg->y, reg->z));
+          
+          nv_next(reg->x, reg->y+reg->dir, reg->z) = 
+            2.*n_b*v_b - nv(reg->x, reg->y, reg->z);
+        }
+      }
+      
+      // Logarithm of density
+      ddt(logn) =
+        - Div_par_integrate(nv) / floor(n, background);
+      
+      // Apply a soft floor to the density
+      // Hard floors (setting ddt = 0) can slow convergence of solver
+      for (auto i : logn.region(RGN_NOBNDRY)) {
+        if (ddt(logn)[i] < 0.0) {
+          ddt(logn)[i] *= (1. - exp(log_background - logn[i]));
+        }
+      }
+    }
+
     
     return 0;
   }
