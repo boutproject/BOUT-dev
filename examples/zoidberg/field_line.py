@@ -2,9 +2,6 @@
 
 # Demonstrates how to generate 3D plots of magnetic field lines
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 import zoidberg
 
 # Size of the domain in y (periodic)
