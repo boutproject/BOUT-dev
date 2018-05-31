@@ -4,7 +4,7 @@
 class FCIwave : public PhysicsModel {
 private:
   Field3D n, nv; //< Evolving density, momentum
-  Field3D logn;
+  Field3D logn, v;
   
   Field3D Bxyz; ///< Total magnetic field
 
@@ -81,6 +81,8 @@ protected:
     } else {
       SOLVE_FOR(n);
     }
+
+    v.setBoundary("v");
     
     return 0;
   }
@@ -101,14 +103,48 @@ protected:
       
       n.applyParallelBoundary();
     }
-    nv.applyParallelBoundary();
+    
+    // Calculate velocity and momentum flux
+    v = nv / floor(n, 1e-4);
+    Field3D momflux = nv * v;
 
-    // Calculate momentum flux
-    Field3D momflux = SQ(nv)/floor(n, 1e-4);
+    // Apply boundary conditions to v
+    v.splitYupYdown();
+    v.yup().allocate();
+    v.ydown().allocate();
+    v.applyParallelBoundary();
+    
+    // Ensure that boundary conditions are consistent
+    // between v, nv and momentum flux
+    
     momflux.splitYupYdown();
-    momflux.yup().allocate();
-    momflux.ydown().allocate();
-    momflux.applyParallelBoundary("parallel_dirichlet");
+    for (const auto &reg : mesh->getBoundariesPar()) {
+      // Using the values of density and velocity on the boundary
+      const Field3D &n_next = n.ynext(reg->dir);
+      const Field3D &v_next = v.ynext(reg->dir);
+
+      // Set the momentum and momentum flux
+      Field3D &nv_next = nv.ynext(reg->dir);
+      Field3D &momflux_next = momflux.ynext(reg->dir);
+      momflux_next.allocate();
+        
+      for (reg->first(); !reg->isDone(); reg->next()) {
+        // Density at the boundary
+        // Note: If evolving density, this should interpolate logn
+        // but neumann boundaries are used here anyway.
+        BoutReal n_b = 0.5*(n_next(reg->x, reg->y+reg->dir, reg->z) +
+                            n(reg->x, reg->y, reg->z));
+        // Velocity at the boundary
+        BoutReal v_b = 0.5*(v_next(reg->x, reg->y+reg->dir, reg->z) +
+                            v(reg->x, reg->y, reg->z));
+        
+        nv_next(reg->x, reg->y+reg->dir, reg->z) = 
+          2.*n_b*v_b - nv(reg->x, reg->y, reg->z);
+
+        momflux_next(reg->x, reg->y+reg->dir, reg->z) = 
+          2.*n_b*v_b*v_b - momflux(reg->x, reg->y, reg->z);
+        }
+      }
     
     // Momentum
     ddt(nv) =

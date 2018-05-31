@@ -44,6 +44,6 @@ function = log(n:function)
 bndry_par_yup = parallel_neumann
 bndry_par_ydown = parallel_neumann
 
-[nv]
+[v]
 
 bndry_par_all = parallel_dirichlet
