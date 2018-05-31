@@ -562,6 +562,10 @@ class BoutOutputs(object):
         self.dimensions = {}
         self.evolvingVariables = []
 
+        # used for getShifted()/getUnshifted() methods, calculated from
+        # self['zShift'] when first needed
+        self._shiftAngle = None
+
         with DataFile(latest_file) as f:
             self.attributes = f.attributes()
             npes = f.read("NXPE")*f.read("NYPE")
@@ -605,6 +609,42 @@ class BoutOutputs(object):
 
         """
         return self.varNames
+
+
+    @property
+    def shiftAngle(self):
+        """
+        The shift angle, calculated from zShift the first time it is used
+        """
+        if self._shiftAngle is None:
+            nz = self["MZ"]
+            zlength = self["dz"]*nz
+            self._shiftAngle = 2.*numpy.pi*self["zShift"]/zlength
+        return self._shiftAngle
+
+    def getShifted(self, name):
+        """
+        Return a variable shifted by zShift: if BOUT++ output is in
+        'unshifted', i.e. toroidal, coordinates, this function returns a field
+        in field-aligned coordinates
+
+        Note: shiftz(x, zshift) takes field-aligned 'x' to 'x' in orthogonal
+        coordinates. Therefore need to use -self.shiftAngle here
+        """
+        from boutdata.shiftz import shiftz
+        return shiftz(self[name], -self.shiftAngle)
+
+    def getUnshifted(self, name):
+        """
+        Return a variable un-shifted by zShift: if BOUT++ output is in
+        'shifted', i.e. field-aligned, coordinates, this function returns a
+        field in toroidal coordinates
+
+        Note: shiftz(x, zshift) takes field-aligned 'x' to 'x' in orthogonal
+        coordinates. Therefore need to use +self.shiftAngle here
+        """
+        from boutdata.shiftz import shiftz
+        return shiftz(self[name], self.shiftAngle)
 
     def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
         """Create a new set of dump files for npes processors.
