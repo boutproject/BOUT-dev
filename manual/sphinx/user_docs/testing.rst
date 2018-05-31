@@ -95,12 +95,11 @@ Some tests require particular libraries or environments, so should be
 skipped if these are not available. To do this, each ``runtest``
 script can contain a line starting with ``#requires``, followed by a
 python expression which evaluates to ``True`` or ``False``. For
-example, the ``integrated/test-multigrid_laplace`` test is turned off
-on Travis when using MPICH using:
+example, a test which doesn't work if both ARKODE and PETSc are used:
 
 .. code-block:: console
 
-   #requires not (travis and mpich)
+   #requires not (arkode and petsc)
 
 or if there were a test which required PETSc to be available, it could
 specify
@@ -110,7 +109,7 @@ specify
    #requires petsc
    
 Currently the requirements which can be combined are ``travis``,
-``mpich``, ``netcdf``, ``pnetcdf``, ``hdf5``, ``pvode``, ``cvode``,
+``netcdf``, ``pnetcdf``, ``hdf5``, ``pvode``, ``cvode``,
 ``ida``, ``lapack``, ``petsc``, ``slepc``, ``mumps``, ``arkode``,
 ``openmp`` and ``make``. The ``make`` requirement is set to True when
 the tests are being compiled (but not run), and False when the scripts
