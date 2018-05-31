@@ -450,10 +450,6 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
 
   MPI_Barrier(BoutComm::get());
 
-  rhs_ncalls = 0;
-  rhs_ncalls_i = 0;
-  rhs_ncalls_e = 0;
-
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
 

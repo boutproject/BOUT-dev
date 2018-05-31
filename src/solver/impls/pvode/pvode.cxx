@@ -232,8 +232,6 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   BoutReal *udata;
   
-  //rhs_ncalls = 0;
-
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
 

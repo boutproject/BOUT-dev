@@ -491,9 +491,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
       PetscFunctionReturn(1);
     }
     */
-   
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
 
     outputnext = false;
     next_time = simtime + tstep; // Set the next output time

@@ -396,8 +396,6 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run(%e)", tout);
 
   MPI_Barrier(BoutComm::get());
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;

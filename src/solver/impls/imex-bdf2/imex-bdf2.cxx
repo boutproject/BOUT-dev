@@ -992,10 +992,6 @@ int IMEXBDF2::run() {
       // User signalled to quit
       break;
     }
-
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
-
   }
 
   return 0;

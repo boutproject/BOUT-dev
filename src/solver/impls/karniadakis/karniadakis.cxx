@@ -142,10 +142,6 @@ int KarniadakisSolver::run() {
       // User signalled to quit
       break;
     }
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
-    rhs_ncalls_i = 0;
-    rhs_ncalls_e = 0;
   }
   
   return 0;

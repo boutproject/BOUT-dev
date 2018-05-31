@@ -877,9 +877,6 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
       output.write("Monitor signalled to quit. Returning\n");
     }
 
-    // Reset counters
-    s->rhs_ncalls = 0;
-
     s->next_output += s->tstep;
     simtime = s->next_output;
   }
