@@ -86,13 +86,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int inbndry = mesh->xstart, outbndry=mesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
-    inbndry = outbndry = mesh->xstart-1;
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
+    inbndry = outbndry = 1;
   }
   if (inner_boundary_flags & INVERT_BNDRY_ONE)
-    inbndry = mesh->xstart-1;
+    inbndry = 1;
   if (outer_boundary_flags & INVERT_BNDRY_ONE)
-    outbndry = mesh->xstart-1;
+    outbndry = 1;
 
   /* Allocation fo
    * bk   = The fourier transformed of b, where b is one of the inputs in
