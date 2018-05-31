@@ -285,7 +285,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {
     tridagMatrix(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0), &data.bk(kz, 0),
-                 kz, kz * kwaveFactor, data.jy, global_flags, inner_boundary_flags,
+                 data.jy, kz, kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
   }
 
