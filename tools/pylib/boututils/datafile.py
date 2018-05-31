@@ -23,7 +23,6 @@ TODO
 - Don't raise ``ImportError`` if no NetCDF libraries found, use HDF5
   instead?
 - Cleaner handling of different NetCDF libraries
-- Monkey-patch old version of scipy.io.netcdf if we're using it
 - Support for h5netcdf?
 
 """
@@ -61,7 +60,11 @@ except ImportError:
             from scipy.io.netcdf import netcdf_file as Dataset
             library = "scipy"
             has_netCDF = True
-        except:
+            if hasattr(Dataset, "create_dimension"):
+                # Monkey-patch old version
+                Dataset.createDimension = Dataset.create_dimension
+                Dataset.createVariable = Dataset.create_variable
+        except ImportError:
             raise ImportError(
                 "DataFile: No supported NetCDF modules available")
 
@@ -627,13 +630,10 @@ class DataFile_netCDF(DataFile):
                         except KeyError:
                             # Not found. Create
                             if info:
-                                print(
-                                    "Defining dimension " + dn + " of size %d" % size)
-                            try:
-                                self.handle.createDimension(dn, size)
-                            except AttributeError:
-                                # Try the old-style function
-                                self.handle.create_dimension(dn, size)
+                                print("Defining dimension {} of size {}"
+                                      .format(dn, size))
+
+                            self.handle.createDimension(dn, size)
                             return dn
                         i = i + 1
 
@@ -644,10 +644,8 @@ class DataFile_netCDF(DataFile):
                             "Defining dimension " + name + " of size %d" % size)
                     if name == 't':
                         size = None
-                    try:
-                        self.handle.createDimension(name, size)
-                    except AttributeError:
-                        self.handle.create_dimension(name, size)
+
+                    self.handle.createDimension(name, size)
 
                 return name
 
@@ -665,14 +663,6 @@ class DataFile_netCDF(DataFile):
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)
-
-            elif library == "scipy":
-                try:
-                    # New style functions
-                    var = self.handle.createVariable(name, t, dims)
-                except AttributeError:
-                    # Old style functions
-                    var = self.handle.create_variable(name, t, dims)
             else:
                 var = self.handle.createVariable(name, t, dims)
 
