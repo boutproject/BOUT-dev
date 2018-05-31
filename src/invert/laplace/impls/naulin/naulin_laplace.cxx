@@ -1,15 +1,14 @@
 /*!
  * \file cyclic.cxx
  *
- * \brief FFT + Tridiagonal solver in serial or parallel
+ * \brief Iterative solver to handle non-constant-in-z coefficients
  *
- * Not particularly optimised: Each y slice is solved sequentially
+ * Scheme suggested by Volker Naulin: solve Delp2(phi[i+1]) = rhs(phi[i]) using
+ * standard FFT-based solver, iterating to include other terms by evaluating
+ * them on rhs using phi from previous iteration
  *
  * CHANGELOG
  * =========
- *
- * Jan 2014: Brendan Shanahan <bws502@york.ac.uk>
- *         * Added DST option
  *
  **************************************************************************
  * Copyright 2013 B.D.Dudson

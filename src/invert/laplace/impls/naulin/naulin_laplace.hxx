@@ -1,5 +1,5 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion in serial or parallel
+ * Iterative solver to handle non-constant-in-z coefficients
  * 
  **************************************************************************
  * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
