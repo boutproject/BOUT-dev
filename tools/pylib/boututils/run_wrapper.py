@@ -4,7 +4,7 @@ from builtins import str
 import os
 import re
 import subprocess
-from os import getenv
+
 try:
     # Python 2.4 onwards
     from subprocess import call, Popen, STDOUT, PIPE
@@ -20,7 +20,7 @@ def getmpirun( default="mpirun -np" ):
    getmpirun: return environment variable named MPIRUN, if it exists
               else return a default mpirun command
   """
-  MPIRUN = getenv("MPIRUN")
+  MPIRUN = os.getenv("MPIRUN")
 
   if MPIRUN is None:
     MPIRUN = default
