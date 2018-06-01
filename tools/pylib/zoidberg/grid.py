@@ -147,7 +147,10 @@ class Grid(object):
         # To avoid edge effects, repeat array three times then take the middle
         ycoords = np.concatenate( (self.ycoords - self.Ly, self.ycoords, self.ycoords + self.Ly) )
         ny = self.ycoords.size
-        dy = np.gradient(ycoords[ny:(2*ny)])
+        if ny == 1:
+            dy = np.array([self.Ly])
+        else:
+            dy = np.gradient(ycoords[ny:(2*ny)])
         
         dy3d = np.zeros(self.shape)
         for i in range(self.shape[1]):

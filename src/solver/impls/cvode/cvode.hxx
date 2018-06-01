@@ -54,6 +54,11 @@ class CvodeSolver;
 #include <vector>
 using std::vector;
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<CvodeSolver> registersolvercvode("cvode");
+}
+
 class CvodeSolver : public Solver {
   public:
     CvodeSolver(Options *opts = NULL);

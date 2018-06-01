@@ -65,7 +65,7 @@ for t in tests:
     # Check requirements
     req_met, req_expr = requirements.check("./runtest")
     if not req_met:
-        print("S - {0} - {1} => False".format(t, req_expr))
+        print("S - {0} => False".format(req_expr))
         sys.stdout.flush()
         os.chdir(savepath)
         continue

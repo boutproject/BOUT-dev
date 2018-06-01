@@ -115,6 +115,7 @@ void Output::vprint(const char *string, va_list ap) {
   }
   bout_vsnprintf_(buffer, buffer_len, string, ap);
   std::cout << std::string(buffer);
+  std::cout.flush();
 }
 
 Output *Output::getInstance() {

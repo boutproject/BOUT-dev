@@ -5,17 +5,10 @@
 """
 from __future__ import print_function
 
-try:
-    from numpy import max
-except ImportError:
-    print("ERROR: numpy module required")
-    raise
+from numpy import max
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: restart module needs boututils.DataFile")
-    raise
+from boututils.datafile import DataFile
+
 
 def grid2bout(input, output="bout.grd.nc"):
     # List variables needed and dimensions

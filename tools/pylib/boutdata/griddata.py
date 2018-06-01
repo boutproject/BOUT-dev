@@ -1,11 +1,7 @@
 from __future__ import print_function
 # Routines for manipulating grid files
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: restart module needs DataFile")
-    raise
+from boututils.datafile import DataFile
 
 from numpy import ndarray, zeros, concatenate
 
