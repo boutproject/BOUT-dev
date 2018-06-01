@@ -29,6 +29,11 @@ shared: libfast
 check-unit-tests: libfast
 	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C tests/unit check
 
+# Quiet(er) version that just prints summary
+check-unit-tests-quiet: libfast
+	@export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH}; $(MAKE) --no-print-directory -C\
+        tests/unit check-quiet
+
 check-mms-tests: libfast
 	@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
 		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
