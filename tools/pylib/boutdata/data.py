@@ -8,10 +8,13 @@ import os
 import sys
 import glob
 import numpy
+import re
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
+
+funcstoreplace = ["pi", "sin", "cos", "tan", "acos", "asin", "atan", "atan2", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "exp", "log", "log10", "pow", "sqrt", "ceil", "floor", "round", "abs"]
 
 class BoutOptions(object):
     """
@@ -141,6 +144,58 @@ class BoutOptions(object):
             text += indent + " |- " + self._sections[s].__str__(indent+" |  ")
         return text
 
+    def evaluate_scalar(self, name):
+        """
+        Evaluate (recursively) scalar expressions
+        """
+        expression = self._substitute_expressions(name)
+
+        # replace ^ with ** so that Python evaluates exponentiation
+        expression = expression.replace("^","**")
+
+        # use numpy functions
+        for func in funcstoreplace:
+            expression = re.sub(r"\b"+func.lower()+r"\b", "numpy."+func, expression)
+
+        return eval(expression)
+
+    def _substitute_expressions(self, name):
+        expression = str(self[name]).lower()
+        expression = self._evaluate_section(expression, "")
+        parent = self._parent
+        while parent is not None:
+            sectionname = parent._name
+            if sectionname is "root":
+                sectionname = ""
+            expression = parent._evaluate_section(expression, sectionname)
+            parent = parent._parent
+
+        return expression
+
+    def _evaluate_section(self, expression, nested_sectionname):
+        # pass a nested section name so that we can traverse the options tree
+        # rooted at our own level and each level above us so that we can use
+        # relatively qualified variable names, e.g. if we are in section
+        # 'foo:bar:baz' then a variable 'x' from section 'bar' could be called
+        # 'bar:x' (found traversing the tree starting from 'bar') or
+        # 'foo:bar:x' (found when traversing tree starting from 'foo').
+        for var in self.values():
+            if nested_sectionname is not "":
+                nested_name = nested_sectionname + ":" + var
+            else:
+                nested_name = var
+            if re.search(r"(?<!:)"+nested_name, expression): # match nested_name only if not preceded by colon (which indicates more nesting)
+                expression = re.sub(r"(?<!:)\b"+nested_name.lower()+r"\b", "("+self._substitute_expressions(var)+")", expression) # match nested_name only if not preceded by colon (which indicates more nesting)
+
+        for subsection in self.sections():
+            if nested_sectionname is not "":
+                nested_name = nested_sectionname + ":" + subsection
+            else:
+                nested_name = subsection
+            expression = self.getSection(subsection)._evaluate_section(expression, nested_name)
+
+        return expression
+
 
 class BoutOptionsFile(BoutOptions):
     """
@@ -216,6 +271,67 @@ class BoutOptionsFile(BoutOptions):
 
                         section[line[:eqpos].strip()] = value
 
+        # define arrays of x, y, z to be used for substitutions
+        gridfile = None
+        try:
+            self.nx = self["mesh"].evaluate_scalar("nx")
+            self.ny = self["mesh"].evaluate_scalar("ny")
+        except KeyError:
+            try:
+                gridfilename = self["mesh"]["file"]
+            except KeyError:
+                gridfilename = self["grid"]
+            gridfile = DataFile(gridfilename)
+            self.nx = float(gridfile["nx"])
+            self.ny = float(gridfile["ny"])
+        self.nz = None
+        if gridfile is not None:
+            try:
+                self.nz = gridfile["nz"]
+            except KeyError:
+                pass
+        if self.nz is None:
+            try:
+                self.nz = self["mesh"].evaluate_scalar("nz")
+            except KeyError:
+                self.nz = self.evaluate_scalar("mz")
+        try:
+            mxg = self["MXG"]
+        except KeyError:
+            mxg = 2
+        try:
+            myg = self["MYG"]
+        except KeyError:
+            myg = 2
+        # make self.x, self.y, self.z three dimensional now so that expressions broadcast together properly.
+        self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg), 1. - (0.5 - mxg)/(self.nx - 2*mxg), self.nx)[:, numpy.newaxis, numpy.newaxis]
+        self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny, 1.-(0.5 - myg)/self.ny, self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
+        self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz, 1.-0.5/self.nz, self.nz)[numpy.newaxis, numpy.newaxis, :]
+
+    def evaluate(self, name):
+        """
+        Evaluate (recursively) expressions
+
+        Sections and subsections must be given as part of 'name', separated by colons
+        """
+        section = self
+        split_name = name.split(":")
+        for subsection in split_name[:-1]:
+            section = section.getSection(subsection)
+        expression = section._substitute_expressions(split_name[-1])
+
+        # replace ^ with ** so that Python evaluates exponentiation
+        expression = expression.replace("^","**")
+
+        # use numpy functions
+        for func in funcstoreplace:
+            expression = re.sub(r"\b"+func.lower()+r"\b", "numpy."+func, expression)
+
+        # substitute for x, y and z coordinates
+        for coord in ["x", "y", "z"]:
+            expression = re.sub(r"\b"+coord.lower()+r"\b", "self."+coord, expression)
+
+        return eval(expression)
 
 class BoutOutputs(object):
     """
