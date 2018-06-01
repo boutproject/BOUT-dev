@@ -1,12 +1,14 @@
+#!/bin/bash
+
 print_usage () {
     echo "usage: $0 dir [-now/-force]"
-    echo "Where path is the path to the output directory."
+    echo "Where dir is the path to the output directory."
     echo "-now can be added (at the end) to send a terminate signal, instead of SIGUSR1, which only signals to stop after the next writing."
     echo "-force can be added, to send sig kill instead of sig terminate"
 }  
 
 # help the user
-if test -z "$1" || test "$1" == "-h"
+if test -z "$1" || test "$1" = "-h"
 then
     print_usage
     exit 1
@@ -27,7 +29,16 @@ then
         exit 3
     fi
 fi
-PID=$(cat $path/.BOUT.pid.0 || grep "^pid: [0-9]*\$" $path/BOUT.log.0 | awk '{print $2}')
+if ! PID=$(cat $path/.BOUT.pid.0)
+then
+    if ! PID=$(grep "^pid: [0-9]*\$" $path/BOUT.log.0)
+    then
+        echo >/dev/stderr "Failed to find log files in dir $1 - aborting"
+        exit 2
+    else
+        PID=$(echo $PID | awk '{print $2}')
+    fi
+fi
 # Alternative approach: using /pro and awk
 # inode=$(ls -i  $path/BOUT.log.0|awk '{print $1}')
 # # look for the pids which are associated with the user, and search whether one of them has the log file open.
@@ -41,10 +52,10 @@ PID=$(cat $path/.BOUT.pid.0 || grep "^pid: [0-9]*\$" $path/BOUT.log.0 | awk '{pr
 #     fi
 # done
 # Test what signal to send, and do it
-if test ".$2" == ".-now"
+if test ".$2" = ".-now"
 then
     kill $PID
-elif test ".$2" == ".-force"
+elif test ".$2" = ".-force"
 then
     kill -9 $PID
 else
