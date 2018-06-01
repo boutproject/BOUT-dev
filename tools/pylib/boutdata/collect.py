@@ -136,7 +136,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             ystart = 0
             ylim = None
         else:
-            ystart = mxg
+            ystart = myg
             if myg > 0:
                 ylim = -myg
             else:
