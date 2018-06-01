@@ -90,7 +90,12 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 #       The GTEST_SENTINEL dependency cannot be added to the %.o target, since this results in the %.o
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
-	@echo "Running unit test"
+	@echo "Running unit tests"
+	@./serial_tests
+
+# Quiet(er) version that just prints summary
+check-quiet: $(GTEST_SENTINEL) serial_tests
+	@echo "Running unit tests"
 	@./serial_tests | ./quiet.sh
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
