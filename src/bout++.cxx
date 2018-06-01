@@ -561,9 +561,10 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");
-  int ncalls            = solver->rhs_ncalls;
-  int ncalls_e		= solver->rhs_ncalls_e;
-  int ncalls_i		= solver->rhs_ncalls_i;
+  int ncalls            = solver->resetRHSCounter();
+  int ncalls_e		= solver->resetRHSCounter_e();
+  int ncalls_i		= solver->resetRHSCounter_i();
+
   bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
@@ -623,7 +624,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
-  
+
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;

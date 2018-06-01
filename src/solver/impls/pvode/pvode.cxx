@@ -310,8 +310,6 @@ void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dud
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-  
-  rhs_ncalls++;
 }
 
 /**************************************************************************
