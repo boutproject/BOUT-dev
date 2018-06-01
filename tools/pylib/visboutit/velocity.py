@@ -4,7 +4,7 @@ velocity.py
 This library contains functions for finding; unit vectors, grad of a field, cross product, dot product, vector sum and write velocity vectors in the cylinder, torus and elm coorinate systems.
 """
 import numpy as np
-import visual
+from . import visual
 from scipy import interpolate
 import os
 import circle
@@ -19,11 +19,11 @@ def y_vector_unit(pts,nx,ny,nz):
     
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
-    print 'Creating y vector map:'
+    print('Creating y vector map:')
     for i in range(nx-1):
         for j in range(ny-1):
             percent = (float(i)/(float(nx - 2)))*100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
                 r2 = np.array((xcoord[ i , j+1 , k ] , ycoord[ i , j+1 , k ]  , zcoord[ i , j+1 , k ])) # Vector of secondary point
@@ -33,7 +33,7 @@ def y_vector_unit(pts,nx,ny,nz):
                 unit_vector_x[i,j,k] = unit[0]
                 unit_vector_y[i,j,k] = unit[1]
                 unit_vector_z[i,j,k] = unit[2]
-    print "" # For closing updated print statement
+    print("") # For closing updated print statement
     return unit_vector_x, unit_vector_y, unit_vector_z
 
 # This Function calulcates x unit vectors from a mesh
@@ -46,11 +46,11 @@ def x_vector_unit(pts,nx,ny,nz):
     
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
-    print 'Creating x vector map:'
+    print('Creating x vector map:')
     for i in range(nx-1):
         for j in range(ny-1):
             percent = (float(i)/(float(nx - 2)))*100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
                 r2 = np.array((xcoord[ i+1 , j , k ] , ycoord[ i+1 , j , k ]  , zcoord[ i+1 , j , k ])) # Vector of secondary point
@@ -60,7 +60,7 @@ def x_vector_unit(pts,nx,ny,nz):
                 unit_vector_x[i,j,k] = unit[0]
                 unit_vector_y[i,j,k] = unit[1]
                 unit_vector_z[i,j,k] = unit[2]
-    print "" # For closing updated print statement
+    print("") # For closing updated print statement
     return unit_vector_x, unit_vector_y, unit_vector_z
 
 # This Function calulcates z unit vectors from a mesh
@@ -73,11 +73,11 @@ def z_vector_unit(pts,nx,ny,nz):
     
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
-    print 'Creating z vector map:'
+    print('Creating z vector map:')
     for i in range(nx-1):
         for j in range(ny-1):
             percent = (float(i)/(float(nx - 2)))*100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
                 r2 = np.array((xcoord[ i , j , k+1 ] , ycoord[ i , j , k+1 ]  , zcoord[ i , j , k+1 ])) # Vector of secondary point
@@ -87,7 +87,7 @@ def z_vector_unit(pts,nx,ny,nz):
                 unit_vector_x[i,j,k] = unit[0]
                 unit_vector_y[i,j,k] = unit[1]
                 unit_vector_z[i,j,k] = unit[2]
-    print "" # For closing updated print statement
+    print("") # For closing updated print statement
     return unit_vector_x, unit_vector_y, unit_vector_z
 
 # This function calculates grad of a variable in a particular mesh
@@ -98,11 +98,11 @@ def grad_func(pts,var,nx,ny,nz):
     grad_j = np.zeros((nx, ny, nz), dtype=float)
     grad_k = np.zeros((nx, ny, nz), dtype=float)
 
-    print 'Computing Grad:'
+    print('Computing Grad:')
     for i in range(nx-2):
         for j in range(ny-2):
             percent = (float(i)/(float(nx - 3)))*100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-2):
                 x,y,z = i+1 , j+1 , k+1
                 #Import values
@@ -151,12 +151,12 @@ def grad_func(pts,var,nx,ny,nz):
                 grad_i[x,y,z] = dphi_dx
                 grad_j[x,y,z] = dphi_dy
                 grad_k[x,y,z] = dphi_dz
-    print ""
+    print("")
     return grad_i, grad_j, grad_k
 
 # This function calculates the vector cross product between two vectors
 def cross_product(avector, bvector, nx, ny, nz):
-    print "Calculating cross product"
+    print("Calculating cross product")
     avector_i, avector_j, avector_k = avector
     bvector_i, bvector_j, bvector_k = bvector
     cp_i = np.zeros((nx, ny, nz), dtype=float)
@@ -165,7 +165,7 @@ def cross_product(avector, bvector, nx, ny, nz):
     for i in range (nx):
         for j in range(ny):
             percent = (float(i)/float(nx-1)) * 100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 avector_work = np.array((avector_i[i,j,k], avector_j[i,j,k], avector_k[i,j,k]))
                 bvector_work = np.array((bvector_i[i,j,k], bvector_j[i,j,k], bvector_k[i,j,k]))
@@ -173,12 +173,12 @@ def cross_product(avector, bvector, nx, ny, nz):
                 cp_i[i,j,k] = cp_work[0]
                 cp_j[i,j,k] = cp_work[1]
                 cp_k[i,j,k] = cp_work[2]
-    print ""
+    print("")
     return cp_i, cp_j, cp_k
 
 # This function calculates the dot product of a scalar and a vector
 def dot_product(ascalar, bvector, nx, ny, nz):
-    print "Calculating dot product"
+    print("Calculating dot product")
     bvector_i, bvector_j, bvector_k = bvector
     dp_i = np.zeros((nx, ny, nz), dtype=float)
     dp_j = np.zeros((nx, ny, nz), dtype=float)
@@ -186,7 +186,7 @@ def dot_product(ascalar, bvector, nx, ny, nz):
     for i in range (nx):
         for j in range(ny):
             percent = (float(i)/float(nx-1)) * 100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 ascalar_work = np.array(ascalar[i,j,k])
                 bvector_work = np.array((bvector_i[i,j,k], bvector_j[i,j,k], bvector_k[i,j,k]))
@@ -194,12 +194,12 @@ def dot_product(ascalar, bvector, nx, ny, nz):
                 dp_i[i,j,k] = dp_work[0]
                 dp_j[i,j,k] = dp_work[1]
                 dp_k[i,j,k] = dp_work[2]
-    print ""
+    print("")
     return dp_i, dp_j, dp_k
 
 # This function calculates the sum of two vectors
 def vec_add(avector, bvector, nx, ny, nz):
-    print "Calculating vec sum"
+    print("Calculating vec sum")
     avector_i, avector_j, avector_k = avector
     bvector_i, bvector_j, bvector_k = bvector
     add_i = np.zeros((nx, ny, nz), dtype=float)
@@ -208,7 +208,7 @@ def vec_add(avector, bvector, nx, ny, nz):
     for i in range (nx):
         for j in range(ny):
             percent = (float(i)/float(nx-1)) * 100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 avector_work = np.array((avector_i[i,j,k], avector_j[i,j,k], avector_k[i,j,k]))
                 bvector_work = np.array((bvector_i[i,j,k], bvector_j[i,j,k], bvector_k[i,j,k]))
@@ -216,7 +216,7 @@ def vec_add(avector, bvector, nx, ny, nz):
                 add_i[i,j,k] = add_work[0]
                 add_j[i,j,k] = add_work[1]
                 add_k[i,j,k] = add_work[2]
-    print ""
+    print("")
     return add_i, add_j, add_k
 
 def velvar_check(var_list):
@@ -406,7 +406,7 @@ def cylinder(time = -1, pi_fr = (2./3.), step = 0.5 , path = None, skip = 1):
         vrbl = visual.vtk_var(phi_new,nx,ny_work,nz) # vtk variable
 
         vtk_path = visual.write_vtk_vector2('velocity', pts, vrbl, velx, vely, velz, q)
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
     return
     
@@ -561,7 +561,7 @@ def torus(time = -1, step = 0.5, skip = 1 , path = None, R = None, r = None , dr
         vrbl = visual.vtk_var(phi_new,nx,ny_work,nz) # vtk variable
         
         vtk_path = visual.write_vtk_vector2('velocity', pts, vrbl, velx, vely, velz  , q)
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
     return
 
@@ -699,7 +699,7 @@ def elm(time = -1, zShf_int_p = 0.25, path = None, skip = 1):
         vrbl = visual.vtk_var(phi_new,nx,ny2,nz) # vtk variable
 
         vtk_path = visual.write_vtk_vector2('velocity', pts2, vrbl, velx, vely, velz, q)
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
     return
 

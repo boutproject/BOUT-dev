@@ -10,7 +10,7 @@ This file contains a library of functions used by various scripts in the VisBOUT
 from boututils.datafile import DataFile
 from boutdata import collect
 from scipy.io import netcdf
-from math import sin, cos, pi
+from numpy import sin, cos, pi
 import numpy as np
 import sys
 import os
@@ -21,7 +21,7 @@ from scipy import interpolate
 from evtk.hl import gridToVTK
 
 #Import settings
-import ConfigParser as cp
+import configparser as cp
 
 #==============================================================================
 # Read setup file section
@@ -55,67 +55,6 @@ import visit
 #==============================================================================
 # Start of the Functions
 #==============================================================================
-#Get returns the a variable in a text file
-
-def get(filename, name, section=None):
-    
-    with open(filename, "rt") as f:
-        if section is not None:
-            # First find the section
-            found = False
-            for line in f:
-                # Strip spaces from left
-                line = line.lstrip(' \t\n\r')
-                if len(line) < 1:
-                    continue  # Empty line
-                    
-                # if line starts with '[' then this is a section
-                if line[0] == '[':
-                    # Split on ']'
-                    head, _ = line[1:].split(']', 1)
-                    # head is now the section name
-                    if head == section:
-                        found = True
-                        break
-            if not found:
-                raise ValueError("Section '%s' not found" % (section))
-        
-        # Now in the correct section
-        
-        for line in f:
-            # Strip spaces from left
-            line = line.lstrip(' \t\n\r')
-            if len(line) < 1:
-                continue  # Empty line
-                
-            # if line starts with '[' then this is a section
-            if line[0] == '[':
-                raise ValueError("Name '%s' not found in section '%s'" % (name,section))
-            # Check if this line contains an '='
-            if '=' in line:
-                # Check if contains comment
-                comment = ''
-                if '#' in line:
-                    line, comment = line.split('#', 1)
-                # Split on '='
-                key, value = line.split('=',1)
-                # Strip whitespace
-                key   = key.strip(' \t\n\r')
-                value = value.strip(' \t\n\r')
-                
-                
-                # Strip out quotes if present
-                if value[0] == '"' or value[0] == "'": 
-                    value = value[1:]
-                if value[-1] == '"' or value[-1] == "'":
-                    value = value[:-1]
-                
-                if '.pdb' in line:
-                    value, extension = value.split('.pdb',1)
-                    value = value + '.nc'
-                
-                if key.lower() == name.lower(): # Case insensitive
-                    return value
 
 def var_list():
     d = DataFile('BOUT.dmp.0.nc')
@@ -125,7 +64,7 @@ def var_list():
 
 def zShf_p_check(zShf_int_p):
     while zShf_int_p > 1:
-        print 'Error: zShift_int_percent has to be positive and between 0 and 1'
+        print('Error: zShift_int_percent has to be positive and between 0 and 1')
         zShf_int_p = float(raw_input('Enter New zShift_int_percent value: '))
     return zShf_int_p
 
@@ -205,14 +144,20 @@ def write_var(file, var, name, nt, nx, ny, nz):
 #  VTK format
 #==============================================================================
 
-def intrp_grd(ny,var,ny_work,step):
-    nx,ny = var.shape
-    var_new = np.empty((nx,ny_work),dtype = float)
+def intrp_grd(nx, ny, var, ny_work, step):
+    if len(var.shape) == 2:
+        var_new = np.empty((nx, ny_work),dtype = float)
+    elif len(var.shape) == 3:
+        nz = var.shape[2]
+        var_new = np.empty((nx, ny_work, nz),dtype = float)
+    else:
+        raise ValueError("intrp_grd expects 2d or 3d variable")
+
     for i in range(nx):
         var_yslice = var[i,:]
         y = np.arange(0,ny)
-        f = interpolate.interp1d(y,var_yslice)
-        y_new = np.arange(0,(ny-1),step)
+        f = interpolate.interp1d(y, var_yslice, axis=0) # axis zero because we restricted to x-index i already
+        y_new = np.arange(0, (ny-1), step)
         var_y_new = f(y_new)
 
         var_new[i,:] = var_y_new
@@ -232,37 +177,37 @@ def intrp_grd(ny,var,ny_work,step):
 
 
 def zshift_interp2d(nx,ny,zshift,z_tol, var):
-	# Input array Rxy[nx, ny]
-	# Decide how many points to insert between point y and y+1
-	# using zShift[nx,ny]
-	# ninsert is an array of length ny, type int
-	ninsert = np.zeros((ny,), dtype=np.int)
-	for y in range(ny):
-		if y == (ny-1):
-			ninsert[y] = 0
-		if y <  (ny-1):
-			ninsert[y] = int( np.amax(np.abs(zshift[:,y+1] - zshift[:,y])) / z_tol )
+    # Input array Rxy[nx, ny]
+    # Decide how many points to insert between point y and y+1
+    # using zShift[nx,ny]
+    # ninsert is an array of length ny, type int
+    ninsert = np.zeros((ny,), dtype=np.int)
+    for y in range(ny):
+        if y == (ny-1):
+            ninsert[y] = 0
+        if y <  (ny-1):
+            ninsert[y] = int( np.amax(np.abs(zshift[:,y+1] - zshift[:,y])) / z_tol )
 
-	# Total number of points to insert
-	nadd = np.sum(ninsert)
+    # Total number of points to insert
+    nadd = np.sum(ninsert)
 
-	ny2 = ny + nadd # New size of array
-	var2 = np.zeros( (nx, ny2) ) # New array to put interpolated values into
-	# Go through original y points
-	y2 = 0  # Counter for location in new array
-	
-	for y in range(ny):
-		# Copy y slice
-		var2[:,y2] = var[:,y]
-		# Interpolate and insert additional points between y and y+1
-		if y < (ny-1): # Check if index is less than the length of the array
-			for i in range(ninsert[y]+1):
-				# Interpolation weights
-				a = ((float(i+1)) / (ninsert[y] + 1))
-				b = float((ninsert[y] - i)) / float((ninsert[y] + 1))
-				y2+=1
-				var2[:,y2] = (a * var[:,y+1])  + (b * var[:,y])
-	return var2, ny2
+    ny2 = ny + nadd # New size of array
+    var2 = np.zeros( (nx, ny2) ) # New array to put interpolated values into
+    # Go through original y points
+    y2 = 0  # Counter for location in new array
+    
+    for y in range(ny):
+        # Copy y slice
+        var2[:,y2] = var[:,y]
+        # Interpolate and insert additional points between y and y+1
+        if y < (ny-1): # Check if index is less than the length of the array
+            for i in range(ninsert[y]+1):
+                # Interpolation weights
+                a = ((float(i+1)) / (ninsert[y] + 1))
+                b = float((ninsert[y] - i)) / float((ninsert[y] + 1))
+                y2+=1
+                var2[:,y2] = (a * var[:,y+1])  + (b * var[:,y])
+    return var2, ny2
 
 # zshift_interp3d funct
 def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol, var):
@@ -299,6 +244,20 @@ def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol, var):
                 var2[:,y2,:] = (a * var[:,y+1,:])  + (b * var[:,y,:])
     return var2, ny2
 
+# Creates slab mesh from coordinates r,z and size of grid
+# Returns x,y,z coordinates as np arrays
+def slab(x, y, zShift, nx, ny, nz):
+    xcoord = np.empty((nx,ny,nz),dtype=float)
+    ycoord = np.empty((nx,ny,nz),dtype=float)
+    zcoord = np.empty((nx,ny,nz),dtype=float)
+    z = 
+    # Transform Rxyz, Zxyz coordinates to cartesian
+    xcoord[...] = x[:, :, np.newaxis]
+    ycoord[...] = y[:, :, np.newaxis]
+    zcoord[...] = z[np.newaxis, np.newaxis, :] + zShift[:, :, np.newaxis]
+                                
+    return xcoord,ycoord,zcoord
+
 # Creates cylinder mesh from coordinates r,z and size of grid
 # Returns x,y,z coordinates as np arrays
 def cylinder(r, z, nx, ny, nz, pi_fr = (2./3.)):
@@ -310,32 +269,29 @@ def cylinder(r, z, nx, ny, nz, pi_fr = (2./3.)):
     ycoord = np.empty((nx,ny,nz),dtype=float)
     zcoord = np.empty((nx,ny,nz),dtype=float)
     pi_fr = float(pi_fr)
+    phi = np.linspace(0., pi_fr*pi/nz, nz, endpoint=False)[np.newaxis, np.newaxis, :]
     # Transform Rxyz, Zxyz coordinates to cartesian
-    for i in range(nx): # latitude
-        for k in range(nz): # longtitude
-            phi = (pi_fr)*pi*(float(k)/float(nz-1)) # (2/3)pi cylinder revolution
-            for j in range(ny): # level
-                xcoord[i,j,k] = float(r[i,j]*cos(phi))
-                ycoord[i,j,k] = float(r[i,j]*sin(phi))
-                zcoord[i,j,k] = float(z[i,j])
+    xcoord[...] = r[:, :, np.newaxis] * cos(phi)
+    ycoord[...] = r[:, :, np.newaxis] * sin(phi)
+    zcoord[...] = z[:, :, np.newaxis]
                                 
     return xcoord,ycoord,zcoord
 
 # Creates torus mesh from coordinates r,z and size of grid
 # Returns x,y,z coordinates as np arrays
 def torus(r, z, nx, ny, nz):
-	xcoord = np.empty((nx,ny,nz), dtype=float)
-	ycoord = np.empty((nx,ny,nz), dtype=float)
-	zcoord = np.empty((nx,ny,nz), dtype=float)
-	# Transform Rxyz, Zxyz coordinates to cartesian
-	for i in range(nx): # latitude
-    		for k in range(nz): # longtitude
-        		for j in range(ny): # level
-				phi = 2.*pi*(float(j)/float(ny-1)) # 2pi torus revolution
-				xcoord[i,j,k] = float(r[i,j,k]*cos(phi))
-	    			ycoord[i,j,k] = float(r[i,j,k]*sin(phi))
-				zcoord[i,j,k] = float(z[i,j,k])
-	return xcoord,ycoord,zcoord
+    xcoord = np.empty((nx,ny,nz), dtype=float)
+    ycoord = np.empty((nx,ny,nz), dtype=float)
+    zcoord = np.empty((nx,ny,nz), dtype=float)
+    # Transform Rxyz, Zxyz coordinates to cartesian
+    for i in range(nx): # latitude
+        for k in range(nz): # longtitude
+            for j in range(ny): # level
+                phi = 2.*pi*(float(j)/float(ny-1)) # 2pi torus revolution
+                xcoord[i,j,k] = float(r[i,j,k]*cos(phi))
+                ycoord[i,j,k] = float(r[i,j,k]*sin(phi))
+                zcoord[i,j,k] = float(z[i,j,k])
+    return xcoord,ycoord,zcoord
 
 # Creates ELM mesh from coordinates r,z, and size of grid
 # Input Rxy,Zxy,zShift from gridfile, size of grid, and periodicity
@@ -359,53 +315,53 @@ def elm(Rxy, Zxy, zshift, nx, ny, nz, period=1):
 
 # Find the maximum and minimum zshift values from zshift file
 def z_shift_mm(nx,ny,zshift):
-	# Find max z shift
-	max_z = 0
-	for i in range (nx):
-		for j in range(ny-1):
-			z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
-			if z_shift > max_z:
-				max_z = z_shift # Assign Max shift
-	# Find min zshift
-	min_z = max_z
-	for i in range (nx): # For all x
-		for j in range(ny-1): # For all y
-			z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
-			if z_shift < min_z:
-				min_z = z_shift # Assign shift value
-	return max_z, min_z
+    # Find max z shift
+    max_z = 0
+    for i in range (nx):
+        for j in range(ny-1):
+            z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
+            if z_shift > max_z:
+                max_z = z_shift # Assign Max shift
+    # Find min zshift
+    min_z = max_z
+    for i in range (nx): # For all x
+        for j in range(ny-1): # For all y
+            z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
+            if z_shift < min_z:
+                min_z = z_shift # Assign shift value
+    return max_z, min_z
 
 # Find the z_tol value
 # tol is a percentage of maximum z_shift is the tolerance value
 # z_tol is absolute value of tolerance (above this value will get interpolated, below ignored)
 def z_shift_tol(nx,ny,zshift,tol):
-	# Find max z shift
-        max_z = 0
-        for i in range (nx):
-                for j in range(ny-1):
-                        z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
-                        if z_shift > max_z:
-                                max_z = z_shift # Assign Max shift
-        # Find min zshift
-        min_z = max_z
-        for i in range (nx): # For all x
-                for j in range(ny-1): # For all y
-                        z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
-                        if z_shift < min_z:
-                                min_z = z_shift # Assign shift value
-	z_tol = min_z + (max_z *tol)
-	return z_tol
+    # Find max z shift
+    max_z = 0
+    for i in range (nx):
+        for j in range(ny-1):
+            z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
+            if z_shift > max_z:
+                max_z = z_shift # Assign Max shift
+    # Find min zshift
+    min_z = max_z
+    for i in range (nx): # For all x
+        for j in range(ny-1): # For all y
+            z_shift = abs(zshift[i,j] - zshift[i,j+1]) # Calc zshift diff
+            if z_shift < min_z:
+                min_z = z_shift # Assign shift value
+    z_tol = min_z + (max_z *tol)
+    return z_tol
 
 # Return spacial part of 4d specified variable
 def var3d(name,t):
-	var = collect(name)[t,:]
-	return var
+    var = collect(name)[t,:]
+    return var
 
 # Collect specified variable and return number of time slices
 def time_max(name):
-	var = collect(name)
-	max_t = var.shape[0]
-	return max_t
+    var = collect(name)
+    max_t = var.shape[0]
+    return max_t
 
 # Find the Dimensions of the variable data
 # input: name
@@ -420,7 +376,7 @@ def dim_all(name):
     var = collect(name)
     max_t = var.shape[0]
     var_0 = var[0,:]
-    nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
+    nx,ny,nz = var_0.shape
     return max_t, var_0, nx, ny, nz
 
 # create the vtk variable
@@ -435,10 +391,10 @@ def vtk_var(var, nx, ny, nz):
 # Writes data to vtk file for every time slice
 # Returns the vtk file path
 def write_vtk(name,pts,vrbl,t):
-	i,j,k = pts
-	vrbl = np.array(vrbl)
-	vtk_file_path = gridToVTK("./batch/" + name + "_batch_%d" % t, i, j, k, pointData = {str(name) : vrbl})
-	return vtk_file_path
+    i,j,k = pts
+    vrbl = np.array(vrbl)
+    vtk_file_path = gridToVTK("./batch/" + name + "_batch_%d" % t, i, j, k, pointData = {str(name) : vrbl})
+    return vtk_file_path
 
 # Write the real and imaginary data to vtk file
 # Inputs:
@@ -448,9 +404,9 @@ def write_vtk(name,pts,vrbl,t):
 # vrbl_i: imaginary eigenvalues
 # eig_num: eigen number,
 def write_vtk_2(name,pts,vrbl_r,vrbl_i,eig_num):
-	i,j,k = pts
-	vtk_file_path = gridToVTK("./batch/" + name + "_eigen_%d" % eig_num,i,j,k, pointData = {str(name + '_r'): vrbl_r , str(name + '_i') : vrbl_i})
-	return vtk_file_path
+    i,j,k = pts
+    vtk_file_path = gridToVTK("./batch/" + name + "_eigen_%d" % eig_num,i,j,k, pointData = {str(name + '_r'): vrbl_r , str(name + '_i') : vrbl_i})
+    return vtk_file_path
 
 def write_vtk_vector(name,pts,vectorx,vectory,vectorz,t):
     i,j,k = pts
@@ -575,7 +531,7 @@ def view_eigen(work_dir,name):
     
     # Return error if dimensions of the plots are not the same
     if dim_1 != dim_2:
-        print 'Error plots do not have the same dimensions'
+        print('Error plots do not have the same dimensions')
         sys.exit()
     
     # Set dimension variable

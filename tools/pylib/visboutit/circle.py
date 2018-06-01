@@ -14,7 +14,7 @@ from __future__ import division
 
 from numpy import zeros, ndarray, pi, cos, sin, outer, linspace,sqrt
 
-from boututils import DataFile # Wrapper around NetCDF4 libraries
+from boututils.datafile import DataFile # Wrapper around NetCDF4 libraries
 
 def generate(nx, ny,
              R = 2.0, r=0.2, # Major & minor radius

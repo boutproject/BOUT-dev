@@ -6,7 +6,7 @@ There are three main functions that handle this; draw (scalar data), vector (fie
 
 
 """
-import visual
+from . import visual
 import sys
 import os
 import numpy as np
@@ -146,7 +146,7 @@ def draw(name , skip = 1 , path = None):
     import visit
     visit.Launch(vdir=visual.visit_bin)
     
-    print "Please orientate the Plot how you would like the image sequence to appear, then save the session file"
+    print("Please orientate the Plot how you would like the image sequence to appear, then save the session file")
         
     # If a max min file exists assign a value if not set Max,Min = False
     if not os.path.exists("max_min_" + name + '.txt'):
@@ -157,8 +157,8 @@ def draw(name , skip = 1 , path = None):
         max = mm_array[0]
         min = mm_array[1]
     
-    print 'max',max
-    print 'min',min    
+    print('max',max)
+    print('min',min)
         
     #Launch VisIt
     sys.path.insert(0,visual.visit_dir)
@@ -166,7 +166,7 @@ def draw(name , skip = 1 , path = None):
         
     # View the VTK files so that the user can reorientate the Plot
     session_path,session_name = visual.view_vtk(work_dir,name,max,min)
-    print session_path
+    print(session_path)
        
     use_max = int(raw_input('Use max from max input file? (0 for No, 1 for Yes): '))
     use_min = int(raw_input('Use min from min input file? (0 for No, 1 for Yes): '))
@@ -235,7 +235,7 @@ def vector(name , skip = 1, path = None):
     import visit
     visit.Launch(vdir=visual.visit_bin)
     
-    print "Please orientate the Plot how you would like the image sequence to appear, then save the session file"
+    print("Please orientate the Plot how you would like the image sequence to appear, then save the session file")
         
     # If a max min file exists assign a value if not set Max,Min = False
     if not os.path.exists("max_min_" + name + '.txt'):
@@ -246,8 +246,8 @@ def vector(name , skip = 1, path = None):
         max = mm_array[0]
         min = mm_array[1]
     
-    print 'max',max
-    print 'min',min    
+    print('max',max)
+    print('min',min)
         
     #Launch VisIt
     sys.path.insert(0,visual.visit_dir)
@@ -258,7 +258,7 @@ def vector(name , skip = 1, path = None):
     # returns the VisIt session name and location
 
     session_path,session_name = view_vector(work_dir,name,max,min)
-    print session_path
+    print(session_path)
        
     use_max = int(raw_input('Use max from max input file? (0 for No, 1 for Yes): '))
     use_min = int(raw_input('Use min from min input file? (0 for No, 1 for Yes): '))
@@ -331,8 +331,8 @@ def eigen(name ,  path = None):
     import visit
     visit.Launch(vdir=visual.visit_bin)
     
-    print "Please orientate the Plot how you would like the image sequence to appear, then save the session file"
-    print "The orientation for the image sequence will be taken from window 1, so that both images sequences have the same orientation" 
+    print("Please orientate the Plot how you would like the image sequence to appear, then save the session file")
+    print("The orientation for the image sequence will be taken from window 1, so that both images sequences have the same orientation")
 
         
     #Launch VisIt
@@ -341,7 +341,7 @@ def eigen(name ,  path = None):
         
     # View the VTK files so that the user can reorientate the Plot
     session_path,session_name = visual.view_eigen(work_dir,name)
-    print session_path
+    print(session_path)
     
     # Export an image sequence of the orientated data
     visual.image_eigen(session_path,img_dir,name,t,session_name)

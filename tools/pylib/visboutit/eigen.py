@@ -5,12 +5,11 @@
 """
 
 # import relevant libraries
+from . import visual, vtk
 from boutdata import collect
 import matplotlib.pyplot as plt
 from numpy import argmin, amax, amin
 import os
-import visual
-import vtk
 
 # Define a fuction that will plot the eigenvalues
 def plot_eigenvals(eigs, name, coord, zShf_int_p, t_step, R,r,dr,Bt,q, c_step, data=None):
@@ -74,7 +73,7 @@ def plot_eigenvals(eigs, name, coord, zShf_int_p, t_step, R,r,dr,Bt,q, c_step, d
 
             
             vtk_path = visual.write_vtk_2(name,pts,vrbl_r,vrbl_i,ind)
-            print "Eigenvalue %d written to vtk" % ind
+            print("Eigenvalue %d written to vtk" % ind)
         fig.canvas.draw()
         
     cid = fig.canvas.mpl_connect('button_press_event', onclick)
@@ -142,7 +141,7 @@ def draw(name, path = None):
             if use_isttok.lower() == 'y':
                 R,r,dr,Bt,q = 0.46, 0.085, 0.02, 0.5, 5
             else:
-                print "Enter values for specifications"
+                print("Enter values for specifications")
                 R = float(raw_input('R = '))
                 r = float(raw_input('r = '))
                 dr = float(raw_input('dr = '))

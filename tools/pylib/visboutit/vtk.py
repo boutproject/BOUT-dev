@@ -6,9 +6,9 @@ This python file contains functions required to convert to cylinder, torus and E
 """
 
 #Import libraries
-import visual
+from . import visual, circle
+from boutdata.data import BoutOptionsFile
 import os
-import circle
 import numpy as np
 from scipy import interpolate
 
@@ -38,16 +38,15 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         work_dir = os.chdir(path)
         work_dir = os.getcwd()
     
-    grid_file = visual.get("BOUT.inp","grid") # Import grid file name 
+    boutinput = BoutOptionsFile("BOUT.inp")
 
     # Get the dimensions and initial value of the variable data.    
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
   
     #ELM
     #Import r,z and zshift from grid file
-    r = visual.nc_var(grid_file,'Rxy') # ELM Coordinates
-    z = visual.nc_var(grid_file,'Zxy') # ELM Coordinates
-    zshift = visual.nc_var(grid_file,'zShift') #ELM Coordinates
+    r,z = load_RZ(boutinput) #ELM Coordinates
+    zshift = load_zShift(boutinput) #ELM Coordinates
     
     max_z,min_z = visual.z_shift_mm(nx,ny,zshift) #Find the max and minimum zshift values
     z_tol = min_z + ((max_z - min_z)* zShf_int_p) # Set tolerance value
@@ -109,7 +108,7 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         #Convert coordinate section
         vrbl = visual.vtk_var(var2,nx,ny2,nz) #vtk variable
         vtk_path = visual.write_vtk(name,pts2,vrbl,q) # write vtk file
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
         
     #Write the Max and min values to file
@@ -215,7 +214,7 @@ def torus(name, time, step = 0.5, skip = 1 , path = None, R = None, r = None , d
         #Convert coordinate section        
         vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
         vtk_path = visual.write_vtk(name,pts,vrbl,q) # write vtk file
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
     
     #Write the Max and min values to file
@@ -223,6 +222,107 @@ def torus(name, time, step = 0.5, skip = 1 , path = None, R = None, r = None , d
     np.savetxt('max_min_' + name + '.txt',mm_array)
     return
 
+
+def slab(name, time, step = 0.5 ,path = None, skip = 1):
+    """
+    This function converts data to the slab coordinate system.
+    
+    Inputs
+        name: variable name to be imported (string)
+        time: End time slice to be converted (int) , if -1 entire dataset is imported
+        step: The gap between the y slices for the y interpolation (float < 1) if 0 then raw data displayed.
+        path: File path to data, if blank then the current working directory is used to look for data
+        skip: The gap between time slices to convert.
+        
+    Outputs
+        Timestamped vtk files of the specified variable.
+        A text file with the maximum and minimum values.
+
+
+    """    
+    
+    #Get the working dir
+    if path == None:
+        work_dir = os.getcwd()
+    if path != None:
+        work_dir = os.chdir(path)
+        work_dir = os.getcwd()
+    
+    # Get the grid file name
+    boutinput = BoutOptionsFile("BOUT.inp")
+    x,y = load_RZ(boutinput) # for a slab, 'Zxy' gives the y-position (because it is orthogonal to the internal z-direction which is given by zShift)
+    zShift = load_zShift(boutinput) # parallel length
+
+    # Find dimensions of data
+    max_t, var_0, nx, ny, nz = visual.dim_all(name)
+    ny_work = ny
+        
+    #Interpolate setup
+    #Get number of new points
+    if step != 0:
+        ny_work = len(np.arange(0,(ny-1),step))
+        r2 = visual.intrp_grd(nx, ny, r, ny_work, step)
+        z2 = visual.intrp_grd(nx, ny, z, ny_work, step)
+        r = r2
+        z = z2
+    #Define empty array with increased number of y values
+    var_new = np.empty((nx,ny_work,nz),dtype=float)
+    pts = visual.slab(x, y, zShift, nx, ny_work, nz) # vtk grid points
+    
+    #Set time from input
+    t = time
+    
+    # Set t to max_t, if user desires entire dataset
+    if t == -1:
+        t = max_t
+    #If t is outside time dim of data set to max_t
+    if t >= max_t:
+        t = max_t
+    
+    ### Make dir for storing vtk files and image files
+    #Check if dir for storing vtk files exsists if not make that dir
+    if not os.path.exists("batch"):
+        os.makedirs("batch")
+    #Make dir for storing images
+    if not os.path.exists("images"):
+        os.makedirs("images")
+    
+    #Initial max and min values
+    max = np.zeros(t , dtype = float)
+    min = np.zeros(t , dtype = float)
+    
+    var_all = visual.collect(name)       
+    
+    q = 0
+    #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
+    while q <= t-1:
+            var = var_all[q] # collect variable
+    
+            #Find the min and max values
+            max[q] = np.amax(var)
+            min[q] = np.amin(var)
+            
+            if ny != ny_work: #Interpolate section for all y values
+                for i in range(nx):
+                    for k in range(nz):
+                            var_y = var[i,:,k]
+                            y = np.arange(0,ny) # Arrange y values in array
+                            f = interpolate.interp1d(y,var_y) # Interpolate the data
+                            y_new = np.arange(0,(ny-1),step) # Arrange new y values 
+                            var_y_new = f(y_new) # interpolate y values
+                            var_new[i,:,k] = var_y_new # Store values in new variable
+            else:
+                var_new = var
+            #Convert coordinate section        
+            vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
+            vtk_path = visual.write_vtk(name,pts,vrbl,q) # write vtk file
+            print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
+            q+= skip
+            
+    #Write the Max and min values to file
+    mm_array = np.array((np.amax(max) , np.amin(min)))
+    np.savetxt('max_min_' + name + '.txt',mm_array)
+    return
 
 def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
     """
@@ -251,21 +351,19 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
         work_dir = os.getcwd()
     
     # Get the grid file name
-    grid_file = visual.get("BOUT.inp","grid")
+    boutinput = BoutOptionsFile("BOUT.inp")
+    r,z = load_RZ(boutinput) # toroidal coordinates
 
     # Find dimensions of data
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
     ny_work = ny
-    # Import coordinates from gridfile
-    r = visual.nc_var(grid_file,'Rxy') # toroidal coordinates
-    z = visual.nc_var(grid_file,'Zxy') # toroidal coordinates
         
     #Interpolate setup
     #Get number of new points
     if step != 0:
         ny_work = len(np.arange(0,(ny-1),step))
-        r2 = visual.intrp_grd(ny,r,ny_work,step)
-        z2 = visual.intrp_grd(ny,z,ny_work,step)
+        r2 = visual.intrp_grd(nx, ny, r, ny_work, step)
+        z2 = visual.intrp_grd(nx, ny, z, ny_work, step)
         r = r2
         z = z2
     #Define empty array with increased number of y values
@@ -319,7 +417,7 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
             #Convert coordinate section        
             vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
             vtk_path = visual.write_vtk(name,pts,vrbl,q) # write vtk file
-            print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+            print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
             q+= skip
             
     #Write the Max and min values to file
@@ -332,7 +430,7 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
 #==============================================================================
 
 def elm_t(name ,time ,zShf_int_p = 0.25, path = None):
-    
+
     """
     elm_t
     The function elm_t converts a specified time slice and returns the mesh and variable
@@ -356,16 +454,15 @@ def elm_t(name ,time ,zShf_int_p = 0.25, path = None):
         work_dir = os.chdir(path)
         work_dir = os.getcwd()
     
-    grid_file = visual.get("BOUT.inp","grid") # Import grid file name 
+    boutinput = BoutOptionsFile("BOUT.inp")
 
     # Get the dimensions and initial value of the variable data.    
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
       
     # ELM
     # Import r,z and zshift from grid file
-    r = visual.nc_var(grid_file,'Rxy') # ELM Coordinates
-    z = visual.nc_var(grid_file,'Zxy') # ELM Coordinates
-    zshift = visual.nc_var(grid_file,'zShift') #ELM Coordinates
+    r,z = load_RZ(boutinput) #ELM Coordinates
+    zshift = load_zShift(boutinput) #ELM Coordinates
     
     max_z,min_z = visual.z_shift_mm(nx,ny,zshift) #Find the max and minimum zshift values
     z_tol = min_z + ((max_z - min_z) * zShf_int_p) # Set tolerance value
@@ -492,21 +589,20 @@ def cylinder_t(name, time, pi_fr = (2./3.), step = 0.5, path = None):
         work_dir = os.getcwd()
     
     # Get the grid file name
-    grid_file = visual.get("BOUT.inp","grid")
+    boutinput = BoutOptionsFile("BOUT.inp")
 
     # Find dimensions of data
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
     ny_work = ny
     # Import coordinates from gridfile
-    r = visual.nc_var(grid_file,'Rxy') # toroidal coordinates
-    z = visual.nc_var(grid_file,'Zxy') # toroidal coordinates
+    r,z = load_RZ(boutinput) # toroidal coordinates
         
     # Interpolate setup
     # Get number of new points
     if step != 0:
         ny_work = len(np.arange(0,(ny-1),step))
-        r2 = visual.intrp_grd(ny,r,ny_work,step)
-        z2 = visual.intrp_grd(ny,z,ny_work,step)
+        r2 = visual.intrp_grd(nx, ny, r, ny_work, step)
+        z2 = visual.intrp_grd(nx, ny, z, ny_work, step)
         r = r2
         z = z2
     # Define empty array with increased number of y values
@@ -542,3 +638,71 @@ def cylinder_t(name, time, pi_fr = (2./3.), step = 0.5, path = None):
     vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
 
     return vrbl,pts    # Return the variable and mesh
+
+def load_RZ(boutinput):
+    try:
+        try:
+            grid_file = boutinput["grid"] # grid file name 
+        except KeyError:
+            grid_file = boutinput["mesh"]["file"] # grid file name 
+    except KeyError:
+        # Import coordinates from input file
+        # Note: 3d array is returned, but 3rd dimension is empty because Rxy
+        # and Zxy have no z-dependence, so we can cut it off here. We must also
+        # cut of y-guard cells to be consistent with grid files
+        try:
+            myg = boutinput["myg"]
+        except KeyError:
+            myg = 2
+        r = boutinput.evaluate('mesh:Rxy')[:, :, 0]
+        if r.shape[1] > 2*myg:
+            r = r[:, myg:-myg]
+        z = boutinput.evaluate('mesh:Zxy')[:, :, 0]
+        if z.shape[1] > 2*myg:
+            z = z[:, myg:-myg]
+        nx = boutinput["mesh"]["nx"]
+        ny = boutinput["mesh"]["ny"]
+        if r.shape[0] == 1:
+            r = np.repeat(r, nx, axis=0)
+        if z.shape[0] == 1:
+            z = np.repeat(z, nx, axis=0)
+        if r.shape[1] == 1:
+            r = np.repeat(r, ny, axis=1)
+        if z.shape[1] == 1:
+            z = np.repeat(z, ny, axis=1)
+    else:
+        # Import coordinates from gridfile
+        r = visual.nc_var(grid_file,'Rxy')
+        z = visual.nc_var(grid_file,'Zxy')
+
+    return r, z
+
+def load_zShift(boutinputs):
+    try:
+        try:
+            grid_file = boutinput["grid"] # grid file name 
+        except KeyError:
+            grid_file = boutinput["mesh"]["file"] # grid file name 
+    except KeyError:
+        # Import coordinates from input file
+        # Note: 3d array is returned, but 3rd dimension is empty because Rxy
+        # and Zxy have no z-dependence, so we can cut it off here. We must also
+        # cut of y-guard cells to be consistent with grid files
+        try:
+            myg = boutinput["myg"]
+        except KeyError:
+            myg = 2
+        zShift = boutinput.evaluate('mesh:zShift')[:, :, 0]
+        if zShift.shape[1] > 2*myg:
+            zShift = zShift[:, myg:-myg]
+        nx = boutinput["mesh"]["nx"]
+        ny = boutinput["mesh"]["ny"]
+        if zShift.shape(0) == 1:
+            zShift = np.repeat(zShift, nx, axis=0)
+        if zShift.shape(1) == 1:
+            zShift = np.repeat(zShift, ny, axis=1)
+    else:
+        # Import coordinates from gridfile
+        zShift = visual.nc_var(grid_file,'zShift')
+
+    return zShift

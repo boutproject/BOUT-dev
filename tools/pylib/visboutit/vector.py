@@ -3,7 +3,7 @@
 vectory.py Draws vectors that are specified.
 """
 #Import the relevant libraries
-from visboutit import visual, circle
+from . import visual, circle
 import os
 import numpy as np
 from math import sin,cos,pi,fabs
@@ -50,10 +50,10 @@ def elm_field_vector(pts,nx,ny,nz):
     
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
-    print 'Creating vector map:'
+    print('Creating vector map:')
     for i in range(nx-1):
         percent = (float(i)/(float(nx - 2)))*100
-        print '%d %% Complete' % percent, "   \r", # Progress percent
+        print('%d %% Complete' % percent, "   \r") # Progress percent
         for j in range(ny-1):
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
@@ -64,7 +64,7 @@ def elm_field_vector(pts,nx,ny,nz):
                 unit_vector_x[i,j,k] = unit[0]
                 unit_vector_y[i,j,k] = unit[1]
                 unit_vector_z[i,j,k] = unit[2]
-    print "" # For closing updated print statement
+    print("") # For closing updated print statement
     return unit_vector_x, unit_vector_y, unit_vector_z
 
 
@@ -88,11 +88,11 @@ def y_unit_vector(pts , nx , ny , nz ):
     
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
-    print 'Creating vector map:'
+    print('Creating vector map:')
     for i in range(nx-1):        
         for j in range(ny-1):
             percent = (float(i)/(float(nx - 2)))*100
-            print '%d %% Complete' % percent, "   \r", # Progress percent
+            print('%d %% Complete' % percent, "   \r") # Progress percent
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
                 r2 = np.array((xcoord[ i , j+1 , k ] , ycoord[ i , j+1 , k ]  , zcoord[ i , j+1 , k ])) # Vector of secondary point
@@ -102,7 +102,7 @@ def y_unit_vector(pts , nx , ny , nz ):
                 unit_vector_x[i,j,k] = unit[0]
                 unit_vector_y[i,j,k] = unit[1]
                 unit_vector_z[i,j,k] = unit[2]
-    print "" # For closing updated print statement
+    print("") # For closing updated print statement
     return unit_vector_x, unit_vector_y, unit_vector_z
 
 
@@ -139,7 +139,7 @@ def dPhi_da(cpos , hpos , lpos, cphi, hphi, lphi):
 #    dphi_dy = []
 #    dphi_dz = []
 #    for i in np.arange(1,nx-1):
-#        print i
+#        print(i)
 #        for j in np.arange(1,ny-1):
 #            for k in np.arange(1,nz-1):
 #                phi_0 = phi[i , j , k ]
@@ -168,7 +168,7 @@ def dPhi_da(cpos , hpos , lpos, cphi, hphi, lphi):
                 
 # Function for calculating grad phi 
 def grad_phi(phi,pts,nx,ny,nz):
-    print "Grad_phi"
+    print("Grad_phi")
     # Create variables for vectors
     dphi = np.zeros((nx,ny,nz,3))
     phi_0_solve = np.zeros((nx,ny,nz))
@@ -183,7 +183,7 @@ def grad_phi(phi,pts,nx,ny,nz):
     for i in range(nx-1):
         percent = (float(i)/(float(nx - 2)))*100
         for j in range(ny-1):
-            print '%d %% Complete i=%d' % (percent,i), "   \r", # Progress percent
+            print('%d %% Complete i=%d' % (percent,i), "   \r") # Progress percent
             for k in range(nz-1):     
                 
                 # Import the variables taking into accound normalisation factor and vectors needed 
@@ -226,7 +226,7 @@ def grad_phi(phi,pts,nx,ny,nz):
                     dphi[i,j,k,z] = dphi_v_work[z]
 
 
-    print ""
+    print("")
     return dphi
 
                 
@@ -338,9 +338,9 @@ def phi_elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         #Convert coordinate section
         vrbl = visual.vtk_var(var2,nx,ny2,nz) #vtk variable
         vtk_path = visual.write_vtk_vector2(name,pts2,vrbl,vectorx,vectory,vectorz,q)
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip))# Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
-    print ""
+    print("")
 #    #Write the Max and min values to file
 #    mm_array = np.array((max,min))
 #    np.savetxt('max_min_' + name + '.txt',mm_array) 
@@ -514,7 +514,7 @@ def vel_torus(name, time, step = 0.5, path = None, R = None, r_min = None , dr =
         #Convert coordinate section        
         vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
         vtk_path = visual.write_vtk_vector2(name,pts,vrbl,vectorx,vectory,vectorz,q)
-        print "At t = %d, %d Steps remaining" % (q , ((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q , ((t- q)/skip))) # Progress indicator
         q += skip
     
     #Write the Max and min values to file
@@ -636,7 +636,7 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 , path = None, skip = 1):
             #Convert coordinate section        
             vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
             vtk_path = visual.write_vtk_vector2(name,pts,vrbl, vectorx, vectory, vectorz ,q) # write vtk file
-            print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+            print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
             q+= skip
             
     #Write the Max and min values to file
@@ -777,7 +777,7 @@ def torus(name, time, step = 0.5, path = None, skip = 1, R = None, r = None , dr
         #Convert coordinate section        
         vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
         vtk_path = visual.write_vtk_vector2(name,pts,vrbl,vectorx,vectory,vectorz,q)
-        print "At t = %d, %d Steps remaining" % (q , ((t- q)/skip)) # Progress indicator
+        print("At t = %d, %d Steps remaining" % (q , ((t- q)/skip))) # Progress indicator
         q += skip
     
     #Write the Max and min values to file
@@ -891,9 +891,9 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         #Convert coordinate section
         vrbl = visual.vtk_var(var2,nx,ny2,nz) #vtk variable
         vtk_path = visual.write_vtk_vector2(name,pts2,vrbl,vectorx,vectory,vectorz,q)
-        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip))# Progress indicator
+        print("At t = %d, %d Steps remaining" % (q,((t- q)/skip))) # Progress indicator
         q += skip
-    print ""
+    print("")
     
     #Write the Max and min values to file
 #    mm_array = np.array((np.median(max),np.median(min))

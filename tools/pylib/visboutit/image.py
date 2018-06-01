@@ -4,7 +4,7 @@ Export an image seqeuence from VisIt Session File for scalar, vector and eigenso
 """
 
  
-import visual
+from . import visual
 import sys
 import os 
 import numpy as np
@@ -186,7 +186,7 @@ def vector(name, skip = 1 , path = None):
     
 # Create image sequence for eigen (2 window interface)
 def eigen(name, path = None):
-        """
+    """
     This function imports a VisIt session of eigensolver data with two windows (window 1: real data, window 2: imaginary data) and then renders out the image sequence of the avaliable data
     
     Inputs:
@@ -208,7 +208,7 @@ def eigen(name, path = None):
         work_dir = os.chdir(path)
         work_dir = os.getcwd()
         
-   #Get max time variable
+    #Get max time variable
     num_eig = len(visual.collect("t_array"))/2
 
     # Create list of the time values
