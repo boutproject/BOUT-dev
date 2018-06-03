@@ -223,7 +223,7 @@ def torus(name, time, step = 0.5, skip = 1 , path = None, R = None, r = None , d
     return
 
 
-def slab(name, time, step = 0.5 ,path = None, skip = 1):
+def slab(name, time = -1, step = 0.5 ,path = None, skip = 1):
     """
     This function converts data to the slab coordinate system.
     
@@ -252,6 +252,7 @@ def slab(name, time, step = 0.5 ,path = None, skip = 1):
     boutinput = BoutOptionsFile("BOUT.inp")
     x,y = load_RZ(boutinput) # for a slab, 'Zxy' gives the y-position (because it is orthogonal to the internal z-direction which is given by zShift)
     zShift = load_zShift(boutinput) # parallel length
+    zlength = load_zlength(boutinput)
 
     # Find dimensions of data
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
@@ -261,13 +262,15 @@ def slab(name, time, step = 0.5 ,path = None, skip = 1):
     #Get number of new points
     if step != 0:
         ny_work = len(np.arange(0,(ny-1),step))
-        r2 = visual.intrp_grd(nx, ny, r, ny_work, step)
-        z2 = visual.intrp_grd(nx, ny, z, ny_work, step)
-        r = r2
-        z = z2
+        x2 = visual.intrp_grd(nx, ny, x, ny_work, step)
+        y2 = visual.intrp_grd(nx, ny, y, ny_work, step)
+        zShift2 = visual.intrp_grd(nx, ny, zShift, ny_work, step)
+        x = x2
+        y = y2
+        zShift = zShift2
     #Define empty array with increased number of y values
     var_new = np.empty((nx,ny_work,nz),dtype=float)
-    pts = visual.slab(x, y, zShift, nx, ny_work, nz) # vtk grid points
+    pts = visual.slab(x, y, zlength, zShift, nx, ny_work, nz) # vtk grid points
     
     #Set time from input
     t = time
@@ -651,7 +654,7 @@ def load_RZ(boutinput):
         # and Zxy have no z-dependence, so we can cut it off here. We must also
         # cut of y-guard cells to be consistent with grid files
         try:
-            myg = boutinput["myg"]
+            myg = int(boutinput.evaluate("myg"))
         except KeyError:
             myg = 2
         r = boutinput.evaluate('mesh:Rxy')[:, :, 0]
@@ -660,8 +663,8 @@ def load_RZ(boutinput):
         z = boutinput.evaluate('mesh:Zxy')[:, :, 0]
         if z.shape[1] > 2*myg:
             z = z[:, myg:-myg]
-        nx = boutinput["mesh"]["nx"]
-        ny = boutinput["mesh"]["ny"]
+        nx = int(boutinput.evaluate("mesh:nx"))
+        ny = int(boutinput.evaluate("mesh:ny"))
         if r.shape[0] == 1:
             r = np.repeat(r, nx, axis=0)
         if z.shape[0] == 1:
@@ -677,7 +680,7 @@ def load_RZ(boutinput):
 
     return r, z
 
-def load_zShift(boutinputs):
+def load_zShift(boutinput):
     try:
         try:
             grid_file = boutinput["grid"] # grid file name 
@@ -697,12 +700,34 @@ def load_zShift(boutinputs):
             zShift = zShift[:, myg:-myg]
         nx = boutinput["mesh"]["nx"]
         ny = boutinput["mesh"]["ny"]
-        if zShift.shape(0) == 1:
+        if zShift.shape[0] == 1:
             zShift = np.repeat(zShift, nx, axis=0)
-        if zShift.shape(1) == 1:
+        if zShift.shape[1] == 1:
             zShift = np.repeat(zShift, ny, axis=1)
     else:
         # Import coordinates from gridfile
         zShift = visual.nc_var(grid_file,'zShift')
 
     return zShift
+
+def load_zlength(boutinput):
+    try:
+        try:
+            grid_file = boutinput["grid"] # grid file name 
+        except KeyError:
+            grid_file = boutinput["mesh"]["file"] # grid file name 
+    except KeyError:
+        # Import coordinates from input file
+        try:
+            nz = int(boutinput.evaluate("mz"))
+        except KeyError:
+            nz = int(boutinput.evaluate("mesh:nz"))
+        dz = boutinput.evaluate("mesh:dz")
+        zlength = nz*dz
+    else:
+        # Import coordinates from gridfile
+        zmin = visual.nc_var(grid_file,'ZMIN')
+        zmax = visual.nc_var(grid_file,'ZMAX')
+        zlength = zmax-zmin
+
+    return zlength

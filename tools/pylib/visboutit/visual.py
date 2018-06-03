@@ -246,14 +246,15 @@ def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol, var):
 
 # Creates slab mesh from coordinates r,z and size of grid
 # Returns x,y,z coordinates as np arrays
-def slab(x, y, zShift, nx, ny, nz):
+def slab(x, y, zlength, zShift, nx, ny, nz):
     xcoord = np.empty((nx,ny,nz),dtype=float)
     ycoord = np.empty((nx,ny,nz),dtype=float)
     zcoord = np.empty((nx,ny,nz),dtype=float)
-    z = 
+    z = np.linspace(0., zlength, nz, endpoint=False)
     # Transform Rxyz, Zxyz coordinates to cartesian
     xcoord[...] = x[:, :, np.newaxis]
     ycoord[...] = y[:, :, np.newaxis]
+    print zcoord.shape, z.shape, zShift.shape
     zcoord[...] = z[np.newaxis, np.newaxis, :] + zShift[:, :, np.newaxis]
                                 
     return xcoord,ycoord,zcoord
