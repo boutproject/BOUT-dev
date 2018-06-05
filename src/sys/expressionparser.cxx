@@ -373,10 +373,6 @@ char ExpressionParser::LexInfo::nextToken() {
   return curtok;
 }
 
-int ExpressionParser::LexInfo::getPos() {
-  return static_cast<int>(ss.tellg());
-}
-
 //////////////////////////////////////////////////////////
 // ParseException
 

@@ -130,8 +130,6 @@ private:
     signed char LastChar;   ///< The last character read from the string
     std::stringstream ss; ///< Used to read values from the input string
     char nextToken(); ///< Get the next token in the string
-    
-    int getPos(); ///< Return position in the input
   };
   
   std::shared_ptr<FieldGenerator> parseIdentifierExpr(LexInfo &lex);
