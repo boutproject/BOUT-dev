@@ -173,7 +173,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
               IndexOffset<Ind3D> offset(*mesh);
 
               //for (const auto &i : result.region(RGN_NOBNDRY)) {
-              BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D(region), i,
+              BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D("RGN_NOY"), i,
                 // Set stencils
                 s.mm = var_fa[offset.ymm(i)];
                 s.m = var_fa[offset.ym(i)];
