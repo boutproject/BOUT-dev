@@ -98,8 +98,10 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
     throw BoutException("FieldPerp: Assignment from non-finite BoutReal\n");
 #endif
 
-  for (const auto &i : (*this))
+  //for (const auto &i : (*this))
+  BLOCK_REGION_LOOP(this->getMesh()->getRegionPerp("RGN_ALL"), i,
     (*this)[i] = rhs;
+  );
 
   return *this;
 }
@@ -163,9 +165,9 @@ FPERP_OP_FIELD(/=, /, Field2D);
     SCOREP0();                                          \
     if(data.unique()) {                                 \
       /* Only reference to the data */           	\
-      for(int i=0;i<nx;i++)                             \
-        for(int k=0;k<nz;k++)                           \
-          (*this)(i,k) op rhs;				\
+      BLOCK_REGION_LOOP(this->getMesh()->getRegionPerp("RGN_ALL"), i, \
+        (*this)[i] op rhs;				\
+      );                                                \
     }else {  			                        \
       /* Shared with another FieldPerp */		\
       (*this) = (*this) bop rhs;                        \
@@ -243,8 +245,9 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
     int y = lhs.getIndex();                                                              \
     result.setIndex(y);                                                                  \
                                                                                          \
-    for (auto i : result)                                                                \
+    BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp("RGN_ALL"), i,                    \
       result[i] = lhs[i] op rhs;                                                         \
+    );                                                                                   \
                                                                                          \
     return result;                                                                       \
   }
@@ -263,8 +266,9 @@ FPERP_FPERP_OP_REAL(/);
     int y = rhs.getIndex();                                                              \
     result.setIndex(y);                                                                  \
                                                                                          \
-    for (auto i : result)                                                                \
+    BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp("RGN_ALL"), i,                    \
       result[i] = lhs op rhs[i];                                                         \
+    );                                                                                   \
                                                                                          \
     return result;                                                                       \
   }
@@ -302,9 +306,9 @@ FPERP_REAL_OP_FPERP(/);
     FieldPerp result(f.getMesh());                                                       \
     result.allocate();                                                                   \
     /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp(rgn), d,                          \
       result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    );                                                                                   \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -335,9 +339,10 @@ const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
   SCOREP0();
   FieldPerp result = copy(var);
 
-  for (const auto &d : result.region(rgn))
+  BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp(rgn), d,
     if (result[d] < f)
       result[d] = f;
+  );
 
   return result;
 }
@@ -369,9 +374,10 @@ BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
 
-  for (const auto &i : f.region(rgn))
+  BLOCK_REGION_LOOP(f.getMesh()->getRegionPerp(rgn), i,
     if (f[i] < result)
       result = f[i];
+  );
 
   if (allpe) {
     // MPI reduce
@@ -390,9 +396,10 @@ BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
 
   BoutReal result = f[f.region(rgn).begin()];
 
-  for (const auto &i : f.region(rgn))
+  BLOCK_REGION_LOOP(f.getMesh()->getRegionPerp(rgn), i,
     if (f[i] > result)
       result = f[i];
+  );
 
   if (allpe) {
     // MPI reduce
@@ -433,9 +440,9 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp(rgn), i,
     result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  );
 
   checkData(result);
   return result;
@@ -452,9 +459,9 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp(rgn), i,
     result[i] = ::pow(lhs[i], rhs);
-  }
+  );
 
   checkData(result);
   return result;
@@ -471,9 +478,9 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  BLOCK_REGION_LOOP(result.getMesh()->getRegionPerp(rgn), i,
     result[i] = ::pow(lhs, rhs[i]);
-  }
+  );
 
   checkData(result);
   return result;
