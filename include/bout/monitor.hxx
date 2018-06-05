@@ -4,22 +4,7 @@
 
 class Solver;
 
-template <typename t>
-t bout_abs(t a){
-  return a>0? a:-1;
-}
-
-template <typename t>
-bool isMultiple(t a, t b){
-  t min = a>b?b:a;
-  t max = a>b?a:b;
-  int ratio = (max/min)+.5;
-  t error = ratio*min - max;
-  if (bout_abs(error/max) > 1e-5)
-    return false;
-  return true;
-}
-
+bool isMultiple(BoutReal a, BoutReal b);
 
 class Monitor{
   friend class Solver; // needs access to timestep and freq
