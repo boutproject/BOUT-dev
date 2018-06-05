@@ -453,7 +453,6 @@ int BoutInitialise(int &argc, char **&argv) {
     
   }catch(BoutException &e) {
     output_error.write("Error encountered during initialisation: %s\n", e.what());
-    BoutComm::cleanup();
     throw;
   }
   return 0;
