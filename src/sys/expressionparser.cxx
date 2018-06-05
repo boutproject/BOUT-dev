@@ -44,7 +44,10 @@ namespace { // These classes only visible in this file
   
   class FieldX : public FieldGenerator {
   public:
-    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldX()); }
+    std::shared_ptr<FieldGenerator>
+    clone(const list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+      return std::make_shared<FieldX>();
+    }
     double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
       return x;
     }
@@ -53,7 +56,10 @@ namespace { // These classes only visible in this file
   
   class FieldY : public FieldGenerator {
   public:
-    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldY()); }
+    std::shared_ptr<FieldGenerator>
+    clone(const list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+      return std::make_shared<FieldY>();
+    }
     double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
       return y;
     }
@@ -62,7 +68,10 @@ namespace { // These classes only visible in this file
 
   class FieldZ : public FieldGenerator {
   public:
-    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldZ()); }
+    std::shared_ptr<FieldGenerator>
+    clone(const list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+      return std::make_shared<FieldZ>();
+    }
     double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
       return z;
     }
@@ -71,7 +80,10 @@ namespace { // These classes only visible in this file
   
   class FieldT : public FieldGenerator {
   public:
-    std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldT()); }
+    std::shared_ptr<FieldGenerator>
+    clone(const list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+      return std::make_shared<FieldT>();
+    }
     double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
       return t;
     }
@@ -87,7 +99,7 @@ namespace { // These classes only visible in this file
       if(args.size() != 1) {
         throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
       }
-      return std::shared_ptr<FieldGenerator>( new FieldUnary(args.front()));
+      return std::make_shared<FieldUnary>(args.front());
     }
     double generate(double x, double y, double z, double t) {
       return -gen->generate(x,y,z,t);
@@ -102,7 +114,7 @@ std::shared_ptr<FieldGenerator> FieldBinary::clone(const list<std::shared_ptr<Fi
   if(args.size() != 2)
     throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
   
-  return std::shared_ptr<FieldGenerator>( new FieldBinary(args.front(), args.back(), op));
+  return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 
 BoutReal FieldBinary::generate(double x, double y, double z, double t) {
@@ -123,17 +135,17 @@ BoutReal FieldBinary::generate(double x, double y, double z, double t) {
 
 ExpressionParser::ExpressionParser() {
   // Add standard binary operations
-  addBinaryOp('+', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '+')), 10);
-  addBinaryOp('-', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '-')), 10);
-  addBinaryOp('*', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '*')), 20);
-  addBinaryOp('/', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '/')), 20);
-  addBinaryOp('^', std::shared_ptr<FieldGenerator>( new FieldBinary(NULL, NULL, '^')), 30);
+  addBinaryOp('+', std::make_shared<FieldBinary>(nullptr, nullptr, '+'), 10);
+  addBinaryOp('-', std::make_shared<FieldBinary>(nullptr, nullptr, '-'), 10);
+  addBinaryOp('*', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 20);
+  addBinaryOp('/', std::make_shared<FieldBinary>(nullptr, nullptr, '/'), 20);
+  addBinaryOp('^', std::make_shared<FieldBinary>(nullptr, nullptr, '^'), 30);
   
   // Add standard generators
-  addGenerator("x", std::shared_ptr<FieldGenerator>( new FieldX()));
-  addGenerator("y", std::shared_ptr<FieldGenerator>( new FieldY()));
-  addGenerator("z", std::shared_ptr<FieldGenerator>( new FieldZ()));
-  addGenerator("t", std::shared_ptr<FieldGenerator>( new FieldT()));
+  addGenerator("x", std::make_shared<FieldX>());
+  addGenerator("y", std::make_shared<FieldY>());
+  addGenerator("z", std::make_shared<FieldZ>());
+  addGenerator("t", std::make_shared<FieldT>());
 }
 
 void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator> g) {
@@ -149,9 +161,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseString(const string &inpu
   LexInfo lex(input);
   
   // Parse
-  std::shared_ptr<FieldGenerator> expr = parseExpression(lex);
-  
-  return std::shared_ptr<FieldGenerator>(expr);
+  return parseExpression(lex);
 }
 
 //////////////////////////////////////////////////////////
@@ -227,7 +237,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   switch(lex.curtok) {
   case -1: { // a number
     lex.nextToken(); // Eat number
-    return std::shared_ptr<FieldGenerator>( new FieldValue(lex.curval) );
+    return std::make_shared<FieldValue>(lex.curval);
   }
   case -2: {
     return parseIdentifierExpr(lex);
@@ -235,7 +245,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   case '-': {
     // Unary minus
     // Don't eat the minus, and return an implicit zero
-    return std::shared_ptr<FieldGenerator>( new FieldValue(0.0) );
+    return std::make_shared<FieldValue>(0.0);
   }
   case '(':
   case '[':

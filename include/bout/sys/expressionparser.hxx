@@ -166,8 +166,16 @@ private:
 class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>(std::shared_ptr<FieldGenerator>( new FieldValue(value))); }
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return value; }
+
+  std::shared_ptr<FieldGenerator>
+  clone(const std::list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+    return std::make_shared<FieldValue>(value);
+  }
+
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                  double UNUSED(t)) {
+    return value;
+  }
   const std::string str() {
     std::stringstream ss;
     ss << value;
