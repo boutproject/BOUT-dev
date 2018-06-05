@@ -153,7 +153,7 @@ void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator>
 }
 
 void ExpressionParser::addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence) {
-  bin_op[sym] = pair<std::shared_ptr<FieldGenerator> , int>(b, precedence);
+  bin_op[sym] = std::make_pair(b, precedence);
 }
 
 std::shared_ptr<FieldGenerator> ExpressionParser::parseString(const string &input) {
