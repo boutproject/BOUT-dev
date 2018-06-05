@@ -106,7 +106,7 @@ public:
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {return NULL;}
+  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {return nullptr;}
 
   /// Parses a given string into a tree of FieldGenerator objects
   std::shared_ptr<FieldGenerator> parseString(const std::string &input);
@@ -136,6 +136,14 @@ private:
   
   std::shared_ptr<FieldGenerator> parseIdentifierExpr(LexInfo &lex);
   std::shared_ptr<FieldGenerator> parseParenExpr(LexInfo &lex);
+
+  /// Parse a primary expression, one of:
+  ///   - number
+  ///   - identifier
+  ///   - ( ... )
+  ///   - [ ... ]
+  ///   - a unary '-', which is converted to '0 -'
+  ///   A ParseException is thrown if none of these is found
   std::shared_ptr<FieldGenerator> parsePrimary(LexInfo &lex);
   std::shared_ptr<FieldGenerator> parseBinOpRHS(LexInfo &lex, int prec, std::shared_ptr<FieldGenerator> lhs);
   std::shared_ptr<FieldGenerator> parseExpression(LexInfo &lex);

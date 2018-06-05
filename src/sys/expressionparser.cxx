@@ -115,8 +115,8 @@ BoutReal FieldBinary::generate(double x, double y, double z, double t) {
   case '/': return lval / rval;
   case '^': return pow(lval, rval);
   }
-  // Unknown operator. Throw an error?
-  return 0.;
+  // Unknown operator.
+  throw ParseException("Unknown binary operator '%c'", op);
 }
 
 /////////////////////////////////////////////
@@ -206,7 +206,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &l
     if(it == gen.end()) {
       // Not in internal map. Try to resolve
       std::shared_ptr<FieldGenerator> g = resolve(name);
-      if(g == NULL)
+      if(g == nullptr)
         throw ParseException("Couldn't find generator '%s'", name.c_str());
       return g;
     }
@@ -219,11 +219,13 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseParenExpr(LexInfo &lex) {
   lex.nextToken(); // eat '('
   
   std::shared_ptr<FieldGenerator> g = parseExpression(lex);
-  if(!g)
-    return NULL;
-  
-  if((lex.curtok != ')') && (lex.curtok != ']'))
-    return NULL;
+  if (!g)
+    throw ParseException("Incomplete parentheses; did you forget a ')'?");
+
+  if ((lex.curtok != ')') && (lex.curtok != ']'))
+    throw ParseException("Expecting ')' or ']' but got curtok=%d (%c)",
+                         static_cast<int>(lex.curtok), lex.curtok);
+
   lex.nextToken(); // eat ')'
   return g;
 }
@@ -246,7 +248,8 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   case '[':
     return parseParenExpr(lex);
   }
-  return NULL;
+  throw ParseException("Unexpected token %d (%c)",
+                       static_cast<int>(lex.curtok), lex.curtok);
 }
 
 std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, std::shared_ptr<FieldGenerator> lhs) {
@@ -271,8 +274,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, in
     lex.nextToken(); // Eat binop
     
     std::shared_ptr<FieldGenerator> rhs = parsePrimary(lex);
-    if(!rhs)
-      return NULL;
     
     if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
       // Done
@@ -292,8 +293,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, in
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
       rhs = parseBinOpRHS(lex, TokPrec+1, rhs);
-      if(!rhs)
-	return 0;
     }
     
     // Merge lhs and rhs into new lhs
@@ -306,8 +305,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, in
 
 std::shared_ptr<FieldGenerator> ExpressionParser::parseExpression(LexInfo &lex) {
   std::shared_ptr<FieldGenerator> lhs = parsePrimary(lex);
-  if(!lhs)
-    return NULL;
   return parseBinOpRHS(lex, 0, lhs);
 }
 
