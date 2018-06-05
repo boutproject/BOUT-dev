@@ -85,25 +85,6 @@ namespace { // These classes only visible in this file
     }
     const std::string str() {return std::string("t");}
   };
-
-  /// Unary minus
-  class FieldUnary : public FieldGenerator {
-  public:
-    FieldUnary(FieldGenerator_ptr g) : gen(g) {}
-  
-    FieldGenerator_ptr clone(const list<FieldGenerator_ptr> args) {
-      if(args.size() != 1) {
-        throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
-      }
-      return std::make_shared<FieldUnary>(args.front());
-    }
-    double generate(double x, double y, double z, double t) {
-      return -gen->generate(x,y,z,t);
-    }
-    const std::string str() {return std::string("(-")+gen->str()+std::string(")");}
-  private:
-    FieldGenerator_ptr gen;
-  };
 }
 
 FieldGenerator_ptr FieldBinary::clone(const list<FieldGenerator_ptr> args) {
