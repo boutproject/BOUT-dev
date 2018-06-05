@@ -116,9 +116,6 @@ private:
   std::map<std::string, std::shared_ptr<FieldGenerator> > gen;  ///< Generators, addressed by name
   std::map<char, std::pair<std::shared_ptr<FieldGenerator> , int> > bin_op; ///< Binary operations
   
-  /// List of allocated generators
-  std::list<std::shared_ptr<FieldGenerator> > genheap;
-
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
