@@ -170,7 +170,7 @@ FieldGenerator_ptr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   if(lex.curtok == '(') {
     // Argument list. Find if a generator or function
     
-    map<string, FieldGenerator_ptr>::iterator it = gen.find(name);
+    auto it = gen.find(name);
     if(it == gen.end())
       throw ParseException("Couldn't find generator '%s'", name.c_str());
     
@@ -203,7 +203,7 @@ FieldGenerator_ptr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
     
   }else {
     // No arguments. Search in generator list
-    map<string, FieldGenerator_ptr >::iterator it = gen.find(name);
+    auto it = gen.find(name);
     if(it == gen.end()) {
       // Not in internal map. Try to resolve
       FieldGenerator_ptr g = resolve(name);
@@ -259,7 +259,7 @@ FieldGenerator_ptr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, F
       return lhs;
     
     // Next token should be a binary operator
-    map<char, pair<FieldGenerator_ptr , int> >::iterator it = bin_op.find(lex.curtok);
+    auto it = bin_op.find(lex.curtok);
     
     if(it == bin_op.end())
       throw ParseException("Unexpected binary operator '%c'", lex.curtok);
