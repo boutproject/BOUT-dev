@@ -30,6 +30,7 @@
 #include "multigrid_laplace.hxx"
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/scorepwrapper.hxx>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -204,6 +205,7 @@ LaplaceMultigrid::~LaplaceMultigrid() {
 
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
+  SCOREP0();
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
 #if CHECK > 2
