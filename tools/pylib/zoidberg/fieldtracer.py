@@ -3,15 +3,18 @@ from builtins import object
 import numpy as np
 from scipy.integrate import odeint
 
+
 class FieldTracer(object):
+    """A class for following magnetic field lines
+
+    Parameters
+    ----------
+    field : :py:obj:`~zoidberg.field.MagneticField`
+        A Zoidberg MagneticField instance
+
+    """
+
     def __init__(self, field):
-        """Create a FieldTracer object
-
-        Inputs
-        ------
-        field - A function specifying the magnetic field function
-        """
-
         self.field_direction = field.field_direction
 
     def follow_field_lines(self, x_values, z_values, y_values, rtol=None):
@@ -19,29 +22,35 @@ class FieldTracer(object):
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
 
-        Inputs
-        ------
-        x_values - Array-like or scalar of starting x coordinates
-        z_values - Array-like or scalar of starting z coordinates
-        y_values - Array-like of y coordinates to follow the field line to.
-                   y_values[0] is the starting position
+        Parameters
+        ----------
+        x_values : array_like
+            Starting x coordinates
+        z_values : array_like
+            Starting z coordinates
+        y_values : array_like
+            y coordinates to follow the field line to. y_values[0] is
+            the starting position
+        rtol : float, optional
+            The relative tolerance to use for the integrator. If None,
+            use the default value
 
         Returns
         -------
+        result : numpy.ndarray
+            Field line ending coordinates
 
-        Field line ending coordinates
-
-        result - The first dimension is y, the last is (x,z). The
-                 middle dimensions are the same shape as [x|z]:
-                 [0,...] is the initial position
-                 [...,0] are the x-values
-                 [...,1] are the z-values
-                 If x_values is a scalar and z_values a 1D array, then result
-                 has the shape [len(y), len(z), 2], and vice-versa.
-                 If x_values and z_values are 1D arrays, then result has the shape
-                 [len(y), len(x), 2].
-                 If x_values and z_values are 2D arrays, then result has the shape
-                 [len(y), x.shape[0], x.shape[1], 2].
+            The first dimension is y, the last is (x,z). The
+            middle dimensions are the same shape as [x|z]:
+            [0,...] is the initial position
+            [...,0] are the x-values
+            [...,1] are the z-values
+            If x_values is a scalar and z_values a 1D array, then result
+            has the shape [len(y), len(z), 2], and vice-versa.
+            If x_values and z_values are 1D arrays, then result has the shape
+            [len(y), len(x), 2].
+            If x_values and z_values are 2D arrays, then result has the shape
+            [len(y), x.shape[0], x.shape[1], 2].
 
         """
 
@@ -78,27 +87,32 @@ class FieldTracer(object):
 
         return result.reshape(y_values.shape + array_shape + (2,))
 
+
 class FieldTracerReversible(object):
-    """
-    Traces magnetic field lines in a reversible way by using trapezoidal integration:
-    
-    pos_{n+1} = pos_n + 0.5*( f(pos_n) + f(pos_{n+1}) )*dy
-    
+    """Traces magnetic field lines in a reversible way by using
+    trapezoidal integration:
+
+    .. math::
+
+       pos_{n+1} = pos_n + 0.5*( f(pos_n) + f(pos_{n+1}) )*dy
+
     This requires a Newton iteration to solve the nonlinear set of equations
-    for the unknown pos_{n+1}.
+    for the unknown ``pos_{n+1}``.
+
+    Parameters
+    ----------
+    field : :py:obj:`~zoidberg.field.MagneticField`
+        A Zoidberg MagneticField instance
+    rtol : float, optional
+        Tolerance applied to changes in dx**2 + dz**2
+    eps : float, optional
+        Change in x,z used to calculate finite differences of magnetic
+        field direction
+    nsteps : int, optional
+        Number of sub-steps between outputs
 
     """
     def __init__(self, field, rtol=1e-8, eps=1e-5, nsteps=20):
-        """Create a FieldTracer object
-
-        Inputs
-        ------
-        field - A function specifying the magnetic field function
-        
-        rtol    Tolerance applied to changes in dx**2 + dz**2
-        eps     Change in x,z used to calculate finite differences of magnetic field direction
-        nsteps  Number of sub-steps between outputs
-        """
 
         self.field_direction = field.field_direction
         self.rtol = float(rtol)
@@ -110,33 +124,40 @@ class FieldTracerReversible(object):
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
 
-        Inputs
-        ------
-        x_values - Array-like or scalar of starting x coordinates
-        z_values - Array-like or scalar of starting z coordinates
-        y_values - Array-like of y coordinates to follow the field line to.
-                   y_values[0] is the starting position
+        Parameters
+        ----------
+        x_values : array_like
+            Starting x coordinates
+        z_values : array_like
+            Starting z coordinates
+        y_values : array_like
+            y coordinates to follow the field line to. y_values[0] is
+            the starting position
+        rtol : float, optional
+            Tolerance applied to changes in dx**2 + dz**2. If None,
+            use the default value
+        eps : float, optional
+            Change in x,z used to calculate finite differences of magnetic
+            field direction
+        nsteps : int, optional
+            Number of sub-steps between outputs
 
-        rtol    Tolerance applied to changes in dx**2 + dz**2
-        eps   Change in x,z used to calculate finite differences of magnetic field direction
-        nsteps  Number of sub-steps between outputs
-        
         Returns
         -------
+        result : numpy.ndarray
+            Field line ending coordinates
 
-        Field line ending coordinates
-
-        result - The first dimension is y, the last is (x,z). The
-                 middle dimensions are the same shape as [x|z]:
-                 [0,...] is the initial position
-                 [...,0] are the x-values
-                 [...,1] are the z-values
-                 If x_values is a scalar and z_values a 1D array, then result
-                 has the shape [len(y), len(z), 2], and vice-versa.
-                 If x_values and z_values are 1D arrays, then result has the shape
-                 [len(y), len(x), 2].
-                 If x_values and z_values are 2D arrays, then result has the shape
-                 [len(y), x.shape[0], x.shape[1], 2].
+            The first dimension is y, the last is (x,z). The
+            middle dimensions are the same shape as [x|z]:
+            [0,...] is the initial position
+            [...,0] are the x-values
+            [...,1] are the z-values
+            If x_values is a scalar and z_values a 1D array, then result
+            has the shape [len(y), len(z), 2], and vice-versa.
+            If x_values and z_values are 1D arrays, then result has the shape
+            [len(y), len(x), 2].
+            If x_values and z_values are 2D arrays, then result has the shape
+            [len(y), x.shape[0], x.shape[1], 2].
 
         """
 
@@ -249,42 +270,44 @@ class FieldTracerReversible(object):
             
         return result
 
-def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=20, nover=20):
-    """Plot a Poincare graph of the field lines.
 
-    Inputs
-    ------
-    magnetic_field   Magnetic field object
-    
-    xpos       Starting X location. Can be scalar or list/array
-    
-    zpos       Starting Z location. Can be scalar or list/array
-    
-    yperiod    Length of period in y domain
+def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3,
+                   y_slices=None, revs=20, nover=20):
+    """Trace a Poincare graph of the field lines
 
-    nplot      Number of equally spaced y-slices to plot
-    
-    y_slices   List of y-slices to plot; overrides nplot
-    
-    revs       Number of revolutions (times around y)
+    Does no plotting, see :py:func:`zoidberg.plot.plot_poincare`
 
-    nover      Over-sample. Produced additional points in y then discards.
-               This seems to be needed for accurate results in some cases
+    Parameters
+    ----------
+    magnetic_field : :py:obj:`~zoidberg.field.MagneticField`
+        Magnetic field object
+    xpos, zpos : array_like
+        Starting X, Z locations
+    yperiod : float
+        Length of period in y domain
+    nplot : int, optional
+        Number of equally spaced y-slices to trace to
+    y_slices : list of ints
+        List of y-slices to plot; overrides `nplot`
+    revs : int, optional
+        Number of revolutions (times around y)
+    nover : int, optional
+        Over-sample. Produced additional points in y then discards.
+        This seems to be needed for accurate results in some cases
 
     Returns
     -------
-    
     coords, y_slices
+        coords is a Numpy array of data::
 
-    coords is a Numpy array of data
-    
-    [revs, nplot, ..., R/Z]
-    
-    where the first index is the revolution, second is the y slice,
-    and last is 0 for R, 1 for Z. The middle indices are the shape 
-    of the input xpos,zpos
+            [revs, nplot, ..., R/Z]
+
+        where the first index is the revolution, second is the y slice,
+        and last is 0 for R, 1 for Z. The middle indices are the shape
+        of the input xpos,zpos
+
     """
-    
+
     if nplot is None and y_slices is None:
         raise ValueError("nplot and y_slices cannot both be None")
     

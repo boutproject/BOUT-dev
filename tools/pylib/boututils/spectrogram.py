@@ -1,38 +1,8 @@
-"""
-    Creates spectrograms using the Gabor transform to maintain time and frequency resolution
+"""Creates spectrograms using the Gabor transform to maintain time and
+frequency resolution
 
-    (spectrogram, frequency, time) = spectrogram(data, dt, sigma, clip=1, optimise_clip=True, nskip=1)
-
-    three arguments are required:
-
-    data  - the time series you want spectrogrammed
-    dt    - time resolution
-    sigma - used in the Gabor transform, will balance time and frequency resolution
-        suggested value is 1.0, but may need to be adjusted manually
-        until result is as desired
-
-        IF bands are too tall raise sigma
-        IF bands are too wide, lower sigma
-
-    optional keyword:
-
-    clip = 1.0 - optional keyword, makes the spectrogram run faster, but decreases frequency resolution
-                clip is by what factor the time spectrum should be clipped by --> N_new = N / clip
-
-    optimise_clip = True - optional keyword, if true (default) will change the data length to be 2^N
-                (rounded down from your inputed clip value) to make FFT's fast
-
-    nskip = 1.0 - optional keyword, scales final time axis, skipping points over which to centre the
-                gaussian window for the FFT's
-
-
-    NOTE: Very early and very late times will have some issues due to the method - truncate them after
-        taking the spectrogram if they are below your required standards
-
-    NOTE: If you are seeing issues at the top or bottom of the frequency range, you need a longer time series
-
-    written by: Jarrod Leddy
-    updated:    23/06/2016
+written by: Jarrod Leddy
+updated:    23/06/2016
 
 """
 from __future__ import print_function
@@ -44,6 +14,49 @@ from scipy import fftpack, pi
 
 
 def spectrogram(data, dx, sigma, clip=1.0, optimise_clipping=True, nskip=1.0):
+    """Creates spectrograms using the Gabor transform to maintain time
+    and frequency resolution
+
+    .. note:: Very early and very late times will have some issues due
+          to the method - truncate them after taking the spectrogram
+          if they are below your required standards
+
+    .. note:: If you are seeing issues at the top or bottom of the
+          frequency range, you need a longer time series
+
+    written by: Jarrod Leddy
+    updated:    23/06/2016
+
+    Parameters
+    ----------
+    data : array_like
+        The time series you want spectrogrammed
+    dt : float
+        Time resolution
+    sigma : float
+        Used in the Gabor transform, will balance time and frequency
+        resolution suggested value is 1.0, but may need to be adjusted
+        manually until result is as desired:
+
+            - If bands are too tall raise sigma
+            - If bands are too wide, lower sigma
+    clip : float, optional
+        Makes the spectrogram run faster, but decreases frequency
+        resolution. clip is by what factor the time spectrum should be
+        clipped by --> N_new = N / clip
+    optimise_clip : bool
+        If true (default) will change the data length to be 2^N
+        (rounded down from your inputed clip value) to make FFT's fast
+    nskip : float
+        Scales final time axis, skipping points over which to centre
+        the gaussian window for the FFTs
+
+    Returns
+    -------
+    tuple : (array_like, array_like, array_like)
+        A tuple containing the spectrogram, frequency and time
+
+    """
     n = data.size
     nnew = int(n/nskip)
     xx = arange(n)*dx
@@ -91,9 +104,20 @@ def spectrogram(data, dx, sigma, clip=1.0, optimise_clipping=True, nskip=1.0):
 
     return (transpose(spectra), omega, xxnew)
 
+
 def test_spectrogram(n, d, s):
-    """
-    Function used to test the performance of spectrogram with various values of sigma
+    """Function used to test the performance of spectrogram with various
+    values of sigma
+
+    Parameters
+    ----------
+    n : int
+        Number of points
+    d : float
+        Grid spacing
+    s : float
+        Initial sigma
+
     """
 
     import matplotlib.pyplot as plt

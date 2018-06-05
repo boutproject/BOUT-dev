@@ -1,5 +1,5 @@
-"""
-Routines and classes for representing periodic lines in R-Z poloidal planes
+"""Routines and classes for representing periodic lines in R-Z
+poloidal planes
 
 """
 
@@ -20,35 +20,38 @@ except ImportError:
 
 
 class RZline:
-    """
-    Represents (R,Z) coordinates of a periodic line
-    
-    Members
-    -------
+    """Represents (R,Z) coordinates of a periodic line
 
-    R      Major radius [m]
-    Z      Height [m]
-    theta  Angle variable [radians]
+    Attributes
+    ----------
+    R : array_like
+        Major radius [m]
+    Z : array_like
+        Height [m]
+    theta : array_like
+        Angle variable [radians]
 
-    R,Z and theta all have the same length
- 
+        `R`, `Z` and `theta` all have the same length
+
+    Parameters
+    ----------
+    r, z : array_like
+        1D arrays of the major radius (`r`) and height (`z`) which are
+        of the same length. A periodic domain is assumed, so the last
+        point connects to the first.
+
+    anticlockwise : bool, optional
+        Ensure that the line goes anticlockwise in the R-Z plane
+        (positive theta)
+
+    Note that the last point in (r,z) arrays should not be the same
+    as the first point. The (r,z) points are in [0,2pi)
+
+    The input r,z points will be reordered, so that the
+    theta angle goes anticlockwise in the R-Z plane
+
     """
     def __init__(self, r, z, anticlockwise=True):
-        """
-        r,z   1D arrays of the major radius (r) and height (z)
-              which are of the same length. A periodic domain
-              is assumed, so the last point connects to the first.
-
-        anticlockwise   Ensure that the line goes anticlockwise
-                        in the R-Z plane (positive theta)
-
-        Note that the last point in (r,z) arrays should not be the same
-        as the first point. The (r,z) points are in [0,2pi)
-        
-        The input r,z points will be reordered, so that the
-        theta angle goes anticlockwise in the R-Z plane
-
-        """
         r = np.asfarray(r)
         z = np.asfarray(z)
         
@@ -78,8 +81,20 @@ class RZline:
         self._zspl = splrep(append(self.theta,2*pi), append(z,z[0]), per=True)
         
     def Rvalue(self, theta=None, deriv=0):
-        """
-        Calculate the value of R at given theta locations
+        """Calculate the value of R at given theta locations
+
+        Parameters
+        ----------
+        theta : array_like, optional
+            Theta locations to find R at. If None (default), use the
+            values of theta stored in the instance
+        deriv : int, optional
+            The order of derivative to compute (default is just the R value)
+
+        Returns
+        -------
+        ndarray
+            Value of R at each input theta point
         """
         if theta is None:
             theta = self.theta
@@ -89,28 +104,58 @@ class RZline:
         return splev(theta, self._rspl, der=deriv)
 
     def Zvalue(self, theta=None, deriv=0):
-        """
-        Calculate the value of Z at given theta locations
+        """Calculate the value of Z at given theta locations
+
+        Parameters
+        ----------
+        theta : array_like, optional
+            Theta locations to find Z at. If None (default), use the
+            values of theta stored in the instance
+        deriv : int, optional
+            The order of derivative to compute (default is just the Z value)
+
+        Returns
+        -------
+        ndarray
+            Value of Z at each input theta point
         """
         if theta is None:
             theta = self.theta
         else:
             theta = np.remainder(theta, 2*np.pi)
         return splev(theta, self._zspl, der=deriv)
-        
+
     def position(self, theta=None):
-        """
-        R,Z position at given theta
+        """Calculate the value of both R, Z at given theta locations
+
+        Parameters
+        ----------
+        theta : array_like, optional
+            Theta locations to find R, Z at. If None (default), use the
+            values of theta stored in the instance
+
+        Returns
+        -------
+        R, Z : (ndarray, ndarray)
+            Value of R, Z at each input theta point
         """
         return self.Rvalue(theta=theta), self.Zvalue(theta=theta)
 
     def positionPolygon(self, theta=None):
-        """
-        Calculates (R,Z) position at given theta angle
-        by joining points by straight lines rather than
-        a spline. This avoids the overshoots which can
-        occur with splines.
-        
+        """Calculates (R,Z) position at given theta angle by joining points
+        by straight lines rather than a spline. This avoids the
+        overshoots which can occur with splines.
+
+        Parameters
+        ----------
+        theta : array_like, optional
+            Theta locations to find R, Z at. If None (default), use the
+            values of theta stored in the instance
+
+        Returns
+        -------
+        R, Z : (ndarray, ndarray)
+            Value of R, Z at each input theta point
         """
         if theta is None:
             return self.R, self.Z
@@ -121,17 +166,20 @@ class RZline:
         rem = np.remainder(theta, dtheta)
         indp = (ind+1) % n
         return (rem*self.R[indp] + (1.-rem)*self.R[ind]), (rem*self.Z[indp] + (1.-rem)*self.Z[ind])
-        
+
     def distance(self, sample=20):
-        """
-        Integrates the distance along the line.
-        
-        sample   Number of samples to take per point 
-        
+        """Integrates the distance along the line.
+
+        Parameters
+        ----------
+        sample : int, optional
+            Number of samples to take per point
+
         Returns
         -------
         An array one longer than theta. The first element is zero,
         and the last element is the total distance around the loop
+
         """
 
         sample = int(sample)
@@ -146,11 +194,18 @@ class RZline:
         return cumtrapz(dldtheta, thetavals, initial=0.0)[::sample]
 
     def equallySpaced(self, n=None):
-        """
-        Returns a new RZline which has a theta uniform
-        in distance along the line
-        
-        n   Number of points. Default is the same as the current line
+        """Returns a new RZline which has a theta uniform in distance along
+        the line
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of points. Default is the same as the current line
+
+        Returns
+        -------
+        `RZline`
+            A new `RZline` based on this instance, but with uniform theta-spacing
         """
         if n is None:
             n = len(self.theta)
@@ -166,14 +221,24 @@ class RZline:
         new_theta = thetavals(positions)
         
         return RZline( self.Rvalue(new_theta), self.Zvalue(new_theta) )
- 
-    def closestPoint(self, R,Z, niter=3, subdivide=20):
+
+    def closestPoint(self, R, Z, niter=3, subdivide=20):
+        """Find the closest point on the curve to the given (R,Z) point
+
+        Parameters
+        ----------
+        R, Z : float
+            The input R, Z point
+        niter : int, optional
+            How many iterations to use
+
+        Returns
+        -------
+        float
+            The value of theta (angle)
+
         """
-        Find the closest point on the curve to the given (R,Z) point
-        
-        Returns the value of theta (angle)
-        """
-        
+
         # First find the closest control point
         ind = argmin((self.R - R)**2 + (self.Z - Z)**2)
         theta0 = self.theta[ind]
@@ -191,14 +256,23 @@ class RZline:
             dtheta = thetas[1] - thetas[0]
         
         return np.remainder(theta0, 2*np.pi)
-        
+
     def plot(self, axis=None, show=True):
-        """
-        Plot the RZline, either on the given axis or a new figure
-        axis    The matplotlib axis to plot on. 
-                By default a new figure is created
-        
-        show    Calls plt.show() at the end
+        """Plot the RZline, either on the given axis or a new figure
+
+        Parameters
+        ----------
+        axis : matplotlib axis, optional
+            A matplotlib axis to plot on. By default a new figure
+            is created
+        show : bool, optional
+            Calls plt.show() at the end
+
+        Returns
+        -------
+        axis
+            The matplotlib axis that was used
+
         """
 
         if not plotting_available:
@@ -217,27 +291,54 @@ class RZline:
             plt.show()
 
         return axis
-    
-def circle(R0=1.0, r= 0.5, n=20):
-    """
-    Creates a pair of RZline objects, for inner and outer boundaries
 
-    >>> inner = circle()
+
+def circle(R0=1.0, r=0.5, n=20):
+    """Creates a pair of RZline objects, for inner and outer boundaries
+
+    Parameters
+    ----------
+    R0 : float, optional
+        Centre point of the circle
+    r : float, optional
+        Radius of the circle
+    n : int, optional
+        Number of points to use in the boundary
+
+    Returns
+    -------
+    `RZline`
+        A circular `RZline`
+
     """
     # Define an angle coordinate
     theta = linspace(0,2*pi,n, endpoint=False)
     
     return RZline( R0 + r*cos(theta), r*sin(theta) )
-    
+
+
 def shaped_line(R0=3.0, a=1.0, elong=0.0, triang=0.0, indent=0.0, n=20):
-    """
-    Parametrisation of plasma shape from J. Manickam, Nucl. Fusion 24 595 (1984)
-    
-    R0  Major radius
-    a   Minor radius
-    elong   Elongation, 0 for a circle
-    triang  Triangularity, 0 for a circle
-    indent  Indentation, 0 for a circle
+    """Parametrisation of plasma shape from J. Manickam, Nucl. Fusion 24
+    595 (1984)
+
+    Parameters
+    ----------
+    R0 : float, optional
+        Major radius
+    a : float, optional
+        Minor radius
+    elong : float, optional
+        Elongation, 0 for a circle
+    triang : float, optional
+        Triangularity, 0 for a circle
+    indent : float, optional
+        Indentation, 0 for a circle
+
+    Returns
+    -------
+    `RZline`
+        An `RZline` matching the given parameterisation
+
     """
     theta = linspace(0,2*pi,n, endpoint=False)
     return RZline( R0 - indent + (a + indent*cos(theta))*cos(theta + triang*sin(theta)),
@@ -245,26 +346,24 @@ def shaped_line(R0=3.0, a=1.0, elong=0.0, triang=0.0, indent=0.0, n=20):
 
 
 def line_from_points_poly(rarray, zarray, show=False):
-    """
-    Find a periodic line which goes through the given
-    (r,z) points
-    
+    """Find a periodic line which goes through the given (r,z) points
+
     This function starts with a triangle, then adds points
     one by one, inserting into the polygon along the nearest
     edge
-    
-    Inputs
-    ------
 
-    rarray, zarray   NumPy arrays or lists of r,z coordinates
-                     These arrays should be the same length
+    Parameters
+    ----------
+    rarray, zarray : array_like
+        R, Z coordinates. These arrays should be the same length
 
     Returns
     -------
+    `RZline`
+        An `RZline` object representing a periodic line
 
-    An RZline object representing a periodic line
     """
-    
+
     rarray = np.asfarray(rarray)
     zarray = np.asfarray(zarray)
 
@@ -316,24 +415,23 @@ def line_from_points_poly(rarray, zarray, show=False):
         plt.show()
     return RZline(rvals, zvals)
 
-def line_from_points(rarray, zarray, show=False):
-    """
-    Find a periodic line which goes through the given
-    (r,z) points
-    
-    This function starts at a point, and finds the nearest
-    neighbour which is not already in the line
-    
-    Inputs
-    ------
 
-    rarray, zarray   NumPy arrays or lists of r,z coordinates
-                     These arrays should be the same length
+def line_from_points(rarray, zarray, show=False):
+    """Find a periodic line which goes through the given (r,z) points
+
+    This function starts at a point, and finds the nearest neighbour
+    which is not already in the line
+
+    Parameters
+    ----------
+    rarray, zarray : array_like
+        R, Z coordinates. These arrays should be the same length
 
     Returns
     -------
+    `RZline`
+        An `RZline` object representing a periodic line
 
-    An RZline object representing a periodic line
     """
 
     # Make sure we have Numpy arrays

@@ -83,10 +83,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = 2, outbndry=2;
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if (global_flags & INVERT_BOTH_BNDRY_ONE) {
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if (inner_boundary_flags & INVERT_BNDRY_ONE)
