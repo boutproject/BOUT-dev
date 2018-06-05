@@ -179,12 +179,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &l
     }
     do{
       // Should be an expression
-      std::shared_ptr<FieldGenerator> a = parseExpression(lex);
-      if(!a) {
-	throw ParseException("Couldn't parse argument %d to function '%s'", 
-                             args.size()+1, name.c_str());
-      }
-      args.push_back(a);
+      args.push_back(parseExpression(lex));
       
       // Now either a comma or ')'
       
@@ -219,8 +214,6 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseParenExpr(LexInfo &lex) {
   lex.nextToken(); // eat '('
   
   std::shared_ptr<FieldGenerator> g = parseExpression(lex);
-  if (!g)
-    throw ParseException("Incomplete parentheses; did you forget a ')'?");
 
   if ((lex.curtok != ')') && (lex.curtok != ']'))
     throw ParseException("Expecting ')' or ']' but got curtok=%d (%c)",
