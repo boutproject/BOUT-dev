@@ -41,6 +41,8 @@ class ParseException;
 #include <memory>
 #include <exception>
 
+using FieldGenerator_ptr = std::shared_ptr<FieldGenerator>;
+
 //////////////////////////////////////////////////////////
 
 /*!
@@ -56,7 +58,9 @@ public:
   /// to test whether the correct number of arguments is passed.
   ///
   /// @param[in] args   A (possibly empty) list of arguments to the generator function
-  virtual std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {return NULL;}
+  virtual FieldGenerator_ptr clone(const std::list<FieldGenerator_ptr> UNUSED(args)) {
+    return nullptr;
+  }
 
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
@@ -87,7 +91,7 @@ public:
   /// @param[in] g     The class inheriting from FieldGenerator. When recognised
   ///                  in an expression, the clone() function will be called
   ///                  to build a tree of generators
-  void addGenerator(std::string name, std::shared_ptr<FieldGenerator> g);
+  void addGenerator(std::string name, FieldGenerator_ptr g);
 
   /// Add a binary operator such as +,-,*,/,^
   ///
@@ -102,19 +106,19 @@ public:
   ///  *, /  precedence = 20
   ///  ^     precedence = 30
   ///                        
-  void addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence);
+  void addBinaryOp(char sym, FieldGenerator_ptr b, int precedence);
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {return nullptr;}
+  virtual FieldGenerator_ptr resolve(std::string &UNUSED(name)) {return nullptr;}
 
   /// Parses a given string into a tree of FieldGenerator objects
-  std::shared_ptr<FieldGenerator> parseString(const std::string &input);
+  FieldGenerator_ptr parseString(const std::string &input);
   
 private:
   
-  std::map<std::string, std::shared_ptr<FieldGenerator> > gen;  ///< Generators, addressed by name
-  std::map<char, std::pair<std::shared_ptr<FieldGenerator> , int> > bin_op; ///< Binary operations
+  std::map<std::string, FieldGenerator_ptr> gen;  ///< Generators, addressed by name
+  std::map<char, std::pair<FieldGenerator_ptr, int>> bin_op; ///< Binary operations
   
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
@@ -129,8 +133,8 @@ private:
     char nextToken(); ///< Get the next token in the string
   };
   
-  std::shared_ptr<FieldGenerator> parseIdentifierExpr(LexInfo &lex);
-  std::shared_ptr<FieldGenerator> parseParenExpr(LexInfo &lex);
+  FieldGenerator_ptr parseIdentifierExpr(LexInfo &lex);
+  FieldGenerator_ptr parseParenExpr(LexInfo &lex);
 
   /// Parse a primary expression, one of:
   ///   - number
@@ -139,9 +143,9 @@ private:
   ///   - [ ... ]
   ///   - a unary '-', which is converted to '0 -'
   ///   A ParseException is thrown if none of these is found
-  std::shared_ptr<FieldGenerator> parsePrimary(LexInfo &lex);
-  std::shared_ptr<FieldGenerator> parseBinOpRHS(LexInfo &lex, int prec, std::shared_ptr<FieldGenerator> lhs);
-  std::shared_ptr<FieldGenerator> parseExpression(LexInfo &lex);
+  FieldGenerator_ptr parsePrimary(LexInfo &lex);
+  FieldGenerator_ptr parseBinOpRHS(LexInfo &lex, int prec, FieldGenerator_ptr lhs);
+  FieldGenerator_ptr parseExpression(LexInfo &lex);
 };
 
 //////////////////////////////////////////////////////
@@ -149,13 +153,13 @@ private:
 /// Binary operators
 class FieldBinary : public FieldGenerator {
 public:
-  FieldBinary(std::shared_ptr<FieldGenerator> l, std::shared_ptr<FieldGenerator> r, char o) : lhs(l), rhs(r), op(o) {}
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > args);
+  FieldBinary(FieldGenerator_ptr l, FieldGenerator_ptr r, char o) : lhs(l), rhs(r), op(o) {}
+  FieldGenerator_ptr clone(const std::list<FieldGenerator_ptr> args);
   double generate(double x, double y, double z, double t);
 
   const std::string str() {return std::string("(")+lhs->str()+std::string(1,op)+rhs->str()+std::string(")");}
 private:
-  std::shared_ptr<FieldGenerator> lhs, rhs;
+  FieldGenerator_ptr lhs, rhs;
   char op;
 };
 
@@ -164,8 +168,7 @@ class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
 
-  std::shared_ptr<FieldGenerator>
-  clone(const std::list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+  FieldGenerator_ptr clone(const std::list<FieldGenerator_ptr> UNUSED(args)) {
     return std::make_shared<FieldValue>(value);
   }
 
