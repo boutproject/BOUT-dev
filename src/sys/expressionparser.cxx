@@ -175,7 +175,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &l
     if(lex.curtok == ')') {
       // Empty list
       lex.nextToken();
-      return record( it->second->clone(args) );
+      return it->second->clone(args);
     }
     do{
       // Should be an expression
@@ -186,7 +186,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &l
       if(lex.curtok == ')') {
         // Finished list
         lex.nextToken();
-        return record( it->second->clone(args) );
+        return it->second->clone(args);
       }
       if(lex.curtok != ',') {
         throw ParseException("Expecting ',' or ')' in function argument list (%s)\n",
@@ -206,7 +206,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseIdentifierExpr(LexInfo &l
       return g;
     }
     list<std::shared_ptr<FieldGenerator>> args;
-    return record( it->second->clone(args) );
+    return it->second->clone(args);
   }
 }
 
@@ -227,7 +227,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   switch(lex.curtok) {
   case -1: { // a number
     lex.nextToken(); // Eat number
-    return record( std::shared_ptr<FieldGenerator>( new FieldValue(lex.curval) ));
+    return std::shared_ptr<FieldGenerator>( new FieldValue(lex.curval) );
   }
   case -2: {
     return parseIdentifierExpr(lex);
@@ -235,7 +235,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parsePrimary(LexInfo &lex) {
   case '-': {
     // Unary minus
     // Don't eat the minus, and return an implicit zero
-    return record( std::shared_ptr<FieldGenerator>( new FieldValue(0.0) ));
+    return std::shared_ptr<FieldGenerator>( new FieldValue(0.0) );
   }
   case '(':
   case '[':
@@ -274,7 +274,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, in
       list<std::shared_ptr<FieldGenerator> > args;
       args.push_front(lhs);
       args.push_back(rhs);
-      return record( op->clone(args) );
+      return op->clone(args);
     }
     
     // Find next binop
@@ -292,7 +292,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseBinOpRHS(LexInfo &lex, in
     list<std::shared_ptr<FieldGenerator> > args;
     args.push_front(lhs);
     args.push_back(rhs);
-    lhs = record( op->clone(args) );
+    lhs = op->clone(args);
   }
 }
 

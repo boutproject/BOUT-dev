@@ -147,12 +147,6 @@ private:
   std::shared_ptr<FieldGenerator> parsePrimary(LexInfo &lex);
   std::shared_ptr<FieldGenerator> parseBinOpRHS(LexInfo &lex, int prec, std::shared_ptr<FieldGenerator> lhs);
   std::shared_ptr<FieldGenerator> parseExpression(LexInfo &lex);
-  
-  /// Record generator in list, and return it
-  std::shared_ptr<FieldGenerator> record( std::shared_ptr<FieldGenerator> g) {
-    genheap.push_back(g);
-    return g;
-  }
 };
 
 //////////////////////////////////////////////////////
