@@ -1,24 +1,31 @@
-"""
-File I/O class
-A wrapper around various NetCDF libraries, used by
-BOUT++ routines. Creates a consistent interface
-across machines
+"""File I/O class
 
-NOTE: NetCDF includes unlimited dimensions,
-but this library is just for very simple
-I/O operations. Educated guesses are made
-for the dimensions.
+A wrapper around various NetCDF libraries and h5py, used by BOUT++
+routines. Creates a consistent interface across machines
 
 Supported libraries:
--------------------
 
-netCDF4
+- ``h5py`` (for HDF5 files)
+- ``netCDF4`` (preferred NetCDF library)
+- ``Scientific.IO.NetCDF``
+- ``scipy.io.netcdf``:
+  - old version (``create_dimension``, ``create_variable``)
+  - new version (``createDimension``, ``createVariable``)
 
-Scientific.IO.NetCDF
+NOTE
+----
+NetCDF and HDF5 include unlimited dimensions, but this library is just
+for very simple I/O operations. Educated guesses are made for the
+dimensions.
 
-scipy.io.netcdf
-  old version (create_dimension, create_variable)
-  new version (createDimension, createVariable)
+TODO
+----
+- Don't raise ``ImportError`` if no NetCDF libraries found, use HDF5
+  instead?
+- Cleaner handling of different NetCDF libraries
+- Monkey-patch old version of scipy.io.netcdf if we're using it
+- Support for h5netcdf?
+
 """
 
 from __future__ import print_function
@@ -66,6 +73,35 @@ except ImportError:
 
 
 class DataFile:
+    """File I/O class
+
+    A wrapper around various NetCDF libraries and h5py, used by BOUT++
+    routines. Creates a consistent interface across machines
+
+    Parameters
+    ----------
+    filename : str, optional
+        Name of file to open. If no filename supplied, you will need
+        to call :py:obj:`~DataFile.open` and supply `filename` there
+    write : bool, optional
+        If True, open the file in read-write mode (existing files will
+        be appended to). Default is read-only mode
+    create : bool, optional
+        If True, open the file in write mode (existing files will be
+        truncated). Default is read-only mode
+    format : str, optional
+        Name of a filetype to use (e.g. ``NETCDF3_CLASSIC``,
+        ``NETCDF4``, ``HDF5``)
+
+    TODO
+    ----
+    - `filename` should not be optional!
+    - Take a ``mode`` argument to be more in line with other file types
+    - `format` should be checked to be a sensible value
+    - Make sure ``__init__`` methods are first
+    - Make `impl` and `handle` private
+
+    """
     impl = None
 
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
@@ -86,10 +122,36 @@ class DataFile:
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
+        """Open the file
+
+        Parameters
+        ----------
+        filename : str, optional
+            Name of file to open
+        write : bool, optional
+            If True, open the file in read-write mode (existing files will
+            be appended to). Default is read-only mode
+        create : bool, optional
+            If True, open the file in write mode (existing files will be
+            truncated). Default is read-only mode
+        format : str, optional
+            Name of a filetype to use (e.g. ``NETCDF3_CLASSIC``,
+            ``NETCDF4``, ``HDF5``)
+
+        TODO
+        ----
+        - Return the result of calling open to be more like stdlib's
+          open
+        - `keys` should be more pythonic (return generator)
+
+        """
         self.impl.open(filename, write=write, create=create,
                        format=format)
 
     def close(self):
+        """Close a file and flush data to disk
+
+        """
         self.impl.close()
 
     def __del__(self):
@@ -103,35 +165,147 @@ class DataFile:
         self.impl.__exit__(type, value, traceback)
 
     def read(self, name, ranges=None, asBoutArray=True):
-        """Read a variable from the file."""
+        """Read a variable from the file
+
+        Parameters
+        ----------
+        name : str
+            Name of the variable to read
+        ranges : list of int, optional
+            Beginning and end indices to read. The number of elements
+            in `ranges` should be twice the number of dimensions of
+            the variable you wish to read. See
+            :py:obj:`~DataFile.size` for how to get the dimensions
+        asBoutArray : bool, optional
+            If True, return the variable as a
+            :py:obj:`~boututils.boutarray.BoutArray` (the default)
+
+        Returns
+        -------
+        ndarray or :py:obj:`~boututils.boutarray.BoutArray`
+            The variable from the file
+            (:py:obj:`~boututils.boutarray.BoutArray` if `asBoutArray`
+            is True)
+
+        """
         return self.impl.read(name, ranges=ranges, asBoutArray=asBoutArray)
 
     def list(self):
-        """List all variables in the file."""
+        """List all variables in the file
+
+        Returns
+        -------
+        list of str
+            A list containing all the names of the variables
+
+        """
         return self.impl.list()
 
     def keys(self):
+        """A synonym for :py:obj:`~DataFile.list`
+
+        TODO
+        ----
+        - Make a generator to be more like python3 dict keys
+
+        """
         return self.list()
 
     def dimensions(self, varname):
-        """Array of dimension names"""
+        """Return the names of all the dimensions of a variable
+
+        Parameters
+        ----------
+        varname : str
+            The name of the variable
+
+        Returns
+        -------
+        tuple of str
+            The names of the variable's dimensions
+
+        """
         return self.impl.dimensions(varname)
 
     def ndims(self, varname):
-        """Number of dimensions for a variable."""
+        """Return the number of dimensions for a variable
+
+        Parameters
+        ----------
+        varname : str
+            The name of the variable
+
+        Returns
+        -------
+        int
+            The number of dimensions
+
+        """
         return self.impl.ndims(varname)
 
     def size(self, varname):
-        """List of dimension sizes for a variable."""
+        """Return the size of each dimension of a variable
+
+        Parameters
+        ----------
+        varname : str
+            The name of the variable
+
+        Returns
+        -------
+        tuple of int
+            The size of each dimension
+
+        """
         return self.impl.size(varname)
 
     def bout_type(self, varname):
-        """BOUT++ type of a variable"""
+        """Return the name of the BOUT++ type of a variable
+
+        Possible values are:
+
+        - scalar
+        - Field2D
+        - Field3D
+
+        If the variable is an evolving variable (i.e. has a time
+        dimension), then it is appended with a "_t"
+
+        Parameters
+        ----------
+        varname : str
+            The name of the variable
+
+        Returns
+        -------
+        str
+            The name of the BOUT++ type
+
+        """
         return self.attributes(varname)["bout_type"]
 
-
     def write(self, name, data, info=False):
-        """Writes a variable to file, making guesses for the dimensions"""
+        """Write a variable to file
+
+        If the variable is not a :py:obj:`~boututils.boutarray.BoutArray` with
+        the ``bout_type`` attribute, a guess will be made for the
+        dimensions
+
+        Parameters
+        ----------
+        name : str
+            Name of the variable to use in the file
+        data : :py:obj:`~boututils.boutarray.BoutArray` or ndarray
+            An array containing the variable data
+        info : bool, optional
+            If True, print information about what is being written to
+            file
+
+        Returns
+        -------
+        None
+
+        """
         return self.impl.write(name, data, info)
 
     def __getitem__(self, name):
@@ -141,7 +315,19 @@ class DataFile:
         self.impl.__setitem__(key, value)
 
     def attributes(self, varname):
-        """Return a dictionary of attributes"""
+        """Return a dictionary of attributes
+
+        Parameters
+        ----------
+        varname : str
+            The name of the variable
+
+        Returns
+        -------
+        dict
+            The attribute names and their values
+
+        """
         return self.impl.attributes(varname)
 
 
@@ -288,17 +474,14 @@ class DataFile_netCDF(DataFile):
         self.write(key, value)
 
     def list(self):
-        """List all variables in the file."""
         if self.handle is None:
             return []
         return list(self.handle.variables.keys())
 
     def keys(self):
-        """List all variables in the file."""
         return self.list()
 
     def dimensions(self, varname):
-        """Array of dimension names"""
         if self.handle is None:
             return None
         try:
@@ -308,7 +491,6 @@ class DataFile_netCDF(DataFile):
         return var.dimensions
 
     def ndims(self, varname):
-        """Number of dimensions for a variable."""
         if self.handle is None:
             raise ValueError("File not open")
         try:
@@ -318,7 +500,6 @@ class DataFile_netCDF(DataFile):
         return len(var.dimensions)
 
     def size(self, varname):
-        """List of dimension sizes for a variable."""
         if self.handle is None:
             return []
         try:
@@ -355,7 +536,6 @@ class DataFile_netCDF(DataFile):
             return None
 
     def write(self, name, data, info=False):
-        """Writes a variable to file, making guesses for the dimensions"""
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
@@ -507,7 +687,6 @@ class DataFile_netCDF(DataFile):
             pass
 
     def attributes(self, varname):
-        """Return a dictionary of variable attributes"""
         try:
             return self._attributes_cache[varname]
         except KeyError:
@@ -585,7 +764,6 @@ class DataFile_HDF5(DataFile):
         self.close()
 
     def read(self, name, ranges=None, asBoutArray=True):
-        """Read a variable from the file."""
         if self.handle is None:
             return None
 
@@ -651,7 +829,6 @@ class DataFile_HDF5(DataFile):
         self.write(key, value)
 
     def list(self):
-        """List all variables in the file."""
         if self.handle is None:
             return []
         names = []
@@ -659,11 +836,9 @@ class DataFile_HDF5(DataFile):
         return names
 
     def keys(self):
-        """List all variables in the file."""
         return self.list()
 
     def dimensions(self, varname):
-        """Array of dimension names"""
         bout_type = self.bout_type(varname)
         if bout_type == 'Field3D_t':
             return ('t', 'x', 'y', 'z')
@@ -681,9 +856,25 @@ class DataFile_HDF5(DataFile):
             raise ValueError("Variable bout_type not recognized")
 
     def _bout_type_from_array(self, data):
-        """
-        Get the bout_type from the array 'data'. If 'data' is a BoutArray, it knows
-        its bout_type, otherwise we have to guess.
+        """Get the bout_type from the array 'data'
+
+        If 'data' is a BoutArray, it knows its bout_type, otherwise we
+        have to guess.
+
+        Parameters
+        ----------
+        data : :py:obj:`~boututils.boutarray.BoutArray` or ndarray
+            An array with between 0 and 4 dimensions
+
+        Returns
+        -------
+        str
+            Either the actual bout_type or our best guess
+
+        See Also
+        --------
+        - `DataFile.bout_type`
+
         """
         try:
             # If data is a BoutArray, it should have a type attribute that we can use
@@ -716,7 +907,6 @@ class DataFile_HDF5(DataFile):
             raise ValueError("Unrecognized variable bout_type, ndims=" + str(ndim))
 
     def ndims(self, varname):
-        """Number of dimensions for a variable."""
         if self.handle is None:
             return None
         try:
@@ -731,7 +921,6 @@ class DataFile_HDF5(DataFile):
             return len(var.shape)
 
     def size(self, varname):
-        """List of dimension sizes for a variable."""
         if self.handle is None:
             return None
         try:
@@ -741,7 +930,6 @@ class DataFile_HDF5(DataFile):
         return var.shape
 
     def write(self, name, data, info=False):
-        """Writes a variable to file"""
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
@@ -793,7 +981,6 @@ class DataFile_HDF5(DataFile):
             pass
 
     def attributes(self, varname):
-        """Return a map of variable attributes"""
 
         try:
             return self._attributes_cache[varname]
