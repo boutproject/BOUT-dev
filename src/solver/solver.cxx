@@ -1101,8 +1101,9 @@ void Solver::save_derivs(BoutReal *dudata) {
 
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
-    if(f.location != (f.F_var)->getLocation()) {
+    if(f.var->getLocation() != (f.F_var)->getLocation()) {
       //output.write("SOLVER: Interpolating\n");
+      throw BoutException("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n",strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
       *(f.F_var) = interp_to(*(f.F_var), f.location);
     }
   }
