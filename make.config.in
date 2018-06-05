@@ -260,7 +260,7 @@ $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")
