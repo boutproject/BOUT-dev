@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if test $1 && test -f $1
+then
+    cmd=$1
+    args="${@:2}"
+else
+    cmd=./simulation.py
+    cmd=./blob2d.py
+    args="$@"
+fi
+
+export PYTHONPATH=$PWD/../../tools/pylib:$PYTHONPATH
+$cmd $args
+#mpirun -np 4 $cmd

@@ -74,8 +74,8 @@ class Ncxx4 : public DataFormat {
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var) override;
-  const vector<int> getSize(const string &var) override;
+  const std::vector<int> getSize(const char *var) override;
+  const std::vector<int> getSize(const std::string &var) override;
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
@@ -113,10 +113,12 @@ class Ncxx4 : public DataFormat {
 
   // Attributes
 
-  void setAttribute(const string &varname, const string &attrname, const string &text) override;
-  void setAttribute(const string &varname, const string &attrname, int value) override;
-  
- private:
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    const std::string &text) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    int value) override;
+
+private:
 
   char *fname; ///< Current file name
 

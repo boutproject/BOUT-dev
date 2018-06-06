@@ -39,6 +39,13 @@ class Solver;
 #include <boutexception.hxx>
 #include <unused.hxx>
 #include "bout/monitor.hxx"
+#include "options.hxx"
+#include "datafile.hxx"
+
+///////////////////////////////////////////////////////////////////
+
+#ifndef __SOLVER_H__
+#define __SOLVER_H__
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -56,10 +63,7 @@ typedef int (*Jacobian)(BoutReal t);
 /// Solution monitor, called each timestep
 typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
 
-///////////////////////////////////////////////////////////////////
 
-#ifndef __SOLVER_H__
-#define __SOLVER_H__
 
 //#include "globals.hxx"
 #include "field2d.hxx"
@@ -73,7 +77,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #include <list>
 using std::string;
 
-#define SolverType const char*
+typedef std::string SolverType;
 #define SOLVERCVODE       "cvode"
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"

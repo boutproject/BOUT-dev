@@ -1193,7 +1193,7 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 }
 
 /////////////////////////////////////////////////////////
-// Type-parameterised tests for SpecificInd, Ind2D, Ind3D
+// Type-parameterised tests for Ind2D, Ind3D
 
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
@@ -1203,7 +1203,7 @@ class FieldIndexTest : public ::testing::Test {
   T value_;
 };
 
-typedef ::testing::Types<SpecificInd, Ind2D, Ind3D> FieldIndexTypes;
+typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
 TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {

@@ -35,19 +35,40 @@ sys.path.append("../../tools/pylib")
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
+if on_readthedocs:
+    from unittest.mock import MagicMock
+
+    class Mock(MagicMock):
+        __all__ = ["foo",]
+        @classmethod
+        def __getattr__(cls, name):
+            return MagicMock()
+
+    MOCK_MODULES = [
+        'boutcore',
+        'bunch',
+        'h5py',
+        'netCDF4',
+    ]
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
-    subprocess.call("cd ../doxygen; doxygen Doxyfile_readthedocs", shell=True)
+    if on_readthedocs:
+        subprocess.call("cd ../doxygen; doxygen Doxyfile_readthedocs", shell=True)
+    else:
+        subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
     apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
                                      dryrun=False,
                                      force=True,
                                      notoc=False,
-                                     outtypes=("class", "file"),
+                                     outtypes=("file"),
                                      project="BOUT++",
                                      rootpath='../doxygen/bout/xml',
-                                     suffix='rst')
+                                     suffix='rst',
+                                     quiet=False)
     apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
     if not os.path.isdir(apidoc_args.destdir):
         if not apidoc_args.dryrun:
@@ -73,7 +94,10 @@ if has_breathe:
 # ones.
 extensions = ['sphinx.ext.coverage',
               'sphinx.ext.mathjax',
-              'sphinx.ext.autodoc']
+              'sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+              'sphinx.ext.todo',
+]
 
 if has_breathe:
     extensions.append('breathe')
@@ -100,7 +124,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'BOUT++'
 copyright = '2017, B. Dudson'
-author = 'B. Dudson'
+author = 'The BOUT++ team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -137,6 +161,12 @@ highlight_language = 'cpp'
 
 # Turn on figure numbering
 numfig = True
+
+# The default role for text marked up `like this`
+default_role = 'any'
+
+# Handle multiple parameters on one line correctly (in Python docs)
+napoleon_use_param = False
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -192,7 +222,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'BOUT.tex', 'BOUT++ Documentation',
-     'B. Dudson', 'manual'),
+     'The BOUT++ team', 'manual'),
 ]
 
 

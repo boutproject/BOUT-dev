@@ -819,6 +819,35 @@ bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int 
 }
 
 /***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
+                            const std::string &text) {
+  TRACE("NcFormat::setAttribute(string)");
+
+  NcVar *var = dataFile->get_var(varname.c_str());
+  if (!var) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var->add_att(attrname.c_str(), text.c_str());
+}
+
+void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
+                            int value) {
+  TRACE("NcFormat::setAttribute(int)");
+
+  NcVar *var = dataFile->get_var(varname.c_str());
+  if (!var) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+  var->add_att(attrname.c_str(), value);
+}
+
+
+/***************************************************************************
  * Private functions
  ***************************************************************************/
 

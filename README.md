@@ -21,6 +21,26 @@ available. BOUT++ is primarily designed and tested with reduced plasma
 fluid models in mind, but it can evolve any number of equations, with
 equations appearing in a readable form.
 
+For example, the following set of equations for magnetohydrodynamics
+(MHD):
+
+![ddt_rho](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Crho%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Crho%20-%20%5Crho%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)  
+![ddt_p](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20p%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%20p%20-%20%5Cgamma%20p%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)  
+![ddt_v](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Cmathbf%7Bv%7D%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Cmathbf%7Bv%7D%20&plus;%20%5Cfrac%7B1%7D%7B%5Crho%7D%28-%5Cnabla%20p%20&plus;%20%28%5Cnabla%5Ctimes%5Cmathbf%7BB%7D%29%5Ctimes%5Cmathbf%7BB%7D%29)  
+![ddt_B](http://latex.codecogs.com/png.latex?%7B%7B%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BB%7D%7D%7B%5Cpartial%20t%7D%7D%7D%20%3D%20%5Cnabla%5Ctimes%28%5Cmathbf%7Bv%7D%5Ctimes%5Cmathbf%7BB%7D%29)  
+
+can be written simply as:
+
+```cpp
+ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
+ddt(p)   = -V_dot_Grad(v, p) - g*p*Div(v);
+ddt(v)   = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
+ddt(B)   = Curl(v^B);
+```
+
+The full code for this example can be found in the [orszag-tang
+example](examples/orszag-tang/mhd.cxx).
+
 Jointly developed by University of York (UK), LLNL, CCFE, DCU, DTU,
 and other international partners.
 

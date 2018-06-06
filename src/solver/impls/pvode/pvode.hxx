@@ -42,6 +42,11 @@ class PvodeSolver;
 #include <pvode/cvode.h>     // main CVODE header file
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<PvodeSolver> registersolverpvode("pvode");
+}
+
 class PvodeSolver : public Solver {
  public:
   PvodeSolver(Options *opts);

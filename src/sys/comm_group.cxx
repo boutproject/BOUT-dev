@@ -204,14 +204,14 @@ namespace comm_group {
     
     return (root == handle->myrank);
   }
-  
-  
-  bool Comm_wait(Comm_handle_t *handle)
-  {
+
+  bool Comm_wait(Comm_handle_t *handle) {
+    if (handle == nullptr) {
+      return false;
+    }
+
     TRACE("Comm_gather_wait(%d)", handle->root);
 
-    if(handle == NULL)
-      return false;
     if(!handle->current)
       return false;
 

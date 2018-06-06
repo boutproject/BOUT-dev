@@ -43,26 +43,32 @@ do
     esac
 done
 
-
+export MAKEFLAGS="-j 2 -k"
 echo "Configuring with $CONFIGURE_OPTIONS"
-time ./configure $CONFIGURE_OPTIONS
+time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS"
 conf=$?
 if test $conf -gt 0
 then
-    echo
+    RED_FG="\033[031m"
+    RESET_FG="\033[039m"
+    echo -e $RED_FG
+    echo "**************************************************"
     echo "Printing config.log:"
-    echo
+    echo "**************************************************"
+    echo -e $RESET_FG
     echo
     cat config.log
     echo
+    echo -e $RED_FG
+    echo "**************************************************"
     echo "Printing config-build.log:"
-    echo
+    echo "**************************************************"
+    echo -e $RESET_FG
     echo
     cat config-build.log
     exit $conf
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
-export MAKEFLAGS="-j 2 -k"
 
 time make $MAIN_TARGET|| exit
 if [[ ${TESTS} == 1 ]]

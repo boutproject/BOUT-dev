@@ -69,7 +69,7 @@ class MsgStack {
   int setPoint();     ///< get a message point
   
   void pop();          ///< Remove the last message
-  void pop(int id);    ///< Remove all messages back to msg <id>
+  void pop(int id);    ///< Remove all messages back to msg \p id
   void clear();        ///< Clear all message
   
   void dump();         ///< Write out all messages (using output)

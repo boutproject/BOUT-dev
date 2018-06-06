@@ -87,8 +87,9 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int ncz = mesh->LocalNz;
   int ncx = mesh->LocalNx-1;
 
-  int xbndry = 2; // Width of the x boundary
-  if(global_flags & INVERT_BOTH_BNDRY_ONE)
+  int xbndry = mesh->xstart; // Width of the x boundary
+  // If the flags to assign that only one guard cell should be used is set
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
     xbndry = 1;
 
   BOUT_OMP(parallel for)

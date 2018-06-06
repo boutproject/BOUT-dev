@@ -76,8 +76,9 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   
   // Get the width of the boundary
   
-  int inbndry = 2, outbndry=2;
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
+  // If the flags to assign that only one guard cell should be used is set
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)

@@ -55,6 +55,11 @@ class ArkodeSolver;
 #include <vector>
 using std::vector;
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
+}
+
 class ArkodeSolver : public Solver {
   public:
     ArkodeSolver(Options *opts = NULL);

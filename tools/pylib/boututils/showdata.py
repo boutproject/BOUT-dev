@@ -16,10 +16,8 @@ try:
 except:
     pass
 
-#import numpy as np
-from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
-from matplotlib import animation, cm
+from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, abs, floor, pi, isclose
 from boutdata.collect import collect
 from boututils.boutwarnings import alwayswarn
@@ -40,63 +38,105 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, fps=28, dpi=200, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False, hold_aspect=False, cmap=None, clear_between_frames=None, return_animation=False):
-    """
-    A Function to animate time dependent data from BOUT++
-    Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.
+def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
+             movie=0, fps=28, dpi=200, intv=1, Ncolors=25, x=[], y=[],
+             global_colors=False, symmetric_colors=False, hold_aspect=False,
+             cmap=None, clear_between_frames=None, return_animation=False):
+    """A Function to animate time dependent data from BOUT++
 
     To animate multiple variables on different axes:
-    showdata([var1, var2, var3])
+
+    >>> showdata([var1, var2, var3])
 
     To animate more than one line on a single axes:
-    showdata([[var1, var2, var3]])
+
+    >>> showdata([[var1, var2, var3]])
 
     The default graph types are:
     2D (time + 1 spatial dimension) arrays = animated line plot
     3D (time + 2 spatial dimensions) arrays = animated contour plot.
 
     To use surface or polar plots:
-    showdata(var, surf = 1)
-    showdata(var, polar = 1)
+
+    >>> showdata(var, surf=1)
+    >>> showdata(var, polar=1)
 
     Can plot different graph types on different axes.  Default graph types will
     be used depending on the dimensions of the input arrays.  To specify
-    polar/surface plots on different axes: showdata([var1,var2], surf = [1,0],
-    polar = [0,1])
+    polar/surface plots on different axes:
+
+    >>> showdata([var1, var2], surf=[1, 0], polar=[0, 1])
 
     Movies require FFmpeg (for .mp4) and/or ImageMagick (for .gif) to be
     installed.  The 'movie' option can be set to 1 (which will produce an mp4
     called 'animation.mp4'), to a name with no extension (which will produce an
     mp4 called '<name>.mp4')
-    
-    fps sets frames per second in movie, default: 28 fps
 
-    dpi sets the resolution of the movie, default: 200 dpi
-    
-    The tslice variable is used to control the time value that is printed on
-    each frame of the animation.  If the input data matches the time values
+    The `tslice` variable is used to control the time value that is printed on
+    each frame of the animation. If the input data matches the time values
     found within BOUT++'s dmp data files, then these time values will be used.
     Otherwise, an integer counter is used.
 
-    The cmap variable (if specified) will set the colormap used in the plot
+    The `cmap` variable (if specified) will set the colormap used in the plot
     cmap must be a matplotlib colormap instance, or the name of a registered
-    matplotlib colormap 
+    matplotlib colormap
 
     During animation click once to stop in the current frame. Click again to
     continue.
 
-    global_colors = True: if "vars" is a list the colorlevels are determined
-    from the mximum of the maxima and and the minimum of the  minima in all
-    fields in vars.
+    Parameters
+    ----------
+    vars : array_like or list of array_like
+        Variable or list of variables to plot
+    titles : str or list of str, optional
+        Title or list of titles for each axis
+    legendlabels : str or list of str, optional
+        Legend or list of legends for each variable
+    surf : list of int
+        Which axes to plot as a surface plot
+    polar : list of int
+        Which axes to plot as a polar plot
+    tslice : list of int
+        Use these time values from a dump file (see above)
+    movie : int
+        If 1, save the animation to file
+    fps : int
+        Number of frames per second to use when saving animation
+    dpi : int
+        Dots per inch to use when saving animation
+    intv : int
+        ???
+    Ncolors : int
+        Number of levels in contour plots
+    x, y : array_like, list of array_like
+        X, Y coordinates
+    global_colors : bool
+        If "vars" is a list the colorlevels are determined from the
+        maximum of the maxima and and the minimum of the minima in all
+        fields in vars
+    symmetric_colors : bool
+        Colour levels are symmetric
+    hold_aspect : bool
+        Use equal aspect ratio in plots
+    cmap : colormap
+        A matplotlib colormap instance to use
+    clear_between_frames : bool, optional
+        - Default (None) - all plots except line plots will clear between frames
+        - True - all plots will clear between frames
+        - False - no plots will clear between frames
+    return_animation : bool
+        Return the matplotlib animation instance
 
-    symmetric_colors = True: colorlevels are symmetric.
+    TODO
+    ----
+    - Replace empty lists in signature with None
+    - Use bools in sensible places
+    - Put massive list of arguments in kwargs
+    - Speed up animations ????
+    - Look at theta in polar plots - periodic?!?
+    - Log axes, colorbars
+    - Figureplot
 
-    clear_between_frames: None  - all plots except line plots will clear between
-                                  frames
-                          True  - all plots will clear between frames
-                          False - no plots will clear between frames
-
-    return_animation = True matplotlib animation object will be returned.
     """
     plt.ioff()
 
@@ -139,7 +179,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 if len(legendlabels) != Nlines[i]:
                     check = check+1
             if check == 0:
-                alwayswarn("The legendlabels list does not contain a sublist for each variable, but it's length matches the number of lines on each plot. Will apply labels to each plot")
+                alwayswarn("The legendlabels list does not contain a sublist for each variable, but its length matches the number of lines on each plot. Will apply labels to each plot")
                 legendlabelsdummy = []
                 for i in range(0, Nvar):
                     legendlabelsdummy.append([])
@@ -675,12 +715,3 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     # Return animation object
     if(return_animation == 1):
         return(anim)
-
-
-"""
-To do list
-1. Speed up animations ????
-2. Look at theta in polar plots - periodic?!?
-3. Log axes, colorbars
-4. Figureplot
-"""

@@ -4,23 +4,14 @@ from __future__ import print_function
 from __future__ import division
 
 try:
-  from builtins import str
-  from builtins import range
-except:
-  print("Warning: No builtins module")
-
-try:
-    from numpy import *
-    from scipy.integrate import quad
+  from builtins import str, range
 except ImportError:
-    print("ERROR: Need NumPy and SciPy modules")
-    raise
+  pass
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
-    raise
+from numpy import *
+from scipy.integrate import quad
+
+from boututils.datafile import DataFile
 
 ######################################################
 
