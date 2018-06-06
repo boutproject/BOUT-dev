@@ -195,13 +195,6 @@ BOUT_OMP(master)
   }  
 }
 
-LaplaceMultigrid::~LaplaceMultigrid() {
-  // Finalize, deallocate memory, etc.
-  kMG->cleanMem();
-  kMG->cleanS();
-  kMG = NULL;
-}
-
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
@@ -551,7 +544,6 @@ BOUT_OMP(for)
 
   return result;
 }
-
 
 void LaplaceMultigrid::generateMatrixF(int level) {
 

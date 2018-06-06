@@ -151,21 +151,6 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
   else kflag = 0;
 }
 
-Multigrid1DP::~Multigrid1DP() {
-}
-
-void Multigrid1DP::cleanS() {
-  if(kflag == 1) {
-    rMG->cleanMem();
-    rMG->cleanS();
-    rMG=NULL;
-  }
-  else if(kflag == 2) {
-    sMG->cleanMem();
-    sMG=NULL;
-  }
-}
-
 void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
@@ -573,18 +558,6 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
   else kflag = 0;
 }
 
-Multigrid2DPf1D::~Multigrid2DPf1D() {
-}
-
-void Multigrid2DPf1D::cleanS() {
-  // Finalize, deallocate memory, etc.
-  if(kflag ==2) {
-    sMG->cleanMem();
-    sMG=NULL;
-  }
-}
-
-
 void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
@@ -774,9 +747,4 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
     matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
   }
 }
-
-MultigridSerial::~MultigridSerial() {
 }
-
-
-

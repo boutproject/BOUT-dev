@@ -51,7 +51,6 @@ public:
 
   void setMultigridC(int );
   void getSolution(BoutReal *,BoutReal *,int ); 
-  void cleanMem();
 
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
@@ -88,23 +87,19 @@ protected:
 class MultigridSerial: public MultigridAlg{
 public:
   MultigridSerial(int ,int ,int ,int ,int ,MPI_Comm ,int );
-  ~MultigridSerial();
+  ~MultigridSerial() {};
 
   void convertMatrixF(BoutReal *); 
-
-private:
-  
 };
 
 class Multigrid2DPf1D: public MultigridAlg{
 public:
   Multigrid2DPf1D(int ,int ,int ,int ,int ,int ,int ,int ,MPI_Comm ,int );
-  ~Multigrid2DPf1D();
+  ~Multigrid2DPf1D() {};
 
   void setMultigridC(int );
   void setPcheck(int );
   void setValueS();
-  void cleanS();
   int kflag;
 
 private:
@@ -117,14 +112,11 @@ private:
 class Multigrid1DP: public MultigridAlg{
 public:
   Multigrid1DP(int ,int ,int ,int ,int ,int, MPI_Comm ,int );
-  ~Multigrid1DP();
+  ~Multigrid1DP() {};
   void setMultigridC(int );
   void setPcheck(int );
   void setValueS();
-  void cleanS();
-
   int kflag;
-
 
 private:
   MPI_Comm comm2D;
@@ -141,7 +133,7 @@ private:
 class LaplaceMultigrid : public Laplacian {
 public:
   LaplaceMultigrid(Options *opt = NULL);
-  ~LaplaceMultigrid();
+  ~LaplaceMultigrid() {};
   
   void setCoefA(const Field2D &val) override { A = val; }
   void setCoefC(const Field2D &val) override { C1 = val; C2 = val;  }
