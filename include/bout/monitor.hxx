@@ -1,11 +1,20 @@
 #pragma once
 
 #include "bout_types.hxx"
+#include "bout/assert.hxx"
+
+#include <cmath>
 
 class Solver;
-/// Check if two numbers are multiples of each other, with an accuracy
-/// of 1e-12
-bool isMultiple(BoutReal a, BoutReal b);
+
+/// Return true if either \p a is a multiple of \p b or vice-versa
+///
+/// Assumes both arguments are greater than zero
+inline bool isMultiple(BoutReal a, BoutReal b) {
+  ASSERT2(a > 0);
+  ASSERT2(b > 0);
+  return (std::fmod(a, b) == 0) || (std::fmod(b, a) == 0);
+}
 
 /// Monitor baseclass for the Solver
 /// Can be called ether with a specified frequency, or with the
