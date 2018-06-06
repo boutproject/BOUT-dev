@@ -31,8 +31,6 @@ public:
   virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
   /// cleanup is called when a clean shutdown is initiated
   virtual void cleanup(){};
-  /// compare two monitors, check whether they are identicall
-  bool operator==(const Monitor& rhs) const;
 private:
   BoutReal timestep;
   int freq;
