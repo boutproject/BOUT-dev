@@ -108,7 +108,7 @@ public:
   int kflag;
 
 private:
-  MultigridSerial *sMG;
+  std::unique_ptr<MultigridSerial> sMG;
   void convertMatrixFS(int  ); 
   void lowestSolver(BoutReal *, BoutReal *, int );
   
@@ -128,8 +128,8 @@ public:
 
 private:
   MPI_Comm comm2D;
-  MultigridSerial *sMG;
-  Multigrid2DPf1D *rMG;
+  std::unique_ptr<MultigridSerial> sMG;
+  std::unique_ptr<Multigrid2DPf1D> rMG;
   void convertMatrixF2D(int ); 
   void convertMatrixFS(int ); 
   void lowestSolver(BoutReal *, BoutReal *, int );
@@ -166,7 +166,7 @@ private:
   int yindex; // y-position of the current solution phase
   Array<BoutReal> x; // solution vector
   Array<BoutReal> b; // RHS vector
-  Multigrid1DP *kMG;
+  std::unique_ptr<Multigrid1DP> kMG;
 
   /******* Start implementation ********/
   int mglevel,mgplag,cftype,mgsm,pcheck;

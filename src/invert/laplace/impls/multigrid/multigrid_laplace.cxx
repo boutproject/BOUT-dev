@@ -157,8 +157,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
-            commX,pcheck);
+  kMG = std::unique_ptr<Multigrid1DP>(new Multigrid1DP(
+      aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi, commX, pcheck));
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
