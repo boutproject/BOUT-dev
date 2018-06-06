@@ -18,19 +18,31 @@ inline bool isMultiple(BoutReal a, BoutReal b) {
 }
 
 /// Monitor baseclass for the Solver
+///
 /// Can be called ether with a specified frequency, or with the
 /// frequency of the BOUT++ output monitor.
 class Monitor{
   friend class Solver; ///< needs access to timestep and freq
 public:
-  /// A timestep of -1 defaults to the the frequency of the BOUT++
+  /// A \p timestep_ of -1 defaults to the the frequency of the BOUT++
   /// output monitor
-  Monitor(BoutReal timestep_=-1):timestep(timestep_){};
+  Monitor(BoutReal timestep_ = -1) : timestep(timestep_){};
+
   virtual ~Monitor(){};
-  /// call is called by the solver after timestep_ has passed
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
-  /// cleanup is called when a clean shutdown is initiated
+
+  /// Callback function for the solver, called after timestep_ has passed
+  ///
+  /// @param[in] solver The solver calling this monitor
+  /// @param[in] time   The current simulation time
+  /// @param[in] iter   The current simulation iteration
+  /// @param[in] nout   The total number of iterations for this simulation
+  ///
+  /// @returns non-zero if simulation should be stopped
+  virtual int call(Solver *solver, BoutReal time, int iter, int nout) = 0;
+
+  /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
+
 private:
   BoutReal timestep;
   int freq;
