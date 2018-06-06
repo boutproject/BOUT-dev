@@ -209,7 +209,16 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         pol_grid,ypos = grid.getPoloidalGrid(yindex)
         Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
         pressure[:,yindex,:] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
-        
+
+    # Get attributes from magnetic field (e.g. psi)
+    attributes = {}
+    for name in magnetic_field.attributes:
+        attribute = np.zeros(grid.shape)
+        for yindex in range(grid.numberOfPoloidalGrids()):
+            pol_grid, ypos = grid.getPoloidalGrid(yindex)
+            attribute[:,yindex,:] = magnetic_field.attributes[name](pol_grid.R, pol_grid.Z, ypos)
+            attributes[name] = attribute
+    
     # Metric is now 3D
     if metric2d:
         # Remove the Z dimension from metric components
@@ -266,6 +275,10 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
         # Pressure
         f.write("pressure", pressure)
+
+        # Attributes
+        for name in attributes:
+            f.write(name, attributes[name])
         
         # Maps - write everything to file
         for key in maps:
