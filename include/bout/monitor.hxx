@@ -37,15 +37,3 @@ private:
   int freq;
 };
 
-/// signature of legacy functions
-typedef int (* MonitorFuncPointer )(Solver *solver, BoutReal simtime, int iter, int NOUT);
-
-/// Class to wrap legacy monitor functions
-class MonitorFunc: public Monitor{
-public:
-  MonitorFunc(MonitorFuncPointer pntr);
-  virtual ~MonitorFunc(){};
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout) override;
-private:
-  MonitorFuncPointer callFunc;
-};
