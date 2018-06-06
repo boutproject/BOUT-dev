@@ -86,7 +86,7 @@ protected:
 
 class MultigridSerial: public MultigridAlg{
 public:
-  MultigridSerial(int ,int ,int ,int ,int ,MPI_Comm ,int );
+  MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check);
   ~MultigridSerial() {};
 
   void convertMatrixF(BoutReal *); 
@@ -162,7 +162,6 @@ private:
 
   /******* Start implementation ********/
   int mglevel,mgplag,cftype,mgsm,pcheck;
-  int xNP,xProcI;
   int mgcount,mgmpi;
 
   Options *opts;

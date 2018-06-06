@@ -145,7 +145,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
         output <<kflag<<" total dim "<<gnx[0]<<"("<< lnz[0]<<")"<<endl;
       }
       sMG = std::unique_ptr<MultigridSerial>(
-          new MultigridSerial(kk, gnx[0], lnz[0], xNP, zNP, commMG, pcheck));
+          new MultigridSerial(kk, gnx[0], lnz[0], commMG, pcheck));
     }             
   }
   else kflag = 0;
@@ -553,7 +553,7 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
     }
     kflag = 2;
     sMG = std::unique_ptr<MultigridSerial>(
-        new MultigridSerial(kk, gnx[0], gnz[0], xNP, zNP, commMG, pcheck));
+        new MultigridSerial(kk, gnx[0], gnz[0], commMG, pcheck));
   }
   else kflag = 0;
 }
@@ -697,36 +697,13 @@ BOUT_OMP(for collapse(2))
   MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
-MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
-                                 int UNUSED(pz), MPI_Comm comm, int check)
+MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check)
     : MultigridAlg(level, gx, gz, gx, gz, comm, check) {
 
-  // find level for Multigrid
-
-  mglevel = level;
-
-  /* Memory allocate for Multigrid */
-  gnx = Array<int>(mglevel);
-  gnz = Array<int>(mglevel);
-  lnx = Array<int>(mglevel);
-  lnz = Array<int>(mglevel);
-  gnx[mglevel-1] = gx;
-  gnz[mglevel-1] = gz;
-  lnx[mglevel-1] = gx;
-  lnz[mglevel-1] = gz;
-  if(mglevel > 1) {
-    for(int i=mglevel-1;i>0;i--) {
-      gnx[i-1] = gnx[i]/2;
-      gnz[i-1] = gnz[i]/2;
-      lnx[i-1] = lnx[i]/2;
-      lnz[i-1] = lnz[i]/2;
-    }
-  }
   xNP = 1;
   zNP = 1;
   numP = 1;
-  commMG = comm;
-  MPI_Comm_rank(commMG,&rProcI);
+  MPI_Comm_rank(commMG, &rProcI);
   xProcI = rProcI;
   zProcI = rProcI;
   xProcM = rProcI;
@@ -740,11 +717,4 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, int UNUSED(px),
       output<<i<<" Ser glo dim "<<gnx[i]<<","<<gnz[i]<<endl;
     }    
   }
-
-  // This could use a Matrix
-  matmg = new BoutReal *[mglevel];
-  for(int i = 0;i<mglevel;i++) {
-    matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
-  }
-}
 }
