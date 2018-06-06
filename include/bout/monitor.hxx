@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __MONITOR_H__
+#define __MONITOR_H__
 
 #include "bout_types.hxx"
 #include "bout/assert.hxx"
@@ -37,3 +38,4 @@ private:
   int freq;
 };
 
+#endif // __MONITOR_H__
