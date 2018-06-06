@@ -60,7 +60,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
   Mesh *fieldmesh = var.getMesh();
   Field3D result(fieldmesh);
 
-  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (mesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (fieldmesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
   if (fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
@@ -88,14 +88,13 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
-        ASSERT0(mesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+        ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
         BOUT_OMP(parallel)
         {
           stencil s;
-          IndexOffset<Ind3D> offset(*mesh);
+          IndexOffset<Ind3D> offset(*fieldmesh);
 
-          //for (const auto &i : result.region(RGN_NOBNDRY)) {
-          BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D(region), i,
+          BLOCK_REGION_LOOP_PARALLEL_SECTION(fieldmesh->getRegion3D("RGN_NOBNDRY"), i,
 
             // Set stencils
             s.mm = var[offset.xmm(i)];
@@ -120,7 +119,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_YLOW: {
-        ASSERT0(mesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+        ASSERT0(fieldmesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
 
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
@@ -132,10 +131,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           BOUT_OMP(parallel)
           {
             stencil s;
-            IndexOffset<Ind3D> offset(*mesh);
+            IndexOffset<Ind3D> offset(*fieldmesh);
 
-            //for (const auto &i : result.region(RGN_NOBNDRY)) {
-            BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D(region), i,
+            BLOCK_REGION_LOOP_PARALLEL_SECTION(fieldmesh->getRegion3D("RGN_NOBNDRY"), i,
               // Set stencils
               s.mm = nan("");
               s.m = var.ydown()[offset.ym(i)];
@@ -170,10 +168,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             BOUT_OMP(parallel)
             {
               stencil s;
-              IndexOffset<Ind3D> offset(*mesh);
+              IndexOffset<Ind3D> offset(*fieldmesh);
 
-              //for (const auto &i : result.region(RGN_NOBNDRY)) {
-              BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D("RGN_NOY"), i,
+              BLOCK_REGION_LOOP_PARALLEL_SECTION(fieldmesh->getRegion3D("RGN_NOBNDRY"), i,
                 // Set stencils
                 s.mm = var_fa[offset.ymm(i)];
                 s.m = var_fa[offset.ym(i)];
@@ -202,10 +199,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             BOUT_OMP(parallel)
             {
               stencil s;
-              IndexOffset<Ind3D> offset(*mesh);
+              IndexOffset<Ind3D> offset(*fieldmesh);
 
-              //for (const auto &i : result.region(RGN_NOBNDRY)) {
-              BLOCK_REGION_LOOP_PARALLEL_SECTION(result.getMesh()->getRegion3D(region), i,
+              BLOCK_REGION_LOOP_PARALLEL_SECTION(fieldmesh->getRegion3D("RGN_NOBNDRY"), i,
                 // Set stencils
                 s.mm = nan("");
                 s.m = var_fa[offset.ym(i)];
