@@ -847,7 +847,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.var)[Ind3D(i2d.ind*nz + jz)] = udata[p];
+        (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
         p++;
       }  
     }
@@ -871,7 +871,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        (*f.F_var)[Ind3D(i2d.ind*nz + jz)] = udata[p];
+        (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
         p++;
       }  
     }
@@ -927,7 +927,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.var)[Ind3D(i2d.ind*nz + jz)];
+        udata[p] = (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)];
         p++;
       }  
     }
@@ -950,7 +950,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
-        udata[p] = (*f.F_var)[Ind3D(i2d.ind*nz + jz)];
+        udata[p] = (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)];
         p++;
       }
     }
@@ -1101,11 +1101,11 @@ const Field3D Solver::globalIndex(int localStart) {
 
     for (auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
       // Zero index contains 2D and 3D variables
-      index[Ind3D(i2d.ind*nz)] = ind;
+      index[mesh->ind2Dto3D(i2d, 0)] = ind;
       ind += n2dbndry + n3dbndry;
 
       for (int jz = 1; jz < nz; jz++) {
-        index[Ind3D(i2d.ind*nz + jz)] = ind;
+        index[mesh->ind2Dto3D(i2d, jz)] = ind;
         ind += n3dbndry;
       }
     }
@@ -1114,11 +1114,11 @@ const Field3D Solver::globalIndex(int localStart) {
   // Bulk of points
   for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Zero index contains 2D and 3D variables
-    index[Ind3D(i2d.ind*nz)] = ind;
+    index[mesh->ind2Dto3D(i2d, 0)] = ind;
     ind += n2d + n3d;
 
     for (int jz = 1; jz < nz; jz++) {
-      index[Ind3D(i2d.ind*nz + jz)] = ind;
+      index[mesh->ind2Dto3D(i2d, jz)] = ind;
       ind += n3d;
     }
   }
