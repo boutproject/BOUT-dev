@@ -38,7 +38,8 @@
  */
 class FCIMap {
   /// Interpolation object
-  Interpolation *interp;
+  Interpolation *interp;        // Cell centre
+  Interpolation *interp_corner; // Cell corner at (x+1, z+1)
 
   /// Private constructor - must be initialised with mesh
   FCIMap();
@@ -51,11 +52,15 @@ public:
   int dir;                     /**< Direction of map */
 
   BoutMask boundary_mask;      /**< boundary mask - has the field line left the domain */
+  BoutMask corner_boundary_mask; ///< If any of the integration area has left the domain
+  
   Field3D y_prime;             /**< distance to intersection with boundary */
 
   BoundaryRegionPar* boundary; /**< boundary region */
 
   const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
+
+  const Field3D integrate(Field3D &f) const;
 };
 
 /*!
@@ -70,7 +75,9 @@ public:
         zperiodic(zperiodic) {}
 
   void calcYUpDown(Field3D &f) override;
-
+  
+  void integrateYUpDown(Field3D &f) override;
+  
   const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
