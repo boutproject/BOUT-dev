@@ -51,7 +51,8 @@ def ddt(f):
 
 
 def DDX(f):
-    return diff(f, metric.x)
+    # psiwidth = dx/dx_in
+    return diff(f, metric.x)/metric.psiwidth
 
 def DDY(f):
     return diff(f, metric.y)
@@ -61,7 +62,7 @@ def DDZ(f):
 
 
 def D2DX2(f):
-    return diff(f, metric.x, 2)
+    return diff(f, metric.x, 2)/metric.psiwidth**2
 
 def D2DY2(f):
     return diff(f, metric.y, 2)
@@ -93,11 +94,11 @@ def bracket(f, g):
     Calculates [f,g] symbolically
     """
 
-    dfdx = diff(f, metric.x)
-    dfdz = diff(f, metric.z)
+    dfdx = DDX(f)
+    dfdz = DDZ(f)
 
-    dgdx = diff(g, metric.x)
-    dgdz = diff(g, metric.z)
+    dgdx = DDX(g)
+    dgdz = DDZ(g)
 
     return dfdz * dgdx - dfdx * dgdz
 
@@ -131,28 +132,28 @@ def Delp2(f, all_terms=True):
     in the BOUT.inp file (laplace section)
 
     """
-    d2fdx2 = diff(f, metric.x, 2)
-    d2fdz2 = diff(f, metric.z, 2)
-    d2fdxdz = diff(f, metric.x, metric.z)
+    d2fdx2 = D2DX2(f)
+    d2fdz2 = D2DZ2(f)
+    d2fdxdz = D2DXDZ(f)
 
     result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
 
     if all_terms:
         G1 = (DDX(metric.J*metric.g11) + DDY(metric.J*metric.g12) + DDZ(metric.J*metric.g13)) / metric.J
         G3 = (DDX(metric.J*metric.g13) + DDY(metric.J*metric.g23) + DDZ(metric.J*metric.g33)) / metric.J
-        result += G1 * diff(f, metric.x) + G3 * diff(f, metric.z)
+        result += G1 * DDX(f) + G3 * DDZ(f)
 
     return result
 
 def Delp4(f):
-    d4fdx4 = diff(f, metric.x, 4)
-    d4fdz4 = diff(f, metric.z, 4)
+    d4fdx4 = D2DX2(D2DX2(f))
+    d4fdz4 = D2DZ2(D2DZ2(f))
 
     return d4fdx4 + d4fdz4
 
 def Grad_par(f):
     """The parallel gradient"""
-    return diff(f, metric.y) / sqrt(metric.g_22)
+    return DDY(f) / sqrt(metric.g_22)
 
 def Vpar_Grad_par(v, f):
     """Parallel advection operator v*grad_||(f)"""
@@ -182,7 +183,7 @@ def Laplace_par(f):
     """
     Div( b (b.Grad(f) ) ) = (1/J) d/dy ( J/g_22 * df/dy )
     """
-    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y)/ metric.J
+    return DDY(metric.J/metric.g_22)*DDY(f)/ metric.J
 
 def Laplace_perp(f):
     """
@@ -204,7 +205,8 @@ def trySimplify(expr):
         return expr
 
 def exprToStr(expr):
-    """ Convert a sympy expression to a string for BOUT++ input
+    """
+    Convert a sympy expression to a string for BOUT++ input
     """
 
     s = str(expr).replace("**", "^") # Replace exponent operator
@@ -385,29 +387,12 @@ class BaseTokamak(object):
         metric.g_13 = self.sinty*self.Rxy**2
         metric.g_23 = sbp*self.Btxy*self.hthe*self.Rxy / self.Bpxy
 
+        metric.zShift = self.zShift
+
         metric.J = self.hthe / self.Bpxy
         metric.B = self.Bxy
 
-        # Convert all "x" symbols from [0,1] into flux
-        metric.Lx = self.psiwidth
-        xsub = metric.x / self.psiwidth
-
-        #metric.g11 = metric.g11.subs(x, xsub)
-        #metric.g22 = metric.g22.subs(x, xsub)
-        #metric.g33 = metric.g33.subs(x, xsub)
-        #metric.g12 = metric.g12.subs(x, xsub)
-        #metric.g13 = metric.g13.subs(x, xsub)
-        #metric.g23 = metric.g23.subs(x, xsub)
-
-        #metric.g_11 = metric.g_11.subs(x, xsub)
-        #metric.g_22 = metric.g_22.subs(x, xsub)
-        #metric.g_33 = metric.g_33.subs(x, xsub)
-        #metric.g_12 = metric.g_12.subs(x, xsub)
-        #metric.g_13 = metric.g_13.subs(x, xsub)
-        #metric.g_23 = metric.g_23.subs(x, xsub)
-
-        #metric.J = metric.J.subs(x, xsub)
-        #metric.B = metric.B.subs(x, xsub)
+        metric.psiwidth = self.psiwidth
 
         self.metric_is_set = True
 
@@ -417,6 +402,10 @@ class BaseTokamak(object):
         """
         if not self.metric_is_set:
             raise ValueError("Error: metric has not been calculated yet, so cannot print")
+
+        print("dx = "+exprToStr(self.psiwidth)+"/(nx-2*mxg)")
+        print("dy = 2.*pi/ny")
+        print("dz = 2.*pi/nz")
         print("g11 = "+exprToStr(metric.g11))
         print("g22 = "+exprToStr(metric.g22))
         print("g33 = "+exprToStr(metric.g33))
@@ -441,7 +430,7 @@ class SimpleTokamak(BaseTokamak):
     NOTE: This is NOT an equilibrium calculation. The input
     is intended solely for testing with MMS
     """
-    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, q = lambda x:2+x**2):
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, q = lambda x:2+x**2):
         """
         R    - Major radius [metric]
 
@@ -453,16 +442,19 @@ class SimpleTokamak(BaseTokamak):
 
         q(x) - A function which returns the safety factor
                as a function of x in range [0,1]
+        
+        psiN0- Normalized poloidal flux of inner edge of grid
 
 
         Coordinates:
-        x - Radial, [0,1]
+        x - Radial, [0,psiwidth], x=psi-psi_inner so dx=dpsi but x=0 at the inner edge of the grid
         y - Poloidal, [0,2pi]. Origin is at inboard midplane.
 
 
         """
-        # X has a range [0,1], and y [0,2pi]
-        #x, y = symbols("x y")
+
+        # Have we calculated metric components yet?
+        self.metric_is_set = False
 
         self.x = x
         self.y = y
@@ -474,22 +466,29 @@ class SimpleTokamak(BaseTokamak):
         # Minor radius
         self.r = R * eps
 
+        # Approximate poloidal field for radial width calculation
+        Bp0 = Bt * self.r / (q(psiN0) * self.R)
+
+        # dpsi = Bp * R * dr  -- width of the box in psi space
+        self.psiwidth = Bp0 * self.R * self.dr
+        self.psi0 = Bp0 * R * self.r # value of psi at 'separatrix' taken to be at r, psi=0 at magnetic axis
+
         # Get safety factor
-        self.q = q(x)
+        self.q = q((x + psiN0*self.psi0)/self.psi0)
 
         # Toroidal angle of a field-line as function
         # of poloidal angle y
-        self.zShift = self.q*(y + eps * sin(y))
+        self.zShift = self.q*(self.y-pi + eps * sin(y-pi))
 
         # Field-line pitch
-        self.nu = self.q*(1 + eps*cos(y)) #diff(self.zShift, y)
+        self.nu = self.q*(1 + eps*cos(y-pi)) #diff(self.zShift, y)
 
         # Coordinates of grid points
-        self.Rxy = R - self.r * cos(y)
-        self.Zxy = self.r * sin(y)
+        self.Rxy = R - self.r*psiN0 * cos(y-pi)
+        self.Zxy = self.r*psiN0 * sin(y-pi)
 
         # Poloidal arc length
-        self.hthe = self.r + 0.*x
+        self.hthe = self.r*psiN0 + 0.*y
 
         # Toroidal magnetic field
         self.Btxy = Bt * R / self.Rxy
@@ -500,16 +499,22 @@ class SimpleTokamak(BaseTokamak):
         # Total magnetic field
         self.Bxy = sqrt(self.Btxy**2 + self.Bpxy**2)
 
-        # Approximate poloidal field for radial width calculation
-        Bp0 = Bt * self.r / (q(0.5) * R)
-        #print("Bp0 = %e" % Bp0)
-
-        # dx = Bp * R * dr  -- width of the box in psi space
-        self.psiwidth = Bp0 * R * dr
-        #print("psi width = %e" % self.psiwidth)
-
         # Integrated shear
-        self.sinty = diff(self.zShift, x) / self.psiwidth
+        self.sinty = diff(self.zShift, x)
+
+        # Convert all "x" symbols from flux to [0,1]
+        xsub = metric.x * self.psiwidth
+
+        self.q = self.q.subs(x, xsub)
+        self.zShift = self.zShift.subs(x, xsub)
+        self.nu = self.nu.subs(x, xsub)
+        self.Rxy = self.Rxy.subs(x, xsub)
+        self.Zxy = self.Zxy.subs(x, xsub)
+        self.hthe = self.hthe.subs(x, xsub)
+        self.Btxy = self.Btxy.subs(x, xsub)
+        self.Bpxy = self.Bpxy.subs(x, xsub)
+        self.Bxy = self.Bxy.subs(x, xsub)
+        self.sinty = self.sinty.subs(x, xsub)
 
         # Extra expressions to add to grid file
         self._extra = {}
@@ -522,7 +527,7 @@ class SimpleTokamak(BaseTokamak):
 # Shaped tokamak
 
 class ShapedTokamak(object):
-    def __init__(self, Rmaj=6.0, rmin=2.0, dr=0.1, kappa=1.0, delta=0.0, b=0.0, ss=0.0, Bt0=1.0, Bp0 = 0.2):
+    def __init__(self, Rmaj=6.0, rmin=2.0, dr=0.1, kappa=1.0, delta=0.0, b=0.0, ss=0.0, Bt0=1.0, Bp0 = 0.2, zperiod=1):
         """
         Rmaj  - Major radius [metric]
         rmin  - Minor radius [metric]
@@ -549,18 +554,21 @@ class ShapedTokamak(object):
 
         """
 
+        xin = symbols("xin") # xin=x/psiwidth
+        self.zperiod = zperiod
+
         # Have we calculated metric components yet?
         self.metric_is_set = False
 
-        # Minor radius as function of x
-        rminx = rmin + (x-0.5)*dr
+        # Minor radius as function of xin
+        rminx = rmin + (xin-0.5)*dr
 
         # Analytical expression for R and Z coordinates as function of x and y
-        Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-x)*(dr/rmin)
-        Zxy = kappa * rminx * sin(y)
+        self.Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-xin)*(dr/rmin)
+        self.Zxy = kappa * rminx * sin(y)
 
         # Toroidal magnetic field
-        Btxy = Bt0 * Rmaj / Rxy
+        self.Btxy = Bt0 * Rmaj / self.Rxy
 
         # Poloidal field. dx constant, so set poloidal field
         # at outboard midplane (y = 0)
@@ -569,38 +577,58 @@ class ShapedTokamak(object):
         # Distance between flux surface relative to outboard midplane.
         expansion = (1 - ss/rmin)*cos(y)/(1 - (ss/rmin))
 
-        Bpxy = Bp0 * ((Rmaj + rmin) / Rxy) / expansion
+        self.Bpxy = Bp0 * ((Rmaj + rmin) / self.Rxy) / expansion
+        self.B = sqrt(self.Btxy**2 + self.Bpxy**2)
 
         # Calculate hthe
-        hthe = sqrt(diff(Rxy, y)**2 + diff(Zxy, y)**2)
+        self.hthe = sqrt(diff(self.Rxy, y)**2 + diff(self.Zxy, y)**2)
         try:
-            hthe = trigsimp(hthe)
+            self.hthe = trigsimp(self.hthe)
         except ValueError:
             pass
 
+        # calculate width in psi
+        drdxin = diff(self.Rxy, xin).subs(y, 0)
+        dpsidr = (self.Bpxy * self.Rxy).subs(y, 0)
+        self.psiwidth = integrate(dpsidr * drdxin, (xin, 0, 1))
+
         # Field-line pitch
-        nu = Btxy * hthe / (Bpxy * Rxy)
+        nu = self.Btxy * self.hthe / (self.Bpxy * self.Rxy)
 
         # Shift angle
         # NOTE: Since x has a range [0,1] this could be done better
         # than ignoring convergence conditions
+        print(nu)
         self.zShift = integrate(nu, (y,0,y), conds='none')
 
         # Safety factor
         self.shiftAngle = self.zShift.subs(y, 2*pi) - self.zShift.subs(y, 0)
+        self.q = self.shiftAngle/2/pi
 
         # Integrated shear
-        self.I = diff(self.zShift, x)
+        self.I = diff(self.zShift.subs(xin, x/self.psiwidth), x)
 
-        # X has a range [0,1], and y [0,2pi]
+        # X has a range [0,psiwidth], and y [0,2pi]
         self.x = x
         self.y = y
 
-        self.R = Rxy
-        self.Z = Zxy
+        # Convert all "x" symbols from flux to [0,1]
+        # Then convert "xin" (which is already [0,1]) to "x"
+        xsub = metric.x * self.psiwidth
 
-        self.Bt = Btxy
-        self.Bp = Bpxy
-        self.B = sqrt(Btxy**2 + Bpxy**2)
+        self.q = self.q.subs(x, xsub).subs(xin, x)
+        self.zShift = self.zShift.subs(x, xsub).subs(xin, x)
+        self.nu = self.nu.subs(x, xsub).subs(xin, x)
+        self.Rxy = self.Rxy.subs(x, xsub).subs(xin, x)
+        self.Zxy = self.Zxy.subs(x, xsub).subs(xin, x)
+        self.hthe = self.hthe.subs(x, xsub).subs(xin, x)
+        self.Btxy = self.Btxy.subs(x, xsub).subs(xin, x)
+        self.Bpxy = self.Bpxy.subs(x, xsub).subs(xin, x)
+        self.Bxy = self.Bxy.subs(x, xsub).subs(xin, x)
+        self.sinty = self.sinty.subs(x, xsub).subs(xin, x)
 
-        self.hthe = hthe
+        # Extra expressions to add to grid file
+        self._extra = {}
+
+        # Calculate metric terms
+        self.metric()

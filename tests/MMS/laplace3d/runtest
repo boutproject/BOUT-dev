@@ -18,6 +18,7 @@ shell_safe("make > make.log")
 
 # List of NX values to use
 nxlist = [16, 32, 64, 128, 256]
+nxlist = [16, 32, 64, 128]
 
 nout = 1
 timestep = 0.1
@@ -30,7 +31,7 @@ error_2   = []  # The L2 error (RMS)
 error_inf = []  # The maximum error
 
 for nx in nxlist:
-    args = "mesh:nx="+str(nx+2)+" MZ="+str(nx)
+    args = "mesh:nx="+str(nx)+"+2*mxg"
 
     print("Running with " + args)
 
