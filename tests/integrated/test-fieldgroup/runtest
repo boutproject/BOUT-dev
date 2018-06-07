@@ -6,6 +6,8 @@
 # helping diagnose where the problem lies.
 #
 
+#requires not make
+
 echo ""
 echo "Running FieldGroup test"
 

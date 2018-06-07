@@ -10,8 +10,9 @@ Getting started
 
 This section goes through the process of getting, installing, and
 starting to run BOUT++. Only the basic functionality needed to use
-BOUT++ is described here; the next section ([sec-advancedinstall]) goes
-through more advanced options, and how to fix some common problems.
+BOUT++ is described here; the next section (:ref:`sec-advancedinstall`) goes
+through more advanced options, configurations for particular machines,
+and how to fix some common problems.
 
 This section will go through the following steps:
 
@@ -112,7 +113,7 @@ On Ubuntu or Debian distributions if you have administrator rights then you can 
 MPICH2 and the needed libraries by running::
 
     $ sudo apt-get install mpich2 libmpich2-dev
-    $ sudo apt-get install libfftw3-dev libnetcdf-dev
+    $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
    
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
@@ -125,6 +126,36 @@ Arch Linux
 ::
 
    $ pacman -S openmpi fftw netcdf-cxx 
+
+
+Fedora
+~~~~~~
+
+On Fedora the required libraries can be installed by running::
+
+   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
+   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
+   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
+   $ sudo dnf install mpich-devel
+   $ sudo dnf install openmpi-devel
+
+Note that the python2/python3 stack is only required for for post
+processing and the tests, so feel free to install only what you
+actually need.
+Further, only either mpich or openmpi is required.
+To load an mpi implementation type::
+
+   $ module load mpi
+
+After that the mpi library is loaded.
+Precompiled binaries are available for fedora as well.
+To get the latest release run::
+
+   $ sudo dnf copr enable davidsch/bout
+   $ # install the mpich version - openmpi is available as well
+   $ sudo dnf install bout++-mpich-devel
+   $ # get the python3 modules - python2 is available as well
+   $ sudo dnf install python3-bout++
 
 .. _sec-config-bout:
 
@@ -192,11 +223,11 @@ get IDL, Python, and Octave analysis routines working. If you
 just want to compile BOUT++ then you can skip to the next section, but
 make a note of what configure printed out.
 
-Python
-~~~~~~
 
 .. _sec-config-python:
 
+Python configuration
+~~~~~~~~~~~~~~~~~~~~
 
 To use Python, you will need the NumPy and SciPy libraries. On Debian or
 Ubuntu these can be installed with::
@@ -227,10 +258,10 @@ To test if this command has worked, try running::
 If this doesn’t produce any error messages then Python is configured
 correctly.
 
-IDL
-~~~
-
 .. _sec-config-idl:
+
+IDL configuration
+~~~~~~~~~~~~~~~~~
 
 If you want to use `IDL <https://en.wikipedia.org/wiki/IDL_(programming_language)>`__ to analyse
 BOUT++ outputs, then the ``IDL_PATH`` environment variable should include the
@@ -406,120 +437,3 @@ quotes. Similarly for IDL::
 More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
 
 
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-----------------------------
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
-
-    $ tar -xzvf mpich-3.2.1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run::
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is::
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
-
-.. _sec-fftw-from-source:
-
-Installing FFTW from source
----------------------------
-
-If you haven’t already, create directories “install” and “local”
-in your home directory::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version from
-http://www.fftw.org/download.html into the “install” directory. At the
-time of writing, this was called ``fftw-3.3.2.tar.gz``. Untar this file,
-and ’cd’ into the resulting directory. As with the MPI compiler,
-configure and install the FFTW library into ``$HOME/local`` by running::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-
-.. _sec-netcdf-from-source:
-
-Installing NetCDF from source
------------------------------
-
-The latest versions of NetCDF have separated out the C++ API from the
-main C library. As a result, you will need to download and install both.
-Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
-from https://www.unidata.ucar.edu/downloads/netcdf. As of
-January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
-
-Untar the file and ’cd’ into the resulting directory::
-
-    $ tar -xzvf netcdf-4.4.1.1.tar.gz
-    $ cd netcdf-4.4.1.1
-
-As with MPI compilers and FFTW, configure, then make and make install::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Sometimes configure can fail, in which case try disabling Fortran::
-
-    $ ./configure --prefix=$HOME/local --disable-fortran
-    $ make
-    $ make install
-
-Similarly for the C++ API::
-
-    $ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
-    $ cd netcdf-cxx4-4.3.0
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-You may need to set a couple of environment variables as well::
-
-    $ export PATH=$HOME/local/bin:$PATH
-    $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
-
-You should check where NetCDF actually installed its libraries. On some
-systems this will be ``$HOME/local/lib``, but on others it may be, e.g.
-``$HOME/local/lib64``. Check which it is, and set ``$LD_LIBRARY_PATH``
-appropriately.

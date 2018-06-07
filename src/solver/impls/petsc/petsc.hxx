@@ -47,6 +47,11 @@ class PetscSolver;
 
 #include <vector>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<PetscSolver> registersolverpetsc("petsc");
+}
+
 typedef PetscScalar BoutReal;
 typedef PetscInt integer;
 typedef PetscBool boole;
@@ -130,6 +135,8 @@ class PetscSolver : public Solver {
   PetscInt prev_linear_its;
   BoutReal bout_snes_time;
   vector<snes_info> snes_list;
+
+  bool adaptive;   ///< Use adaptive timestepping
 };
 
 

@@ -31,7 +31,7 @@
 
 #include <field_factory.hxx>
 
-#include "solverfactory.hxx"
+#include "bout/solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
@@ -339,6 +339,11 @@ void Solver::add(Vector3D &v, const char* name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -352,9 +357,6 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-  
   VarStr<Field2D> d;
   
   d.constraint = true;
@@ -366,6 +368,11 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
 
 #if CHECK > 0
@@ -379,9 +386,6 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-
   VarStr<Field3D> d;
   
   d.constraint = true;
@@ -394,6 +398,11 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -407,9 +416,6 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
-    
   VarStr<Vector2D> d;
   
   d.constraint = true;
@@ -433,6 +439,11 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
+
+  if (name == nullptr) {
+    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  }
+
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
 
 #if CHECK > 0  
@@ -445,9 +456,6 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
   if(initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
-
-  if(name == NULL)
-    throw BoutException("WARNING: Constraint requested for variable with NULL name\n");
 
   VarStr<Vector3D> d;
   
@@ -629,13 +637,6 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 
 /////////////////////////////////////////////////////
 
-void Solver::addMonitor(int (& MonitorFuncRef )(Solver *solver, BoutReal simtime, int iter, int NOUT)
-                        , MonitorPosition pos) {
-  MonitorFunc * mon = new MonitorFunc(&MonitorFuncRef);
-  mon->timestep=-1;
-  addMonitor(mon,pos);
-}
-
 /// Method to add a Monitor to the Solver
 /// Note that behaviour changes if init() is called,
 /// as the timestep cannot be changed afterwards
@@ -762,11 +763,6 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   }
   return 0;
 }
-
- void Solver::addToRestart(BoutReal &var, const string &name) {
-   if(model)
-     model->addToRestart(var, name);
- }
 
 /**************************************************************************
  * Useful routines (protected)
@@ -1105,9 +1101,8 @@ void Solver::save_derivs(BoutReal *dudata) {
 
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
-    if(f.location != (f.F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *(f.F_var) = interp_to(*(f.F_var), f.location);
+    if(f.var->getLocation() != (f.F_var)->getLocation()) {
+      throw BoutException("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n",strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
     }
   }
 

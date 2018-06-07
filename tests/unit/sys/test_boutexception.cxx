@@ -27,6 +27,14 @@ TEST(BoutRhsFailTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutRhsFail("RHS Fail test"), BoutRhsFail);
 }
 
+TEST(BoutParallelRhsFailTest, ThrowCorrect) {
+  EXPECT_THROW(BoutParallelThrowRhsFail(1, "RHS Fail test"), BoutRhsFail);
+}
+
+TEST(BoutParallelRhsFailTest, ThrowNoError) {
+  EXPECT_NO_THROW(BoutParallelThrowRhsFail(0, "RHS Fail test"));
+}
+
 TEST(BoutIterationFailTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutIterationFail("Iteration fail test"), BoutIterationFail);
 }

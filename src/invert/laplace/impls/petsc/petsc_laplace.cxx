@@ -271,15 +271,11 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   string type;
-  opts->get("ksptype", type, KSP_GMRES);
-
-  ksptype = type.c_str();
+  opts->get("ksptype", ksptype, KSP_GMRES);
   
   // Get preconditioner type
   // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
-  string pctypeoption;
-  opts->get("pctype", pctypeoption, "none", true);
-  pctype = pctypeoption.c_str();
+  opts->get("pctype", pctype, "none", true);
   
   // Get Options specific to particular solver types
   opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);
@@ -295,14 +291,12 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
 
   // Get direct solver switch
   opts->get("direct", direct, false);
-  if(direct)
-    {
-      output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
-    }
+  if (direct) {
+    output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
+  }
 
   pcsolve = NULL;
-  if(pctype == PCSHELL) {
-    // User-supplied preconditioner
+  if (pctype == PCSHELL) {
 
     OPTION(opts, rightprec, true); // Right preconditioning by default
 
@@ -337,6 +331,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  * \returns sol     The solution x of the problem Ax=b.
  */
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
+  TRACE("LaplacePetsc::solve");
+  
   #if CHECK > 0
     // Checking flags are set to something which is not implemented (see
     // constructor for details)
@@ -463,15 +459,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x,y,z);
 
+        ASSERT3(finite(A0));
+        
         // Set the matrix coefficients
         Coeffs( x, y, z, A1, A2, A3, A4, A5 );
 
         BoutReal dx   = coord->dx(x,y);
-        BoutReal dx2  = pow( coord->dx(x,y) , 2.0 );
+        BoutReal dx2  = SQ(coord->dx(x,y));
         BoutReal dz   = coord->dz;
-        BoutReal dz2  = pow( coord->dz, 2.0 );
+        BoutReal dz2  = SQ(coord->dz);
         BoutReal dxdz = coord->dx(x,y) * coord->dz;
-
+        
+        ASSERT3(finite(A1));
+        ASSERT3(finite(A2));
+        ASSERT3(finite(A3));
+        ASSERT3(finite(A4));
+        ASSERT3(finite(A5));
+        
           // Set Matrix Elements
           PetscScalar val=0.;
           if (fourth_order) {
@@ -574,8 +578,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
             // f(i+2,j+2)
             val = A3 / ( 144.0 * dxdz );
             Element(i,x,z, 2, 2, val, MatA );
-          }
-          else {
+          } else {
+            // Second order
+            
             // f(i,j) = f(x,z)
             val = A0 - 2.0*( (A1 / dx2) + (A2 / dz2) );
             Element(i,x,z, 0, 0, val, MatA );
@@ -728,9 +733,13 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     // Set the preconditioner
     PCSetType(pc,PCLU);
     // Set the solver type
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else { // If a iterative solver has been chosen
-    KSPSetType( ksp, ksptype ); // Set the type of the solver
+    KSPSetType( ksp, ksptype.c_str() ); // Set the type of the solver
 
     if( ksptype == KSPRICHARDSON )     KSPRichardsonSetScale( ksp, richardson_damping_factor );
 #ifdef KSPCHEBYSHEV
@@ -748,11 +757,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     KSPGetPC(ksp,&pc);
 
     // Set the type of the preconditioner
-    PCSetType(pc, pctype);
+    PCSetType(pc, pctype.c_str());
 
     // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
     // construction of the object
-    if(pctype == PCSHELL) {
+    if (pctype == PCSHELL) {
       // User-supplied preconditioner function
       PCShellSetApply(pc,laplacePCapply);
       PCShellSetContext(pc,this);
@@ -865,6 +874,13 @@ void LaplacePetsc::Element(int i, int x, int z,
   // Convert to global indices
   int index = (row_new * meshz) + col_new;
 
+#if CHECK > 2
+  if (!finite(ele)) {
+    throw BoutException("Non-finite element at x=%d, z=%d, row=%d, col=%d\n",
+                        x, z, i, index);
+  }
+#endif
+  
   /* Inserts or adds a block of values into a matrix
    * Input:
    * MatA   - The matrix to set the values in
@@ -921,9 +937,12 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
-  if(all_terms) {
+  if (all_terms) {
     coef4 = coord->G1(x,y); // X 1st derivative
     coef5 = coord->G3(x,y); // Z 1st derivative
+
+    ASSERT3(finite(coef4));
+    ASSERT3(finite(coef5));
   }
 
   if(nonuniform) {

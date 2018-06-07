@@ -64,11 +64,11 @@ class RKScheme {
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
 
   //Get the state vector at given stage
-  virtual void setCurState(const BoutReal *start, BoutReal *out,int curStage, 
+  virtual void setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,int curStage, 
 			   const BoutReal dt);
 
   //Calculate the output state and return the error estimate (if adaptive)
-  virtual BoutReal setOutputStates(const BoutReal *start,BoutReal dt, BoutReal *resultFollow);
+  virtual BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
 
   //Update the timestep
   virtual BoutReal updateTimestep(BoutReal dt,BoutReal err);
@@ -83,7 +83,7 @@ class RKScheme {
   int getNumOrders(){return numOrders;};
 
   //The intermediate stages
-  BoutReal **steps;
+  Matrix<BoutReal> steps;
 
  protected:
   //Information about scheme
@@ -94,11 +94,11 @@ class RKScheme {
   int order; //Order of scheme
 
   //The Butcher Tableau
-  BoutReal **stageCoeffs;
-  BoutReal **resultCoeffs;
-  BoutReal *timeCoeffs;
+  Matrix<BoutReal> stageCoeffs;
+  Matrix<BoutReal> resultCoeffs;
+  Array<BoutReal> timeCoeffs;
   
-  BoutReal *resultAlt;
+  Array<BoutReal> resultAlt;
 
   int nlocal;
   int neq;
@@ -108,14 +108,14 @@ class RKScheme {
 
   BoutReal dtfac;
 
-  virtual BoutReal getErr(BoutReal *solA, BoutReal *solB);
+  virtual BoutReal getErr(Array<BoutReal> &solA, Array<BoutReal> &solB);
 
-  virtual void constructOutput(const BoutReal *start,BoutReal dt, 
-			       const int index, BoutReal *sol);
+  virtual void constructOutput(const Array<BoutReal> &start,BoutReal dt, 
+			       const int index, Array<BoutReal> &sol);
 
-  virtual void constructOutputs(const BoutReal *start,BoutReal dt, 
+  virtual void constructOutputs(const Array<BoutReal> &start,BoutReal dt, 
 				const int indexFollow,int indexAlt,
-				BoutReal *solFollow, BoutReal *solAlt);
+				Array<BoutReal> &solFollow, Array<BoutReal> &solAlt);
 
  private:
   void verifyCoeffs();

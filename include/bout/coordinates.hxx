@@ -37,6 +37,7 @@ class Coordinates;
 
 #include "mesh.hxx"
 #include "datafile.hxx"
+#include "utils.hxx"
 #include <bout_types.hxx>
 
 /*!
@@ -84,7 +85,7 @@ public:
   
   Field2D G1, G2, G3;
   
-  Field2D ShiftTorsion; ///< d <pitch angle> / dx. Needed for vector differentials (Curl)
+  Field2D ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
 
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
@@ -96,9 +97,15 @@ public:
 
   // Operators
 
-  const Field2D DDX(const Field2D &f);
-  const Field2D DDY(const Field2D &f);
-  const Field2D DDZ(const Field2D &f);
+  const Field2D DDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
+  const Field2D DDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
+  const Field2D DDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                    DIFF_METHOD method = DIFF_DEFAULT,
+                    REGION region = RGN_NOBNDRY);
   
   /// Gradient along magnetic field  b.Grad(f)
   const Field2D Grad_par(const Field2D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
@@ -136,9 +143,6 @@ public:
   const Field2D Laplace_perpXY(const Field2D &A, const Field2D &f);
   
 private:
-  /// Matrix inversion by Gauss-Jordan elimination
-  int gaussj(BoutReal **a, int n);
-  vector<int> indxc, indxr, ipiv;
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
 };

@@ -23,6 +23,8 @@
 #ifndef __LAPACK_ROUTINES_H__
 #define __LAPACK_ROUTINES_H__
 
+#include <utils.hxx>
+
 /* Tridiagonal inversion
  *
  * a = Left of diagonal (so a[0] not used)
@@ -48,7 +50,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
 void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n);
 
 /// Complex band matrix solver
-void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b);
+void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b);
 
 #endif // __LAPACK_ROUTINES_H__
 

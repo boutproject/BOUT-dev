@@ -46,7 +46,7 @@
 #include <cstring>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), flushFrequencyCounter(0), flushFrequency(1), file(nullptr) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), shiftOutput(false), shiftInput(false), flushFrequencyCounter(0), flushFrequency(1), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   filename[0] = 0; // Terminate the string
@@ -62,15 +62,16 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   OPTION(opt, init_missing, false); // Initialise missing variables?
-  OPTION(opt, shiftOutput, false); //Do we want to write 3D fields in shifted space?
-  OPTION(opt, flushFrequency, 1); //How frequently do we flush the file
+  OPTION(opt, shiftOutput, false); // Do we want to write 3D fields in shifted space?
+  OPTION(opt, shiftInput, false); // Do we want to read 3D fields in shifted space?
+  OPTION(opt, flushFrequency, 1); // How frequently do we flush the file
   
 }
 
 Datafile::Datafile(Datafile &&other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(other.file.release()), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -84,7 +85,7 @@ Datafile::Datafile(Datafile &&other) :
 Datafile::Datafile(const Datafile &other) :
   parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
+  enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(nullptr), int_arr(other.int_arr),
   BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
   f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -104,6 +105,7 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
   shiftOutput  = rhs.shiftOutput;
+  shiftInput   = rhs.shiftInput;
   flushFrequencyCounter = 0;
   flushFrequency = rhs.flushFrequency;
   file         = std::move(rhs.file);
@@ -550,6 +552,9 @@ bool Datafile::write() {
   for (const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -578,6 +583,9 @@ bool Datafile::write() {
   for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -612,6 +620,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector2D v  = *(var.ptr);
@@ -620,6 +636,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
 
@@ -633,6 +657,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector3D v  = *(var.ptr);
@@ -641,6 +673,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
   
@@ -716,6 +756,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
       return false;
     }
   }
+  
   return true;
 }
 
@@ -743,6 +784,13 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool save_repeat) {
       return false;
     }
   }
+
+  
+  if (shiftInput) {
+    // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
+    *f = mesh->fromFieldAligned(*f);
+  }
+  
   return true;
 }
 

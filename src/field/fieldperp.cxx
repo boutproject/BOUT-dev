@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include <boutcomm.hxx>
 #include <globals.hxx>
 
 #include <stdlib.h>
@@ -33,12 +34,10 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp(Mesh *localmesh) {
-  // Get mesh size
-  fieldmesh = localmesh;
-  if (localmesh) {
-    nx = localmesh->LocalNx;
-    nz = localmesh->LocalNz;
+FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
+  if (fieldmesh) {
+    nx = fieldmesh->LocalNx;
+    nz = fieldmesh->LocalNz;
   }
   
 #if CHECK > 0
@@ -47,8 +46,28 @@ FieldPerp::FieldPerp(Mesh *localmesh) {
     nz=-1;
   }
 #endif
+}
 
-  yindex = -1;
+FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh), yindex(-1) {
+  nx = fieldmesh->LocalNx;
+  nz = fieldmesh->LocalNz;
+  *this = val;
+}
+
+void FieldPerp::allocate() {
+  if (data.empty()) {
+    if (!fieldmesh) {
+      /// If no mesh, use the global
+      fieldmesh = mesh;
+      nx = fieldmesh->LocalNx;
+      nz = fieldmesh->LocalNz;
+    }
+    data = Array<BoutReal>(nx * nz);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
+  } else
+    data.ensureUnique();
 }
 
 /***************************************************************
@@ -64,12 +83,18 @@ FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
 }
 
 FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
+  TRACE("FieldPerp = BoutReal");
+
   allocate();
 
-  for(auto&& d : data) {
-    d = rhs;
-  }
-  
+#if CHECK > 0
+  if (!finite(rhs))
+    throw BoutException("FieldPerp: Assignment from non-finite BoutReal\n");
+#endif
+
+  for (const auto &i : (*this))
+    (*this)[i] = rhs;
+
   return *this;
 }
 
@@ -143,7 +168,27 @@ FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
+const IndexRange FieldPerp::region(REGION rgn) const {
+  switch (rgn) {
+  case RGN_ALL:
+  case RGN_NOZ:
+    return IndexRange{0, nx - 1, 0, 0, 0, nz - 1};
+    break;
+  case RGN_NOX:
+    return IndexRange{getMesh()->xstart, getMesh()->xend, 0, 0, 0, nz - 1};
+    break;
+  default:
+    throw BoutException("FieldPerp::region() : Requested region not implemented");
+    break;
+  };
+}
+
+//////////////// NON-MEMBER FUNCTIONS //////////////////
+
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
+
+// Unary minus
+FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
 
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FIELD(op, ftype)                                                  \
@@ -214,10 +259,70 @@ FPERP_FPERP_OP_REAL(/);
 FPERP_REAL_OP_FPERP(-);
 FPERP_REAL_OP_FPERP(/);
 
+/////////////////////////////////////////////////
+// functions
+
+/*!
+ * This macro takes a function \p func, which is
+ * assumed to operate on a single BoutReal and return
+ * a single BoutReal, and wraps it up into a function
+ * of a FieldPerp called \p name.
+ *
+ * @param name  The name of the function to define
+ * @param func  The function to apply to each value
+ *
+ * If CHECK >= 1, checks if the FieldPerp is allocated
+ *
+ * Loops over the entire domain, applies function,
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
+ *
+ */
+#define FPERP_FUNC(name, func)                                                           \
+  const FieldPerp name(const FieldPerp &f, REGION rgn) {                                 \
+    TRACE(#name "(FieldPerp)");                                                          \
+    /* Check if the input is allocated */                                                \
+    ASSERT1(f.isAllocated());                                                            \
+    /* Define and allocate the output result */                                          \
+    FieldPerp result(f.getMesh());                                                       \
+    result.allocate();                                                                   \
+    /* Loop over domain */                                                               \
+    for (const auto &d : result.region(rgn)) {                                           \
+      result[d] = func(f[d]);                                                            \
+    }                                                                                    \
+    checkData(result);                                                                   \
+    return result;                                                                       \
+  }
+
+FPERP_FUNC(abs, ::fabs);
+
+FPERP_FUNC(sqrt, ::sqrt);
+
+FPERP_FUNC(exp, ::exp);
+FPERP_FUNC(log, ::log);
+
+FPERP_FUNC(sin, ::sin);
+FPERP_FUNC(cos, ::cos);
+FPERP_FUNC(tan, ::tan);
+
+FPERP_FUNC(sinh, ::sinh);
+FPERP_FUNC(cosh, ::cosh);
+FPERP_FUNC(tanh, ::tanh);
+
 const FieldPerp copy(const FieldPerp &f) {
   FieldPerp fcopy = f;
   fcopy.allocate();
   return fcopy;
+}
+
+const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
+  FieldPerp result = copy(var);
+
+  for (const auto &d : result.region(rgn))
+    if (result[d] < f)
+      result[d] = f;
+
+  return result;
 }
 
 const FieldPerp sliceXZ(const Field3D& f, int y) {
@@ -236,3 +341,154 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   return result;
 }
 
+BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
+  TRACE("FieldPerp::Min() %s", allpe ? "over all PEs" : "");
+
+  ASSERT2(f.isAllocated());
+
+  BoutReal result = f[f.region(rgn).begin()];
+
+  for (const auto &i : f.region(rgn))
+    if (f[i] < result)
+      result = f[i];
+
+  if (allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+  }
+
+  return result;
+}
+
+BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
+  TRACE("FieldPerp::Max() %s", allpe ? "over all PEs" : "");
+
+  ASSERT2(f.isAllocated());
+
+  BoutReal result = f[f.region(rgn).begin()];
+
+  for (const auto &i : f.region(rgn))
+    if (f[i] > result)
+      result = f[i];
+
+  if (allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+
+  return result;
+}
+
+bool finite(const FieldPerp &f, REGION rgn) {
+  TRACE("finite(FieldPerp)");
+
+  if (!f.isAllocated()) {
+    return false;
+  }
+
+  for (const auto &i : f.region(rgn)) {
+    if (!::finite(f[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
+  TRACE("pow(FieldPerp, FieldPerp)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
+  FieldPerp result(lhs.getMesh());
+  result.allocate();
+
+  // Loop over domain
+  for (const auto &i : result.region(rgn)) {
+    result[i] = ::pow(lhs[i], rhs[i]);
+  }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
+  TRACE("pow(FieldPerp, BoutReal)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+
+  // Define and allocate the output result
+  FieldPerp result(lhs.getMesh());
+  result.allocate();
+
+  // Loop over domain
+  for (const auto &i : result.region(rgn)) {
+    result[i] = ::pow(lhs[i], rhs);
+  }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
+  TRACE("pow(lhs, FieldPerp)");
+  // Check if the inputs are allocated
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
+  FieldPerp result(rhs.getMesh());
+  result.allocate();
+
+  // Loop over domain
+  for (const auto &i : result.region(rgn)) {
+    result[i] = ::pow(lhs, rhs[i]);
+  }
+
+  checkData(result);
+  return result;
+}
+
+#if CHECK > 0
+/// Check if the data is valid
+void checkData(const FieldPerp &f, REGION region) {
+  if (!f.isAllocated()) {
+    throw BoutException("FieldPerp: Operation on empty data\n");
+  }
+
+#if CHECK > 2
+  // Do full checks
+  for (const auto &i : f.region(region)) {
+    if (!::finite(f[i])) {
+      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x,
+                          i.z);
+    }
+  }
+#endif
+}
+#endif
+
+void invalidateGuards(FieldPerp &var) {
+#if CHECK > 2
+  Mesh *localmesh = var.getMesh();
+
+  // Inner x -- all z
+  for (int ix = 0; ix < localmesh->xstart; ix++) {
+    for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+      var(ix, iz) = std::nan("");
+    }
+  }
+
+  // Outer x -- all z
+  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+    for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+      var(ix, iz) = std::nan("");
+    }
+  }
+#endif
+  return;
+}

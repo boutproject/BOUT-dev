@@ -193,12 +193,14 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
  * These are a simple way to do staggered differencing
  */
 const Field3D Grad_par_CtoL(const Field3D &var);
+const Field2D Grad_par_CtoL(const Field2D &var);
 const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region=RGN_NOBNDRY);
 const Field3D Grad_par_LtoC(const Field3D &var);
-const Field3D Div_par_LtoC(const Field2D &var);
+const Field2D Grad_par_LtoC(const Field2D &var);
 const Field3D Div_par_LtoC(const Field3D &var);
-const Field3D Div_par_CtoL(const Field2D &var);
+const Field2D Div_par_LtoC(const Field2D &var);
 const Field3D Div_par_CtoL(const Field3D &var);
+const Field2D Div_par_CtoL(const Field2D &var);
 
 /*!
  * Parallel divergence of diffusive flux, K*Grad_par
@@ -280,11 +282,15 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 /*!
  * Poisson bracket methods
  */
-enum BRACKET_METHOD {BRACKET_STD=0,   ///< Use b0xGrad_dot_Grad
-                     BRACKET_SIMPLE=1, ///< Keep only terms in X-Z
-                     BRACKET_ARAKAWA=2, ///< Arakawa method in X-Z (optimised)
-                     BRACKET_CTU=3, ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the timestep from the solver
-                     BRACKET_ARAKAWA_OLD=4 ///< Older version, for regression testing of optimised version.
+enum BRACKET_METHOD {
+  BRACKET_STD = 0,        ///< Use b0xGrad_dot_Grad
+  BRACKET_SIMPLE = 1,     ///< Keep only terms in X-Z
+  BRACKET_ARAKAWA = 2,    ///< Arakawa method in X-Z (optimised)
+  BRACKET_CTU = 3,        ///< Corner Transport Upwind (CTU)
+                          /// method. Explicit method only,
+                          /// needs the timestep from the
+                          /// solver
+  BRACKET_ARAKAWA_OLD = 4 ///< Older version, for regression testing of optimised version.
 };
 
 /*!
@@ -296,7 +302,7 @@ enum BRACKET_METHOD {BRACKET_STD=0,   ///< Use b0xGrad_dot_Grad
  * \f]
  * 
  * @param[in] f  The potential
- * @param[in] f  The field being advected
+ * @param[in] g  The field being advected
  * @param[in] method   The method to use
  * @param[in] outloc   The cell location where the result is defined. Default is the same as g
  * @param[in] solver   Pointer to the time integration solver

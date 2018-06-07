@@ -4,6 +4,10 @@
 #ifndef __OPERATORS_DI_H__
 #define __OPERATORS_DI_H__
 
+#include <bout_types.hxx>
+#include <field3d.hxx>
+#include <bout/mesh.hxx>
+
 /// \brief 2nd order central differencing in X
 ///
 /// Performs calculation at a single point. The input field
@@ -65,8 +69,7 @@ BoutReal Delp2_C2(const Field3D &f, const DataIterator &i) {
 ///
 /// @param[in] f  Field to be differentiated
 /// @param[in] g  Field to be differentiated
-/// @param[in[ i  The point where the result is calculated
-///
+/// @param[in] i  The point where the result is calculated
 BoutReal bracket_arakawa(const Field3D &f, const Field3D &g, const DataIterator &i) {
   Coordinates *metric = mesh->coordinates();
 

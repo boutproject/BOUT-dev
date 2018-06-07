@@ -53,17 +53,20 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
-    : dir(dir), boundary_mask(mesh), y_prime(&mesh) {
+FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
+  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
 
-  interp = InterpolationFactory::getInstance()->create();
+  interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
 
+  interp_corner = InterpolationFactory::getInstance()->create(&mesh);
+  interp_corner->setYOffset(dir);
+  
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
-  int ***i_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  auto i_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
   // z-index of bottom-left grid point
-  int ***k_corner = i3tensor(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  auto k_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
   Field3D xt_prime(&mesh), zt_prime(&mesh);
   Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
@@ -94,20 +97,47 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
 
   // Add the boundary region to the mesh's vector of parallel boundaries
   mesh.addBoundaryPar(boundary);
+  
+  // Cell corners
+  Field3D xt_prime_corner(&mesh), zt_prime_corner(&mesh);
+  xt_prime_corner.allocate();
+  zt_prime_corner.allocate();
 
+  for (int x = mesh.xstart; x <= mesh.xend; x++) {
+    for (int y = mesh.ystart; y <= mesh.yend; y++) {
+      for (int z = 0; z < mesh.LocalNz - 1; z++) {
+        // Point interpolated from (x+1/2, z+1/2)
+
+        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
+            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
+          // Hit a boundary
+          corner_boundary_mask(x, y, z) = true;
+          
+          xt_prime_corner(x, y, z) = -1.0;
+          zt_prime_corner(x, y, z) = -1.0;
+          continue;
+        }
+        
+        xt_prime_corner(x, y, z) =
+            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
+                    xt_prime(x + 1, y, z + 1));
+
+        zt_prime_corner(x, y, z) =
+            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
+                    zt_prime(x + 1, y, z + 1));
+      }
+    }
+  }
+  
+  interp_corner->setMask(corner_boundary_mask);
+  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  
   interp->calcWeights(xt_prime, zt_prime);
-
+  
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
   Coordinates &coord = *(mesh.coordinates());
-
-  // Vector in real space
-  struct RealVector {
-    BoutReal x;
-    BoutReal y;
-    BoutReal z;
-  };
 
   for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {
@@ -115,7 +145,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = static_cast<int>(floor(xt_prime(x, y, z)));
+        i_corner(x, y, z) = static_cast<int>(floor(xt_prime(x, y, z)));
 
         // z is periodic, so make sure the z-index wraps around
         if (zperiodic) {
@@ -127,12 +157,12 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
             zt_prime(x, y, z) += ncz;
         }
 
-        k_corner[x][y][z] = static_cast<int>(floor(zt_prime(x, y, z)));
+        k_corner(x, y, z) = static_cast<int>(floor(zt_prime(x, y, z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner[x][y][z]);
-        t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner[x][y][z]);
+        t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+        t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
         //----------------------------------------
         // Boundary stuff
@@ -204,9 +234,62 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool yperiodic, bool zperiodic)
   }
 
   interp->setMask(boundary_mask);
+}
 
-  free_i3tensor(i_corner);
-  free_i3tensor(k_corner);
+const Field3D FCIMap::integrate(Field3D &f) const {
+  TRACE("FCIMap::integrate");
+  
+  // Cell centre values
+  Field3D centre = interp->interpolate(f);
+  
+  // Cell corner values (x+1/2, z+1/2)
+  Field3D corner = interp_corner->interpolate(f);
+
+  Field3D result;
+  result.allocate();
+
+  int nz = mesh->LocalNz;
+  
+  for(int x = mesh->xstart; x <= mesh->xend; x++) {
+    for(int y = mesh->ystart; y <= mesh->yend; y++) {
+      
+      int ynext = y+dir;
+      
+      for(int z = 0; z < nz; z++) {
+        if (boundary_mask(x,y,z))
+          continue;
+        
+        int zm = z - 1;
+        if (z == 0) {
+          zm = nz-1;
+        }
+        
+        BoutReal f_c  = centre(x,ynext,z);
+        
+        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
+            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)) {
+          // One of the corners leaves the domain.
+          // Use the cell centre value, since boundary conditions are not
+          // currently applied to corners.
+          result(x, ynext, z) = f_c;
+
+        } else {
+          BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
+          BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
+          BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
+          BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
+
+          // This uses a simple weighted average of centre and corners
+          // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
+          // which would include cell edges and corners
+          result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
+
+          ASSERT2(finite(result(x,ynext,z)));
+        }
+      }
+    }
+  }
+  return result;
 }
 
 void FCITransform::calcYUpDown(Field3D &f) {
@@ -218,4 +301,15 @@ void FCITransform::calcYUpDown(Field3D &f) {
   // Interpolate f onto yup and ydown fields
   f.ynext(forward_map.dir) = forward_map.interpolate(f);
   f.ynext(backward_map.dir) = backward_map.interpolate(f);
+}
+
+void FCITransform::integrateYUpDown(Field3D &f) {
+  TRACE("FCITransform::integrateYUpDown");
+  
+  // Ensure that yup and ydown are different fields
+  f.splitYupYdown();
+
+  // Integrate f onto yup and ydown fields
+  f.ynext(forward_map.dir) = forward_map.integrate(f);
+  f.ynext(backward_map.dir) = backward_map.integrate(f);
 }

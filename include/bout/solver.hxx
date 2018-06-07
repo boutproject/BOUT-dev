@@ -39,6 +39,13 @@ class Solver;
 #include <boutexception.hxx>
 #include <unused.hxx>
 #include "bout/monitor.hxx"
+#include "options.hxx"
+#include "datafile.hxx"
+
+///////////////////////////////////////////////////////////////////
+
+#ifndef __SOLVER_H__
+#define __SOLVER_H__
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -56,10 +63,7 @@ typedef int (*Jacobian)(BoutReal t);
 /// Solution monitor, called each timestep
 typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
 
-///////////////////////////////////////////////////////////////////
 
-#ifndef __SOLVER_H__
-#define __SOLVER_H__
 
 //#include "globals.hxx"
 #include "field2d.hxx"
@@ -73,7 +77,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #include <list>
 using std::string;
 
-#define SolverType const char*
+typedef std::string SolverType;
 #define SOLVERCVODE       "cvode"
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
@@ -194,9 +198,7 @@ class Solver {
   // Monitors
   
   enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
-  /// Add a monitor function to be called every output
-  DEPRECATED(void addMonitor(int (&)(Solver *solver, BoutReal simtime, int iter, int NOUT)
-                             , MonitorPosition pos=FRONT));
+
   /// Add a monitor to be called every output
   void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
   void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
@@ -305,12 +307,6 @@ class Solver {
    */ 
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
   
-  /*!
-   * Add extra variables to the restart files, which store
-   * system state. This is now deprecated, since the restart file
-   * is handled by PhysicsModel rather than Solver.
-   */
-  DEPRECATED(void addToRestart(BoutReal &var, const string &name));
 protected:
   
   // Command-line arguments

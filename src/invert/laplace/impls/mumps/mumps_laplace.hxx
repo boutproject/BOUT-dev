@@ -82,11 +82,6 @@ public:
     delete [] mumps_struc.jcn_loc;
     delete [] mumps_struc.a_loc;
     delete [] mumps_struc.isol_loc;
-    delete [] rhs;
-//     delete [] rhs_slice;
-    delete [] localrhs;
-    delete [] localrhs_size_array;
-    delete [] rhs_positions;
   }
   
   void setCoefA(const Field2D &val) override { A = val; }
@@ -124,12 +119,12 @@ private:
 //   int repeat_analysis; // Repeat analysis step after this many iterations
 //   int iteration_count; // Use this to count the number of iterations since last analysis
   
-  BoutReal* rhs; // Array to collect rhs field onto host processor
+  Array<BoutReal> rhs; // Array to collect rhs field onto host processor
 //   BoutReal* rhs_slice; // Array to pass xz-slice of rhs to solve
-  BoutReal* localrhs;
+  Array<BoutReal> localrhs;
   int localrhssize;
-  int* localrhs_size_array;
-  int* rhs_positions;
+  Array<int> localrhs_size_array;
+  Array<int> rhs_positions;
   FieldPerp sol;              // solution Field
   
   // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.

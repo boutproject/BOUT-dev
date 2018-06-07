@@ -8,11 +8,12 @@
 
 #ifdef BACKTRACE
 #include <execinfo.h>
+#include <dlfcn.h>
 #endif
 
 #include <utils.hxx>
 
-void BoutParallelThrowRhsFail(int &status, const char *message) {
+void BoutParallelThrowRhsFail(int status, const char *message) {
   int allstatus;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
@@ -66,28 +67,43 @@ std::string BoutException::BacktraceGenerate() const{
     }
 
     char syscom[256];
+    // If we are compiled as PIE, need to get base pointer of .so and substract
+    Dl_info info;
+    void * ptr=trace[i];
+    if (dladdr(trace[i],&info)){
+      // Additionally, check whether this is the default offset for an executable
+      if (info.dli_fbase != (void*)0x400000)
+        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
+    }
+
     // Pipe stderr to /dev/null to avoid cluttering output
     // when addr2line fails or is not installed
     snprintf(syscom, sizeof(syscom) - 1, "addr2line %p -Cfpie %.*s 2> /dev/null",
-             trace[i], p, messages[i]);
+             ptr, p, messages[i]);
     // last parameter is the file name of the symbol
     FILE *fp = popen(syscom, "r");
     if (fp != NULL) {
       char out[1024];
-      char *retstr = fgets(out, sizeof(out) - 1, fp);
+      char *retstr;
+      std::string buf;
+      do {
+        retstr = fgets(out, sizeof(out) - 1, fp);
+        if (retstr != nullptr)
+          buf+=retstr;
+      } while (retstr != NULL);
       int status = pclose(fp);
-      if ((status == 0) && (retstr != NULL)) {
-        message += out;
+      if (status == 0) {
+        message += buf;
       }
-    } else {
-      message += syscom;
     }
   }
 #endif
   return message;
 }
 
-
+/// Common set up for exceptions
+///
+/// Formats the message s using C-style printf formatting
 #define INIT_EXCEPTION(s)                                                                \
   {                                                                                      \
     buflen = 0;                                                                          \
