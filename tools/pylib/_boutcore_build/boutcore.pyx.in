@@ -42,6 +42,8 @@ cat <<EOF
 # distutils: sources = helper.cxx
 # distutils: extra_compile_args = $flags
 
+# cython: binding=True
+
 cimport boutcpp as c
 import numpy as np
 cimport numpy as np
@@ -90,8 +92,7 @@ cdef class Field3D:
     cdef c.bool isSelfOwned
     @classmethod
     def fromMesh(cls,mesh=None):
-        """fromMesh(cls,mesh=None)
-
+        """
         Create a Field3D.
 
         Parameters
@@ -107,8 +108,7 @@ cdef class Field3D:
         return f3d
     @classmethod
     def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
-        """fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs)
-
+        """
         Create a Field3D from reading in a datafile via collect.
 
         Parameters
@@ -175,8 +175,7 @@ cdef class Field3D:
         #    raise MemoryError('Not enough memory, allocation failed.')
 
     def set(self,data,ignoreDataType=False):
-        """set(self,data,ignoreDataType=False)
-
+        """
         Set all data of the Field3D
 
         Parameters
@@ -189,8 +188,7 @@ cdef class Field3D:
         return self.setAll(data,ignoreDataType)
 
     def setAll(self,data,ignoreDataType=False):
-        """setAll(self,data,ignoreDataType=False)
-
+        """
         Set all data of the Field3D
 
         Parameters
@@ -215,7 +213,7 @@ cdef class Field3D:
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
 
     def get(self):
-        """get(self)
+        """
         Get all data of the Field3D
 
         Returns
@@ -226,7 +224,7 @@ cdef class Field3D:
         return self.getAll()
 
     def getAll(self):
-        """getAll(self)
+        """
         Get all data of the Field3D
 
         Returns
@@ -243,7 +241,7 @@ cdef class Field3D:
         return data_
 
     def setLocation(self,location):
-        """setLocation(self,location)
+        """
         Set the location of the Field3D
         This does not do any modification of the data.
 
@@ -257,8 +255,7 @@ cdef class Field3D:
         return self
 
     def getLocation(self):
-        """getLocation(self)
-
+        """
         Get the location of the Field3D
 
         Returns
@@ -270,7 +267,8 @@ cdef class Field3D:
         return _resolve_inv_cell_loc(loc)
 
     def ddt(self,val=None):
-        """ddt(self,val=None)
+        """
+        Get or set the time derivative
 
         Returns
         -------
@@ -287,7 +285,7 @@ cdef class Field3D:
         return f3dFromPtr(&c.ddt(self.cobj[0]))
 
     def __neg__(self):
-        """__neg__(self)
+        """
 
         Returns
         -------
@@ -296,8 +294,7 @@ cdef class Field3D:
         """
         return f3dFromObj(c_minus(self.cobj[0]))
     def isAllocated(self):
-        """isAllocated(self)
-
+        """
         Check if the Field3D has its own datablock allocated
 
         Returns
@@ -307,8 +304,7 @@ cdef class Field3D:
         """
         return self.cobj.isAllocated()
     def __getitem__(self,slices):
-        """__getitem__(self,slices)
-
+        """
         Get data from the Field3D
         Supports full 3D slicing support.
         Partially slicing is currently not supported.
@@ -337,8 +333,7 @@ cdef class Field3D:
         return data_
 
     def __setitem__(self,slices,data_):
-        """__setitem__(self,slices,data)
-
+        """
         Parameters
         ----------
         slices: tuple_like, slice
@@ -466,8 +461,7 @@ cdef class Mesh:
 
     @classmethod
     def getGlobal(cls):
-        """getGlobal(cls)
-
+        """
         Get the global Mesh object
 
         Returns
@@ -486,8 +480,7 @@ cdef class Mesh:
             del self.cobj
 
     cdef getFactory(self):
-        """getFactory(self)
-
+        """
         Get the FieldFactory of the mesh
 
         Returns
@@ -499,8 +492,7 @@ cdef class Mesh:
             (<FieldFactory?>self.factory).cobj = new c.FieldFactory(self.cobj,<c.Options*>0)
         return self.factory
     def normalise(self,double norm):
-        """normalise(self,double norm)
-
+        """
         Normalise the mesh.
 
         Usefull if the Options are in SI units, but the simulation is written in Bohm units.
@@ -519,8 +511,7 @@ cdef class Mesh:
             self.isNormalised=t
         c_mesh_normalise(self.cobj,norm)
     def communicate(self,*args):
-        """communicate(self,*args)
-
+        """
         Communicate (MPI) the boundaries of the Field3Ds with neighbours
 
         Parameters
@@ -538,7 +529,14 @@ cdef class Mesh:
 cdef class Laplacian:
     cdef c.Laplacian * cobj
     def __init__(self,section=None):
-        """__init__(self,section=None)"""
+        """
+        Initialiase a laplacion solver
+
+        Parameters
+        ----------
+        section : Options, optional
+            The section from the Option tree to take the options from
+        """
         checkInit()
         if section:
            self.cobj = c.Laplacian.create((<Options?>section).cobj)
@@ -546,8 +544,7 @@ cdef class Laplacian:
            self.cobj = c.Laplacian.create(NULL)
 
     def solve(self,Field3D a, Field3D b):
-        """solve(self,Field3D x, Field3D guess)
-
+        """
         Calculate the Laplacian inversion
 
         Parameters
@@ -647,8 +644,7 @@ cdef class PhysicsModelBase(object):
             self.cmodel.getSolver().add(f3d[0],tmp)
 
     def setRhs(self,rhs):
-        """setRhs(self,rhs)
-
+        """
         set the rhs function to be called
 
         Parameters
@@ -662,8 +658,7 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_rhs_func(self.callback)
 
     def setInit(self,init):
-        """setInit(self,init)
-
+        """
         set the init function to be called
 
         Parameters
@@ -689,8 +684,7 @@ class PhysicsModel(PhysicsModelBase):
         super(PhysicsModel,self).__init__()
         self._super_is_initialised=True
     def solve(self):
-        """solve(self)
-
+        """
         Call the solver.
         This makes sure that self.init(restart) and self.rhs(time) are called from the solver.
         """
@@ -708,8 +702,7 @@ class PhysicsModel(PhysicsModelBase):
         self.setInit(self.myinit)
         super(PhysicsModel,self).solve()
     def solve_for(self,*args,**kwargs):
-        """solve_for(self,**kwargs)
-
+        """
         Add Field3D's to be solved for.
         Need to pass as name=field - where name is the name that is
         used e.g. for the dump file and field is a Field3D
@@ -725,8 +718,7 @@ class PhysicsModel(PhysicsModelBase):
             raise RuntimeError("PhysicsModel is not initialized")
         super(PhysicsModel,self).solve_for(*args,**kwargs)
     def init(self,restart):
-        """init(self,restart)
-
+        """
         This can be overwritten to do model specific initialization
         """
         pass
@@ -741,8 +733,7 @@ cdef extern from "boutcore_openmpi_compat.hxx":
 
 _isInit=False
 def init(args=[]):
-    """init(args=[])
-
+    """
     Initialization function for the library.
 
     Parameters
@@ -786,8 +777,7 @@ def init(args=[]):
     #atexit.register(finalise)
 
 def finalise():
-    """finalise()
-
+    """
     Finalize BOUT++ and also MPI.
     After this most objects and functions are not valid anymore.
     """
@@ -797,8 +787,7 @@ def finalise():
     _isInit=False
 
 def checkInit():
-    """checkInit()
-
+    """
     Assert that boutcore has been initialized
     """
     global _isInit
@@ -807,19 +796,21 @@ def checkInit():
 
 EOF
 
-f_desc_f=":param field: The Field3D object of which to calculate the derivative"
-f_desc_vf=":param field: The Field3D object of which to calculate the derivative
-    :param velocity: The Field3D object of which the field is advected"
+f_desc_f="field : Field3D
+        The Field3D object of which to calculate the derivative"
+f_desc_vf="field: Field3D
+        The Field3D object of which to calculate the derivative
+    velocity : Field3D
+        The Field3D object of which the field is advected"
 fun () {
     cat <<EOF
 def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
+    """
     Compute the derivative $DD
-
-    $f_desc
 
     Parameters
     ---------
+    $f_desc
     outloc : string
         The location where the derivative is expected. Defaults to the same as field.
     method : string
@@ -862,13 +853,12 @@ done
 funbad () {
     cat <<EOF
 def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
-    """$DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY")
+    """
     Compute the derivative $DD
-
-    $f_desc
 
     Parameters
     ---------
+    $f_desc
     outloc : string
         The location where the derivative is expected. Defaults to the same as field.
     method : string
@@ -906,13 +896,12 @@ done
 cat <<EOF
 
 def Delp2(Field3D a, zsmooth=-1):
-    """Delp2(Field3D a, zsmooth=-1)"""
+#    """Delp2(Field3D a, zsmooth=-1)"""
     checkInit()
     return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
-    """Grad_perp_dot_Grad_perp(Field3D a, Field3D b)
-
+    """
     Parameters
     ----------
     a : Field3D
@@ -929,8 +918,7 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
 def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
-    """bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT")
-
+    """
     Calculate the poison bracket for Field3D a and Field3D b.
 
     Parameters
@@ -939,6 +927,10 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
         The left field in the bracket
     b : Field3D
         The right field in the bracket
+    method : string
+        The method to be used
+    outloc : string
+        The location of the calculated derivative
 
     Returns
     -------
@@ -974,7 +966,7 @@ done
 cat <<EOF
 
 def pow(Field3D a, exponent):
-    """pow(Field3D a, exponent)
+    """
     Returns a**e where a is a Field3D and e is a number
 
     Parameters
@@ -992,7 +984,8 @@ def pow(Field3D a, exponent):
     return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
 
 def min(Field3D a):
-    """min(Field3D a)
+    """
+    Get the minimum
 
     Parameters
     ----------
@@ -1007,7 +1000,8 @@ def min(Field3D a):
     return c.min(a.cobj[0])
 
 def max(Field3D a):
-    """max(Field3D a)
+    """
+    Get the maximum
 
     Parameters
     ----------
@@ -1022,7 +1016,7 @@ def max(Field3D a):
     return c.max(a.cobj[0])
 
 def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
-    """create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0)
+    """
     Returns a Field3D from the fieldfactory
     Parameters
     ----------
@@ -1051,8 +1045,7 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
                                            ,outloc_,time))
 
 def interp_to(Field3D f3d,location):
-    """interp_to(Field3D f3d,location)
-
+    """
     Interpolate a Field3D to a given location
 
     Parameters
@@ -1073,8 +1066,7 @@ def interp_to(Field3D f3d,location):
 
 
 def setOption(name, value, source="PyInterface", force=False):
-    """setOption(name, value, source="PyInterface", force=False)
-
+    """
     Set an option in the global Options tree
 
     Parameters
@@ -1107,7 +1099,8 @@ cdef class Options:
             self.cobj=self.cobj.getSection(sec_)
 
     def set(self,name,value,source="PyInterface", force=False):
-        """opt.set(name,value,source="PyInterface", force=False)
+        """
+        Set an option
 
         Parameters
         ----------
@@ -1136,7 +1129,8 @@ cdef class Options:
         return self
 
     def get(self,name,default):
-        """get(self,name,default)
+        """
+        Get an option
 
         Parameters
         ----------
