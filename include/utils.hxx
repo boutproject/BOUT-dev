@@ -351,7 +351,7 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-T SQ(T t){
+T SQ(const T &t){
   return t*t;
 }
 
