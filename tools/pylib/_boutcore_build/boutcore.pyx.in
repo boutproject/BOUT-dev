@@ -87,7 +87,9 @@ cdef Field3D f3dFromPtr(c.Field3D * i):
     f3d.isSelfOwned=False
     return f3d
 cdef class Field3D:
-    """A wrapper for the Field3D"""
+    """
+    The Field3D class
+    """
     cdef c.Field3D * cobj
     cdef c.bool isSelfOwned
     @classmethod
@@ -119,7 +121,7 @@ cdef class Field3D:
             if not defined, use global mesh
         ignoreDataType : bool
             Do not fail if data is not float64
-         **kwargs :
+        **kwargs
             remaining arguments are passed to collect
         """
         checkInit()
@@ -432,6 +434,12 @@ cat <<EOF
             self.cobj=NULL
 
 cdef class Mesh:
+    """
+    Mesh class
+
+    Contains information about geometry.
+    It contains also the coordinates and is responsible for taking deriavtives.
+    """
     cdef c.Mesh * cobj;
     cdef c.bool isGlobal
     cdef double isNormalised
@@ -527,6 +535,11 @@ cdef class Mesh:
         return self
 
 cdef class Laplacian:
+    """
+    Laplacian inversion solver
+
+    Compute the Laplacian inversion of objects.
+    """
     cdef c.Laplacian * cobj
     def __init__(self,section=None):
         """
@@ -551,7 +564,7 @@ cdef class Laplacian:
         ----------
         x : Field3D
             Field to be inverted
-        guess: Field3D
+        guess : Field3D
             initial guess for the inversion
 
 
@@ -946,7 +959,7 @@ EOF
 for fun in sqrt exp sin cos log abs
 do
     echo "def $fun(Field3D a):
-    \"\"\"$fun(Field3D a)
+    \"\"\"
     Calculate $fun of the Field3D
 
     Parameters
@@ -1137,12 +1150,12 @@ cdef class Options:
         name : string
              the name of the value to get. Can be relative,
              e.g. \`mesh:ddx:first\`.
-        default : various
+        default : bool, string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float
         Returns
         -------
-        various
+        bool, string or float
             See default for the type.
             The option that was read if available, otherwise default
         """
