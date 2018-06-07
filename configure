@@ -8855,7 +8855,7 @@ $as_echo "$as_me: Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&6;}
 # with no identation
 
 
-# PETSc changed the location of the conf direction in 3.5, so we
+# PETSc changed the location of the conf directory in 3.5, so we
 # need to check both locations
   as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5

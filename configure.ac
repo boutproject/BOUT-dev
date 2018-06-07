@@ -616,7 +616,7 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
       http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
   ])
 
-# PETSc changed the location of the conf direction in 3.5, so we
+# PETSc changed the location of the conf directory in 3.5, so we
 # need to check both locations
   AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
     PETSC_CONFDIR=${PETSC_DIR}/conf
