@@ -523,112 +523,113 @@ class SimpleTokamak(BaseTokamak):
         self.metric()
 
 
-##########################
-# Shaped tokamak
-
-class ShapedTokamak(object):
-    def __init__(self, Rmaj=6.0, rmin=2.0, dr=0.1, kappa=1.0, delta=0.0, b=0.0, ss=0.0, Bt0=1.0, Bp0 = 0.2, zperiod=1):
-        """
-        Rmaj  - Major radius [metric]
-        rmin  - Minor radius [metric]
-        dr    - Radial width of region [metric]
-
-        kappa - Ellipticity, 1 for a circle
-        delta - Triangularity, 0 for circle
-        b     - Indentation ("bean" shape), 0 for circle
-
-        ss    - Shafranov shift [metric]
-
-        Bt0   - Toroidal magnetic field on axis [T]. Varies as 1/R
-        Bp0   - Poloidal field at outboard midplane [T]
-
-        Outputs
-        -------
-
-        Assigns member variables
-
-        x, y    - Symbols for x and y coordinates
-
-        R (x,y)
-        Z (x,y)
-
-        """
-
-        xin = symbols("xin") # xin=x/psiwidth
-        self.zperiod = zperiod
-
-        # Have we calculated metric components yet?
-        self.metric_is_set = False
-
-        # Minor radius as function of xin
-        rminx = rmin + (xin-0.5)*dr
-
-        # Analytical expression for R and Z coordinates as function of x and y
-        self.Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-xin)*(dr/rmin)
-        self.Zxy = kappa * rminx * sin(y)
-
-        # Toroidal magnetic field
-        self.Btxy = Bt0 * Rmaj / self.Rxy
-
-        # Poloidal field. dx constant, so set poloidal field
-        # at outboard midplane (y = 0)
-        # NOTE: Approximate calculation
-
-        # Distance between flux surface relative to outboard midplane.
-        expansion = (1 - ss/rmin)*cos(y)/(1 - (ss/rmin))
-
-        self.Bpxy = Bp0 * ((Rmaj + rmin) / self.Rxy) / expansion
-        self.B = sqrt(self.Btxy**2 + self.Bpxy**2)
-
-        # Calculate hthe
-        self.hthe = sqrt(diff(self.Rxy, y)**2 + diff(self.Zxy, y)**2)
-        try:
-            self.hthe = trigsimp(self.hthe)
-        except ValueError:
-            pass
-
-        # calculate width in psi
-        drdxin = diff(self.Rxy, xin).subs(y, 0)
-        dpsidr = (self.Bpxy * self.Rxy).subs(y, 0)
-        self.psiwidth = integrate(dpsidr * drdxin, (xin, 0, 1))
-
-        # Field-line pitch
-        nu = self.Btxy * self.hthe / (self.Bpxy * self.Rxy)
-
-        # Shift angle
-        # NOTE: Since x has a range [0,1] this could be done better
-        # than ignoring convergence conditions
-        print(nu)
-        self.zShift = integrate(nu, (y,0,y), conds='none')
-
-        # Safety factor
-        self.shiftAngle = self.zShift.subs(y, 2*pi) - self.zShift.subs(y, 0)
-        self.q = self.shiftAngle/2/pi
-
-        # Integrated shear
-        self.I = diff(self.zShift.subs(xin, x/self.psiwidth), x)
-
-        # X has a range [0,psiwidth], and y [0,2pi]
-        self.x = x
-        self.y = y
-
-        # Convert all "x" symbols from flux to [0,1]
-        # Then convert "xin" (which is already [0,1]) to "x"
-        xsub = metric.x * self.psiwidth
-
-        self.q = self.q.subs(x, xsub).subs(xin, x)
-        self.zShift = self.zShift.subs(x, xsub).subs(xin, x)
-        self.nu = self.nu.subs(x, xsub).subs(xin, x)
-        self.Rxy = self.Rxy.subs(x, xsub).subs(xin, x)
-        self.Zxy = self.Zxy.subs(x, xsub).subs(xin, x)
-        self.hthe = self.hthe.subs(x, xsub).subs(xin, x)
-        self.Btxy = self.Btxy.subs(x, xsub).subs(xin, x)
-        self.Bpxy = self.Bpxy.subs(x, xsub).subs(xin, x)
-        self.Bxy = self.Bxy.subs(x, xsub).subs(xin, x)
-        self.sinty = self.sinty.subs(x, xsub).subs(xin, x)
-
-        # Extra expressions to add to grid file
-        self._extra = {}
-
-        # Calculate metric terms
-        self.metric()
+###########################
+## Shaped tokamak
+###########################
+#
+#class ShapedTokamak(object):
+#    def __init__(self, Rmaj=6.0, rmin=2.0, dr=0.1, kappa=1.0, delta=0.0, b=0.0, ss=0.0, Bt0=1.0, Bp0 = 0.2, zperiod=1):
+#        """
+#        Rmaj  - Major radius [metric]
+#        rmin  - Minor radius [metric]
+#        dr    - Radial width of region [metric]
+#
+#        kappa - Ellipticity, 1 for a circle
+#        delta - Triangularity, 0 for circle
+#        b     - Indentation ("bean" shape), 0 for circle
+#
+#        ss    - Shafranov shift [metric]
+#
+#        Bt0   - Toroidal magnetic field on axis [T]. Varies as 1/R
+#        Bp0   - Poloidal field at outboard midplane [T]
+#
+#        Outputs
+#        -------
+#
+#        Assigns member variables
+#
+#        x, y    - Symbols for x and y coordinates
+#
+#        R (x,y)
+#        Z (x,y)
+#
+#        """
+#
+#        xin = symbols("xin") # xin=x/psiwidth
+#        self.zperiod = zperiod
+#
+#        # Have we calculated metric components yet?
+#        self.metric_is_set = False
+#
+#        # Minor radius as function of xin
+#        rminx = rmin + (xin-0.5)*dr
+#
+#        # Analytical expression for R and Z coordinates as function of x and y
+#        self.Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-xin)*(dr/rmin)
+#        self.Zxy = kappa * rminx * sin(y)
+#
+#        # Toroidal magnetic field
+#        self.Btxy = Bt0 * Rmaj / self.Rxy
+#
+#        # Poloidal field. dx constant, so set poloidal field
+#        # at outboard midplane (y = 0)
+#        # NOTE: Approximate calculation
+#
+#        # Distance between flux surface relative to outboard midplane.
+#        expansion = (1 - ss/rmin)*cos(y)/(1 - (ss/rmin))
+#
+#        self.Bpxy = Bp0 * ((Rmaj + rmin) / self.Rxy) / expansion
+#        self.B = sqrt(self.Btxy**2 + self.Bpxy**2)
+#
+#        # Calculate hthe
+#        self.hthe = sqrt(diff(self.Rxy, y)**2 + diff(self.Zxy, y)**2)
+#        try:
+#            self.hthe = trigsimp(self.hthe)
+#        except ValueError:
+#            pass
+#
+#        # calculate width in psi
+#        drdxin = diff(self.Rxy, xin).subs(y, 0)
+#        dpsidr = (self.Bpxy * self.Rxy).subs(y, 0)
+#        self.psiwidth = integrate(dpsidr * drdxin, (xin, 0, 1))
+#
+#        # Field-line pitch
+#        nu = self.Btxy * self.hthe / (self.Bpxy * self.Rxy)
+#
+#        # Shift angle
+#        # NOTE: Since x has a range [0,1] this could be done better
+#        # than ignoring convergence conditions
+#        print(nu)
+#        self.zShift = integrate(nu, (y,0,y), conds='none')
+#
+#        # Safety factor
+#        self.shiftAngle = self.zShift.subs(y, 2*pi) - self.zShift.subs(y, 0)
+#        self.q = self.shiftAngle/2/pi
+#
+#        # Integrated shear
+#        self.I = diff(self.zShift.subs(xin, x/self.psiwidth), x)
+#
+#        # X has a range [0,psiwidth], and y [0,2pi]
+#        self.x = x
+#        self.y = y
+#
+#        # Convert all "x" symbols from flux to [0,1]
+#        # Then convert "xin" (which is already [0,1]) to "x"
+#        xsub = metric.x * self.psiwidth
+#
+#        self.q = self.q.subs(x, xsub).subs(xin, x)
+#        self.zShift = self.zShift.subs(x, xsub).subs(xin, x)
+#        self.nu = self.nu.subs(x, xsub).subs(xin, x)
+#        self.Rxy = self.Rxy.subs(x, xsub).subs(xin, x)
+#        self.Zxy = self.Zxy.subs(x, xsub).subs(xin, x)
+#        self.hthe = self.hthe.subs(x, xsub).subs(xin, x)
+#        self.Btxy = self.Btxy.subs(x, xsub).subs(xin, x)
+#        self.Bpxy = self.Bpxy.subs(x, xsub).subs(xin, x)
+#        self.Bxy = self.Bxy.subs(x, xsub).subs(xin, x)
+#        self.sinty = self.sinty.subs(x, xsub).subs(xin, x)
+#
+#        # Extra expressions to add to grid file
+#        self._extra = {}
+#
+#        # Calculate metric terms
+#        self.metric()
