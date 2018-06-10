@@ -58,7 +58,7 @@ def DDY(f):
     return diff(f, metric.y)
 
 def DDZ(f):
-    return diff(f, metric.z)
+    return diff(f, metric.z)*metric.zperiod
 
 
 def D2DX2(f):
@@ -68,7 +68,7 @@ def D2DY2(f):
     return diff(f, metric.y, 2)
 
 def D2DZ2(f):
-    return diff(f, metric.z, 2)
+    return diff(f, metric.z, 2)*metric.zperiod**2
 
 
 def D2DXDY(f):
@@ -393,6 +393,7 @@ class BaseTokamak(object):
         metric.B = self.Bxy
 
         metric.psiwidth = self.psiwidth
+        metric.zperiod = self.zperiod
 
         self.metric_is_set = True
 
@@ -403,9 +404,9 @@ class BaseTokamak(object):
         if not self.metric_is_set:
             raise ValueError("Error: metric has not been calculated yet, so cannot print")
 
-        print("dx = "+exprToStr(self.psiwidth)+"/(nx-2*mxg)")
+        print("dx = "+exprToStr(metric.psiwidth)+"/(nx-2*mxg)")
         print("dy = 2.*pi/ny")
-        print("dz = 2.*pi/nz")
+        print("dz = 2.*pi/nz/"+exprToStr(metric.zperiod))
         print("g11 = "+exprToStr(metric.g11))
         print("g22 = "+exprToStr(metric.g22))
         print("g33 = "+exprToStr(metric.g33))
@@ -420,6 +421,8 @@ class BaseTokamak(object):
         print("g_23 = "+exprToStr(metric.g_23))
         print("J = "+exprToStr(metric.J))
         print("Bxy = "+exprToStr(metric.B))
+        print("Lx = "+exprToStr(metric.psiwidth))
+        print("Lz = "+exprToStr((2.*pi*self.R/metric.zperiod).evalf()))
 
 ##################################
 
@@ -430,7 +433,7 @@ class SimpleTokamak(BaseTokamak):
     NOTE: This is NOT an equilibrium calculation. The input
     is intended solely for testing with MMS
     """
-    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, q = lambda x:2+x**2):
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, q = lambda x:2+x**2):
         """
         R    - Major radius [metric]
 
@@ -458,6 +461,7 @@ class SimpleTokamak(BaseTokamak):
 
         self.x = x
         self.y = y
+        self.zperiod = zperiod
 
         self.R = R
 
@@ -467,7 +471,7 @@ class SimpleTokamak(BaseTokamak):
         self.r = R * eps
 
         # Approximate poloidal field for radial width calculation
-        Bp0 = Bt * self.r / (q(psiN0) * self.R)
+        Bp0 = Bt * self.r*psiN0 / (q(psiN0) * self.R)
 
         # dpsi = Bp * R * dr  -- width of the box in psi space
         self.psiwidth = Bp0 * self.R * self.dr
