@@ -151,9 +151,6 @@ int RKGenericSolver::run() {
     
     /// Call the output step monitor function
     if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;

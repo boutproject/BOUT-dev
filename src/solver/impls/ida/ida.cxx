@@ -229,8 +229,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
