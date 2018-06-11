@@ -159,7 +159,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
 
 def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
-               new_names=False, metric2d=True):
+               new_names=False, metric2d=True, format="NETCDF3_64BIT"):
     """Write FCI maps to BOUT++ grid file
 
     Parameters
@@ -176,6 +176,8 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         Write "g_yy" rather than "g_22"
     metric2d : bool, optional
         Output only 2D metrics
+    format : str
+        Specifies file format to use, passed to boutdata.DataFile
 
     Returns
     -------
@@ -234,7 +236,7 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         metric["Rxy"] = maps["R"][:,:,0]
         metric["Bxy"] = Bmag[:,:,0]
 
-    with bdata.DataFile(gridfile, write=True, create=True) as f:
+    with bdata.DataFile(gridfile, write=True, create=True, format=format) as f:
         ixseps = nx+1
         f.write('nx', nx)
         f.write('ny', ny)

@@ -91,7 +91,7 @@ class DataFile:
         truncated). Default is read-only mode
     format : str, optional
         Name of a filetype to use (e.g. ``NETCDF3_CLASSIC``,
-        ``NETCDF4``, ``HDF5``)
+        ``NETCDF3_64BIT``, ``NETCDF4``, ``HDF5``)
 
     TODO
     ----
@@ -104,7 +104,15 @@ class DataFile:
     """
     impl = None
 
-    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
+    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_64BIT'):
+        """
+
+        NetCDF formats are described here: http://unidata.github.io/netcdf4-python/
+        - NETCDF3_CLASSIC   Limited to 2.1Gb files
+        - NETCDF3_64BIT_OFFSET or NETCDF3_64BIT is an extension to allow larger file sizes
+        - NETCDF3_64BIT_DATA adds 64-bit integer data types and 64-bit dimension sizes
+        - NETCDF4 and NETCDF4_CLASSIC use HDF5 as the disk format
+        """
         if filename is not None:
             if filename.split('.')[-1] in ('hdf5', 'hdf', 'h5'):
                 self.impl = DataFile_HDF5(
