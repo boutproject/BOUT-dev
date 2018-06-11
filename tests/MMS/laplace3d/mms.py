@@ -7,7 +7,7 @@ from sys import exit
 global metric
 
 # Define non-trivial metrics
-geometry = SimpleTokamak(zperiod=600)
+geometry = SimpleTokamak(zperiod=600, r0=.0001, q=lambda x: .5+0.1*x)
 #geometry = ShapedTokamak()
 #geometry = ShapedTokamak(Rmaj=2., rmin=.2, dr=0.02)
 
