@@ -289,6 +289,9 @@ class BaseTokamak(object):
         self._extra
     """
 
+    psiwidth = None
+    r0 = None
+
     def __init__(self):
         raise ValueError("Error: An instance of BaseTokamak should never be created, use a derived class like SimpleTokamak or ShapedTokamak instead")
 
@@ -395,6 +398,21 @@ class BaseTokamak(object):
         metric.psiwidth = self.psiwidth
         metric.zperiod = self.zperiod
 
+        # normalize lengths
+        if self.r0 is not None:
+            metric.g11 *= self.r0**2
+            metric.g22 *= self.r0**2
+            metric.g33 *= self.r0**2
+            metric.g12 *= self.r0**2
+            metric.g13 *= self.r0**2
+            metric.g23 *= self.r0**2
+            metric.g_11 /= self.r0**2
+            metric.g_22 /= self.r0**2
+            metric.g_33 /= self.r0**2
+            metric.g_12 /= self.r0**2
+            metric.g_13 /= self.r0**2
+            metric.g_23 /= self.r0**2
+
         self.metric_is_set = True
 
     def print_mesh(self):
@@ -433,7 +451,7 @@ class SimpleTokamak(BaseTokamak):
     NOTE: This is NOT an equilibrium calculation. The input
     is intended solely for testing with MMS
     """
-    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, q = lambda x:2+x**2):
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda x:2+x**2):
         """
         R    - Major radius [metric]
 
@@ -448,6 +466,7 @@ class SimpleTokamak(BaseTokamak):
         
         psiN0- Normalized poloidal flux of inner edge of grid
 
+        r0   - Length-scale to normalize metric components (default 1m)
 
         Coordinates:
         x - Radial, [0,psiwidth], x=psi-psi_inner so dx=dpsi but x=0 at the inner edge of the grid
@@ -462,6 +481,7 @@ class SimpleTokamak(BaseTokamak):
         self.x = x
         self.y = y
         self.zperiod = zperiod
+        self.r0 = r0
 
         self.R = R
 
