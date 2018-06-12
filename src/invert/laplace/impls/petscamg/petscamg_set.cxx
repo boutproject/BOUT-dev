@@ -54,17 +54,28 @@ void LaplacePetscAmg::settingSolver(int kflag){
   
   if(soltype == "direct") {
     KSPSetType(ksp,KSPPREONLY);
-    //    PCSetType(pc,PCLU);
-    PCSetType(pc,PCBJACOBI);
+    if(xNP*zNP == 1) {
+      PCSetType(pc,PCLU);
+    }
+    else {
+      PCSetType(pc,PCBJACOBI);
+      int *blks = new int[Nx_global];
+      for(int i=0;i<Nx_global;i++) blks[i] = Nz_local;
+      PCBJacobiSetTotalBlocks(pc,Nx_global,blks);
+      delete [] blks;
+    }
   }
   else {
     KSPSetType( ksp, KSPGMRES );
     KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
     if(soltype == "gmres") {
       PCSetType(pc,PCBJACOBI);
+      int *blks = new int[Nx_global];
+      for(int i=0;i<Nx_global;i++) blks[i] = Nz_local;
+      PCBJacobiSetTotalBlocks(pc,Nx_global,blks);
+      delete [] blks;
     }
-    else {
-      
+    else { 
       if(soltype == "gamg" ) {
 	PCSetType(pc,PCGAMG);
       }
@@ -110,18 +121,20 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   output <<"solvs"<<"N="<<yindex<<"(After set)"<<endl;
   
   int ind,i2,i,k,k2;
-  PetscScalar val;
+  PetscScalar val,area;
   // mxstart = xgstart;
   // mzstart = zgstart;
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (i=0; i < Nx_local; i++) {
+      i2 = i + mxstart;
+      area = coords->dx(i2, yindex)*coords->dz;
       for (k=0; k < Nz_local; k++) {
         ind = gindices[(i+lxs)*nzt+k+lzs];
         val = 0.;
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
       
-        val = rhs(i+mxstart,k+mzstart);
+        val = rhs(i+mxstart,k+mzstart)*area;
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
       }
     }
@@ -129,12 +142,14 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   else {
     // Read initial guess into local array, ignoring guard cells
     for (i=0; i < Nx_local; i++) {
+      i2 = i + mxstart;
+      area = coords->dx(i2, yindex)*coords->dz;
       for (k=0; k < Nz_local; k++) {
         ind = gindices[(i+lxs)*nzt+k+lzs];
         val = x0(i+mxstart,k+mzstart);
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
       
-        val = rhs(i+mxstart,k+mzstart);
+        val = rhs(i+mxstart,k+mzstart)*area;
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
       }
     }
@@ -186,14 +201,17 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     }
     for(k = 0;k < Nz_local;k++) {
       k2 = k + mzstart;
+      area = coords->dx(i2, yindex)*coords->dz;
       ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
       ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
       dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
       dval -= (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
 	       + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
+      dval *= area;
       output <<"SS "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
       val = -tval[k+lzs]*dval;
       dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
+      dval *= area;
       output <<"SS0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val -= dval*tval[nzt-1];
       else val -= dval*tval[k-1];
@@ -243,14 +261,17 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     }
     for(k = 0;k < Nz_local;k++) {
       k2 = k+mzstart;
+      area = coords->dx(i2, yindex)*coords->dz;
       ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
       ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
       dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
       dval += (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
                    + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
+      dval *= area;
       output <<"SF "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
       val = -tval[k+lzs]*dval;
       dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
+      dval *= area;
       output <<"SF0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val += dval*tval[nzt-1];
       else val += dval*tval[k-1];
