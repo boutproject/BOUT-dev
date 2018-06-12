@@ -25,6 +25,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    mesh->createDefaultRegions();
 
     mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2));
     mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2));
@@ -38,9 +39,9 @@ protected:
       for (auto &r : mesh->getBoundaries()) {
         delete r;
       }
-      delete mesh;
-      mesh = nullptr;
     }
+    delete mesh;
+    mesh = nullptr;
   }
 
 public:
