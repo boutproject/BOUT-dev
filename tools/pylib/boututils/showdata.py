@@ -41,7 +41,7 @@ pause = False
 def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
              movie=0, fps=28, dpi=200, intv=1, Ncolors=25, x=[], y=[],
              global_colors=False, symmetric_colors=False, hold_aspect=False,
-             cmap=None, clear_between_frames=None, return_animation=False):
+             cmap=None, clear_between_frames=None, return_animation=False, window_title=""):
     """A Function to animate time dependent data from BOUT++
 
     To animate multiple variables on different axes:
@@ -126,6 +126,8 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         - False - no plots will clear between frames
     return_animation : bool
         Return the matplotlib animation instance
+    window_title : str
+        Give a title for the animation window
 
     TODO
     ----
@@ -490,7 +492,7 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         raise ValueError('too many variables...')
 
 
-    fig = plt.figure(figsize=(w,h))
+    fig = plt.figure(window_title, figsize=(w,h))
     title = fig.suptitle(r' ', fontsize=14  )
 
     # Initiate all list variables required for plotting here
