@@ -38,7 +38,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
+def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_array=None,
              movie=0, fps=28, dpi=200, intv=1, Ncolors=25, x=[], y=[],
              global_colors=False, symmetric_colors=False, hold_aspect=False,
              cmap=None, clear_between_frames=None, return_animation=False, window_title=""):
@@ -98,6 +98,10 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         Which axes to plot as a polar plot
     tslice : list of int
         Use these time values from a dump file (see above)
+    t_array : array
+        Pass in t_array using this argument if collect("t_array") will not give
+        the right output, e.g. because collect would need a 'path' argument or
+        we have taken a slice of the t-dimension
     movie : int
         If 1, save the animation to file
     fps : int
@@ -363,14 +367,17 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
 
     # Collect time data from file
     if (tslice == 0):           # Only wish to collect time data if it matches
-        try:
-            t = collect('t_array')
-            if t is None:
-                raise ValueError("t_array is None")
-            if len(t) != Nt[0][0]:
-                raise ValueError("t_array is wrong size")
-        except:
-            t = linspace(0,Nt[0][0], Nt[0][0])
+        if t_array is not None:
+            t = t_array
+        else:
+            try:
+                t = collect('t_array')
+                if t is None:
+                    raise ValueError("t_array is None")
+                if len(t) != Nt[0][0]:
+                    raise ValueError("t_array is wrong size")
+            except:
+                t = linspace(0,Nt[0][0], Nt[0][0])
 
     # Obtain number of frames
     Nframes = int(Nt[0][0]/intv)
