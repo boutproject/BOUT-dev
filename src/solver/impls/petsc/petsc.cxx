@@ -368,9 +368,15 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     /* number of degrees (variables) at each grid point */
     PetscInt dof = n3Dvars();
 
-    /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
-    PetscInt sw = 2;
-    PetscInt cols = sw*2*3+1;
+    // Maximum allowable size of stencil in x is the number of guard cells
+    PetscInt stencil_width = mesh->xstart;
+    // This is the stencil in each direction (*2) along each dimension
+    // (*3), plus the point itself. Not sure if this is correct
+    // though, on several levels:
+    //   1. Ignores corner points used in e.g. brackets
+    //   2. Could have different stencil widths in each dimension
+    //   3. FFTs couple every single point together
+    PetscInt cols = stencil_width*2*3+1;
     PetscInt prealloc; // = cols*dof;
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
