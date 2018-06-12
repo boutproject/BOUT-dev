@@ -693,14 +693,23 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
+BOUT_OMP(parallel)
+{
       stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
 //TODO
-      for (const auto &i : result.region(region)) {
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
+        //s.c = var[i];
+        //s.p = var[i.xp()];
+        //s.m = var[i.xm()];
+        //s.pp = var[i.offset(2, 0, 0)];
+        //s.mm = var[i.offset(-2, 0, 0)];
+        s.mm = var[offset.xmm(i)];
+        s.m = var[offset.xm(i)];
         s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+        s.p = var[offset.xp(i)];
+        s.pp = var[offset.xpp(i)];
 
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
           // Producing a stencil centred around a lower X value
@@ -713,17 +722,28 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
         }
 
         result[i] = func(s);
-      }
+      //}
+      );
+}
     } else {
       // Only one guard cell, so no pp or mm values
 //TODO
-      for (const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
+BOUT_OMP(parallel)
+{
+      stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
+        //s.c = var[i];
+        //s.p = var[i.xp()];
+        //s.m = var[i.xm()];
+        //s.pp = nan("");
+        //s.mm = nan("");
         s.mm = nan("");
+        s.m = var[offset.xm(i)];
+        s.c = var[i];
+        s.p = var[offset.xp(i)];
+        s.pp = nan("");
 
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
           // Producing a stencil centred around a lower X value
@@ -736,7 +756,9 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
         }
 
         result[i] = func(s);
-      }
+      //}
+      );
+}
     }
 
   } else {
@@ -746,29 +768,45 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
 //TODO
-      for (const auto &i : result.region(region)) {
-        stencil s;
+BOUT_OMP(parallel)
+{
+      stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
+        //s.c = var[i];
+        //s.p = var[i.xp()];
+        //s.m = var[i.xm()];
+        //s.pp = var[i.offset(2, 0, 0)];
+        //s.mm = var[i.offset(-2, 0, 0)];
+        s.mm = var[offset.xmm(i)];
+        s.m = var[offset.xm(i)];
         s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+        s.p = var[offset.xp(i)];
+        s.pp = var[offset.xpp(i)];
 
         result[i] = func(s);
-      }
+      //}
+      );
+}
     } else {
       // Only one guard cell, so no pp or mm values
 //TODO
-      for (const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
+BOUT_OMP(parallel)
+{
+      stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
+      //for (const auto &i : result.region(region)) {
+      BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
         s.mm = nan("");
+        s.m = var[offset.xm(i)];
+        s.c = var[i];
+        s.p = var[offset.xp(i)];
+        s.pp = nan("");
 
         result[i] = func(s);
-      }
+      );
+}
     }
   }
 
@@ -1175,20 +1213,31 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-  BOUT_OMP(parallel)
-  {
-    stencil s;
-    IndexOffset<Ind3D> offset(*mesh);
-    //for (const auto &i : result.region(region)) {
-    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
-      s.mm = var[offset.zmm(i)];
-      s.m = var[offset.zm(i)];
-      s.c = var[i];
-      s.p = var[offset.zp(i)];
-      s.pp = var[offset.zpp(i)];
+///  BOUT_OMP(parallel)
+///  {
+///    stencil s;
+///    IndexOffset<Ind3D> offset(*mesh);
+///    //for (const auto &i : result.region(region)) {
+///    BLOCK_REGION_LOOP_PARALLEL_SECTION( mesh->getRegion3D(region), i,
+///      s.mm = var[offset.zmm(i)];
+///      s.m = var[offset.zm(i)];
+///      s.c = var[i];
+///      s.p = var[offset.zp(i)];
+///      s.pp = var[offset.zpp(i)];
+///
+///      result[i] = func(s);
+///    );
+///  }
 
-      result[i] = func(s);
-    );
+  stencil s;
+  for (const auto &i : result.region(region)) {
+    s.c = var[i];
+    s.p = var[i.zp()];
+    s.m = var[i.zm()];
+    s.pp = var[i.offset(0, 0, 2)];
+    s.mm = var[i.offset(0, 0, -2)];
+
+    result[i] = func(s);
   }
 
   result.setLocation(diffloc);
