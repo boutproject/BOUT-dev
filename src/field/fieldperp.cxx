@@ -98,10 +98,10 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
     throw BoutException("FieldPerp: Assignment from non-finite BoutReal\n");
 #endif
 
-  //for (const auto &i : (*this))
-  BLOCK_REGION_LOOP(this->getMesh()->getRegionPerp("RGN_ALL"), i,
+  //BLOCK_REGION_LOOP(fieldmesh->getRegionPerp("RGN_ALL"), i,
+  for (const auto &i : (*this))
     (*this)[i] = rhs;
-  );
+  //);
 
   return *this;
 }

@@ -46,7 +46,9 @@
 #include <bout/assert.hxx>
 #include <bout/scorepwrapper.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+/// Constructor
+Field2D::Field2D(Mesh *localmesh) 
+    : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -225,10 +227,10 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   if (!finite(rhs))
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
-  //for (const auto &i : (*this))
-  BLOCK_REGION_LOOP( fieldmesh->getRegion2D("RGN_ALL"), i,
+  //BLOCK_REGION_LOOP( fieldmesh->getRegion2D("RGN_ALL"), i,
+  for (const auto &i : (*this))
     (*this)[i] = rhs;
-  );
+  //);
 
   return *this;
 }
