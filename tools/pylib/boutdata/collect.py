@@ -68,6 +68,40 @@ def findVar(varname, varlist):
               "' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
+def check_range(r, low, up, name="range"):
+    """ Utility function to check index ranges"""
+    r2 = r
+    if r is not None:
+        try:
+            n = len(r2)
+        except:
+            # No len attribute, so probably a single number
+            r2 = [r2, r2]
+        if (len(r2) < 1) or (len(r2) > 2):
+            print("WARNING: "+name+" must be [min, max]")
+            r2 = None
+        else:
+            if len(r2) == 1:
+                r2 = [r2, r2]
+            if r2[0] < 0 and low >= 0:
+                r2[0] += (up-low+1)
+            if r2[1] < 0 and low >= 0:
+                r2[1] += (up-low+1)
+            if r2[0] < low:
+                r2[0] = low
+            if r2[0] > up:
+                r2[0] = up
+            if r2[1] < low:
+                r2[1] = low
+            if r2[1] > up:
+                r2[1] = up
+            if r2[0] > r2[1]:
+                tmp = r2[0]
+                r2[0] = r2[1]
+                r2[1] = tmp
+    else:
+        r2 = [low, up]
+    return r2
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             yguards=False, xguards=True, info=True, prefix="BOUT.dmp",
@@ -141,44 +175,70 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         except KeyError:
             myg = 0
             print("MYG not found, setting to {}".format(myg))
-            
-        if tind is not None or xind is not None or yind is not None or zind is not None:
-            raise ValueError("tind, xind, yind, zind arguments are not implemented yet for single (parallel) data file")
-        
-        if xguards:
-            xstart = 0
-            xlim = None
-        else:
-            xstart = mxg
-            if mxg > 0:
-                xlim = -mxg
-            else:
-                xlim = None
-        if yguards:
-            ystart = 0
-            ylim = None
-        else:
-            ystart = myg
-            if myg > 0:
-                ylim = -myg
-            else:
-                ylim = None
 
-        data = f.read(varname)
+        if xguards:
+            nx = f["nx"]
+        else:
+            nx = f["nx"] - 2*mxg
+        if yguards:
+            ny = f["ny"] + 2*myg
+        else:
+            ny = f["ny"]
+        nz = f["MZ"]
+        t_array = f.read("t_array")
+        if t_array is None:
+            nt = 1
+            t_array = np.zeros(1)
+        else:
+            try:
+                nt = len(t_array)
+            except TypeError:
+                # t_array is not an array here, which probably means it was a
+                # one-element array and has been read as a scalar.
+                nt = 1
+        
+        xind = check_range(xind, 0, nx-1, "xind")
+        yind = check_range(yind, 0, ny-1, "yind")
+        zind = check_range(zind, 0, nz-1, "zind")
+        tind = check_range(tind, 0, nt-1, "tind")
+
+        tstart = tind[0]
+        tlim = tind[1] + 1
+        if xguards:
+            xstart = xind[0]
+            xlim = xind[1] + 1
+        else:
+            xstart = xind[0] + mxg
+            xlim = xind[1] + mxg + 1
+        if yguards:
+            ystart = yind[0]
+            ylim = yind[1] + 1
+        else:
+            ystart = yind[0] + myg
+            ylim = yind[1] + myg + 1
+        zstart = zind[0]
+        zlim = zind[1] + 1
+
         attributes = f.attributes(varname)
-        if ndims == 2:
+        if ndims == 0:
+            data = f.read(varname)
+        elif ndims == 1:
+            data = f.read(varname, ranges=[tstart, tlim])
+        elif ndims == 2:
             # Field2D
-            data = data[xstart:xlim, ystart:ylim]
+            data = f.read(varname, ranges=[xstart, xlim, ystart, ylim])
         elif ndims == 3:
             if dimens[2] == 'z':
                 # Field3D
-                data = data[xstart:xlim, ystart:ylim, :]
+                data = f.read(varname, ranges=[xstart, xlim, ystart, ylim, zstart, zlim])
             else:
                 # evolving Field2D
-                data = data[:, xstart:xlim, ystart:ylim]
+                data = f.read(varname, ranges=[tstart, tlim, xstart, xlim, ystart, ylim])
         elif ndims == 4:
             # evolving Field3D
-            data = data[:, xstart:xlim, ystart:ylim, :]
+            data = f.read(varname, ranges=[tstart, tlim, xstart, xlim, ystart, ylim, zstart, zlim])
+        else:
+            raise ValueError("Don't know what to do with variable with ndims="+str(ndims))
         return BoutArray(data, attributes=attributes)
     nfiles = len(file_list)
 
@@ -282,42 +342,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         ny = mysub * nype + 2*myg
     else:
         ny = mysub * nype
-
-    # Check ranges
-
-    def check_range(r, low, up, name="range"):
-        r2 = r
-        if r is not None:
-            try:
-                n = len(r2)
-            except:
-                # No len attribute, so probably a single number
-                r2 = [r2, r2]
-            if (len(r2) < 1) or (len(r2) > 2):
-                print("WARNING: "+name+" must be [min, max]")
-                r2 = None
-            else:
-                if len(r2) == 1:
-                    r2 = [r2, r2]
-                if r2[0] < 0 and low >= 0:
-                    r2[0] += (up-low+1)
-                if r2[1] < 0 and low >= 0:
-                    r2[1] += (up-low+1)
-                if r2[0] < low:
-                    r2[0] = low
-                if r2[0] > up:
-                    r2[0] = up
-                if r2[1] < low:
-                    r2[1] = low
-                if r2[1] > up:
-                    r2[1] = up
-                if r2[0] > r2[1]:
-                    tmp = r2[0]
-                    r2[0] = r2[1]
-                    r2[1] = tmp
-        else:
-            r2 = [low, up]
-        return r2
 
     xind = check_range(xind, 0, nx-1, "xind")
     yind = check_range(yind, 0, ny-1, "yind")
