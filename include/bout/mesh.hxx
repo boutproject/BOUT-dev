@@ -709,7 +709,7 @@ class Mesh {
     return indexLookup3Dto2D[ind3D.ind];
   }
   /// Converts an IndPerp and an int to a raw int representing a 3D index using a lookup -- to be used with care
-  int mapPerpto3D(const IndPerp &indPerp, const int jy){
+  int mapPerpto3D(const IndPerp &indPerp, int jy){
     return indexLookupPerpto3D(indPerp.ind,jy);
   }
   
