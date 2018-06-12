@@ -697,14 +697,7 @@ BOUT_OMP(parallel)
 {
       stencil s;
       IndexOffset<Ind3D> offset(*mesh);
-//TODO
-      //for (const auto &i : result.region(region)) {
       BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
-        //s.c = var[i];
-        //s.p = var[i.xp()];
-        //s.m = var[i.xm()];
-        //s.pp = var[i.offset(2, 0, 0)];
-        //s.mm = var[i.offset(-2, 0, 0)];
         s.mm = var[offset.xmm(i)];
         s.m = var[offset.xm(i)];
         s.c = var[i];
@@ -722,23 +715,15 @@ BOUT_OMP(parallel)
         }
 
         result[i] = func(s);
-      //}
       );
 }
     } else {
       // Only one guard cell, so no pp or mm values
-//TODO
 BOUT_OMP(parallel)
 {
       stencil s;
       IndexOffset<Ind3D> offset(*mesh);
-      //for (const auto &i : result.region(region)) {
       BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
-        //s.c = var[i];
-        //s.p = var[i.xp()];
-        //s.m = var[i.xm()];
-        //s.pp = nan("");
-        //s.mm = nan("");
         s.mm = nan("");
         s.m = var[offset.xm(i)];
         s.c = var[i];
@@ -756,7 +741,6 @@ BOUT_OMP(parallel)
         }
 
         result[i] = func(s);
-      //}
       );
 }
     }
@@ -767,18 +751,11 @@ BOUT_OMP(parallel)
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-//TODO
 BOUT_OMP(parallel)
 {
       stencil s;
       IndexOffset<Ind3D> offset(*mesh);
-      //for (const auto &i : result.region(region)) {
       BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
-        //s.c = var[i];
-        //s.p = var[i.xp()];
-        //s.m = var[i.xm()];
-        //s.pp = var[i.offset(2, 0, 0)];
-        //s.mm = var[i.offset(-2, 0, 0)];
         s.mm = var[offset.xmm(i)];
         s.m = var[offset.xm(i)];
         s.c = var[i];
@@ -786,17 +763,14 @@ BOUT_OMP(parallel)
         s.pp = var[offset.xpp(i)];
 
         result[i] = func(s);
-      //}
       );
 }
     } else {
       // Only one guard cell, so no pp or mm values
-//TODO
 BOUT_OMP(parallel)
 {
       stencil s;
       IndexOffset<Ind3D> offset(*mesh);
-      //for (const auto &i : result.region(region)) {
       BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
         s.mm = nan("");
         s.m = var[offset.xm(i)];
