@@ -21,7 +21,7 @@ from boututils.boutarray import BoutArray
 import numpy
 import os
 
-def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice=None, xslice=None, yslice=None, zslice=None, singleprecision=False):
+def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None, xind=None, yind=None, zind=None, singleprecision=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -37,18 +37,18 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice
     format : str
         format argument passed to DataFile
         default "NETCDF4"
-    tslice : [int, int, int]
-        lower, upper, stride values to slice the t-dimension
+    tind : slice, int, or [int, int, int]
+        tind argument passed to collect
         default None
-    xslice : [int, int, int]
-        lower, upper, stride values to slice the x-dimension
+    xind : slice, int, or [int, int, int]
+        xind argument passed to collect
         default None
-    yslice : [int, int, int]
-        lower, upper, stride values to slice the y-dimension
+    yind : slice, int, or [int, int, int]
+        yind argument passed to collect
         default None
-    zslice : [int, int, int]
-        lower, upper, stride values to slice the z-dimension
-        default [None, None, None]
+    zind : slice, int, or [int, int, int]
+        zind argument passed to collect
+        default None
     singleprecision : bool
         If true convert data to single-precision floats
         default False
@@ -58,27 +58,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice
     if os.path.isfile(fullpath):
         raise ValueError(fullpath+" already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
-    # Check *slice arguments, and make sure length is at least 3
-    def normalize_slice_argument(s, name):
-        try:
-            len(s)
-        except ValueError:
-            # Make into a list if it is not one already
-            s = [s]
-        else:
-            # Make sure is a list not a tuple, etc., so that we can concatenate it
-            s = list(s)
-        if len(s) < 3:
-            s += [None]*(3-len(s))
-        elif len(s) > 3:
-            raise ValueError("Can provide at most 3 arguments for "+str(name))
-    tslice = normalize_slice_argument(tslice, "tslice")
-    xslice = normalize_slice_argument(xslice, "xslice")
-    yslice = normalize_slice_argument(yslice, "yslice")
-    zslice = normalize_slice_argument(zslice, "zslice")
-
     # useful object from BOUT pylib to access output data
-    outputs = BoutOutputs(datadir, info=False, xguards=True, yguards=True)
+    outputs = BoutOutputs(datadir, info=False, xguards=True, yguards=True, tind=tind, xind=xind, yind=yind, zind=zind)
     outputvars = outputs.keys()
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
@@ -90,24 +71,10 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice
 
             var = outputs[varname]
             if singleprecision:
-                var = BoutArray(numpy.float32(var), var.attributes)
-            if var.attributes["bout_type"] == "Field3D_t":
-                var = var[tslice[0]:tslice[1]:tslice[2], xslice[0]:xslice[1]:xslice[2], yslice[0]:yslice[1]:yslice[2], zslice[0]:zslice[1]:zslice[2]]
-            elif var.attributes["bout_type"] == "Field2D_t":
-                var = var[tslice[0]:tslice[1]:tslice[2], xslice[0]:xslice[1]:xslice[2], yslice[0]:yslice[1]:yslice[2]]
-            elif var.attributes["bout_type"] == "scalar_t":
-                var = var[tslice[0]:tslice[1]:tslice[2]]
-            elif var.attributes["bout_type"] == "Field3D":
-                var = var[xslice[0]:xslice[1]:xslice[2], yslice[0]:yslice[1]:yslice[2], zslice[0]:zslice[1]:zslice[2]]
-            elif var.attributes["bout_type"] == "Field2D":
-                var = var[xslice[0]:xslice[1]:xslice[2], yslice[0]:yslice[1]:yslice[2]]
-            else:
-                var = outputs[varname]
+                if not isinstance(var, int):
+                    var = BoutArray(numpy.float32(var), var.attributes)
 
-            if varname == "NXPE" or varname == "NYPE":
-                f.write(varname, 1)
-            else:
-                f.write(varname, var)
+            f.write(varname, var)
 
 if __name__=="__main__":
     # Call the squashoutput function using arguments from
@@ -130,22 +97,14 @@ if __name__=="__main__":
                 raise
     parser.add_argument("datadir", nargs='?', default=".")
     parser.add_argument("--outputname",default="BOUT.dmp.nc")
-    parser.add_argument("--trange", type=int, nargs='*', default=None)
-    parser.add_argument("--tslice", type=int_or_none, nargs='*', default=[None])
-    parser.add_argument("--xslice", type=int_or_none, nargs='*', default=[None])
-    parser.add_argument("--yslice", type=int_or_none, nargs='*', default=[None])
-    parser.add_argument("--zslice", type=int_or_none, nargs='*', default=[None])
+    parser.add_argument("--tind", type=int_or_none, nargs='*', default=[None])
+    parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
+    parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
+    parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
     parser.add_argument("--singleprecision", type=str_to_bool, default=True)
     args = parser.parse_args()
 
-    if args.trange is not None:
-        if len(args.trange) == 1:
-            # just pass an int if only one element
-            args.trange = args.trange[0]
-        elif len(args.trange) > 2:
-            # error
-            raise ValueError("Can give at most two arguments for trange")
     # Call the function, using command line arguments
-    squashoutput(datadir=args.datadir, outputname=args.outputname, trange=args.trange, tslice=args.tslice, xslice=args.xslice, yslice=args.yslice, zslice=args.zslice, singleprecision=args.singleprecision)
+    squashoutput(datadir=args.datadir, outputname=args.outputname, tind=args.tind, xind=args.xind, yind=args.yind, zind=args.zind, singleprecision=args.singleprecision)
 
     exit(0)
