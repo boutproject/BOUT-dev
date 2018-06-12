@@ -30,26 +30,28 @@
 
 #include "petscamg.hxx"
 
-//BoutReal soltime=0.0,settime=0.0;
+//BoutReal amgsoltime=0.0,amgsettime=0.0;
 
 LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   Laplacian(opt),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplacePetscAmg::LaplacePetscAmg(Options *opt)");
-  
+
+  // PetscInitialize(&argc,&args,(char*)0,help);
   // Get Options in Laplace Section
-  if (!opt) opts = Options::getRoot()->getSection("petscamg");
-  else opts=opt;
-  opts->get("rtol",rtol,pow(10.0,-8),true);
-  opts->get("atol",atol,pow(10.0,-20),true);
+  //  if (!opt) opts = Options::getRoot()->getSection("petscamg");
+  //  else opts=opt;
+  opts = Options::getRoot()->getSection("petscamg");
+  opts->get("rtol",rtol,pow(10.0,-15),true);
+  opts->get("atol",atol,pow(10.0,-25),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
-  opts->get("maxits",maxits,100000,true);
+  opts->get("maxits",maxits,200000,true);
   opts->get("rightpre",rightpre,0,true);
   opts->get("smtype",mgsm,1,true);
   opts->get("jacomega",omega,0.8,true);
-  opts->get("checking",fcheck,0,true);
-  opts->get("multigridlevel",mglevel,7,true);
+  opts->get("checking",fcheck,1,true);
+  opts->get("multigridlevel",mglevel,3,true);
   opts->get("solvertype",soltype,"gmres");
 
   // Initialize, allocate memory, etc.
@@ -71,6 +73,7 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   }
   
   commX = mesh->getXcomm();    // Where to get This mesh //
+
   MPI_Comm_size(commX,&xNP);
   MPI_Comm_rank(commX,&xProcI); 
   Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
@@ -95,7 +98,7 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
     output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
   }
 
-  int Nlogal,Nglobal,ig,jg,nzt,nxt,lxs,lzs,ll,lg;
+  int ig,jg,ll,lg;
   // Periodic boundary condition for z-direction
   // Nz_global = 0
   //
@@ -119,6 +122,10 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   }
   Nlocal = nxt*nzt;
   Nglobal = Nz_global*Nx_global;
+
+  if (mgcount == 0) {
+    output <<"NP="<<xNP<<"N="<<Nlocal<<"("<<Nglobal<<")"<<endl;
+  }
   gindices = new int[Nlocal];
 
   for(ig = 0;ig < Nx_local;ig++) {
@@ -188,12 +195,7 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   VecSetLocalToGlobalMapping(xs,mgmapping);
   VecSetFromOptions(xs);
   VecDuplicate(xs,&bs);
-  int diffpre,elemf;
   opts->get("diffpre",diffpre,0,true);
-  opts->get("elemf",elemf,0,true);
-  generateMatrixA(elemf);
-  if(diffpre > 0) generateMatrixP(elemf);
-  settingSolver(diffpre);
-     
+  opts->get("elemf",elemf,0,true);     
 }
 

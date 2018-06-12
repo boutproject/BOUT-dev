@@ -10,8 +10,8 @@ nz = 32
 dx = 1
 dz = 1
 
-[laplacexz]
-type = petsc   # Use PETSc implementation
+[laplace]
+type = petscamg   # Use PETSc implementation
 
 ksptype = gmres   # Linear iterative method
 

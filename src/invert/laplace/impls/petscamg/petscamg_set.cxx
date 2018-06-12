@@ -54,13 +54,14 @@ void LaplacePetscAmg::settingSolver(int kflag){
   
   if(soltype == "direct") {
     KSPSetType(ksp,KSPPREONLY);
-    PCSetType(pc,PCLU);
+    //    PCSetType(pc,PCLU);
+    PCSetType(pc,PCBJACOBI);
   }
   else {
     KSPSetType( ksp, KSPGMRES );
     KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
     if(soltype == "gmres") {
-      PCSetType(pc,PCILU);
+      PCSetType(pc,PCBJACOBI);
     }
     else {
       
@@ -85,7 +86,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
       PCGAMGSetNSmooths(pc,2);
     }
     if(rightpre) KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-    else          KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+    else         KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
 
   }
   KSPSetTolerances(ksp,rtol,atol,dtol,maxits);  
@@ -99,7 +100,15 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // Load initial guess x0 into xs and rhs into bs
   Mesh *mesh = rhs.getMesh();  // Where to get initializing LaplacePetscAmg
   Coordinates *coords = mesh->coordinates();
-  int yindex = rhs.getIndex();
+  yindex = rhs.getIndex();
+  output <<"solvs"<<"N="<<yindex<<"( Before gen)"<<endl;
+  generateMatrixA(elemf);
+  if(diffpre > 0) generateMatrixP(elemf);
+  output <<"solvs"<<"N="<<yindex<<"(After gen)"<<endl;
+
+  settingSolver(diffpre);
+  output <<"solvs"<<"N="<<yindex<<"(After set)"<<endl;
+  
   int ind,i2,i,k,k2;
   PetscScalar val;
   // mxstart = xgstart;
@@ -130,58 +139,68 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       }
     }
   }
+  output <<"solvs"<<"N="<<yindex<<"(After set Matrix)"<<endl;
+  VecAssemblyBegin(bs);
+  VecAssemblyEnd(bs);
+  //  VecView(bs,PETSC_VIEWER_STDOUT_WORLD);
+  // Assemble Trial Solution Vector
+  VecAssemblyBegin(xs);
+  VecAssemblyEnd(xs);
   // For the boundary conditions 
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
   if (mesh->firstX()) {
-    i2 = mesh->xstart;
+    i2 = mxstart;
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      if ( inner_boundary_flags & INVERT_SET ) {
-        // sEY THE VALUE guard cells specify gradient to set at inner boundary
+      //      if ( inner_boundary_flags & INVERT_SET ) {
+        // Set the value of guard cells specify gradient to set at inner boundary
 	// tval = df/dn = (v_ghost - v_in)/distance 
         for (k = 0; k < nzt; k++) {
 	  tval[k] = -x0(i2-1, k+mzstart-lzs)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
         }
-      }
-      else {
+	//   }
+	//else {
         // zero gradient inner boundary condition
-        for (int k = 0; k<nzt; k++) {
+        //for (int k = 0; k<nzt; k++) {
           // set inner guard cells
-          tval[k] = 0.0;
-        }
-      }
+        //  tval[k] = 0.0;
+	// }
+	// }
     }
     else {      // Dirichlet boundary condition
-      if ( inner_boundary_flags & INVERT_SET ) {
+      // if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at inner boundary
 	// tval = f = (v_ghost + v_in)/2.0
         for (int k = 0; k < nzt; k++) {
           tval[k] = 2.*x0(i2-1, k+mzstart-lzs); 
         // this is the value to set at the inner boundary
         }
-      }
-      else {
+	// }
+	//else {
         // zero value inner boundary condition
-        for (int k=0; k < nzt; k++) {
+	// for (int k=0; k < nzt; k++) {
           // set inner guard cells
-          tval[k] = 0.;
-        }
-      }
+        //  tval[k] = 0.;
+	// }
+	// }
     }
     for(k = 0;k < Nz_local;k++) {
       k2 = k + mzstart;
       ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      ddz_C = (C2(i2, yindex, k2+nzt) - C2(i2, yindex, k2-nzt)) /2./coords->dz/C1(i2, yindex, k2);
+      ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
       dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
       dval -= (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
-                   + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
-      val = -tval[k]*dval;
-      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/4.;
+	       + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
+      output <<"SS "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
+      val = -tval[k+lzs]*dval;
+      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
+      output <<"SS0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val -= dval*tval[nzt-1];
       else val -= dval*tval[k-1];
       if(lzs == 0 && k == nzt-1) val += dval*tval[0];
       else val += dval*tval[k+1];
       ind = gindices[k+lzs];
+      output <<"SS0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
       VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
     }  
   }
@@ -189,54 +208,56 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     i2 = mesh->xend;
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
-      if ( inner_boundary_flags & INVERT_SET ) {
+      //      if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at outer boundary
 	// tval = df/dn = (v_ghost - v_in)/distance 
         for (k= 0; k < nzt; k++) {
           tval[k] = x0(i2+1, k+mzstart-lzs)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
         // this is the value to set the gradient to at the outer boundary
         }
-      }
-      else {
+	//}
+	//else {
         // zero gradient outer boundary condition
-        for (k=0; k<nzt; k++) {
+        //for (k=0; k<nzt; k++) {
           // set outer guard cells
-          tval[k] = 0.;
-        }
-      }
+          //tval[k] = 0.;
+        //}
+	//}
     }
     else {
       // Dirichlet boundary condition
-      if ( outer_boundary_flags & INVERT_SET ) {
+      // if ( outer_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at outer boundary
         for (k=0; k< nzt; k++) {
-          int k2 = k-1;
           tval[k]=2.*x0(i2+1, k+mzstart-lzs); 
           // this is the value to set at the outer boundary
         }
-      }
-      else {
+	//}
+	//else {
         // zero value inner boundary condition
-        for (int k=0; k<nzt; k++) {
+        //for (int k=0; k<nzt; k++) {
           // set outer guard cells
-          tval[k] = 0.;
-        }
-      }
+          //tval[k] = 0.;
+        //}
+	// }
     }
     for(k = 0;k < Nz_local;k++) {
       k2 = k+mzstart;
       ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      ddz_C = (C2(i2, yindex, k2+nzt) - C2(i2, yindex, k2-nzt)) /2./coords->dz/C1(i2, yindex, k2);
+      ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
       dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
       dval += (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
                    + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
-      val = -tval[k]*dval;
-      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/4.;
+      output <<"SF "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
+      val = -tval[k+lzs]*dval;
+      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
+      output <<"SF0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val += dval*tval[nzt-1];
       else val += dval*tval[k-1];
       if(lzs == 0 && k == nzt-1) val -= dval*tval[0];
       else val -= dval*tval[k+1];
       ind = gindices[(nxt-1)*nzt+k+lzs];
+      output <<"SF0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
       VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
     }      
   }
@@ -244,14 +265,30 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // Assemble RHS Vector
   VecAssemblyBegin(bs);
   VecAssemblyEnd(bs);
+  //  VecView(bs,PETSC_VIEWER_STDOUT_WORLD);
 
-  // Assemble Trial Solution Vector
-  VecAssemblyBegin(xs);
-  VecAssemblyEnd(xs);
   
   // Solve the system
+  output <<"Before solvs"<<yindex<<"(After set)"<<endl;
   KSPSolve( ksp, bs, xs );
-  
+  output <<"After solvs"<<yindex<<"(After set)"<<endl;
+
+  if(fcheck) {
+    int its;
+    Vec rs;
+    PetscScalar norm;
+    PCType typepc;
+    PCGetType(pc,&typepc);
+    VecDuplicate(xs,&rs);
+    //    VecGhostUpdateBegin(xs,INSERT_VALUES,SCATTER_FORWARD);
+    // VecGhostUpdateEnd(xs,INSERT_VALUES,SCATTER_FORWARD);
+    MatResidual(MatA,bs,xs,rs);
+    //    VecView(rs,PETSC_VIEWER_STDOUT_WORLD);
+    VecNorm(rs,NORM_2,&norm);
+    KSPGetIterationNumber(ksp,&its);
+    output<<"Norm of error "<< (double)norm<< " iterations "<<its<<":"<<typepc<<endl;
+    VecDestroy(&rs);
+  }
   KSPConvergedReason reason;
   KSPGetConvergedReason( ksp, &reason );
   

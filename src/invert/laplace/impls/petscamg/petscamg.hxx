@@ -94,9 +94,9 @@ public:
   
 private:
   Field3D A,C1,C2,D; // ODE Coefficients
-  int Nx_local, Nx_global,Nlocal,Nz_local, Nz_global;
+  int Nx_local, Nx_global,Nlocal,Nz_local,Nz_global,Nglobal;
   // Local and global grid sizes
-  int mzstart,mxstart,lxs,lzs,nxt,nzt,Nglobal;
+  int mzstart,mxstart,lxs,lzs,nxt,nzt;
   int yindex; // y-position of the current solution phase
 
   /******* Start implementation ********/
@@ -108,10 +108,12 @@ private:
   Options *opts;
   BoutReal rtol,atol,dtol,omega;
   bool rightpre;
+  int diffpre,elemf;
   int maxits,mgsm,mglevel,fcheck,stypei;
   string soltype;  /* direct, gmres, gamg, boomermg, ml, kmg, ...  */
 
   /*********************************************************/
+  PetscLib lib;
   
   MPI_Comm commX;
   Mat MatA,MatP;

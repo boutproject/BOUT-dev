@@ -35,7 +35,6 @@ void LaplacePetscAmg::generateMatrixA(int kflag) {
   TRACE("LaplacePetscAmg::generateMatrixA(int)");
   
   // Set (fine-level) matrix entries
-
   Coordinates *coords = mesh->coordinates();
   int i,k,i2,k2,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
   BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd;
@@ -73,9 +72,11 @@ void LaplacePetscAmg::generateMatrixA(int kflag) {
 	}
       }
     }
+    MatCreateAIJ(commX,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,dzz,oz,ozz,&MatA );
   }
-  
-  MatCreateAIJ( commX,nn,nn,Nglobal,Nglobal,dz,dzz,oz,ozz, &MatA );                                
+  else { 
+    MatCreateAIJ(commX,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,NULL,oz,NULL,&MatA );
+  }
   MatSetFromOptions(MatA);
 
   
@@ -89,7 +90,7 @@ BOUT_OMP(for)
       k2m  = (k2+Nz_global-1)%nzt;
       
       ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      ddz_C = (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) /2./coords->dz/C1(i2, yindex, k2);
+      ddz_C = (C2(i2, yindex, k2p) - C2(i2, yindex, k2m))/2./coords->dz/C1(i2, yindex, k2);
       
       ddx = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex); 
                // coefficient of 2nd derivative stencil (x-direction)
@@ -125,9 +126,11 @@ BOUT_OMP(for)
       
       icc = (i+lxs)*nzt+k+lzs;
       irow = gindices[icc];
+      
       if((xProcI == 0) && (i == 0))  {
         if( inner_boundary_flags & INVERT_AC_GRAD ) {
             // Neumann boundary condition
+	  //          output <<"NS"<<irow<<":"<<lval[0]<<","<<lval[1]<<","<<lval[2]<<endl;
           lval[3] += lval[0];
           lval[4] += lval[1];
           lval[5] += lval[2];
@@ -137,6 +140,7 @@ BOUT_OMP(for)
         }
         else {
            // Dirichlet boundary condition
+	  //          output <<"DS"<<irow<<":"<<lval[0]<<","<<lval[1]<<","<<lval[2]<<endl;
           lval[3] -= lval[0];
           lval[4] -= lval[1];
           lval[5] -= lval[2];
@@ -149,22 +153,26 @@ BOUT_OMP(for)
         icc = (i+lxs-1)*nzt+k+lzs;
         icol = gindices[icc];
         val = lval[1];
+	//        output<<"1V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
         if((k == 0) && (lzs == 0))  icc = (i+lxs)*nzt-1;
         else icc = (i-1+lxs)*nzt+k+lzs-1;
         icol = gindices[icc];
         val = lval[0];
+	//        output <<"0V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
-        if((k == nzt-1) && (lzs == 0))  icc = (i-1+lxs)*nzt;
+        if((k == Nz_local-1) && (lzs == 0))  icc = (i-1+lxs)*nzt;
         else icc = (i-1+lxs)*nzt+k+lzs+1;
         icol = gindices[icc];
         val = lval[2];
+	//        output <<"2V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
       }
-      if((xProcI == xNP-1) && (i == nxt-1)) {
+      if((xProcI == xNP-1) && (i == Nx_local-1)) {
         if ( outer_boundary_flags & INVERT_AC_GRAD ) {
              // Neumann boundary condition
+	  //          output <<"NF"<<irow<<":"<<lval[6]<<","<<lval[7]<<","<<lval[8]<<endl;
           lval[3] += lval[6];
           lval[4] += lval[7];
           lval[5] += lval[8];
@@ -174,6 +182,7 @@ BOUT_OMP(for)
         }
         else {
           // Dirichlet boundary condition
+	  //          output <<"DF"<<irow<<":"<<lval[6]<<","<<lval[7]<<","<<lval[8]<<endl;
           lval[3] -= lval[6];
           lval[4] -= lval[7];
           lval[5] -= lval[8];
@@ -186,32 +195,38 @@ BOUT_OMP(for)
         icc = (i+lxs+1)*nzt+k+lzs;
         icol = gindices[icc];
         val = lval[7];
+	//        output <<"7V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
         if((k == 0) && (lzs == 0))  icc = (i+lxs+2)*nzt-1;
         else icc = (i+1+lxs)*nzt+k+lzs-1;
         icol = gindices[icc];
         val = lval[6];
+	//        output <<"6V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
-        if((k == nzt-1) && (lzs == 0))  icc = (i+1+lxs)*nzt;
+        if((k == Nz_local-1) && (lzs == 0))  icc = (i+1+lxs)*nzt;
         else icc = (i+1+lxs)*nzt+k+lzs+1;
         icol = gindices[icc];
         val = lval[8];
+	//        output <<"8V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
       }
       val = lval[4];
+      //      output <<"="<<i<<"N="<<k<<"("<<icc<<","<<irow<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&irow,&val,INSERT_VALUES);
       
       if((k == 0) && (lzs == 0))  icc = (i+lxs+1)*nzt-1;
       else icc = (i+lxs)*nzt+k+lzs-1;
       icol = gindices[icc];
       val = lval[3];
+      //      output <<"3V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
-      if((k == nzt-1) && (lzs == 0))  icc = (i+lxs)*nzt;
+      if((k == Nz_local-1) && (lzs == 0))  icc = (i+lxs)*nzt;
       else icc = (i+lxs)*nzt+k+lzs+1;
       icol = gindices[icc];
       val = lval[5];
+      //      output <<"5V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
     }
   }

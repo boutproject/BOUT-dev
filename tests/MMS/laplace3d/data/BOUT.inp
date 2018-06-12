@@ -38,5 +38,11 @@ Bxy = sqrt(4.0/(-0.2*cos(y) + 2)^2 + 0.16/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*
 
 [laplace]
 
-type = cyclic
+type = petscamg
 flags = 0
+
+[petscamg]
+solvertype = gmres
+checking = 1
+
+
