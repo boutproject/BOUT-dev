@@ -73,35 +73,68 @@ def check_range(r, low, up, name="range"):
     r2 = r
     if r is not None:
         try:
-            n = len(r2)
-        except:
-            # No len attribute, so probably a single number
-            r2 = [r2, r2]
-        if (len(r2) < 1) or (len(r2) > 2):
-            print("WARNING: "+name+" must be [min, max]")
-            r2 = None
-        else:
-            if len(r2) == 1:
-                r2 = [r2, r2]
-            if r2[0] < 0 and low >= 0:
-                r2[0] += (up-low+1)
-            if r2[1] < 0 and low >= 0:
-                r2[1] += (up-low+1)
-            if r2[0] < low:
-                r2[0] = low
-            if r2[0] > up:
-                r2[0] = up
-            if r2[1] < low:
-                r2[1] = low
-            if r2[1] > up:
-                r2[1] = up
-            if r2[0] > r2[1]:
-                tmp = r2[0]
-                r2[0] = r2[1]
-                r2[1] = tmp
+            if r2.start is not None:
+                start = r2.start
+            else:
+                start = low
+            if r2.stop is not None:
+                stop = r2.stop
+            else:
+                stop = up
+            if r2.step is not None:
+                step = r2.step
+            else:
+                step = 1
+        except AttributeError:
+            # r2 is not already a slice object
+            try:
+                if (len(r2) < 1) or (len(r2) > 3):
+                    print("WARNING: "+name+" must be [start, stop, step]")
+                    r2 = None
+                    return r2
+                if r2[0] is not None:
+                    start = r2[0]
+                else:
+                    start = low
+                if len(r2) > 1:
+                    if r2[1] is not None:
+                        stop = r2[1]
+                    else:
+                        stop = up
+                else:
+                    stop = start+1
+                if len(r2) > 2 and r2[2] is not None:
+                    step = r2[2]
+                else:
+                    step = 1
+            except:
+                # No len attribute, so probably a single number
+                start = r2
+                stop = r2+1
+                step = 1
+        if start < 0 and low >= 0:
+            start += (up-low+1)
+        if stop <= 0 and low >= 0:
+            stop += (up-low+1)
+        if start < low:
+            start = low
+        if start > up-1:
+            start = up-1
+        if stop < low+1:
+            stop = low+1
+        if stop > up:
+            stop = up
+        if start > stop:
+            tmp = start
+            start = stop
+            stop = tmp
+        elif start == stop:
+            stop += 1
     else:
-        r2 = [low, up]
-    return r2
+        start = low
+        stop = up
+        step = 1
+    return slice(start, stop, step)
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             yguards=False, xguards=True, info=True, prefix="BOUT.dmp",
@@ -112,9 +145,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     ----------
     varname : str
         Name of the variable
-    xind, yind, zind, tind : int, list of int, optional
-        Range of X, Y, Z or time indices to collect. Either a single index,
-        or [min, max] (inclusive). Default is to fetch all indices
+    xind, yind, zind, tind : int, slice, optional
+        Range of X, Y, Z or time indices to collect. Either a single index, or
+        slice(start, stop, range) (standard Python index slicing). Will also
+        convert argument from lists or tuples to slices. Default is to fetch
+        all indices
     path : str, optional
         Path to data files (default: ".")
     prefix : str, optional
@@ -197,46 +232,29 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                 # one-element array and has been read as a scalar.
                 nt = 1
         
-        xind = check_range(xind, 0, nx-1, "xind")
-        yind = check_range(yind, 0, ny-1, "yind")
-        zind = check_range(zind, 0, nz-1, "zind")
-        tind = check_range(tind, 0, nt-1, "tind")
-
-        tstart = tind[0]
-        tlim = tind[1] + 1
-        if xguards:
-            xstart = xind[0]
-            xlim = xind[1] + 1
-        else:
-            xstart = xind[0] + mxg
-            xlim = xind[1] + mxg + 1
-        if yguards:
-            ystart = yind[0]
-            ylim = yind[1] + 1
-        else:
-            ystart = yind[0] + myg
-            ylim = yind[1] + myg + 1
-        zstart = zind[0]
-        zlim = zind[1] + 1
+        xind = check_range(xind, 0, nx, "xind")
+        yind = check_range(yind, 0, ny, "yind")
+        zind = check_range(zind, 0, nz, "zind")
+        tind = check_range(tind, 0, nt, "tind")
 
         attributes = f.attributes(varname)
         if ndims == 0:
             data = f.read(varname)
         elif ndims == 1:
-            data = f.read(varname, ranges=[tstart, tlim])
+            data = f.read(varname, ranges=[tind])
         elif ndims == 2:
             # Field2D
-            data = f.read(varname, ranges=[xstart, xlim, ystart, ylim])
+            data = f.read(varname, ranges=[xind, yind])
         elif ndims == 3:
             if dimens[2] == 'z':
                 # Field3D
-                data = f.read(varname, ranges=[xstart, xlim, ystart, ylim, zstart, zlim])
+                data = f.read(varname, ranges=[xind, yind, zind])
             else:
                 # evolving Field2D
-                data = f.read(varname, ranges=[tstart, tlim, xstart, xlim, ystart, ylim])
+                data = f.read(varname, ranges=[tind, xind, yind])
         elif ndims == 4:
             # evolving Field3D
-            data = f.read(varname, ranges=[tstart, tlim, xstart, xlim, ystart, ylim, zstart, zlim])
+            data = f.read(varname, ranges=[tind, xind, yind, zind])
         else:
             raise ValueError("Don't know what to do with variable with ndims="+str(ndims))
         return BoutArray(data, attributes=attributes)
@@ -343,21 +361,21 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     else:
         ny = mysub * nype
 
-    xind = check_range(xind, 0, nx-1, "xind")
-    yind = check_range(yind, 0, ny-1, "yind")
-    zind = check_range(zind, 0, nz-1, "zind")
-    tind = check_range(tind, 0, nt-1, "tind")
+    xind = check_range(xind, 0, nx, "xind")
+    yind = check_range(yind, 0, ny, "yind")
+    zind = check_range(zind, 0, nz, "zind")
+    tind = check_range(tind, 0, nt, "tind")
 
-    xsize = xind[1] - xind[0] + 1
-    ysize = yind[1] - yind[0] + 1
-    zsize = zind[1] - zind[0] + 1
-    tsize = tind[1] - tind[0] + 1
+    xsize = xind.stop - xind.start
+    ysize = yind.stop - yind.start
+    zsize = int(np.ceil(float(zind.stop - zind.start)/zind.step))
+    tsize = int(np.ceil(float(tind.stop - tind.start)/tind.step))
 
     if ndims == 1:
         if tind is None:
             data = f.read(varname)
         else:
-            data = f.read(varname, ranges=[tind[0], tind[1]+1])
+            data = f.read(varname, ranges=[tind])
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
@@ -385,156 +403,168 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
         if yguards:
             # Get local ranges
-            ymin = yind[0] - pe_yind*mysub
-            ymax = yind[1] - pe_yind*mysub
+            ystart = yind.start - pe_yind*mysub
+            ystop = yind.stop - pe_yind*mysub
 
             # Check lower y boundary
             if pe_yind == 0:
                 # Keeping inner boundary
-                if ymax < 0:
+                if ystop <= 0:
                     inrange = False
-                if ymin < 0:
-                    ymin = 0
+                if ystart < 0:
+                    ystart = 0
             else:
-                if ymax < myg:
+                if ystop < myg-1:
                     inrange = False
-                if ymin < myg:
-                    ymin = myg
+                if ystart < myg:
+                    ystart = myg
 
             # Upper y boundary
             if pe_yind == (nype - 1):
                 # Keeping outer boundary
-                if ymin >= (mysub + 2*myg):
+                if ystart >= (mysub + 2*myg):
                     inrange = False
-                if ymax > (mysub + 2*myg - 1):
-                    ymax = (mysub + 2*myg - 1)
+                if ystop > (mysub + 2*myg):
+                    ystop = (mysub + 2*myg)
             else:
-                if ymin >= (mysub + myg):
+                if ystart >= (mysub + myg):
                     inrange = False
-                if ymax >= (mysub + myg):
-                    ymax = (mysub+myg-1)
+                if ystop > (mysub + myg):
+                    ystop = (mysub + myg)
 
             # Calculate global indices
-            ygmin = ymin + pe_yind * mysub
-            ygmax = ymax + pe_yind * mysub
+            ygstart = ystart + pe_yind * mysub
+            ygstop = ystop + pe_yind * mysub
 
         else:
             # Get local ranges
-            ymin = yind[0] - pe_yind*mysub + myg
-            ymax = yind[1] - pe_yind*mysub + myg
+            ystart = yind.start - pe_yind*mysub + myg
+            ystop = yind.stop - pe_yind*mysub + myg
 
-            if (ymin >= (mysub + myg)) or (ymax < myg):
+            if (ystart >= (mysub + myg)) or (ystop <= myg):
                 inrange = False  # Y out of range
 
-            if ymin < myg:
-                ymin = myg
-            if ymax >= mysub+myg:
-                ymax = myg + mysub - 1
+            if ystart < myg:
+                ystart = myg
+            if ystop > mysub + myg:
+                ystop = myg + mysub
 
             # Calculate global indices
-            ygmin = ymin + pe_yind * mysub - myg
-            ygmax = ymax + pe_yind * mysub - myg
+            ygstart = ystart + pe_yind * mysub - myg
+            ygstop = ystop + pe_yind * mysub - myg
 
         if xguards:
             # Get local ranges
-            xmin = xind[0] - pe_xind*mxsub
-            xmax = xind[1] - pe_xind*mxsub
+            xstart = xind.start - pe_xind*mxsub
+            xstop = xind.stop - pe_xind*mxsub
 
             # Check lower x boundary
             if pe_xind == 0:
                 # Keeping inner boundary
-                if xmax < 0:
+                if xstop <= 0:
                     inrange = False
-                if xmin < 0:
-                    xmin = 0
+                if xstart < 0:
+                    xstart = 0
             else:
-                if xmax < mxg:
+                if xstop <= mxg:
                     inrange = False
-                if xmin < mxg:
-                    xmin = mxg
+                if xstart < mxg:
+                    xstart = mxg
 
             # Upper x boundary
             if pe_xind == (nxpe - 1):
                 # Keeping outer boundary
-                if xmin >= (mxsub + 2*mxg):
+                if xstart >= (mxsub + 2*mxg):
                     inrange = False
-                if xmax > (mxsub + 2*mxg - 1):
-                    xmax = (mxsub + 2*mxg - 1)
+                if xstop > (mxsub + 2*mxg):
+                    xstop = (mxsub + 2*mxg)
             else:
-                if xmin >= (mxsub + mxg):
+                if xstart >= (mxsub + mxg):
                     inrange = False
-                if xmax >= (mxsub + mxg):
-                    xmax = (mxsub+mxg-1)
+                if xstop > (mxsub + mxg):
+                    xstop = (mxsub+mxg)
 
             # Calculate global indices
-            xgmin = xmin + pe_xind * mxsub
-            xgmax = xmax + pe_xind * mxsub
+            xgstart = xstart + pe_xind * mxsub
+            xgstop = xstop + pe_xind * mxsub
 
         else:
             # Get local ranges
-            xmin = xind[0] - pe_xind*mxsub + mxg
-            xmax = xind[1] - pe_xind*mxsub + mxg
+            xstart = xind.start - pe_xind*mxsub + mxg
+            xstop = xind.stop - pe_xind*mxsub + mxg
 
-            if (xmin >= (mxsub + mxg)) or (xmax < mxg):
+            if (xstart >= (mxsub + mxg)) or (xstop <= mxg):
                 inrange = False  # X out of range
 
-            if xmin < mxg:
-                xmin = mxg
-            if xmax >= mxsub+mxg:
-                xmax = mxg + mxsub - 1
+            if xstart < mxg:
+                xstart = mxg
+            if xstop > mxsub + mxg:
+                xstop = mxg + mxsub
 
             # Calculate global indices
-            xgmin = xmin + pe_xind * mxsub - mxg
-            xgmax = xmax + pe_xind * mxsub - mxg
+            xgstart = xstart + pe_xind * mxsub - mxg
+            xgstop = xstop + pe_xind * mxsub - mxg
 
         # Number of local values
-        nx_loc = xmax - xmin + 1
-        ny_loc = ymax - ymin + 1
+        nx_loc = xstop - xstart
+        ny_loc = ystop - ystart
 
         if not inrange:
             continue  # Don't need this file
 
         if info:
             sys.stdout.write("\rReading from " + file_list[i] + ": [" +
-                             str(xmin) + "-" + str(xmax) + "][" +
-                             str(ymin) + "-" + str(ymax) + "] -> [" +
-                             str(xgmin) + "-" + str(xgmax) + "][" +
-                             str(ygmin) + "-" + str(ygmax) + "]")
+                             str(xstart) + "-" + str(xstop-1) + "][" +
+                             str(ystart) + "-" + str(ystop-1) + "] -> [" +
+                             str(xgstart) + "-" + str(xgstop-1) + "][" +
+                             str(ygstart) + "-" + str(ygstop-1) + "]")
 
         f = getDataFile(i)
 
         if ndims == 4:
-            d = f.read(varname, ranges=[tind[0], tind[1]+1,
-                                        xmin, xmax+1,
-                                        ymin, ymax+1,
-                                        zind[0], zind[1]+1])
-            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
-                 (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+            d = f.read(varname, ranges=[tind,
+                                        slice(xstart, xstop),
+                                        slice(ystart, ystop),
+                                        zind])
+            data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
         elif ndims == 3:
             # Could be xyz or txy
 
             if dimens[2] == 'z':  # xyz
-                d = f.read(varname, ranges=[xmin, xmax+1,
-                                            ymin, ymax+1,
-                                            zind[0], zind[1]+1])
-                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
-                     (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+                d = f.read(varname, ranges=[slice(xstart, xstop),
+                                            slice(ystart, ystop),
+                                            zind])
+                data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                     (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
             else:  # txy
-                d = f.read(varname, ranges=[tind[0], tind[1]+1,
-                                            xmin, xmax+1,
-                                            ymin, ymax+1])
-                data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
-                     (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+                d = f.read(varname, ranges=[tind,
+                                            slice(xstart, xstop),
+                                            slice(ystart, ystop)])
+                data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                     (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
         elif ndims == 2:
             # xy
-            d = f.read(varname, ranges=[xmin, xmax+1,
-                                        ymin, ymax+1])
-            data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc),
-                 (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+            d = f.read(varname, ranges=[slice(xstart, xstop),
+                                        slice(ystart, ystop)])
+            data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
 
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
+
+    # if a step was requested in x or y, need to apply it here
+    if xind.step is not None or yind.step is not None:
+        if ndims == 4:
+            data = data[:, ::xind.step, ::yind.step]
+        elif ndims == 3:
+            if dimens[2] == 'z':
+                data = data[::xind.step, ::yind.step, :]
+            else:
+                data = data[:, ::xind.step, ::yind.step]
+        elif ndims == 2:
+            data = data[::xind.step, ::yind.step]
 
     # Force the precision of arrays of dimension>1
     if ndims > 1:

@@ -179,11 +179,12 @@ class DataFile:
         ----------
         name : str
             Name of the variable to read
-        ranges : list of int, optional
-            Beginning and end indices to read. The number of elements
-            in `ranges` should be twice the number of dimensions of
-            the variable you wish to read. See
-            :py:obj:`~DataFile.size` for how to get the dimensions
+        ranges : list of slice objects, optional
+            Slices of variable to read, can also be converted from lists or
+            tuples of (start, stop, stride). The number of elements in `ranges`
+            should be equal to the number of dimensions of the variable you
+            wish to read. See :py:obj:`~DataFile.size` for how to get the
+            dimensions
         asBoutArray : bool, optional
             If True, return the variable as a
             :py:obj:`~boututils.boutarray.BoutArray` (the default)
@@ -196,6 +197,10 @@ class DataFile:
             is True)
 
         """
+        if ranges is not None:
+            for x in ranges:
+                if isinstance(x, (list, tuple)):
+                    x = slice(*x)
         return self.impl.read(name, ranges=ranges, asBoutArray=asBoutArray)
 
     def list(self):
@@ -427,7 +432,7 @@ class DataFile_netCDF(DataFile):
             return data  # [0]
         else:
             if ranges is not None:
-                if len(ranges) != 2 * ndims:
+                if len(ranges) != ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
@@ -435,34 +440,22 @@ class DataFile_netCDF(DataFile):
                     # Passing ranges to var[] doesn't seem to work
                     data = var[:]
                     if ndims == 1:
-                        data = data[ranges[0]:ranges[1]]
+                        data = data[ranges[0]]
                     elif ndims == 2:
-                        data = data[ranges[0]:ranges[1],
-                                    ranges[2]:ranges[3]]
+                        data = data[ranges[0],ranges[1]]
                     elif ndims == 3:
-                        data = data[ranges[0]:ranges[1],
-                                    ranges[2]:ranges[3],
-                                    ranges[4]:ranges[5]]
+                        data = data[ranges[0],ranges[1],ranges[2]]
                     elif ndims == 4:
-                        data = data[(ranges[0]):(ranges[1]),
-                                    (ranges[2]):(ranges[3]),
-                                    (ranges[4]):(ranges[5]),
-                                    (ranges[6]):(ranges[7])]
+                        data = data[ranges[0],ranges[1],ranges[2],ranges[3]]
                 else:
                     if ndims == 1:
-                        data = var[ranges[0]:ranges[1]]
+                        data = var[ranges[0]]
                     elif ndims == 2:
-                        data = var[ranges[0]:ranges[1],
-                                   ranges[2]:ranges[3]]
+                        data = var[ranges[0],ranges[1]]
                     elif ndims == 3:
-                        data = var[ranges[0]:ranges[1],
-                                   ranges[2]:ranges[3],
-                                   ranges[4]:ranges[5]]
+                        data = var[ranges[0],ranges[1],ranges[2]]
                     elif ndims == 4:
-                        data = var[(ranges[0]):(ranges[1]),
-                                   (ranges[2]):(ranges[3]),
-                                   (ranges[4]):(ranges[5]),
-                                   (ranges[6]):(ranges[7])]
+                        data = var[ranges[0],ranges[1],ranges[2],ranges[3]]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
@@ -800,24 +793,18 @@ class DataFile_HDF5(DataFile):
             return data[0]
         else:
             if ranges is not None:
-                if len(ranges) != 2 * ndims:
+                if len(ranges) != ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
                 if ndims == 1:
-                    data = var[ranges[0]:ranges[1]]
+                    data = var[ranges[0]]
                 elif ndims == 2:
-                    data = var[ranges[0]:ranges[1],
-                               ranges[2]:ranges[3]]
+                    data = var[ranges[0],ranges[1]]
                 elif ndims == 3:
-                    data = var[ranges[0]:ranges[1],
-                               ranges[2]:ranges[3],
-                               ranges[4]:ranges[5]]
+                    data = var[ranges[0],ranges[1],ranges[2]]
                 elif ndims == 4:
-                    data = var[(ranges[0]):(ranges[1]),
-                               (ranges[2]):(ranges[3]),
-                               (ranges[4]):(ranges[5]),
-                               (ranges[6]):(ranges[7])]
+                    data = var[ranges[0],ranges[1],ranges[2],ranges[3]]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
