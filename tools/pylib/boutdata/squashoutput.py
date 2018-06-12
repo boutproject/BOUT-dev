@@ -21,7 +21,7 @@ from boututils.boutarray import BoutArray
 import numpy
 import os
 
-def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice=[None,None,None], xslice=[None,None,None], yslice=[None,None,None], zslice=[None,None,None], singleprecision=False):
+def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice=None, xslice=None, yslice=None, zslice=None, singleprecision=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -39,13 +39,13 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice
         default "NETCDF4"
     tslice : [int, int, int]
         lower, upper, stride values to slice the t-dimension
-        default [None, None, None]
+        default None
     xslice : [int, int, int]
         lower, upper, stride values to slice the x-dimension
-        default [None, None, None]
+        default None
     yslice : [int, int, int]
         lower, upper, stride values to slice the y-dimension
-        default [None, None, None]
+        default None
     zslice : [int, int, int]
         lower, upper, stride values to slice the z-dimension
         default [None, None, None]
@@ -59,22 +59,23 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tslice
         raise ValueError(fullpath+" already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
     # Check *slice arguments, and make sure length is at least 3
-    if len(tslice) < 3:
-        tslice += [None]*(3-len(tslice))
-    elif len(tslice) > 3:
-        raise ValueError("Can provide at most 3 arguments for tslice")
-    if len(xslice) < 3:
-        xslice += [None]*(3-len(xslice))
-    elif len(xslice) > 3:
-        raise ValueError("Can provide at most 3 arguments for xslice")
-    if len(yslice) < 3:
-        yslice += [None]*(3-len(yslice))
-    elif len(yslice) > 3:
-        raise ValueError("Can provide at most 3 arguments for yslice")
-    if len(zslice) < 3:
-        zslice += [None]*(3-len(zslice))
-    elif len(zslice) > 3:
-        raise ValueError("Can provide at most 3 arguments for zslice")
+    def normalize_slice_argument(s, name):
+        try:
+            len(s)
+        except ValueError:
+            # Make into a list if it is not one already
+            s = [s]
+        else:
+            # Make sure is a list not a tuple, etc., so that we can concatenate it
+            s = list(s)
+        if len(s) < 3:
+            s += [None]*(3-len(s))
+        elif len(s) > 3:
+            raise ValueError("Can provide at most 3 arguments for "+str(name))
+    tslice = normalize_slice_argument(tslice, "tslice")
+    xslice = normalize_slice_argument(xslice, "xslice")
+    yslice = normalize_slice_argument(yslice, "yslice")
+    zslice = normalize_slice_argument(zslice, "zslice")
 
     # useful object from BOUT pylib to access output data
     outputs = BoutOutputs(datadir, info=False, xguards=True, yguards=True)
