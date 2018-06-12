@@ -408,10 +408,12 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
 #endif
       output_info << "compute J by slow fd is done.\n";
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
-      throw BoutException("Path followed in PETSc solver not yet implemented in general "
-                          "-- experimental hard coded values here. Sorry\n");
+      throw BoutException("Sorry, unimplemented way of setting PETSc preconditioner. "
+                          "Either set a preconditioner function with 'setPrecon' "
+                          "in your code, or load a matrix with '-Jload' on the "
+                          "command line, or calculate with finite differences "
+                          "with '-J_slowfd' (on command line)");
     }
   }
 
