@@ -28,11 +28,11 @@
 #include <vector>
 
 Bilinear::Bilinear(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset), w0(mesh), w1(mesh), w2(mesh), w3(mesh) {
+  : Interpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
-  k_corner = i3tensor(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   // Allocate Field3D members
   w0.allocate();
@@ -42,21 +42,21 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
 }
 
 void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
-  for(int x=mesh->xstart;x<=mesh->xend;x++) {
-    for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+      for(int z=0;z<localmesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
-        i_corner[x][y][z] = static_cast<int>(floor(delta_x(x,y,z)));
-        k_corner[x][y][z] = static_cast<int>(floor(delta_z(x,y,z)));
+        i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
+        k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        BoutReal t_x = delta_x(x,y,z) - static_cast<BoutReal>(i_corner[x][y][z]);
-        BoutReal t_z = delta_z(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
+        BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+        BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
         BoutReal t_x1 = BoutReal(1.0) - t_x;
         BoutReal t_z1 = BoutReal(1.0) - t_z;
 
@@ -77,34 +77,33 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
   }
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
 }
 
 Field3D Bilinear::interpolate(const Field3D& f) const {
-  Mesh *mesh = f.getMesh();
-  Field3D f_interp(mesh);
+  ASSERT1(f.getMesh() == localmesh);
+  Field3D f_interp(f.getMesh());
   f_interp.allocate();
 
-  for(int x=mesh->xstart;x<=mesh->xend;x++) {
-    for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      for(int z=0;z<mesh->LocalNz;z++) {
+  for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+      for(int z=0;z<localmesh->LocalNz;z++) {
 
         if (skip_mask(x, y, z)) continue;
 
         int y_next = y + y_offset;
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
-        int ncz = mesh->LocalNz;
-        int z_mod = ((k_corner[x][y][z] % ncz) + ncz) % ncz;
+        int ncz = localmesh->LocalNz;
+        int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
-        f_interp(x,y_next,z) =
-            f(i_corner[x][y][z],   y_next,z_mod) * w0(x,y,z)
-          + f(i_corner[x][y][z]+1, y_next,z_mod) * w1(x,y,z)
-          + f(i_corner[x][y][z],   y_next,z_mod_p1) * w2(x,y,z)
-          + f(i_corner[x][y][z]+1, y_next,z_mod_p1) * w3(x,y,z);
+        f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z) +
+                                 f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z) +
+                                 f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z) +
+                                 f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
       }
     }
   }
@@ -116,7 +115,7 @@ Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Fi
   return interpolate(f);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

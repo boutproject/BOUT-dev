@@ -30,8 +30,6 @@ class FieldPerp;
 
 #include "field.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
@@ -65,6 +63,14 @@ class FieldPerp : public Field {
    * Move constructor
    */
   FieldPerp(FieldPerp &&rhs) = default;
+
+  /*!
+   * Constructor. This creates a FieldPerp using the global Mesh pointer (mesh)
+   * allocates data, and assigns the value \p val to all points including
+   * boundary cells.
+   */ 
+  FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
+
   ~FieldPerp() {}
 
   /*!
@@ -79,6 +85,8 @@ class FieldPerp : public Field {
    */
   const DataIterator begin() const;
   const DataIterator end() const;
+
+  const IndexRange region(REGION rgn) const override;
 
   /*!
    * Direct data access using DataIterator indexing
@@ -111,12 +119,7 @@ class FieldPerp : public Field {
   /*!
    * Ensure that data array is allocated and unique
    */
-  void allocate() {
-    if(data.empty()) {
-      data = Array<BoutReal>(nx*nz);
-    }else
-      data.ensureUnique();
-  }
+  void allocate();
 
   /*!
    * True if the underlying data array is allocated.
@@ -225,7 +228,18 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const Field2D &rhs);
   FieldPerp & operator/=(BoutReal rhs);
 
+  /*!
+   * Return the number of nx points
+   */
+  int getNx() const override {return nx;};
+  /*!
+   * Return the number of ny points
+   */
   virtual int getNy() const override{ return 1;};
+  /*!
+   * Return the number of nz points
+   */
+  int getNz() const override {return nz;};
   
  private:
   int yindex; ///< The Y index at which this FieldPerp is defined
@@ -266,16 +280,136 @@ const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
 const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
 const FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
 const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
-  
-/*!
- * Create a unique copy of a FieldPerp, ensuring 
- * that they do not share an underlying data array
- */
-const FieldPerp copy(const FieldPerp &f);
 
 /*!
- * Create a FieldPerp by slicing a 3D field at a given y
+ * Unary minus. Returns the negative of given field,
+ * iterates over whole domain including guard/boundary cells.
  */
+FieldPerp operator-(const FieldPerp &f);
+
+/// Square root
+const FieldPerp sqrt(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Absolute value
+const FieldPerp abs(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Exponential
+const FieldPerp exp(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Natural logarithm
+const FieldPerp log(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Sine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp sin(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Cosine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp cos(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Tangent trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp tan(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Hyperbolic sine function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp sinh(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Hyperbolic cosine function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp cosh(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Hyperbolic tangent function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const FieldPerp tanh(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+/// Create a unique copy of a FieldPerp, ensuring
+/// that they do not share an underlying data array
+const FieldPerp copy(const FieldPerp &f);
+
+/// Sets a floor on var, so minimum of the return value is >= f
+const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn=RGN_ALL);
+
+/// Power, lhs ** rhs
+FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn=RGN_ALL);
+FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
+FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn=RGN_ALL);
+
+/// Create a FieldPerp by slicing a 3D field at a given y
 const FieldPerp sliceXZ(const Field3D& f, int y);
+
+/// Calculates the minimum of a field, excluding
+/// the boundary/guard cells by default (this can be
+/// changed with the rgn argument).
+/// By default this is only on the local processor,
+/// but setting allpe=true does a collective Allreduce
+/// over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Minimum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal min(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
+
+/// Calculates the maximum of a field, excluding
+/// the boundary/guard cells by default (this can be
+/// changed with the rgn argument).
+/// By default this is only on the local processor,
+/// but setting allpe=true does a collective Allreduce
+/// over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Minimum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
+
+/// Test if all values of this field are finite
+/// Loops over the entire domain including boundaries by
+/// default (can be changed using the \p rgn argument)
+bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+#if CHECK > 0
+void checkData(const FieldPerp &f, REGION region = RGN_NOX);
+#else
+inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region) = RGN_NOX) {}
+#endif
+
+/// Force guard cells of passed field \p var to NaN
+void invalidateGuards(FieldPerp &var);
 
 #endif

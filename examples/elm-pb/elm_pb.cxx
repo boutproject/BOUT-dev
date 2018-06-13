@@ -931,17 +931,7 @@ int physics_init(bool restarting) {
   V0net.z = -Dphi0;
 
   U0=B0vec*Curl(V0net)/B0;     //get 0th vorticity for Kelvin-Holmholtz term
-
-  /**************** SET VARIABLE LOCATIONS *************/
-
-  P.setLocation(CELL_CENTRE);
-  U.setLocation(CELL_CENTRE);
-  phi.setLocation(CELL_CENTRE);
-  Psi.setLocation(CELL_YLOW);
-  Jpar.setLocation(CELL_YLOW);
-  Vpar.setLocation(CELL_YLOW);
-  //sourp.setLocation(CELL_CENTRE);
-
+  
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT which variables to evolve
@@ -958,16 +948,19 @@ int physics_init(bool restarting) {
     dump.add(Jpar, "jpar", 1);
   }
   
-  if(compress0) {
+  if (compress0) {
     output.write("Including compression (Vpar) effects\n");
     
     SOLVE_FOR(Vpar);
+    comms.add(Vpar);
 
     beta = B0*B0 / ( 0.5 + (B0*B0 / (g*P0)));
     gradparB = Grad_par(B0) / B0;
 
     output.write("Beta in range %e -> %e\n",
                  min(beta), max(beta));
+  } else {
+    Vpar = 0.0;
   }
 
   if(phi_constraint) {

@@ -10,20 +10,7 @@
 
 #include <output.hxx>
 
-RK3SSP::RK3SSP(Options *opt) : Solver(opt), f(nullptr) {
-  
-}
-
-RK3SSP::~RK3SSP() {
-  if(f != nullptr) {
-    delete[] f;
-    
-    delete[] u1;
-    delete[] u2;
-    delete[] u3;
-    delete[] L;
-  }
-}
+RK3SSP::RK3SSP(Options *opt) : Solver(opt) {}
 
 void RK3SSP::setMaxTimestep(BoutReal dt) {
   if(dt > timestep)
@@ -60,17 +47,17 @@ int RK3SSP::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f = new BoutReal[nlocal];
-  
+  f = Array<BoutReal>(nlocal);
+
   // memory for taking a single time step
-  u1 = new BoutReal[nlocal];
-  u2 = new BoutReal[nlocal];
-  u3 = new BoutReal[nlocal];
-  L = new BoutReal[nlocal];
+  u1 = Array<BoutReal>(nlocal);
+  u2 = Array<BoutReal>(nlocal);
+  u3 = Array<BoutReal>(nlocal);
+  L = Array<BoutReal>(nlocal);
 
   // Put starting values into f
-  save_vars(f);
-  
+  save_vars(std::begin(f));
+
   // Get options
   OPTION(options, max_timestep, tstep); // Maximum timestep
   OPTION(options, timestep, max_timestep); // Starting timestep
@@ -104,8 +91,8 @@ int RK3SSP::run() {
       
       call_timestep_monitors(simtime, dt);
     }while(running);
-    
-    load_vars(f); // Put result into variables
+
+    load_vars(std::begin(f)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
  
@@ -125,28 +112,29 @@ int RK3SSP::run() {
   return 0;
 }
 
-void RK3SSP::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
-  
-  load_vars(start);
+void RK3SSP::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal> &start,
+                       Array<BoutReal> &result) {
+
+  load_vars(std::begin(start));
   run_rhs(curtime);
-  save_derivs(L);
-  
+  save_derivs(std::begin(L));
+
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     u1[i] = start[i] + dt*L[i];
-  
-  load_vars(u1);
+
+  load_vars(std::begin(u1));
   run_rhs(curtime + dt);
-  save_derivs(L);
-  
+  save_derivs(std::begin(L));
+
   BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
     u2[i] = 0.75*start[i] + 0.25*u1[i] + 0.25*dt*L[i];
-  
-  load_vars(u2);
+
+  load_vars(std::begin(u2));
   run_rhs(curtime + 0.5*dt);
-  save_derivs(L);
- 
+  save_derivs(std::begin(L));
+
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = (1./3)*start[i] + (2./3.)*(u2[i] + dt*L[i]);

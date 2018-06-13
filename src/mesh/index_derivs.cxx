@@ -55,6 +55,7 @@
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <utils.hxx>
+#include <unused.hxx>
 
 #include <cmath>
 #include <stdlib.h>
@@ -156,10 +157,10 @@ BoutReal VDDX_U2(BoutReal vc, stencil &f) {
                    : vc * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c);
 }
 
-/// upwind, 4th order
-BoutReal VDDX_U4(BoutReal vc, stencil &f) {
-  return vc >= 0.0 ? vc * (4. * f.p - 12. * f.m + 2. * f.mm + 6. * f.c) / 12.
-                   : vc * (-4. * f.m + 12. * f.p - 2. * f.pp - 6. * f.c) / 12.;
+/// upwind, 3rd order
+BoutReal VDDX_U3(BoutReal vc, stencil &f) {
+  return vc >= 0.0 ? vc*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
+    : vc*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
 }
 
 /// 3rd-order WENO scheme
@@ -223,49 +224,13 @@ BoutReal FDDX_U1(stencil &v, stencil &f) {
   vs = 0.5 * (v.c + v.p);
   result -= (vs >= 0.0) ? vs * f.c : vs * f.p;
 
-  return result;
+  return - result;
 }
 
 BoutReal FDDX_C2(stencil &v, stencil &f) { return 0.5 * (v.p * f.p - v.m * f.m); }
 
 BoutReal FDDX_C4(stencil &v, stencil &f) {
   return (8. * v.p * f.p - 8. * v.m * f.m + v.mm * f.mm - v.pp * f.pp) / 12.;
-}
-
-/// Non-oscillatory, containing No free parameters and Dissipative (NND) scheme
-/// http://arxiv.org/abs/1010.4135v1
-BoutReal FDDX_NND(stencil &v, stencil &f) {
-  // f{+-} i
-  BoutReal fp = 0.5 * (v.c + fabs(v.c)) * f.c;
-  BoutReal fm = 0.5 * (v.c - fabs(v.c)) * f.c;
-
-  // f{+-} i+1
-  BoutReal fp1 = 0.5 * (v.p + fabs(v.p)) * f.p;
-  BoutReal fm1 = 0.5 * (v.p - fabs(v.p)) * f.p;
-
-  // f{+-} i+2
-  BoutReal fm2 = 0.5 * (v.pp - fabs(v.pp)) * f.pp;
-
-  // f{+-} i-1
-  BoutReal fp_1 = 0.5 * (v.m + fabs(v.m)) * f.m;
-  BoutReal fm_1 = 0.5 * (v.m - fabs(v.m)) * f.m;
-
-  // f{+-} i-2
-  BoutReal fp_2 = 0.5 * (v.mm + fabs(v.mm)) * f.mm;
-
-  // f^{LR} {i+1/2}
-  BoutReal flp = fp + 0.5 * MINMOD(fp1 - fp, fp - fp_1);
-  BoutReal frp = fm1 - 0.5 * MINMOD(fm1 - fm, fm2 - fm1);
-
-  // f^{LR} {i-1/2}
-  BoutReal flm = fp_1 + 0.5 * MINMOD(fp - fp_1, fp_1 - fp_2);
-  BoutReal frm = fm - 0.5 * MINMOD(fm - fm_1, fm1 - fm);
-
-  // h{+-}
-  BoutReal hp = flp + frp;
-  BoutReal hm = flm + frm;
-
-  return hp - hm;
 }
 
 //////////////////////// MUSCL scheme ///////////////////////
@@ -388,7 +353,7 @@ BoutReal FDDX_U1_stag(stencil &v, stencil &f) {
   // Upper cell boundary
   result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
 
-  return result;
+  return - result;
 }
 
 /*******************************************************************************
@@ -418,10 +383,10 @@ static DiffNameLookup DiffNameTable[] = {
     {DIFF_W2, "W2", "Second order WENO"},
     {DIFF_W3, "W3", "Third order WENO"},
     {DIFF_C4, "C4", "Fourth order central"},
-    {DIFF_U4, "U4", "Fourth order upwinding"},
+    {DIFF_U3, "U3", "Third order upwinding"},
+    {DIFF_U3, "U4", "Third order upwinding (Can't do 4th order yet)."},
     {DIFF_S2, "S2", "Smoothing 2nd order"},
     {DIFF_FFT, "FFT", "FFT"},
-    {DIFF_NND, "NND", "NND"},
     {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
     {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
 
@@ -441,7 +406,7 @@ static DiffLookup SecondDerivTable[] = {{DIFF_C2, D2DX2_C2, NULL, NULL},
 /// Upwinding functions lookup table
 static DiffLookup UpwindTable[] = {
     {DIFF_U1, NULL, VDDX_U1, NULL},    {DIFF_U2, NULL, VDDX_U2, NULL},
-    {DIFF_C2, NULL, VDDX_C2, NULL},    {DIFF_U4, NULL, VDDX_U4, NULL},
+    {DIFF_C2, NULL, VDDX_C2, NULL},    {DIFF_U3, NULL, VDDX_U3, NULL},
     {DIFF_W3, NULL, VDDX_WENO3, NULL}, {DIFF_C4, NULL, VDDX_C4, NULL},
     {DIFF_DEFAULT, NULL, NULL, NULL}};
 
@@ -449,7 +414,7 @@ static DiffLookup UpwindTable[] = {
 static DiffLookup FluxTable[] = {
     {DIFF_SPLIT, NULL, NULL, NULL},   {DIFF_U1, NULL, NULL, FDDX_U1},
     {DIFF_C2, NULL, NULL, FDDX_C2},   {DIFF_C4, NULL, NULL, FDDX_C4},
-    {DIFF_NND, NULL, NULL, FDDX_NND}, {DIFF_DEFAULT, NULL, NULL, NULL}};
+    {DIFF_DEFAULT, NULL, NULL, NULL}};
 
 /// First staggered derivative lookup
 static DiffLookup FirstStagDerivTable[] = {{DIFF_C2, DDX_C2_stag, NULL, NULL},
@@ -536,7 +501,21 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
   // Loop through the name lookup table
   for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
     if (strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) { // Whole match
-      return DiffNameTable[i].method;
+      if (isImplemented(table, DiffNameTable[i].method)) {
+        return DiffNameTable[i].method;
+      } else {
+        std::string avail{};
+
+        for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
+          if (isImplemented(table, DiffNameTable[i].method)) {
+            avail += DiffNameTable[i].label;
+            avail += "\n";
+          }
+        }
+        throw BoutException("Option %s is known but not valid for this differencing "
+                            "type.\nAvailable options are:\n%s",
+                            label.c_str(), avail.c_str());
+      }
     }
   }
 
@@ -689,24 +668,26 @@ void Mesh::derivs_init(Options *options) {
 
 // X derivative
 
-const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc,
-                               REGION region) {
+const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
+                               CELL_LOC loc, REGION region) {
+  ASSERT1(this == var.getMesh());
+  ASSERT1(var.isAllocated());
+
   if (var.getNx() == 1) {
     return Field2D(0., this);
   }
 
-  ASSERT1(var.isAllocated());
-  ASSERT1(this == var.getMesh());
+  CELL_LOC diffloc = var.getLocation();
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+  if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
 
     CELL_LOC location = var.getLocation();
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
@@ -756,7 +737,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   } else {
     // Non-staggered differencing
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       for (const auto &i : result.region(region)) {
@@ -783,6 +764,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
       }
     }
   }
+
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -792,26 +775,28 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   return result;
 }
 
-const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
-                               REGION region) {
-  if (var.getNx() == 1) {
-    return Field3D(0., this);
-  }
+const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
+                               CELL_LOC loc, REGION region) {
+  // Check that the mesh is correct
+  ASSERT1(this == var.getMesh());
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-  // Check that the mesh is correct
-  ASSERT1(this == var.getMesh());
+  if (var.getNx() == 1) {
+    return Field3D(0., this);
+  }
+
+  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+  if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
 
     CELL_LOC location = var.getLocation();
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
@@ -861,7 +846,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   } else {
     // Non-staggered differencing
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       stencil s;
@@ -888,6 +873,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       }
     }
   }
+
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -899,21 +886,22 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 // Y derivative
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC loc,
+const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC UNUSED(loc),
                                REGION region) {
+  ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   if (var.getNy() == 1) {
     return Field2D(0., this);
   }
 
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
-
-  ASSERT1(this == var.getMesh());
+  CELL_LOC diffloc = var.getLocation();
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->ystart > 1) {
+  if (this->ystart > 1) {
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
 
@@ -943,6 +931,8 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     }
   }
 
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
@@ -953,14 +943,15 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
                                REGION region) {
+  ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   if (var.getNy() == 1) {
     return Field3D(0., this);
   }
 
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
-
-  ASSERT1(this == var.getMesh());
+  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -970,7 +961,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     // will be used to calculate a derivative along
     // the magnetic field
 
-    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
       // Staggered differencing
 
       // Cell location of the input field
@@ -1014,15 +1005,15 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 
-    Field3D var_fa = mesh->toFieldAligned(var);
+    Field3D var_fa = this->toFieldAligned(var);
 
-    if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+    if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
       // Staggered differencing
 
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
 
-      if (mesh->ystart > 1) {
+      if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         stencil s;
@@ -1074,7 +1065,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     } else {
       // Non-staggered differencing
 
-      if (mesh->ystart > 1) {
+      if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         stencil s;
@@ -1106,8 +1097,11 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
     // Shift result back
 
-    result = mesh->fromFieldAligned(result);
+    result = this->fromFieldAligned(result);
   }
+
+  result.setLocation(diffloc);
+
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -1120,13 +1114,18 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc,
                                REGION region) {
+  ASSERT1(this == var.getMesh());
+  // Check that the input variable has data
+  ASSERT1(var.isAllocated());
+
   if (var.getNz() == 1) {
     return Field3D(0., this);
   }
 
-  ASSERT1(this == var.getMesh());
 
-  if (mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
+  CELL_LOC diffloc = var.getLocation();
+
+  if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
     throw BoutException("No one used this before. And no one implemented it.");
   }
@@ -1148,6 +1147,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     result[i] = func(s);
   }
 
+  result.setLocation(diffloc);
+
   return result;
 }
 
@@ -1157,23 +1158,22 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
 ////////////// X DERIVATIVE /////////////////
 
-const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+
   Mesh::deriv_func func = fDDX; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  ASSERT1(this == f.getMesh());
-
   Field3D result(this);
 
-  if (mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (this->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if (mesh->StaggerGrids && (outloc != inloc)) {
+  if (this->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
 
     if (((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) ||
@@ -1185,18 +1185,10 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       diffloc = (inloc == CELL_CENTRE) ? CELL_XLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_XLOW) {
-        // Shifting
-
-        func = sfDDX;                // Set default
-        table = FirstStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate then (centre -> centre) then interpolate
-        return DDX(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDX(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1207,35 +1199,38 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
-  result = applyXdiff(f, func, diffloc);
-  result.setLocation(diffloc); // Set the result location
+  result = applyXdiff(f, func, diffloc, region);
 
-  result = interp_to(result, outloc); // Interpolate if necessary
+  result.setLocation(diffloc); // Set the result location
 
   return result;
 }
 
-const Field2D Mesh::indexDDX(const Field2D &f) { return applyXdiff(f, fDDX); }
+const Field2D Mesh::indexDDX(const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyXdiff(f, fDDX, f.getLocation(), region);
+}
 
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fDDY; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  ASSERT1(this == f.getMesh());
-
   Field3D result(this);
 
-  if (mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (this->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if (mesh->StaggerGrids && (outloc != inloc)) {
+  if (this->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     if (((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
         ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
@@ -1246,18 +1241,10 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       diffloc = (inloc == CELL_CENTRE) ? CELL_YLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_YLOW) {
-        // Shifting
-
-        func = sfDDY;                // Set default
-        table = FirstStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate to centre then call DDY again
-        return DDY(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDY(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1268,34 +1255,38 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
-  result = applyYdiff(f, func, diffloc);
+  result = applyYdiff(f, func, diffloc, region);
 
   result.setLocation(diffloc); // Set the result location
 
-  return interp_to(result, outloc); // Interpolate if necessary
+  return result;
 }
 
-const Field2D Mesh::indexDDY(const Field2D &f) { return applyYdiff(f, fDDY); }
+const Field2D Mesh::indexDDY(const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyYdiff(f, fDDY, f.getLocation(), region);
+}
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                             bool inc_xbndry) {
+const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
+                             DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fDDZ; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  ASSERT1(this == f.getMesh());
   Field3D result(this);
 
-  if (mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (this->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if (mesh->StaggerGrids && (outloc != inloc)) {
+  if (this->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
 
     if (((inloc == CELL_CENTRE) && (outloc == CELL_ZLOW)) ||
@@ -1307,18 +1298,10 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       diffloc = (inloc == CELL_CENTRE) ? CELL_ZLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_ZLOW) {
-        // Shifting
-
-        func = sfDDZ;                // Set default
-        table = FirstStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate then (centre -> centre) then interpolate
-        return DDZ(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDZ(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1331,7 +1314,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
-    if (mesh->StaggerGrids) {
+    if (this->StaggerGrids) {
       if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
         // Shifting down - multiply by exp(-0.5*i*k*dz)
         shift = -1.;
@@ -1345,21 +1328,18 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
     result.allocate(); // Make sure data allocated
 
-    int ncz = mesh->LocalNz;
+    auto region_index = f.region(region);
+    int xs = region_index.xstart;
+    int xe = region_index.xend;
+    int ys = region_index.ystart;
+    int ye = region_index.yend;
+    ASSERT2(region_index.zstart == 0);
+    int ncz = region_index.zend + 1;
 
     BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
 
-      int xs = mesh->xstart;
-      int xe = mesh->xend;
-      int ys = mesh->ystart;
-      int ye = mesh->yend;
-
-      if (inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
-        xs = 0;
-        xe = mesh->LocalNx - 1;
-      }
 
       // Calculate how many Z wavenumbers will be removed
       int kfilter =
@@ -1402,15 +1382,16 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   } else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    result = applyZdiff(f, func, diffloc, region);
   }
 
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return result;
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f) {
+const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC outloc,
+                             DIFF_METHOD method, REGION region) {
   ASSERT1(this == f.getMesh());
   return Field2D(0., this);
 }
@@ -1435,7 +1416,8 @@ const Field2D Mesh::indexDDZ(const Field2D &f) {
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fD2DX2; // Set to default function
   DiffLookup *table = SecondDerivTable;
 
@@ -1463,18 +1445,10 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       diffloc = (inloc == CELL_CENTRE) ? CELL_XLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_XLOW) {
-        // Shifting
-
-        func = sfD2DX2;               // Set default
-        table = SecondStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate then (centre -> centre) then interpolate
-        return D2DX2(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DX2(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1485,10 +1459,9 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
-  result = applyXdiff(f, func);
-  result.setLocation(diffloc);
+  result = applyXdiff(f, func, diffloc, region);
 
-  result = interp_to(result, outloc);
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1503,7 +1476,12 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
  *          guard cells
  *
  */
-const Field2D Mesh::indexD2DX2(const Field2D &f) { return applyXdiff(f, fD2DX2); }
+const Field2D Mesh::indexD2DX2(const Field2D &f,  CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyXdiff(f, fD2DX2, f.getLocation(), region);
+}
 
 ////////////// Y DERIVATIVE /////////////////
 
@@ -1517,7 +1495,8 @@ const Field2D Mesh::indexD2DX2(const Field2D &f) { return applyXdiff(f, fD2DX2);
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fD2DY2; // Set to default function
   DiffLookup *table = SecondDerivTable;
 
@@ -1545,18 +1524,10 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       diffloc = (inloc == CELL_CENTRE) ? CELL_YLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_YLOW) {
-        // Shifting
-
-        func = sfD2DY2;               // Set default
-        table = SecondStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate then (centre -> centre) then interpolate
-        return D2DY2(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DY2(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1567,10 +1538,11 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
-  result = applyYdiff(f, func);
+  result = applyYdiff(f, func, diffloc, region);
+
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 /*!
@@ -1583,7 +1555,12 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
  *          guard cells
  *
  */
-const Field2D Mesh::indexD2DY2(const Field2D &f) { return applyYdiff(f, fD2DY2); }
+const Field2D Mesh::indexD2DY2(const Field2D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyYdiff(f, fD2DY2, f.getLocation(), region);
+}
 
 ////////////// Z DERIVATIVE /////////////////
 
@@ -1597,8 +1574,8 @@ const Field2D Mesh::indexD2DY2(const Field2D &f) { return applyYdiff(f, fD2DY2);
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                               bool inc_xbndry) {
+const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
 
@@ -1626,18 +1603,10 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
       diffloc = (inloc == CELL_CENTRE) ? CELL_ZLOW : CELL_CENTRE;
 
     } else {
-      // A more complicated shift. Get a result at cell centre, then shift.
-      if (inloc == CELL_ZLOW) {
-        // Shifting
-
-        func = sfD2DZ2;               // Set default
-        table = SecondStagDerivTable; // Set table for others
-        diffloc = CELL_CENTRE;
-
-      } else if (inloc != CELL_CENTRE) {
-        // Interpolate then (centre -> centre) then interpolate
-        return D2DZ2(interp_to(f, CELL_CENTRE), outloc, method);
-      }
+      // Derivative of interpolated field or interpolation of derivative field
+      // cannot be taken without communicating and applying boundary
+      // conditions, so throw an exception instead
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DZ2(Field3D).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1665,20 +1634,18 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
     result.allocate(); // Make sure data allocated
 
-    int ncz = mesh->LocalNz;
+    auto region_index = f.region(region);
+    int xs = region_index.xstart;
+    int xe = region_index.xend;
+    int ys = region_index.ystart;
+    int ye = region_index.yend;
+    ASSERT2(region_index.zstart == 0);
+    int ncz = region_index.zend + 1;
 
+    // TODO: The comment does not match the check
     ASSERT1(ncz % 2 == 0); // Must be a power of 2
     Array<dcomplex> cv(ncz / 2 + 1);
-
-    int xs = mesh->xstart;
-    int xe = mesh->xend;
-    int ys = mesh->ystart;
-    int ye = mesh->yend;
-    if (inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
-      xs = 0;
-      xe = mesh->LocalNx - 1;
-    }
-
+    
     for (int jx = xs; jx <= xe; jx++) {
       for (int jy = ys; jy <= ye; jy++) {
 
@@ -1706,12 +1673,12 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
   } else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func);
+    result = applyZdiff(f, func, diffloc, region);
   }
 
   result.setLocation(diffloc);
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 /*******************************************************************************
@@ -1720,15 +1687,47 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD me
 
 BoutReal D4DX4_C2(stencil &f) { return (f.pp - 4. * f.p + 6. * f.c - 4. * f.m + f.mm); }
 
-const Field3D Mesh::indexD4DX4(const Field3D &f) { return applyXdiff(f, D4DX4_C2); }
+const Field3D Mesh::indexD4DX4(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
+}
 
-const Field2D Mesh::indexD4DX4(const Field2D &f) { return applyXdiff(f, D4DX4_C2); }
+const Field2D Mesh::indexD4DX4(const Field2D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
+}
 
-const Field3D Mesh::indexD4DY4(const Field3D &f) { return applyYdiff(f, D4DX4_C2); }
+const Field3D Mesh::indexD4DY4(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
+}
 
-const Field2D Mesh::indexD4DY4(const Field2D &f) { return applyYdiff(f, D4DX4_C2); }
+const Field2D Mesh::indexD4DY4(const Field2D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region) {
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
+}
 
-const Field3D Mesh::indexD4DZ4(const Field3D &f) { return applyZdiff(f, D4DX4_C2); }
+const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region){
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT1(method == DIFF_DEFAULT);
+  return applyZdiff(f, D4DX4_C2, f.getLocation(), region);
+}
+
+const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
+                               DIFF_METHOD method, REGION region){
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  return Field2D(0.,this);
+}
+
 
 /*******************************************************************************
  * Mixed derivatives
@@ -1744,9 +1743,11 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f) { return applyZdiff(f, D4DX4_C2
 ////////////// X DERIVATIVE /////////////////
 
 /// Special case where both arguments are 2D. Output location ignored for now
-const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSED(outloc),
+const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDX(Field2D, Field2D)");
+
+  CELL_LOC diffloc = f.getLocation();
 
   Mesh::upwind_func func = fVDDX;
 
@@ -1757,11 +1758,12 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
 
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
+  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->xstart > 1) {
+  if (this->xstart > 1) {
     // Two or more guard cells
 
     stencil s;
@@ -1775,7 +1777,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
       result[i] = func(v[i], s);
     }
 
-  } else if (mesh->xstart == 1) {
+  } else if (this->xstart == 1) {
     // Only one guard cell
 
     stencil s;
@@ -1798,6 +1800,8 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC UNUSE
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = false;
 #endif
+
+  result.setLocation(diffloc);
 
   return result;
 }
@@ -1854,7 +1858,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Note: The velocity stencil contains only (mm, m, p, pp)
     // v.p is v at +1/2, v.m is at -1/2 relative to the field f
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // Two or more guard cells
 
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
@@ -1897,7 +1901,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
       }
-    } else if (mesh->xstart == 1) {
+    } else if (this->xstart == 1) {
       // One guard cell
 
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
@@ -1956,7 +1960,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupUpwindFunc(table, method);
     }
 
-    if (mesh->xstart > 1) {
+    if (this->xstart > 1) {
       // Two or more guard cells
       stencil fs;
       for (const auto &i : result.region(region)) {
@@ -1968,7 +1972,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
         result[i] = func(v[i], fs);
       }
-    } else if (mesh->xstart == 1) {
+    } else if (this->xstart == 1) {
       // Only one guard cell
       stencil fs;
       fs.pp = nan("");
@@ -1986,14 +1990,14 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 ////////////// Y DERIVATIVE /////////////////
@@ -2005,8 +2009,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
-
-  ASSERT1(mesh->ystart > 0); // Must have at least one guard cell
+  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -2015,10 +2018,18 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  if (StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (outloc == CELL_DEFAULT) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  if (this->LocalNy == 1){
+    result=0;
+    result.setLocation(outloc);
+    return result;
+  }
+
+  ASSERT1(this->ystart > 0); // Must have at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -2048,7 +2059,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Note: vs.c not used for staggered differencing
     // vs.m is at i-1/2, vs.p is as i+1/2
     if ((vloc == CELL_YLOW) && (diffloc == CELL_CENTRE)) {
-      if (mesh->ystart > 1) {
+      if (this->ystart > 1) {
         // Two or more guard cells
         stencil fs, vs;
         vs.c = nan("");
@@ -2090,7 +2101,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         }
       }
     } else if ((vloc == CELL_CENTRE) && (inloc == CELL_YLOW)) {
-      if (mesh->ystart > 1) {
+      if (this->ystart > 1) {
         // Two or more guard cells
         stencil fs, vs;
         vs.c = nan("");
@@ -2146,7 +2157,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       func = lookupUpwindFunc(table, method);
     }
 
-    if (mesh->ystart > 1) {
+    if (this->ystart > 1) {
       // Two or more guard cells
       stencil fs;
       for (const auto &i : result.region(region)) {
@@ -2177,14 +2188,14 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 // general case
@@ -2195,8 +2206,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  ASSERT1(mesh->ystart > 0); // Need at least one guard cell
-
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -2204,10 +2213,18 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
 
-  if (StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if (outloc == CELL_DEFAULT) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  if (this->LocalNy == 1){
+    result=0;
+    result.setLocation(outloc);
+    return result;
+  }
+
+  ASSERT1(this->ystart > 0); // Need at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -2280,7 +2297,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     } else if (vUseUpDown) {
       // Only v has up/down fields
       // f must shift to field aligned coordinates
-      Field3D f_fa = mesh->toFieldAligned(f);
+      Field3D f_fa = this->toFieldAligned(f);
 
       stencil vval, fval;
       vval.pp = nan("");
@@ -2314,7 +2331,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     } else if (fUseUpDown) {
       // Only f has up/down fields
       // v must shift to field aligned coordinates
-      Field3D v_fa = mesh->toFieldAligned(v);
+      Field3D v_fa = this->toFieldAligned(v);
 
       stencil vval, fval;
       fval.pp = nan("");
@@ -2347,8 +2364,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     } else {
       // Both must shift to field aligned
-      Field3D v_fa = mesh->toFieldAligned(v);
-      Field3D f_fa = mesh->toFieldAligned(f);
+      Field3D v_fa = this->toFieldAligned(v);
+      Field3D f_fa = this->toFieldAligned(f);
 
       stencil vval, fval;
       for (const auto &i : result.region(region)) {
@@ -2413,10 +2430,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     } else {
       // Not using yup/ydown fields, so first transform to field-aligned coordinates
 
-      Field3D f_fa = mesh->toFieldAligned(f);
-      Field3D v_fa = mesh->toFieldAligned(v);
+      Field3D f_fa = this->toFieldAligned(f);
+      Field3D v_fa = this->toFieldAligned(v);
 
-      if (mesh->ystart > 1) {
+      if (this->ystart > 1) {
         stencil fs;
 
         for (const auto &i : result.region(region)) {
@@ -2442,18 +2459,18 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
       // Shift result back
-      result = mesh->fromFieldAligned(result);
+      result = this->fromFieldAligned(result);
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 ////////////// Z DERIVATIVE /////////////////
@@ -2559,14 +2576,14 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 /*******************************************************************************
@@ -2576,6 +2593,8 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
+
+  CELL_LOC diffloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL))) {
     // Split into an upwind and a central differencing part
@@ -2589,19 +2608,22 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     func = lookupFluxFunc(FluxTable, method);
   }
 
+  Field2D result(this);
+  result.allocate(); // Make sure data allocated
+
   if (StaggerGrids &&
       ((v.getLocation() != CELL_CENTRE) || (f.getLocation() != CELL_CENTRE))) {
     // Staggered differencing
     throw BoutException("Unhandled staggering");
   }
+  else {
+    result.setLocation(CELL_CENTRE);
+  }
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-
-  if (mesh->xstart > 1) {
+  if (this->xstart > 1) {
     // Two or more guard cells
 
     stencil fs;
@@ -2621,7 +2643,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
       result[i] = func(vs, fs);
     }
-  } else if (mesh->xstart == 1) {
+  } else if (this->xstart == 1) {
     // Only one guard cell
 
     stencil fs;
@@ -2706,7 +2728,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->xstart > 1) {
+  if (this->xstart > 1) {
     // Two or more guard cells
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
@@ -2775,7 +2797,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         result[i] = func(vs, fs);
       }
     }
-  } else if (mesh->xstart == 1) {
+  } else if (this->xstart == 1) {
     // One guard cell
 
     stencil fs;
@@ -2841,14 +2863,14 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     throw BoutException("Error: Derivatives in X requires at least one guard cell");
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -2856,6 +2878,11 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDY(Field2D, Field2D)");
+
+  ASSERT1(this == v.getMesh());
+  ASSERT1(this == f.getMesh());
+
+  CELL_LOC diffloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL))) {
     // Split into an upwind and a central differencing part
@@ -2869,13 +2896,19 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     func = lookupFluxFunc(FluxTable, method);
   }
 
-  ASSERT1(this == v.getMesh());
-  ASSERT1(this == f.getMesh());
-
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (mesh->ystart > 1) {
+  if (StaggerGrids &&
+      ((v.getLocation() != CELL_CENTRE) || (f.getLocation() != CELL_CENTRE))) {
+    // Staggered differencing
+    throw BoutException("Unhandled staggering");
+  }
+  else {
+    result.setLocation(CELL_CENTRE);
+  }
+
+  if (this->ystart > 1) {
     // Two or more guard cells
     stencil fs, vs;
     for (const auto &i : result.region(region)) {
@@ -2895,7 +2928,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       result[i] = func(vs, fs);
     }
 
-  } else if (mesh->ystart == 1) {
+  } else if (this->ystart == 1) {
     // Only one guard cell
 
     stencil fs;
@@ -2919,6 +2952,8 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // No guard cells
     throw BoutException("Error: Derivatives in Y requires at least one guard cell");
   }
+
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -3029,7 +3064,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   else if (vUseUpDown) {
     // Only v has up/down fields
     // f must shift to field aligned coordinates
-    Field3D f_fa = mesh->toFieldAligned(f);
+    Field3D f_fa = this->toFieldAligned(f);
 
     stencil vval;
     vval.mm = nan("");
@@ -3068,7 +3103,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   else if (fUseUpDown) {
     // Only f has up/down fields
     // v must shift to field aligned coordinates
-    Field3D v_fa = mesh->toFieldAligned(v);
+    Field3D v_fa = this->toFieldAligned(v);
 
     stencil vval;
 
@@ -3107,8 +3142,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   }
   else {
     // Both must shift to field aligned
-    Field3D v_fa = mesh->toFieldAligned(v);
-    Field3D f_fa = mesh->toFieldAligned(f);
+    Field3D v_fa = this->toFieldAligned(v);
+    Field3D f_fa = this->toFieldAligned(f);
 
     stencil vval, fval;
 
@@ -3144,14 +3179,14 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -3242,12 +3277,12 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     result[i] = func(vval, fval);
   }
 
-  result.setLocation(inloc);
+  result.setLocation(diffloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
 
-  return interp_to(result, outloc);
+  return result;
 }

@@ -46,7 +46,7 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
   if(mesh->firstX() && mesh->lastX()) {
     // Can use serial algorithm
 
-    options->get("type", type, LAPLACE_TRI);
+    options->get("type", type, LAPLACE_CYCLIC);
 
     if(strcasecmp(type.c_str(), LAPLACE_TRI) == 0) {
       return new LaplaceSerialTri(options);
@@ -71,7 +71,7 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     }
   }
 
-  options->get("type", type, LAPLACE_SPT);
+  options->get("type", type, LAPLACE_CYCLIC);
 
   // Parallel algorithm
   if(strcasecmp(type.c_str(), LAPLACE_PDD) == 0) {

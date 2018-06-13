@@ -453,7 +453,6 @@ int BoutInitialise(int &argc, char **&argv) {
     
   }catch(BoutException &e) {
     output_error.write("Error encountered during initialisation: %s\n", e.what());
-    BoutComm::cleanup();
     throw;
   }
   return 0;
@@ -660,11 +659,6 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 /**************************************************************************
  * Global error handling
  **************************************************************************/
-
-/// Print an error message and exit
-void bout_error(const char *str) {
-  throw BoutException(str);
-}
 
 /// Signal handler - handles all signals
 void bout_signal_handler(int sig) {

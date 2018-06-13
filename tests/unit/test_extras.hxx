@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 
+#include <iostream>
 #include <mpi.h>
 
 #include "bout/mesh.hxx"
@@ -22,6 +23,27 @@ const BoutReal BoutRealTolerance = 1e-15;
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
+
+/// Is \p field equal to \p number, with a tolerance of \p tolerance?
+::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
+                                                  BoutReal tolerance = BoutRealTolerance);
+
+
+/// Teach googletest how to print SpecificInds
+inline std::ostream& operator<< (std::ostream &out, const SpecificInd &index) {
+  return out << index.ind;
+}
+
+/// Teach googletest how to print Ind2D
+inline std::ostream& operator<< (std::ostream &out, const Ind2D &index) {
+  return out << index.ind;
+}
+
+/// Teach googletest how to print Ind3D
+inline std::ostream& operator<< (std::ostream &out, const Ind3D &index) {
+  return out << index.ind;
+}
+
 
 /// FakeMesh has just enough information to create fields
 ///
@@ -57,6 +79,7 @@ public:
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+    maxregionblocksize = MAXREGIONBLOCKSIZE;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };

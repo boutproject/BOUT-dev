@@ -61,7 +61,6 @@ int physics_init(bool restarting) {
 
 #pragma omp parallel
   for (auto i: d3){
-    //output.print("%d %d %d\n",i.x,i.y,i.z);
     if (d3[i] != exp) PRINT_DEBUG;
     //if (i.x != 8)
     d3[i]=3;

@@ -84,12 +84,12 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
   nloc    = xend - xstart + 1; // Number of X points on this processor
   nsys = mesh->yend - mesh->ystart + 1; // Number of separate Y slices
-  
-  acoef = matrix<BoutReal>(nsys, nloc);
-  bcoef = matrix<BoutReal>(nsys, nloc);
-  ccoef = matrix<BoutReal>(nsys, nloc);
-  xvals = matrix<BoutReal>(nsys, nloc);
-  bvals = matrix<BoutReal>(nsys, nloc);
+
+  acoef = Matrix<BoutReal>(nsys, nloc);
+  bcoef = Matrix<BoutReal>(nsys, nloc);
+  ccoef = Matrix<BoutReal>(nsys, nloc);
+  xvals = Matrix<BoutReal>(nsys, nloc);
+  bvals = Matrix<BoutReal>(nsys, nloc);
 
   // Create a cyclic reduction object
   cr = new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc);
@@ -216,7 +216,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(direct) {
     KSPGetPC(ksp,&pc);
     PCSetType(pc,PCLU);
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else {
     
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
@@ -322,10 +326,10 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       c += B(x,y);
       
       // Put values into the preconditioner, X derivatives only
-      acoef[y - mesh->ystart][x - xstart] = xm;
-      bcoef[y - mesh->ystart][x - xstart] = c;
-      ccoef[y - mesh->ystart][x - xstart] = xp;
-      
+      acoef(y - mesh->ystart, x - xstart) = xm;
+      bcoef(y - mesh->ystart, x - xstart) = c;
+      ccoef(y - mesh->ystart, x - xstart) = xp;
+
       if( include_y_derivs ) {
         // YY component
         // Metrics at y+1/2
@@ -396,8 +400,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         
         // Preconditioner
-        bcoef[y-mesh->ystart][0] = 0.5;
-        ccoef[y-mesh->ystart][0] = 0.5;
+        bcoef(y - mesh->ystart, 0) = 0.5;
+        ccoef(y - mesh->ystart, 0) = 0.5;
       }
       
     }else {
@@ -413,8 +417,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         
         // Preconditioner
-        bcoef[y-mesh->ystart][0] =  1.0;
-        ccoef[y-mesh->ystart][0] = -1.0;
+        bcoef(y - mesh->ystart, 0) = 1.0;
+        ccoef(y - mesh->ystart, 0) = -1.0;
       }
     }
   }
@@ -430,8 +434,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
       
       // Preconditioner
-      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
-      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
+      acoef(y - mesh->ystart, mesh->xend + 1 - xstart) = 0.5;
+      bcoef(y - mesh->ystart, mesh->xend + 1 - xstart) = 0.5;
     }
   }
 
@@ -490,7 +494,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 #endif
   
   // Set coefficients for preconditioner
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+  cr->setCoefs(acoef, bcoef, ccoef);
 }
 
 LaplaceXY::~LaplaceXY() {
@@ -498,13 +502,6 @@ LaplaceXY::~LaplaceXY() {
   VecDestroy( &xs );
   VecDestroy( &bs );
   MatDestroy( &MatA );
-
-  // Free memory for preconditioner
-  free_matrix(acoef);
-  free_matrix(bcoef);
-  free_matrix(ccoef);
-  free_matrix(xvals);
-  free_matrix(bvals);
   
   // Delete tridiagonal solver
   delete cr;
@@ -729,20 +726,20 @@ int LaplaceXY::precon(Vec input, Vec result) {
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       PetscScalar val;
-      VecGetValues(input, 1, &ind, &val ); 
-      bvals[y-mesh->ystart][x-xstart] = val;
+      VecGetValues(input, 1, &ind, &val );
+      bvals(y - mesh->ystart, x - xstart) = val;
       ind++;
     }
   }
   
   // Solve tridiagonal systems using CR solver
-  cr->solve(nsys, bvals, xvals);
+  cr->solve(bvals, xvals);
 
   // Save result xvals into y array
   ind = ind0;
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      PetscScalar val = xvals[y-mesh->ystart][x-xstart];
+      PetscScalar val = xvals(y - mesh->ystart, x - xstart);
       VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
       ind++;
     }

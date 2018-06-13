@@ -33,11 +33,12 @@ class LaplaceShoot;
 #include <invert_laplace.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 class LaplaceShoot : public Laplacian {
 public:
   LaplaceShoot(Options *opt = NULL);
-  ~LaplaceShoot();
+  ~LaplaceShoot(){};
   
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override { Acoef = val; }
@@ -62,9 +63,9 @@ private:
   
   int nmode;  // Number of modes being solved
   
-  dcomplex *km, *kc, *kp, *rhsk;
+  Array<dcomplex> km, kc, kp, rhsk;
   
-  BoutReal *buffer; // For communications
+  Array<BoutReal> buffer; // For communications
 };
 
 #endif

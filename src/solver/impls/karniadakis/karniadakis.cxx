@@ -43,22 +43,8 @@
 #include <output.hxx>
 #include <bout/openmpwrap.hxx>
 
-KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options), f1(nullptr) {
+KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
   canReset = true;  
-}
-
-KarniadakisSolver::~KarniadakisSolver() {
-  if(f1 != nullptr){
-    delete[] f1;
-    delete[] f0;
-    delete[] fm1;
-    delete[] fm2;
-    
-    delete[] S0;
-    delete[] Sm1;
-    delete[] Sm2;
-    delete[] D0;
-  }
 }
 
 int KarniadakisSolver::init(int nout, BoutReal tstep) {
@@ -86,24 +72,24 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
-  // Allocate memory 
-  
-  f1 = new BoutReal[nlocal];
-  f0 = new BoutReal[nlocal];
-  fm1 = new BoutReal[nlocal];
-  fm2 = new BoutReal[nlocal];
-  
-  S0 = new BoutReal[nlocal];
-  Sm1 = new BoutReal[nlocal];
-  Sm2 = new BoutReal[nlocal];
-  
-  D0 = new BoutReal[nlocal];
-  
+  // Allocate memory
+
+  f1 = Array<BoutReal>(nlocal);
+  f0 = Array<BoutReal>(nlocal);
+  fm1 = Array<BoutReal>(nlocal);
+  fm2 = Array<BoutReal>(nlocal);
+
+  S0 = Array<BoutReal>(nlocal);
+  Sm1 = Array<BoutReal>(nlocal);
+  Sm2 = Array<BoutReal>(nlocal);
+
+  D0 = Array<BoutReal>(nlocal);
+
   first_time = true;
 
   // Put starting values into f0
-  save_vars(f0);
-  
+  save_vars(std::begin(f0));
+
   // Get options
   OPTION(options, timestep, tstep);
   
@@ -129,7 +115,7 @@ int KarniadakisSolver::run() {
       take_step(timestep);
       
       // Cycle buffers
-      BoutReal *tmp = fm2;
+      auto tmp = fm2;
       fm2 = fm1;
       fm1 = f0;
       f0 = f1;
@@ -147,7 +133,7 @@ int KarniadakisSolver::run() {
     iteration++;
     
     // Call RHS to communicate and get auxilliary variables
-    load_vars(f0);
+    load_vars(std::begin(f0));
     run_rhs(simtime);
     
     /// Call the monitor function
@@ -170,16 +156,16 @@ void KarniadakisSolver::resetInternalFields(){
   first_time=true;
 
   //Copy fields into vector
-  save_vars(f0);
+  save_vars(std::begin(f0));
 }
 
 void KarniadakisSolver::take_step(BoutReal dt) {
   // S0 = S(f0)
-  
-  load_vars(f0);
+
+  load_vars(std::begin(f0));
   run_convective(simtime);
-  save_derivs(S0);
-  
+  save_derivs(std::begin(S0));
+
   if(first_time) {
     // Initialise values
     BOUT_OMP(parallel for)
@@ -197,10 +183,10 @@ void KarniadakisSolver::take_step(BoutReal dt) {
     f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
   
   // D0 = S(f0)
-  load_vars(f0);
+  load_vars(std::begin(f0));
   run_diffusive(simtime);
-  save_derivs(D0);
-  
+  save_derivs(std::begin(D0));
+
   // f1 = f1 + dt*D0
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)

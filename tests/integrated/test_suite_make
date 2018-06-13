@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 #
 # Run the test suite, report failures
@@ -14,6 +15,14 @@ import sys
 import time
 from boututils.run_wrapper import shell
 
+sys.path.append('..')
+from requirements import Requirements
+requirements = Requirements();
+requirements.add('make',True)
+
+
+##################################################################
+
 # Get list of directories containing test cases
 tests=[]
 with open('test_suite_list') as testfile:
@@ -21,12 +30,17 @@ with open('test_suite_list') as testfile:
         test=test.strip()
         if test.startswith("#"):
             pass
-        elif test.startswith("!"):
-            pass
         else:
             tests.append(test)
 
 ##################################################################
+
+if "--get-list" in sys.argv:
+    for test in tests:
+        req_met, req_expr = requirements.check(test+"/runtest")
+        if req_met:
+            print(test)
+    exit(0)
 
 savepath = os.getcwd() # Save current working directory
 npassed = 0
@@ -39,21 +53,40 @@ start_time = time.time()
 print("======= Making {0} tests ========".format(savepath.split("/")[-1]))
 print("Making {0} tests".format(total))
 
+longest=max([len(s) for s in tests])
+output='%-'+str(longest+1)+'s'
 for t in tests:
     os.chdir(t)
 
+    print(output%t,end='')
+    sys.stdout.flush() # Make sure name is flushed
+    status,out = shell("make", pipe=True)
+
+    # Check requirements
+    req_met, req_expr = requirements.check("./runtest")
+    if not req_met:
+        print("S - {0} => False".format(req_expr))
+        sys.stdout.flush()
+        os.chdir(savepath)
+        continue
+
+    start_time_ = time.time()
+    # Run test, piping stdout so it is not sent to console
     status,out = shell("make", pipe=True)
 
     if status != 0:
-        print("F", end='') # No newline
+        # ❌ Failed
+        print(u"\u274C", end='') # No newline
         nfailed = nfailed + 1
         failed.append((t, out))
     else:
-        # Passed
-        print(".", end='') # No newline
+        # ✓ Passed
+        print(u"\u2713", end='') # No newline
         npassed = npassed + 1
 
-    sys.stdout.flush() # Make sure '.' or 'F' is flushed
+    print(" %7.3f s - %s"%(time.time() - start_time_,t))
+    sys.stdout.flush() # Make sure '✓' or '❌' is flushed
+
     os.chdir(savepath)
 
 elapsed_time = time.time() - start_time

@@ -33,76 +33,6 @@
 #include <sstream>
 #include <cmath>
 
-BoutReal *rvector(int size) {
-  return (BoutReal*) malloc(sizeof(BoutReal)*size);
-}
-
-BoutReal *rvresize(BoutReal *v, int newsize) {
-  return (BoutReal*) realloc(v, sizeof(BoutReal)*newsize);
-}
-
-void rvfree(BoutReal *r) {
-  free(r);
-}
-
-int *ivector(int size) {
-  return (int*) malloc(sizeof(int)*size);
-}
-
-int *ivresize(int *v, int newsize) {
-  return (int*) realloc(v, sizeof(int)*newsize);
-}
-
-void ivfree(int *v) {
-  free(v);
-}
-
-BoutReal **rmatrix(int xsize, int ysize) {
-  long i;
-  BoutReal **m;
-
-  if((m = (BoutReal**) malloc(xsize*sizeof(BoutReal*))) == (BoutReal**) NULL) {
-    throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  }
-
-  if((m[0] = (BoutReal*) malloc(xsize*ysize*sizeof(BoutReal))) == (BoutReal*) NULL) {
-    throw BoutException("Error: could not allocate memory\n");
-  }
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-
-  return(m);
-}
-
-int **imatrix(int xsize, int ysize) {
-  long i;
-  int **m;
-
-  if((m = (int**) malloc(xsize*sizeof(int*))) == (int**) NULL) {
-    throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  }
-
-  if((m[0] = (int*) malloc(xsize*ysize*sizeof(int))) == (int*) NULL) {
-    throw BoutException("Error: could not allocate memory\n");
-  }
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-
-  return(m);
-}
-
-void free_rmatrix(BoutReal **m) {
-  free(m[0]);
-  free(m);
-}
-
-void free_imatrix(int **m) {
-  free(m[0]);
-  free(m);
-}
-
 BoutReal ***r3tensor(int nrow, int ncol, int ndep) {
   int i,j;
   BoutReal ***t;
@@ -163,25 +93,6 @@ void free_i3tensor(int ***m) {
   free(m);
 }
 
-dcomplex **cmatrix(int nrow, int ncol) {
-  dcomplex **m;
-  int i;
-
-  m = new dcomplex*[nrow];
-  m[0] = new dcomplex[nrow*ncol];
-  for(i=1;i<nrow;i++)
-    m[i] = m[i-1] + ncol;
-
-  return m;
-}
-
-void free_cmatrix(dcomplex** m) {
-  delete[] m[0];
-  delete[] m;
-}
-
-
-
 /**************************************************************************
  * String routines
  **************************************************************************/
@@ -200,7 +111,7 @@ char* copy_string(const char* s) {
   return s2;
 }
 
-/// Convert a string to lower case
+// Convert a string to lower case
 const string lowercase(const string &str) {
   string strlow(str);
 
@@ -208,7 +119,7 @@ const string lowercase(const string &str) {
   return strlow;
 }
 
-/// Convert to lowercase, except for inside strings
+// Convert to lowercase, except for inside strings
 const string lowercasequote(const string &str) {
   string strlow(str);
 

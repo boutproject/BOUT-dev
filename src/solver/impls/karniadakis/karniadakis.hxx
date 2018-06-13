@@ -40,10 +40,15 @@ class KarniadakisSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<KarniadakisSolver> registersolverkarniadakis("karniadakis");
+}
+
 class KarniadakisSolver : public Solver {
  public:
   KarniadakisSolver(Options *options);
-  ~KarniadakisSolver();
+  ~KarniadakisSolver(){};
 
   BoutReal getCurrentTimestep() override {return timestep; }
 
@@ -54,9 +59,9 @@ class KarniadakisSolver : public Solver {
 
  private:
   
-  BoutReal *f1, *f0, *fm1, *fm2; // System state at current, and two previous time points
-  BoutReal *S0, *Sm1, *Sm2; // Convective part of the RHS equations
-  BoutReal *D0;             // Dissipative part of the RHS
+  Array<BoutReal> f1, f0, fm1, fm2; // System state at current, and two previous time points
+  Array<BoutReal> S0, Sm1, Sm2; // Convective part of the RHS equations
+  Array<BoutReal> D0;             // Dissipative part of the RHS
   
   bool first_time; // Need to initialise values
 
