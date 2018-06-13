@@ -443,23 +443,9 @@ class DataFile_netCDF(DataFile):
                 if library == "Scientific":
                     # Passing ranges to var[] doesn't seem to work
                     data = var[:]
-                    if ndims == 1:
-                        data = data[ranges[0]]
-                    elif ndims == 2:
-                        data = data[ranges[0],ranges[1]]
-                    elif ndims == 3:
-                        data = data[ranges[0],ranges[1],ranges[2]]
-                    elif ndims == 4:
-                        data = data[ranges[0],ranges[1],ranges[2],ranges[3]]
+                    data = data[ranges[:ndims]]
                 else:
-                    if ndims == 1:
-                        data = var[ranges[0]]
-                    elif ndims == 2:
-                        data = var[ranges[0],ranges[1]]
-                    elif ndims == 3:
-                        data = var[ranges[0],ranges[1],ranges[2]]
-                    elif ndims == 4:
-                        data = var[ranges[0],ranges[1],ranges[2],ranges[3]]
+                    data = var[ranges[:ndims]]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
