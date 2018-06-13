@@ -135,11 +135,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     ----------
     varname : str
         Name of the variable
-    xind, yind, zind, tind : int, slice, optional
-        Range of X, Y, Z or time indices to collect. Either a single index, or
-        slice(start, stop, range) (standard Python index slicing). Will also
-        convert argument from lists or tuples to slices. Default is to fetch
-        all indices
+    xind, yind, zind, tind : int, slice or list of int, optional
+        Range of X, Y, Z or time indices to collect. Either a single
+        index to collect, a list containing [start, end] (inclusive
+        end), or a slice object (usual python indexing). Default is to
+        fetch all indices
     path : str, optional
         Path to data files (default: ".")
     prefix : str, optional
