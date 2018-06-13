@@ -712,13 +712,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     throw e;
   }
 
-  // Reset iteration and wall-time count
-  if ((iter % freqDefault) == 0) {
-    rhs_ncalls = 0;
-    rhs_ncalls_i = 0;
-    rhs_ncalls_e = 0;
-  }
-
   if ( iter == NOUT ){
     for (auto it: monitors){
       it->cleanup();
@@ -734,6 +727,23 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   return 0;
 }
 
+int Solver::resetRHSCounter() {
+  int t = rhs_ncalls;
+  rhs_ncalls = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_i() {
+  int t = rhs_ncalls_i;
+  rhs_ncalls_i = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_e() {
+  int t = rhs_ncalls_e;
+  rhs_ncalls_e = 0;
+  return t;
+}
 /////////////////////////////////////////////////////
 
 void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
@@ -1101,9 +1111,8 @@ void Solver::save_derivs(BoutReal *dudata) {
 
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
-    if(f.location != (f.F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *(f.F_var) = interp_to(*(f.F_var), f.location);
+    if(f.var->getLocation() != (f.F_var)->getLocation()) {
+      throw BoutException("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n",strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
     }
   }
 

@@ -229,9 +229,11 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, Field3D *
 }
 
 void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
-
+  TRACE("BoundaryOpPar_neumann::apply");
+  
   Field3D& f_next = f.ynext(bndry->dir);
-
+  f_next.allocate(); // Ensure unique before modifying
+  
   Coordinates& coord = *(mesh->coordinates());
 
   // If point is in boundary, then fill in f_next such that the derivative

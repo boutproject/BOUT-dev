@@ -681,7 +681,12 @@ class Mesh {
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
-
+  
+  /*!
+   * Return the parallel transform, setting it if need be
+   */
+  ParallelTransform& getParallelTransform();
+  
  protected:
   
   GridDataSource *source; ///< Source for grid data
@@ -690,10 +695,6 @@ class Mesh {
 
   Options *options; ///< Mesh options section
   
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
 
   PTptr transform; ///< Handles calculation of yup and ydown
 

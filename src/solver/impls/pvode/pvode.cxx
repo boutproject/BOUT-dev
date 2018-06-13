@@ -232,8 +232,6 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   BoutReal *udata;
   
-  //rhs_ncalls = 0;
-
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
 
@@ -312,8 +310,6 @@ void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dud
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-  
-  rhs_ncalls++;
 }
 
 /**************************************************************************
