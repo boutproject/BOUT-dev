@@ -26,12 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_ARKODE
+#ifdef BOUT_HAS_ARKODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver ArkodeSolver;
- 
-#else
 class ArkodeSolver;
 
 #ifndef __ARKODE_SOLVER_H__
@@ -65,9 +61,9 @@ class ArkodeSolver : public Solver {
     ArkodeSolver(Options *opts = NULL);
     ~ArkodeSolver();
 
-    void setJacobian(Jacobian j) {jacfunc = j; }
-    
-    BoutReal getCurrentTimestep() { return hcur; }
+    void setJacobian(Jacobian j) override { jacfunc = j; }
+
+    BoutReal getCurrentTimestep() override { return hcur; }
 
     int init(int nout, BoutReal tstep) override;
 

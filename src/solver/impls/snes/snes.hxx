@@ -75,9 +75,4 @@ class SNESSolver : public Solver {
 
 #endif // __SNES_SOLVER_H__
 
-#else // BOUT_HAS_PETSC
-
-#include "../emptysolver.hxx"
-typedef EmptySolver SNESSolver;
-
 #endif // BOUT_HAS_PETSC

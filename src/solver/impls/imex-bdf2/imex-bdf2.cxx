@@ -1238,6 +1238,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   for(int i=0;i<nlocal;i++)
     u[i] = xdata[i];
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
+
+  return 0;
 }
 
 // f = (x - gamma*G(x)) - rhs

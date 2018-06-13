@@ -51,7 +51,7 @@ AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
         [Use the LAPACK library])],,[with_lapack=guess])
 AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
-        [Enable PETSc interface])],,[])
+        [Enable PETSc interface])],,[with_petsc=no])
 AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
@@ -593,86 +593,95 @@ AS_IF([test "x$with_lapack" != "xno"], [
 #############################################################
 
 AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
-  AC_PROG_AWK
-### This still needs to check for PETSC_ARCH
+
+# Supplying an argument to "--with-petsc" only works if PETSC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
-    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
-        ))
+    PETSC_ARCH=
+  ])
+
+  AC_MSG_NOTICE([Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
+
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# PETSC_ERROR_MESSAGE
+#
+# with no identation
+  m4_define(PETSC_ERROR_MESSAGE,
+  [  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  ])
+
+# PETSc changed the location of the conf directory in 3.5, so we
+# need to check both locations
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
+    PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
-        ))
-  ])
-
-  PETSC_HEADER=
-  BOUT_ADDPATH_CHECK_HEADER([petscversion.h], [PETSC_HEADER=
-  PETSC_DIR=],
-    BOUT_ADDPATH_CHECK_HEADER([petsc/petscversion.h],[PETSC_HEADER=petsc/
-    PETSC_DIR=]))
-
-
-  CPPGLAGS_save=$CPPFLAGS
-  AS_IF([test ."$PETSC_DIR$PETSC_ARCH" != .],[
-         CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"])
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MAJOR
-       ]])]
-        , [PETSC_VERSION_MAJOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MINOR
-       ]])]
-        , [PETSC_VERSION_MINOR=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_RELEASE
-       ]])]
-        , [PETSC_VERSION_RELEASE=`grep -v \# conftest.i`]
-        ,[AC_MSG_ERROR([[Error detecting PETSc version]])])
-
-  AS_IF([test $PETSC_VERSION_MAJOR != "3"], [
-    AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
-  ])
-
-  AC_MSG_CHECKING([PETSc interface version])
-  AS_CASE(["$PETSC_VERSION_RELEASE"],
-  [0], [
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    AC_MSG_RESULT([dev])
-  ],
-  [1], [
-    AS_CASE(["$PETSC_VERSION_MINOR"],
-    dnl Note double brackets! This is escaping them to leave just "[1-7]"
-    [ [[1-7]] ],
-      [CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_$PETSC_VERSION_MINOR"
-       AC_MSG_RESULT([3.$PETSC_VERSION_MINOR])
-       AC_MSG_NOTICE([PETSC_DIR="$PETSC_DIR"])
-       AC_MSG_NOTICE([PETSC_ARCH="$PETSC_ARCH"])
-       AC_MSG_NOTICE([PETSC_CONFDIR="$PETSC_CONFDIR"])
-      ],
-    [
-      AC_MSG_RESULT([unknown])
-      AC_MSG_NOTICE([PETSC_DIR="$PETSC_DIR"])
-      AC_MSG_NOTICE([PETSC_ARCH="$PETSC_ARCH"])
-      AC_MSG_NOTICE([PETSC_CONFDIR="$PETSC_CONFDIR"])
-      AC_MSG_NOTICE([***********************************])
-      AC_MSG_WARN([Unrecognised PETSc version])
-      AC_MSG_NOTICE([MAJOR VERSION: $PETSC_VERSION_MAJOR])
-      AC_MSG_NOTICE([MINOR VERSION: $PETSC_VERSION_MINOR])
-      AC_MSG_NOTICE([RELEASE      : $PETSC_VERSION_RELEASE])
-      AC_MSG_NOTICE([])
-      AC_MSG_NOTICE([Trying PETSc-dev interface])
-      AC_MSG_NOTICE([***********************************])
-      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
+      PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
+    ], [
+      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+PETSC_ERROR_MESSAGE])
     ])
   ])
 
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# petscverion.h
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  AC_CHECK_HEADER([petscversion.h],
+    [FOUND_PETSC_HEADER=yes],
+    [FOUND_PETSC_HEADER=no]
+  )
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install PETSc in a non-supported fashion. This is really the fault
+# of PETSc for their weird method of installation
+  AS_IF([test $FOUND_PETSC_HEADER = no], [
+    AC_CHECK_FILE([${PETSC_CONFDIR}/petscvariables], [], [
+      AC_MSG_ERROR([Unable to find either petscversion.h or petscvariables
+PETSC_ERROR_MESSAGE])
+    ])
+
+# This relies on the assumption that PETSC_ARCH is empty
+    PETSC_CC_INCLUDES=$(grep ^PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+
+    AC_MSG_NOTICE([Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables])
+
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    AS_UNSET([ac_cv_header_petscversion_h])
+
+    CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
+    AC_CHECK_HEADER([petscversion.h], [], [
+      AC_MSG_ERROR([Couldn't find or include petscversion.h.
+PETSC_ERROR_MESSAGE])
+    ])
+  ], [])
+
+# Now we have the header we want, we can check the version number
+  AC_MSG_CHECKING([PETSc is at least 3.4.0])
+  AC_EGREP_CPP([yes], [
+    #include <petscversion.h>
+    #if PETSC_VERSION_GE(3, 4, 0)
+      yes
+    #endif
+  ], [PETSC_VERSION_OK="yes"],
+     [PETSC_VERSION_OK="no"])
+  AC_MSG_RESULT([$PETSC_VERSION_OK])
+  CPPFLAGS="$save_CPPFLAGS"
+
+  AS_IF([test $PETSC_VERSION_OK = no], [
+    AC_MSG_ERROR([PETSc version must be at least 3.4.0])
+  ])
+
+# Check if PETSc was compiled with SUNDIALS
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
@@ -686,26 +695,23 @@ PETSC_VERSION_RELEASE
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
   CPPFLAGS="$save_CPPFLAGS"
 
-  HAS_PETSC="yes"
-  # Set the line to be included in the make.conf file
-  AS_IF([test "." != ."$PETSC_CONFDIR"] ,
-    [ PETSC="include ${PETSC_CONFDIR}/variables" ],
-    [ PETSC= ])
-], [
-  PETSC=
-  HAS_PETSC="no"
-])
-
-AC_SUBST(PETSC, $PETSC)
-
-AS_IF([test "$PETSC" != ""], [
-  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
-  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-
   AS_IF([test "$PETSC_HAS_SUNDIALS" = "yes"], [
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   ])
+
+  # Set the line to be included in the make.conf file
+  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
+
+  HAS_PETSC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
+  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+
+], [
+  PETSC_MAKE_INCLUDE=
+  HAS_PETSC="no"
+  PETSC_HAS_SUNDIALS="no"
 ])
 
 #############################################################
@@ -1085,18 +1091,6 @@ then
   HAS_MUMPS="no"
 fi
 
-if test "$PETSC" = ""
-then
-  HAS_PETSC="no"
-  PETSC_VERSION=""
-  PETSC_RELEASE=""
-  PETSC_HAS_SUNDIALS="no"
-else
-  HAS_PETSC="yes"
-  PETSC_VERSION="$PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR"
-  PETSC_RELEASE="$PETSC_VERSION_RELEASE"
-fi
-
 # Only make.config is altered by configure
 AC_CONFIG_FILES([make.config])
 AC_OUTPUT
@@ -1144,9 +1138,10 @@ AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
-AC_SUBST(PETSC_VERSION)
-AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(PETSC_MAKE_INCLUDE)
+AC_SUBST(PETSC_DIR)
+AC_SUBST(PETSC_ARCH)
 AC_SUBST(HAS_OPENMP)
 
 AC_CONFIG_FILES([bin/bout-config])
@@ -1161,17 +1156,7 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  Configuration summary  ])
 AC_MSG_NOTICE([-------------------------])
 
-AS_IF([test "$PETSC" = ""], [
-  AC_MSG_NOTICE([  PETSc support           : no])
-], [
-  AS_CASE(["$PETSC_VERSION_RELEASE"],
-    [0], [PETSC_RELEASE_TYPE="dev"],
-    [1], [PETSC_RELEASE_TYPE="release"]
-  )
-  AC_MSG_NOTICE([  PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)])
-  AC_MSG_NOTICE([  PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS])
-])
-
+AC_MSG_NOTICE([  PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
 AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
 AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])

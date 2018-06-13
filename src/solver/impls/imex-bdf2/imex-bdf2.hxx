@@ -198,9 +198,4 @@ class IMEXBDF2 : public Solver {
 
 #endif // __IMEXBDF2_SOLVER_H__
 
-#else // BOUT_HAS_PETSC
-
-#include "../emptysolver.hxx"
-typedef EmptySolver IMEXBDF2;
-
 #endif // BOUT_HAS_PETSC

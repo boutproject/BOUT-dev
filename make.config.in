@@ -17,7 +17,9 @@
 
 # PETSc config variables need to be first, else they may clobber other
 # options (e.g. CXX, CXXFLAGS)
-@PETSC@
+PETSC_DIR ?= @PETSC_DIR@
+PETSC_ARCH ?= @PETSC_ARCH@
+@PETSC_MAKE_INCLUDE@
 @SLEPC_VARS@
 
 # These lines can be replaced in "make install" to point to install directories
