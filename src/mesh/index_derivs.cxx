@@ -940,37 +940,39 @@ SCOREP0();
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+BOUT_OMP(parallel)
+{
 
   if (this->ystart > 1) {
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
 
-//TODO
-    for (const auto &i : result.region(region)) {
+    stencil s;
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
       // Set stencils
-      stencil s;
+      s.mm = var[offset.ymm(i)];
+      s.m = var[offset.ym(i)];
       s.c = var[i];
-      s.p = var[i.yp()];
-      s.m = var[i.ym()];
-      s.pp = var[i.offset(0, 2, 0)];
-      s.mm = var[i.offset(0, -2, 0)];
+      s.p = var[offset.yp(i)];
+      s.pp = var[offset.ypp(i)];
 
       result[i] = func(s);
-    }
+    );
   } else {
     // Only one guard cell, so no pp or mm values
-//TODO
-    for (const auto &i : result.region(region)) {
+    stencil s;
+    IndexOffset<Ind3D> offset(*mesh);
+    s.mm = nan("");
+    s.pp = nan("");
+    BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D(region), i,
       // Set stencils
-      stencil s;
+      s.m = var[offset.ym(i)];
       s.c = var[i];
-      s.p = var[i.yp()];
-      s.m = var[i.ym()];
-      s.pp = nan("");
-      s.mm = nan("");
+      s.p = var[offset.yp(i)];
 
       result[i] = func(s);
-    }
+    );
   }
 
   result.setLocation(diffloc);
@@ -980,6 +982,7 @@ SCOREP0();
   result.bndry_yup = result.bndry_ydown = false;
 #endif
 
+}
   return result;
 }
 
