@@ -273,15 +273,13 @@ class BoutOptionsFile(BoutOptions):
             raise ValueError("Not overwriting existing file, cannot write output to "+filename)
 
         def write_section(basename, opts, f):
-            if basename is not "":
+            if basename:
                 f.write("["+basename+"]\n")
             for key, value in opts._keys.items():
                 f.write(key+" = "+str(value)+"\n")
             for section in opts.sections():
-                if basename is not "":
-                    write_section(basename+":"+section, opts[section], f)
-                else:
-                    write_section(section, opts[section], f)
+                section_name = basename+":"+section if basename else section
+                write_section(section_name, opts[section], f)
 
         with open(filename, "w") as f:
             write_section("", self, f)
