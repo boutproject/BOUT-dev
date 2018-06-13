@@ -68,73 +68,63 @@ def findVar(varname, varlist):
               "' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def check_range(r, low, up, name="range"):
-    """ Utility function to check index ranges"""
-    r2 = r
-    if r is not None:
-        try:
-            if r2.start is not None:
-                start = r2.start
-            else:
-                start = low
-            if r2.stop is not None:
-                stop = r2.stop
-            else:
-                stop = up
-            if r2.step is not None:
-                step = r2.step
-            else:
-                step = 1
-        except AttributeError:
-            # r2 is not already a slice object
-            try:
-                if (len(r2) < 1) or (len(r2) > 3):
-                    print("WARNING: "+name+" must be [start, stop, step]")
-                    r2 = None
-                    return r2
-                if r2[0] is not None:
-                    start = r2[0]
-                else:
-                    start = low
-                if len(r2) > 1:
-                    if r2[1] is not None:
-                        stop = r2[1]
-                    else:
-                        stop = up
-                else:
-                    stop = start+1
-                if len(r2) > 2 and r2[2] is not None:
-                    step = r2[2]
-                else:
-                    step = 1
-            except:
-                # No len attribute, so probably a single number
-                start = r2
-                stop = r2+1
-                step = 1
-        if start < 0 and low >= 0:
-            start += (up-low+1)
-        if stop <= 0 and low >= 0:
-            stop += (up-low+1)
-        if start < low:
-            start = low
-        if start > up-1:
-            start = up-1
-        if stop < low+1:
-            stop = low+1
-        if stop > up:
-            stop = up
-        if start > stop:
-            tmp = start
-            start = stop
-            stop = tmp
-        elif start == stop:
-            stop += 1
+
+def _convert_to_nice_slice(r, N, name="range"):
+    """Convert r to a "sensible" slice in range [0, N]
+
+    If r is None, the slice corresponds to the full range.
+
+    Lists or tuples of one or two ints are converted to slices.
+
+    Slices with None for one or more arguments have them replaced with
+    sensible values.
+
+    Private helper function for collect
+
+    Parameters
+    ----------
+    r : None, int, slice or list of int
+        Range-like to check/convert to slice
+    N : int
+        Size of range
+    name : str, optional
+        Name of range for error message
+
+    Returns
+    -------
+    slice
+        "Sensible" slice with no Nones for start, stop or step
+    """
+
+    if not r:
+        temp_slice = slice(N)
+    elif isinstance(r, slice):
+        temp_slice = r
+    elif isinstance(r, int):
+        if r == -1:
+            temp_slice = slice(r, None)
+        else:
+            temp_slice = slice(r, r + 1)
+    elif len(r) < 3:
+        # Make sure r has two elements in the range [0, N]
+        r2 = list(r)
+        if len(r2) == 1:
+            r2 = [r2, r2]
+        if r2[0] < 0:
+            r2[0] += N
+        if r2[1] < 0:
+            r2[1] += N
+        if r2[0] > r2[1]:
+            raise ValueError("{} start ({}) is larger than end ({})"
+                             .format(name, *r2))
+        # Lists uses inclusive end, we need exclusive end
+        temp_slice = slice(r2[0], r2[1] + 1)
     else:
-        start = low
-        stop = up
-        step = 1
-    return slice(start, stop, step)
+        raise ValueError("Couldn't convert {} ('{}') to slice".format(name, r))
+
+    # slice.indices converts None to actual values
+    return slice(*temp_slice.indices(N))
+
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             yguards=False, xguards=True, info=True, prefix="BOUT.dmp",
@@ -231,11 +221,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                 # t_array is not an array here, which probably means it was a
                 # one-element array and has been read as a scalar.
                 nt = 1
-        
-        xind = check_range(xind, 0, nx, "xind")
-        yind = check_range(yind, 0, ny, "yind")
-        zind = check_range(zind, 0, nz, "zind")
-        tind = check_range(tind, 0, nt, "tind")
+
+        xind = _convert_to_nice_slice(xind, nx, "xind")
+        yind = _convert_to_nice_slice(yind, ny, "yind")
+        zind = _convert_to_nice_slice(zind, nz, "zind")
+        tind = _convert_to_nice_slice(tind, nt, "tind")
 
         attributes = f.attributes(varname)
         if ndims == 0:
@@ -361,10 +351,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     else:
         ny = mysub * nype
 
-    xind = check_range(xind, 0, nx, "xind")
-    yind = check_range(yind, 0, ny, "yind")
-    zind = check_range(zind, 0, nz, "zind")
-    tind = check_range(tind, 0, nt, "tind")
+    xind = _convert_to_nice_slice(xind, nx, "xind")
+    yind = _convert_to_nice_slice(yind, ny, "yind")
+    zind = _convert_to_nice_slice(zind, nz, "zind")
+    tind = _convert_to_nice_slice(tind, nt, "tind")
 
     xsize = xind.stop - xind.start
     ysize = yind.stop - yind.start
