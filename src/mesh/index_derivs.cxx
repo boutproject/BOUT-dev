@@ -2126,6 +2126,9 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
+BOUT_OMP(parallel)
+{
+
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
@@ -2167,21 +2170,23 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         // Two or more guard cells
         stencil fs, vs;
         vs.c = nan("");
-        for (const auto &i : result.region(region)) {
 
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+          fs.mm = f[offset.ymm(i)];
+          fs.m = f[offset.ym(i)];
           fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-          fs.pp = f[i.offset(0, 2, 0)];
-          fs.mm = f[i.offset(0, -2, 0)];
+          fs.p = f[offset.yp(i)];
+          fs.pp = f[offset.ypp(i)];
 
-          vs.pp = v[i.offset(0, 2, 0)];
-          vs.p = v[i.yp()];
+          vs.mm = v[offset.ym(i)];
           vs.m = v[i];
-          vs.mm = v[i.ym()];
+          vs.p = v[offset.yp(i)];
+          vs.pp = v[offset.ypp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
 
       } else {
         // Only one guard cell
@@ -2192,38 +2197,42 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         vs.c = nan("");
         vs.pp = nan("");
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-          vs.p = v[i.yp()];
+          fs.m = f[offset.ym(i)];
+          fs.c = f[i];
+          fs.p = f[offset.yp(i)];
+
+          vs.mm = v[offset.ym(i)];
           vs.m = v[i];
-          vs.mm = v[i.ym()];
+          vs.p = v[offset.yp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
       }
     } else if ((vloc == CELL_CENTRE) && (inloc == CELL_YLOW)) {
       if (this->ystart > 1) {
         // Two or more guard cells
         stencil fs, vs;
         vs.c = nan("");
-        for (const auto &i : result.region(region)) {
 
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+          fs.mm = f[offset.ymm(i)];
+          fs.m = f[offset.ym(i)];
           fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-          fs.pp = f[i.offset(0, 2, 0)];
-          fs.mm = f[i.offset(0, -2, 0)];
+          fs.p = f[offset.yp(i)];
+          fs.pp = f[offset.ypp(i)];
 
-          vs.pp = v[i.yp()];
+          vs.mm = v[offset.ymm(i)];
+          vs.m = v[offset.ym(i)];
           vs.p = v[i];
-          vs.m = v[i.ym()];
-          vs.mm = v[i.offset(0, -2, 0)];
+          vs.pp = v[offset.yp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
 
       } else {
         // Only one guard cell
@@ -2234,17 +2243,19 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         vs.c = nan("");
         vs.mm = nan("");
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-          vs.pp = v[i.yp()];
+          fs.m = f[offset.ym(i)];
+          fs.c = f[i];
+          fs.p = f[offset.yp(i)];
+
+          vs.m = v[offset.ym(i)];
           vs.p = v[i];
-          vs.m = v[i.ym()];
+          vs.pp = v[offset.yp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
       }
     } else {
       throw BoutException("Unhandled shift in indexVDDY(Field2D, Field2D)");
@@ -2264,16 +2275,18 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     if (this->ystart > 1) {
       // Two or more guard cells
       stencil fs;
-      for (const auto &i : result.region(region)) {
 
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+        fs.mm = f[offset.ymm(i)];
+        fs.m = f[offset.ym(i)];
         fs.c = f[i];
-        fs.p = f[i.yp()];
-        fs.m = f[i.ym()];
-        fs.pp = f[i.offset(0, 2, 0)];
-        fs.mm = f[i.offset(0, -2, 0)];
+        fs.p = f[offset.yp(i)];
+        fs.pp = f[offset.ypp(i)];
 
         result[i] = func(v[i], fs);
-      }
+      );
 
     } else {
       // Only one guard cell
@@ -2282,13 +2295,15 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       fs.pp = nan("");
       fs.mm = nan("");
 
-      for (const auto &i : result.region(region)) {
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+        fs.m = f[offset.ym(i)];
         fs.c = f[i];
-        fs.p = f[i.yp()];
-        fs.m = f[i.ym()];
+        fs.p = f[offset.yp(i)];
 
         result[i] = func(v[i], fs);
-      }
+      );
     }
   }
 
@@ -2298,6 +2313,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+
+}
 
   return result;
 }
