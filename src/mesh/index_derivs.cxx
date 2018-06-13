@@ -1910,6 +1910,9 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
+BOUT_OMP(parallel)
+{
+
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
@@ -1956,40 +1959,42 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         stencil fs, vs;
         vs.c = nan("");
-
-        for (const auto &i : result.region(region)) {
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+          fs.mm = f[offset.xmm(i)];
+          fs.m = f[offset.xm(i)];
           fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+          fs.p = f[offset.xp(i)];
+          fs.pp = f[offset.xpp(i)];
 
-          vs.mm = v[i.xm()];
+          vs.mm = v[offset.xm(i)];
           vs.m = v[i];
-          vs.p = v[i.xp()];
-          vs.pp = v[i.offset(2, 0, 0)];
+          vs.p = v[offset.xp(i)];
+          vs.pp = v[offset.xpp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
 
       } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         stencil fs, vs;
         vs.c = nan("");
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-          vs.mm = v[i.offset(-2, 0, 0)];
-          vs.m = v[i.xm()];
+          fs.mm = f[offset.xmm(i)];
+          fs.m = f[offset.xm(i)];
+          fs.c = f[i];
+          fs.p = f[offset.xp(i)];
+          fs.pp = f[offset.xpp(i)];
+
+          vs.mm = v[offset.xmm(i)];
+          vs.m = v[offset.xm(i)];
           vs.p = v[i];
-          vs.pp = v[i.xp()];
+          vs.pp = v[offset.xp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
       }
@@ -2003,17 +2008,19 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         fs.pp = nan("");
         fs.mm = nan("");
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-          vs.mm = v[i.xm()];
+          fs.m = f[offset.xm(i)];
+          fs.c = f[i];
+          fs.p = f[offset.xp(i)];
+
+          vs.mm = v[offset.xm(i)];
           vs.m = v[i];
-          vs.p = v[i.xp()];
+          vs.p = v[offset.xp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
 
       } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         stencil fs, vs;
@@ -2023,17 +2030,19 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         vs.c = nan("");
         vs.mm = nan("");
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        IndexOffset<Ind3D> offset(*mesh);
+        BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-          vs.m = v[i.xm()];
+          fs.m = f[offset.xm(i)];
+          fs.c = f[i];
+          fs.p = f[offset.xp(i)];
+
+          vs.m = v[offset.xm(i)];
           vs.p = v[i];
-          vs.pp = v[i.xp()];
+          vs.pp = v[offset.xp(i)];
 
           result[i] = func(vs, fs);
-        }
+	);
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
       }
@@ -2055,27 +2064,33 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     if (this->xstart > 1) {
       // Two or more guard cells
       stencil fs;
-      for (const auto &i : result.region(region)) {
+
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+        fs.mm = f[offset.xmm(i)];
+        fs.m = f[offset.xm(i)];
         fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
-        fs.pp = f[i.offset(2, 0, 0)];
-        fs.mm = f[i.offset(-2, 0, 0)];
+        fs.p = f[offset.xp(i)];
+        fs.pp = f[offset.xpp(i)];
 
         result[i] = func(v[i], fs);
-      }
+      );
     } else if (this->xstart == 1) {
       // Only one guard cell
       stencil fs;
       fs.pp = nan("");
       fs.mm = nan("");
-      for (const auto &i : result.region(region)) {
+
+      IndexOffset<Ind3D> offset(*mesh);
+      BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+        fs.m = f[offset.xm(i)];
         fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
+        fs.p = f[offset.xp(i)];
 
         result[i] = func(v[i], fs);
-      }
+      );
     } else {
       // No guard cells
       throw BoutException("Error: Derivatives in X requires at least one guard cell");
@@ -2088,6 +2103,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+
+}
 
   return result;
 }
