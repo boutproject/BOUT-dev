@@ -431,8 +431,12 @@ class DataFile_netCDF(DataFile):
                 data = BoutArray(data, attributes=attributes)
             return data  # [0]
         else:
-            if ranges is not None:
-                if len(ranges) != ndims:
+            if ranges:
+                if len(ranges) == 2 * ndims:
+                    # Reform list of pairs of ints into slices
+                    ranges = [slice(a, b) for a, b in
+                              zip(ranges[::2], ranges[1::2])]
+                elif len(ranges) != ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
