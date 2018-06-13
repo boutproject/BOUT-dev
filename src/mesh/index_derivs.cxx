@@ -1850,35 +1850,38 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+BOUT_OMP(parallel)
+{
 
   if (this->xstart > 1) {
     // Two or more guard cells
 
     stencil s;
-    for (const auto &i : result.region(region)) {
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+      s.mm = f[offset.xmm(i)];
+      s.m = f[offset.xm(i)];
       s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
-      s.pp = f[i.offset(2, 0, 0)];
-      s.mm = f[i.offset(-2, 0, 0)];
+      s.p = f[offset.xp(i)];
+      s.pp = f[offset.xpp(i)];
 
       result[i] = func(v[i], s);
-    }
+    );
 
   } else if (this->xstart == 1) {
     // Only one guard cell
 
     stencil s;
-    s.pp = nan("");
     s.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
+    s.pp = nan("");
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+      s.m = f[offset.xm(i)];
       s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
+      s.p = f[offset.xp(i)];
 
       result[i] = func(v[i], s);
-    }
+    );
   } else {
     // No guard cells
     throw BoutException("Error: Derivatives in X requires at least one guard cell");
@@ -1890,6 +1893,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 #endif
 
   result.setLocation(diffloc);
+}
 
   return result;
 }
