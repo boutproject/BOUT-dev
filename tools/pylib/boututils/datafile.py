@@ -437,8 +437,9 @@ class DataFile_netCDF(DataFile):
                     ranges = [slice(a, b) for a, b in
                               zip(ranges[::2], ranges[1::2])]
                 elif len(ranges) != ndims:
-                    print("Incorrect number of elements in ranges argument")
-                    return None
+                    raise ValueError("Incorrect number of elements in ranges argument "
+                                     "(got {}, expected {} or {})"
+                                     .format(len(ranges), ndims, 2 * ndims))
 
                 if library == "Scientific":
                     # Passing ranges to var[] doesn't seem to work
@@ -788,8 +789,9 @@ class DataFile_HDF5(DataFile):
                     ranges = [slice(a, b) for a, b in
                               zip(ranges[::2], ranges[1::2])]
                 elif len(ranges) != ndims:
-                    print("Incorrect number of elements in ranges argument")
-                    return None
+                    raise ValueError("Incorrect number of elements in ranges argument "
+                                     "(got {}, expected {} or {})"
+                                     .format(len(ranges), ndims, 2 * ndims))
 
                 data = var[ranges[:ndims]]
            if asBoutArray:
