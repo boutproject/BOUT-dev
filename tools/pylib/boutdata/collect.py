@@ -186,10 +186,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             return DataFile(file_list[i])
 
     if parallel:
-        print("Single (parallel) data file")
-        f = getDataFile(0)  # Get the file
-        dimens = f.dimensions(varname)
-        ndims = f.ndims(varname)
+        if info:
+            print("Single (parallel) data file")
+
+        f = getDataFile(0)
+
         try:
             mxg = f["MXG"]
         except KeyError:
@@ -227,27 +228,32 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         zind = _convert_to_nice_slice(zind, nz, "zind")
         tind = _convert_to_nice_slice(tind, nt, "tind")
 
-        attributes = f.attributes(varname)
+        ndims = f.ndims(varname)
         if ndims == 0:
-            data = f.read(varname)
+            ranges = []
         elif ndims == 1:
-            data = f.read(varname, ranges=[tind])
+            ranges = [tind]
         elif ndims == 2:
             # Field2D
-            data = f.read(varname, ranges=[xind, yind])
+            ranges = [xind, yind]
         elif ndims == 3:
-            if dimens[2] == 'z':
+            if f.dimensions(varname)[2] == 'z':
                 # Field3D
-                data = f.read(varname, ranges=[xind, yind, zind])
+                ranges = [xind, yind, zind]
             else:
                 # evolving Field2D
-                data = f.read(varname, ranges=[tind, xind, yind])
+                ranges = [tind, xind, yind]
         elif ndims == 4:
             # evolving Field3D
-            data = f.read(varname, ranges=[tind, xind, yind, zind])
+            ranges = [tind, xind, yind, zind]
         else:
-            raise ValueError("Don't know what to do with variable with ndims="+str(ndims))
-        return BoutArray(data, attributes=attributes)
+            raise ValueError("Variable has too many dimensions ({}), expected at most 4"
+                             .format(ndims))
+
+        data = f.read(varname, ranges)
+        var_attributes = f.attributes(varname)
+        return BoutArray(data, attributes=var_attributes)
+
     nfiles = len(file_list)
 
     # Read data from the first file
