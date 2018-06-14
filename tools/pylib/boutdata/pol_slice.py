@@ -33,20 +33,22 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
 
     s = np.shape(var3d)
     if len(s) != 3:
-        print("ERROR: pol_slice expects a 3D variable")
-        return None
+        raise ValueError("pol_slice expects a 3D variable (got {} dimensions)"
+                         .format(len(s)))
 
     nx, ny, nz = s
 
     # Open the grid file
     with DataFile(gridfile) as gf:
         # Check the grid size is correct
-        if gf.read("nx") != nx:
-            print("ERROR: Grid X size is different to the variable")
-            return None
-        if gf.read("ny") != ny:
-            print("ERROR: Grid Y size is different to the variable")
-            return None
+        grid_nx = gf.read("nx")
+        if grid_nx != nx:
+            raise ValueError("Grid X size ({}) is different to the variable ({})"
+                             .format(grid_nx, nx))
+        grid_ny = gf.read("ny")
+        if grid_ny != ny:
+            raise ValueError("Grid Y size ({}) is different to the variable ({})"
+                             .format(grid_ny, ny))
 
         # Get the toroidal shift
         zShift = gf.read("qinty")
@@ -58,8 +60,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
             if zShift is not None:
                 print("Using zShift as toroidal shift angle")
             else:
-                print("ERROR: Neither qinty nor zShift found")
-                return None
+                raise ValueError("Neither qinty nor zShift found")
 
     # Decide if we've asked to do interpolation
     if nyInterp is not None and nyInterp != ny:
