@@ -261,20 +261,16 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
     # Read data from the first file
     f = getDataFile(0)
-    attributes = f.attributes(varname)
 
-    try:
-        dimens = f.dimensions(varname)
-        ndims = f.ndims(varname)
-    except:
+    if varname not in f.keys():
         if strict:
-            raise
+            raise ValueError("Variable '{}' not found".format(varname))
         else:
-            # Find the variable
             varname = findVar(varname, f.list())
 
-            dimens = f.dimensions(varname)
-            ndims = f.ndims(varname)
+    var_attributes = f.attributes(varname)
+    dimens = f.dimensions(varname)
+    ndims = f.ndims(varname)
 
     # ndims is 0 for reals, and 1 for f.ex. t_array
     if ndims == 0:
@@ -283,7 +279,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
-        return BoutArray(data, attributes=attributes)
+        return BoutArray(data, attributes=var_attributes)
 
     if ndims > 4:
         raise ValueError("ERROR: Too many dimensions")
@@ -378,7 +374,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
             f.close()
-        return BoutArray(data, attributes=attributes)
+        return BoutArray(data, attributes=var_attributes)
 
     if datafile_cache is None:
         # close the DataFile if we are not keeping it in a cache
@@ -575,7 +571,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")
-    return BoutArray(data, attributes=attributes)
+    return BoutArray(data, attributes=var_attributes)
 
 
 def attributes(varname, path=".", prefix="BOUT.dmp"):
