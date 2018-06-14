@@ -1206,32 +1206,31 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-///  BOUT_OMP(parallel)
-///  {
-///    stencil s;
-///    IndexOffset<Ind3D> offset(*mesh);
-///    //for (const auto &i : result.region(region)) {
-///    BLOCK_REGION_LOOP_PARALLEL_SECTION( mesh->getRegion3D(region), i,
-///      s.mm = var[offset.zmm(i)];
-///      s.m = var[offset.zm(i)];
-///      s.c = var[i];
-///      s.p = var[offset.zp(i)];
-///      s.pp = var[offset.zpp(i)];
-///
-///      result[i] = func(s);
-///    );
-///  }
+  BOUT_OMP(parallel)
+  {
+    stencil s;
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( mesh->getRegion3D(region), i,
+      s.mm = var[offset.zmm(i)];
+      s.m = var[offset.zm(i)];
+      s.c = var[i];
+      s.p = var[offset.zp(i)];
+      s.pp = var[offset.zpp(i)];
 
-  stencil s;
-  for (const auto &i : result.region(region)) {
-    s.c = var[i];
-    s.p = var[i.zp()];
-    s.m = var[i.zm()];
-    s.pp = var[i.offset(0, 0, 2)];
-    s.mm = var[i.offset(0, 0, -2)];
-
-    result[i] = func(s);
+      result[i] = func(s);
+    );
   }
+
+///  stencil s;
+///  for (const auto &i : result.region(region)) {
+///    s.c = var[i];
+///    s.p = var[i.zp()];
+///    s.m = var[i.zm()];
+///    s.pp = var[i.offset(0, 0, 2)];
+///    s.mm = var[i.offset(0, 0, -2)];
+///
+///    result[i] = func(s);
+///  }
 
   result.setLocation(diffloc);
 
@@ -2651,6 +2650,9 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
+BOUT_OMP(parallel)
+{
+
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc;         // Location of differential result
@@ -2687,19 +2689,22 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFluxFunc(table, method);
     }
 
-    stencil vval, fval;
-    for (const auto &i : result.region(region)) {
-      fval.mm = f[i.offset(0,0,-2)];
-      fval.m = f[i.zm()];
-      fval.c = f[i];
-      fval.p = f[i.zp()];
-      fval.pp = f[i.offset(0,0,2)];
 
-      vval.mm = v[i.offset(0,0,-2)];
-      vval.m = v[i.zm()];
+    stencil vval, fval;
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+
+      fval.mm = f[offset.zmm(i)];
+      fval.m = f[offset.zm(i)];
+      fval.c = f[i];
+      fval.p = f[offset.zp(i)];
+      fval.pp = f[offset.zpp(i)];
+
+      vval.mm = v[offset.zmm(i)];
+      vval.m = v[offset.zm(i)];
       vval.c = v[i];
-      vval.p = v[i.zp()];
-      vval.pp = v[i.offset(0,0,2)];
+      vval.p = v[offset.zp(i)];
+      vval.pp = v[offset.zpp(i)];
 
       if((diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
         // Non-centred stencil
@@ -2719,7 +2724,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Could produce warning
       }
       result[i] = func(vval, fval);
-    }
+    );
   } else {
     Mesh::upwind_func func = fVDDZ;
     DiffLookup *table = UpwindTable;
@@ -2730,15 +2735,16 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
 
     stencil fval;
-    for (const auto &i : result.region(region)) {
-      fval.mm = f[i.offset(0,0,-2)];
-      fval.m = f[i.zm()];
+    IndexOffset<Ind3D> offset(*mesh);
+    BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
+      fval.mm = f[offset.zmm(i)];
+      fval.m = f[offset.zm(i)];
       fval.c = f[i];
-      fval.p = f[i.zp()];
-      fval.pp = f[i.offset(0,0,2)];
+      fval.p = f[offset.zp(i)];
+      fval.pp = f[offset.zpp(i)];
 
       result[i] = func(v[i], fval);
-    }
+    );
   }
 
   result.setLocation(diffloc);
@@ -2747,6 +2753,8 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+
+}
 
   return result;
 }
@@ -3451,20 +3459,24 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
+BOUT_OMP(parallel)
+{
+
   stencil vval, fval;
-  for (const auto &i : result.region(region)) {
+  IndexOffset<Ind3D> offset(*mesh);
+  BLOCK_REGION_LOOP_PARALLEL_SECTION( result.getMesh()->getRegion3D(region), i,
 
-    fval.mm = f[i.offset(0,0,-2)];
-    fval.m = f[i.zm()];
+    fval.mm = f[offset.zmm(i)];
+    fval.m = f[offset.zm(i)];
     fval.c = f[i];
-    fval.p = f[i.zp()];
-    fval.pp = f[i.offset(0,0,2)];
+    fval.p = f[offset.zp(i)];
+    fval.pp = f[offset.zpp(i)];
 
-    vval.mm = v[i.offset(0,0,-2)];
-    vval.m = v[i.zm()];
+    vval.mm = v[offset.zmm(i)];
+    vval.m = v[offset.zm(i)];
     vval.c = v[i];
-    vval.p = v[i.zp()];
-    vval.pp = v[i.offset(0,0,2)];
+    vval.p = v[offset.zp(i)];
+    vval.pp = v[offset.zpp(i)];
 
     if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
       // Non-centred stencil
@@ -3484,7 +3496,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Could produce warning
     }
     result[i] = func(vval, fval);
-  }
+  );
 
   result.setLocation(diffloc);
 
@@ -3492,6 +3504,8 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+
+}
 
   return result;
 }
