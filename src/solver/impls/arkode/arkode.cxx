@@ -714,7 +714,7 @@ void ArkodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> 
   }
 }
 
-void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), int UNUSED(jy),
+void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
                                          BoutReal *abstolvec_data, int &p,
                                          vector<BoutReal> &f2dtols,
                                          vector<BoutReal> &f3dtols, bool bndry) {
