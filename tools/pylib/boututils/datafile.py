@@ -794,7 +794,7 @@ class DataFile_HDF5(DataFile):
                                      .format(len(ranges), ndims, 2 * ndims))
 
                 data = var[ranges[:ndims]]
-           if asBoutArray:
+                if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
             else:
