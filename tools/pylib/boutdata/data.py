@@ -14,7 +14,9 @@ from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
 
-funcstoreplace = ["pi", "sin", "cos", "tan", "acos", "asin", "atan", "atan2", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "exp", "log", "log10", "pow", "sqrt", "ceil", "floor", "round", "abs"]
+# These are imported to be used by 'eval' in BoutOptions.evaluate_scalar() and BoutOptionsFile.evaluate()
+# Change the names to match those used by c++/BOUT++
+from numpy import pi, sin, cos, tan, arccos as acos, arcsin as asin, arctan as atan, arctan2 as atan2, sinh, cosh, tanh, arcsinh as asinh, arccosh as acosh, arctanh as atanh, exp, log, log10, power as pow, sqrt, ceil, floor, round, abs
 
 class BoutOptions(object):
     """
@@ -153,10 +155,6 @@ class BoutOptions(object):
         # replace ^ with ** so that Python evaluates exponentiation
         expression = expression.replace("^","**")
 
-        # use numpy functions
-        for func in funcstoreplace:
-            expression = re.sub(r"\b"+func.lower()+r"\b", "numpy."+func, expression)
-
         return eval(expression)
 
     def _substitute_expressions(self, name):
@@ -290,19 +288,15 @@ class BoutOptionsFile(BoutOptions):
                 self.nz = gridfile["nz"]
             except KeyError:
                 pass
+            gridfile.close()
         if self.nz is None:
             try:
                 self.nz = self["mesh"].evaluate_scalar("nz")
             except KeyError:
                 self.nz = self.evaluate_scalar("mz")
-        try:
-            mxg = self["MXG"]
-        except KeyError:
-            mxg = 2
-        try:
-            myg = self["MYG"]
-        except KeyError:
-            myg = 2
+        mxg = self._keys.get("MXG", 2)
+        myg = self._keys.get("MYG", 2)
+
         # make self.x, self.y, self.z three dimensional now so that expressions broadcast together properly.
         self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg), 1. - (0.5 - mxg)/(self.nx - 2*mxg), self.nx)[:, numpy.newaxis, numpy.newaxis]
         self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny, 1.-(0.5 - myg)/self.ny, self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
@@ -322,10 +316,6 @@ class BoutOptionsFile(BoutOptions):
 
         # replace ^ with ** so that Python evaluates exponentiation
         expression = expression.replace("^","**")
-
-        # use numpy functions
-        for func in funcstoreplace:
-            expression = re.sub(r"\b"+func.lower()+r"\b", "numpy."+func, expression)
 
         # substitute for x, y and z coordinates
         for coord in ["x", "y", "z"]:
