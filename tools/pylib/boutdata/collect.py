@@ -178,8 +178,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         suffix = datafile_cache.suffix
         file_list = datafile_cache.file_list
 
-    # Get the DataFile from the cache, if present, otherwise open the DataFile
     def getDataFile(i):
+        """Get the DataFile from the cache, if present, otherwise open the
+        DataFile
+
+        """
         if datafile_cache is not None:
             return datafile_cache.datafile_list[i]
         else:
