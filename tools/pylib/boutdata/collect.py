@@ -172,10 +172,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
     if datafile_cache is None:
         # Search for BOUT++ dump files
-        file_list, parallel, suffix = findFiles(path, prefix)
+        file_list, parallel, _ = findFiles(path, prefix)
     else:
         parallel = datafile_cache.parallel
-        suffix = datafile_cache.suffix
         file_list = datafile_cache.file_list
 
     def getDataFile(i):
