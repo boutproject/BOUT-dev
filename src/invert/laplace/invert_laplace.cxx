@@ -345,7 +345,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 
   Coordinates *coord = mesh->coordinates();
 
-  BOUT_OMP(parallel for)
+  //BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
     BoutReal kwave=kz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
