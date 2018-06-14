@@ -578,44 +578,19 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
  **************************************************************************/
 
 void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
-  int jx, jy;
   int p = 0; // Counter for location in abstolvec_data array
 
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX() && !mesh->periodicX) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols, true);
+  // All boundaries
+  for (auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
   }
-
-  // Lower Y boundary region
-  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
-  }
-
   // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, false);
-  
-  // Upper Y boundary condition
-  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->LocalNy;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
-  }
-
-  // Outer X boundary
-  if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
+  for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
                                         BoutReal *abstolvec_data, int &p,
                                         vector<BoutReal> &f2dtols,
                                         vector<BoutReal> &f3dtols, bool bndry) {

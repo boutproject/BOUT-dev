@@ -403,7 +403,7 @@ private:
   void post_rhs(BoutReal t); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
+  void loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
