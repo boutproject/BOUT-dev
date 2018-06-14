@@ -782,20 +782,17 @@ class DataFile_HDF5(DataFile):
                 data = BoutArray(data, attributes=attributes)
             return data[0]
         else:
-            if ranges is not None:
-                if len(ranges) != ndims:
+            if ranges:
+                if len(ranges) == 2 * ndims:
+                    # Reform list of pairs of ints into slices
+                    ranges = [slice(a, b) for a, b in
+                              zip(ranges[::2], ranges[1::2])]
+                elif len(ranges) != ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
 
-                if ndims == 1:
-                    data = var[ranges[0]]
-                elif ndims == 2:
-                    data = var[ranges[0],ranges[1]]
-                elif ndims == 3:
-                    data = var[ranges[0],ranges[1],ranges[2]]
-                elif ndims == 4:
-                    data = var[ranges[0],ranges[1],ranges[2],ranges[3]]
-                if asBoutArray:
+                data = var[ranges[:ndims]]
+           if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
             else:
