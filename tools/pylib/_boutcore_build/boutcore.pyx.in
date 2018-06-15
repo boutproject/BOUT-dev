@@ -575,6 +575,17 @@ cdef class Laplacian:
         """
         return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
 
+    def setCoefA(self,Field3D a):
+        """
+        Set the A coefficient
+
+        Parameters
+        ----------
+        a : Field3D
+            Coefficient to set
+        """
+        self.cobj.setCoefA(a.cobj[0])
+
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
