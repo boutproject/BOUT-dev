@@ -30,10 +30,12 @@ struct IndexOffset {
   const inline T ym(T index, int i = 1) const { return index - (i * nz); }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline T zp(T index, int i = 1) const {
+    ASSERT3(i > 0);
     return (index + i) % nz == 0 ? index - nz + i : index + i;
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline T zm(T index, int i = 1) const {
+    ASSERT3(i > 0);
     return index % nz == 0 ? index + nz - i : index - i;
   }
   // and for 2 cells
