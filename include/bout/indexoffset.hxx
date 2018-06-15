@@ -21,20 +21,20 @@ struct IndexOffset {
   int y(T index) const { return (index.ind / nz) % ny; }
   int z(T index) const { return (index.ind % nz); }
 
-  const inline T xp(T index, int i = 1) const { return index.ind + (i * ny * nz); }
+  const inline T xp(T index, int i = 1) const { return index + (i * ny * nz); }
   /// The index one point -1 in x
-  const inline T xm(T index, int i = 1) const { return index.ind - (i * ny * nz); }
+  const inline T xm(T index, int i = 1) const { return index - (i * ny * nz); }
   /// The index one point +1 in y
-  const inline T yp(T index, int i = 1) const { return index.ind + (i * nz); }
+  const inline T yp(T index, int i = 1) const { return index + (i * nz); }
   /// The index one point -1 in y
-  const inline T ym(T index, int i = 1) const { return index.ind - (i * nz); }
+  const inline T ym(T index, int i = 1) const { return index - (i * nz); }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline T zp(T index, int i = 1) const {
-    return (index.ind + i) % nz == 0 ? index.ind - nz + i : index.ind + i;
+    return (index + i) % nz == 0 ? index - nz + i : index + i;
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline T zm(T index, int i = 1) const {
-    return index.ind % nz == 0 ? index.ind + nz - i : index.ind - i;
+    return index % nz == 0 ? index + nz - i : index - i;
   }
   // and for 2 cells
   const inline T xpp(T index) const { return xp(index, 2); }
