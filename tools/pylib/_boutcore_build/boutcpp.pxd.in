@@ -18,6 +18,8 @@ cdef extern from "field3d.hxx":
         bool isAllocated()
         void setLocation(benum.CELL_LOC)
         benum.CELL_LOC getLocation()
+        void applyBoundary(double)
+        void applyBoundary(string)
 EOF
 for f in sqrt exp log sin cos abs
 do

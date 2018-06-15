@@ -50,6 +50,7 @@ cimport numpy as np
 #import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
+from libcpp.string cimport string
 
 cdef extern from "helper.h":
      void c_set_f3d_all(c.Field3D * f3d, double * data)
@@ -241,6 +242,28 @@ cdef class Field3D:
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
         c_get_f3d_all(self.cobj,&data_[0,0,0]);
         return data_
+
+    def applyBoundary_condition(self, string condition):
+        """
+        Apply boundary condition to the Field3D
+
+        Parameters
+        ----------
+        condition : string
+             The boundary condition to apply, e.g. 'dirichlet', 'neumann'
+        """
+        self.cobj[0].applyBoundary(condition)
+
+    def applyBoundary_t(self, double t=0.):
+        """
+        Apply boundary condition to the Field3D
+
+        Parameters
+        ----------
+        t : double
+             The time to pass to the boundary condition expression
+        """
+        self.cobj[0].applyBoundary(t)
 
     def setLocation(self,location):
         """
