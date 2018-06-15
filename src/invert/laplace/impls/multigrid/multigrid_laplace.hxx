@@ -169,7 +169,7 @@ private:
   Multigrid1DP *kMG;
 
   /******* Start implementation ********/
-  int mglevel,mgplag,cftype,mgsm,pcheck,tcheck;
+  int mglevel,mgplag,cftype,mgsm,pcheck;
   int xNP,xProcI;
   int mgcount,mgmpi;
 

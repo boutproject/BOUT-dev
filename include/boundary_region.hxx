@@ -7,6 +7,7 @@ class BoundaryRegion;
 #include <string>
 using std::string;
 
+/// Location of boundary
 enum BndryLoc {BNDRY_XIN=1,
                BNDRY_XOUT=2,
                BNDRY_YDOWN=4,
@@ -22,14 +23,16 @@ public:
   BoundaryRegionBase(const string &name, BndryLoc loc) : label(name), location(loc) {}
   virtual ~BoundaryRegionBase() {}
 
-  string label; // Label for this boundary region
+  string label; ///< Label for this boundary region
 
-  BndryLoc location;         // Which side of the domain is it on?
-  bool isParallel = false;   // Is this a parallel boundary?
+  BndryLoc location;         ///< Which side of the domain is it on?
+  bool isParallel = false;   ///< Is this a parallel boundary?
 
-  virtual void first() = 0;
-  virtual void next() = 0;   // Loop over every element from inside out (in X or Y first)
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+  virtual void first() = 0;  ///< Move the region iterator to the start
+  virtual void next() = 0;   ///< Get the next element in the loop
+                             ///  over every element from inside out (in
+                             ///  X or Y first)
+  virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
@@ -40,14 +43,14 @@ public:
   BoundaryRegion(const string &name, int xd, int yd) : BoundaryRegionBase(name), bx(xd), by(yd), width(2) {}
   virtual ~BoundaryRegion() {}
 
-  int x,y; // Indices of the point in the boundary
-  int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
+  int x,y; ///< Indices of the point in the boundary
+  int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
 
-  int width; // Width of the boundary
+  int width; ///< Width of the boundary
 
-  virtual void next1d() = 0; // Loop over the innermost elements
-  virtual void nextX() = 0; // Just loop over X
-  virtual void nextY() = 0; // Just loop over Y
+  virtual void next1d() = 0; ///< Loop over the innermost elements
+  virtual void nextX() = 0;  ///< Just loop over X
+  virtual void nextY() = 0;  ///< Just loop over Y
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {

@@ -84,8 +84,9 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
@@ -154,8 +155,9 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
        ((outer_boundary_flags & INVERT_SET) && mesh->lastX()) ) {
     Field3D bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
@@ -243,26 +245,24 @@ void LaplaceSPT::tridagBack(dcomplex *u, int n,
   up = u[0];
 }
 
-/// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
-/*!
- * This is a reference code which performs the same operations as the serial code.
- * To invert a single XZ slice (FieldPerp object), data must pass from the innermost
- * processor (mesh->PE_XIND = 0) to the outermost (mesh->PE_XIND = mesh->NXPE-1) and back again.
- *
- * Some parallelism is achieved by running several inversions simultaneously, so while
- * processor #1 is inverting Y=0, processor #0 is starting on Y=1. This works ok as long
- * as the number of slices to be inverted is greater than the number of X processors (MYSUB > mesh->NXPE).
- * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
- *
- * @param[in]    b      RHS values (Ax = b)
- * @param[in]    global_flags  Inversion settings (see boundary.h for values)
- * @param[in]    inner_boundary_flags  Inversion settings for inner boundary (see invert_laplace.hxx for values)
- * @param[in]    outer_boundary_flags  Inversion settings for outer boundary (see invert_laplace.hxx for values)
- * @param[in]    a      This is a 2D matrix which allows solution of A = Delp2 + a
- * @param[out]   data   Structure containing data needed for second half of inversion
- * @param[in]    ccoef  Optional coefficient for first-order derivative
- * @param[in]    d      Optional factor to multiply the Delp2 operator
- */
+/// Simple parallelisation of the Thomas tridiagonal solver algorithm
+/// (serial code)
+///
+/// This is a reference code which performs the same operations as the
+/// serial code.  To invert a single XZ slice (FieldPerp object), data
+/// must pass from the innermost processor (mesh->PE_XIND = 0) to the
+/// outermost (mesh->PE_XIND = mesh->NXPE-1) and back again.
+///
+/// Some parallelism is achieved by running several inversions
+/// simultaneously, so while processor #1 is inverting Y=0, processor
+/// #0 is starting on Y=1. This works ok as long as the number of
+/// slices to be inverted is greater than the number of X processors
+/// (MYSUB > mesh->NXPE).  If MYSUB < mesh->NXPE then not all
+/// processors can be busy at once, and so efficiency will fall
+/// sharply.
+///
+/// @param[in]    b      RHS values (Ax = b)
+/// @param[out]   data   Structure containing data needed for second half of inversion
 int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   if(mesh->firstX() && mesh->lastX())
     throw BoutException("Error: SPT method only works for mesh->NXPE > 1\n");
@@ -287,7 +287,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {
     tridagMatrix(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0), &data.bk(kz, 0),
-                 kz, kz * kwaveFactor, data.jy, global_flags, inner_boundary_flags,
+                 data.jy, kz, kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
   }
 
@@ -444,13 +444,9 @@ BOUT_OMP(parallel for)
 }
 
 /// Finishes the parallelised Thomas algorithm
-/*!
-  @param[inout] data   Structure keeping track of calculation
-  @param[in]    global_flags  Inversion flags (same as passed to invert_spt_start)
-  @param[in]    inner_boundary_flags  Inversion flags for inner boundary (same as passed to invert_spt_start)
-  @param[in]    outer_boundary_flags  Inversion flags for outer boundary (same as passed to invert_spt_start)
-  @param[out]   x      The result
-*/
+///
+/// @param[inout] data   Structure keeping track of calculation
+/// @param[out]   x      The result
 void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   int ncx = mesh->LocalNx-1;
   int ncz = mesh->LocalNz;

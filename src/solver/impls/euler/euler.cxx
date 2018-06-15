@@ -126,9 +126,6 @@ int EulerSolver::run() {
       // Stop simulation
       break;
     }
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;

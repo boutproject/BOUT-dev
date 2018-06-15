@@ -24,7 +24,6 @@ libs="@CONFIG_LDFLAGS@"
 
 version="@BOUT_VERSION@"
 git="@GIT_REVISION@"
-checks="@CHECK_LEVEL@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
@@ -41,8 +40,6 @@ has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 has_openmp="@HAS_OPENMP@"
 
-petsc_version="@PETSC_VERSION@"
-petsc_release="@PETSC_RELEASE@"
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
 
 usage()
@@ -79,8 +76,6 @@ Available values for OPTION include:
   --has-slepc   SLEPc support
   --has-mumps   MUMPS support
 
-  --petsc-version
-  --petsc-release
   --petsc-has-sundials 
 EOF
 
@@ -94,7 +89,7 @@ all()
         echo
         echo "  --cc          -> $cc"
         echo "  --cxx         -> $cxx"
-	echo "  --ld          -> $ld"
+        echo "  --ld          -> $ld"
         echo "  --cflags      -> $cflags"
         echo "  --libs        -> $libs"
         echo
@@ -115,10 +110,8 @@ all()
         echo "  --has-petsc   -> $has_petsc"
         echo "  --has-slepc   -> $has_slepc"
         echo "  --has-mumps   -> $has_mumps"
-	echo "  --has-arkode  -> $has_arkode"
+        echo "  --has-arkode  -> $has_arkode"
         echo
-        echo "  --petsc-version      -> $petsc_version"
-        echo "  --petsc-release      -> $petsc_release"
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
 }
@@ -231,19 +224,21 @@ while test $# -gt 0; do
         ;;
 
     --has-arkode)
-	echo $has_arkode
-	;;
+	    echo $has_arkode
+	    ;;
 
     --has-openmp)
-	echo $has_openmp
-	;;
+	    echo $has_openmp
+	    ;;
 
     --petsc-version)
-        echo $petsc_version
+        # TODO: Remove in next release
+        # Left in for backwards-compatibility
         ;;
 
     --petsc-release)
-        echo $petsc_release
+        # TODO: Remove in next release
+        # Left in for backwards-compatibility
         ;;
 
     --petsc-has-sundials)

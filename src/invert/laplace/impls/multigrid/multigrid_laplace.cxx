@@ -62,7 +62,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   opts->get("cftype",cftype,0,true);
   opts->get("mergempi",mgmpi,63,true);
   opts->get("checking",pcheck,0,true);
-  tcheck = pcheck;
   mgcount = 0;
 
   // Initialize, allocate memory, etc.
@@ -158,10 +157,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  int rcheck = 0;
-  if ((pcheck == 1) && (mgcount == 0)) rcheck = 1;
   kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
-            commX,rcheck);
+            commX,pcheck);
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
@@ -414,21 +411,22 @@ BOUT_OMP(for)
 
   t1 = MPI_Wtime();
   settime += t1-t0;
+
   // Compute solution.
 
   mgcount++;
-  if((mgcount == 300) && (pcheck == 0)) {
-    tcheck = 1;
-  }
-  t0 = MPI_Wtime();
+  if (pcheck > 0) t0 = MPI_Wtime();
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 
-  t1 = MPI_Wtime();
-  if((mgcount == 300) && (tcheck != pcheck)) tcheck = pcheck;
-  soltime += t1-t0;
-  if(mgcount%300 == 0) {
-    output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+  if (pcheck > 0) {
+    t1 = MPI_Wtime();
+    soltime += t1-t0;
+    if(mgcount%300 == 0) {
+      output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
+      settime = 0.;
+      soltime = 0.;
+    }
   }
 
   FieldPerp result(mesh);

@@ -133,8 +133,7 @@ IdaSolver::~IdaSolver() { }
   int mukeep, mlkeep;
   bool use_precon;
   bool correct_start;
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
+
   OPTION(options, mudq, n3d*(MXSUB+2));
   OPTION(options, mldq, n3d*(MXSUB+2));
   OPTION(options, mukeep, n3d);
@@ -230,8 +229,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;

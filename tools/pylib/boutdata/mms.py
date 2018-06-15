@@ -150,14 +150,14 @@ def Grad_par(f, metric = identity):
     return diff(f, metric.y) / sqrt(metric.g_22)
 
 def Vpar_Grad_par(v, f, metric = identity):
-    """Parallel advection operator v*grad_||(f)"""
+    """Parallel advection operator $$v_\parallel \cdot \nabla_\parallel (f)$$"""
     return v * Grad_par(f, metric=metric)
 
 def Div_par(f, metric=identity):
     '''
-    Divergence of magnetic field aligned vector v = \bhat f
-    \nabla \cdot (\bhat f) = 1/J \partial_y (f/B)
-    = B Grad_par(f/B)
+    Divergence of magnetic field aligned vector $$v = \hat{b} f
+    \nabla \cdot (\hat{b} f) = 1/J \partial_y (f/B)
+    = B Grad_par(f/B)$$
     '''
     return metric.B*Grad_par(f/metric.B, metric)
 

@@ -216,7 +216,9 @@ class BoutMesh : public Mesh {
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
   void topology();
-
+  
+  void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
+  
   vector<BoundaryRegion*> boundary; // Vector of boundary regions
   vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
 

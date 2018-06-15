@@ -40,10 +40,9 @@
  * where IDFT is the inverse fourier transform.
  * See the the fftw user manual for details.
  *
- * \param[in] in  Pointer to the 1D array to take the fourier transform of
+ * \param[in] in     Pointer to the 1D array to take the fourier transform of
  * \param[in] length Number of points in the input array
- *
- * \param[out] Pointer to the complex 1D array which is the FFT of in
+ * \param[out] out   Pointer to the complex 1D array which is the FFT of in
  */
 void rfft(const BoutReal *in, int length, dcomplex *out);
 
@@ -58,25 +57,24 @@ void rfft(const BoutReal *in, int length, dcomplex *out);
  *
  * See the the fftw user manual for details.
  *
- * \param[in] in Pointer to the 1D array to take the inverse fourier transform
- *               of
+ * \param[in] in     Pointer to the 1D array to take the inverse fourier
+ *                   transform of
  * \param[in] length Number of points in the input array
- *
- * \param[out] Pointer to the complex 1D array which is IFFTed
+ * \param[out] out   Pointer to the complex 1D array which is IFFTed
  */
 void irfft(const dcomplex *in, int length, BoutReal *out);
 
 /*!
  * Discrete Sine Transform
  *
- * in and out arrays must both be of the same length
+ * \p in and \p out arrays must both be of the same \p length
  */
 void DST(const BoutReal *in, int length, dcomplex *out);
 
 /*!
  * Inverse Discrete Sine Transform
  *
- * in and out arrays must both be of the same length
+ * \p in and \p out arrays must both be of the same \p length
  */
 void DST_rev(dcomplex *in, int length, BoutReal *out);
 

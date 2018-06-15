@@ -21,7 +21,7 @@
 #
 # Process this file with autoreconf to produce a configure script.
 #
-#     $ autoreconf -if 
+#     $ autoreconf -if
 #
 # Changelog:
 #
@@ -31,8 +31,8 @@
 #    * Searching for libs in lib and lib64
 #
 
-AC_PREREQ(2.59)
-AC_INIT(BOUT++, 4.1.2, bd512@york.ac.uk)
+AC_PREREQ([2.69])
+AC_INIT([BOUT++],[4.1.2],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -49,9 +49,9 @@ AC_ARG_WITH(sundials,     [AS_HELP_STRING([--with-sundials],
 AC_ARG_WITH(fftw,         [AS_HELP_STRING([--with-fftw],
         [Set directory of FFTW3 library])],,[])
 AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
-        [Use the LAPACK library])],,[])
+        [Use the LAPACK library])],,[with_lapack=guess])
 AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
-        [Enable PETSc interface])],,[])
+        [Enable PETSc interface])],,[with_petsc=no])
 AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
@@ -75,7 +75,7 @@ AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
         [Enable all debugging flags])],,[])
-AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=1/2/3],
+AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=no/1/2/3/4],
         [Enable optimization])],,[])
 AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
         [Enable FloatingPointExceptions])],,[])
@@ -94,11 +94,12 @@ AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 file_formats=""  # Record which file formats are being supported
 
 # Delete the build log from last time
-rm config-build.log
+rm -f config-build.log
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 AC_ARG_VAR(LDFLAGS,[Extra linking flags])
-AC_ARG_VAR(LDLIBS,[Extra linking libraries])
+AC_ARG_VAR(LIBS,[Extra linking libraries])
+LIBS="$LIBS $LDLIBS"
 
 AC_SUBST(MKDIR_P)
 AC_SUBST(EXTRA_INCS)
@@ -113,6 +114,11 @@ AC_LANG(C++)
 #############################################################
 # Checks for programs
 #############################################################
+
+# Autoconf inserts "-g -O2" into flags by default
+# Set them to be just "-g", but only if the user hasn't already set CXXFLAGS
+# We then put "-O2" back in later, assuming optimisations aren't explicitly disabled
+: ${CXXFLAGS="-g"}
 
 # Search for MPI compiler; fail if not found
 AX_PROG_CXX_MPI([], [], [
@@ -198,162 +204,135 @@ AC_SUBST([COVERAGE_FLAGS])
 #############################################################
 
 OPT_FLAGS=""
-if test "$enable_debug" != ""
-then
-  echo "Enabling all debug options"
+AS_IF([test "$enable_debug" != ""], [
+  AC_MSG_NOTICE([Enabling all debug options])
   enable_checks="3"
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
-elif test $enable_optimize ; then
-  optimize=$enable_optimize
-  test $optimize -eq 0 2>/dev/null
-  if test $? -eq 2 ; then
-    if test $optimize == "default"
-    then
-      OPT_FLAGS="-O"
-    elif test $optimize == "fast"
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    else
-      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
-    fi
-  else
-    if test $optimize -gt 3
-    then
-      OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 2
-    then
-      OPT_FLAGS="-O3 -march=native -funroll-loops"
-      DISABLE_CHECK=probably
-    elif test $optimize -gt 1
-    then
-      OPT_FLAGS="-O2 -march=native"
-    elif test $optimize -ge 0
-    then
-      OPT_FLAGS="-O$optimize"
-    else
-      AC_MSG_ERROR([unrecognized option: --enable-optimize=$optimize])
-    fi
-  fi
-else
-  OPT_FLAGS="-O"
-fi
+], [
+  AS_IF([test "x$enable_optimize" != "xno"], [
+    AS_CASE(["$enable_optimize"],
+    ["default" | "yes" | ""],
+        [AC_MSG_NOTICE([Enabling default optimisations])
+         OPT_FLAGS="-O2"],
+    ["fast" | "4"],
+        [AC_MSG_NOTICE([Enabling level 4 optimisations])
+         OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
+         DISABLE_CHECK=probably],
+    ["3"],
+        [AC_MSG_NOTICE([Enabling level 3 optimisations])
+         OPT_FLAGS="-O3 -march=native -funroll-loops"
+         DISABLE_CHECK=probably],
+    ["2"],
+        [AC_MSG_NOTICE([Enabling level 2 optimisations])
+         OPT_FLAGS="-O2 -march=native"],
+    ["1" | "0"],
+        [AC_MSG_NOTICE([Enabling level $enable_optimize optimisations])
+         OPT_FLAGS="-O$enable_optimize"],
+    [
+      AC_MSG_ERROR([unrecognized option: --enable-optimize=$enable_optimize])
+    ])
+  ], [OPT_FLAGS=""])
+])
+
 for flag in $OPT_FLAGS
 do
   CXXFLAGS_save=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $flag"
-  AC_MSG_CHECKING([for flag $flag])
-  AC_TRY_COMPILE([],[],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no);CXXFLAGS=$CXXFLAGS_save])
+  AC_MSG_CHECKING([flag $flag is supported])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+    [AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)
+     CXXFLAGS=$CXXFLAGS_save])
 done
 
-# disable checks if optimization > 2 is used
-if test -z $enable_checks && test .$DISABLE_CHECK = ."probably"
-then
+# Disable checks if optimization > 2 is used
+AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
   enable_checks=no
-fi
+])
 
 CHECK_LEVEL="0"
-if test ".$enable_checks" != ".no"
-then
-  echo "Run-time checking enabled"
-  if test "$enable_checks" = "1"
-  then
-    echo " -> Level 1 (Basic checking)"
-    CXXFLAGS="$CXXFLAGS -DCHECK=1"
-    CHECK_LEVEL="1"
-  elif test "$enable_checks" = "3"
-  then
-    CXXFLAGS="$CXXFLAGS -DCHECK=3"
-    echo " -> Level 3 (Full checking + stack tracing)"
-    CHECK_LEVEL="3"
-  else
-    echo " -> Level 2 (Basic checking + stack tracing)"
-    CXXFLAGS="$CXXFLAGS -DCHECK=2"
-    CHECK_LEVEL="2"
-  fi
-else
-  echo "Run-time checking disabled"
-fi
+AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
+  AC_MSG_NOTICE([Run-time checking enabled])
+  AS_CASE([$enable_checks],
+    [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
+          CXXFLAGS="$CXXFLAGS -DCHECK=1"
+          CHECK_LEVEL="1"],
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          CXXFLAGS="$CXXFLAGS -DCHECK=3"
+          CHECK_LEVEL="3"],
+    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+     CXXFLAGS="$CXXFLAGS -DCHECK=2"
+     CHECK_LEVEL="2"])
+], [
+  AC_MSG_NOTICE([Run-time checking disabled])
+])
 
-if test "$enable_signal" != "no"
-then
-  echo "Segmentation fault handling enabled"
+AS_IF([test "x$enable_signal" != "xno"], [
+  AC_MSG_NOTICE([Segmentation fault handling enabled])
   CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
-else
-  echo "Segmentation fault handling disabled"
-fi
+], [
+  AC_MSG_NOTICE([Segmentation fault handling disabled])
+])
 
-if test "$enable_color" != "no"
-then
-  echo "Output coloring enabled"
+AS_IF([test "x$enable_color" != "xno"], [
+  AC_MSG_NOTICE([Output coloring enabled])
   CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
-else
-  echo "Output coloring disabled"
-fi
+], [
+  AC_MSG_NOTICE([Output coloring disabled])
+])
 
-if test ."$enable_track" == ."yes"
-then
-       CXXFLAGS="$CXXFLAGS -DTRACK"
-fi
+AS_IF([test "x$enable_track" = "xyes"], [
+  AC_MSG_NOTICE([Field name tracking enabled])
+  CXXFLAGS="$CXXFLAGS -DTRACK"
+], [
+  AC_MSG_NOTICE([Field name tracking disabled])
+])
 
-if test ."$enable_sigfpe" == .yes
-then
-    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-fi
-
-echo
+AS_IF([test "x$enable_sigfpe" = "xyes"], [
+  AC_MSG_NOTICE([Signaling floating point exceptions enabled])
+  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+], [
+  AC_MSG_NOTICE([Signaling floating point exceptions disabled])
+])
 
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR/./}
-CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
-
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
 #############################################################
 
-if test ."$enable_backtrace" == .yes || test ."$enable_backtrace" == .maybe
-then
-    works=yes
-    if ! which addr2line &>/dev/null
-    then
-        AC_MSG_WARN("util addr2line not found")
-        works=no
-    fi
-    AC_CHECK_FUNC(popen, , [works=no])
-    AC_TRY_COMPILE([#include <execinfo.h>] , , ,
-                   [AC_MSG_WARN("execinfo.h not found")
-                    works=no])
-    AC_TRY_LINK([extern "C"
-                 char backtrace();] ,
-                 [return backtrace();], ,
-                 [AC_MSG_WARN("backtrace function not found")
-                  works=no])
-    AC_TRY_COMPILE([#include <dlfcn.h>] , , ,
-                   [AC_MSG_WARN("dlfcn.h not found")
-                    works=no])
-    if test .$works == .yes
-    then
-        CXXFLAGS="$CXXFLAGS -DBACKTRACE"
-    else
-        if test ."$enable_backtrace" == .yes
-        then
-            AC_MSG_ERROR([backtrace requested, but cannot be enabled])
-        else
-            AC_MSG_WARN("backtrace disabled")
-        fi
-    fi
-fi
+AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe"], [
+  AC_CHECK_PROG([works], [addr2line], [yes], [no])
+
+  AS_IF([test $works = yes], [
+    AC_CHECK_FUNCS([popen backtrace], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works = yes], [
+    AC_CHECK_HEADERS([execinfo.h dlfcn.h], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works = yes], [
+    AC_MSG_NOTICE([Native backtrace enabled])
+    CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+  ], [
+    AS_IF([test "x$enable_backtrace" = "xyes"], [
+      AC_MSG_ERROR([backtrace requested, but cannot be enabled])
+    ], [
+      AC_MSG_WARN([Native backtrace disabled])
+    ])
+  ])
+])
 
 #############################################################
 # Build into shared object (pic)
 #############################################################
 
-if test ."$enable_shared" == .yes
-then
+AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
     # From a SO comment (https://stackoverflow.com/a/3544211/3384414):
@@ -362,39 +341,35 @@ then
     #  code. It seems they generate a different code only on m68k,
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
-    CXXFLAGS+=" -fPIC"
-fi
+    CXXFLAGS="$CXXFLAGS -fPIC"
+])
 
 #############################################################
 # Git revision number
 #############################################################
 
 rev=`git rev-parse HEAD`
-if test "$?" = "0"
-then
-  dnl Revision not needed for build - is checked at compile time.
-  dnl CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
-  echo "Revision ID: $rev"
-fi
-
-GIT_REVISION=$rev
+AS_IF([test $? = 0], [
+  AC_MSG_NOTICE([Git revision: $rev])
+  GIT_REVISION=$rev
+], [
+  GIT_REVISION=
+])
 
 #############################################################
 # FFT routines
 #############################################################
 
-echo "Searching for FFTW library"
+AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
-if type fftw-wisdom > /dev/null 2>&1; then
-  echo " -> Found fftw-wisdom executable"
-  # Path to fftw-wisdom, then remove fft-wisdom and bin/
-  fftw_wisdom=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
-    with_fftw="$with_fftw $fftw_wisdom"
-fi
-BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR('FFTW3 is needed by BOUT++'), $with_fftw)
-BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR("FFTW3 is needed by BOUT++"), $with_fftw)
+AS_IF([test "x$fftw_path" != "xno"], [
+  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+  with_fftw="$with_fftw $fftw_wisdom"
+])
 
-echo ""
+BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
+BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 
 #############################################################
 # netCDF support
@@ -442,7 +417,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
        [
         NCLIB=`$NCCONF --libs`
         CXXFLAGS="$CXXFLAGS -DNCDF4"
-        echo " -> NetCDF-4 support enabled"
+        AC_MSG_NOTICE([ -> NetCDF-4 support enabled])
        ], [
         # nc-config might not *say* it has C++ support, but we can try anyway
         AC_MSG_CHECKING([if we can compile NetCDF with C++])
@@ -461,9 +436,9 @@ AS_IF([test "x$with_netcdf" != "xno"],
              #include <netcdfcpp.h>
              ], [NcFile file("foo.nc");])],
           [AC_MSG_RESULT([yes])
-           echo " -> Legacy NetCDF support enabled"],
+           AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])],
           [AC_MSG_RESULT([no])
-           AC_MSG_FAILURE([Could not compile NetCDF C++ program!])])
+           AC_MSG_FAILURE([*** Could not compile NetCDF C++ program!])])
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
@@ -486,7 +461,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
       AS_IF([test "x$NCFOUND" = "xyes"],
         [
          file_formats="$file_formats netCDF"
-         echo " -> Legacy NetCDF support enabled"
+         AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
          CXXFLAGS="$CXXFLAGS -DNCDF"
         ], [])
@@ -496,60 +471,54 @@ AS_IF([test "x$with_netcdf" != "xno"],
   AS_IF([test "x$NCFOUND" != "xyes"], [AC_MSG_NOTICE([ -> NetCDF support disabled])], [])
 ], [])
 
-echo ""
-
 #############################################################
 # Parallel NetCDF support
 #############################################################
 
 PNCPATH=""
-if test "$with_pnetcdf" != "no"
-then
-  echo "Searching for Parallel-NetCDF library"
+AS_IF([test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ], [
+  AC_MSG_NOTICE([Searching for Parallel-NetCDF library])
 
-  if test "$with_pnetcdf" != ""
-  then
+  AS_IF([test "x$with_pnetcdf" != "xyes"], [
     # Given a path to the library
-    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
-    if test "$PNCPATH" == ""
-    then
-      echo "parallel-netcdf not found in given directory"
-    fi
-  fi
+    AC_CHECK_FILES([$with_pnetcdf/include/pnetcdf.h], [PNCPATH=$with_pnetcdf],
+      AC_MSG_NOTICE([parallel-netcdf not found in given directory])
+    )
+  ])
 
   # Find the utilities included with pnetcdf
-  if test "$PNCPATH" == ""
-  then
-    path=`which ncmpidump`
-    if test "$path" != ""
-    then
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
-    fi
-  fi
-fi
+  AS_IF([test "x$PNCPATH" = "x"], [
+    AS_IF([test "x$with_pnetcdf" = "xyes"], [
+      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump])
+    ], [
+      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump], [$with_pnetcdf$PATH_SEPARATOR$PATH])
+    ])
+    AS_IF([test "$NCMPIDUMP_PATH" != ""], [
+      AC_CHECK_FILES([$NCMPIDUMP_PATH/../include/pnetcdf.h], [PNCPATH=$NCMPIDUMP_PATH/../])
+    ])
+  ])
 
-if test "$PNCPATH" != ""
-then
-  AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
-    AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
-fi
+  AS_IF([test "x$PNCPATH" != "x"], [
+    AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
+      AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
+  ])
 
-if test "$PNCPATH" == ""
-then
-  echo "Parallel-NetCDF support disabled"
-else
+  AS_IF([test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"], [
+    AC_MSG_FAILURE([*** Parallel-NetCDF requested but not found])
+  ])
+])
+
+AS_IF([test "x$PNCPATH" = "x"], [
+  AC_MSG_NOTICE([Parallel-NetCDF support disabled])
+], [
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
   EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
 
   file_formats="$file_formats Parallel-NetCDF"
-  echo "Parallel-NetCDF support enabled"
-fi
-
-echo ""
+  AC_MSG_NOTICE([Parallel-NetCDF support enabled])
+])
 
 #############################################################
 # HDF5 library
@@ -581,161 +550,169 @@ AS_IF([test "$with_parallelhdf5" = "yes"], [
   AC_MSG_NOTICE([Parallel HDF5 support disabled])
 ])
 
-echo ""
-
 #############################################################
 # Check file formats
 #############################################################
 
-if test "$file_formats" = ""
-then
+AS_IF([test "x$file_formats" = "x"], [
   AC_MSG_ERROR([*** At least one file format must be supported])
-else
-  echo "Supported file formats:$file_formats"
-fi
-
-echo
+], [
+  AC_MSG_NOTICE([Supported file formats:$file_formats])
+])
 
 #############################################################
 # LAPACK routines (Used for tri- and band-diagonal solvers)
 #############################################################
 
 HAS_LAPACK="no"
-if ( ( test "$with_lapack" != "no" ) )
-then
-    AS_IF( [ test .$with_lapack = .guess || test .$with_lapack = . ],
-                 [ lapack_path="" ],
-                 [ AS_IF(test .$lapack_path != .yes, [lapack_path=$with_lapack
-                                 with_lapack=yes], lapack_path="" )])
-    dnl echo "\$with_lapack=$with_lapack"
-    dnl echo "\$lapack_pat=$lapack_path"
-    BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , [HAS_BLAS=yes
-        BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
-            echo "Using LAPACK"
-            CXXFLAGS="$CXXFLAGS -DLAPACK"
-            ,
-          [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
-        ]	, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
-
-    echo ""
-fi
+AS_IF([test "x$with_lapack" != "xno"], [
+  AS_IF([test "x$with_lapack" = "xguess" || test "x$with_lapack" = "x" ],
+    [lapack_path=""],
+    [AS_IF([test "x$with_lapack" != xyes],
+       [lapack_path=$with_lapack
+        with_lapack=yes],
+       [lapack_path=""])
+    ])
+  BOUT_ADDPATH_CHECK_LIB(blas, zgemm_,
+    [HAS_BLAS=yes],
+    [AS_IF([test "x$with_lapack" = "xyes"],
+       AC_MSG_ERROR([LAPACK requested but couldn't find BLAS]))],
+    $lapack_path)
+  BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_,
+    [HAS_LAPACK=yes
+     AC_MSG_NOTICE([Using LAPACK])
+     CXXFLAGS="$CXXFLAGS -DLAPACK"
+    ],
+    [AS_IF([test "x$with_lapack" = "xyes"],
+       AC_MSG_ERROR([LAPACK requested but not found]))],
+    $lapack_path)
+])
 
 #############################################################
 # PETSc library
 #############################################################
 
-if test "x$with_petsc" != "x" && test "$with_petsc" != "no"
-then
-### This still needs to check for PETSC_ARCH
-  if test "$with_petsc" != "yes"
-  then
+AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
+
+# Supplying an argument to "--with-petsc" only works if PETSC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
+  AS_IF([test "$with_petsc" != "yes"], [
     PETSC_DIR="$with_petsc"
-    AC_CHECK_FILE($PETSC_DIR/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc=$with_petsc was specified but could not find PETSc distribution])
-        ))
+    PETSC_ARCH=
+  ])
 
-  else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC_CONFDIR=${PETSC_DIR}/conf,
-      AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf,
-        AC_MSG_ERROR([*** --with-petsc was specified but could not find PETSc distribution])
-        ))
-  fi
-  
-  PETSC_VERSION_MAJOR="0"
-  PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
-  PETSC_VERSION_MINOR="0"
-  PETSC_VERSION_MINOR=`grep 'define PETSC_VERSION_MINOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
-  PETSC_VERSION_RELEASE="0"
-  PETSC_VERSION_RELEASE=`grep 'define PETSC_VERSION_RELEASE' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  AC_MSG_NOTICE([Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH])
 
-  if test $PETSC_VERSION_MAJOR != "3"
-  then
-    AC_MSG_ERROR([PETSc must be version 3, found $PETSC_VERSION_MAJOR])
-  fi
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# PETSC_ERROR_MESSAGE
+#
+# with no identation
+  m4_define(PETSC_ERROR_MESSAGE,
+  [  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  ])
 
-  AC_MSG_CHECKING([PETSc interface version])
-  if test "$PETSC_VERSION_MINOR" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
-    AC_MSG_RESULT([3.1])
-  elif test "$PETSC_VERSION_MINOR" = "2"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
-    AC_MSG_RESULT([3.2])
-  elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
-    AC_MSG_RESULT([3.3])
-  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
-    AC_MSG_RESULT([3.4])
-  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
-    AC_MSG_RESULT([3.5])
-  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    AC_MSG_RESULT([dev])
-  elif test "$PETSC_VERSION_MINOR" = "7" && test "$PETSC_VERSION_RELEASE" = "1"
-  then
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_7"
-    AC_MSG_RESULT([3.7 "$PETSC_DIR $PETSC_ARCH $PETSC_CONFDIR"])
-  else
-    AC_MSG_RESULT([unknown])
-    echo "***********************************"
-    echo "WARNING: Unrecognised PETSc version"
-    echo "MAJOR VERSION: $PETSC_VERSION_MAJOR"
-    echo "MINOR VERSION: $PETSC_VERSION_MINOR"
-    echo "RELEASE      : $PETSC_VERSION_RELEASE"
-    echo ""
-    echo "Trying PETSc-dev interface"
-    echo "***********************************"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-  fi
+# PETSc changed the location of the conf directory in 3.5, so we
+# need to check both locations
+  AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
+    PETSC_CONFDIR=${PETSC_DIR}/conf
+  ], [
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
+      PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
+    ], [
+      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+PETSC_ERROR_MESSAGE])
+    ])
+  ])
 
-cat <<MFILE > petscmake$$
-PETSC_ARCH = ${PETSC_ARCH}
-PETSC_DIR  = ${PETSC_DIR}
-include ${PETSC_CONFDIR}/rules
-include ${PETSC_CONFDIR}/variables
-echo_sundials:
-	-@echo \${SUNDIALS_LIB}
-MFILE
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# petscverion.h
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  AC_CHECK_HEADER([petscversion.h],
+    [FOUND_PETSC_HEADER=yes],
+    [FOUND_PETSC_HEADER=no]
+  )
 
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install PETSc in a non-supported fashion. This is really the fault
+# of PETSc for their weird method of installation
+  AS_IF([test $FOUND_PETSC_HEADER = no], [
+    AC_CHECK_FILE([${PETSC_CONFDIR}/petscvariables], [], [
+      AC_MSG_ERROR([Unable to find either petscversion.h or petscvariables
+PETSC_ERROR_MESSAGE])
+    ])
+
+# This relies on the assumption that PETSC_ARCH is empty
+    PETSC_CC_INCLUDES=$(grep ^PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+
+    AC_MSG_NOTICE([Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables])
+
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    AS_UNSET([ac_cv_header_petscversion_h])
+
+    CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
+    AC_CHECK_HEADER([petscversion.h], [], [
+      AC_MSG_ERROR([Couldn't find or include petscversion.h.
+PETSC_ERROR_MESSAGE])
+    ])
+  ], [])
+
+# Now we have the header we want, we can check the version number
+  AC_MSG_CHECKING([PETSc is at least 3.4.0])
+  AC_EGREP_CPP([yes], [
+    #include <petscversion.h>
+    #if PETSC_VERSION_GE(3, 4, 0)
+      yes
+    #endif
+  ], [PETSC_VERSION_OK="yes"],
+     [PETSC_VERSION_OK="no"])
+  AC_MSG_RESULT([$PETSC_VERSION_OK])
+  CPPFLAGS="$save_CPPFLAGS"
+
+  AS_IF([test $PETSC_VERSION_OK = no], [
+    AC_MSG_ERROR([PETSc version must be at least 3.4.0])
+  ])
+
+# Check if PETSc was compiled with SUNDIALS
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   AC_MSG_CHECKING([PETSc has SUNDIALS support])
-  PETSC_HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-
-  AS_IF([test "$PETSC_HAS_SUNDIALS" == "0"],
-        [PETSC_HAS_SUNDIALS="no"],
-        [PETSC_HAS_SUNDIALS="yes"])
+  AC_EGREP_CPP([yes], [
+    #include <petscconf.h>
+    #ifdef PETSC_HAVE_SUNDIALS
+      yes
+    #endif
+  ], [PETSC_HAS_SUNDIALS="yes"],
+     [PETSC_HAS_SUNDIALS="no"])
   AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
+  CPPFLAGS="$save_CPPFLAGS"
 
-  rm petscmake$$
+  AS_IF([test "$PETSC_HAS_SUNDIALS" = "yes"], [
+    CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
+  ])
 
   # Set the line to be included in the make.conf file
-  PETSC="include ${PETSC_CONFDIR}/variables"
-else
-  PETSC=
-fi
-AC_SUBST(PETSC, $PETSC)
+  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
 
-if test "$PETSC" != ""
-then
-  echo "Using PETSC_DIR = $PETSC_DIR"
-  echo "Using PETSC_ARCH = $PETSC_ARCH"
-  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
+  HAS_PETSC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 
-  if test "$PETSC_HAS_SUNDIALS" == "yes"
-  then
-    CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
-  fi
-  echo
-fi
+], [
+  PETSC_MAKE_INCLUDE=
+  HAS_PETSC="no"
+  PETSC_HAS_SUNDIALS="no"
+])
 
 #############################################################
 # SLEPc library
@@ -743,21 +720,19 @@ fi
 HAS_SLEPC="no"
 SLEPC_VARS=""
 
-if test "$with_slepc" != "" && test "$with_slepc" != "no"
-then
-  echo "Searching for SLEPc"
+AS_IF([test "$with_slepc" != "" && test "$with_slepc" != "no"], [
+  AC_MSG_NOTICE([Searching for SLEPc])
 
-  if test "$SLEPC_DIR" == ""
-  then
+  AS_IF([test "$SLEPC_DIR" = ""], [
     AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
-  fi
+  ])
 
   # Check that the config directory exists
   AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
     AC_MSG_ERROR([*** --with-slepc specified but could not find SLEPc distribution])
     )
 
-  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+  AC_MSG_NOTICE([ -> using SLEPC_DIR=$SLEPC_DIR])
 
   # Find version number
   AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
@@ -769,404 +744,206 @@ then
   SLEPC_VERSION_MINOR="0"
   SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
 
-  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
-  then
+  AS_IF([test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"], [
     # Version 3.4
-    echo " -> Using interface for SLEPc 3.4"
+    AC_MSG_NOTICE([ -> Using interface for SLEPc 3.4])
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
 
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
-  else
+  ], [
     AC_MSG_WARN([Error - Unknown SLEPc version])
-    echo "  -> No SLEPc support"
+    AC_MSG_NOTICE([  -> No SLEPc support])
     HAS_SLEPC="no"
-  fi
-  echo
-fi
-AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
+  ])
+])
+
+AC_SUBST(SLEPC_VARS)
 
 #############################################################
 # MUMPS library
 #############################################################
 
-if test "$with_mumps" != "" && test "$with_mumps" != "no"
-then
+AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
   MUMPS=""
-  echo "Searching for MUMPS"
-  if test "$with_mumps" != "yes"
-  then
+  AC_MSG_NOTICE([Searching for MUMPS])
+  AS_IF([test "$with_mumps" != "yes"], [
     # User specified a directory
     MUMPS="$with_mumps"
+  ])
 
-    # Check for libraries
-
-    MUMPS_INC=$MUMPS/include
-    MUMPS_LIB=$MUMPS/lib
-  fi
-
-  if test "$MUMPS" == ""
-  then
+  AS_IF([test "$MUMPS" = ""], [
     # Look in some standard locations
-    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/".
-    AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
+    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/",
+      AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
+  ])
 
-    # Check for libraries
-
+  AS_IF([test "$MUMPS" != ""], [
+    # Check all files needed
     MUMPS_INC=$MUMPS/include
     MUMPS_LIB=$MUMPS/lib
-  fi
+    AC_CHECK_FILES([$MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a
+      $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
+      $MUMPS_LIB/libscalapack.a
+      $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
+      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,
+    [MUMPS=""
+     MUMPS_INC=""
+     MUMPS_LIB=""
+    ])
+  ])
 
-  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
-  then
-    # Try PETSc installation
+  save_LIBS=$LIBS
+  save_LDFLAGS=$LDFLAGS
+  save_CPPFLAGS=$CPPFLAGS
 
-    mumps_dir=`ls $PETSC_DIR/externalpackages/ | grep MUMPS`
+  AS_IF([test "x$MUMPS_INC" != "x"], [
+    LIBS="$save_LIBS -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
+    LDFLAGS="$LDFLAGS -L$MUMPS_LIB"
+    CPPFLAGS="$CPPFLAGS -I$MUMPS_INC"
+    AC_MSG_NOTICE([Trying the following flags for MUMPS:])
+    AC_MSG_NOTICE([   Includes : $CPPFLAGS])
+    AC_MSG_NOTICE([   Libraries: $LDFLAGS $LIBS])
+  ], [
+    AC_MSG_NOTICE([Using user supplied flags for MUMPS])
+  ])
 
-    if test "$mumps_dir" != ""
-    then
-      # PETSc has a MUMPS installation
-      MUMPS_INC=$PETSC_DIR/externalpackages/$mumps_dir/include
-      MUMPS_LIB=$PETSC_DIR/$PETSC_ARCH/lib
-      MUMPS=$PETSC_DIR/externalpackages/$mumps_dir
-    fi
-  fi
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([if we can compile MUMPS program])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([
+       #include <dmumps_c.h>
+       ], [
+       DMUMPS_STRUC_C mumps_struc;
+       dmumps_c(&mumps_struc);])],
+    [AC_MSG_RESULT([yes])
+     AC_MSG_NOTICE([ -> MUMPS support enabled])
+     MUMPS=yes
+     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"],
+    [AC_MSG_RESULT([no])
+     AC_MSG_FAILURE([*** Could not compile MUMPS program! You may need to supply LIBS, LDFLAGS and CPPFLAGS ])])
+  AC_LANG_POP([C++])
 
-  if test "$MUMPS" != ""
-  then
-    # Check all files needed
-    AC_CHECK_FILES( $MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a, ,[ MUMPS="" ])
-  fi
+  LIBS=$save_LIBS
+  LDFLAGS=$save_LDFLAGS
+  CPPFLAGS=$save_CPPFLAGS
 
-  if test "$MUMPS" == ""
-  then
-    echo " -> MUMPS not found"
-  else
-    echo " -> MUMPS support enabled"
-    echo "   Includes : $MUMPS_INC"
-    echo "   Libraries: $MUMPS_LIB"
+  AS_IF([test "x$MUMPS_INC" != "x"], [
+    AC_MSG_NOTICE([   Includes : $MUMPS_INC])
+    AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
+
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
-    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
-  fi
-  echo
-fi
+    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
+  ])
+])
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
-if ( ( test "$with_sundials" != "" ) && ( test "$with_sundials" != "no" ) )
-then
+AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
+
+  # Now follows a few different checks for the version of SUNDIALS.
+  # We need the sundials_config.h header, which comes with all the
+  # versions we care about
+
+  # If we've been given a path, look in there first
+  AS_IF([test "x$with_sundials" != "xyes"], [
+    AC_CHECK_FILE([$with_sundials/include/sundials/sundials_config.h],
+      [SUNDIALS_INC=$with_sundials/include], [SUNDIALS_INC=""])
+  ])
+
+  # If we've got one, add the include dir to the preprocessor flags
+  save_CPPFLAGS=$CPPFLAGS
+  AS_IF([test "x$SUNDIALS_INC" != "x"], [CPPFLAGS="-I$SUNDIALS_INC"])
+
+  AC_MSG_CHECKING([for SUNDIALS config header])
+  AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+      #include "sundials/sundials_config.h"
+    ], [])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])
+     AC_MSG_FAILURE([*** Could not determine SUNDIALS version])])
+
+  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
+  AC_MSG_CHECKING([for SUNDIALS major version])
+  AC_EGREP_CPP([yes], [
+    #include "sundials/sundials_config.h"
+    #ifdef SUNDIALS_PACKAGE_VERSION
+      yes
+    #endif
+  ], [sundials_major_ver=2], [sundials_major_ver=3])
+  AC_MSG_RESULT([$sundials_major_ver])
+
+  AS_IF([test $sundials_major_ver = 3], [
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+  ])
+
+  AC_MSG_CHECKING([for SUNDIALS minor version])
+  AC_EGREP_CPP([^ *\"? *2\.[67]\.], [
+    #include "sundials/sundials_config.h"
+    #ifdef SUNDIALS_PACKAGE_VERSION
+    SUNDIALS_PACKAGE_VERSION
+    #endif
+  ], [sundials_minor_ver=ok], [sundials_minor_ver="too low"])
+  AC_MSG_RESULT([$sundials_minor_ver])
+
+  CPPFLAGS=$save_CPPFLAGS
+
+  AS_IF([test "$sundials_minor_ver" = "too low"], [
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+  ])
+
   # Set both IDA and CVODE if not set already
-
-  if test "$with_ida" = ""
-  then
+  AS_IF([test "x$with_ida" = "x"], [
     with_ida=$with_sundials
-  fi
+  ])
 
-  if test "$with_cvode" = ""
-  then
+  AS_IF([test "x$with_cvode" = "x"], [
     with_cvode=$with_sundials
-  fi
-fi
+  ])
 
-if ( ( test "$with_ida" != "" ) && ( test "$with_ida" != "no" ) )
-then
-  echo "Searching for SUNDIALS IDA library"
-  if test "$with_ida" = "yes"
-  then
-    # No path specified. Try using sundials-config
-    if type sundials-config > /dev/null 2>&1; then
-       IDAINCS=`sundials-config -m ida -t p -l c -s cppflags`
-       IDALIBS=`sundials-config -m ida -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS IDA solver, configured with $scr"
-    else
-       IDAINCS=""
-       IDALIBS=""
-    fi
-  else
-    # Specified with path
-    echo "Checking given path to SUNDIALS' IDA solver"
-    IDALIBS=$with_ida
-    AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h , , [
-      IDALIBS=""
-    ] )
-    AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib',
-      AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-        AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.so $with_ida/lib/libsundials_ida.so, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.so $with_ida/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
-        IDALIBS=""
-    ) ) ) )
-    if test "$IDALIBS" != ""
-    then
-    IDAINCS="-I$IDALIBS/include"
-    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-    echo "=> Using SUNDIALS IDA solver, path $with_ida"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
+  AS_IF([test "x$with_arkode" = "x"], [
+    with_arkode=$with_sundials
+  ])
+])
 
-  if test "$IDALIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/ida/ida.h, IDALIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/ida/ida.h, IDALIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/ida/ida.h, IDALIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/ida/ida.h, IDALIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/ida/ida.h, IDALIBS=/opt/local,
-    )))))
+AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
+  BOUT_FIND_SUNDIALS_MODULE([ida], [
+    #include <nvector/nvector_parallel.h>
+    #include <ida/ida.h>
+    extern void foo(N_Vector);
+  ], [IDACreate();], [
+    #include <ida/ida_bbdpre.h>
+    extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
+  ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
+])
 
-    if test "$IDALIBS" != ""
-    then
-    # Check the rest of the files
-    AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
-          IDALIBS=""
-        ] )
-    AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
-      AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
-        AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.so $IDALIBS/lib/libsundials_ida.so, IDALIBSLIB='lib',
-          AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.so $IDALIBS/lib64/libsundials_ida.so, IDALIBSLIB='lib64',
-            IDALIBS=""
-    ) ) ) )
-    fi
+AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
+  BOUT_FIND_SUNDIALS_MODULE([cvode], [
+    #include <nvector/nvector_parallel.h>
+    #include <cvode/cvode.h>
+    extern void foo(N_Vector);
+  ], [CVodeCreate(0, 0);], [
+    #include <cvode/cvode_bbdpre.h>
+    extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
+  ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
+])
 
-    if test "$IDALIBS" != ""
-    then
-    IDAINCS="-I$IDALIBS/include"
-    IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
-    fi
-  fi
-
-  if test "$IDALIBS" = ""
-  then
-    echo "=> IDA solver not available"
-    echo
-  else
-    # Compile in the IDA solver
-    echo "=> IDA solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $IDALIBS"
-    EXTRA_INCS="$EXTRA_INCS $IDAINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
-  fi
-fi
-
-if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
-then
-  echo "Searching for SUNDIALS' CVODE library"
-  if test "$with_cvode" = "yes"
-  then
-    # No path specified. Try using sundials-config
-    if type sundials-config > /dev/null 2>&1; then
-       CVODEINCS=`sundials-config -m cvode -t p -l c -s cppflags`
-       CVODELIBS=`sundials-config -m cvode -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS CVODE solver, configured with $scr"
-    else
-       CVODEINCS=""
-       CVODELIBS=""
-    fi
-  else
-    # Specified with path
-    echo "Checking given path to SUNDIALS' CVODE solver"
-    CVODELIBS=$with_cvode
-    AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h, , [
-      CVODELIBS=""
-    ] )
-    AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
-        AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.so $with_cvode/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.so $with_cvode/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
-          CVODELIBS=""
-        ]) ) ) )
-
-
-    if test "$CVODELIBS" != ""
-    then
-      CVODEINCS="-I$with_cvode/include"
-      CVODELIBS="-L$with_cvode/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
-      echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
-
-  if test "$CVODELIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/cvode/cvode_spgmr.h, CVODELIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/cvode/cvode_spgmr.h, CVODELIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/cvode/cvode_spgmr.h, CVODELIBS=/opt/local,
-    )))))
-
-    if test "$CVODELIBS" != ""
-    then
-    # Check the rest of the files
-    AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
-      CVODELIBS=""
-    ])
-        AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',
-            AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.so $CVODELIBS/lib/libsundials_nvecparallel.so, CVODELIBSLIB='lib',
-          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.so $CVODELIBS/lib64/libsundials_nvecparallel.so, CVODELIBSLIB='lib64', [
-            CVODELIBS=""
-          ]) ) ) )
-    fi
-    if test "$CVODELIBS" != ""
-    then
-      CVODEINCS="-I$CVODELIBS/include"
-      CVODELIBS="-L$CVODELIBS/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
-    fi
-  fi
-
-  if test "$CVODELIBS" = ""
-  then
-    echo "=> CVODE solver not available"
-    echo
-  else
-    # Compile in the CVODE solver
-    echo "=> CVODE solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $CVODELIBS"
-    EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
-
-
-  fi
-fi
-
-############## ARKode ####################
-
-if ( ( test "$with_arkode" != "" ) && ( test "$with_arkode" != "no" ) )
-then
-  echo "Searching for SUNDIALS' ARKODE library"
-  if test "$with_arkode" = "yes"
-  then
-    # No path specified. Try using sundials-config (not currently available in SUNDIALS, but include here for the future)
-    if type sundials-config > /dev/null 2>&1; then
-       ARKODEINCS=`sundials-config -m arkode -t p -l c -s cppflags`
-       ARKODELIBS=`sundials-config -m arkode -t p -l c -s libs`
-       scr=`which sundials-config`
-       echo "=> Using SUNDIALS ARKODE solver, configured with $scr"
-    else
-       ARKODEINCS=""
-       ARKODELIBS=""
-    fi
-  else
-    # Specified with path
-    echo "Checking given path to SUNDIALS' ARKODE solver"
-    ARKODELIBS=$with_arkode
-    AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h , , [
-      ARKODELIBS=""
-    ] )
-    AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
-        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
-          [
-            ARKODELIBS=""
-      ]) ) ) )
-
-    if test "$ARKODELIBS" != ""
-    then
-      ARKODEINCS="-I$with_arkode/include"
-      ARKODELIBS="-L$with_arkode/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
-      echo "=> Using SUNDIALS ARKODE solver, path $with_arkode"
-    else
-      echo " -> Given path not correct. Finding..."
-    fi
-  fi
-
-  if test "$ARKODELIBS" = ""
-  then
-    # Try some known paths
-    AC_CHECK_FILE($HOME/local/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME/local,
-    AC_CHECK_FILE($HOME/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME,
-    AC_CHECK_FILE(/usr/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr,
-    AC_CHECK_FILE(/usr/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr/local,
-    AC_CHECK_FILE(/opt/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/opt/local,
-    )))))
-
-    if test "$ARKODELIBS" != ""
-    then
-        # Check the rest of the files
-        AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h, , [
-          ARKODELIBS=""
-        ])
-        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
-          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',
-            AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.so $ARKODELIBS/lib/libsundials_nvecparallel.so, ARKODELIBSLIB='lib',
-              AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.so $ARKODELIBS/lib64/libsundials_nvecparallel.so, ARKODELIBSLIB='lib64',
-              [
-                ARKODELIBS=""
-          ]) ) ) )
-    fi
-
-    if test "$ARKODELIBS" != ""
-    then
-      ARKODEINCS="-I$ARKODELIBS/include"
-      ARKODELIBS="-L$ARKODELIBS/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
-    fi
-  fi
-  if test "$ARKODELIBS" = ""
-  then
-    echo "=> ARKODE solver not available"
-    echo
-  else
-    # Compile in the ARKODE solver
-    echo "=> ARKODE solver enabled"
-    echo
-    EXTRA_LIBS="$EXTRA_LIBS $ARKODELIBS"
-    EXTRA_INCS="$EXTRA_INCS $ARKODEINCS"
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_ARKODE"
-
-
-  fi
-fi
-
-
-#############################################################
-# Check types for SUNDIALS
-#############################################################
-
-AS_IF([test "x$CVODELIBS" != "x"],
-[
-    BOUT_CHECK_SUNDIALS_TYPE([CVODE],[$CVODEINCS],[CVODEINT],[
-#include <cvode/cvode_bbdpre.h>
-extern int cvode_bbd_rhs(CVODEINT Nlocal,
-               double, N_Vector u, N_Vector du,
-               void *user_data);
-    ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
-], [])
-
-AS_IF([test "x$IDALIBS" != "x"],
-[
-    BOUT_CHECK_SUNDIALS_TYPE([IDA],[$IDAINCS],[IDAINT],[
-#include <ida/ida_bbdpre.h>
-extern int ida_bbd_rhs(IDAINT Nlocal,
-               double, N_Vector u, N_Vector du, N_Vector rr,
-               void *user_data);
-      ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
-], [])
-
-AS_IF([test "x$ARKODELIBS" != "x"],
-[
-    BOUT_CHECK_SUNDIALS_TYPE([ARKODE],[$ARKODEINCS],[ARKODEINT],[
-#include <arkode/arkode_bbdpre.h>
-extern int arkode_bbd_rhs(ARKODEINT Nlocal,
-               double, N_Vector u, N_Vector du,
-               void *user_data);
-      ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
-], [])
-
+AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
+  BOUT_FIND_SUNDIALS_MODULE([arkode], [
+    #include <nvector/nvector_parallel.h>
+    #include <arkode/arkode.h>
+    extern void foo(N_Vector);
+  ], [ARKodeCreate();], [
+    #include <arkode/arkode_bbdpre.h>
+    extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
+  ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
+])
 
 #############################################################
 # Scorep setup
@@ -1174,44 +951,30 @@ extern int arkode_bbd_rhs(ARKODEINT Nlocal,
 
 HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
-  AC_MSG_NOTICE(["Searching for Scorep executable"])
 
   AS_IF([test "$with_scorep" != "yes"], [
-    # Given a path to the library
-    AC_CHECK_FILES($with_scorep/scorep, SCOREPPATH=$with_scorep,)
-    AS_IF([test "$SCOREPPATH" == ""],[
-      AC_MSG_NOTICE(["scorep not found in given directory"])
-    ],[])
-  ], 
-  [])
+    AC_MSG_NOTICE([Searching for Scorep executable in $with_scorep])
+    AC_PATH_PROG([SCOREPPATH], [scorep], [], [$with_scorep])
+  ], [
+    AC_MSG_NOTICE([Searching for Scorep executable])
+    AC_PATH_PROG([SCOREPPATH], [scorep], [])
+  ])
 
-  # Find the scorep binary
-  AS_IF([test "$SCOREPPATH" == ""], [
-    path=`which scorep`
-    AS_IF([test "$path" != ""], [
-      path=`dirname $path`
-      path=$path/..
-      AC_CHECK_FILES($path/bin/scorep , SCOREPPATH=$path,)
-      ], [])
-  ],
-  [])
-
-  AS_IF([test "$SCOREPPATH" == ""], [
-      AC_MSG_NOTICE(["SCOREP support disabled"])
+  AS_IF([test "$SCOREPPATH" = ""], [
+      AC_MSG_FAILURE([*** Scorep requested, but executable not found.
+Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="scorep --user --nocompiler $MPICXX"
+      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
       BOUT_CHECK_PRETTYFUNCTION
       HAS_SCOREP="yes"
-      AC_MSG_NOTICE(["Scorep support enabled"])
+      AC_MSG_NOTICE([Scorep support enabled])
   ])
 
   ],[
   AC_MSG_NOTICE([Scorep support disabled])
 ])
-
-echo ""
 
 #############################################################
 # Download + Build PVODE '98
@@ -1222,43 +985,41 @@ AS_MKDIR_P(lib)
 AS_MKDIR_P(include)
 
 HAS_PVODE="no"
-if ( test "$with_pvode" != "no" )
-then
-	AS_IF([test "$enable_pvode_openmp" != "no"  ],[
-	      AS_IF([test "$enable_openmp" != "no" ],[
-    	               PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
-		       AC_MSG_NOTICE([PVODE being built with OpenMP support])
-		    ],[
-		       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
-		       ])
-	      ],[
-	         PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
-	         AC_MSG_NOTICE([PVODE being built without OpenMP support])
-	])
+AS_IF([test "$with_pvode" != "no"], [
+  AS_IF([test "$enable_pvode_openmp" != "no"  ], [
+    AS_IF([test "$enable_openmp" != "no" ], [
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      AC_MSG_NOTICE([PVODE being built with OpenMP support])
+    ], [
+      AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
+    ])
+  ], [
+    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    AC_MSG_NOTICE([PVODE being built without OpenMP support])
+  ])
+  # Clean PVODE
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-   # Clean PVODE
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  AC_MSG_NOTICE([Building PVODE])
+  echo "* Building PVODE" >> config-build.log
+  echo "*************************************************************" >> config-build.log
 
-   #make -C externalpackages/PVODE/ clean
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-    echo "* Building PVODE" | tee -a config-build.log
+  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
+    AC_MSG_NOTICE([Successfully built PVODE])
+    AC_MSG_NOTICE([Installing PVODE into BOUT++ sourcetree])
+
     echo "*************************************************************" >> config-build.log
-
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
-
-    if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
-    then
-      echo "*************************************************************" >> config-build.log
-      echo "* Successfully built PVODE" | tee -a config-build.log
-      echo "*	************************************************************" >> config-build.log
-      echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
-
-      echo "*************************************************************" | tee -a config-build.log
-    else
-      AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
-    fi
+    echo "* Successfully built PVODE" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+    echo "* Installing PVODE into BOUT++ sourcetree" >> config-build.log
+    echo "*************************************************************" >> config-build.log
+  ], [
+    AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
+  ])
 
   # Set the correct libraries and copy them to bout
   AS_MKDIR_P(include/pvode)
@@ -1267,23 +1028,22 @@ then
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
-fi
+])
 
 #############################################################
 # Check environment
 #############################################################
 
-if ( test "$CXXINCLUDE" != "" )
-then
-  echo "================================================"
-  echo " WARNING: CXXINCLUDE environment variable set to:"
-  echo $CXXINCLUDE
-  echo " => This will be added to compile commands"
-  echo " If this is not intended, then run"
-  echo "   export CXXINCLUDE=''"
-  echo " before making BOUT++"
-  echo "================================================"
-fi
+AS_IF([test "$CXXINCLUDE" != ""], [
+  AC_MSG_NOTICE([================================================])
+  AC_MSG_NOTICE([ WARNING: CXXINCLUDE environment variable set to:])
+  AC_MSG_NOTICE([$CXXINCLUDE])
+  AC_MSG_NOTICE([ => This will be added to compile commands])
+  AC_MSG_NOTICE([ If this is not intended, then run])
+  AC_MSG_NOTICE([   export CXXINCLUDE=''])
+  AC_MSG_NOTICE([ before making BOUT++])
+  AC_MSG_NOTICE([================================================])
+])
 
 #############################################################
 # Gather configuration info for bout-config
@@ -1331,82 +1091,9 @@ then
   HAS_MUMPS="no"
 fi
 
-if test "$PETSC" = ""
-then
-  HAS_PETSC="no"
-  PETSC_VERSION=""
-  PETSC_RELEASE=""
-  PETSC_HAS_SUNDIALS="no"
-else
-  HAS_PETSC="yes"
-  PETSC_VERSION="$PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR"
-  PETSC_RELEASE="$PETSC_VERSION_RELEASE"
-fi
-
-#############################################################
-# Print configuration info
-#############################################################
-
-echo
-echo "Configuration summary"  | tee -a config-build.log
-echo
-
-if test "$PETSC" = ""
-then
-  echo "  PETSc support: no" | tee -a config-build.log
-else
-  echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
-  echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
-fi
-
-echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
-
-echo "  IDA support: $HAS_IDA" | tee -a config-build.log
-
-echo "  CVODE support: $HAS_CVODE" | tee -a config-build.log
-
-echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
-
-echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
-
-echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
-
-echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
-
-echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
-
-echo "  Lapack support: $HAS_LAPACK" | tee -a config-build.log
-
-echo "  Scorep support: $HAS_SCOREP" | tee -a config-build.log
-
-echo ""
-echo
-echo "Data analysis configuration"
-echo
-echo "=== IDL ==="
-echo
-echo "Make sure that the tools/idllib directory is in your IDL_PATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH"
-echo
-echo "=== Python ==="
-echo
-echo "Make sure that the tools/pylib directory is in your PYTHONPATH"
-echo "e.g. by adding to your ~/.bashrc file"
-echo
-echo "   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH"
-echo
-echo "=== Octave ==="
-echo
-echo "Add the following to ~/.octaverc"
-echo "   addpath('$PWD/tools/octave')"
-echo
-echo "*** Now run '$MAKE' to compile BOUT++ ***"
-echo
-
 # Only make.config is altered by configure
-AC_OUTPUT(make.config)
+AC_CONFIG_FILES([make.config])
+AC_OUTPUT
 
 #############################################################
 # Use a dummy Makefile to get the cflags and ldflags
@@ -1432,7 +1119,6 @@ BOUT_INCLUDE_PATH=$PWD/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
 
-
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
@@ -1452,10 +1138,53 @@ AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
-AC_SUBST(PETSC_VERSION)
-AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
+AC_SUBST(PETSC_MAKE_INCLUDE)
+AC_SUBST(PETSC_DIR)
+AC_SUBST(PETSC_ARCH)
 AC_SUBST(HAS_OPENMP)
 
-AC_OUTPUT(bin/bout-config)
+AC_CONFIG_FILES([bin/bout-config])
+AC_OUTPUT
 chmod a+x bin/bout-config
+
+#############################################################
+# Print configuration info
+#############################################################
+
+AC_MSG_NOTICE([-------------------------])
+AC_MSG_NOTICE([  Configuration summary  ])
+AC_MSG_NOTICE([-------------------------])
+
+AC_MSG_NOTICE([  PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
+AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
+AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
+AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
+AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
+AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
+AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
+AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
+AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
+AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
+AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
+
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([-------------------------------])
+AC_MSG_NOTICE([  Data analysis configuration  ])
+AC_MSG_NOTICE([-------------------------------])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([=== IDL ===])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([Make sure that the tools/idllib directory is in your IDL_PATH])
+AC_MSG_NOTICE([e.g. by adding to your ~/.bashrc file])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([    export IDL_PATH=+$PWD/tools/idllib:'<IDL_DEFAULT>':\$IDL_PATH])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([=== Python ===])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([Make sure that the tools/pylib directory is in your PYTHONPATH])
+AC_MSG_NOTICE([e.g. by adding to your ~/.bashrc file])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([*** Now run '$MAKE' to compile BOUT++ ***])

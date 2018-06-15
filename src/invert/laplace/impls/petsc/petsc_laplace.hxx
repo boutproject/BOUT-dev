@@ -72,8 +72,6 @@ public:
     VecDestroy( &xs );
     VecDestroy( &bs );
     MatDestroy( &MatA );
-    delete [] ksptype;
-    delete [] pctype;
   }
 
   void setCoefA(const Field2D &val) override { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
@@ -129,8 +127,8 @@ private:
   KSP ksp;
 
   Options *opts;              // Laplace Section Options Object
-  KSPType ksptype;            // Solver Type;
-  PCType pctype;	      // Preconditioner type
+  std::string ksptype; ///< KSP solver type
+  std::string pctype;  ///< Preconditioner type
 
   // Values specific to particular solvers
   BoutReal richardson_damping_factor;
@@ -143,7 +141,7 @@ private:
   int maxits; // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
-
+  
   PetscLib lib;
 
   bool use_precon;  // Switch for preconditioning
@@ -159,6 +157,6 @@ private:
   #endif
 };
 
-#endif //BOUT_HAS_PETSC_DEV
+#endif //BOUT_HAS_PETSC
 
 #endif //__PETSC_LAPLACE_H__
