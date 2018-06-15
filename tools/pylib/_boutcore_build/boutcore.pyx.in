@@ -282,7 +282,7 @@ cdef class Field3D:
         val : Field3D, optional
              If set, set the time derivative to val
         """
-        if val:
+        if val is not None:
             c_set_f3d_from_f3d(&c.ddt(self.cobj[0]),(<Field3D?>val).cobj)
         return f3dFromPtr(&c.ddt(self.cobj[0]))
 
