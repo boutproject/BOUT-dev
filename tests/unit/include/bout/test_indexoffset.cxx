@@ -9,10 +9,6 @@
 /// Global mesh
 extern Mesh *mesh;
 
-::std::ostream& operator<<(::std::ostream& os, const Ind3D& index) {
-  return os << index.ind;  // whatever needed to print bar to os
-}
-
 /// Test fixture to make sure the global mesh is our fake one
 class IndexOffsetTest : public ::testing::Test {
 protected:
