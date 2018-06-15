@@ -142,7 +142,7 @@ cdef class Field3D:
             nx=mesh_.LocalNx
             nx_=nx-2*nxg
             xstart=nx_*nxi
-            kwargs['xind']=[xstart,xstart+nx]
+            kwargs['xind']=[xstart,xstart+nx-1]
         if (nype):
             if "yind" in kwargs.keys():
                 raise "Error: Do not support yind slicing with MPI"
@@ -151,7 +151,7 @@ cdef class Field3D:
             ny=mesh_.LocalNy
             ny_=ny-2*nyg
             ystart=ny_*nyi
-            kwargs['yind']=[ystart,ystart+ny]
+            kwargs['yind']=[ystart,ystart+ny-1]
         data=collect(name,yguards=True,tind=tind,**kwargs)
         dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
         if dims[0] == 't':
