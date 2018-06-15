@@ -68,9 +68,11 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0, nyInterp=None):
 
         # Interpolate to output positions and make the correct shape
         # np.mgrid gives us an array of indices
-        var3d = map_coordinates(varTmp, coordinates=np.mgrid[0:nx, 0:nyInterp, 0:nz],
+        # 0:ny-1:nyInterp*1j means use nyInterp points between 0 and ny-1 inclusive
+        var3d = map_coordinates(varTmp, np.mgrid[0:nx, 0:ny-1:nyInterp*1j, 0:nz],
                                 cval=-999)
-        zShift = map_coordinates(zShift, np.mgrid[0:nx, 0:nyInterp], cval=-999)
+        zShift = map_coordinates(zShift, np.mgrid[0:nx, 0:ny-1:nyInterp*1j],
+                                 cval=-999)
 
         # Update shape
         ny = nyInterp
