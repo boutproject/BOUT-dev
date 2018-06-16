@@ -267,7 +267,8 @@ const Field3D FCIMap::integrate(Field3D &f) const {
         BoutReal f_c  = centre(x,ynext,z);
         
         if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
-            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)) {
+            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm) ||
+            (x == mesh->xstart)) {
           // One of the corners leaves the domain.
           // Use the cell centre value, since boundary conditions are not
           // currently applied to corners.
