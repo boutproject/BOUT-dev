@@ -80,7 +80,14 @@ PetscSolver::~PetscSolver() {
     if (J) {MatDestroy(&J);}
     if (Jmf) {MatDestroy(&Jmf);}
     if (matfdcoloring) {MatFDColoringDestroy(&matfdcoloring);}
-    TSDestroy(&ts);
+
+    PetscBool petsc_is_finalised;
+    PetscFinalized(&petsc_is_finalised);
+
+    if (!petsc_is_finalised) {
+      // PetscFinalize may already have destroyed this object
+      TSDestroy(&ts);
+    }
 
     initialised = false;
   }
