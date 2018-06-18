@@ -147,17 +147,16 @@ TEST_F(IndexOffsetTest, ZPlusOne) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      for (int k = 0; k < nz - 1; ++k) {
+      for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
         EXPECT_EQ(offset.x(offset.zp(*index)), i);
         EXPECT_EQ(offset.y(offset.zp(*index)), j);
-        EXPECT_EQ(offset.z(offset.zp(*index)), k + 1);
+        EXPECT_EQ(offset.z(offset.zp(*index)), (k + 1) % nz);
         ++index;
       }
-      ++index;
     }
   }
 }
@@ -225,15 +224,14 @@ TEST_F(IndexOffsetTest, ZMinusOne) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      ++index;
-      for (int k = 1; k < nz; ++k) {
+      for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
         EXPECT_EQ(offset.x(offset.zm(*index)), i);
         EXPECT_EQ(offset.y(offset.zm(*index)), j);
-        EXPECT_EQ(offset.z(offset.zm(*index)), k - 1);
+        EXPECT_EQ(offset.z(offset.zm(*index)), (k - 1 + nz) % nz);
         ++index;
       }
     }
@@ -299,18 +297,16 @@ TEST_F(IndexOffsetTest, ZPlusTwo) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      for (int k = 0; k < nz - 2; ++k) {
+      for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
         EXPECT_EQ(offset.x(offset.zpp(*index)), i);
         EXPECT_EQ(offset.y(offset.zpp(*index)), j);
-        EXPECT_EQ(offset.z(offset.zpp(*index)), k + 2);
+        EXPECT_EQ(offset.z(offset.zpp(*index)), (k + 2 + nz) % nz);
         ++index;
       }
-      ++index;
-      ++index;
     }
   }
 }
@@ -380,16 +376,14 @@ TEST_F(IndexOffsetTest, ZMinusTwo) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      ++index;
-      ++index;
-      for (int k = 2; k < nz; ++k) {
+      for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
         EXPECT_EQ(offset.x(offset.zmm(*index)), i);
         EXPECT_EQ(offset.y(offset.zmm(*index)), j);
-        EXPECT_EQ(offset.z(offset.zmm(*index)), k - 2);
+        EXPECT_EQ(offset.z(offset.zmm(*index)), (k - 2 + nz) % nz);
         ++index;
       }
     }
