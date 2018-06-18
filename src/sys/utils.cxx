@@ -186,7 +186,6 @@ std::string trimLeft(const std::string &s, const std::string &c) {
 // Strips the comments from a string
 // This is the compliment of trimLeft
 std::string trimComments(const std::string &s, const std::string &c) {
-  std::string str(s);
-  return str.substr(0, s.find_first_of(c));
+  return s.substr(0, s.find_first_of(c));
 }
 
