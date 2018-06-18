@@ -37,6 +37,7 @@
 #include <bout/coordinates.hxx>
 #include <bout/sys/timer.hxx>
 #include <derivs.hxx>
+#include <difops.hxx>
 #include <globals.hxx>
 #include <output.hxx>
 
@@ -93,25 +94,36 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   Field3D oneOverC1coefTimesDcoef = 1./C1coef/Dcoef;
   Field3D AOverD = Acoef/Dcoef;
 
+  // Use this below to normalize error for relative error estimate
+  BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
+
   BoutReal error_rel = 1e20, error_abs=1e20;
   int count = 0;
-  while (error_rel>rtol && error_abs>atol) {
 
-    Field3D ddx_x = DDX(x, location, DIFF_C2);
-    Field3D ddz_x = DDZ(x, location, DIFF_FFT);
-    Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
+  // Initial values for derivatives of x
+  Field3D ddx_x = DDX(x, location, DIFF_C2);
+  Field3D ddz_x = DDZ(x, location, DIFF_FFT);
+  Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
+
+  while (error_rel>rtol && error_abs>atol) {
 
     // This passes in the boundary conditions from x0's guard cells, if necessary
     copy_x_boundaries(x, x0, mesh);
 
     // NB need to pass x in case boundary flags require 'x0', even if
     // delp2solver is not iterative and does not use an initial guess
-    Field3D xnew = delp2solver->solve(b, x);
-    Field3D difference = xnew-x;
-    error_abs = max(abs(difference, RGN_NOBNDRY), true, RGN_NOBNDRY);
-    error_rel = error_abs / sqrt(mean(SQ(x), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
-    x = xnew;
+    x = delp2solver->solve(b, x);
     mesh->communicate(x);
+
+    // re-calculate the rhs from the new solution
+    // Use here to calculate an error, can also use for the next iteration
+    ddx_x = DDX(x, location, DIFF_C2); // can be used also for the next iteration
+    ddz_x = DDZ(x, location, DIFF_FFT);
+    b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
+
+    Field3D error3D = b - Delp2(x);
+    error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
+    error_rel = error_abs / RMS_rhsOverD;
     //output<<"NaulinSolver: "<<count<<" "<<error_rel<<" "<<error_abs<<endl;
 
     count++;
