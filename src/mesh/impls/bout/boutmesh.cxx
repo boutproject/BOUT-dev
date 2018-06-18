@@ -2238,20 +2238,20 @@ void BoutMesh::addBoundaryRegions() {
   // Join boundary regions together
   
   Region<Ind3D> bndry3d; // Empty
-  for(auto region_name : all_boundaries) {
+  for (const auto &region_name : all_boundaries) {
     bndry3d += getRegion3D(region_name);
   }
   bndry3d.unique(); // Ensure that the points are unique
-  
+
   // Create a region which is all boundaries
   addRegion3D("RGN_BNDRY", bndry3d);
 
   Region<Ind2D> bndry2d; // Empty
-  for(auto region_name : all_boundaries) {
+  for (const auto &region_name : all_boundaries) {
     bndry2d += getRegion2D(region_name);
   }
   bndry2d.unique(); // Ensure that the points are unique
-  
+
   // Create a region which is all boundaries
   addRegion2D("RGN_BNDRY", bndry2d);
 }
