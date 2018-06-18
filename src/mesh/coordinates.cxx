@@ -647,6 +647,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 
   Field3D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   int ncz = localmesh->LocalNz;
 
