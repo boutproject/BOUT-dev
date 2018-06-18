@@ -137,7 +137,7 @@ ExpressionParser::ExpressionParser() {
 }
 
 void ExpressionParser::addGenerator(const string &name, std::shared_ptr<FieldGenerator> g) {
-  gen[name] = g;
+  gen[name] = std::move(g);
 }
 
 void ExpressionParser::addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence) {

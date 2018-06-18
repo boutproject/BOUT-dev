@@ -23,7 +23,7 @@
  *            destructor
  */
 GridFile::GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename)
-    : file(format.release()), filename(gridfilename) {
+  : file(std::move(format)), filename(gridfilename) {
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {

@@ -68,17 +68,19 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   
 }
 
-Datafile::Datafile(Datafile &&other) :
-  parallel(other.parallel), flush(other.flush), guards(other.guards),
-  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
-  file(other.file.release()), int_arr(other.int_arr),
-  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
-  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=other.filenamelen;
-  filename=other.filename;
-  other.filenamelen=0;
-  other.filename=nullptr;
+Datafile::Datafile(Datafile &&other)
+    : parallel(other.parallel), flush(other.flush), guards(other.guards),
+      floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly),
+      Lz(other.Lz), enabled(other.enabled), shiftOutput(other.shiftOutput),
+      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushFrequency(other.flushFrequency), file(std::move(other.file)),
+      int_arr(std::move(other.int_arr)), BoutReal_arr(std::move(other.BoutReal_arr)),
+      f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
+      v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
+  filenamelen = other.filenamelen;
+  filename = other.filename;
+  other.filenamelen = 0;
+  other.filename = nullptr;
   other.file = nullptr;
 }
 
@@ -95,7 +97,6 @@ Datafile::Datafile(const Datafile &other) :
   // Same added variables, but the file not the same 
 }
 
-
 Datafile& Datafile::operator=(Datafile &&rhs) {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
@@ -109,13 +110,12 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   flushFrequencyCounter = 0;
   flushFrequency = rhs.flushFrequency;
   file         = std::move(rhs.file);
-  rhs.file     = nullptr; // not needed?
-  int_arr      = rhs.int_arr;
-  BoutReal_arr = rhs.BoutReal_arr;
-  f2d_arr      = rhs.f2d_arr;
-  f3d_arr      = rhs.f3d_arr;
-  v2d_arr      = rhs.v2d_arr;
-  v3d_arr      = rhs.v3d_arr;
+  int_arr      = std::move(rhs.int_arr);
+  BoutReal_arr = std::move(rhs.BoutReal_arr);
+  f2d_arr      = std::move(rhs.f2d_arr);
+  f3d_arr      = std::move(rhs.f3d_arr);
+  v2d_arr      = std::move(rhs.v2d_arr);
+  v3d_arr      = std::move(rhs.v3d_arr);
   if (filenamelen < rhs.filenamelen){
     delete[] filename;
     filenamelen=rhs.filenamelen;
