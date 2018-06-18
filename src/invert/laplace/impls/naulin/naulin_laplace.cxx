@@ -93,10 +93,13 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   int count = 0;
   while (error_rel>rtol && error_abs>atol) {
 
-    copy_x_boundaries(x, x0, mesh);
     Field3D ddx_x = DDX(x, location, DIFF_C2);
     Field3D ddz_x = DDZ(x, location, DIFF_FFT);
     Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef;
+
+    // This passes in the boundary conditions from x0's guard cells, if necessary
+    copy_x_boundaries(x, x0, mesh);
+
     // NB need to pass x in case boundary flags require 'x0', even if
     // delp2solver is not iterative and does not use an initial guess
     Field3D xnew = delp2solver->solve(b, x);
