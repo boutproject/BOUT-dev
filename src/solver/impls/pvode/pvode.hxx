@@ -24,12 +24,8 @@
  * 
  **************************************************************************/
 
-#ifndef BOUT_HAS_PVODE
+#ifdef BOUT_HAS_PVODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver PvodeSolver;
- 
-#else
 class PvodeSolver;
 
 #ifndef __PVODE_SOLVER_H__

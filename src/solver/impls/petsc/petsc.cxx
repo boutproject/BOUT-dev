@@ -26,7 +26,7 @@
 
 #include "petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC_DEV
+#ifdef BOUT_HAS_PETSC
 
 //#include <private/tsimpl.h>
 #include <petsc.h>
@@ -80,7 +80,14 @@ PetscSolver::~PetscSolver() {
     if (J) {MatDestroy(&J);}
     if (Jmf) {MatDestroy(&Jmf);}
     if (matfdcoloring) {MatFDColoringDestroy(&matfdcoloring);}
-    TSDestroy(&ts);
+
+    PetscBool petsc_is_finalised;
+    PetscFinalized(&petsc_is_finalised);
+
+    if (!petsc_is_finalised) {
+      // PetscFinalize may already have destroyed this object
+      TSDestroy(&ts);
+    }
 
     initialised = false;
   }
@@ -118,10 +125,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   nout = NOUT;
   tstep = TIMESTEP;
 
-  // Set the rhs solver function
-  // func = f;
-
-  PetscInt n2d = n2Dvars();       // Number of 2D variables
   PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
@@ -143,15 +146,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = VecGetArray(u,&udata);CHKERRQ(ierr);
   save_vars(udata);
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
+
   PetscReal norm;
   ierr = VecNorm(u,NORM_1,&norm);CHKERRQ(ierr);
   output_info << "initial |u| = " << norm << "\n";
 
   PetscBool       J_load;
-  MatStructure    J_structure;
   char            load_file[PETSC_MAX_PATH_LEN];  /* jacobian input file name */
   PetscBool       J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
-  ISColoring      iscoloring;
 
   // Create timestepper
   ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
@@ -200,6 +202,10 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Set default absolute/relative tolerances
   ierr = TSSetTolerances(ts, abstol, nullptr, reltol, nullptr);CHKERRQ(ierr);
 
+#if PETSC_VERSION_LT(3,5,0)
+  ierr = TSRKSetTolerance(ts, reltol); CHKERRQ(ierr);
+#endif
+
 #ifdef PETSC_HAS_SUNDIALS
   // Set Sundials tolerances
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
@@ -219,16 +225,23 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal start_timestep;
   OPTION(options, start_timestep, TIMESTEP);
-  ierr = TSSetInitialTimeStep(ts,simtime,start_timestep);CHKERRQ(ierr);
+  ierr = TSSetTime(ts, simtime); CHKERRQ(ierr);
+  ierr = TSSetTimeStep(ts, start_timestep); CHKERRQ(ierr);
   next_output = simtime;
 
   // Maximum number of steps
   int mxstep;
   OPTION(options, mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
-  PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time'=
+  PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time
   output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
+
+#if PETSC_VERSION_GE(3,8,0)
+  ierr = TSSetMaxSteps(ts, mxstep); CHKERRQ(ierr);
+  ierr = TSSetMaxTime(ts, tfinal); CHKERRQ(ierr);
+#else
   ierr = TSSetDuration(ts,mxstep,tfinal);CHKERRQ(ierr);
+#endif
 
   // Set the current solution
   ierr = TSSetSolution(ts,u);CHKERRQ(ierr);
@@ -272,7 +285,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
-    ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf);
+    ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
     ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
   }else {
@@ -359,26 +372,19 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PetscViewerDestroy(&fd);CHKERRQ(ierr);
   } else { // create Jacobian matrix
 
-    //PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
-    //PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
-
-    PetscInt nx = mesh->xend;//MXSUB;
-    PetscInt ny = mesh->yend;//MYSUB;
-
-    /* number of z points */
-    PetscInt nz  = mesh->LocalNz;
-
     /* number of degrees (variables) at each grid point */
     PetscInt dof = n3Dvars();
 
-    /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
-    PetscInt n = local_N; //mesh->xend*mesh->yend*nz*dof; //<- that doesn't seem to work. Why is n3Dvars()*nz?
-    // PetscInt n = MXSUB*MYSUB*nz*dof;
-    PetscInt sw = 2;
-    PetscInt dim = 3;
-    PetscInt cols = sw*2*3+1;
+    // Maximum allowable size of stencil in x is the number of guard cells
+    PetscInt stencil_width = mesh->xstart;
+    // This is the stencil in each direction (*2) along each dimension
+    // (*3), plus the point itself. Not sure if this is correct
+    // though, on several levels:
+    //   1. Ignores corner points used in e.g. brackets
+    //   2. Could have different stencil widths in each dimension
+    //   3. FFTs couple every single point together
+    PetscInt cols = stencil_width*2*3+1;
     PetscInt prealloc; // = cols*dof;
-    PetscInt preallocblock = cols*dof*dof; //prealloc*dof;
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
@@ -399,167 +405,22 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
 #endif
     if (J_slowfd) { // create Jacobian matrix by slow fd
-      MatStructure flg;
-
       ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefault,PETSC_NULL);CHKERRQ(ierr);
       output_info << "SNESComputeJacobian J by slow fd...\n";
 
 #if PETSC_VERSION_GE(3,5,0)
       ierr = TSComputeRHSJacobian(ts,simtime,u,J,J);CHKERRQ(ierr);
 #else
+      MatStructure flg;
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
 #endif
       output_info << "compute J by slow fd is done.\n";
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
-      throw BoutException("Path followed in PETSc solver not yet implemented in general "
-                          "-- experimental hard coded values here. Sorry\n");
-
-      output_info << "get sparse pattern of the Jacobian...\n";
-
-      if(n2Dvars() != 0) throw BoutException("PETSc solver can't handle 2D variables yet. Sorry\n");
-
-      ISLocalToGlobalMapping ltog, ltogb;
-      PetscInt i, j, k, d, s;
-      PetscInt gi, gj;
-
-      MatStencil stencil[cols];
-
-      PetscScalar one[preallocblock];
-      for (i = 0; i < preallocblock; i++) one[i] = 1.0;
-
-      // Change this block for parallel. Currently this is just the identity
-      // map since advect1d has no branch cuts (and we are only testing
-      // single processor now)
-      PetscInt ltog_array[n];
-      for (i = 0; i < n; i++) ltog_array[i] = i;
-
-      // Also change this for parallel. This defines the 'global stencil'
-      // where starts are the starting index in each dimension and dims
-      // are the size
-      PetscInt starts[3], dims[3];
-      starts[0] = starts[1] = starts[2] = 0;
-
-      // Only for advect1d, need to figure this out
-      nx = 5;
-      ny = 128;
-
-      dims[0] = nx;
-      dims[1] = ny;
-      dims[2] = nz;
-
-      // This doesn't need to be changed for parallel if ltog_array, starts, and dims are all correctly set in parallel
-      // CHECK PETSC_COPY_VALUES
-#if PETSC_VERSION_GE(3,5,0)
-      ierr = ISLocalToGlobalMappingCreate(comm, dof, n, ltog_array, PETSC_COPY_VALUES, &ltog);CHKERRQ(ierr);
-#else
-      ierr = ISLocalToGlobalMappingCreate(comm, n, ltog_array, PETSC_COPY_VALUES, &ltog);CHKERRQ(ierr);
-      //ierr = ISLocalToGlobalMappingBlock(ltog, dof, &ltogb);CHKERRQ(ierr);
-#endif
-      
-      ierr = MatSetBlockSize(J, dof);CHKERRQ(ierr);
-      // CHECK WITH HONG ABOUT THE BELOW CALL
-      ierr = MatSetLocalToGlobalMapping(J, ltog, ltog);CHKERRQ(ierr);
-      //ierr = MatSetLocalToGlobalMappingBlock(J, ltogb, ltogb);CHKERRQ(ierr);
-      ierr = MatSetStencil(J, dim, dims, starts, dof);CHKERRQ(ierr);
-
-      bool xperiodic = false;
-      // Need to figure out how to tell if y is periodic
-      bool yperiodic = true;
-
-      output_info.write(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
-      for(k=0;k<nz;k++) {
-        output_info << "----- " << k << " -----" << endl;
-        for(j=mesh->ystart; j <= mesh->yend; j++) {
-          // cout << "j " << mesh->YGLOBAL(j) << ": ";
-          gj = mesh->YGLOBAL(j);
-
-          // X range depends on whether there are X boundaries
-          int xmin = mesh->xstart;
-          if(mesh->firstX())
-            xmin = 0; // This processor includes a boundary region
-          int xmax = mesh->xend;
-          if(mesh->lastX())
-            xmax = mesh->LocalNx-1;
-
-          for(i=xmin; i <= xmax; i++) {
-            gi = mesh->XGLOBAL(i);
-
-            // Check if X and Y are periodic
-            yperiodic = mesh->periodicY(i);
-            xperiodic = mesh->periodicX;
-
-            d = 0;
-            stencil[d].k = k;
-            stencil[d].j = gj;
-            stencil[d].i = gi;
-            stencil[d].c = dof;
-            for (s = 0; s < sw; s++) {
-              d++;
-              stencil[d].k = k;
-              stencil[d].j = gj;
-              if(xperiodic) {
-                stencil[d].i = (gi+s+1 >= nx) ? s-(nx-1-gi) : gi+s+1;
-              } else {
-                stencil[d].i = (gi+s+1 >= nx) ? -1 : gi+s+1;
-              }
-              stencil[d].c = dof;
-
-              d++;
-              stencil[d].k = k;
-              stencil[d].j = gj;
-              if(xperiodic) {
-                stencil[d].i = (gi-s-1 < 0) ? nx-1-(s-gi) : gi-s-1;
-              } else {
-                stencil[d].i = gi-s-1;
-              }
-              stencil[d].c = dof;
-            }
-            for (s = 0; s < sw; s++) {
-              d++;
-              stencil[d].k = k;
-              if(yperiodic) {
-                stencil[d].j = (gj+s+1 >= ny) ? s-(ny-1-gj) : gj+s+1;
-              } else {
-                stencil[d].j = (gj+s+1 >= ny) ? -1 : gj+s+1;
-              }
-              stencil[d].i = gi;
-              stencil[d].c = dof;
-
-              d++;
-              stencil[d].k = k;
-              if(yperiodic) {
-                stencil[d].j = (gj-s-1 < 0) ? ny-1-(s-gj) : gj-s-1;
-              } else {
-                stencil[d].j = gj-s-1;
-              }
-              stencil[d].i = gi;
-              stencil[d].c = dof;
-            }
-            for (s = 0; s < sw; s++) {
-              d++;
-              stencil[d].k = (k+s+1 >= nz) ? s-(nz-1-k) : k+s+1;
-              stencil[d].j = gj;
-              stencil[d].i = gi;
-              stencil[d].c = dof;
-
-              d++;
-              stencil[d].k = (k-s-1 < 0) ? nz-1-(s-k) : k-s-1;
-              stencil[d].j = gj;
-              stencil[d].i = gi;
-              stencil[d].c = dof;
-            }
-            ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
-          }
-        }
-      }
-
-      ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-      //J(2585:n-1,:) has no entry !!!
-      ierr = ISLocalToGlobalMappingDestroy(&ltog);CHKERRQ(ierr);
-      ierr = ISLocalToGlobalMappingDestroy(&ltogb);CHKERRQ(ierr);
+      throw BoutException("Sorry, unimplemented way of setting PETSc preconditioner. "
+                          "Either set a preconditioner function with 'setPrecon' "
+                          "in your code, or load a matrix with '-Jload' on the "
+                          "command line, or calculate with finite differences "
+                          "with '-J_slowfd' (on command line)");
     }
   }
 
@@ -567,12 +428,19 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   output_info << " Create coloring ...\n";
   
+  ISColoring iscoloring;
 #if PETSC_VERSION_GE(3,5,0)
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+  MatColoring coloring;
+  MatColoringCreate(Jmf, &coloring);
+  MatColoringSetType(coloring, MATCOLORINGSL);
+  MatColoringSetFromOptions(coloring);
+  // Calculate index sets
+  MatColoringApply(coloring, &iscoloring);
+  MatColoringDestroy(&coloring);
 #else
   ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
 #endif
+  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
@@ -591,6 +459,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 #if PETSC_VERSION_GE(3,5,0)
     ierr = TSComputeRHSJacobian(ts,simtime,u,J,J);CHKERRQ(ierr);
 #else
+    MatStructure J_structure;
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
 #endif
 
@@ -623,11 +492,10 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  //integer steps;
   FILE *fp = NULL;
 
   // Set when the next call to monitor is desired
-  // next_output = simtime + tstep;
+  next_output = simtime + tstep;
 
   PetscFunctionBegin;
 
@@ -659,14 +527,15 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   TRACE("Running RHS: PetscSolver::rhs(%e)", t);
 
   int flag;
-  BoutReal *udata_array, *dudata_array;
+  const BoutReal *udata_array;
+  BoutReal *dudata_array;
 
   PetscFunctionBegin;
 
   // Load state from PETSc
-  VecGetArray(udata, &udata_array);
-  load_vars(udata_array);
-  VecRestoreArray(udata, &udata_array);
+  VecGetArrayRead(udata, &udata_array);
+  load_vars(const_cast<BoutReal *>(udata_array));
+  VecRestoreArrayRead(udata, &udata_array);
 
   // Call RHS function
   flag = run_rhs(t);
@@ -712,8 +581,8 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   // Petsc's definition of Jacobian differs by a factor from Sundials'
   PetscErrorCode ierr = VecScale(y, shift); CHKERRQ(ierr);
 
-   return 0;
- }
+  return 0;
+}
 
 /**************************************************************************
  * User-supplied Jacobian function J(state) * x = y
@@ -746,7 +615,7 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   VecRestoreArray(y, &data);
 
   // y = a * x - y
-  int ierr = VecAXPBY(y, shift, -1.0, x);
+  PetscErrorCode ierr = VecAXPBY(y, shift, -1.0, x);CHKERRQ(ierr);
 
   return 0;
 }
@@ -892,13 +761,13 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   KSP ksp;
   PC pc;
   Mat A,B;
-  MatStructure diff = DIFFERENT_NONZERO_PATTERN;
 
   PetscFunctionBegin;
   ierr = SNESGetJacobian(snes, &A, &B, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
 #if PETSC_VERSION_GE(3,5,0)
   ierr = SNESComputeJacobian(snes, x, A, B);CHKERRQ(ierr);
 #else
+  MatStructure diff = DIFFERENT_NONZERO_PATTERN;
   ierr = SNESComputeJacobian(snes, x, &A, &B, &diff);CHKERRQ(ierr);
 #endif
   ierr = SNESGetKSP(snes, &ksp);CHKERRQ(ierr);
@@ -961,7 +830,12 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
 
   PetscFunctionBegin;
   ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
+
+#if PETSC_VERSION_GE(3, 8, 0)
+  ierr = TSGetMaxTime(ts, &tfinal); CHKERRQ(ierr);
+#else
   ierr = TSGetDuration(ts, PETSC_NULL, &tfinal);CHKERRQ(ierr);
+#endif
 
   /* Duplicate the solution vector X into a work vector */
   ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
@@ -970,15 +844,12 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
 
     /* Place the interpolated values into the global variables */
     ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);
-    s->load_vars((BoutReal *)x);
+    s->load_vars(const_cast<BoutReal *>(x));
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
     if (s->call_monitors(simtime,i++,s->nout)) {
       PetscFunctionReturn(1);
     }
-
-    // Reset counters
-    s->rhs_ncalls = 0;
 
     s->next_output += s->tstep;
     simtime = s->next_output;

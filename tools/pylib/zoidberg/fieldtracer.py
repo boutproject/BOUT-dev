@@ -81,9 +81,39 @@ class FieldTracer(object):
         if len(x_values.shape) > 1:
             x_values = x_values.flatten()
             z_values = z_values.flatten()
-        position = np.column_stack((x_values, z_values)).flatten()
-        result = odeint(self.field_direction, position, y_values, args=(True,),
-                        rtol=rtol)
+
+        # If too many points are calculated at once (>~ 1e4) then
+        # memory errors occur.
+
+        if len(x_values) < 1000:
+            position = np.column_stack((x_values, z_values)).flatten()
+
+            result = odeint(self.field_direction, position, y_values, args=(True,),
+                            rtol=rtol)
+        else:
+            # Split into smaller pieces
+
+            nchunks = int(len(x_values) / 1000)
+
+            # Splitting x and z values separately to avoid ending up with
+            # an odd number of points in position arrays
+            x_values = np.array_split(x_values, nchunks)
+            z_values = np.array_split(z_values, nchunks)
+
+            # Combine x,z into flattened position arrays
+            chunks = [ np.column_stack((x, z)).flatten() for x,z in zip(x_values, z_values) ]
+
+            # Process in chunks. Note: multiprocessing has trouble with closures
+            # so fails in Python 2. Python 3 may work
+            results = [odeint(self.field_direction,
+                              chunk,
+                              y_values,
+                              args=(True,),
+                              rtol=rtol)
+                       for chunk in chunks]
+
+            # Concatenate results into a single array
+            result = np.concatenate(results, axis=1)
 
         return result.reshape(y_values.shape + array_shape + (2,))
 

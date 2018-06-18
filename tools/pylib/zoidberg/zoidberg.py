@@ -159,7 +159,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
 
 
 def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
-               new_names=False, metric2d=True):
+               new_names=False, metric2d=True, format="NETCDF3_64BIT"):
     """Write FCI maps to BOUT++ grid file
 
     Parameters
@@ -176,6 +176,8 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         Write "g_yy" rather than "g_22"
     metric2d : bool, optional
         Output only 2D metrics
+    format : str
+        Specifies file format to use, passed to boutdata.DataFile
 
     Returns
     -------
@@ -209,7 +211,16 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         pol_grid,ypos = grid.getPoloidalGrid(yindex)
         Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
         pressure[:,yindex,:] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
-        
+
+    # Get attributes from magnetic field (e.g. psi)
+    attributes = {}
+    for name in magnetic_field.attributes:
+        attribute = np.zeros(grid.shape)
+        for yindex in range(grid.numberOfPoloidalGrids()):
+            pol_grid, ypos = grid.getPoloidalGrid(yindex)
+            attribute[:,yindex,:] = magnetic_field.attributes[name](pol_grid.R, pol_grid.Z, ypos)
+            attributes[name] = attribute
+    
     # Metric is now 3D
     if metric2d:
         # Remove the Z dimension from metric components
@@ -225,7 +236,7 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         metric["Rxy"] = maps["R"][:,:,0]
         metric["Bxy"] = Bmag[:,:,0]
 
-    with bdata.DataFile(gridfile, write=True, create=True) as f:
+    with bdata.DataFile(gridfile, write=True, create=True, format=format) as f:
         ixseps = nx+1
         f.write('nx', nx)
         f.write('ny', ny)
@@ -266,6 +277,10 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
         # Pressure
         f.write("pressure", pressure)
+
+        # Attributes
+        for name in attributes:
+            f.write(name, attributes[name])
         
         # Maps - write everything to file
         for key in maps:

@@ -34,9 +34,9 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-        t) ### Set target to build
-            MAIN_TARGET="$OPTARG"
-            ;;
+    t) ### Set target to build
+        MAIN_TARGET="$OPTARG"
+        ;;
 	*) ### Show usage message
 	    usage
 	    ;;

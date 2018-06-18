@@ -28,6 +28,9 @@ class MagneticField(object):
     boundary
         An object with an "outside" function. See :py:obj:`zoidberg.boundary`
 
+    attributes : A dictionary of string -> function(x,z,phi)
+         Contains attributes to be written to the output
+
     See Also
     --------
     Slab : A straight field in normal Cartesian coordinates
@@ -39,6 +42,7 @@ class MagneticField(object):
     """
 
     boundary = boundary.NoBoundary() # An optional Boundary object
+    attributes = {}
 
     def Bxfunc(self, x, z, phi):
         """Magnetic field in x direction at given coordinates
@@ -166,6 +170,9 @@ class MagneticField(object):
             - ``= (Bx/By, Bz/By)`` if Cartesian
 
         """
+
+        # Input array must have an even number of points
+        assert len(pos) % 2 == 0
 
         if flatten:
             position = pos.reshape((-1, 2))
@@ -743,6 +750,9 @@ class GEQDSK(MagneticField):
         # Create a 2D spline interpolation for psi
         from scipy import interpolate
         self.psi_func = interpolate.RectBivariateSpline(self.r, self.z, self.psi)
+
+        # Add to the attributes so that it can be written to file
+        self.attributes["psi"] = lambda x,z,phi : self.psi_func(x,z,grid=False)
 
         # Create a normalised psi array
 

@@ -25,12 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_CVODE
+#ifdef BOUT_HAS_CVODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver CvodeSolver;
- 
-#else
 class CvodeSolver;
 
 #ifndef __SUNDIAL_SOLVER_H__
@@ -64,16 +60,16 @@ class CvodeSolver : public Solver {
     CvodeSolver(Options *opts = NULL);
     ~CvodeSolver();
 
-    void setJacobian(Jacobian j) {jacfunc = j; }
-    
-    BoutReal getCurrentTimestep() { return hcur; }
+    void setJacobian(Jacobian j) override { jacfunc = j; }
+
+    BoutReal getCurrentTimestep() override { return hcur; }
 
     int init(int nout, BoutReal tstep) override;
 
     int run() override;
     BoutReal run(BoutReal tout);
     
-    void resetInternalFields();
+    void resetInternalFields() override;
 
     // These functions used internally (but need to be public)
     void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
@@ -94,7 +90,7 @@ class CvodeSolver : public Solver {
     BoutReal pre_ncalls; // Number of calls to preconditioner
     
     void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
+    void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
 #endif // __SUNDIAL_SOLVER_H__
