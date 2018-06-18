@@ -35,39 +35,39 @@ struct IndexOffset {
       : mesh(mesh), nx(mesh.LocalNx), ny(mesh.LocalNy),
         nz(std::is_base_of<Ind3D, T>::value ? mesh.LocalNz : 1) {}
 
-  /// Convenience functions for converting to (x, y, z)
+  /// Convenience functions for converting \p index to (x, y, z)
   int x(T index) const { return (index.ind / nz) / ny; }
   int y(T index) const { return (index.ind / nz) % ny; }
   int z(T index) const { return (index.ind % nz); }
 
-  /// Positive offset in x, default to offset by one
-  const inline T xp(T index, int i = 1) const { return index + (i * ny * nz); }
-  /// Negative offset in x, default to offset by one
-  const inline T xm(T index, int i = 1) const { return xp(index, -i); }
-  /// Positive offset in y, default to offset by one
-  const inline T yp(T index, int i = 1) const { return index + (i * nz); }
-  /// Negative offset in y, default to offset by one
-  const inline T ym(T index, int i = 1) const { return yp(index, -i); }
-  /// Positive offset in z, default to offset by one.
+  /// Positive offset \p index by \p dx in x, default to offset by one
+  const inline T xp(T index, int dx = 1) const { return index + (dx * ny * nz); }
+  /// Negative offset \p index by \p dx in x, default to offset by one
+  const inline T xm(T index, int dx = 1) const { return xp(index, -dx); }
+  /// Positive offset \p index by \p dy in y, default to offset by one
+  const inline T yp(T index, int dy = 1) const { return index + (dy * nz); }
+  /// Negative offset \p index by \p dy in y, default to offset by one
+  const inline T ym(T index, int dy = 1) const { return yp(index, -dy); }
+  /// Positive offset \p index by \p dz in z, default to offset by one.
   /// Periodic in z, cannot handle negative offsets
-  const inline T zp(T index, int i = 1) const {
-    ASSERT3(i > 0);
+  const inline T zp(T index, int dz = 1) const {
+    ASSERT3(dz > 0);
     if (nz == 1) {
       return index;
     }
-    return (index + i) % nz < i ? index - nz + i : index + i;
+    return (index + dz) % nz < dz ? index - nz + dz : index + dz;
   }
-  /// Negative offset in z, default to offset by one.
+  /// Negative offset \p index by \p dz in z, default to offset by one.
   /// Periodic in z, cannot handle negative offsets
-  const inline T zm(T index, int i = 1) const {
-    ASSERT3(i > 0);
+  const inline T zm(T index, int dz = 1) const {
+    ASSERT3(dz > 0);
     if (nz == 1) {
       return index;
     }
-    return (index) % nz < i ? index + nz - i : index - i;
+    return (index) % nz < dz ? index + nz - dz : index - dz;
   }
 
-  /// Helper functions for offsets by two
+  /// Helper functions for offsetting \p index by two
   const inline T xpp(T index) const { return xp(index, 2); }
   const inline T xmm(T index) const { return xm(index, 2); }
   const inline T ypp(T index) const { return yp(index, 2); }
@@ -75,7 +75,7 @@ struct IndexOffset {
   const inline T zpp(T index) const { return zp(index, 2); }
   const inline T zmm(T index) const { return zm(index, 2); }
 
-  /// Generic offset in multiple direction simultaneously
+  /// Generic offset of \p index in multiple directions simultaneously
   const inline T offset(T index, int dx, int dy, int dz) {
     auto temp = (dz > 0) ? zp(index, dz) : zm(index, -dz);
     return xp(yp(temp, dy), dx);
