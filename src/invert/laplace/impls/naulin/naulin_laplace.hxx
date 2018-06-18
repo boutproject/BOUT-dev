@@ -65,6 +65,11 @@ public:
   const Field3D solve(const Field3D &b, const Field3D&x0) override;
   const Field3D solve(const Field3D &b) override { return solve(b, Field3D(0.)); }
 
+  // Override flag-setting methods to set delp2solver's flags as well
+  void setGlobalFlags(int f) override { Laplacian::setGlobalFlags(f); delp2solver->setGlobalFlags(f); }
+  void setInnerBoundaryFlags(int f) override { Laplacian::setInnerBoundaryFlags(f); delp2solver->setInnerBoundaryFlags(f); }
+  void setOuterBoundaryFlags(int f) override { Laplacian::setOuterBoundaryFlags(f); delp2solver->setOuterBoundaryFlags(f); }
+
   const BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
