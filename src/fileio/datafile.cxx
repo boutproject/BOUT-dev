@@ -68,7 +68,7 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   
 }
 
-Datafile::Datafile(Datafile &&other)
+Datafile::Datafile(Datafile &&other) noexcept
     : parallel(other.parallel), flush(other.flush), guards(other.guards),
       floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly),
       Lz(other.Lz), enabled(other.enabled), shiftOutput(other.shiftOutput),
@@ -97,7 +97,7 @@ Datafile::Datafile(const Datafile &other) :
   // Same added variables, but the file not the same 
 }
 
-Datafile& Datafile::operator=(Datafile &&rhs) {
+Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
