@@ -94,6 +94,13 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   Field3D oneOverC1coefTimesDcoef = 1./C1coef/Dcoef;
   Field3D AOverD = Acoef/Dcoef;
 
+  // Split A into DC and AC parts so that delp2solver can use DC part.
+  // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
+  Field2D AOverD_DC = DC(AOverD);
+  Field3D AOverD_AC = AOverD - AOverD_DC;
+
+  delp2solver->setCoefA(AOverD_DC);
+
   // Use this below to normalize error for relative error estimate
   BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
@@ -103,7 +110,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   // Initial values for derivatives of x
   Field3D ddx_x = DDX(x, location, DIFF_C2);
   Field3D ddz_x = DDZ(x, location, DIFF_FFT);
-  Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
+  Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - AOverD_AC*x;
 
   while (error_rel>rtol && error_abs>atol) {
 
@@ -119,12 +126,11 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     // Use here to calculate an error, can also use for the next iteration
     ddx_x = DDX(x, location, DIFF_C2); // can be used also for the next iteration
     ddz_x = DDZ(x, location, DIFF_FFT);
-    b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
+    b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - AOverD_AC*x;
 
-    Field3D error3D = b - Delp2(x);
+    Field3D error3D = b - Delp2(x) - AOverD_DC*x;
     error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
     error_rel = error_abs / RMS_rhsOverD;
-    //output<<"NaulinSolver: "<<count<<" "<<error_rel<<" "<<error_abs<<endl;
 
     count++;
     if (count>maxits)
