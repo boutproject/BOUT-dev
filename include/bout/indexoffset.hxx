@@ -14,7 +14,8 @@ struct IndexOffset {
   const int nx, ny, nz;
 
   IndexOffset(Mesh &mesh)
-      : mesh(mesh), nx(mesh.LocalNx), ny(mesh.LocalNy), nz(mesh.LocalNz) {}
+      : mesh(mesh), nx(mesh.LocalNx), ny(mesh.LocalNy),
+        nz(std::is_base_of<Ind3D, T>::value ? mesh.LocalNz : 1) {}
 
   /// Convenience functions for converting to (x, y, z)
   int x(T index) const { return (index.ind / nz) / ny; }
