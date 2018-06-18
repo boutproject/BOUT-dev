@@ -96,18 +96,6 @@ Solver::~Solver(){
       delete f.MMS_err;
     }
   }
-
-  for(const auto& f : v3d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-
-  for(const auto& f : v2d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
 }
 
 /**************************************************************************
@@ -276,6 +264,8 @@ void Solver::add(Vector2D &v, const char* name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
+  // MMS errors set on individual components
+  d.MMS_err = nullptr;
 
   v2d.push_back(d);
 
@@ -318,6 +308,8 @@ void Solver::add(Vector3D &v, const char* name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
+  // MMS errors set on individual components
+  d.MMS_err = nullptr;
   
   v3d.push_back(d);
 
