@@ -4,6 +4,24 @@
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
 
+/// Helper class for offsetting Ind2D/Ind3D
+///
+/// Provides methods for offsetting by fixed amounts in x, y, z, as
+/// well as a generic method for offsetting by any amount in multiple
+/// directions
+///
+/// Also provides helper methods for converting Ind2D/Ind3D to x, y, z
+/// indices
+///
+/// Examples
+/// --------
+///
+///     Field3D field, result;
+///     auto index = std::begin(region);
+///     IndexOffset<Ind3D> offset(*mesh);
+///
+///     result = field[offset.yp(*index)] - field[offset.ym(*index)];
+///
 template <typename T = Ind3D>
 struct IndexOffset {
 
@@ -22,14 +40,16 @@ struct IndexOffset {
   int y(T index) const { return (index.ind / nz) % ny; }
   int z(T index) const { return (index.ind % nz); }
 
+  /// Positive offset in x, default to offset by one
   const inline T xp(T index, int i = 1) const { return index + (i * ny * nz); }
-  /// The index one point -1 in x
   const inline T xm(T index, int i = 1) const { return index - (i * ny * nz); }
-  /// The index one point +1 in y
+  /// Negative offset in x, default to offset by one
+  /// Positive offset in y, default to offset by one
   const inline T yp(T index, int i = 1) const { return index + (i * nz); }
-  /// The index one point -1 in y
   const inline T ym(T index, int i = 1) const { return index - (i * nz); }
-  /// The index one point +1 in z. Wraps around zend to zstart
+  /// Negative offset in y, default to offset by one
+  /// Positive offset in z, default to offset by one.
+  /// Periodic in z, cannot handle negative offsets
   const inline T zp(T index, int i = 1) const {
     ASSERT3(i > 0);
     if (nz == 1) {
@@ -37,7 +57,8 @@ struct IndexOffset {
     }
     return (index + i) % nz < i ? index - nz + i : index + i;
   }
-  /// The index one point -1 in z. Wraps around zstart to zend
+  /// Negative offset in z, default to offset by one.
+  /// Periodic in z, cannot handle negative offsets
   const inline T zm(T index, int i = 1) const {
     ASSERT3(i > 0);
     if (nz == 1) {
@@ -45,7 +66,8 @@ struct IndexOffset {
     }
     return (index) % nz < i ? index + nz - i : index - i;
   }
-  // and for 2 cells
+
+  /// Helper functions for offsets by two
   const inline T xpp(T index) const { return xp(index, 2); }
   const inline T xmm(T index) const { return xm(index, 2); }
   const inline T ypp(T index) const { return yp(index, 2); }
