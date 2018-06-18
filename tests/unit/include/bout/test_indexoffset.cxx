@@ -390,6 +390,63 @@ TEST_F(IndexOffsetTest, ZMinusTwo) {
   }
 }
 
+TEST_F(IndexOffsetTest, Offset111) {
+  auto region = mesh->getRegion("RGN_ALL");
+
+  IndexOffset<Ind3D> offset(*mesh);
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx - 1; ++i) {
+    for (int j = 0; j < ny - 1; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(offset.x(*index), i);
+        EXPECT_EQ(offset.y(*index), j);
+        EXPECT_EQ(offset.z(*index), k);
+
+        EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
+        EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
+        EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), (k + 1 + nz) % nz);
+        ++index;
+      }
+    }
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1) {
+  auto region = mesh->getRegion("RGN_ALL");
+
+  IndexOffset<Ind3D> offset(*mesh);
+
+  auto index = std::begin(region);
+
+  for (int j = 0; j < ny; ++j) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+    }
+  }
+  for (int i = 1; i < nx; ++i) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+    }
+    for (int j = 1; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(offset.x(*index), i);
+        EXPECT_EQ(offset.y(*index), j);
+        EXPECT_EQ(offset.z(*index), k);
+
+        EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
+        EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
+        EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), (k - 1 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
 TEST_F(IndexOffsetTest, XInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -695,6 +752,53 @@ TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
       EXPECT_EQ(offset.x(offset.zmm(*index)), i);
       EXPECT_EQ(offset.y(offset.zmm(*index)), j);
       EXPECT_EQ(offset.z(offset.zmm(*index)), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offset111Ind2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  IndexOffset<Ind2D> offset(*mesh);
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx - 1; ++i) {
+    for (int j = 0; j < ny - 1; ++j) {
+      EXPECT_EQ(offset.x(*index), i);
+      EXPECT_EQ(offset.y(*index), j);
+      EXPECT_EQ(offset.z(*index), 0);
+
+      EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
+      EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
+      EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), 0);
+      ++index;
+    }
+    ++index;
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  IndexOffset<Ind2D> offset(*mesh);
+
+  auto index = std::begin(region);
+
+  for (int j = 0; j < ny; ++j) {
+    ++index;
+  }
+  for (int i = 1; i < nx; ++i) {
+    ++index;
+    for (int j = 1; j < ny; ++j) {
+      EXPECT_EQ(offset.x(*index), i);
+      EXPECT_EQ(offset.y(*index), j);
+      EXPECT_EQ(offset.z(*index), 0);
+
+      EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
+      EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
+      EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), 0);
       ++index;
     }
   }

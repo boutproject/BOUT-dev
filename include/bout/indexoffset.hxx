@@ -74,6 +74,12 @@ struct IndexOffset {
   const inline T ymm(T index) const { return ym(index, 2); }
   const inline T zpp(T index) const { return zp(index, 2); }
   const inline T zmm(T index) const { return zm(index, 2); }
+
+  /// Generic offset in multiple direction simultaneously
+  const inline T offset(T index, int dx, int dy, int dz) {
+    auto temp = (dz > 0) ? zp(index, dz) : zm(index, -dz);
+    return xp(yp(temp, dy), dx);
+  }
 };
 
 #endif // __INDEXOFFSET_H__
