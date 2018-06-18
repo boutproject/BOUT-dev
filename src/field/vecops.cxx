@@ -188,9 +188,9 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_
   Vector3D vcn = v;
   vcn.toContravariant();
   
-  result = FDDX(metric->J*vcn.x, f, method, outloc);
-  result += FDDY(metric->J*vcn.y, f, method, outloc);
-  result += FDDZ(metric->J*vcn.z, f, method, outloc);
+  result = FDDX(metric->J*vcn.x, f, outloc, method);
+  result += FDDY(metric->J*vcn.y, f, outloc, method);
+  result += FDDZ(metric->J*vcn.z, f, outloc, method);
   result /= metric->J;
   
   return result;
