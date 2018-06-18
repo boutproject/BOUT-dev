@@ -43,8 +43,10 @@ public:
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
-  void setCoefA(const Field2D &val) override { throw BoutException("Acoef is not implemented"); }
-  void setCoefC(const Field2D &val) override { C1coef = val; C2coef = val; }
+  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field3D &val) override { Acoef = val; }
+  void setCoefC(const Field2D &val) override { setCoefC1(val); setCoefC2(val); }
+  void setCoefC(const Field3D &val) override { setCoefC1(val); setCoefC2(val); }
   void setCoefC1(const Field3D &val) override { C1coef = val; }
   void setCoefC1(const Field2D &val) override { C1coef = val; }
   void setCoefC2(const Field3D &val) override { C2coef = val; }
@@ -62,10 +64,12 @@ public:
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override { throw BoutException("LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)"); }
   const Field3D solve(const Field3D &b, const Field3D&x0) override;
   const Field3D solve(const Field3D &b) override { return solve(b, Field3D(0.)); }
+
+  const BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
-  Field3D C1coef, C2coef, Dcoef;
+  Field3D Acoef, C1coef, C2coef, Dcoef;
   Laplacian* delp2solver;
   BoutReal rtol, atol;
   int maxits;

@@ -43,8 +43,10 @@
 #include "naulin_laplace.hxx"
 
 LaplaceNaulin::LaplaceNaulin(Options *opt)
-    : Laplacian(opt), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
+    : Laplacian(opt), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
+
+  ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
 
   // Get options
   OPTION(opt, rtol, 1.e-7);
@@ -78,6 +80,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   ASSERT1(Dcoef.getLocation() == location);
   ASSERT1(C1coef.getLocation() == location);
   ASSERT1(C2coef.getLocation() == location);
+  ASSERT1(Acoef.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
   Mesh *mesh = rhs.getMesh();
@@ -88,6 +91,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   Field3D ddx_c = DDX(C2coef, location, DIFF_C2);
   Field3D ddz_c = DDZ(C2coef, location, DIFF_FFT);
   Field3D oneOverC1coefTimesDcoef = 1./C1coef/Dcoef;
+  Field3D AOverD = Acoef/Dcoef;
 
   BoutReal error_rel = 1e20, error_abs=1e20;
   int count = 0;
@@ -95,7 +99,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
     Field3D ddx_x = DDX(x, location, DIFF_C2);
     Field3D ddz_x = DDZ(x, location, DIFF_FFT);
-    Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef;
+    Field3D b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - Acoef*x;
 
     // This passes in the boundary conditions from x0's guard cells, if necessary
     copy_x_boundaries(x, x0, mesh);
