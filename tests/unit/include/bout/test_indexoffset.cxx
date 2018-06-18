@@ -103,9 +103,15 @@ TEST_F(IndexOffsetTest, XPlusOne) {
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.xp(*index)), i + 1);
-        EXPECT_EQ(offset.y(offset.xp(*index)), j);
-        EXPECT_EQ(offset.z(offset.xp(*index)), k);
+        if (i >= (nx - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.xp(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.xp(*index)), i + 1);
+          EXPECT_EQ(offset.y(offset.xp(*index)), j);
+          EXPECT_EQ(offset.z(offset.xp(*index)), k);
+        }
         ++index;
       }
     }
@@ -120,20 +126,23 @@ TEST_F(IndexOffsetTest, YPlusOne) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < ny - 1; ++j) {
+    for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.yp(*index)), i);
-        EXPECT_EQ(offset.y(offset.yp(*index)), j + 1);
-        EXPECT_EQ(offset.z(offset.yp(*index)), k);
+        if (j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.yp(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.yp(*index)), i);
+          EXPECT_EQ(offset.y(offset.yp(*index)), j + 1);
+          EXPECT_EQ(offset.z(offset.yp(*index)), k);
+        }
         ++index;
       }
-    }
-    for (int k = 0; k < nz; ++k) {
-      ++index;
     }
   }
 }
@@ -168,21 +177,22 @@ TEST_F(IndexOffsetTest, XMinusOne) {
 
   auto index = std::begin(region);
 
-  for (int j = 0; j < ny; ++j) {
-    for (int k = 0; k < nz; ++k) {
-      ++index;
-    }
-  }
-  for (int i = 1; i < nx; ++i) {
+  for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.xm(*index)), i - 1);
-        EXPECT_EQ(offset.y(offset.xm(*index)), j);
-        EXPECT_EQ(offset.z(offset.xm(*index)), k);
+        if (i < 1) {
+#if CHECK > 3
+          EXPECT_THROW(offset.xm(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.xm(*index)), i - 1);
+          EXPECT_EQ(offset.y(offset.xm(*index)), j);
+          EXPECT_EQ(offset.z(offset.xm(*index)), k);
+        }
         ++index;
       }
     }
@@ -197,18 +207,21 @@ TEST_F(IndexOffsetTest, YMinusOne) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    for (int k = 0; k < nz; ++k) {
-      ++index;
-    }
-    for (int j = 1; j < ny; ++j) {
+    for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.ym(*index)), i);
-        EXPECT_EQ(offset.y(offset.ym(*index)), j - 1);
-        EXPECT_EQ(offset.z(offset.ym(*index)), k);
+        if (j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(offset.ym(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.ym(*index)), i);
+          EXPECT_EQ(offset.y(offset.ym(*index)), j - 1);
+          EXPECT_EQ(offset.z(offset.ym(*index)), k);
+        }
         ++index;
       }
     }
@@ -252,9 +265,15 @@ TEST_F(IndexOffsetTest, XPlusTwo) {
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.xpp(*index)), i + 2);
-        EXPECT_EQ(offset.y(offset.xpp(*index)), j);
-        EXPECT_EQ(offset.z(offset.xpp(*index)), k);
+        if (i >= (nx - 2)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.xpp(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.xpp(*index)), i + 2);
+          EXPECT_EQ(offset.y(offset.xpp(*index)), j);
+          EXPECT_EQ(offset.z(offset.xpp(*index)), k);
+        }
         ++index;
       }
     }
@@ -269,21 +288,23 @@ TEST_F(IndexOffsetTest, YPlusTwo) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < ny - 2; ++j) {
+    for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.ypp(*index)), i);
-        EXPECT_EQ(offset.y(offset.ypp(*index)), j + 2);
-        EXPECT_EQ(offset.z(offset.ypp(*index)), k);
+        if (j >= (ny - 2)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.ypp(*index), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.ypp(*index)), i);
+          EXPECT_EQ(offset.y(offset.ypp(*index)), j + 2);
+          EXPECT_EQ(offset.z(offset.ypp(*index)), k);
+        }
         ++index;
       }
-    }
-    for (int k = 0; k < nz; ++k) {
-      ++index;
-      ++index;
     }
   }
 }
@@ -397,21 +418,24 @@ TEST_F(IndexOffsetTest, Offset111) {
 
   auto index = std::begin(region);
 
-  for (int i = 0; i < nx - 1; ++i) {
-    for (int j = 0; j < ny - 1; ++j) {
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
-        EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
-        EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), (k + 1 + nz) % nz);
+        if (i >= (nx - 1) or j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
+          EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
+          EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), (k + 1 + nz) % nz);
+        }
         ++index;
       }
-    }
-    for (int k = 0; k < nz; ++k) {
-      ++index;
     }
   }
 }
@@ -423,24 +447,22 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1) {
 
   auto index = std::begin(region);
 
-  for (int j = 0; j < ny; ++j) {
-    for (int k = 0; k < nz; ++k) {
-      ++index;
-    }
-  }
-  for (int i = 1; i < nx; ++i) {
-    for (int k = 0; k < nz; ++k) {
-      ++index;
-    }
-    for (int j = 1; j < ny; ++j) {
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
         EXPECT_EQ(offset.x(*index), i);
         EXPECT_EQ(offset.y(*index), j);
         EXPECT_EQ(offset.z(*index), k);
 
-        EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
-        EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
-        EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), (k - 1 + nz) % nz);
+        if (i < 1 or j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
+          EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
+          EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), (k - 1 + nz) % nz);
+        }
         ++index;
       }
     }
@@ -505,9 +527,15 @@ TEST_F(IndexOffsetTest, XPlusOneInd2D) {
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.xp(*index)), i + 1);
-      EXPECT_EQ(offset.y(offset.xp(*index)), j);
-      EXPECT_EQ(offset.z(offset.xp(*index)), 0);
+      if (i >= (nx - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.xp(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.xp(*index)), i + 1);
+        EXPECT_EQ(offset.y(offset.xp(*index)), j);
+        EXPECT_EQ(offset.z(offset.xp(*index)), 0);
+      }
       ++index;
     }
   }
@@ -521,17 +549,22 @@ TEST_F(IndexOffsetTest, YPlusOneInd2D) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < ny - 1; ++j) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.yp(*index)), i);
-      EXPECT_EQ(offset.y(offset.yp(*index)), j + 1);
-      EXPECT_EQ(offset.z(offset.yp(*index)), 0);
+      if (j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.yp(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.yp(*index)), i);
+        EXPECT_EQ(offset.y(offset.yp(*index)), j + 1);
+        EXPECT_EQ(offset.z(offset.yp(*index)), 0);
+      }
       ++index;
     }
-    ++index;
   }
 }
 
@@ -563,18 +596,21 @@ TEST_F(IndexOffsetTest, XMinusOneInd2D) {
 
   auto index = std::begin(region);
 
-  for (int j = 0; j < ny; ++j) {
-    ++index;
-  }
-  for (int i = 1; i < nx; ++i) {
+  for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.xm(*index)), i - 1);
-      EXPECT_EQ(offset.y(offset.xm(*index)), j);
-      EXPECT_EQ(offset.z(offset.xm(*index)), 0);
+      if (i < 1) {
+#if CHECK > 3
+        EXPECT_THROW(offset.xm(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.xm(*index)), i - 1);
+        EXPECT_EQ(offset.y(offset.xm(*index)), j);
+        EXPECT_EQ(offset.z(offset.xm(*index)), 0);
+      }
       ++index;
     }
   }
@@ -588,15 +624,20 @@ TEST_F(IndexOffsetTest, YMinusOneInd2D) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    ++index;
-    for (int j = 1; j < ny; ++j) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.ym(*index)), i);
-      EXPECT_EQ(offset.y(offset.ym(*index)), j - 1);
-      EXPECT_EQ(offset.z(offset.ym(*index)), 0);
+      if (j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(offset.ym(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.ym(*index)), i);
+        EXPECT_EQ(offset.y(offset.ym(*index)), j - 1);
+        EXPECT_EQ(offset.z(offset.ym(*index)), 0);
+      }
       ++index;
     }
   }
@@ -636,9 +677,15 @@ TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.xpp(*index)), i + 2);
-      EXPECT_EQ(offset.y(offset.xpp(*index)), j);
-      EXPECT_EQ(offset.z(offset.xpp(*index)), 0);
+      if (i >= (nx - 2)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.xpp(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.xpp(*index)), i + 2);
+        EXPECT_EQ(offset.y(offset.xpp(*index)), j);
+        EXPECT_EQ(offset.z(offset.xpp(*index)), 0);
+      }
       ++index;
     }
   }
@@ -652,18 +699,22 @@ TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < ny - 2; ++j) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.ypp(*index)), i);
-      EXPECT_EQ(offset.y(offset.ypp(*index)), j + 2);
-      EXPECT_EQ(offset.z(offset.ypp(*index)), 0);
+      if (j >= (ny - 2)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.ypp(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.ypp(*index)), i);
+        EXPECT_EQ(offset.y(offset.ypp(*index)), j + 2);
+        EXPECT_EQ(offset.z(offset.ypp(*index)), 0);
+      }
       ++index;
     }
-    ++index;
-    ++index;
   }
 }
 
@@ -695,19 +746,21 @@ TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
 
   auto index = std::begin(region);
 
-  for (int j = 0; j < ny; ++j) {
-    ++index;
-    ++index;
-  }
-  for (int i = 2; i < nx; ++i) {
+  for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.xmm(*index)), i - 2);
-      EXPECT_EQ(offset.y(offset.xmm(*index)), j);
-      EXPECT_EQ(offset.z(offset.xmm(*index)), 0);
+      if (i < 2) {
+#if CHECK > 3
+        EXPECT_THROW(offset.xmm(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.xmm(*index)), i - 2);
+        EXPECT_EQ(offset.y(offset.xmm(*index)), j);
+        EXPECT_EQ(offset.z(offset.xmm(*index)), 0);
+      }
       ++index;
     }
   }
@@ -721,16 +774,20 @@ TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
   auto index = std::begin(region);
 
   for (int i = 0; i < nx; ++i) {
-    ++index;
-    ++index;
-    for (int j = 2; j < ny; ++j) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.ymm(*index)), i);
-      EXPECT_EQ(offset.y(offset.ymm(*index)), j - 2);
-      EXPECT_EQ(offset.z(offset.ymm(*index)), 0);
+      if (j < 2) {
+#if CHECK > 3
+        EXPECT_THROW(offset.ymm(*index), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.ymm(*index)), i);
+        EXPECT_EQ(offset.y(offset.ymm(*index)), j - 2);
+        EXPECT_EQ(offset.z(offset.ymm(*index)), 0);
+      }
       ++index;
     }
   }
@@ -764,18 +821,23 @@ TEST_F(IndexOffsetTest, Offset111Ind2D) {
 
   auto index = std::begin(region);
 
-  for (int i = 0; i < nx - 1; ++i) {
-    for (int j = 0; j < ny - 1; ++j) {
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
-      EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
-      EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), 0);
+      if (i >= (nx - 1) or j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.offset(*index, 1, 1, 1)), i + 1);
+        EXPECT_EQ(offset.y(offset.offset(*index, 1, 1, 1)), j + 1);
+        EXPECT_EQ(offset.z(offset.offset(*index, 1, 1, 1)), 0);
+      }
       ++index;
     }
-    ++index;
   }
 }
 
@@ -786,19 +848,21 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
 
   auto index = std::begin(region);
 
-  for (int j = 0; j < ny; ++j) {
-    ++index;
-  }
-  for (int i = 1; i < nx; ++i) {
-    ++index;
-    for (int j = 1; j < ny; ++j) {
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
       EXPECT_EQ(offset.x(*index), i);
       EXPECT_EQ(offset.y(*index), j);
       EXPECT_EQ(offset.z(*index), 0);
 
-      EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
-      EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
-      EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), 0);
+      if (i < 1 or j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(offset.x(offset.offset(*index, -1, -1, -1)), i - 1);
+        EXPECT_EQ(offset.y(offset.offset(*index, -1, -1, -1)), j - 1);
+        EXPECT_EQ(offset.z(offset.offset(*index, -1, -1, -1)), 0);
+      }
       ++index;
     }
   }

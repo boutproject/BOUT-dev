@@ -41,11 +41,25 @@ struct IndexOffset {
   int z(T index) const { return (index.ind % nz); }
 
   /// Positive offset \p index by \p dx in x, default to offset by one
-  const inline T xp(T index, int dx = 1) const { return index + (dx * ny * nz); }
+  const inline T xp(T index, int dx = 1) const {
+#if CHECK > 3
+    if (x(index) + dx < 0 or x(index) + dx >= nx) {
+      throw BoutException("Offset in x (%d) would go out of bounds at %d", dx, index.ind);
+    }
+#endif
+    return index + (dx * ny * nz);
+  }
   /// Negative offset \p index by \p dx in x, default to offset by one
   const inline T xm(T index, int dx = 1) const { return xp(index, -dx); }
   /// Positive offset \p index by \p dy in y, default to offset by one
-  const inline T yp(T index, int dy = 1) const { return index + (dy * nz); }
+  const inline T yp(T index, int dy = 1) const {
+#if CHECK > 3
+    if (y(index) + dy < 0 or y(index) + dy >= ny) {
+      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, index.ind);
+    }
+#endif
+    return index + (dy * nz);
+  }
   /// Negative offset \p index by \p dy in y, default to offset by one
   const inline T ym(T index, int dy = 1) const { return yp(index, -dy); }
   /// Positive offset \p index by \p dz in z, default to offset by one.
