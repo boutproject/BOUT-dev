@@ -43,29 +43,21 @@ public:
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
-  using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override { throw BoutException("Acoef is not implemented"); }
-  using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override { C1coef = val; C2coef = val; }
-  using Laplacian::setCoefC1;
   void setCoefC1(const Field3D &val) override { C1coef = val; }
   void setCoefC1(const Field2D &val) override { C1coef = val; }
-  using Laplacian::setCoefC2;
   void setCoefC2(const Field3D &val) override { C2coef = val; }
   void setCoefC2(const Field2D &val) override { C2coef = val; }
-  using Laplacian::setCoefD;
   void setCoefD(const Field3D &val) override { Dcoef = val; }
   void setCoefD(const Field2D &val) override { Dcoef = val; }
-  using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceNaulin does not have Ex coefficient");
   }
-  using Laplacian::setCoefEz;
   void setCoefEz(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceNaulin does not have Ez coefficient");
   }
 
-  using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override { throw BoutException("LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)"); }
   const Field3D solve(const Field3D &b, const Field3D&x0) override;
