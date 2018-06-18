@@ -42,12 +42,12 @@ struct IndexOffset {
 
   /// Positive offset in x, default to offset by one
   const inline T xp(T index, int i = 1) const { return index + (i * ny * nz); }
-  const inline T xm(T index, int i = 1) const { return index - (i * ny * nz); }
   /// Negative offset in x, default to offset by one
+  const inline T xm(T index, int i = 1) const { return xp(index, -i); }
   /// Positive offset in y, default to offset by one
   const inline T yp(T index, int i = 1) const { return index + (i * nz); }
-  const inline T ym(T index, int i = 1) const { return index - (i * nz); }
   /// Negative offset in y, default to offset by one
+  const inline T ym(T index, int i = 1) const { return yp(index, -i); }
   /// Positive offset in z, default to offset by one.
   /// Periodic in z, cannot handle negative offsets
   const inline T zp(T index, int i = 1) const {
