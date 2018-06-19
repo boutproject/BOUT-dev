@@ -12,10 +12,11 @@
 
 #include <output.hxx>
 
-OptionsReader* OptionsReader::instance = NULL;
+OptionsReader *OptionsReader::instance = nullptr;
 
 OptionsReader* OptionsReader::getInstance() {
-  if (instance == NULL) instance = new OptionsReader(); // Create the singleton object
+  if (instance == nullptr)
+    instance = new OptionsReader(); // Create the singleton object
 
   return instance;
 }

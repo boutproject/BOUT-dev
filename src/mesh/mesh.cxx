@@ -18,9 +18,7 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
 
-Mesh* Mesh::create(Options *opt) {
-  return create(NULL, opt);
-}
+Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
   if(s == nullptr)

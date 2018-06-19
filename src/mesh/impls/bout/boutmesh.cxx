@@ -1021,7 +1021,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 int BoutMesh::wait(comm_handle handle) {
   TRACE("BoutMesh::wait(comm_handle)");
 
-  if (handle == NULL)
+  if (handle == nullptr)
     return 1;
 
   CommHandle *ch = static_cast<CommHandle *>(handle);
@@ -1223,7 +1223,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1240,7 +1240,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1358,7 +1358,7 @@ int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1378,7 +1378,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1398,7 +1398,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1418,7 +1418,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 

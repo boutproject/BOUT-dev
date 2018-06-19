@@ -65,7 +65,7 @@ RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 ///
 class IMEXBDF2 : public Solver {
  public:
-  IMEXBDF2(Options *opt = NULL);
+  IMEXBDF2(Options *opt = nullptr);
   ~IMEXBDF2();
 
   /// Returns the current internal timestep

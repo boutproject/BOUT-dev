@@ -102,8 +102,8 @@ char* copy_string(const char* s) {
   char *s2;
   int n;
 
-  if(s == NULL)
-    return NULL;
+  if (s == nullptr)
+    return nullptr;
 
   n = strlen(s);
   s2 = (char*) malloc(n+1);

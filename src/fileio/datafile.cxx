@@ -51,8 +51,9 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   filename=new char[filenamelen];
   filename[0] = 0; // Terminate the string
   
-  if(opt == NULL)
+  if (opt == nullptr) {
     return; // To allow static initialisation
+  }
   // Read options
   
   OPTION(opt, parallel, false); // By default no parallel formats for now
@@ -134,8 +135,9 @@ Datafile::~Datafile() {
 }
 
 bool Datafile::openr(const char *format, ...) {
-  if(format == (const char*) NULL) 
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename,filenamelen, format);
   
@@ -168,8 +170,9 @@ bool Datafile::openw(const char *format, ...) {
   if(!enabled)
     return true;
   
-  if(format == (const char*) NULL)
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename, filenamelen, format);
   
@@ -208,9 +211,10 @@ bool Datafile::openw(const char *format, ...) {
 bool Datafile::opena(const char *format, ...) {
   if(!enabled)
     return true;
-  
-  if(format == (const char*) NULL)
+
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename, filenamelen, format);
 
@@ -695,8 +699,9 @@ bool Datafile::write(const char *format, ...) const {
   if(!enabled)
     return true;
 
-  if(format == (const char*) NULL)
+  if (format == nullptr) {
     throw BoutException("Datafile::write: No argument given!");
+  }
 
   int filenamelen=FILENAMELEN;
   char * filename=new char[filenamelen];

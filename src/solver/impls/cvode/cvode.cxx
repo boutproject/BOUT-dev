@@ -65,9 +65,9 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
-  
-  jacfunc = NULL;
-  
+
+  jacfunc = nullptr;
+
   canReset = true;
 }
 
@@ -111,7 +111,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Allocate memory
   {TRACE("Allocating memory with N_VNew_Parallel");
-    if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+    if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
       throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   }
 
@@ -150,8 +150,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if (use_vector_abstol) {
       Options *abstol_options = Options::getRoot();
       BoutReal tempabstol;
-      if((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-	throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
+      if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+        throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
       vector<BoutReal> f2dtols;
       vector<BoutReal> f3dtols;
       BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
@@ -196,7 +196,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Call CVodeCreate
   {TRACE("Calling CVodeCreate");
-    if((cvode_mem = CVodeCreate(lmm, iter)) == NULL)
+    if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
       throw BoutException("CVodeCreate failed\n");
   }
 
@@ -274,14 +274,14 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       if (!have_user_precon()) {
         output_info.write("\tUsing BBD preconditioner\n");
 
-        if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
-              mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
+        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
+                          cvode_bbd_rhs, nullptr))
           throw BoutException("ERROR: CVBBDPrecInit failed\n");
 
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
+        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre))
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
       }
     }else {
@@ -295,7 +295,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
     /// Set Jacobian-vector multiplication function
 
-    if((use_jacobian) && (jacfunc != NULL)) {
+    if ((use_jacobian) && (jacfunc != nullptr)) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
@@ -498,8 +498,8 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 
 void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata) {
   TRACE("Running Jacobian: CvodeSolver::jac(%e)", t);
-  
-  if(jacfunc == NULL)
+
+  if (jacfunc == nullptr)
     throw BoutException("ERROR: No jacobian function supplied!\n");
   
   // Load state from ydate

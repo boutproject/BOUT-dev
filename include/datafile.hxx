@@ -37,7 +37,7 @@ class Datafile;
 */
 class Datafile {
  public:
-  Datafile(Options *opt = NULL);
+  Datafile(Options *opt = nullptr);
   Datafile(Datafile &&other) noexcept;
   ~Datafile(); // need to delete filename
   

@@ -127,6 +127,6 @@ class DataFormat {
 };
 
 // For backwards compatability. In formatfactory.cxx
-std::unique_ptr<DataFormat> data_format(const char *filename = NULL);
+std::unique_ptr<DataFormat> data_format(const char *filename = nullptr);
 
 #endif // __DATAFORMAT_H__

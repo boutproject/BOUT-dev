@@ -95,7 +95,7 @@ class Mesh {
   ///
   /// @param[in] source  The data source to use for loading variables
   /// @param[in] opt     The option section. By default this is "mesh"
-  static Mesh* create(GridDataSource *source, Options *opt = NULL);
+  static Mesh *create(GridDataSource *source, Options *opt = nullptr);
 
   /// Create a Mesh object
   ///
@@ -105,8 +105,8 @@ class Mesh {
   ///  3) Use options as data source
   ///
   /// @param[in] opt  Input options. Default is "mesh" section
-  static Mesh* create(Options *opt = NULL);
-  
+  static Mesh *create(Options *opt = nullptr);
+
   /// Loads the mesh values
   /// 
   /// Currently need to create and load mesh in separate calls

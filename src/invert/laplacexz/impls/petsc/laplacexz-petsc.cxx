@@ -95,7 +95,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
 
   TRACE("LaplaceXZpetsc::LaplaceXZpetsc");
 
-  if(opt == NULL) {
+  if (opt == nullptr) {
     // If no options supplied, use default
     opt = Options::getRoot()->getSection("laplacexz");
   }

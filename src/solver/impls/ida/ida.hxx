@@ -57,7 +57,7 @@ RegisterSolver<IdaSolver> registersolverida("ida");
 
 class IdaSolver : public Solver {
  public:
-  IdaSolver(Options *opts = NULL);
+  IdaSolver(Options *opts = nullptr);
   ~IdaSolver();
   
   int init(int nout, BoutReal tstep) override;
