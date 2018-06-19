@@ -580,7 +580,7 @@ BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /// allpe to true does a collective Allreduce over all processors.
 ///
 /// @param[in] f      The field to loop over
-/// @param[in] allpe  Maximum over all processors?
+/// @param[in] allpe  Mean over all processors?
 /// @param[in] rgn    The region to calculate the result over
 BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
