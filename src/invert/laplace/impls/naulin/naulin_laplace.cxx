@@ -204,11 +204,13 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     // Use here to calculate an error, can also use for the next iteration
     ddx_x = DDX(x, location, DIFF_C2); // can be used also for the next iteration
     ddz_x = DDZ(x, location, DIFF_FFT);
-    b = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - AOverD_AC*x;
+    Field3D bnew = rhsOverD - (coords->g11*ddx_c*ddx_x + coords->g33*ddz_c*ddz_x + coords->g13*(ddx_c*ddz_x + ddz_c*ddx_x))*oneOverC1coefTimesDcoef - AOverD_AC*x;
 
-    Field3D error3D = b - Delp2(x) - AOverD_DC*x;
+    Field3D error3D = b - bnew;
     error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
     error_rel = error_abs / RMS_rhsOverD;
+
+    b = bnew;
 
     count++;
     if (count>maxits)
