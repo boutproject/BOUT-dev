@@ -113,7 +113,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       }
     }
     
-    size_t startpos = buffer.find_first_of("=");
+    size_t startpos = buffer.find_first_of('=');
 
     if (startpos == string::npos) {
       // Just set a flag to true
@@ -121,7 +121,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 
       options->set(buffer, true, "Command line");
     } else {
-      size_t endpos = buffer.find_last_of("=");
+      size_t endpos = buffer.find_last_of('=');
 
       if(startpos != endpos) throw BoutException("\tMultiple '=' in command-line argument '%s'\n", buffer.c_str());
 
@@ -129,7 +129,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       string value = trim(buffer.substr(startpos+1));
       
       size_t scorepos;
-      while((scorepos = key.find_first_of(":")) != string::npos) {
+      while((scorepos = key.find_first_of(':')) != string::npos) {
 	// sub-section
 	string section = key.substr(0,scorepos);
 	key = trim(key.substr(scorepos+1));
