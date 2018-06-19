@@ -191,8 +191,9 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
   while (error_rel>rtol && error_abs>atol) {
 
-    // This passes in the boundary conditions from x0's guard cells, if necessary
-    copy_x_boundaries(x, x0, mesh);
+    if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) )
+      // This passes in the boundary conditions from x0's guard cells
+      copy_x_boundaries(x, x0, mesh);
 
     // NB need to pass x in case boundary flags require 'x0', even if
     // delp2solver is not iterative and does not use an initial guess
