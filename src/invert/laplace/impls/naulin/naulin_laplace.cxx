@@ -57,15 +57,15 @@
  * In fact we allow for the slightly more general form
  *
  * \f{eqnarray}{
- * D*\nabla_\perp^2 \phi
- * &=& b - \frac{1}{C1} \nabla_\perp C2\cdot\nabla_\perp \phi - A*\phi
+ * \nabla_\perp^2 \phi + <\frac{A}{D}>\phi
+ * &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)*\phi
  * \f}
  *
  * The iteration now works as follows:
  *      1. Get the vorticity from
  *         \code{.cpp}
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
- *         [Delp2(phiCur) + DC(A/D)*phiCur = rhs = (b/D) - 1/C1*grad_perp(C2)*grad_perp(phiCur) - (A/D - DC(A/D))*phiCur]
+ *         [Delp2(phiNext) + DC(A/D)*phiNext = b(phiCur) = (rhs/D) - 1/C1*grad_perp(C2)*grad_perp(phiCur) - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
@@ -73,18 +73,19 @@
  *         \code{.cpp}
  *         phiNext = invert_laplace_perp(vort)
  *         [set Acoef of laplace_perp solver to DC(A/D)
- *         phiNext = invert_laplace_perp(rhs)]
+ *         phiNext = invert_laplace_perp(b)]
  *         \endcode
  *         where phiNext is the newly obtained \f$phi\f$
- *      3. Calculate
+ *      3. Calculate the error at phi=phiNext
  *         \code{.cpp}
- *         EAbsLInf = phiCur - phi_new
- *         ERelLInf = (phiCur - phi_new)/phiCur
+ *         error3D = Delp2(phiNext) + 1/C1*grad_perp(C2)*grad_perp(phiNext) + A/D*phiNext - rhs/D
+ *                 = b(phiCur) - b(phiNext)
+ *         as b(phiCur) = Delp2(phiNext) + DC(A/D)*phiNext up to rounding errors
  *         \endcode
- *      4. Calculate the infinity norms of the Es
+ *      4. Calculate the infinity norms of the error
  *         \code{.cpp}
- *         EAbsLInf = max(abs(EAbsLInf))
- *         ERelLInf = max(abs(ERelLInf))
+ *         EAbsLInf = max(error3D)
+ *         ERelLInf = EAbsLInf/sqrt( max((rhs/D)^2) )
  *         \endcode
  *      5. Check whether
  *         \code{.cpp}
@@ -103,9 +104,9 @@
  *                    increase curCount and start from step 1
  *                  * If number of iteration is above maxit, throw exception
  *              * If no
- *                  * Stop: Function returns
+ *                  * Stop: Function returns phiNext
  *          * if no
- *              * Stop: Function returns
+ *              * Stop: Function returns phiNext
  */
 
 #include <boutexception.hxx>
