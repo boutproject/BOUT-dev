@@ -8,7 +8,7 @@ from builtins import str
 # d/dt(n) = Dx * D2DX2(n) + Dy * D2DY2(n) + Dz * D2DZ2(n)
 #
 
-from sympy import symbols, cos, sin, diff
+from sympy import symbols, sin, diff
 
 ####
 

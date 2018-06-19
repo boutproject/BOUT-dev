@@ -29,7 +29,6 @@ from .read_geqdsk import read_geqdsk
 from boututils.View2D import View2D
 from scipy import interpolate
 from .boutgrid import *
-from boututils.file_import import file_import
 
 
 def View3D(g,path=None, gb=None):

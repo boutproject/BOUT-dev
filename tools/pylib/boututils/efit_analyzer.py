@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-#import matplotlib
-#matplotlib.use('Qt4Agg')
-#from pylab import *
-
 from __future__ import absolute_import
 from __future__ import division
 from builtins import range
@@ -11,8 +7,8 @@ import numpy as np
 from bunch import Bunch
 from .radial_grid import radial_grid
 from .analyse_equil_2 import analyse_equil
-from pylab import figure, show, draw, plot, contour, setp, clabel, title, streamplot, cm, gca, annotate, subplot2grid, Rectangle, tight_layout, text, subplots_adjust, figaspect, setp, legend, tick_params
-from boututils.closest_line import closest_line
+from pylab import (cm, clabel, contour, draw, legend, plot, setp, show,
+                   streamplot, subplot2grid, text, tick_params, figure)
 from .ask import query_yes_no
 from .read_geqdsk import read_geqdsk
 from scipy import interpolate

@@ -5,9 +5,7 @@ OMFIT
 """
 
 import os
-import sys
 import glob
-import numpy
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn

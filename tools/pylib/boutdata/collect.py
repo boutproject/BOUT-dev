@@ -1,27 +1,16 @@
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-except:
-    print("Warning: No str in builtins")
 
-try:
-    from builtins import range
-except:
-    print("Warning: No range in builtins")
-
-# Requires:
-#  - boututils
-#  - NumPy
-
-from boututils.datafile import DataFile
-from boututils.boutarray import BoutArray
+from builtins import str, range
 
 import os
 import sys
 import glob
 
 import numpy as np
+
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
 
 
 def findVar(varname, varlist):
