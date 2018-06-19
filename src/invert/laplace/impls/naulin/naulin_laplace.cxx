@@ -131,6 +131,11 @@ LaplaceNaulin::LaplaceNaulin(Options *opt)
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
   delp2solver = create(opt->getSection("delp2solver"));
+  std::string delp2type;
+  opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
+  // Check delp2solver is using an FFT scheme, otherwise it will not exactly
+  // invert Delp2 and we will not converge
+  ASSERT0( delp2type=="cyclic" || delp2type=="spt" || delp2type=="tri" );
   // Use same flags for FFT solver as for NaulinSolver
   delp2solver->setGlobalFlags(global_flags);
   delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
