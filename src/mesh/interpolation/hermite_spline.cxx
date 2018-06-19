@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright 2015 B.D.Dudson, P. Hill
+ * Copyright 2015-2018 B.D.Dudson, P. Hill
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *

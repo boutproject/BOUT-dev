@@ -88,6 +88,10 @@ public:
 };
 
 class HermiteSpline : public Interpolation {
+protected:
+  /// This is protected rather than private so that it can be
+  /// extended and used by HermiteSplineMonotonic
+  
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
 
@@ -128,6 +132,34 @@ public:
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask);
+};
+
+
+/// Monotonic Hermite spline interpolator
+///
+/// Similar to HermiteSpline, so uses most of the same code.
+/// Forces the interpolated result to be in the range of the
+/// neighbouring cell values. This prevents unphysical overshoots,
+/// but also degrades accuracy near maxima and minima.
+/// Perhaps should only impose near boundaries, since that is where
+/// problems most obviously occur.
+class MonotonicHermiteSpline : public HermiteSpline {
+public:
+  MonotonicHermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
+  MonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
+      : HermiteSpline(y_offset, mesh) {}
+  MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : HermiteSpline(mask, y_offset, mesh) {}
+
+  /// Callback function for InterpolationFactory
+  static Interpolation *CreateMonotonicHermiteSpline(Mesh *mesh) {
+    return new MonotonicHermiteSpline(mesh);
+  }
+  
+  /// Interpolate using precalculated weights.
+  /// This function is called by the other interpolate functions
+  /// in the base class HermiteSpline.
+  Field3D interpolate(const Field3D &f) const;
 };
 
 class Lagrange4pt : public Interpolation {
