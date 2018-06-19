@@ -38,10 +38,10 @@ class Datafile;
 class Datafile {
  public:
   Datafile(Options *opt = NULL);
-  Datafile(Datafile &&other);
+  Datafile(Datafile &&other) noexcept;
   ~Datafile(); // need to delete filename
   
-  Datafile& operator=(Datafile &&rhs);
+  Datafile& operator=(Datafile &&rhs) noexcept;
   Datafile& operator=(const Datafile &rhs) = delete;
 
   bool openr(const char *filename, ...);

@@ -87,7 +87,7 @@ public:
   /// @param[in] g     The class inheriting from FieldGenerator. When recognised
   ///                  in an expression, the clone() function will be called
   ///                  to build a tree of generators
-  void addGenerator(std::string name, std::shared_ptr<FieldGenerator> g);
+  void addGenerator(const std::string &name, std::shared_ptr<FieldGenerator> g);
 
   /// Add a binary operator such as +,-,*,/,^
   ///
@@ -122,7 +122,7 @@ private:
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
-    LexInfo(std::string input);
+    LexInfo(const std::string &input);
     
     signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number

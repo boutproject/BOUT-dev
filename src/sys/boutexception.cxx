@@ -133,7 +133,7 @@ std::string BoutException::BacktraceGenerate() const{
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }
 
-BoutException::BoutException(const std::string msg) {
+BoutException::BoutException(const std::string &msg) {
   message = "====== Exception thrown ======\n" + msg + "\n";
 
   this->Backtrace();
