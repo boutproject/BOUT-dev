@@ -5,7 +5,7 @@
 
 bool DataFormat::openr(const string &name, int mype) {
   // Split into base name and extension
-  size_t pos = name.find_last_of(".");
+  size_t pos = name.find_last_of('.');
   string base(name.substr(0, pos));
   string ext(name.substr(pos+1));
   
@@ -15,7 +15,7 @@ bool DataFormat::openr(const string &name, int mype) {
 
 bool DataFormat::openw(const string &name, int mype, bool append) {
   // Split into base name and extension
-  size_t pos = name.find_last_of(".");
+  size_t pos = name.find_last_of('.');
   string base(name.substr(0, pos));
   string ext(name.substr(pos+1));
   
