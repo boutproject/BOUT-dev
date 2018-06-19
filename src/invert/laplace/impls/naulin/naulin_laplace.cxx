@@ -1,17 +1,20 @@
 /*!
- * \file cyclic.cxx
+ * \file naulin_laplace.cxx
  *
  * \brief Iterative solver to handle non-constant-in-z coefficients
  *
- * Scheme suggested by Volker Naulin: solve Delp2(phi[i+1]) = rhs(phi[i]) using
- * standard FFT-based solver, iterating to include other terms by evaluating
- * them on rhs using phi from previous iteration
+ * Scheme suggested by Volker Naulin: solve
+ * Delp2(phi[i+1]) + DC(A/D)*phi[i+1] = rhs(phi[i]) + DC(A/D)*phi[i]
+ * using standard FFT-based solver, iterating to include other terms by
+ * evaluating them on rhs using phi from previous iteration.
+ * DC part (i.e. Field2D part) of A/D is kept in the FFT inversion so that all
+ * Neumann boundary conditions can be used at least when DC(A/D)!=0.
  *
  * CHANGELOG
  * =========
  *
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
  *
  * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
  *
@@ -30,6 +33,79 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
+ * ## Explanation of the procedure:
+ * A way to invert the equation
+ * \f$\Omega^D = \nabla\cdot(n\nabla_\perp \phi)\f$
+ * invented by Naulin, V.
+ * In an orthogonal system, we have that:
+ *
+ * \f{eqnarray}{
+ * \Omega^D &=& \nabla\cdot(n\nabla_\perp \phi)\\
+ *       &=& n \nabla_\perp^2 \phi + \nabla n\cdot\nabla_\perp \phi\\
+ *       &=& n \Omega + \nabla n\cdot\nabla_\perp \phi\\
+ *       &=& n \Omega + \nabla_\perp n\cdot\nabla_\perp \phi
+ * \f}
+ *
+ * Rearranging gives
+ *
+ * \f{eqnarray}{
+ * \Omega  &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi\\
+ * \nabla_\perp^2 \phi
+ * &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi
+ * \f}
+ *
+ * In fact we allow for the slightly more general form
+ *
+ * \f{eqnarray}{
+ * D*\nabla_\perp^2 \phi
+ * &=& b - \frac{1}{C1} \nabla_\perp C2\cdot\nabla_\perp \phi - A*\phi
+ * \f}
+ *
+ * The iteration now works as follows:
+ *      1. Get the vorticity from
+ *         \code{.cpp}
+ *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
+ *         [Delp2(phiCur) + DC(A/D)*phiCur = rhs = (b/D) - 1/C1*grad_perp(C2)*grad_perp(phiCur) - (A/D - DC(A/D))*phiCur]
+ *         \endcode
+ *         where phiCur is phi of the current iteration
+ *         [and DC(f) is the constant-in-z component of f]
+ *      2. Invert \f$phi\f$ to find the voricity using
+ *         \code{.cpp}
+ *         phiNext = invert_laplace_perp(vort)
+ *         [set Acoef of laplace_perp solver to DC(A/D)
+ *         phiNext = invert_laplace_perp(rhs)]
+ *         \endcode
+ *         where phiNext is the newly obtained \f$phi\f$
+ *      3. Calculate
+ *         \code{.cpp}
+ *         EAbsLInf = phiCur - phi_new
+ *         ERelLInf = (phiCur - phi_new)/phiCur
+ *         \endcode
+ *      4. Calculate the infinity norms of the Es
+ *         \code{.cpp}
+ *         EAbsLInf = max(abs(EAbsLInf))
+ *         ERelLInf = max(abs(ERelLInf))
+ *         \endcode
+ *      5. Check whether
+ *         \code{.cpp}
+ *         EAbsLInf > atol
+ *         \endcode
+ *          * If yes
+ *              * Check whether
+ *                \code{.cpp}
+ *                ERelLInf > rtol
+ *                \endcode
+ *              * If yes
+ *                  * Set
+ *                    \code{.cpp}
+ *                    phiCur = phiNext
+ *                    \endcode
+ *                    increase curCount and start from step 1
+ *                  * If number of iteration is above maxit, throw exception
+ *              * If no
+ *                  * Stop: Function returns
+ *          * if no
+ *              * Stop: Function returns
  */
 
 #include <boutexception.hxx>
