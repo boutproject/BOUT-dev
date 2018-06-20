@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+
+# Python script to run and analyse MMS test
+#
+# Outputs PDF figures in each subdirectory
+# Checks that the convergence is 2nd order
+# Exits with status 1 if any test failed
+
+import numpy as np
+
+import boutcore as bc
+
+#Requires: boutcore
+
+bc.init("-q -q -q")
+
+
+funcs = [
+    #'x',
+    'sin(x*fac)' ,
+    'cos(x*fac)' ,
+#    'sin(x*fac)+sin(10*fac*x)',
+]
+
+facs={'X':'2*pi',
+      'Y':'1',
+      'Z':'1'    }
+
+# List of NX values to use
+nlist = [8, 16, 32, 64]#, 128 , 256]#, 512]
+
+prec = 0.6
+
+nproc = 2
+
+def genMesh(nx,ny,nz):
+    bc.setOption("mesh:mxg",str(2 if nx > 1 else 0),force=True)
+    bc.setOption("mesh:myg",str(2 if ny > 1 else 0),force=True)
+    bc.setOption("mesh:nx",str(nx + 4 if nx > 1 else nx),force=True)
+    bc.setOption("mesh:ny",str(ny),force=True)
+    bc.setOption("mz",str(nz),force=True)
+    bc.setOption("mesh:dx","2*pi/(%d)"%(nx),force=True)
+    bc.setOption("mesh:dy","2*pi/(%d)*((y-pi)/2/pi*.5+1)"%(ny),force=True)
+    bc.setOption("mesh:dz","1/(%d)"%(nz),force=True)
+    return bc.Mesh(OptionSection="mesh")
+
+order=4
+errlist=""
+
+locs=['CENTRE','YLOW']#,'XLOW','ZLOW']
+for inloc in locs:
+    for outloc in locs:
+        if outloc == inloc:
+            continue
+        if 'XLOW' in [inloc,outloc] and 'YLOW' in [inloc,outloc]:
+            # not working
+            continue
+        dirs=[inloc[0],outloc[0]]
+        for dir in dirs:
+            if dir == 'C':
+                continue
+            dirnfac=dir+"*"+facs[dir]
+            for func in funcs:
+                if dir == 'Y':
+                    func_=func.replace("x",'realy()').replace("fac",facs[dir])
+                else:
+                    func_=func.replace("x",dir).replace("fac",facs[dir])
+                print(func_)
+                errors=[]
+                for n in nlist[-2:]:
+                    mesh=genMesh(n if 'X' in dirs else 1,
+                                 n if 'Y' in dirs else 1,
+                                 n if 'Z' in dirs else 1)
+                    inf=bc.create3D(func_,mesh,outloc=inloc)
+                    inf=bc.interp_to(inf,outloc)
+                    outf=bc.create3D(func_,mesh,outloc=outloc)
+                    err=(inf-outf)
+                    slize=[slice(2,-2) if 'X' in dirs else 0,
+                           slice(2,-2) if 'Y' in dirs else 0,
+                           slice(2,-2) if 'Z' in dirs else 0]
+                    #err=np.max(np.abs(err))
+                    err=err[slize]
+                    err=np.sqrt(np.mean(err**2))
+                    errors.append(err)
+                errc=np.log(errors[-2]/errors[-1])
+                difc=np.log(nlist[-1]/nlist[-2])
+                conv=errc/difc
+                print(inloc,outloc,errors)
+                if order-prec < conv < order+prec:
+                    pass
+                else:
+                    err="%s -- %s -> %s failed (conv: %f)\n"%(func_,inloc,outloc,conv)
+                    errlist+=err
+                    try:
+                        #if True:
+                        #if 'Y' in dirs:
+                        if True:
+                            print(err)
+                            import matplotlib.pyplot as plt
+                            slize=[slice(2,-2) if 'X' == dir else 0,
+                                   slice(2,-2) if 'Y' == dir else 0,
+                                   slice(2,-2) if 'Z' == dir else 0]
+                            ind=inf.get()[slize]
+                            out=outf.get()[slize]
+                            plt.plot(ind-out)
+                            plt.plot(ind)
+                            plt.plot(out)
+                            plt.show()
+                    except:
+                        pass
+
+if errlist:
+    print(errlist)
+    exit(1)
+
+exit(0)
