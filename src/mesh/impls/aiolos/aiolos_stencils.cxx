@@ -3145,17 +3145,15 @@ void AiolosMesh::VDDX_U3_x_Field2D_norm(BoutReal *__restrict__ result_ptr,
 
       result_ptr[(x + 0) * LocalNy + y] =
           v_in_ptr[(x + 0) * LocalNy + y] >= 0.0
-              ? v_in_ptr[(x + 0) * LocalNy + y] *
-                    (4. * f_in_ptr[(x + 1) * LocalNy + y] -
-                     12. * f_in_ptr[(x - 1) * LocalNy + y] +
-                     2. * f_in_ptr[(x - 2) * LocalNy + y] +
-                     6. * f_in_ptr[(x + 0) * LocalNy + y]) /
+              ? v_in_ptr[(x + 0) * LocalNy + y] * (4. * f_in_ptr[(x + 1) * LocalNy + y] -
+                                                   12. * f_in_ptr[(x - 1) * LocalNy + y] +
+                                                   2. * f_in_ptr[(x - 2) * LocalNy + y] +
+                                                   6. * f_in_ptr[(x + 0) * LocalNy + y]) /
                     12.
-              : v_in_ptr[(x + 0) * LocalNy + y] *
-                    (-4. * f_in_ptr[(x - 1) * LocalNy + y] +
-                     12. * f_in_ptr[(x + 1) * LocalNy + y] -
-                     2. * f_in_ptr[(x + 2) * LocalNy + y] -
-                     6. * f_in_ptr[(x + 0) * LocalNy + y]) /
+              : v_in_ptr[(x + 0) * LocalNy + y] * (-4. * f_in_ptr[(x - 1) * LocalNy + y] +
+                                                   12. * f_in_ptr[(x + 1) * LocalNy + y] -
+                                                   2. * f_in_ptr[(x + 2) * LocalNy + y] -
+                                                   6. * f_in_ptr[(x + 0) * LocalNy + y]) /
                     12.;
     }
   }
@@ -3197,19 +3195,18 @@ void AiolosMesh::VDDX_U3_y_Field2D_norm(BoutReal *__restrict__ result_ptr,
   for (int x = 0; x < LocalNx; ++x) {
     for (int y = 2; y < LocalNy - 2; ++y) {
 
-      result_ptr[(x)*LocalNy + y + 0] = v_in_ptr[(x)*LocalNy + y + 0] >= 0.0
-                                            ? v_in_ptr[(x)*LocalNy + y + 0] *
-                                                  (4. * f_in_ptr[(x)*LocalNy + y + 1] -
-                                                   12. * f_in_ptr[(x)*LocalNy + y - 1] +
-                                                   2. * f_in_ptr[(x)*LocalNy + y - 2] +
-                                                   6. * f_in_ptr[(x)*LocalNy + y + 0]) /
-                                                  12.
-                                            : v_in_ptr[(x)*LocalNy + y + 0] *
-                                                  (-4. * f_in_ptr[(x)*LocalNy + y - 1] +
-                                                   12. * f_in_ptr[(x)*LocalNy + y + 1] -
-                                                   2. * f_in_ptr[(x)*LocalNy + y + 2] -
-                                                   6. * f_in_ptr[(x)*LocalNy + y + 0]) /
-                                                  12.;
+      result_ptr[(x)*LocalNy + y + 0] =
+          v_in_ptr[(x)*LocalNy + y + 0] >= 0.0
+              ? v_in_ptr[(x)*LocalNy + y + 0] * (4. * f_in_ptr[(x)*LocalNy + y + 1] -
+                                                 12. * f_in_ptr[(x)*LocalNy + y - 1] +
+                                                 2. * f_in_ptr[(x)*LocalNy + y - 2] +
+                                                 6. * f_in_ptr[(x)*LocalNy + y + 0]) /
+                    12.
+              : v_in_ptr[(x)*LocalNy + y + 0] * (-4. * f_in_ptr[(x)*LocalNy + y - 1] +
+                                                 12. * f_in_ptr[(x)*LocalNy + y + 1] -
+                                                 2. * f_in_ptr[(x)*LocalNy + y + 2] -
+                                                 6. * f_in_ptr[(x)*LocalNy + y + 0]) /
+                    12.;
     }
   }
 }
@@ -3261,11 +3258,10 @@ void AiolosMesh::VDDX_WENO3_x_Field3D_norm(BoutReal *__restrict__ result_ptr,
           w = 1.0 / (1.0 + 2.0 * r * r);
           deriv = 0.5 * (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                          f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) -
-                  0.5 * w *
-                      (-f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] +
-                       3. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] -
-                       3. * f_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
-                       f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z]);
+                  0.5 * w * (-f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] +
+                             3. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] -
+                             3. * f_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
+                             f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z]);
         } else {
           r = (WENO_SMALL + SQ(f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z] -
                                2.0 * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
@@ -3276,11 +3272,10 @@ void AiolosMesh::VDDX_WENO3_x_Field3D_norm(BoutReal *__restrict__ result_ptr,
           w = 1.0 / (1.0 + 2.0 * r * r);
           deriv = 0.5 * (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                          f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) -
-                  0.5 * w *
-                      (-f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
-                       3. * f_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] -
-                       3. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
-                       f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]);
+                  0.5 * w * (-f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
+                             3. * f_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] -
+                             3. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
+                             f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]);
         }
 
         result_ptr[((x + 0) * LocalNy + y) * LocalNz + z] =
@@ -3337,11 +3332,10 @@ void AiolosMesh::VDDX_WENO3_y_Field3D_norm(BoutReal *__restrict__ result_ptr,
           w = 1.0 / (1.0 + 2.0 * r * r);
           deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                          f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) -
-                  0.5 * w *
-                      (-f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] +
-                       3. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] -
-                       3. * f_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
-                       f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z]);
+                  0.5 * w * (-f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] +
+                             3. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] -
+                             3. * f_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
+                             f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z]);
         } else {
           r = (WENO_SMALL + SQ(f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z] -
                                2.0 * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
@@ -3352,11 +3346,10 @@ void AiolosMesh::VDDX_WENO3_y_Field3D_norm(BoutReal *__restrict__ result_ptr,
           w = 1.0 / (1.0 + 2.0 * r * r);
           deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                          f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) -
-                  0.5 * w *
-                      (-f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
-                       3. * f_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] -
-                       3. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
-                       f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]);
+                  0.5 * w * (-f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
+                             3. * f_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] -
+                             3. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
+                             f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]);
         }
 
         result_ptr[((x)*LocalNy + y + 0) * LocalNz + z] =
@@ -3409,13 +3402,13 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
                     2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]));
             w = 1.0 / (1.0 + 2.0 * r * r);
-            deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-                           f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
+            deriv =
+                0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                       f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) -
+                0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] +
+                           3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] -
+                           3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                           f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
           } else {
             r = (WENO_SMALL + SQ(f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2] -
                                  2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
@@ -3427,11 +3420,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           }
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
@@ -3451,11 +3443,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
           } else {
             r = (WENO_SMALL + SQ(f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2] -
                                  2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
@@ -3466,11 +3457,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           }
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
@@ -3488,11 +3478,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
           } else {
             r = (WENO_SMALL + SQ(f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2] -
                                  2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
@@ -3503,11 +3492,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           }
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
@@ -3526,11 +3514,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]);
           } else {
             r = (WENO_SMALL + SQ(f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz] -
                                  2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
@@ -3541,11 +3528,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           }
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
@@ -3564,11 +3550,10 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
             w = 1.0 / (1.0 + 2.0 * r * r);
             deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
                            f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz]);
+                    0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] +
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
+                               3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz]);
           } else {
             r = (WENO_SMALL +
                  SQ(f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz] -
@@ -3578,13 +3563,13 @@ void AiolosMesh::VDDX_WENO3_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
                                  2.0 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
                                  f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]));
             w = 1.0 / (1.0 + 2.0 * r * r);
-            deriv = 0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
-                           f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
-                    0.5 * w *
-                        (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
-                         3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
-                         f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
+            deriv =
+                0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
+                       f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) -
+                0.5 * w * (-f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                           3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] -
+                           3. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
+                           f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           }
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
@@ -4557,9 +4542,8 @@ void AiolosMesh::FDDX_C4_z_Field3D_norm(BoutReal *__restrict__ result_ptr,
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
               (8. * v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] *
                    f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
-               8. *
-                   v_in_ptr[((x)*LocalNy + y) * LocalNz +
-                            +((z - 1 + 1 * LocalNz) % LocalNz)] *
+               8. * v_in_ptr[((x)*LocalNy + y) * LocalNz +
+                             +((z - 1 + 1 * LocalNz) % LocalNz)] *
                    f_in_ptr[((x)*LocalNy + y) * LocalNz +
                             +((z - 1 + 1 * LocalNz) % LocalNz)] +
                v_in_ptr[((x)*LocalNy + y) * LocalNz +
@@ -6828,9 +6812,8 @@ void AiolosMesh::VDDX_U2_stag_x_Field3D_CtoL(
                      2. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                      .5 * f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]);
         } else {
-          result_ = .25 *
-                    (v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
-                     v_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) *
+          result_ = .25 * (v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
+                           v_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) *
                     (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                      f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
         }
@@ -6893,9 +6876,8 @@ void AiolosMesh::VDDX_U2_stag_y_Field3D_CtoL(
                      2. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                      .5 * f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]);
         } else {
-          result_ = .25 *
-                    (v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
-                     v_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) *
+          result_ = .25 * (v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
+                           v_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) *
                     (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                      f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
         }
@@ -6954,9 +6936,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_CtoL(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
           }
@@ -6981,9 +6962,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_CtoL(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7007,9 +6987,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_CtoL(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7034,9 +7013,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_CtoL(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7061,9 +7039,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_CtoL(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7284,9 +7261,8 @@ void AiolosMesh::VDDX_U2_stag_x_Field3D_LtoC(
                      2. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                      .5 * f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]);
         } else {
-          result_ = .25 *
-                    (v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
-                     v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z]) *
+          result_ = .25 * (v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
+                           v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z]) *
                     (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
                      f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
         }
@@ -7349,9 +7325,8 @@ void AiolosMesh::VDDX_U2_stag_y_Field3D_LtoC(
                      2. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                      .5 * f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]);
         } else {
-          result_ = .25 *
-                    (v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
-                     v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z]) *
+          result_ = .25 * (v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
+                           v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z]) *
                     (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
                      f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
         }
@@ -7410,9 +7385,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_LtoC(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
           }
@@ -7437,9 +7411,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_LtoC(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7463,9 +7436,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_LtoC(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7490,9 +7462,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_LtoC(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7517,9 +7488,8 @@ void AiolosMesh::VDDX_U2_stag_z_Field3D_LtoC(
                        2. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
                        .5 * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]);
           } else {
-            result_ = .25 *
-                      (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
-                       v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+            result_ = .25 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
+                             v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
                       (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
                        f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
           }
@@ -7722,12 +7692,10 @@ void AiolosMesh::VDDX_C2_stag_x_Field3D_CtoL(
       for (int z = 0; z < LocalNz; ++z) {
 
         result_ptr[((x + 0) * LocalNy + y) * LocalNz + z] =
-            0.5 *
-            (v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
-             v_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) *
-            0.5 *
-            (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
-             f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
+            0.5 * (v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z] +
+                   v_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]) *
+            0.5 * (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
+                   f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
       }
     }
   }
@@ -7771,12 +7739,10 @@ void AiolosMesh::VDDX_C2_stag_y_Field3D_CtoL(
       for (int z = 0; z < LocalNz; ++z) {
 
         result_ptr[((x)*LocalNy + y + 0) * LocalNz + z] =
-            0.5 *
-            (v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
-             v_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) *
-            0.5 *
-            (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
-             f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
+            0.5 * (v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z] +
+                   v_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]) *
+            0.5 * (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
+                   f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
       }
     }
   }
@@ -7816,33 +7782,27 @@ void AiolosMesh::VDDX_C2_stag_z_Field3D_CtoL(
           int z = 0;
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
         }
         for (int z = 1; z < LocalNz - 1; ++z) {
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
         }
         {
           int z = LocalNz - 1;
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
         }
       }
     }
@@ -7852,14 +7812,12 @@ void AiolosMesh::VDDX_C2_stag_z_Field3D_CtoL(
         for (int z = 0; z < LocalNz; ++z) {
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 0) % LocalNz)] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz +
-                        +((z - 1 + 1 * LocalNz) % LocalNz)]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                        +((z - 1 + 1 * LocalNz) % LocalNz)]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 0) % LocalNz)] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz +
+                              +((z - 1 + 1 * LocalNz) % LocalNz)]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                              +((z - 1 + 1 * LocalNz) % LocalNz)]);
         }
       }
     }
@@ -7990,12 +7948,10 @@ void AiolosMesh::VDDX_C2_stag_x_Field3D_LtoC(
       for (int z = 0; z < LocalNz; ++z) {
 
         result_ptr[((x + 0) * LocalNy + y) * LocalNz + z] =
-            0.5 *
-            (v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
-             v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z]) *
-            0.5 *
-            (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
-             f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
+            0.5 * (v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] +
+                   v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z]) *
+            0.5 * (f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
+                   f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z]);
       }
     }
   }
@@ -8039,12 +7995,10 @@ void AiolosMesh::VDDX_C2_stag_y_Field3D_LtoC(
       for (int z = 0; z < LocalNz; ++z) {
 
         result_ptr[((x)*LocalNy + y + 0) * LocalNz + z] =
-            0.5 *
-            (v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
-             v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z]) *
-            0.5 *
-            (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
-             f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
+            0.5 * (v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] +
+                   v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z]) *
+            0.5 * (f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
+                   f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z]);
       }
     }
   }
@@ -8084,33 +8038,27 @@ void AiolosMesh::VDDX_C2_stag_z_Field3D_LtoC(
           int z = 0;
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz]);
         }
         for (int z = 1; z < LocalNz - 1; ++z) {
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
         }
         {
           int z = LocalNz - 1;
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1]);
         }
       }
     }
@@ -8120,13 +8068,11 @@ void AiolosMesh::VDDX_C2_stag_z_Field3D_LtoC(
         for (int z = 0; z < LocalNz; ++z) {
 
           result_ptr[((x)*LocalNy + y) * LocalNz + z + 0] =
-              0.5 *
-              (v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] +
-               v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 0) % LocalNz)]) *
-              0.5 *
-              (f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                        +((z - 1 + 1 * LocalNz) % LocalNz)]);
+              0.5 * (v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] +
+                     v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 0) % LocalNz)]) *
+              0.5 * (f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                              +((z - 1 + 1 * LocalNz) % LocalNz)]);
         }
       }
     }
@@ -8261,11 +8207,10 @@ void AiolosMesh::VDDX_C4_stag_x_Field3D_CtoL(
                    v_in_ptr[((x + 0) * LocalNy + y) * LocalNz + z]) -
              v_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] -
              v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z]) /
-            16. *
-            (8. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
-             8. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
-             f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] -
-             f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]) /
+            16. * (8. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
+                   8. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
+                   f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] -
+                   f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]) /
             12.;
       }
     }
@@ -8314,11 +8259,10 @@ void AiolosMesh::VDDX_C4_stag_y_Field3D_CtoL(
                    v_in_ptr[((x)*LocalNy + y + 0) * LocalNz + z]) -
              v_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] -
              v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z]) /
-            16. *
-            (8. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
-             8. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
-             f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] -
-             f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]) /
+            16. * (8. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
+                   8. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
+                   f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] -
+                   f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]) /
             12.;
       }
     }
@@ -8363,11 +8307,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         {
@@ -8378,11 +8321,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         for (int z = 2; z < LocalNz - 2; ++z) {
@@ -8392,11 +8334,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         {
@@ -8407,11 +8348,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
               12.;
         }
         {
@@ -8422,11 +8362,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 0]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
               12.;
         }
       }
@@ -8443,13 +8382,12 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_CtoL(
                v_in_ptr[((x)*LocalNy + y) * LocalNz +
                         +((z - 2 + 2 * LocalNz) % LocalNz)] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                             +((z - 1 + 1 * LocalNz) % LocalNz)] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                        +((z - 2 + 2 * LocalNz) % LocalNz)] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 2) % LocalNz)]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                                   +((z - 1 + 1 * LocalNz) % LocalNz)] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                              +((z - 2 + 2 * LocalNz) % LocalNz)] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 2) % LocalNz)]) /
               12.;
         }
       }
@@ -8543,9 +8481,8 @@ void AiolosMesh::VDDX_C4_stag_y_Field2D_CtoL(
       result_ptr[(x)*LocalNy + y + 0] =
           (9. * (v_in_ptr[(x)*LocalNy + y - 1] + v_in_ptr[(x)*LocalNy + y + 0]) -
            v_in_ptr[(x)*LocalNy + y - 2] - v_in_ptr[(x)*LocalNy + y + 1]) /
-          16. *
-          (8. * f_in_ptr[(x)*LocalNy + y + 1] - 8. * f_in_ptr[(x)*LocalNy + y - 1] +
-           f_in_ptr[(x)*LocalNy + y - 2] - f_in_ptr[(x)*LocalNy + y + 2]) /
+          16. * (8. * f_in_ptr[(x)*LocalNy + y + 1] - 8. * f_in_ptr[(x)*LocalNy + y - 1] +
+                 f_in_ptr[(x)*LocalNy + y - 2] - f_in_ptr[(x)*LocalNy + y + 2]) /
           12.;
     }
   }
@@ -8593,11 +8530,10 @@ void AiolosMesh::VDDX_C4_stag_x_Field3D_LtoC(
                    v_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z]) -
              v_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] -
              v_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]) /
-            16. *
-            (8. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
-             8. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
-             f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] -
-             f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]) /
+            16. * (8. * f_in_ptr[((x + 1) * LocalNy + y) * LocalNz + z] -
+                   8. * f_in_ptr[((x - 1) * LocalNy + y) * LocalNz + z] +
+                   f_in_ptr[((x - 2) * LocalNy + y) * LocalNz + z] -
+                   f_in_ptr[((x + 2) * LocalNy + y) * LocalNz + z]) /
             12.;
       }
     }
@@ -8646,11 +8582,10 @@ void AiolosMesh::VDDX_C4_stag_y_Field3D_LtoC(
                    v_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z]) -
              v_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] -
              v_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]) /
-            16. *
-            (8. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
-             8. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
-             f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] -
-             f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]) /
+            16. * (8. * f_in_ptr[((x)*LocalNy + y + 1) * LocalNz + z] -
+                   8. * f_in_ptr[((x)*LocalNy + y - 1) * LocalNz + z] +
+                   f_in_ptr[((x)*LocalNy + y - 2) * LocalNz + z] -
+                   f_in_ptr[((x)*LocalNy + y + 2) * LocalNz + z]) /
             12.;
       }
     }
@@ -8695,11 +8630,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1 + LocalNz] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         {
@@ -8710,11 +8644,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2 + LocalNz] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         for (int z = 2; z < LocalNz - 2; ++z) {
@@ -8724,11 +8657,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2]) /
               12.;
         }
         {
@@ -8739,11 +8671,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
               12.;
         }
         {
@@ -8754,11 +8685,10 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                      v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz]) -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 1 - LocalNz] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 1] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z - 2] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + z + 2 - LocalNz]) /
               12.;
         }
       }
@@ -8774,13 +8704,12 @@ void AiolosMesh::VDDX_C4_stag_z_Field3D_LtoC(
                v_in_ptr[((x)*LocalNy + y) * LocalNz +
                         +((z - 1 + 1 * LocalNz) % LocalNz)] -
                v_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 2) % LocalNz)]) /
-              16. *
-              (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
-               8. * f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                             +((z - 1 + 1 * LocalNz) % LocalNz)] +
-               f_in_ptr[((x)*LocalNy + y) * LocalNz +
-                        +((z - 2 + 2 * LocalNz) % LocalNz)] -
-               f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 2) % LocalNz)]) /
+              16. * (8. * f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 1) % LocalNz)] -
+                     8. * f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                                   +((z - 1 + 1 * LocalNz) % LocalNz)] +
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz +
+                              +((z - 2 + 2 * LocalNz) % LocalNz)] -
+                     f_in_ptr[((x)*LocalNy + y) * LocalNz + +((z + 2) % LocalNz)]) /
               12.;
         }
       }
@@ -8874,9 +8803,8 @@ void AiolosMesh::VDDX_C4_stag_y_Field2D_LtoC(
       result_ptr[(x)*LocalNy + y + 0] =
           (9. * (v_in_ptr[(x)*LocalNy + y + 0] + v_in_ptr[(x)*LocalNy + y + 1]) -
            v_in_ptr[(x)*LocalNy + y - 1] - v_in_ptr[(x)*LocalNy + y + 2]) /
-          16. *
-          (8. * f_in_ptr[(x)*LocalNy + y + 1] - 8. * f_in_ptr[(x)*LocalNy + y - 1] +
-           f_in_ptr[(x)*LocalNy + y - 2] - f_in_ptr[(x)*LocalNy + y + 2]) /
+          16. * (8. * f_in_ptr[(x)*LocalNy + y + 1] - 8. * f_in_ptr[(x)*LocalNy + y - 1] +
+                 f_in_ptr[(x)*LocalNy + y - 2] - f_in_ptr[(x)*LocalNy + y + 2]) /
           12.;
     }
   }
