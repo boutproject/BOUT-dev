@@ -69,11 +69,11 @@ std::string BoutException::BacktraceGenerate() const{
     char syscom[256];
     // If we are compiled as PIE, need to get base pointer of .so and substract
     Dl_info info;
-    void * ptr;
+    void * ptr=trace[i];
     if (dladdr(trace[i],&info)){
-      ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
-    } else {
-      ptr=trace[i];
+      // Additionally, check whether this is the default offset for an executable
+      if (info.dli_fbase != (void*)0x400000)
+        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
@@ -84,10 +84,16 @@ std::string BoutException::BacktraceGenerate() const{
     FILE *fp = popen(syscom, "r");
     if (fp != NULL) {
       char out[1024];
-      char *retstr = fgets(out, sizeof(out) - 1, fp);
+      char *retstr;
+      std::string buf;
+      do {
+        retstr = fgets(out, sizeof(out) - 1, fp);
+        if (retstr != nullptr)
+          buf+=retstr;
+      } while (retstr != NULL);
       int status = pclose(fp);
-      if ((status == 0) && (retstr != NULL)) {
-        message += out;
+      if (status == 0) {
+        message += buf;
       }
     }
   }
@@ -95,7 +101,9 @@ std::string BoutException::BacktraceGenerate() const{
   return message;
 }
 
-
+/// Common set up for exceptions
+///
+/// Formats the message s using C-style printf formatting
 #define INIT_EXCEPTION(s)                                                                \
   {                                                                                      \
     buflen = 0;                                                                          \
@@ -125,7 +133,7 @@ std::string BoutException::BacktraceGenerate() const{
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }
 
-BoutException::BoutException(const std::string msg) {
+BoutException::BoutException(const std::string &msg) {
   message = "====== Exception thrown ======\n" + msg + "\n";
 
   this->Backtrace();

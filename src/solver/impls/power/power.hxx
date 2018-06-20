@@ -32,9 +32,17 @@ class PowerSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<PowerSolver> registersolverpower("power");
+}
+
+class Options;
+
 class PowerSolver : public Solver {
  public:
   PowerSolver() : Solver() {}
+  PowerSolver(Options*) : Solver() {}
   ~PowerSolver(){};
   
   int init(int nout, BoutReal tstep) override;

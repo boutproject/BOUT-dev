@@ -622,9 +622,10 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='HAS_OPENMP
+PETSC_ARCH
+PETSC_DIR
+PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
-PETSC_RELEASE
-PETSC_VERSION
 HAS_SLEPC
 HAS_PETSC
 HAS_LAPACK
@@ -650,7 +651,6 @@ LTLIBOBJS
 SCOREPPATH
 sundials_config
 SLEPC_VARS
-PETSC
 PARALLELHDF5_TYPE
 PARALLELHDF5_LIBS
 PARALLELHDF5_LDFLAGS
@@ -2539,6 +2539,8 @@ fi
 # Check whether --with-petsc was given.
 if test "${with_petsc+set}" = set; then :
   withval=$with_petsc;
+else
+  with_petsc=no
 fi
 
 
@@ -5700,8 +5702,7 @@ BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
 BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
 BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
-CXXFLAGS+=" -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
-
+CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
 #############################################################
@@ -5823,7 +5824,7 @@ if test "x$enable_shared" = "xyes"; then :
     #  code. It seems they generate a different code only on m68k,
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
-    CXXFLAGS+=" -fPIC"
+    CXXFLAGS="$CXXFLAGS -fPIC"
 
 fi
 
@@ -6774,7 +6775,7 @@ fi
 #############################################################
 
 PNCPATH=""
-if test "$with_pnetcdf" != "no"; then :
+if test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for Parallel-NetCDF library" >&5
 $as_echo "$as_me: Searching for Parallel-NetCDF library" >&6;}
@@ -8833,102 +8834,30 @@ fi
 
 if test "x$with_petsc" != "x" && test "$with_petsc" != "no"; then :
 
-  for ac_prog in gawk mawk nawk awk
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_AWK+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$AWK"; then
-  ac_cv_prog_AWK="$AWK" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AWK="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
 
-fi
-fi
-AWK=$ac_cv_prog_AWK
-if test -n "$AWK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
-$as_echo "$AWK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$AWK" && break
-done
-
-### This still needs to check for PETSC_ARCH
+# Supplying an argument to "--with-petsc" only works if PETSC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   if test "$with_petsc" != "yes"; then :
 
     PETSC_DIR="$with_petsc"
-    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/conf" >&5
-$as_echo_n "checking for $PETSC_DIR/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PETSC_DIR/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/conf
-else
-  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/lib/petsc/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/lib/petsc/conf" >&5
-$as_echo_n "checking for $PETSC_DIR/lib/petsc/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$PETSC_DIR/lib/petsc/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
-else
-  as_fn_error $? "*** --with-petsc=$with_petsc was specified but could not find PETSc distribution" "$LINENO" 5
+    PETSC_ARCH=
 
 fi
 
-fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&5
+$as_echo "$as_me: Using PETSC_DIR=$PETSC_DIR, PETSC_ARCH=$PETSC_ARCH" >&6;}
+
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# PETSC_ERROR_MESSAGE
+#
+# with no identation
 
 
-else
-
-    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
+# PETSc changed the location of the conf directory in 3.5, so we
+# need to check both locations
+  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/conf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -8946,9 +8875,12 @@ eval ac_res=\$$as_ac_File
 	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/conf
+
+    PETSC_CONFDIR=${PETSC_DIR}/conf
+
 else
-  as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/lib/petsc/conf" | $as_tr_sh`
+
+    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/lib/petsc/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/lib/petsc/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/lib/petsc/conf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -8966,320 +8898,136 @@ eval ac_res=\$$as_ac_File
 	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
+
+      PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
+
 else
-  as_fn_error $? "*** --with-petsc was specified but could not find PETSc distribution" "$LINENO" 5
+
+      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
 
 fi
 
-fi
-
 
 fi
 
-  PETSC_HEADER=
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for petscversion.h" >&5
-$as_echo_n "checking for petscversion.h... " >&6; }
-
-  save_CPPFLAGS=$CPPFLAGS
-  BACH_found=no
-
-  if test ."" != .yes; then :
-  extra_prefix=""
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# petscverion.h
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/include"
+  ac_fn_cxx_check_header_mongrel "$LINENO" "petscversion.h" "ac_cv_header_petscversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_petscversion_h" = xyes; then :
+  FOUND_PETSC_HEADER=yes
 else
-  extra_prefix=""
+  FOUND_PETSC_HEADER=no
+
 fi
 
+
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install PETSc in a non-supported fashion. This is really the fault
+# of PETSc for their weird method of installation
+  if test $FOUND_PETSC_HEADER = no; then :
+
+    as_ac_File=`$as_echo "ac_cv_file_${PETSC_CONFDIR}/petscvariables" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${PETSC_CONFDIR}/petscvariables" >&5
+$as_echo_n "checking for ${PETSC_CONFDIR}/petscvariables... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "${PETSC_CONFDIR}/petscvariables"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+
+      as_fn_error $? "Unable to find either petscversion.h or petscvariables
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+fi
+
+
+# This relies on the assumption that PETSC_ARCH is empty
+    PETSC_CC_INCLUDES=$(grep ^PETSC_CC_INCLUDES ${PETSC_CONFDIR}/petscvariables | cut -d= -f 2-)
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&5
+$as_echo "$as_me: Looking for petscverion.h using $PETSC_CC_INCLUDES from ${PETSC_CONFDIR}/petscvariables" >&6;}
+
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    { ac_cv_header_petscversion_h=; unset ac_cv_header_petscversion_h;}
+
+    CPPFLAGS="$CPPFLAGS $PETSC_CC_INCLUDES"
+    ac_fn_cxx_check_header_mongrel "$LINENO" "petscversion.h" "ac_cv_header_petscversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_petscversion_h" = xyes; then :
+
+else
+
+      as_fn_error $? "Couldn't find or include petscversion.h.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+fi
+
+
+
+fi
+
+# Now we have the header we want, we can check the version number
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc is at least 3.4.0" >&5
+$as_echo_n "checking PETSc is at least 3.4.0... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
     #include <petscversion.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  BACH_found=yes
-
-
-        break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  if test $BACH_found != yes; then :
-
-    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local
-    do
-      for path in $search_prefix $search_prefix/include
-      do
-        if test -d $path; then :
-
-          CPPFLAGS="$save_CPPFLAGS -I$path"
-
-
-          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-              #include <petscversion.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  BACH_found=yes
-             EXTRA_INCS="$EXTRA_INCS -I$path"
-
-
-             break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-      done
-      if test .$BACH_found = .yes; then :
-  break;
-fi
-    done
-
-fi
-
-  if test $BACH_found = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    CPPFLAGS=$save_CPPFLAGS
-
-fi
-  if test .$BACH_found = .yes; then :
-  PETSC_HEADER=
-  PETSC_DIR=
-else
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for petsc/petscversion.h" >&5
-$as_echo_n "checking for petsc/petscversion.h... " >&6; }
-
-  save_CPPFLAGS=$CPPFLAGS
-  BACH_found=no
-
-  if test ."" != .yes; then :
-  extra_prefix=""
-else
-  extra_prefix=""
-fi
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <petsc/petscversion.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  BACH_found=yes
-
-
-        break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-  if test $BACH_found != yes; then :
-
-    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local
-    do
-      for path in $search_prefix $search_prefix/include
-      do
-        if test -d $path; then :
-
-          CPPFLAGS="$save_CPPFLAGS -I$path"
-
-
-          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-              #include <petsc/petscversion.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  BACH_found=yes
-             EXTRA_INCS="$EXTRA_INCS -I$path"
-
-
-             break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-      done
-      if test .$BACH_found = .yes; then :
-  break;
-fi
-    done
-
-fi
-
-  if test $BACH_found = yes; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    CPPFLAGS=$save_CPPFLAGS
-
-fi
-  if test .$BACH_found = .yes; then :
-  PETSC_HEADER=petsc/
-    PETSC_DIR=
-fi
-
-fi
-
-
-
-  CPPGLAGS_save=$CPPFLAGS
-  if test ."$PETSC_DIR$PETSC_ARCH" != .; then :
-
-         CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
-fi
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MAJOR
-
+    #if PETSC_VERSION_GE(3, 4, 0)
+      yes
+    #endif
 
 _ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  PETSC_VERSION_MAJOR=`grep -v \# conftest.i`
-
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then :
+  PETSC_VERSION_OK="yes"
 else
-  as_fn_error $? "Error detecting PETSc version" "$LINENO" 5
+  PETSC_VERSION_OK="no"
 fi
-rm -f conftest.err conftest.i conftest.$ac_ext
+rm -f conftest*
 
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_MINOR
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PETSC_VERSION_OK" >&5
+$as_echo "$PETSC_VERSION_OK" >&6; }
+  CPPFLAGS="$save_CPPFLAGS"
 
+  if test $PETSC_VERSION_OK = no; then :
 
-_ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  PETSC_VERSION_MINOR=`grep -v \# conftest.i`
-
-else
-  as_fn_error $? "Error detecting PETSc version" "$LINENO" 5
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include "${PETSC_HEADER}petscversion.h"
-PETSC_VERSION_RELEASE
-
-
-_ACEOF
-if ac_fn_cxx_try_cpp "$LINENO"; then :
-  PETSC_VERSION_RELEASE=`grep -v \# conftest.i`
-
-else
-  as_fn_error $? "Error detecting PETSc version" "$LINENO" 5
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-
-  if test $PETSC_VERSION_MAJOR != "3"; then :
-
-    as_fn_error $? "PETSc must be version 3, found $PETSC_VERSION_MAJOR" "$LINENO" 5
+    as_fn_error $? "PETSc version must be at least 3.4.0" "$LINENO" 5
 
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc interface version" >&5
-$as_echo_n "checking PETSc interface version... " >&6; }
-  case "$PETSC_VERSION_RELEASE" in #(
-  0) :
-
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: dev" >&5
-$as_echo "dev" >&6; }
-   ;; #(
-  1) :
-
-    case "$PETSC_VERSION_MINOR" in #(
-       [1-7] ) :
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_$PETSC_VERSION_MINOR"
-       { $as_echo "$as_me:${as_lineno-$LINENO}: result: 3.$PETSC_VERSION_MINOR" >&5
-$as_echo "3.$PETSC_VERSION_MINOR" >&6; }
-       { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_DIR=\"$PETSC_DIR\"" >&5
-$as_echo "$as_me: PETSC_DIR=\"$PETSC_DIR\"" >&6;}
-       { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_ARCH=\"$PETSC_ARCH\"" >&5
-$as_echo "$as_me: PETSC_ARCH=\"$PETSC_ARCH\"" >&6;}
-       { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_CONFDIR=\"$PETSC_CONFDIR\"" >&5
-$as_echo "$as_me: PETSC_CONFDIR=\"$PETSC_CONFDIR\"" >&6;}
-       ;; #(
-  *) :
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_DIR=\"$PETSC_DIR\"" >&5
-$as_echo "$as_me: PETSC_DIR=\"$PETSC_DIR\"" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_ARCH=\"$PETSC_ARCH\"" >&5
-$as_echo "$as_me: PETSC_ARCH=\"$PETSC_ARCH\"" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: PETSC_CONFDIR=\"$PETSC_CONFDIR\"" >&5
-$as_echo "$as_me: PETSC_CONFDIR=\"$PETSC_CONFDIR\"" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: ***********************************" >&5
-$as_echo "$as_me: ***********************************" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unrecognised PETSc version" >&5
-$as_echo "$as_me: WARNING: Unrecognised PETSc version" >&2;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: MAJOR VERSION: $PETSC_VERSION_MAJOR" >&5
-$as_echo "$as_me: MAJOR VERSION: $PETSC_VERSION_MAJOR" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: MINOR VERSION: $PETSC_VERSION_MINOR" >&5
-$as_echo "$as_me: MINOR VERSION: $PETSC_VERSION_MINOR" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: RELEASE      : $PETSC_VERSION_RELEASE" >&5
-$as_echo "$as_me: RELEASE      : $PETSC_VERSION_RELEASE" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Trying PETSc-dev interface" >&5
-$as_echo "$as_me: Trying PETSc-dev interface" >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: ***********************************" >&5
-$as_echo "$as_me: ***********************************" >&6;}
-      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
-     ;;
-esac
-   ;; #(
-  *) :
-     ;;
-esac
-
+# Check if PETSc was compiled with SUNDIALS
   save_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS -I$PETSC_DIR/$PETSC_ARCH/include"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PETSc has SUNDIALS support" >&5
@@ -9305,35 +9053,27 @@ rm -f conftest*
 $as_echo "$PETSC_HAS_SUNDIALS" >&6; }
   CPPFLAGS="$save_CPPFLAGS"
 
-  HAS_PETSC="yes"
-  # Set the line to be included in the make.conf file
-  if test "." != ."$PETSC_CONFDIR" ; then :
-   PETSC="include ${PETSC_CONFDIR}/variables"
-else
-   PETSC=
-fi
-
-else
-
-  PETSC=
-  HAS_PETSC="no"
-
-fi
-
-PETSC=$PETSC
-
-
-if test "$PETSC" != ""; then :
-
-  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
-  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-
   if test "$PETSC_HAS_SUNDIALS" = "yes"; then :
 
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
 
 fi
+
+  # Set the line to be included in the make.conf file
+  PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
+
+  HAS_PETSC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
+  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+
+
+else
+
+  PETSC_MAKE_INCLUDE=
+  HAS_PETSC="no"
+  PETSC_HAS_SUNDIALS="no"
 
 fi
 
@@ -12061,18 +11801,6 @@ then
   HAS_MUMPS="no"
 fi
 
-if test "$PETSC" = ""
-then
-  HAS_PETSC="no"
-  PETSC_VERSION=""
-  PETSC_RELEASE=""
-  PETSC_HAS_SUNDIALS="no"
-else
-  HAS_PETSC="yes"
-  PETSC_VERSION="$PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR"
-  PETSC_RELEASE="$PETSC_VERSION_RELEASE"
-fi
-
 # Only make.config is altered by configure
 ac_config_files="$ac_config_files make.config"
 
@@ -13298,6 +13026,7 @@ BOUT_INCLUDE_PATH=$PWD/include
 
 
 
+
 ac_config_files="$ac_config_files bin/bout-config"
 
 cat >confcache <<\_ACEOF
@@ -14487,29 +14216,8 @@ $as_echo "$as_me:   Configuration summary  " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------" >&5
 $as_echo "$as_me: -------------------------" >&6;}
 
-if test "$PETSC" = ""; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc support           : no" >&5
-$as_echo "$as_me:   PETSc support           : no" >&6;}
-
-else
-
-  case "$PETSC_VERSION_RELEASE" in #(
-  0) :
-    PETSC_RELEASE_TYPE="dev" ;; #(
-  1) :
-    PETSC_RELEASE_TYPE="release"
-   ;; #(
-  *) :
-     ;;
-esac
-  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)" >&5
-$as_echo "$as_me:   PETSc support           : yes (version $PETSC_VERSION, $PETSC_RELEASE_TYPE version)" >&6;}
-  { $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS" >&5
-$as_echo "$as_me:   PETSc has SUNDIALS      : $PETSC_HAS_SUNDIALS" >&6;}
-
-fi
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)" >&5
+$as_echo "$as_me:   PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   SLEPc support           : $HAS_SLEPC" >&5
 $as_echo "$as_me:   SLEPc support           : $HAS_SLEPC" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   IDA support             : $HAS_IDA" >&5

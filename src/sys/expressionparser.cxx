@@ -136,8 +136,8 @@ ExpressionParser::ExpressionParser() {
   addGenerator("t", std::shared_ptr<FieldGenerator>( new FieldT()));
 }
 
-void ExpressionParser::addGenerator(string name, std::shared_ptr<FieldGenerator> g) {
-  gen[name] = g;
+void ExpressionParser::addGenerator(const string &name, std::shared_ptr<FieldGenerator> g) {
+  gen[name] = std::move(g);
 }
 
 void ExpressionParser::addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence) {
@@ -314,7 +314,7 @@ std::shared_ptr<FieldGenerator> ExpressionParser::parseExpression(LexInfo &lex) 
 //////////////////////////////////////////////////////////
 // LexInfo
 
-ExpressionParser::LexInfo::LexInfo(string input) {
+ExpressionParser::LexInfo::LexInfo(const std::string &input) {
   ss.clear();
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);

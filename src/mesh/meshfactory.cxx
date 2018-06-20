@@ -12,6 +12,7 @@
 
 MeshFactory *MeshFactory::instance = NULL;
 
+/// Name of BoutMesh for Options
 #define MESH_BOUT  "bout"
 #define MESH_AIOLOS "aiolos"
 

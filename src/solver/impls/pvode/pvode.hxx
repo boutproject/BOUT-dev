@@ -24,12 +24,8 @@
  * 
  **************************************************************************/
 
-#ifndef BOUT_HAS_PVODE
+#ifdef BOUT_HAS_PVODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver PvodeSolver;
- 
-#else
 class PvodeSolver;
 
 #ifndef __PVODE_SOLVER_H__
@@ -41,6 +37,11 @@ class PvodeSolver;
 #include <pvode/nvector.h>
 #include <pvode/cvode.h>     // main CVODE header file
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
+
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<PvodeSolver> registersolverpvode("pvode");
+}
 
 class PvodeSolver : public Solver {
  public:

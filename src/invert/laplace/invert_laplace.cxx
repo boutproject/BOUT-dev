@@ -405,8 +405,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   int ncx = xe - xs; // Total number of points in x to be used
 
   // Setting the width of the boundary.
-  // NOTE: The default is a width of 2 guard cells
-  int inbndry = 2, outbndry=2;
+  // NOTE: The default is a width of (mesh->xstart) guard cells
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
   if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
@@ -446,16 +446,16 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] =  0.;
-            bvec[ix] =  1./sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
-            cvec[ix] = -1./sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
+            bvec[ix] = -1./sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
+            cvec[ix] =  1./sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
           }
         }
         else if(inner_boundary_flags & INVERT_DC_GRAD) {
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] =  0.;
-            bvec[ix] =  1.;
-            cvec[ix] = -1.;
+            bvec[ix] = -1.;
+            cvec[ix] =  1.;
           }
         }
         else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
@@ -546,16 +546,16 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] = dcomplex(0.,0.);
-            bvec[ix] = dcomplex(1.,0.)/sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
-            cvec[ix] = dcomplex(-1.,0.)/sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
+            bvec[ix] = dcomplex(-1.,0.)/sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
+            cvec[ix] = dcomplex(1.,0.)/sqrt(coord->g_11(ix,jy))/coord->dx(ix,jy);
           }
         }
         else if(inner_boundary_flags & INVERT_AC_GRAD) {
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix]=dcomplex(0.,0.);
-            bvec[ix]=dcomplex(1.,0.);
-            cvec[ix]=dcomplex(-1.,0.);
+            bvec[ix]=dcomplex(-1.,0.);
+            cvec[ix]=dcomplex(1.,0.);
           }
         }
         else if(inner_boundary_flags & INVERT_AC_LAP) {
@@ -609,17 +609,17 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         if(outer_boundary_flags & INVERT_DC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
-            avec[ncx-ix]=dcomplex(1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
-            bvec[ncx-ix]=dcomplex(-1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
+            avec[ncx-ix]=dcomplex(-1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
+            bvec[ncx-ix]=dcomplex(1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
             cvec[ncx-ix]=dcomplex(0.,0.);
           }
         }
         else if(outer_boundary_flags & INVERT_DC_GRAD) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
+            avec[ncx-ix]=dcomplex(1.,0.);
+            bvec[ncx-ix]=dcomplex(-1.,0.);
             cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.,0.);
-            avec[ncx-ix]=dcomplex(-1.,0.);
           }
         }
         else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
@@ -667,17 +667,17 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         if(outer_boundary_flags & INVERT_AC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
-            cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
             avec[ncx-ix]=dcomplex(-1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
+            bvec[ncx-ix]=dcomplex(1.,0.)/sqrt(coord->g_11(ncx-ix,jy))/coord->dx(ncx-ix,jy);
+            cvec[ncx-ix]=dcomplex(0.,0.);
           }
         }
         else if(outer_boundary_flags & INVERT_AC_GRAD) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
+            avec[ncx-ix]=dcomplex(1.,0.);
+            bvec[ncx-ix]=dcomplex(-1.,0.);
             cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.,0.);
-            avec[ncx-ix]=dcomplex(-1.,0.);
           }
         }
         else if(outer_boundary_flags & INVERT_AC_LAP) {

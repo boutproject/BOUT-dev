@@ -111,7 +111,7 @@ char* copy_string(const char* s) {
   return s2;
 }
 
-/// Convert a string to lower case
+// Convert a string to lower case
 const string lowercase(const string &str) {
   string strlow(str);
 
@@ -119,7 +119,7 @@ const string lowercase(const string &str) {
   return strlow;
 }
 
-/// Convert to lowercase, except for inside strings
+// Convert to lowercase, except for inside strings
 const string lowercasequote(const string &str) {
   string strlow(str);
 
@@ -186,7 +186,6 @@ std::string trimLeft(const std::string &s, const std::string &c) {
 // Strips the comments from a string
 // This is the compliment of trimLeft
 std::string trimComments(const std::string &s, const std::string &c) {
-  std::string str(s);
-  return str.substr(0, s.find_first_of(c));
+  return s.substr(0, s.find_first_of(c));
 }
 

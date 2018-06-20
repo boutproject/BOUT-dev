@@ -9,12 +9,14 @@ class BoutException;
 
 using std::string;
 
+/// Throw BoutRhsFail with \p message if any one process has non-zero
+/// \p status
 void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
-  BoutException(const std::string);
+  BoutException(const std::string&);
   virtual ~BoutException();
   
   const char* what() const noexcept override;

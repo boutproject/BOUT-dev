@@ -74,7 +74,7 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 }
 
 void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                              BoutMask mask) {
+                              const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
 }
@@ -142,7 +142,7 @@ Field3D Lagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
 }
 
 Field3D Lagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
-                                 const Field3D &delta_z, BoutMask mask) {
+                                 const Field3D &delta_z, const BoutMask &mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

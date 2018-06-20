@@ -11,6 +11,8 @@ from scipy.special import erf
 import numpy as np
 import os
 
+#requires not make
+
 ########################################
 # Implementations of BOUT++ functions
 

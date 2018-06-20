@@ -1,0 +1,1224 @@
+#!/bin/bash
+# parse bout-config to extract appropriate flags
+inc_dirs=
+flags=
+libs=
+lib_dirs=
+for fl in $(bout-config --cflags)
+do
+    if test ".${fl:0:2}" == ".-I"
+    then
+        inc_dirs+=" ${fl:2}"
+    else
+        flags+=" $fl"
+    fi
+done
+for fl in $(bout-config --libs)
+do
+    s=${fl:0:2}
+    if test ".$s" == ".-L"
+    then
+        lib_dirs+=" ${fl:2}"
+    elif test ".$s" == ".-l"
+    then
+        libs+=" ${fl:2}"
+    fi
+done
+
+# needed sometimes to add include dir ...
+python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
+numpyheader=$(for d in $python_dirs
+              do
+                  find $d|grep numpy/arrayobject.h
+              done)
+inc_dirs="${numpyheader%/*/*} $inc_dirs"
+
+# Main file
+cat <<EOF
+# distutils: language=c++
+# distutils: include_dirs = $inc_dirs
+# distutils: libraries = $libs
+# distutils: library_dirs = $lib_dirs
+# distutils: sources = helper.cxx
+# distutils: extra_compile_args = $flags
+
+# cython: binding=True
+
+cimport boutcpp as c
+import numpy as np
+cimport numpy as np
+#import atexit
+cimport resolve_enum as benum
+from libc.stdlib cimport malloc, free
+
+cdef extern from "helper.h":
+     void c_set_f3d_all(c.Field3D * f3d, double * data)
+     void c_get_f3d_all(c.Field3D * f3d, double * data)
+     void c_get_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+     void c_set_f3d_all_(c.Field3D * f3d, double data)
+     void c_set_f3d_from_f3d(c.Field3D * f3d, c.Field3D * f3d)
+EOF
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
+do
+    n=${f%:*}
+    echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*) except +"
+    echo "     c.Field3D * f$n( c.Field3D*, double) except +"
+    echo "     c.Field3D * f$n( double, c.Field3D*) except +"
+    echo "     void fi$n( c.Field3D*, c.Field3D*) except +"
+    echo "     void fi$n( c.Field3D*, double) except +"
+done
+cat <<EOF
+     c.Field3D c_minus( c.Field3D )
+     c.Mesh * c_get_global_mesh()
+     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
+     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
+     void c_mesh_normalise(c.Mesh* , double)
+     c.Datafile * c_get_global_datafile()
+
+cdef Field3D f3dFromObj(c.Field3D i):
+    f3d=Field3D()
+    f3d.cobj=new c.Field3D(<const c.Field3D & ?>i)
+    return f3d
+cdef Field3D f3dFromPtr(c.Field3D * i):
+    f3d=Field3D()
+    f3d.cobj=i
+    f3d.isSelfOwned=False
+    return f3d
+cdef class Field3D:
+    """
+    The Field3D class
+    """
+    cdef c.Field3D * cobj
+    cdef c.bool isSelfOwned
+    @classmethod
+    def fromMesh(cls,mesh=None):
+        """
+        Create a Field3D.
+
+        Parameters
+        ----------
+        mesh : Mesh, optional
+             The mesh of the Field3D. If None, use global mesh
+        """
+        checkInit()
+        f3d=Field3D()
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f3d.cobj=new c.Field3D((<Mesh?>mesh).cobj)
+        return f3d
+    @classmethod
+    def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
+        """
+        Create a Field3D from reading in a datafile via collect.
+
+        Parameters
+        ----------
+        tind : int
+            time slice to read
+        mesh : Mesh
+            if not defined, use global mesh
+        ignoreDataType : bool
+            Do not fail if data is not float64
+        **kwargs
+            remaining arguments are passed to collect
+        """
+        checkInit()
+        from boutdata.collect import collect, dimensions
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f3d=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise "Error: Do not support xind slicing with MPI"
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise "Error: Do not support yind slicing with MPI"
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
+        data=collect(name,yguards=True,tind=tind,**kwargs)
+        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
+        if len(data.shape) != 3:
+            raise TypeError("expected 3d data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f3d.setLocation(loc)
+        f3d.setAll(data,ignoreDataType=ignoreDataType)
+        return f3d
+
+    def __cinit__(self,Field3D obj=None):
+        self.cobj=NULL
+        if obj:
+            self.cobj=obj.cobj
+        self.isSelfOwned=True
+        #self.cobj = (<c.Field3D * ?> cobj_)
+        #if self.cobj == NULL:
+        #    raise MemoryError('Not enough memory, allocation failed.')
+
+    def set(self,data,ignoreDataType=False):
+        """
+        Set all data of the Field3D
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool
+            Ignore if data is off different type to BoutReal
+        """
+        return self.setAll(data,ignoreDataType)
+
+    def setAll(self,data,ignoreDataType=False):
+        """
+        Set all data of the Field3D
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool
+            Ignore if data is off different type to BoutReal
+        """
+        dims=[self.cobj.getNx()
+              ,self.cobj.getNy()
+              ,self.cobj.getNz()]
+        if isinstance(data, (int, float)):
+            data=np.zeros(dims)+data
+        if data.dtype != np.dtype('float64'):
+            if ignoreDataType:
+                data=data.astype('float64')
+            else:
+                raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+        dims_in=self._checkDims(dims,data.shape)
+        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
+        c_set_f3d_all(self.cobj,&data_[0,0,0]);
+
+    def get(self):
+        """
+        Get all data of the Field3D
+
+        Returns
+        -------
+        array
+             A 3d numpy array with the data of the Field3D
+        """
+        return self.getAll()
+
+    def getAll(self):
+        """
+        Get all data of the Field3D
+
+        Returns
+        -------
+        array
+            A 3d numpy array with the data of the Field3D
+        """
+        nx=self.cobj.getNx()
+        ny=self.cobj.getNy()
+        nz=self.cobj.getNz()
+        #print(nx,ny,nz)
+        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
+        c_get_f3d_all(self.cobj,&data_[0,0,0]);
+        return data_
+
+    def setLocation(self,location):
+        """
+        Set the location of the Field3D
+        This does not do any modification of the data.
+
+        Parameters
+        ----------
+        location : string
+             The location to be set, e.g. "YLOW" or "CELL_YLOW" are supported.
+        """
+        cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+        self.cobj[0].setLocation(location_)
+        return self
+
+    def getLocation(self):
+        """
+        Get the location of the Field3D
+
+        Returns
+        -------
+        string
+            Representation of the field's location.
+        """
+        cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
+        return _resolve_inv_cell_loc(loc)
+
+    def ddt(self,val=None):
+        """
+        Get or set the time derivative
+
+        Returns
+        -------
+        Field3D
+            the Field3D's time derivative
+
+        Parameters
+        ----------
+        val : Field3D, optional
+             If set, set the time derivative to val
+        """
+        if val:
+            c_set_f3d_from_f3d(&c.ddt(self.cobj[0]),(<Field3D?>val).cobj)
+        return f3dFromPtr(&c.ddt(self.cobj[0]))
+
+    def __neg__(self):
+        """
+
+        Returns
+        -------
+        Field3D
+            negative of the Field
+        """
+        return f3dFromObj(c_minus(self.cobj[0]))
+    def isAllocated(self):
+        """
+        Check if the Field3D has its own datablock allocated
+
+        Returns
+        -------
+        bool
+            whether the Field is allocated
+        """
+        return self.cobj.isAllocated()
+    def __getitem__(self,slices):
+        """
+        Get data from the Field3D
+        Supports full 3D slicing support.
+        Partially slicing is currently not supported.
+
+        Parameters
+        ----------
+        slices: tuple_like, slice
+            List of slice objects, which shall be returned. Must contain 3 slice objects
+
+        Returns
+        -------
+        array
+            Numpy array of the requested data
+        """
+        if len(slices)!=3:
+            raise IndexError("This is a 3D object, but got %d slics"%len(slices))
+        inds=_resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()
+                             ,self.cobj.getNz()])
+        dims=[]
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_f3d_part(self.cobj,&data_[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+        return data_
+
+    def __setitem__(self,slices,data_):
+        """
+        Parameters
+        ----------
+        slices: tuple_like, slice
+            slice objects of the data to be set. Must contain 3 slice objects
+        data : array_like
+            Values to be set. Must be 3D and match the size of the slicing object.
+        """
+        if len(slices)!=3:
+            raise IndexError("This is a 3D object!")
+        inds=_resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()
+                             ,self.cobj.getNz()])
+        dims=[]
+        import numbers
+        if isinstance(data_,Field3D):
+            # get all to get a numpy array
+            data_=data_[:,:,:]
+        elif isinstance(data_,numbers.Number):
+            c_set_f3d_part_(self.cobj,<double>data_,inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2])
+            return
+        try:
+            dims_in=data_.shape
+        except:
+            raise TypeError("Expected a Field3D or a numpy array")
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        dims_in=self._checkDims(dims,dims_in)
+        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
+        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+    def _checkDims(self,dims,dims_in):
+        if len(dims_in) > 3:
+            raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
+        if len(dims_in) < 3:
+            len_dims=len([1 for d in dims if d>1])
+            if len(dims_in) != len_dims:
+                raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
+            dims_in_new=[]
+            k=0
+            for i in range(3):
+                if (dims[i]==1):
+                    dims_in_new.append(1)
+                else:
+                    dims_in_new.append(dims_in[k])
+                    k+=1
+            dims_in=dims_in_new
+        for i in range(3):
+            if dims[i] != dims_in[i]:
+                raise IndexError("Expected %s but got %s."%(dims,dims_in))
+
+EOF
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
+do
+    n=${f%:*}
+    #o=${f#*:}
+    cat <<EOF
+    def __${n}__(self,other):
+        #print("call __${n}__")
+        fu=Field3D()
+        import numbers
+        if isinstance(self,Field3D) and isinstance(other,Field3D):
+            fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(self,Field3D) and isinstance(other, numbers.Number):
+            fu.cobj=f$n((<Field3D?>self).cobj , (<double?>float(other)))
+        elif isinstance(self,numbers.Number) and isinstance(other, Field3D):
+            fu.cobj=f$n(<double?>float(self),(<Field3D?>other).cobj)
+        else:
+            print("$n",type(self),type(other),isinstance(self,numbers.Number))
+            return NotImplemented
+        return fu
+
+    def __r${n}__(self,lhs):
+        fu=Field3D()
+        if isinstance(lhs,float) or isinstance(lhs,int):
+            fu.cobj=f$n(<double?>float(lhs),(<Field3D?>self).cobj)
+        else:
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+        return fu
+
+    def __i${n}__(self,other):
+        if isinstance(other,Field3D):
+            fi$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(other,float) or isinstance(other,int):
+            fi$n((<Field3D?>self).cobj , (<double?>float(other)))
+        else:
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+        return self
+
+EOF
+
+done
+cat <<EOF
+    def __dealloc__(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
+cdef class Mesh:
+    """
+    Mesh class
+
+    Contains information about geometry.
+    It contains also the coordinates and is responsible for taking deriavtives.
+    """
+    cdef c.Mesh * cobj;
+    cdef c.bool isGlobal
+    cdef double isNormalised
+    cdef FieldFactory factory
+    #factory=FieldFactory()
+    def __init__(self, create=True,OptionSection=None):
+        checkInit()
+        self.cobj=<c.Mesh*>0
+        cdef c.string tmp
+        cdef c.Options * opt
+        self.isGlobal=False
+        self.isNormalised=-1
+        self.factory = FieldFactory()
+        if create:
+            if OptionSection:
+                opt = c.Options.getRoot()
+                for sec in OptionSection.split(":"):
+                    tmp=sec.encode('ascii')
+                    opt=opt.getSection(tmp)
+                self.cobj=c.Mesh.create(opt)
+            else:
+                self.cobj = c.Mesh.create(<c.Options *>0)
+            if self.cobj == NULL:
+                raise MemoryError('Not enough memory, allocation failed.')
+            self.cobj.load()
+            self.cobj.setParallelTransform()
+
+    @classmethod
+    def getGlobal(cls):
+        """
+        Get the global Mesh object
+
+        Returns
+        -------
+        Mesh
+            The global instance
+        """
+        checkInit()
+        msh = Mesh(create=False);
+        msh.cobj = c_get_global_mesh();
+        msh.isGlobal=True
+        return msh
+
+    def __dealloc__(self):
+        if self.cobj and not self.isGlobal:
+            del self.cobj
+
+    cdef getFactory(self):
+        """
+        Get the FieldFactory of the mesh
+
+        Returns
+        -------
+        FieldFactory
+            The fieldfactory for the given mesh
+        """
+        if (<FieldFactory>self.factory).cobj == <c.FieldFactory*>0:
+            (<FieldFactory?>self.factory).cobj = new c.FieldFactory(self.cobj,<c.Options*>0)
+        return self.factory
+    def normalise(self,double norm):
+        """
+        Normalise the mesh.
+
+        Usefull if the Options are in SI units, but the simulation is written in Bohm units.
+        Calling it multiple times will not change the mesh, if the normalisation is always the same.
+
+        It calls mesh->dx/=norm etc. followed by a call to geometry().
+
+        Parameters
+        ----------
+        norm : float
+            The length with which to rescale
+        """
+        if self.isNormalised>0:
+            t=norm
+            norm=norm/self.isNormalised
+            self.isNormalised=t
+        c_mesh_normalise(self.cobj,norm)
+    def communicate(self,*args):
+        """
+        Communicate (MPI) the boundaries of the Field3Ds with neighbours
+
+        Parameters
+        ----------
+        args : Field3D
+            Abitrary number of fields
+        """
+        cdef c.FieldGroup * fg = new c.FieldGroup()
+        for f in args:
+            fg.add((<Field3D?> f).cobj[0])
+        self.cobj.communicate(fg[0])
+        del fg
+        return self
+
+cdef class Laplacian:
+    """
+    Laplacian inversion solver
+
+    Compute the Laplacian inversion of objects.
+    """
+    cdef c.Laplacian * cobj
+    def __init__(self,section=None):
+        """
+        Initialiase a laplacion solver
+
+        Parameters
+        ----------
+        section : Options, optional
+            The section from the Option tree to take the options from
+        """
+        checkInit()
+        if section:
+           self.cobj = c.Laplacian.create((<Options?>section).cobj)
+        else:
+           self.cobj = c.Laplacian.create(NULL)
+
+    def solve(self,Field3D a, Field3D b):
+        """
+        Calculate the Laplacian inversion
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to be inverted
+        guess : Field3D
+            initial guess for the inversion
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
+
+cdef class FieldFactory:
+    cdef c.FieldFactory * cobj
+    def __init__(self):
+        checkInit()
+        cobj=< c.FieldFactory*>0
+    def __dealloc__(self):
+        if self.cobj != <c.FieldFactory*>0:
+            del self.cobj
+    # @classmethod
+    # def fromPtr(cls,FieldFactory * cobj_):
+    #     fu=cls()
+    #     fu.cobj=cobj_
+    #     return fu
+
+cdef void callback(void * parameter, void * method) with gil:
+    cdef double time = (<double*>parameter)[0]
+    cdef c.string str_
+    try:
+        (<object?>method)(time)
+    except BaseException, e:
+        str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
+        import traceback
+        str__ += traceback.format_exc()
+        str_=str__.encode('ascii')
+        c.throw_BoutException(str_)
+
+
+ctypedef void (*Method)(void *param)
+
+cdef class PythonModelCallback:
+    """Needed for callbacks from C++ to python"""
+    cdef c.PythonModelCallback * cobj
+
+    def __cinit__(self, method):
+        # 'callback' :: The pattern/converter method to fire a Python
+        #               object method from C typed infos
+        # 'method'   :: The effective method passed by the Python user
+        checkInit()
+        self.cobj = new c.PythonModelCallback(callback, <void*>method)
+
+    def __dealloc__(self):
+        if self.thisptr:
+            del self.thisptr
+
+    cpdef void execute(self, parameter):
+        # 'parameter' :: The parameter to be passed to the 'method'
+        self.cobj.cy_execute(<void*>parameter)
+
+
+cdef class PhysicsModelBase(object):
+    """The PhysicsModelBase in python - better use the PhysicsModel class"""
+    cdef c.PythonModel * cmodel
+    cdef c.PythonModelCallback * callback
+    cdef c.PythonModelCallback * callbackinit
+    cdef c.bool _done_pyinit
+    def __init__(self):
+        checkInit()
+        self.cmodel  = new c.PythonModel()
+        self.callback= <c.PythonModelCallback*> 0
+        self.callbackinit= <c.PythonModelCallback*> 0
+        self._done_pyinit = False
+    def solve(self):
+        if self._done_pyinit == False:
+            self._done_pyinit = True
+            self.cmodel.pyinit()
+        import sys
+        sys.stdout.flush()
+        self.cmodel.solve()
+
+    def solve_for(self,**kwargs):
+        if self._done_pyinit == False:
+            self._done_pyinit = True
+            self.cmodel.pyinit()
+        cdef char * tmp
+        cdef c.Field3D * f3d
+        for key in kwargs:
+            t2=str.encode(key)
+            tmp=t2
+            f3d=(<Field3D?>kwargs[key]).cobj
+            self.cmodel.getSolver().add(f3d[0],tmp)
+
+    def setRhs(self,rhs):
+        """
+        set the rhs function to be called
+
+        Parameters
+        ----------
+        rhs : function
+            Must not be a method, and must accept an double (time) as argument
+        """
+        if self.callback != <c.PythonModelCallback*>0:
+            del self.callback
+        self.callback = new c.PythonModelCallback(callback, <void*> rhs)
+        self.cmodel.set_rhs_func(self.callback)
+
+    def setInit(self,init):
+        """
+        set the init function to be called
+
+        Parameters
+        ----------
+        init : function
+            Must not be a method, and must accept an bool (restart) as argument
+        """
+        if self.callbackinit != <c.PythonModelCallback*>0:
+            del self.callbackinit
+        self.callbackinit = new c.PythonModelCallback(callback, <void*> init)
+        self.cmodel.set_init_func(self.callbackinit)
+
+    def __dealloc__(self):
+        if self.cmodel != <c.PythonModel *> 0:
+            self.cmodel.free()
+            del self.cmodel
+            del self.callback
+            del self.callbackinit
+
+class PhysicsModel(PhysicsModelBase):
+    """The PhysicsModel base class for python"""
+    def __init__(self):
+        super(PhysicsModel,self).__init__()
+        self._super_is_initialised=True
+    def solve(self):
+        """
+        Call the solver.
+        This makes sure that self.init(restart) and self.rhs(time) are called from the solver.
+        """
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        def _rhs(time):
+           self.rhs(time)
+        self.myrhs=_rhs
+        self.setRhs(self.myrhs)
+        def _init(restart):
+            self.init(restart)
+        self.myinit=_init
+        self.setInit(self.myinit)
+        super(PhysicsModel,self).solve()
+    def solve_for(self,*args,**kwargs):
+        """
+        Add Field3D's to be solved for.
+        Need to pass as name=field - where name is the name that is
+        used e.g. for the dump file and field is a Field3D
+
+        Parameters
+        ----------
+        kwargs : dict
+            Keys must be strings, and value of dict must be the Field3D which should be evolved.
+        """
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        super(PhysicsModel,self).solve_for(*args,**kwargs)
+    def init(self,restart):
+        """
+        This can be overwritten to do model specific initialization
+        """
+        pass
+
+cdef extern from "bout.hxx":
+    int BoutInitialise(int&, char **&)
+    void BoutFinalise()
+
+cdef extern from "boutcore_openmpi_compat.hxx":
+    void PyMPI_OPENMPI_dlopen_libmpi()
+    c.bool is_openmpi
+
+_isInit=False
+def init(args=[]):
+    """
+    Initialization function for the library.
+
+    Parameters
+    ----------
+    args : list or string
+        It accepts ether a list of strings, or a string that is split at the spaces.
+        This is passed on to MPI and other libraries that BOUT++ initializes.
+    """
+    global _isInit
+    if _isInit:
+        raise RuntimeError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
+    try:
+        # python3 version
+        if isinstance(args, str):
+            args=args.split(" ")
+    except:
+        # fallback to python2
+        if isinstance(args, basestring):
+            args=args.split(" ")
+    args.insert(0,"boutcore")
+    cdef char **string_buf = <char **>malloc((len(args)+1) * sizeof(char*))
+    fu=[]
+    cdef char * tmp
+    for i in range(len(args)):
+        t2=str.encode(args[i])
+        tmp=t2
+        fu.append(tmp)
+        string_buf[i]=<char*>fu[i]
+    # terminate string_buf with a null pointer for OpenMPI, which requires this
+    # because it iterates through 'argv' with a loop 'for (p = argv; *p; ++p)'
+    string_buf[len(args)] = NULL
+    cdef int fuu=len(args)
+    if is_openmpi:
+        PyMPI_OPENMPI_dlopen_libmpi()
+    ret=BoutInitialise(fuu,string_buf)
+    free(string_buf)
+    if ret:
+        BoutFinalise()
+    else:
+        _isInit=True
+    #atexit.register(finalise)
+
+def finalise():
+    """
+    Finalize BOUT++ and also MPI.
+    After this most objects and functions are not valid anymore.
+    """
+    checkInit()
+    BoutFinalise()
+    global _isInit
+    _isInit=False
+
+def checkInit():
+    """
+    Assert that boutcore has been initialized
+    """
+    global _isInit
+    if not _isInit:
+       raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
+
+EOF
+
+f_desc_f="field : Field3D
+        The Field3D object of which to calculate the derivative"
+f_desc_vf="field: Field3D
+        The Field3D object of which to calculate the derivative
+    velocity : Field3D
+        The Field3D object of which the field is advected"
+fun () {
+    cat <<EOF
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """
+    Compute the derivative $DD
+
+    Parameters
+    ---------
+    $f_desc
+    outloc : string
+        The location where the derivative is expected. Defaults to the same as field.
+    method : string
+        The method to calculate the derivative.
+    region : string
+        The region for which to calculate the derivative
+
+    Returns
+    -------
+    Field3D
+        The computed $DD derivative
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    cdef benum.REGION region_=benum.resolve_region(region)
+    return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
+EOF
+}
+for d in X Y Z
+do
+    for f in DDd D2Dd2 # VDDd FDDd
+    do
+        in1="Field3D field"
+        in2="field.cobj[0]"
+        DD=${f/d/$d}
+        f_desc="$f_desc_f"
+        fun
+    done
+    for f in VDDd FDDd
+    do
+        in1="Field3D velocity, Field3D field"
+        in2="velocity.cobj[0], field.cobj[0]"
+        DD=${f/d/$d}
+        f_desc="$f_desc_vf"
+        fun
+    done
+done
+
+funbad () {
+    cat <<EOF
+def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """
+    Compute the derivative $DD
+
+    Parameters
+    ---------
+    $f_desc
+    outloc : string
+        The location where the derivative is expected. Defaults to the same as field.
+    method : string
+        The method to calculate the derivative.
+    region : string
+        The region for which to calculate the derivative
+
+    Returns
+    -------
+    Field3D
+        The computed $DD derivative
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    return f3dFromObj(c.$DD($in2,outloc_,method_))
+EOF
+}
+
+for DD in Div_par Grad_par
+do
+    in1="Field3D field"
+    in2="field.cobj[0]"
+    f_desc="$f_desc_f"
+    funbad
+done
+
+for DD in Vpar_Grad_par
+do
+    in1="Field3D velocity, Field3D field"
+    in2="velocity.cobj[0], field.cobj[0]"
+    f_desc="$f_desc_vf"
+    funbad
+done
+cat <<EOF
+
+def Delp2(Field3D a, zsmooth=-1):
+#    """Delp2(Field3D a, zsmooth=-1)"""
+    checkInit()
+    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
+
+def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
+    """
+    Parameters
+    ----------
+    a : Field3D
+        The left field of the multiplication
+    b : Field3D
+        The right field of the multiplication
+
+    Returns
+    -------
+    float
+        the scalar product of the perpendicular gradient contributions
+    """
+    checkInit()
+    return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
+
+def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+    """
+    Calculate the poison bracket for Field3D a and Field3D b.
+
+    Parameters
+    ----------
+    a : Field3D
+        The left field in the bracket
+    b : Field3D
+        The right field in the bracket
+    method : string
+        The method to be used
+    outloc : string
+        The location of the calculated derivative
+
+    Returns
+    -------
+    Field3D
+        The bracket
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
+    return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
+
+EOF
+for fun in sqrt exp sin cos log abs
+do
+    echo "def $fun(Field3D a):
+    \"\"\"
+    Calculate $fun of the Field3D
+
+    Parameters
+    ----------
+    a : Field3D
+         The field for which to calculate $fun
+
+    Returns
+    -------
+    Field3D
+        $fun of a
+    \"\"\"
+    return f3dFromObj(c.$fun(a.cobj[0]))
+
+"
+done
+cat <<EOF
+
+def pow(Field3D a, exponent):
+    """
+    Returns a**e where a is a Field3D and e is a number
+
+    Parameters
+    ----------
+    a : Field3D
+        The field for which to calculate $fun
+    exponent : float
+        The exponent
+
+    Returns
+    -------
+    Field3D
+        The a**exponent
+    """
+    return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
+
+def min(Field3D a):
+    """
+    Get the minimum
+
+    Parameters
+    ----------
+    a : Field3D
+        The field
+
+    Returns
+    -------
+    float
+        the minimum value of a
+    """
+    return c.min(a.cobj[0])
+
+def max(Field3D a):
+    """
+    Get the maximum
+
+    Parameters
+    ----------
+    a : Field3D
+        The field
+
+    Returns
+    -------
+    float
+        the maximum value of a
+    """
+    return c.max(a.cobj[0])
+
+def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
+    """
+    Returns a Field3D from the fieldfactory
+    Parameters
+    ----------
+    string : string
+        Expression to create. This can contain references to the options
+    msh : Mesh
+        the Mesh to use, defaults to the global mesh.
+    outloc : string
+        the cell location of the returned field
+    time : float
+         is the time
+
+    Returns
+    -------
+    Field3D
+        the Field from the expression
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    if msh is None:
+        msh=Mesh.getGlobal()
+    cdef FieldFactory fact=msh.getFactory()
+    cdef c.string str_=string.encode('ascii')
+    return f3dFromObj(
+        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
+                                           ,outloc_,time))
+
+def interp_to(Field3D f3d,location):
+    """
+    Interpolate a Field3D to a given location
+
+    Parameters
+    ----------
+    f3d : Field3D
+        The field to interpolate
+    location : string
+        The location to which to interploate
+
+    Returns
+    -------
+    Field3D
+        the interpolated field
+    """
+    checkInit()
+    cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+    return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
+
+
+def setOption(name, value, source="PyInterface", force=False):
+    """
+    Set an option in the global Options tree
+
+    Parameters
+    ----------
+    name : string
+        the name of the value to be set. Can be relative,
+        e.g. \`mesh:ddx:first\`.
+    value : string
+        the value to be set
+    source : string
+        The source of the change. Useful for keeping
+        track of where what was set.
+    force : bool
+        If a value is overwritten, an exception is
+        thrown. setting this to \`True\` avoids the exception.
+    """
+    checkInit()
+    root=Options('')
+    root.set(name,value,source,force)
+
+cdef class Options:
+    cdef c.Options * cobj
+
+    def __init__(self,name):
+        checkInit()
+        self.cobj = c.Options.getRoot()
+        cdef c.string sec_
+        for sec in name.split(":"):
+            sec_=sec.encode('ascii')
+            self.cobj=self.cobj.getSection(sec_)
+
+    def set(self,name,value,source="PyInterface", force=False):
+        """
+        Set an option
+
+        Parameters
+        ----------
+        name : string
+             the name of the value to be set. Can be relative,
+             e.g. \`mesh:ddx:first\`.
+        value : string
+            the value to be set
+        source : string
+            The source of the change. Useful for keeping
+            track of where what was set.
+        force : bool
+            If a value is overwritten, an exception is
+            thrown. setting this to \`True\` avoids the exception.
+        """
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string value_ = value.encode('ascii')
+        cdef c.string source_ = source.encode('ascii')
+        opt.set(key,value_, source_, force)
+        opt.cleanCache()
+        return self
+
+    def get(self,name,default):
+        """
+        Get an option
+
+        Parameters
+        ----------
+        name : string
+             the name of the value to get. Can be relative,
+             e.g. \`mesh:ddx:first\`.
+        default : bool, string or float
+            Depending on the type of the default, different things will be returned.
+            Supported types are bool, string or float
+        Returns
+        -------
+        bool, string or float
+            See default for the type.
+            The option that was read if available, otherwise default
+        """
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        import numbers
+
+        cdef double ret_real=0
+        cdef c.bool ret_bool=False
+        cdef c.string default_
+        cdef c.string ret_str
+
+        if isinstance(default,bool):
+            #print("isbool")
+            opt.get(key,ret_bool, <c.bool> default)
+            return ret_bool
+        elif isinstance(default,numbers.Number):
+            #print("isreal")
+            opt.get(key,ret_real,<double> default)
+            return ret_real
+        else:
+            #print("isstr")
+            default_= str(default).encode('ascii')
+            opt.get(key,ret_str, default_)
+            return ret_str
+
+cdef class Datafile:
+     cdef c.Datafile * cobj
+     def __init__(self):
+         self.cobj = c_get_global_datafile()
+     def add(self,save_repeat=False,**kwargs):
+         for key in kwargs:
+             self._add(kwargs[key],key,save_repeat)
+
+     def _add(self,data,name,save_repeat):
+         cdef char * tmp
+         cdef double * dbl
+         cdef c.Field3D * f3d
+         t2=str.encode(name)
+         tmp=t2
+         # import numbers
+         # if isinstance(data,int):
+         #     #c_datafile_add_int(self.cobj,
+         #     self.cobj.add(<int>data,tmp,<c.bool>save_repeat)
+         # elif isinstance(data,numbers.Number):
+         #     self.cobj.add(dbl,tmp,<c.bool>save_repeat)
+         # el
+         if isinstance(data,Field3D):
+             f3d=(<Field3D>data).cobj
+             self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+         else:
+             raise TypeError("unsupported datatype")
+     def write(self):
+         self.cobj.write()
+
+
+
+EOF
+
+cat helper.py
+
+bash resolve_enum_inv.pyx.in

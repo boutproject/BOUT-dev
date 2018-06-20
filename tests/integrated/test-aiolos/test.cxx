@@ -39,10 +39,10 @@ int physics_init(bool restart) {
     compare(interp_to(n,CELL_XLOW),
             FieldFactory::get()->create3D("all:function", Options::getRoot(),
                                           mesh, CELL_XLOW, 0));
-    compare(mesh->interp_to(n,CELL_YLOW),
+    compare(mesh->interp_to(n,CELL_YLOW,RGN_ALL),
             FieldFactory::get()->create3D("all:function", Options::getRoot(),
                                           mesh, CELL_YLOW, 0));
-    compare(mesh->interp_to(n,CELL_ZLOW),
+    compare(mesh->interp_to(n,CELL_ZLOW,RGN_ALL),
             FieldFactory::get()->create3D("all:function", Options::getRoot(),
                                           mesh, CELL_ZLOW, 0));
   }

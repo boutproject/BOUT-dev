@@ -216,7 +216,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(direct) {
     KSPGetPC(ksp,&pc);
     PCSetType(pc,PCLU);
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else {
     
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
@@ -494,13 +498,17 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 }
 
 LaplaceXY::~LaplaceXY() {
-  KSPDestroy( &ksp );
-  VecDestroy( &xs );
-  VecDestroy( &bs );
-  MatDestroy( &MatA );
-  
-  // Delete tridiagonal solver
-  delete cr;
+  PetscBool is_finalised;
+  PetscFinalized(&is_finalised);
+
+  if (!is_finalised) {
+    // PetscFinalize may already have destroyed this object
+    KSPDestroy(&ksp);
+  }
+
+  VecDestroy(&xs);
+  VecDestroy(&bs);
+  MatDestroy(&MatA);
 }
 
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {

@@ -290,7 +290,7 @@ FPERP_REAL_OP_FPERP(/);
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
-    checkData(result, rgn);                                                              \
+    checkData(result);                                                                   \
     return result;                                                                       \
   }
 
@@ -413,7 +413,7 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -431,7 +431,7 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 
@@ -449,7 +449,7 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
     result[i] = ::pow(lhs, rhs[i]);
   }
 
-  checkData(result, rgn);
+  checkData(result);
   return result;
 }
 

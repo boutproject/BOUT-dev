@@ -32,12 +32,9 @@
 
 // Define basic multigrid algorithm
 
-MultigridAlg::MultigridAlg(int level,int lx,int lz, int gx, int gz, 
-			   MPI_Comm comm,int check) {
-
-  mglevel = level;
-  commMG = comm;
-  pcheck = check;
+MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm,
+                           int check)
+    : mglevel(level), pcheck(check), commMG(comm) {
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 
@@ -69,10 +66,6 @@ MultigridAlg::MultigridAlg(int level,int lx,int lz, int gx, int gz,
 
 MultigridAlg::~MultigridAlg() {
   output<<"End deconstruction Malg AAAA "<<numP<<endl;
-}
-
-void MultigridAlg::cleanMem() {
-  // Finalize, deallocate memory, etc.
   for(int i = 0;i<mglevel;i++) delete [] matmg[i];
   delete [] matmg;
 }

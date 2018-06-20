@@ -25,6 +25,8 @@ shell_safe("make > make.log")
 
 vars = ['ivar', 'rvar', 'f2d', 'f3d', 'ivar_evol', 'rvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z']
 
+field_vars = ['f2d', 'f3d', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z'] # Field quantities, not scalars
+
 tol = 1e-10
 
 print("Reading benchmark data")
@@ -52,16 +54,32 @@ for nproc in [1,2,4]:
   for v in vars:
     stdout.write("      Checking variable "+v+" ... ")
     result = collect(v, path="data", info=False)
+    
     # Compare benchmark and output
     if np.shape(bmk[v]) != np.shape(result):
       print("Fail, wrong shape")
       success = False
+      continue
+    
     diff =  np.max(np.abs(bmk[v] - result))
     if diff > tol:
       print("Fail, maximum difference = "+str(diff))
       success = False
-    else:
-      print("Pass")
+      continue
+
+    if v in field_vars:
+      # Check cell location
+      if "cell_location" not in result.attributes:
+        print("Fail: {0} has no cell_location attribute".format(v))
+        success = False
+        continue
+    
+      if result.attributes["cell_location"] != "CELL_CENTRE":
+        print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
+        success = False
+        continue
+    
+    print("Pass")
 
 if success:
   print(" => All I/O tests passed")

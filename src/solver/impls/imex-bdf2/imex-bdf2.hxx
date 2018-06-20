@@ -49,6 +49,10 @@ class IMEXBDF2;
 #include <petsc.h>
 #include <petscsnes.h>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
+}
 
 /// IMEX-BDF2 time integration solver
 ///
@@ -193,10 +197,5 @@ class IMEXBDF2 : public Solver {
 };
 
 #endif // __IMEXBDF2_SOLVER_H__
-
-#else // BOUT_HAS_PETSC
-
-#include "../emptysolver.hxx"
-typedef EmptySolver IMEXBDF2;
 
 #endif // BOUT_HAS_PETSC

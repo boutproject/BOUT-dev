@@ -3,26 +3,13 @@
 
 InterpolationFactory* InterpolationFactory::instance = nullptr;
 
-/**
- * Add the available interpolation methods to the internal map
- *
- */
 InterpolationFactory::InterpolationFactory() {
   add(HermiteSpline::CreateHermiteSpline, "hermitespline");
+  add(MonotonicHermiteSpline::CreateMonotonicHermiteSpline, "monotonichermitespline");
   add(Lagrange4pt::CreateLagrange4pt, "lagrange4pt");
   add(Bilinear::CreateBilinear, "bilinear");
 }
 
-inline string InterpolationFactory::getDefaultInterpType() {
-  return "hermitespline";
-}
-
-/**
- * Create or get the singleton instance of the factory
- *
- *
- * @return The singleton instance of the InterpolationFactory
- */
 InterpolationFactory* InterpolationFactory::getInstance() {
   if (instance == nullptr) {
     // Create the singleton object
@@ -31,10 +18,6 @@ InterpolationFactory* InterpolationFactory::getInstance() {
   return instance;
 }
 
-/**
- * Destroy the singleton instance
- *
- */
 void InterpolationFactory::cleanup() {
   if (instance == nullptr)
     return;
@@ -44,14 +27,6 @@ void InterpolationFactory::cleanup() {
   instance = nullptr;
 }
 
-/**
- * Create an Interpolation object given its name and an Options object
- *
- * @param name The name of the interpolation method
- * @param opt An Options object (e.g. an input file)
- *
- * @return A new copy of an Interpolation object
- */
 Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   // Get the default interpolation type
   string type = getDefaultInterpType();
@@ -95,13 +70,6 @@ void InterpolationFactory::add(CreateInterpCallback interp, const string &name) 
   interp_map[lowercase(name)] = interp;
 }
 
-/**
- * Find an interpolation method in the list of available methods
- *
- * @param name Name of the interpolation method
- *
- * @return A pointer to the Interpolation object in the map
- */
 InterpolationFactory::CreateInterpCallback InterpolationFactory::findInterpolation(const string &name) {
   auto interp = interp_map.find(lowercase(name));
   if (interp == end(interp_map))

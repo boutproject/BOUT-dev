@@ -37,10 +37,6 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   if (Solver::init(nout, tstep))
     return 1;
 
-  //Read options
-  if(options == nullptr)
-    options = Options::getRoot()->getSection("solver");
-
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
   nsteps = nout; // Save number of output steps
@@ -155,9 +151,6 @@ int RKGenericSolver::run() {
     
     /// Call the output step monitor function
     if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;

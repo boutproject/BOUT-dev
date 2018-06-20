@@ -9,7 +9,7 @@ import numpy as np
 from math import pi
 from scipy.integrate import odeint
 import boututils.datafile as bdata
-from boutdata.input import transform3D
+
 
 def slab(nx, ny, nz,
          filename="fci.grid.nc",

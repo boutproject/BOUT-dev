@@ -11,10 +11,12 @@ class OptionsTest : public ::testing::Test {
 public:
   OptionsTest() {
     output_info.disable();
+    output_warn.disable();
   }
 
   ~OptionsTest() {
     output_info.enable();
+    output_warn.enable();
   }
 };
 
@@ -84,6 +86,30 @@ TEST_F(OptionsTest, SetGetReal) {
   options.get("real_key", value, -78.0, false);
 
   EXPECT_DOUBLE_EQ(value, 6.7e8);
+}
+
+TEST_F(OptionsTest, SetGetDouble) {
+  Options options;
+  options.set("real_key", 0.7853981633974483, "code");
+
+  ASSERT_TRUE(options.isSet("real_key"));
+
+  BoutReal value;
+  options.get("real_key", value, -78.0, false);
+
+  EXPECT_DOUBLE_EQ(value, 0.7853981633974483);
+}
+
+TEST_F(OptionsTest, SetGetNegativeDouble) {
+  Options options;
+  options.set("real_key", -0.7853981633974483, "code");
+
+  ASSERT_TRUE(options.isSet("real_key"));
+
+  BoutReal value;
+  options.get("real_key", value, -78.0, false);
+
+  EXPECT_DOUBLE_EQ(value, -0.7853981633974483);
 }
 
 TEST_F(OptionsTest, DefaultValueReal) {
@@ -159,7 +185,7 @@ TEST_F(OptionsTest, GetBoolFromString) {
   options.set("bool_key3", "A_bool_starts_with_T_or_N_or_Y_or_F_or_1_or_0", "code");
   EXPECT_THROW(options.get("bool_key3", value3, false, false), BoutException);
   // Surprise true
-  options.set("bool_key3", "yes_this_is_a_bool", "code");
+  options.set("bool_key3", "yes_this_is_a_bool", "code2");
   EXPECT_NO_THROW(options.get("bool_key3", value3, false, false));
   EXPECT_EQ(value3, true);
 }
@@ -322,4 +348,15 @@ TEST_F(OptionsTest, MakeNestedSection) {
   EXPECT_NE(section2, section1);
   EXPECT_EQ(section2->getParent(), section1);
   EXPECT_EQ(section2->str(), "section1:section2");
+}
+
+TEST_F(OptionsTest, SetSameOptionTwice) {
+  Options options;
+  options.set("key", "value", "code");
+  EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
+  output_warn.disable();
+  options.set("key", "value", "code");
+  EXPECT_NO_THROW(options.forceSet("key", "new value", "code"));
+  EXPECT_NO_THROW(options.set("key", "value", "code",true));
+  output_warn.enable();
 }

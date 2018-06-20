@@ -59,15 +59,15 @@ public:
 
   // virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
 
-  virtual const Field3D interp_to(const Field3D &f, CELL_LOC loc) const override {
+  virtual const Field3D interp_to(const Field3D &f, CELL_LOC loc, REGION region) const override {
     ASSERT2(f.getMesh() == this);
     if (loc == f.getLocation() || loc == CELL_DEFAULT) {
       return f;
     } else {
-      return interp_to_do(f, loc);
+      return interp_to_do(f, loc, region);
     }
   }
-  virtual const Field2D interp_to(const Field2D &f, CELL_LOC loc) const override {
+  virtual const Field2D interp_to(const Field2D &f, CELL_LOC loc, REGION region) const override {
     return f;
   }
 
@@ -78,7 +78,7 @@ public:
   bool isAiolos = true;
 #endif
 private:
-  const Field3D interp_to_do(const Field3D &f, CELL_LOC loc) const;
+  const Field3D interp_to_do(const Field3D &f, CELL_LOC loc, REGION region) const;
 
 #include "aiolos_derivs.hxx"
 

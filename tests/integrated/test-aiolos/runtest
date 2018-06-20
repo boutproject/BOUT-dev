@@ -15,14 +15,14 @@ done
 
 ny=9
 #if ! ./test mesh:ny=$ny all:function=x^4+y^4+z diff_x:function=4*x^3 diff_y:function=4*y^3 ddx:first=C4 ddy:first=C4 MXG=2 MYG=2 > run.log.$ny
-if ! ./test mesh:ny=$ny all:function=x^4 diff_x:function=4*x^3 diff_y:function=0 mesh:ddx:first=C4 ddy:first=C4 MXG=2 MYG=2 mesh:nx=8 mesh:ny=2 mesh:nz=1 order=4> run.log.$ny
+if ! ./test all:function=x^4 diff_x:function=4*x^3 diff_y:function=0 mesh:ddx:first=C4 ddy:first=C4 MXG=2 MYG=2 mesh:nx=8 mesh:ny=$ny mesh:nz=1 order=4> run.log.$ny
 then
     cat run.log.$ny
     exit 1
 fi
 ny=20
 
-if ! ./test mesh:nx=$ny all:function='((x-Lx/2)^4)  -  (Lx*Lx/2)*((x-Lx/2)^2)' diff_x:function=0 diff_y:function=0 mesh:ddx:first=C4 MXG=2 MYG=1 mesh:nz=1 mesh:ny=1 diff_x:function='4*(x-Lx/2)^3-Lx^2*(x-Lx/2)' print=0 order=4> run.log.$ny
+if ! ./test mesh:nx=$ny all:function='((x-Lx/2)^4)  -  (Lx*Lx/2)*((x-Lx/2)^2)' diff_y:function=0 mesh:ddx:first=C4 MXG=2 MYG=1 mesh:nz=1 mesh:ny=1 diff_x:function='4*(x-Lx/2)^3-Lx^2*(x-Lx/2)' print=0 order=4> run.log.$ny
 #x-L/2)**4-L*L/2*(x-L/2)**2
 #if ! ./test mesh:nz=$ny all:function='(z-lz)^4-Lz^2*2*(z-Lz/2)^2' diff_x:function=0 diff_y:function=0 mesh:ddz:first=C4 MXG=1 MYG=1 mesh:nx=3 mesh:ny=1 diff_z:function='4*(z-Lz/2)^3-Lz^2*(z-Lz/2)' > run.log.$ny
 #   

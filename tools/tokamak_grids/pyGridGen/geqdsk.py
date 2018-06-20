@@ -138,7 +138,6 @@ class Geqdsk(object):
 ################################
 
 def main():
-        import sys
         from optparse import OptionParser
         parser = OptionParser()
         parser.add_option("-f", "--file", dest="filename",

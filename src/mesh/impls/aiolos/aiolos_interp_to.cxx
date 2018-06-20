@@ -425,7 +425,8 @@ void AiolosMesh::interp_to_LtoC_Field3D_z(BoutReal *__restrict__ result_ptr,
     }
   }
 }
-const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
+const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc,
+                                       REGION region) const {
   Field3D result((AiolosMesh *)this);
   result.allocate();
   Indices i0{0, 0, 0};
@@ -436,19 +437,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
       interp_to_LtoC_Field3D_x(&result[i0], &f[i0]);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
-      return interp_to(result, loc);
+      return interp_to(result, loc, region);
       break;
     case CELL_YLOW:
       interp_to_LtoC_Field3D_y(&result[i0], &f[i0]);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
-      return interp_to(result, loc);
+      return interp_to(result, loc, region);
       break;
     case CELL_ZLOW:
       interp_to_LtoC_Field3D_z(&result[i0], &f[i0]);
       result.setLocation(CELL_CENTRE);
       // return or interpolate again
-      return interp_to(result, loc);
+      return interp_to(result, loc, region);
       break;
     default:
       throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",
@@ -461,19 +462,19 @@ const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {
     interp_to_CtoL_Field3D_x(&result[i0], &f[i0]);
     result.setLocation(CELL_XLOW);
     // return or interpolate again
-    return interp_to(result, loc);
+    return interp_to(result, loc, region);
     break;
   case CELL_YLOW:
     interp_to_CtoL_Field3D_y(&result[i0], &f[i0]);
     result.setLocation(CELL_YLOW);
     // return or interpolate again
-    return interp_to(result, loc);
+    return interp_to(result, loc, region);
     break;
   case CELL_ZLOW:
     interp_to_CtoL_Field3D_z(&result[i0], &f[i0]);
     result.setLocation(CELL_ZLOW);
     // return or interpolate again
-    return interp_to(result, loc);
+    return interp_to(result, loc, region);
     break;
   default:
     throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",

@@ -82,20 +82,24 @@ void OptionINI::read(Options *options, const string &filename) {
 
       // Check for section
       size_t startpos, endpos;
-      startpos = buffer.find_first_of("[");
-      endpos   = buffer.find_last_of("]");
+      startpos = buffer.find_first_of('[');
+      endpos   = buffer.find_last_of(']');
 
       if (startpos != string::npos) {
         // A section header
-        if (endpos == string::npos) throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if (endpos == string::npos) {
+          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
 
         buffer = trim(buffer, "[]");
 
-        if(buffer.empty()) throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if(buffer.empty()) {
+          throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
         
         section = options;
         size_t scorepos;
-        while((scorepos = buffer.find_first_of(":")) != string::npos) {
+        while((scorepos = buffer.find_first_of(':')) != string::npos) {
           // sub-section
           string sectionname = trim(buffer.substr(0,scorepos));
           buffer = trim(buffer.substr(scorepos+1));
@@ -153,7 +157,7 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
 {
    // A key/value pair, separated by a '='
 
-  size_t startpos = buffer.find_first_of("=");
+  size_t startpos = buffer.find_first_of('=');
 
   if (startpos == string::npos) {
     // Just set a flag to true

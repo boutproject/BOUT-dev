@@ -644,7 +644,7 @@ def print_interp_to_code(header_only=False):
     if header_only:
         return
     print(
-        "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc) const {")
+        "const Field3D AiolosMesh::interp_to_do(const Field3D &f, CELL_LOC loc, REGION region) const {")
     print("  Field3D result((AiolosMesh*)this);")
     print("  result.allocate();")
     if not use_field_operator:
@@ -661,7 +661,7 @@ def print_interp_to_code(header_only=False):
                 "      interp_to_LtoC_%s_%s(&result[i0],&f[i0]);" % (field, d))
         print("      result.setLocation(CELL_CENTRE);")
         print("      // return or interpolate again")
-        print("      return interp_to(result,loc);")
+        print("      return interp_to(result, loc, region);")
         print("      break;")
     print("    default:")
     print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')
@@ -678,7 +678,7 @@ def print_interp_to_code(header_only=False):
                 "      interp_to_CtoL_%s_%s(&result[i0],&f[i0]);" % (field, d))
         print("      result.setLocation(CELL_%sLOW);" % d.upper())
         print("      // return or interpolate again")
-        print("      return interp_to(result,loc);")
+        print("      return interp_to(result, loc, region);")
         print("      break;")
     print("    default:")
     print('      throw BoutException("AiolosMesh::interp_to: Cannot interpolate to %s!",strLocation(loc));')

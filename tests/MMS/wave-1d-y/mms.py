@@ -9,9 +9,9 @@ from __future__ import print_function
 #
 #
 
-from sympy import symbols, cos, sin, diff
+from sympy import cos, sin, diff
 
-from boutdata.mms import exprToStr, y, t, pi
+from boutdata.mms import exprToStr, y, t
 
 # Define the manufactured solution
 

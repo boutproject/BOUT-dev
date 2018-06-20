@@ -102,8 +102,9 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 
   // Get the width of the boundary
 
-  int inbndry = 2, outbndry=2;
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  // If the flags to assign that only one guard cell should be used is set
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -166,12 +167,12 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     for(int ix=xs; ix <= xe; ix++) {
       // Take FFT in Z direction, apply shift, and put result in k1d
 
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
-        // Use the values in x0 in the boundary
-      rfft(x0[ix], mesh->LocalNz, std::begin(k1d));
-    }else {
-      rfft(rhs[ix], mesh->LocalNz, std::begin(k1d));
+      if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+         ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
+          // Use the values in x0 in the boundary
+        rfft(x0[ix], mesh->LocalNz, std::begin(k1d));
+      }else {
+        rfft(rhs[ix], mesh->LocalNz, std::begin(k1d));
       }
 
       // Copy into array, transposing so kz is first index

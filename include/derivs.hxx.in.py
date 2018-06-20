@@ -120,7 +120,7 @@ deprecated_methods="""
 //
 // Calculate first partial derivative in Z
 //
-//   $\partial / \partial z$
+//   \f$\partial / \partial z\f$
 //
 // @param[in] f       The field to be differentiated
 // @param[in] outloc  The cell location where the result is desired.

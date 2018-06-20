@@ -476,6 +476,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   virtual const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                            REGION region=RGN_NOBNDRY);
   /// Second derivative in X direction in index space
@@ -488,6 +489,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   virtual const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                            REGION region=RGN_NOBNDRY);
   /// Second derivative in Y direction in index space
@@ -500,6 +502,7 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
+  /// @param[in] region  The region of the grid for which the result is calculated.
   virtual const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
                            DIFF_METHOD method, REGION region);
   virtual const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
@@ -541,11 +544,12 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the X direction
+  /// @param[in] v       The velocity in the X direction
   /// @param[in] f       The field being advected
   /// @param[in] outloc  The cell location where the result is desired.
   ///                    The default is the same as \p f
   /// @param[in] method  The differencing method to use
+  /// @param[in] region  The region of the grid for which the result is calculated
   /// @param[in] region  The region of the grid for which the result is calculated.
   virtual const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region = RGN_NOBNDRY);
@@ -558,7 +562,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Y direction
+  /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -574,7 +578,7 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Z direction
+  /// @param[in] v  The velocity in the Z direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
@@ -602,8 +606,8 @@ class Mesh {
   /// Interpolate to a give cell location
   /// @param[in] var  The field
   /// @param[in] loc  The wanted location of the field
-  virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc) const;
-  virtual const Field2D interp_to(const Field2D &var, CELL_LOC loc) const;
+  virtual const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) const;
+  virtual const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) const;
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
@@ -652,18 +656,18 @@ class Mesh {
   }
   Region<Ind3D> &getRegion3D(const std::string &region_name);
   Region<Ind2D> &getRegion2D(const std::string &region_name);
-  
+
   /// Add a new region to the region_map for the data iterator
   ///
   /// Outputs an error message if region_name already exists
-  void addRegion(const std::string &region_name, Region<> region){
+  void addRegion(const std::string &region_name, const Region<> &region) {
     return addRegion3D(region_name, region);
   }
-  void addRegion(const std::string &region_name, Region<Ind2D> region){
+  void addRegion(const std::string &region_name, const Region<Ind2D> &region) {
     return addRegion2D(region_name, region);
   }
-  void addRegion3D(const std::string &region_name, Region<Ind3D> region);
-  void addRegion2D(const std::string &region_name, Region<Ind2D> region);
+  void addRegion3D(const std::string &region_name, const Region<Ind3D> &region);
+  void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
   Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){
@@ -684,7 +688,12 @@ class Mesh {
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
-
+  
+  /*!
+   * Return the parallel transform, setting it if need be
+   */
+  ParallelTransform& getParallelTransform();
+  
  protected:
   
   GridDataSource *source; ///< Source for grid data
@@ -693,10 +702,6 @@ class Mesh {
 
   Options *options; ///< Mesh options section
   
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
 
   PTptr transform; ///< Handles calculation of yup and ydown
 
@@ -706,10 +711,10 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
-  // Initialise derivatives
+  /// Initialise derivatives
   virtual void derivs_init(Options* options);
   
-  // Loop over mesh, applying a stencil in the X direction
+  /// Loop over mesh, applying a stencil in the X direction
   virtual const Field2D applyXdiff(const Field2D &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);

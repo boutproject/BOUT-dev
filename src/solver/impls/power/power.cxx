@@ -74,9 +74,6 @@ int PowerSolver::run() {
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;
