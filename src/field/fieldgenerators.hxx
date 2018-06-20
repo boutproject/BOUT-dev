@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+#include "bout/constants.hxx"
+
 using std::list;
 
 //////////////////////////////////////////////////////////
@@ -335,6 +337,29 @@ private:
   std::shared_ptr<FieldGenerator> X;
   // Other input arguments to the FieldTanhHat
   std::shared_ptr<FieldGenerator> width, center, steepness;
+};
+
+/// Real y - found by integrating dy
+/// Only uses the global mesh :(
+class FieldRealY : public FieldGenerator {
+public:
+  FieldRealY() {
+    }
+  FieldRealY(const list<std::shared_ptr<FieldGenerator> > args) {}
+  std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args) {
+    if(args.size() != 0) {
+      throw ParseException("Real y function must not have any input");
+    }
+    return std::shared_ptr<FieldGenerator>( new  FieldRealY());
+  }
+  BoutReal generate(double x, double y, double z, double t) override {
+    throw BoutException("I am not useful without the mesh!");
+  }
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
+private:
+  std::list<BoutReal *> cache;
+  std::list<Mesh *> cached;
+  BoutReal * doCache(Mesh * localmesh);
 };
 
 #endif // __FIELDGENERATORS_H__

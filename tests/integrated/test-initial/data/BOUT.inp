@@ -18,6 +18,8 @@ symmetricGlobalY = false
 nx = 7
 ny = 12
 
+staggerGrids=True
+
 [All]
 scale = 1.0
 
@@ -123,3 +125,6 @@ function = erf(x)
 
 [TanhHat]
 function = TanhHat(x, 0.5, 0.4, 0.3)
+
+[realy]
+function = realy()

@@ -1,4 +1,3 @@
-
 #include "fieldgenerators.hxx"
 
 #include <bout/constants.hxx>
@@ -277,4 +276,80 @@ BoutReal FieldTanhHat::generate(double x, double y, double z, double t) {
                  tanh( s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
                - tanh( s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
              );
+}
+
+BoutReal FieldRealY::generate(double x, double y, double z, double t,
+                              const DataIterator &i, Mesh *localmesh) {
+  BoutReal *offset = doCache(localmesh);
+  int gny = localmesh->GlobalNy - mesh->ystart * 2;
+  int iy = y / 2 / PI * gny * 2 + 10.5;
+  BoutReal res;
+  Field2D &dy = localmesh->coordinates()->dy;
+  res = offset[i.x];
+  for (int y = 0; y < i.y; ++y) {
+    res += dy(i.x, y);
+  }
+  if (iy % 2) { // centered
+    res -= dy[i] * .5;
+  } else {
+    // res+=dy[i];
+  }
+  // printf("%g %8g %4d %4d %6g\n",offset[i.x],y/2/PI*gny*2,i.y,iy,res);
+  return res;
+}
+
+BoutReal *FieldRealY::doCache(Mesh *localmesh) {
+  auto it = cache.begin();
+  for (const auto &cm : cached) {
+    if (cm == localmesh) {
+      return *it;
+    }
+    ++it;
+  }
+  cached.push_back(localmesh);
+  BoutReal *offset = (BoutReal *)malloc(sizeof(BoutReal) * localmesh->LocalNx);
+  BoutReal tmp[localmesh->LocalNx];
+  BoutReal dummy1, dummy2;
+  if (localmesh->firstY()) {
+    for (int x = 0; x < localmesh->LocalNx; ++x) {
+      offset[x] = 0;
+      for (int y = localmesh->ystart - 1; y >= 0; --y) {
+        offset[x] -= localmesh->coordinates()->dy(x, y);
+      }
+    }
+  } else {
+    localmesh->wait(localmesh->receiveFromProc(localmesh->getXProcIndex(),
+                                               localmesh->getYProcIndex() - 1, offset,
+                                               localmesh->LocalNx, 666));
+    // printf("%d: receive %g\n",localmesh->getYProcIndex(),offset[localmesh->xstart]);
+  }
+  if (!localmesh->lastY()) {
+    for (int x = 0; x < localmesh->LocalNx; ++x) {
+      tmp[x] = offset[x];
+      for (int y = 0; y < localmesh->LocalNy - localmesh->ystart * 2; ++y) {
+        tmp[x] += localmesh->coordinates()->dy(x, y);
+      }
+    }
+    // printf("%d: send %g\n",localmesh->getYProcIndex(),tmp[localmesh->xstart]);
+    MPI_Request out =
+        localmesh->sendToProc(localmesh->getXProcIndex(), localmesh->getYProcIndex() + 1,
+                              tmp, localmesh->LocalNx, 666);
+    MPI_Status stat;
+    MPI_Wait(&out, &stat);
+    // ASSERT2(stat == MPI_SUCCESS);
+  }
+  // dummy1=localmesh->getYProcIndex();
+  // dummy2=-1;
+  // if (! localmesh->firstY()){
+  //   localmesh->sendToProc(localmesh->getXProcIndex(),
+  //   localmesh->getYProcIndex()-1,&dummy1,1,667);
+  // }
+  // if (! localmesh->lastY()) {
+  //   localmesh->wait(localmesh->receiveFromProc(localmesh->getXProcIndex(),
+  //   localmesh->getYProcIndex()+1,&dummy2,1,667));
+  // }
+  // printf("%d: debug %g %g\n",localmesh->getYProcIndex(),dummy1,dummy2);
+
+  cache.push_back(offset);
+  return offset;
 }

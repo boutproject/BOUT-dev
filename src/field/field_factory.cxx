@@ -90,6 +90,9 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
 
   // TanhHat function
   addGenerator("tanhhat", std::shared_ptr<FieldGenerator>( new FieldTanhHat(NULL, NULL, NULL, NULL)));
+
+  // RealY
+  addGenerator("realy", std::shared_ptr<FieldGenerator>( new FieldRealY()));
 }
 
 FieldFactory::~FieldFactory() {
@@ -127,7 +130,8 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
       result[i] = gen->generate(xpos,
                                 TWOPI*localmesh->GlobalY(i.y),
                                 0.0,  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
     break;
   }
@@ -137,7 +141,8 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
                                 0.0,  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
     break;
   }
@@ -146,7 +151,8 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 0.0,  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
   }
   };
@@ -186,7 +192,8 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
       result[i] = gen->generate(xpos,
                                 TWOPI*localmesh->GlobalY(i.y),
                                 TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
     break;
   }
@@ -196,7 +203,8 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
                                 TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
     break;
   }
@@ -205,7 +213,8 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
     break;
   }
@@ -214,7 +223,8 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+                                t, // T
+                                i,localmesh);
     }
   }
   };

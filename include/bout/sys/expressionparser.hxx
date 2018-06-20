@@ -41,6 +41,8 @@ class ParseException;
 #include <memory>
 #include <exception>
 
+class Mesh;
+
 //////////////////////////////////////////////////////////
 
 /*!
@@ -61,6 +63,11 @@ public:
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   virtual double generate(double x, double y, double z, double t) = 0;
+
+  /// Some function require the current mesh
+  virtual double generate(double x, double y, double z, double t, const DataIterator & i,  Mesh * mesh){
+    return this->generate(x,y,z,t);
+  }
 
   /// Create a string representation of the generator, for debugging output
   virtual const std::string str() {return std::string("?");}

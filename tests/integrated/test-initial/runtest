@@ -120,6 +120,12 @@ def min(*args):
         current = np.minimum(arg, current)
     return current
 
+def realy(*args):
+    res=np.zeros((7,14,4))
+    for y in range(-1,13):
+        res[:,y+1,:]=y
+    return res
+
 # Rename functions to match BOUT++ naming
 # Mostly just alternative names to numpy functions
 abs = np.abs
