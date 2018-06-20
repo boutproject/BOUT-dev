@@ -90,7 +90,7 @@ private:
 class FieldFunction : public FieldGenerator {
 public:
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  double generate(double x, double y, double z, double t) {
+  double generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) override {
     return func(t, x, y, z);
   }
 private:
@@ -104,7 +104,7 @@ private:
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t), const DataIterator & UNUSED(i), Mesh *UNUSED(localmesh)) override{
     return 0.0;
   }
   std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {

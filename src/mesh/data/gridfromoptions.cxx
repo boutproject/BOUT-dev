@@ -25,7 +25,7 @@ bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
   return true;
 }
 
-bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
+bool GridFromOptions::get(Mesh *m, BoutReal &rval, const string &name) {
   if(!hasVar(name)) {
     rval = 0.0;
     return false;
@@ -37,7 +37,8 @@ bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
 
   // Parse, and evaluate with x,y,z,t = 0
   std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
-  rval = gen->generate(0.0, 0.0, 0.0, 0.0);
+  DataIterator i(0,0,0,0,0,0);
+  rval = gen->generate(0.0, 0.0, 0.0, 0.0, i ,m);
 
   return true;
 }
@@ -94,20 +95,23 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
 
   switch(dir) {
   case GridDataSource::X: {
+    DataIterator i(0,0,0,len,0,0);
     for(int x=0;x<len;x++){
-      var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0);
+      var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0,i,m);
     }
     break;
   }
   case GridDataSource::Y : {
+    DataIterator i(0,0,0,0,len,0);
     for(int y=0;y<len;y++){
-      var[y] = gen->generate(0.0, TWOPI*m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
+      var[y] = gen->generate(0.0, TWOPI*m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0,i,m);
     }
     break;
   }
   case GridDataSource::Z : {
+    DataIterator i(0,0,0,0,0,len);
     for(int z=0;z<len;z++){
-      var[z] = gen->generate(0.0, 0.0, TWOPI*(static_cast<BoutReal>(z) + offset) / static_cast<BoutReal>(m->LocalNz), 0.0);
+      var[z] = gen->generate(0.0, 0.0, TWOPI*(static_cast<BoutReal>(z) + offset) / static_cast<BoutReal>(m->LocalNz), 0.0,i,m);
     }
     break;
   }

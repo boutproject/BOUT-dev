@@ -91,12 +91,13 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   // TanhHat function
   addGenerator("tanhhat", std::shared_ptr<FieldGenerator>( new FieldTanhHat(NULL, NULL, NULL, NULL)));
 
-  // RealY
+  // Real X and Real Y
+  addGenerator("realx", std::shared_ptr<FieldGenerator>( new FieldRealX()));
+
   addGenerator("realy", std::shared_ptr<FieldGenerator>( new FieldRealY()));
 }
 
 FieldFactory::~FieldFactory() {
-
 }
 
 const Field2D FieldFactory::create2D(const string &value, Options *opt,

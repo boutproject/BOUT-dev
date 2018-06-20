@@ -25,10 +25,18 @@ using std::list;
 class FieldValuePtr : public FieldGenerator {
 public:
   FieldValuePtr(BoutReal *val) : ptr(val) {}
-  std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new  FieldValuePtr(ptr)); }
-  BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return *ptr; }
+  std::shared_ptr<FieldGenerator>
+  clone(const list<std::shared_ptr<FieldGenerator>> UNUSED(args)) {
+    return std::shared_ptr<FieldGenerator>(new FieldValuePtr(ptr));
+  }
+  BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                    double UNUSED(t), const DataIterator &UNUSED(i),
+                    Mesh *UNUSED(localmesh)) {
+    return *ptr;
+  }
+
 private:
-  BoutReal *ptr; 
+  BoutReal *ptr;
 };
 
 //////////////////////////////////////////////////////////
@@ -40,7 +48,7 @@ public:
   FieldSin(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
   const std::string str() {return std::string("sin(")+gen->str()+std::string(")");}
 private:
   std::shared_ptr<FieldGenerator> gen;
@@ -52,7 +60,7 @@ public:
   FieldCos(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 
   const std::string str() {return std::string("cos(")+gen->str()+std::string(")");}
 private:
@@ -71,8 +79,8 @@ public:
     }
     return std::shared_ptr<FieldGenerator>( new  FieldGenOneArg<Op>(args.front()));
   }
-  BoutReal generate(double x, double y, double z, double t) {
-    return Op(gen->generate(x,y,z,t));
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
+    return Op(gen->generate(x,y,z,t,i,localmesh));
   }
   const std::string str() {return std::string("func(")+gen->str()+std::string(")");}
 private:
@@ -91,8 +99,8 @@ public:
     }
     return std::shared_ptr<FieldGenerator>( new  FieldGenTwoArg<Op>(args.front(), args.back()));
   }
-  BoutReal generate(double x, double y, double z, double t) {
-    return Op(A->generate(x,y,z,t), B->generate(x,y,z,t));
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
+    return Op(A->generate(x,y,z,t,i,localmesh), B->generate(x,y,z,t,i,localmesh));
   }
   const std::string str() {return std::string("cos(")+A->str()+","+B->str()+std::string(")");}
 private:
@@ -111,10 +119,10 @@ public:
     }
     throw ParseException("Incorrect number of arguments to atan function. Expecting 1 or 2, got %d", args.size());
   }
-  BoutReal generate(double x, double y, double z, double t) {
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
     if(B == nullptr)
-      return atan(A->generate(x,y,z,t));
-    return atan2(A->generate(x,y,z,t), B->generate(x,y,z,t));
+      return atan(A->generate(x,y,z,t,i,localmesh));
+    return atan2(A->generate(x,y,z,t,i,localmesh), B->generate(x,y,z,t,i,localmesh));
   }
 private:
   std::shared_ptr<FieldGenerator> A, B;
@@ -126,7 +134,7 @@ public:
   FieldSinh(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -137,7 +145,7 @@ public:
   FieldCosh(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -148,7 +156,7 @@ public:
   FieldTanh(std::shared_ptr<FieldGenerator> g=nullptr) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -159,7 +167,7 @@ public:
   FieldGaussian(std::shared_ptr<FieldGenerator> xin, std::shared_ptr<FieldGenerator> sin) : X(xin), s(sin) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> X, s;
 };
@@ -170,7 +178,7 @@ public:
   FieldAbs(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -181,7 +189,7 @@ public:
   FieldSqrt(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -192,7 +200,7 @@ public:
   FieldHeaviside(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
   const std::string str() {return std::string("H(")+gen->str()+std::string(")");}
 private:
   std::shared_ptr<FieldGenerator> gen;
@@ -204,7 +212,7 @@ public:
   FieldErf(std::shared_ptr<FieldGenerator> g) : gen(g) {}
 
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::shared_ptr<FieldGenerator> gen;
 };
@@ -220,11 +228,11 @@ public:
     }
     return std::shared_ptr<FieldGenerator>( new  FieldMin(args));
   }
-  BoutReal generate(double x, double y, double z, double t) {
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
     list<std::shared_ptr<FieldGenerator> >::iterator it=input.begin();
-    BoutReal result = (*it)->generate(x,y,z,t);
+    BoutReal result = (*it)->generate(x,y,z,t,i,localmesh);
     for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x,y,z,t);
+      BoutReal val = (*it)->generate(x,y,z,t,i,localmesh);
       if(val < result)
         result = val;
     }
@@ -245,11 +253,11 @@ public:
     }
     return std::shared_ptr<FieldGenerator>( new  FieldMax(args));
   }
-  BoutReal generate(double x, double y, double z, double t) {
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
     list<std::shared_ptr<FieldGenerator> >::iterator it=input.begin();
-    BoutReal result = (*it)->generate(x,y,z,t);
+    BoutReal result = (*it)->generate(x,y,z,t,i,localmesh);
     for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x,y,z,t);
+      BoutReal val = (*it)->generate(x,y,z,t,i,localmesh);
       if(val > result)
         result = val;
     }
@@ -269,8 +277,8 @@ public:
       throw BoutException("round function must have one input");
     return std::shared_ptr<FieldGenerator>( new  FieldRound(args.front()));
   }
-  BoutReal generate(double x, double y, double z, double t) {
-    BoutReal val = gen->generate(x,y,z,t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) {
+    BoutReal val = gen->generate(x,y,z,t,i,localmesh);
     if(val > 0.0) {
       return static_cast<int>(val + 0.5);
     }
@@ -291,7 +299,7 @@ class FieldBallooning : public FieldGenerator {
 public:
   FieldBallooning(Mesh *m, std::shared_ptr<FieldGenerator> a = nullptr, int n = 3) : mesh(m), arg(a), ball_n(n) {}
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   Mesh *mesh;
   std::shared_ptr<FieldGenerator> arg;
@@ -306,7 +314,7 @@ class FieldMixmode : public FieldGenerator {
 public:
   FieldMixmode(std::shared_ptr<FieldGenerator> a = nullptr, BoutReal seed = 0.5);
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   /// Generate a random number between 0 and 1 (exclusive)
   /// given an arbitrary seed value
@@ -331,7 +339,7 @@ public:
         : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args);
-  BoutReal generate(double x, double y, double z, double t);
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   // The (x,y,z,t) field
   std::shared_ptr<FieldGenerator> X;
@@ -340,21 +348,47 @@ private:
 };
 
 /// Real y - found by integrating dy
-/// Only uses the global mesh :(
 class FieldRealY : public FieldGenerator {
 public:
   FieldRealY() {
+    printf("realy ctor\n");
+  }
+  FieldRealY(const list<std::shared_ptr<FieldGenerator> > args) {
+    printf("realy ctor args\n");
+  }
+  std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args){ 
+    printf("realy clone\n");
+    if(args.size() != 0) {
+      throw ParseException("Real y function must not have any input");
     }
-  FieldRealY(const list<std::shared_ptr<FieldGenerator> > args) {}
+    return std::shared_ptr<FieldGenerator>( new  FieldRealY());
+  }
+  //BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override {
+  //  throw BoutException("I am not useful without the mesh!");
+  //}
+  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
+private:
+  std::list<BoutReal *> cache;
+  std::list<Mesh *> cached;
+  BoutReal * doCache(Mesh * localmesh);
+};
+
+/// Real x - found by integrating dx
+class FieldRealX : public FieldGenerator {
+public:
+  FieldRealX() {
+    }
+  FieldRealX(const list<std::shared_ptr<FieldGenerator> > args) {
+  }
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args) {
     if(args.size() != 0) {
       throw ParseException("Real y function must not have any input");
     }
     return std::shared_ptr<FieldGenerator>( new  FieldRealY());
   }
-  BoutReal generate(double x, double y, double z, double t) override {
-    throw BoutException("I am not useful without the mesh!");
-  }
+  //  BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override {
+  //  throw BoutException("I am not useful without the mesh!");
+  //}
   BoutReal generate(double x, double y, double z, double t, const DataIterator & i, Mesh * localmesh) override;
 private:
   std::list<BoutReal *> cache;

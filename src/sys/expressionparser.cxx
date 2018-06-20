@@ -45,7 +45,7 @@ namespace { // These classes only visible in this file
   class FieldX : public FieldGenerator {
   public:
     std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldX()); }
-    double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
+    double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t), const DataIterator & UNUSED(i), Mesh *UNUSED(localmesh)) {
       return x;
     }
     const std::string str() {return std::string("x");}
@@ -54,7 +54,7 @@ namespace { // These classes only visible in this file
   class FieldY : public FieldGenerator {
   public:
     std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldY()); }
-    double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
+    double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t), const DataIterator & UNUSED(i), Mesh *UNUSED(localmesh)) {
       return y;
     }
     const std::string str() {return std::string("y");}
@@ -63,7 +63,7 @@ namespace { // These classes only visible in this file
   class FieldZ : public FieldGenerator {
   public:
     std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldZ()); }
-    double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
+    double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t), const DataIterator & UNUSED(i), Mesh *UNUSED(localmesh)) {
       return z;
     }
     const std::string str() {return std::string("z");}
@@ -72,7 +72,7 @@ namespace { // These classes only visible in this file
   class FieldT : public FieldGenerator {
   public:
     std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new FieldT()); }
-    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
+    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t, const DataIterator & UNUSED(i), Mesh *UNUSED(localmesh)) {
       return t;
     }
     const std::string str() {return std::string("t");}
@@ -89,8 +89,8 @@ namespace { // These classes only visible in this file
       }
       return std::shared_ptr<FieldGenerator>( new FieldUnary(args.front()));
     }
-    double generate(double x, double y, double z, double t) {
-      return -gen->generate(x,y,z,t);
+    double generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+      return -gen->generate(x,y,z,t,i,localmesh);
     }
     const std::string str() {return std::string("(-")+gen->str()+std::string(")");}
   private:
@@ -105,9 +105,9 @@ std::shared_ptr<FieldGenerator> FieldBinary::clone(const list<std::shared_ptr<Fi
   return std::shared_ptr<FieldGenerator>( new FieldBinary(args.front(), args.back(), op));
 }
 
-BoutReal FieldBinary::generate(double x, double y, double z, double t) {
-  BoutReal lval = lhs->generate(x,y,z,t);
-  BoutReal rval = rhs->generate(x,y,z,t);
+BoutReal FieldBinary::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  BoutReal lval = lhs->generate(x,y,z,t,i,localmesh);
+  BoutReal rval = rhs->generate(x,y,z,t,i,localmesh);
   switch(op) {
   case '+': return lval + rval;
   case '-': return lval - rval;

@@ -13,8 +13,8 @@ std::shared_ptr<FieldGenerator> FieldSin::clone(const list<std::shared_ptr<Field
   return std::shared_ptr<FieldGenerator>( new FieldSin(args.front()));
 }
 
-BoutReal FieldSin::generate(double x, double y, double z, double t) {
-  return sin(gen->generate(x,y,z,t));
+BoutReal FieldSin::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return sin(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldCos::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -25,8 +25,8 @@ std::shared_ptr<FieldGenerator> FieldCos::clone(const list<std::shared_ptr<Field
   return std::shared_ptr<FieldGenerator>( new FieldCos(args.front()));
 }
 
-BoutReal FieldCos::generate(double x, double y, double z, double t) {
-  return cos(gen->generate(x,y,z,t));
+BoutReal FieldCos::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return cos(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldSinh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -37,8 +37,8 @@ std::shared_ptr<FieldGenerator> FieldSinh::clone(const list<std::shared_ptr<Fiel
   return std::shared_ptr<FieldGenerator>( new FieldSinh(args.front()));
 }
 
-BoutReal FieldSinh::generate(double x, double y, double z, double t) {
-  return sinh(gen->generate(x,y,z,t));
+BoutReal FieldSinh::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return sinh(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldCosh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -49,8 +49,8 @@ std::shared_ptr<FieldGenerator> FieldCosh::clone(const list<std::shared_ptr<Fiel
   return std::shared_ptr<FieldGenerator>( new FieldCosh(args.front()));
 }
 
-BoutReal FieldCosh::generate(double x, double y, double z, double t) {
-  return cosh(gen->generate(x,y,z,t));
+BoutReal FieldCosh::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return cosh(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldTanh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -60,8 +60,8 @@ std::shared_ptr<FieldGenerator> FieldTanh::clone(const list<std::shared_ptr<Fiel
   return std::shared_ptr<FieldGenerator>( new FieldTanh(args.front()));
 }
 
-BoutReal FieldTanh::generate(double x, double y, double z, double t) {
-  return tanh(gen->generate(x,y,z,t));
+BoutReal FieldTanh::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return tanh(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldGaussian::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -79,9 +79,9 @@ std::shared_ptr<FieldGenerator> FieldGaussian::clone(const list<std::shared_ptr<
   return std::shared_ptr<FieldGenerator>( new FieldGaussian(xin, sin));
 }
 
-BoutReal FieldGaussian::generate(double x, double y, double z, double t) {
-  BoutReal sigma = s->generate(x,y,z,t);
-  return exp(-SQ(X->generate(x,y,z,t)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+BoutReal FieldGaussian::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  BoutReal sigma = s->generate(x,y,z,t,i,localmesh);
+  return exp(-SQ(X->generate(x,y,z,t,i,localmesh)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
 std::shared_ptr<FieldGenerator> FieldAbs::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -92,8 +92,8 @@ std::shared_ptr<FieldGenerator> FieldAbs::clone(const list<std::shared_ptr<Field
   return std::shared_ptr<FieldGenerator>( new FieldAbs(args.front()));
 }
 
-BoutReal FieldAbs::generate(double x, double y, double z, double t) {
-  return fabs(gen->generate(x,y,z,t));
+BoutReal FieldAbs::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return fabs(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldSqrt::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -104,8 +104,8 @@ std::shared_ptr<FieldGenerator> FieldSqrt::clone(const list<std::shared_ptr<Fiel
   return std::shared_ptr<FieldGenerator>( new FieldSqrt(args.front()));
 }
 
-BoutReal FieldSqrt::generate(double x, double y, double z, double t) {
-  return sqrt(gen->generate(x,y,z,t));
+BoutReal FieldSqrt::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return sqrt(gen->generate(x,y,z,t,i,localmesh));
 }
 
 std::shared_ptr<FieldGenerator> FieldHeaviside::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -116,8 +116,8 @@ std::shared_ptr<FieldGenerator> FieldHeaviside::clone(const list<std::shared_ptr
   return std::shared_ptr<FieldGenerator>( new FieldHeaviside(args.front()));
 }
 
-BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
-  return (gen->generate(x,y,z,t) > 0.0) ? 1.0 : 0.0;
+BoutReal FieldHeaviside::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return (gen->generate(x,y,z,t,i,localmesh) > 0.0) ? 1.0 : 0.0;
 }
 
 std::shared_ptr<FieldGenerator> FieldErf::clone(const list<std::shared_ptr<FieldGenerator> > args) {
@@ -128,8 +128,8 @@ std::shared_ptr<FieldGenerator> FieldErf::clone(const list<std::shared_ptr<Field
   return std::shared_ptr<FieldGenerator>( new FieldErf(args.front()));
 }
 
-BoutReal FieldErf::generate(double x, double y, double z, double t) {
-  return erf(gen->generate(x,y,z,t));
+BoutReal FieldErf::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
+  return erf(gen->generate(x,y,z,t,i,localmesh));
 }
 
 //////////////////////////////////////////////////////////
@@ -142,7 +142,8 @@ std::shared_ptr<FieldGenerator> FieldBallooning::clone(const list<std::shared_pt
   case 2: {
     // Second optional argument is ball_n, an integer
     // This should probably warn if arg isn't constant
-    n = ROUND( args.back()->generate(0,0,0,0) );
+    DataIterator i(0,0,0,0,0,0);
+    n = ROUND( args.back()->generate(0,0,0,0,i,mesh) );
   } // Fall through
   case 1: {
     return std::shared_ptr<FieldGenerator>( new FieldBallooning(mesh, args.front(), n));
@@ -152,7 +153,7 @@ std::shared_ptr<FieldGenerator> FieldBallooning::clone(const list<std::shared_pt
   throw ParseException("ballooning function must have one or two arguments");
 }
 
-BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
+BoutReal FieldBallooning::generate(double x, double y, double z, double t, const DataIterator &di, Mesh *localmesh) {
   if(!mesh)
     throw BoutException("ballooning function needs a valid mesh");
   if(ball_n < 1)
@@ -168,14 +169,14 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
   if(mesh->periodicY(jx, ts)) {
     // Start with the value at this point
-    BoutReal value = arg->generate(x,y,z,t);
+    BoutReal value = arg->generate(x,y,z,t,di,localmesh);
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->coordinates()->zlength(),t);
+      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->coordinates()->zlength(),t,di,localmesh);
 
       // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->coordinates()->zlength(),t);
+      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->coordinates()->zlength(),t,di,localmesh);
     }
     return value;
   }
@@ -200,7 +201,8 @@ std::shared_ptr<FieldGenerator> FieldMixmode::clone(const list<std::shared_ptr<F
   switch(args.size()) {
   case 2: {
     // Second optional argument is the seed, which should be a constant
-    seed = args.back()->generate(0,0,0,0);
+    DataIterator i(0,0,0,0,0,0);
+    seed = args.back()->generate(0,0,0,0,i,mesh);
   } // Fall through
   case 1: {
     return std::shared_ptr<FieldGenerator>( new FieldMixmode(args.front(), seed));
@@ -210,14 +212,14 @@ std::shared_ptr<FieldGenerator> FieldMixmode::clone(const list<std::shared_ptr<F
   throw ParseException("mixmode function must have one or two arguments");
 }
 
-BoutReal FieldMixmode::generate(double x, double y, double z, double t) {
+BoutReal FieldMixmode::generate(double x, double y, double z, double t, const DataIterator &di, Mesh *localmesh) {
   BoutReal result = 0.0;
 
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
     result += ( 1./SQ(1. + abs(i - 4)) ) *
-      cos(i * arg->generate(x,y,z,t) + phase[i]);
+      cos(i * arg->generate(x,y,z,t,di,localmesh) + phase[i]);
   }
 
   return result;
@@ -267,14 +269,14 @@ std::shared_ptr<FieldGenerator> FieldTanhHat::clone(const list<std::shared_ptr<F
   return std::shared_ptr<FieldGenerator>( new FieldTanhHat(xin, widthin, centerin, steepnessin));
 }
 
-BoutReal FieldTanhHat::generate(double x, double y, double z, double t) {
+BoutReal FieldTanhHat::generate(double x, double y, double z, double t, const DataIterator &i, Mesh *localmesh) {
   // The following are constants
-  BoutReal w = width    ->generate(0,0,0,0);
-  BoutReal c = center   ->generate(0,0,0,0);
-  BoutReal s = steepness->generate(0,0,0,0);
+  BoutReal w = width    ->generate(0,0,0,0,i,localmesh);
+  BoutReal c = center   ->generate(0,0,0,0,i,localmesh);
+  BoutReal s = steepness->generate(0,0,0,0,i,localmesh);
   return 0.5*(
-                 tanh( s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
-               - tanh( s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
+                 tanh( s*(X->generate(x,y,z,t,i,localmesh) - (c - 0.5*w)) )
+               - tanh( s*(X->generate(x,y,z,t,i,localmesh) - (c + 0.5*w)) )
              );
 }
 
@@ -350,6 +352,65 @@ BoutReal *FieldRealY::doCache(Mesh *localmesh) {
   // }
   // printf("%d: debug %g %g\n",localmesh->getYProcIndex(),dummy1,dummy2);
 
+  cache.push_back(offset);
+  return offset;
+}
+
+BoutReal FieldRealX::generate(double x, double y, double z, double t,
+                              const DataIterator &i, Mesh *localmesh) {
+  BoutReal *offset = doCache(localmesh);
+  int gnx = localmesh->GlobalNx - mesh->xstart * 2;
+  int ix = x / 2 / PI * gnx * 2 + 10.5;
+  BoutReal res;
+  Field2D &dx = localmesh->coordinates()->dx;
+  res = offset[i.y];
+  for (int x = 0; x < i.x; ++x) {
+    res += dx(x, i.y);
+  }
+  if (ix % 2) { // centered
+    res -= dx[i] * .5;
+  }
+  printf("%g %8g %4d %4d %6g\n",offset[i.x],x/2/PI*gnx*2,i.x,ix,res);
+  return res;
+}
+
+BoutReal *FieldRealX::doCache(Mesh *localmesh) {
+  auto it = cache.begin();
+  for (const auto &cm : cached) {
+    if (cm == localmesh) {
+      return *it;
+    }
+    ++it;
+  }
+  cached.push_back(localmesh);
+  BoutReal *offset = (BoutReal *)malloc(sizeof(BoutReal) * localmesh->LocalNy);
+  BoutReal tmp[localmesh->LocalNy];
+  if (localmesh->firstX()) {
+    for (int y = 0; y < localmesh->LocalNy; ++y) {
+      offset[y] = 0;
+      for (int x = localmesh->xstart - 1; x >= 0; --x) {
+        offset[y] -= localmesh->coordinates()->dx(x, y);
+      }
+    }
+  } else {
+    localmesh->wait(localmesh->receiveFromProc(localmesh->getXProcIndex() - 1,
+                                               localmesh->getYProcIndex(), offset,
+                                               localmesh->LocalNy, 667));
+  }
+  if (!localmesh->lastX()) {
+    for (int y = 0; y < localmesh->LocalNy; ++y) {
+      tmp[y] = offset[y];
+      for (int x = 0; x < localmesh->LocalNx - localmesh->xstart * 2; ++x) {
+        tmp[y] += localmesh->coordinates()->dx(x, y);
+      }
+    }
+    MPI_Request out =
+        localmesh->sendToProc(localmesh->getXProcIndex() + 1, localmesh->getYProcIndex(),
+                              tmp, localmesh->LocalNx, 667);
+    MPI_Status stat;
+    MPI_Wait(&out, &stat);
+    // ASSERT2(stat == MPI_SUCCESS);
+  }
   cache.push_back(offset);
   return offset;
 }
