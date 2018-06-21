@@ -43,7 +43,7 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   //  if (!opt) opts = Options::getRoot()->getSection("petscamg");
   //  else opts=opt;
   opts = Options::getRoot()->getSection("petscamg");
-  opts->get("rtol",rtol,pow(10.0,-15),true);
+  opts->get("rtol",rtol,pow(10.0,-11),true);
   opts->get("atol",atol,pow(10.0,-25),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
   opts->get("maxits",maxits,200000,true);

@@ -63,11 +63,8 @@ public:
   LaplacePetscAmg(Options *opt = NULL);
   ~LaplacePetscAmg(){
     ISLocalToGlobalMappingDestroy(&mgmapping);
-    KSPDestroy( &ksp );
     VecDestroy( &xs );
     VecDestroy( &bs );
-    MatDestroy( &MatA );
-    if(MatP != NULL) MatDestroy( &MatP );
     //    delete [] ksp;
     //    delete [] pc;
     delete [] gindices;

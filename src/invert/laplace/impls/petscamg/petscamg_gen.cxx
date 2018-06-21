@@ -155,20 +155,20 @@ BOUT_OMP(for)
         icc = (i+lxs-1)*nzt+k+lzs;
         icol = gindices[icc];
         val = lval[1];
-	//        output<<"1V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output<<"1V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
         if((k == 0) && (lzs == 0))  icc = (i+lxs)*nzt-1;
         else icc = (i-1+lxs)*nzt+k+lzs-1;
         icol = gindices[icc];
         val = lval[0];
-	//        output <<"0V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output <<"0V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
         if((k == Nz_local-1) && (lzs == 0))  icc = (i-1+lxs)*nzt;
         else icc = (i-1+lxs)*nzt+k+lzs+1;
         icol = gindices[icc];
         val = lval[2];
-	//        output <<"2V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output <<"2V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
       }
       if((xProcI == xNP-1) && (i == Nx_local-1)) {
@@ -197,38 +197,38 @@ BOUT_OMP(for)
         icc = (i+lxs+1)*nzt+k+lzs;
         icol = gindices[icc];
         val = lval[7];
-	//        output <<"7V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output <<"7V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
         if((k == 0) && (lzs == 0))  icc = (i+lxs+2)*nzt-1;
         else icc = (i+1+lxs)*nzt+k+lzs-1;
         icol = gindices[icc];
         val = lval[6];
-	//        output <<"6V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output <<"6V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
         if((k == Nz_local-1) && (lzs == 0))  icc = (i+1+lxs)*nzt;
         else icc = (i+1+lxs)*nzt+k+lzs+1;
         icol = gindices[icc];
         val = lval[8];
-	//        output <<"8V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+	// output <<"8V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
         MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
       }
       val = lval[4];
-      //      output <<"="<<i<<"N="<<k<<"("<<icc<<","<<irow<<")"<<val<<endl;
+      // output <<"="<<i<<"N="<<k<<"("<<icc<<","<<irow<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&irow,&val,INSERT_VALUES);
       
       if((k == 0) && (lzs == 0))  icc = (i+lxs+1)*nzt-1;
       else icc = (i+lxs)*nzt+k+lzs-1;
       icol = gindices[icc];
       val = lval[3];
-      //      output <<"3V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+      // output <<"3V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);
 
       if((k == Nz_local-1) && (lzs == 0))  icc = (i+lxs)*nzt;
       else icc = (i+lxs)*nzt+k+lzs+1;
       icol = gindices[icc];
       val = lval[5];
-      //      output <<"5V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
+      // output <<"5V"<<i<<"N="<<k<<"("<<icc<<","<<icol<<")"<<val<<endl;
       MatSetValues(MatA,1,&irow,1,&icol,&val,INSERT_VALUES);     
     }
   }

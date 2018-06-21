@@ -11,7 +11,7 @@ input = (2.5e-7*(0.01*x + 0.55)^2*(4.0/(0.1*cos(y) + 2)^2 + 0.04/((0.01*x + 0.55
 symmetricGlobalX = true
 
 nx = 34
-ny = nx-2*mxg
+ny = 8
 nz = nx-2*mxg
 
 dx = 0.0036363636363636364/(nx-2*mxg)
@@ -40,7 +40,7 @@ type = petscamg
 flags = 0
 
 [petscamg]
-solvertype = gmres
+solvertype = gamgag
 checking = 1
 
 

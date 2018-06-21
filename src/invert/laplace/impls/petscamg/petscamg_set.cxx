@@ -43,7 +43,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
   // Set up KSP
   
   // Declare KSP Context 
-  KSPCreate( commX, &ksp ); 
+  KSPCreate(commX, &ksp ); 
   KSPGetPC(ksp, &pc);
   
   // Configure Linear Solver
@@ -67,12 +67,15 @@ void LaplacePetscAmg::settingSolver(int kflag){
   }
   else {
     KSPSetType( ksp, KSPGMRES );
-    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    KSPSetInitialGuessNonzero(ksp, (PetscBool) true );
     if(soltype == "gmres") {
       PCSetType(pc,PCBJACOBI);
-      int *blks = new int[Nx_global];
-      for(int i=0;i<Nx_global;i++) blks[i] = Nz_local;
-      PCBJacobiSetTotalBlocks(pc,Nx_global,blks);
+      int *blks = new int[Nx_global*2];
+      for(int i=0;i<Nx_global;i++) {
+	blks[2*i] = Nz_local/2;
+	blks[2*i+1] = Nz_local - Nz_local/2;
+      }
+      PCBJacobiSetTotalBlocks(pc,Nx_global*2,blks);
       delete [] blks;
     }
     else { 
@@ -92,7 +95,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
         PCGAMGSetType(pc,PCGAMGAGG);
 	PCGAMGSetNSmooths(pc,1);
       }
-      PCMGSetCycleType(pc,PC_MG_CYCLE_V);
+      //      PCGAMGSetCycleType(pc,PC_MG_CYCLE_V);
       PCGAMGSetNlevels(pc,mglevel);
       PCGAMGSetNSmooths(pc,2);
     }
@@ -101,7 +104,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
 
   }
   KSPSetTolerances(ksp,rtol,atol,dtol,maxits);  
-  KSPSetFromOptions( ksp );
+  KSPSetFromOptions(ksp);
 }
 
 const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0) {
@@ -119,11 +122,10 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
 
   settingSolver(diffpre);
   output <<"solvs"<<"N="<<yindex<<"(After set)"<<endl;
+  MPI_Barrier(MPI_COMM_WORLD);
   
   int ind,i2,i,k,k2;
   PetscScalar val,area;
-  // mxstart = xgstart;
-  // mzstart = zgstart;
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
     for (i=0; i < Nx_local; i++) {
@@ -136,6 +138,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       
         val = rhs(i+mxstart,k+mzstart)*area;
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+	//        output <<"Set V "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
       }
     }
   }
@@ -149,8 +152,10 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
         val = x0(i+mxstart,k+mzstart);
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
       
+        // output <<"Set V0 "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
         val = rhs(i+mxstart,k+mzstart)*area;
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        //output <<"Set V1 "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
       }
     }
   }
@@ -162,6 +167,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   VecAssemblyBegin(xs);
   VecAssemblyEnd(xs);
   // For the boundary conditions 
+  MPI_Barrier(MPI_COMM_WORLD);
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
   if (mesh->firstX()) {
     i2 = mxstart;
@@ -208,17 +214,17 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       dval -= (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
 	       + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
       dval *= area;
-      output <<"SS "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
+      // output <<"SS "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
       val = -tval[k+lzs]*dval;
       dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
       dval *= area;
-      output <<"SS0 "<<k<<":"<<k2<<","<<dval<<endl;
+      // output <<"SS0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val -= dval*tval[nzt-1];
       else val -= dval*tval[k-1];
       if(lzs == 0 && k == nzt-1) val += dval*tval[0];
       else val += dval*tval[k+1];
       ind = gindices[k+lzs];
-      output <<"SS0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
+      // output <<"SS0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
       VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
     }  
   }
@@ -250,7 +256,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
           tval[k]=2.*x0(i2+1, k+mzstart-lzs); 
           // this is the value to set at the outer boundary
         }
-	//}
+ 	//}
 	//else {
         // zero value inner boundary condition
         //for (int k=0; k<nzt; k++) {
@@ -268,17 +274,17 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       dval += (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
                    + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
       dval *= area;
-      output <<"SF "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
+      // output <<"SF "<<k<<":"<<k2<<","<<dval<<":"<<tval[k+lzs]<<endl;
       val = -tval[k+lzs]*dval;
       dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
       dval *= area;
-      output <<"SF0 "<<k<<":"<<k2<<","<<dval<<endl;
+      // output <<"SF0 "<<k<<":"<<k2<<","<<dval<<endl;
       if(lzs == 0 && k == 0) val += dval*tval[nzt-1];
       else val += dval*tval[k-1];
       if(lzs == 0 && k == nzt-1) val -= dval*tval[0];
       else val -= dval*tval[k+1];
       ind = gindices[(nxt-1)*nzt+k+lzs];
-      output <<"SF0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
+      // output <<"SF0 "<<k<<":"<<k2<<","<<ind<<":"<<dval<<endl;
       VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
     }      
   }
@@ -290,8 +296,22 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
 
   
   // Solve the system
-  output <<"Before solvs"<<yindex<<"(After set)"<<endl;
-  KSPSolve( ksp, bs, xs );
+  PCType typepc;
+  PCGetType(pc,&typepc);
+  output <<"Before solvs "<<yindex<<"(After set)"<<typepc<<endl;
+  if(fcheck) {
+    int its;
+    Vec rs;
+    PetscScalar norm;
+    VecDuplicate(xs,&rs);
+    MatResidual(MatA,bs,xs,rs);
+    VecNorm(rs,NORM_2,&norm);
+    output<<"Norm of rhs "<< (double)norm<< " iterations "<<endl;
+    VecDestroy(&rs);
+  }
+  KSPSetUp(ksp);
+  KSPSolve(ksp,bs,xs);
+  MPI_Barrier(MPI_COMM_WORLD);
   output <<"After solvs"<<yindex<<"(After set)"<<endl;
 
   if(fcheck) {
@@ -320,6 +340,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   //////////////////////////
   // Copy data into result
   
+  MPI_Barrier(MPI_COMM_WORLD);
   FieldPerp result(mesh);
   result.allocate();
   
@@ -327,21 +348,24 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     for(k= 0;k < Nz_local;k++) {
       ind = gindices[(i+lxs)*nzt+k+lzs];
       VecGetValues(xs, 1, &ind, &val );
-      result(i+mesh->xstart,k+mzstart) = val;
+      result(i+mxstart,k+mzstart) = val;
+      // output <<"Get V "<<i<<","<<k<<":"<<ind<<","<<val<<":"<<result(i+mxstart,k+mzstart)<<endl;
     }
   }
   
   // Inner X boundary approximations on guard cells
   // Need to modify
+  output<<"Put results "<<reason<<endl;
   
   if(mesh->firstX()) {
-    i2 = mesh->xstart;
+    i2 = mxstart;
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Set THE VALUE guard cells specify gradient to set at inner boundary
       // tval = df/dn = (v_ghost - v_in)/distance 
       for (k = 0; k < Nz_local; k++) {
 	val = -x0(i2-1, k+mzstart)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
         result(i2-1,k+mzstart) = val + result(i2,k+mzstart);
+        // output <<"Get S "<<i2-1<<","<<k<<":"<<k+mzstart<<","<<val<<":"<<result(i2,k+mzstart)<<endl;
       }
     }
     else {      // Dirichlet boundary condition
@@ -350,8 +374,10 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       for (int k = 0; k < Nz_local; k++) {
           result(i2-1,k+mzstart) = 2.*x0(i2-1, k+mzstart) - result(i2,k+mzstart); 
         // this is the value to set at the inner boundary
+        // output <<"Get SD "<<i2-1<<","<<k<<":"<<k+mzstart<<","<<x0(i2-1, k+mzstart)<<":"<<result(i2,k+mzstart)<<endl;
       }
     }
+    output<<"Put results first "<<reason<<endl;
   }
 
   // Outer X boundary
@@ -362,23 +388,35 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
         // guard cells of x0 specify gradient to set at outer boundary
 	// tval = df/dn = (v_ghost - v_in)/distance 
       for (k= 0; k < Nz_local; k++) {
-        tval[k] = x0(i2+1, k+mzstart)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
+        val = x0(i2+1, k+mzstart)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
         result(i2+1,k+mzstart) = val + result(i2,k+mzstart);
         // this is the value to set the gradient to at the outer boundary
+        // output <<"Get F "<<i2+1<<","<<k<<":"<<k+mzstart<<","<<val<<":"<<result(i2,k+mzstart)<<endl;
       }
     }
     else {
       // Dirichlet boundary condition
       // guard cells of x0 specify value to set at outer boundary
       for (k=0; k< Nz_local; k++) {
-        result(i2+1,k+mzstart) = 2.*x0(i2+1, k+mzstart-lzs) - result(i2,k+mzstart); 
+        result(i2+1,k+mzstart) = 2.*x0(i2+1, k+mzstart) - result(i2,k+mzstart); 
           // this is the value to set at the outer boundary
+        // output <<"Get FD "<<i2+1<<","<<k<<":"<<k+mzstart<<","<<x0(i2+1, k+mzstart)<<":"<<result(i2,k+mzstart)<<endl;
       }
 
     }
+    output<<"Put results last "<<reason<<endl;
   }
   result.setIndex(yindex);
+  MPI_Barrier(MPI_COMM_WORLD);
+  output<<"Put results last de "<<yindex<<endl;
+
+  MatDestroy( &MatA );
+  if(diffpre > 0) MatDestroy( &MatP );
+  output<<"Put results last KSP "<<yindex<<endl;
+  KSPDestroy( &ksp );
   // Set the index of the FieldPerp to be returned
+  output<<"Put results last Ends "<<yindex<<endl;
+  MPI_Barrier(MPI_COMM_WORLD);
   return result;
 }
 
