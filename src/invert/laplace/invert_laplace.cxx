@@ -275,12 +275,12 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   if (outloc == CELL_DEFAULT) {
     outloc = CELL_CENTRE;
   }
-  Field2D g11 = coord->g11.get(outloc);
-  Field2D g33 = coord->g33.get(outloc);
-  Field2D g13 = coord->g13.get(outloc);
-  Field2D G1 = coord->G1.get(outloc);
-  Field2D G3 = coord->G3.get(outloc);
-  Field2D dx = coord->dx.get(outloc);
+  const Field2D & g11 = coord->g11.get(outloc);
+  const Field2D & g33 = coord->g33.get(outloc);
+  const Field2D & g13 = coord->g13.get(outloc);
+  const Field2D & G1 = coord->G1.get(outloc);
+  const Field2D & G3 = coord->G3.get(outloc);
+  const Field2D & dx = coord->dx.get(outloc);
 
   coef1=g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=g33(jx,jy);     ///< Z 2nd derivative coefficient
