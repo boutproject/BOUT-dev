@@ -829,6 +829,30 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   return result;
 }
 
+BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
+  TRACE("Field3D::mean() %s",allpe? "over all PEs" : "");
+
+  ASSERT2(f.isAllocated());
+
+  Mesh *localmesh = f.getMesh();
+
+  // use first element for sum of values of f, second element for number of points
+  BoutReal result[2] = {0., 0.};
+  
+  for(const auto& i: f.region(rgn)) {
+    result[0] += f[i];
+    result[1] += 1.;
+  }
+
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult[2] = {result[0], result[1]};
+    MPI_Allreduce(&localresult, &result, 2, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  }
+  
+  return result[0]/result[1];
+}
+
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 

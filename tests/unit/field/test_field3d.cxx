@@ -1767,6 +1767,25 @@ TEST_F(Field3DTest, Max) {
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
 
+TEST_F(Field3DTest, Mean) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = 1.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 109.0;
+
+  // mean doesn't include guard cells by default
+  const int npoints_all = nx*ny*nz;
+  const BoutReal mean_value_nobndry = 50.0;
+  const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
+
+  EXPECT_EQ(mean(field, false), mean_value_nobndry);
+  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
+}
+
 TEST_F(Field3DTest, DC) {
   Field3D field;
 
