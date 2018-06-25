@@ -24,7 +24,7 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_SLEPC_3_4
+#ifdef BOUT_HAS_SLEPC
 //Hacked together by <DD>
 class SlepcSolver;
 

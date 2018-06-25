@@ -12,7 +12,7 @@
 #include "impls/rk3-ssp/rk3-ssp.hxx"
 #include "impls/rk4/rk4.hxx"
 #include "impls/rkgeneric/rkgeneric.hxx"
-#include "impls/slepc-3.4/slepc-3.4.hxx"
+#include "impls/slepc/slepc.hxx"
 #include "impls/snes/snes.hxx"
 
 SolverFactory* SolverFactory::instance = nullptr;

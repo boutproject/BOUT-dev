@@ -24,10 +24,10 @@
  **************************************************************************/
 
 
-#ifdef BOUT_HAS_SLEPC_3_4
+#ifdef BOUT_HAS_SLEPC
 //Hacked together by <DD>
 
-#include "slepc-3.4.hxx"
+#include "slepc.hxx"
 
 #include <globals.hxx>
 
@@ -763,4 +763,4 @@ void SlepcSolver::analyseResults(){
   }
 }
 
-#endif // BOUT_HAS_SLEPC_3_4
+#endif // BOUT_HAS_SLEPC
