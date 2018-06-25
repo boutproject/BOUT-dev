@@ -12,7 +12,7 @@ class Laplace3DFactory {
   /// Return a pointer to the only instance
   static Laplace3DFactory* getInstance();
   
-  Laplace3D* createLaplace3D(Options *options = NULL);
+  Laplace3D* createLaplace3D(Options *options = nullptr);
   
 private:
   Laplace3DFactory() {} // Prevent instantiation of this class

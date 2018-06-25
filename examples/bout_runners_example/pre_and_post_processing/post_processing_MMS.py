@@ -3,10 +3,7 @@
 """Post processing which performs MMS"""
 
 from boutdata.collect import collect
-from boututils.showdata import showdata
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-from pylab import plot
 import numpy as np
 
 #{{{perform_MMS_test

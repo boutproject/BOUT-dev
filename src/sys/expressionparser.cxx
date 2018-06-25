@@ -125,7 +125,7 @@ ExpressionParser::ExpressionParser() {
   addGenerator("t", std::make_shared<FieldT>());
 }
 
-void ExpressionParser::addGenerator(string name, FieldGeneratorPtr g) {
+void ExpressionParser::addGenerator(const string &name, FieldGeneratorPtr g) {
   gen[name] = g;
 }
 
@@ -291,7 +291,7 @@ FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo &lex) {
 //////////////////////////////////////////////////////////
 // LexInfo
 
-ExpressionParser::LexInfo::LexInfo(string input) {
+ExpressionParser::LexInfo::LexInfo(const std::string &input) {
   ss.clear();
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);

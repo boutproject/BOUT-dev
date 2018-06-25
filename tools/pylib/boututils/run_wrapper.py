@@ -1,29 +1,32 @@
 """Collection of functions which can be used to make a BOUT++ run"""
 
+from builtins import str
 import os
 import re
 import subprocess
-from os import getenv
+
 try:
     # Python 2.4 onwards
     from subprocess import call, Popen, STDOUT, PIPE
     lib = "call"
-except:
+except ImportError:
+    # FIXME: drop support for python < 2.4!
     # Use os.system (depreciated)
     from os import popen4, system
     lib = "system"
-try:
-  from builtins import str
-except:
-  pass
 
 
-def getmpirun( default="mpirun -np" ):
+def getmpirun(default="mpirun -np"):
+  """Return environment variable named MPIRUN, if it exists else return
+   a default mpirun command
+
+  Parameters
+  ----------
+  default : str, optional
+      An mpirun command to return if ``MPIRUN`` is not set in the environment
+
   """
-   getmpirun: return environment variable named MPIRUN, if it exists
-              else return a default mpirun command
-  """
-  MPIRUN = getenv("MPIRUN")
+  MPIRUN = os.getenv("MPIRUN")
 
   if MPIRUN is None:
     MPIRUN = default
@@ -33,7 +36,21 @@ def getmpirun( default="mpirun -np" ):
 
 
 def shell(command, pipe=False):
-    """Run a shell command"""
+    """Run a shell command
+
+    Parameters
+    ----------
+    command : list of str
+        The command to run, split into (shell) words
+    pipe : bool, optional
+        Grab the output as text, else just run the command in the
+        background
+
+    Returns
+    -------
+    tuple : (int, str)
+        The return code, and either command output if pipe=True else None
+    """
     output = None
     status = 0
     if lib == "system":
@@ -61,16 +78,19 @@ def shell(command, pipe=False):
     return status, output
 
 
-def  determineNumberOfCPUs():
-    """
-    Number of virtual or physical CPUs on this system
+def determineNumberOfCPUs():
+    """Number of virtual or physical CPUs on this system
 
-    i.e.
-    user/real as output by time(1) when called with an optimally scaling
-    userspace-only program
+    i.e. user/real as output by time(1) when called with an optimally
+    scaling userspace-only program
 
     Taken from a post on stackoverflow:
     http://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
+
+    Returns
+    -------
+    int
+        The number of CPUs
     """
 
     # Python 2.6+
@@ -164,16 +184,35 @@ def  determineNumberOfCPUs():
     raise Exception('Can not determine number of CPUs on this system')
 
 
-def launch(command, runcmd="mpirun -np", nproc=None, mthread=None, output=None, pipe=False, verbose=False):
+def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
+           output=None, pipe=False, verbose=False):
     """Launch parallel MPI jobs
 
-    status = launch(command, nproc, output=None)
+    >>> status = launch(command, nproc, output=None)
 
-    runcmd     Command for running parallel job; defaults to "mpirun -np"
-    command    The command to run (string)
-    nproc      Number of processors (integer)
-    mthread      Number of omp threads (integer)
-    output     Optional name of file for output
+    Parameters
+    ----------
+    command : str
+        The command to run
+    runcmd : str, optional
+        Command for running parallel job; defaults to "mpirun -np"
+    nproc : int, optional
+        Number of processors (default: all available processors)
+    mthread : int, optional
+        Number of omp threads (default: the value of the
+        ``OMP_NUM_THREADS`` environment variable
+    output : str, optional
+        Name of file to save output to
+    pipe : bool, optional
+        If True, return the output of the command
+    verbose : bool, optional
+        Print the full command to be run before running it
+
+    Returns
+    -------
+    tuple : (int, str)
+        The return code, and either command output if pipe=True else None
+
     """
 
     if nproc is None:
@@ -193,10 +232,20 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None, output=None, 
 
     return shell(cmd, pipe=pipe)
 
-def shell_safe(command,*args, **kwargs):
-    """`Safe` version of shell.
 
-    raises an RuntimeError exception if the command is not successfull.
+def shell_safe(command, *args, **kwargs):
+    """'Safe' version of shell.
+
+    Raises a `RuntimeError` exception if the command is not
+    successful
+
+    Parameters
+    ----------
+    command : str
+        The command to run
+    *args, **kwargs
+        Optional arguments passed to `shell`
+
     """
     s, out = shell(command,*args,**kwargs)
     if s:
@@ -205,10 +254,19 @@ def shell_safe(command,*args, **kwargs):
                            (s,command,out))
     return s, out
 
-def launch_safe(command,*args, **kwargs):
-    """`Safe` version of launch.
 
-    raises an RuntimeError exception if the command is not successfull.
+def launch_safe(command, *args, **kwargs):
+    """'Safe' version of launch.
+
+    Raises an RuntimeError exception if the command is not successful
+
+    Parameters
+    ----------
+    command : str
+        The command to run
+    *args, **kwargs
+        Optional arguments passed to `shell`
+
     """
     s, out = launch(command,*args,**kwargs)
     if s:

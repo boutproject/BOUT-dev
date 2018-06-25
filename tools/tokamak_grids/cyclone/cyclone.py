@@ -3,10 +3,7 @@
 from __future__ import print_function
 from __future__ import division
 
-try:
-  from builtins import str, range
-except ImportError:
-  pass
+from builtins import str, range
 
 from numpy import *
 from scipy.integrate import quad

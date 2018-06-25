@@ -48,7 +48,7 @@ PncFormat::PncFormat() {
   default_rec = 0;
   rec_nr.clear();
 
-  fname = NULL;
+  fname = nullptr;
 }
 
 PncFormat::PncFormat(const char *name) {
@@ -194,7 +194,7 @@ void PncFormat::close() {
 
   int ret = ncmpi_close(ncfile);
   free(fname);
-  fname = NULL;
+  fname = nullptr;
 }
 
 void PncFormat::flush() {

@@ -558,7 +558,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,2);
-  std::shared_ptr<FieldGenerator>  newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -973,7 +973,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,3);
-  std::shared_ptr<FieldGenerator>  newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -1681,7 +1681,7 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region,1);
-  std::shared_ptr<FieldGenerator> newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
@@ -2107,7 +2107,7 @@ void BoundaryNeumann::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
-  std::shared_ptr<FieldGenerator> newgen = 0;
+  std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());

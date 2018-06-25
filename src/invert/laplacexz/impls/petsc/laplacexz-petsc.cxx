@@ -95,7 +95,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
 
   TRACE("LaplaceXZpetsc::LaplaceXZpetsc");
 
-  if(opt == NULL) {
+  if (opt == nullptr) {
     // If no options supplied, use default
     opt = Options::getRoot()->getSection("laplacexz");
   }
@@ -245,11 +245,17 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 
   TRACE("LaplaceXZpetsc::~LaplaceXZpetsc");
 
+  PetscBool petsc_is_finalised;
+  PetscFinalized(&petsc_is_finalised);
+
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     MatDestroy(&it->MatA);
     MatDestroy(&it->MatP);
 
-    KSPDestroy(&it->ksp);
+    if (!petsc_is_finalised) {
+      // PetscFinalize may already have destroyed this object
+      KSPDestroy(&it->ksp);
+    }
   }
 
   VecDestroy(&bs);

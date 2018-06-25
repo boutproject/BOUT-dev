@@ -30,9 +30,10 @@
 
 #include <bout/physicsmodel.hxx>
 
-PhysicsModel::PhysicsModel() : solver(0), splitop(false), 
-                               userprecon(0), userjacobian(0), initialised(false) {
-  
+PhysicsModel::PhysicsModel()
+    : solver(nullptr), splitop(false), userprecon(nullptr), userjacobian(nullptr),
+      initialised(false) {
+
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
 }
@@ -56,9 +57,7 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
   return diffusive(time, linear);
 }
 
-bool PhysicsModel::hasPrecon() {
-  return (userprecon != 0);
-}
+bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
   if(!userprecon)
@@ -66,9 +65,7 @@ int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
   return (*this.*userprecon)(t, gamma, delta);
 }
 
-bool PhysicsModel::hasJacobian() {
-  return (userjacobian != 0);
-}
+bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
 
 int PhysicsModel::runJacobian(BoutReal t) {
   if (!userjacobian)

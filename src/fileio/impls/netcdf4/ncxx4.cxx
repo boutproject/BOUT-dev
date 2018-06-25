@@ -40,7 +40,7 @@ using namespace netCDF;
 //#define NCDF_VERBOSE
 
 Ncxx4::Ncxx4() {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -49,11 +49,11 @@ Ncxx4::Ncxx4() {
   default_rec = 0;
   rec_nr.clear();
 
-  fname = NULL;
+  fname = nullptr;
 }
 
 Ncxx4::Ncxx4(const char *name) {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -78,14 +78,14 @@ bool Ncxx4::openr(const char *name) {
   output.write("Ncxx4:: openr(%s)\n", name); 
 #endif
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   dataFile = new NcFile(name, NcFile::read);
 
   if(dataFile->isNull()) {
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
   }
 
@@ -132,7 +132,7 @@ bool Ncxx4::openw(const char *name, bool append) {
   output.write("Ncxx4:: openw(%s, %d)\n", name, static_cast<int>(append)); 
 #endif
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   if(append) {
@@ -140,7 +140,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     if(dataFile->isNull()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -150,7 +150,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     if(xDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have an 'x' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -158,7 +158,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     if(yDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 'y' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -166,7 +166,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     if(zDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 'z' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -174,7 +174,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     if(tDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 't' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -183,7 +183,7 @@ bool Ncxx4::openw(const char *name, bool append) {
         (yDim.getSize() != static_cast<size_t>(mesh->LocalNy)) ||
         (zDim.getSize() != static_cast<size_t>(mesh->LocalNz)) || (!tDim.isUnlimited())) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -195,7 +195,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     
     if(dataFile->isNull()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -204,28 +204,28 @@ bool Ncxx4::openw(const char *name, bool append) {
     xDim = dataFile->addDim("x", mesh->LocalNx);
     if(xDim.isNull()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
   
     yDim = dataFile->addDim("y", mesh->LocalNy);
     if(yDim.isNull()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     zDim = dataFile->addDim("z", mesh->LocalNz);
     if(zDim.isNull()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     tDim = dataFile->addDim("t");
     if(tDim.isNull()) { // unlimited dimension
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -243,7 +243,7 @@ bool Ncxx4::openw(const char *name, bool append) {
 }
 
 bool Ncxx4::is_valid() {
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return false;
   return !dataFile->isNull();
 }
@@ -255,14 +255,14 @@ void Ncxx4::close() {
   output.write("Ncxx4:: close()\n"); 
 #endif
 
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return;
   
   delete dataFile;
-  dataFile = NULL;
-  
+  dataFile = nullptr;
+
   free(fname);
-  fname = NULL;
+  fname = nullptr;
 }
 
 void Ncxx4::flush() {

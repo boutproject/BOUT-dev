@@ -187,7 +187,8 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
 ////////////////////////////////////////////////////////////////
 
-FieldMixmode::FieldMixmode(std::shared_ptr<FieldGenerator> a, BoutReal seed) : arg(a) {
+FieldMixmode::FieldMixmode(std::shared_ptr<FieldGenerator> a, BoutReal seed)
+    : arg(std::move(a)) {
   // Calculate the phases -PI to +PI
   // using genRand [0,1]
 

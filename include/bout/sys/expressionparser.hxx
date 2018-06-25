@@ -91,7 +91,7 @@ public:
   /// @param[in] g     The class inheriting from FieldGenerator. When recognised
   ///                  in an expression, the clone() function will be called
   ///                  to build a tree of generators
-  void addGenerator(std::string name, FieldGeneratorPtr g);
+  void addGenerator(const std::string &name, FieldGeneratorPtr g);
 
   /// Add a binary operator such as +,-,*,/,^
   ///
@@ -110,7 +110,7 @@ public:
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) {return nullptr;}
+  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string &input);
@@ -123,7 +123,7 @@ private:
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
-    LexInfo(std::string input);
+    LexInfo(const std::string &input);
     
     signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number

@@ -62,7 +62,7 @@ int MsgStack::push(const char *s, ...)
     }
   }
 
-  if(s != NULL) {
+  if (s != nullptr) {
 
     va_start(ap, s);
       vsnprintf(buffer,MSG_MAX_SIZE, s, ap);
@@ -78,7 +78,7 @@ int MsgStack::push(const char *s, ...)
 
 int MsgStack::setPoint() {
   // Create an empty message
-  return push(NULL);
+  return push(nullptr);
 }
 
 void MsgStack::pop() {
