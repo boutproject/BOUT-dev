@@ -14,11 +14,11 @@ class RKSchemeFactory {
   static RKSchemeFactory* getInstance();
   
   RKSchemeType getDefaultRKSchemeType();
-  
-  RKScheme* createRKScheme(Options *opts = NULL);
-  RKScheme* createRKScheme(RKSchemeType &, Options *opts = NULL);
-  
- private:
+
+  RKScheme *createRKScheme(Options *opts = nullptr);
+  RKScheme *createRKScheme(RKSchemeType &, Options *opts = nullptr);
+
+private:
   RKSchemeFactory() {} // Prevent instantiation of this class
   static RKSchemeFactory* instance; ///< The only instance of this class (Singleton)
 

@@ -53,7 +53,7 @@
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options *options) {
 
-  if(options == NULL) {
+  if (options == nullptr) {
     // Use the default options
     options = Options::getRoot()->getSection("laplace");
   }
@@ -108,19 +108,19 @@ Laplacian* Laplacian::create(Options *opts) {
   return LaplaceFactory::getInstance()->createLaplacian(opts);
 }
 
-Laplacian* Laplacian::instance = NULL;
+Laplacian *Laplacian::instance = nullptr;
 
 Laplacian* Laplacian::defaultInstance() {
-  if(instance == NULL)
+  if (instance == nullptr)
     instance = create();
   return instance;
 }
 
 void Laplacian::cleanup() {
-  if(instance == NULL)
+  if (instance == nullptr)
     return;
   delete instance;
-  instance = NULL;
+  instance = nullptr;
 }
 
 /**********************************************************************************
@@ -284,7 +284,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     coef5 = coord->G3(jx,jy); // Z 1st derivative
   }
 
-  if(d != (Field2D*) NULL) {
+  if (d != nullptr) {
     // Multiply Delp2 component by a factor
     coef1 *= (*d)(jx,jy);
     coef2 *= (*d)(jx,jy);
@@ -300,7 +300,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     }
   }
 
-  if(ccoef != NULL) {
+  if (ccoef != nullptr) {
     // A first order derivative term
     if((jx > 0) && (jx < (mesh->LocalNx-1)))
       coef4 += coord->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coord->dx(jx,jy)*((*ccoef)(jx,jy)));
@@ -422,7 +422,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   for(int ix=0;ix<=ncx;ix++) {
     // Actually set the metric coefficients
     tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
-    if(a != (Field2D*) NULL)
+    if (a != nullptr)
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs+ix,jy);
   }
@@ -475,7 +475,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         else if (inner_boundary_flags & INVERT_DC_LAP) {
           // Decaying boundary conditions
           BoutReal k = 0.0;
-          if(a != (Field2D*) NULL) {
+          if (a != nullptr) {
             BoutReal ksq = -((*a)(inbndry, jy));
             if(ksq < 0.0)
               throw BoutException("ksq must be positive");
@@ -639,7 +639,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         else if (inner_boundary_flags & INVERT_DC_LAP) {
           // Decaying boundary conditions
           BoutReal k = 0.0;
-          if(a != (Field2D*) NULL) {
+          if (a != nullptr) {
             BoutReal ksq = -((*a)(inbndry, jy));
             if(ksq < 0.0)
               throw BoutException("ksq must be positive");
@@ -718,17 +718,17 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 
   Laplacian *lap = Laplacian::defaultInstance();
 
-  if(a != NULL) {
+  if (a != nullptr) {
     lap->setCoefA(*a);
   }else
     lap->setCoefA(0.0);
 
-  if(c != NULL) {
+  if (c != nullptr) {
     lap->setCoefC(*c);
   }else
     lap->setCoefC(1.0);
 
-  if(d != NULL) {
+  if (d != nullptr) {
     lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);
@@ -748,17 +748,17 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 
   Laplacian *lap = Laplacian::defaultInstance();
 
-  if(a != NULL) {
+  if (a != nullptr) {
     lap->setCoefA(*a);
   }else
     lap->setCoefA(0.0);
 
-  if(c != NULL) {
+  if (c != nullptr) {
     lap->setCoefC(*c);
   }else
     lap->setCoefC(1.0);
 
-  if(d != NULL) {
+  if (d != nullptr) {
     lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);
@@ -779,17 +779,17 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
 
   Laplacian *lap = Laplacian::defaultInstance();
 
-  if(a != NULL) {
+  if (a != nullptr) {
     lap->setCoefA(*a);
   }else
     lap->setCoefA(0.0);
 
-  if(c != NULL) {
+  if (c != nullptr) {
     lap->setCoefC(*c);
   }else
     lap->setCoefC(1.0);
 
-  if(d != NULL) {
+  if (d != nullptr) {
     lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);

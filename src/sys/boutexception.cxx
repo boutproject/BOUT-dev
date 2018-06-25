@@ -82,7 +82,7 @@ std::string BoutException::BacktraceGenerate() const{
              ptr, p, messages[i]);
     // last parameter is the file name of the symbol
     FILE *fp = popen(syscom, "r");
-    if (fp != NULL) {
+    if (fp != nullptr) {
       char out[1024];
       char *retstr;
       std::string buf;
@@ -90,7 +90,7 @@ std::string BoutException::BacktraceGenerate() const{
         retstr = fgets(out, sizeof(out) - 1, fp);
         if (retstr != nullptr)
           buf+=retstr;
-      } while (retstr != NULL);
+      } while (retstr != nullptr);
       int status = pclose(fp);
       if (status == 0) {
         message += buf;
@@ -108,7 +108,7 @@ std::string BoutException::BacktraceGenerate() const{
   {                                                                                      \
     buflen = 0;                                                                          \
     buffer = nullptr;                                                                    \
-    if (s == (const char *)NULL) {                                                       \
+    if (s == (const char *)nullptr) {                                                    \
       message = "No error message given!\n";                                             \
     } else {                                                                             \
       buflen = BoutException::BUFFER_LEN;                                                \
@@ -149,11 +149,11 @@ const char *BoutException::what() const noexcept{
 #endif
 }
 
-BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(NULL) {
+BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(nullptr) {
   INIT_EXCEPTION(s);
 }
 
 BoutIterationFail::BoutIterationFail(const char *s, ...)
-    : BoutException::BoutException(NULL) {
+    : BoutException::BoutException(nullptr) {
   INIT_EXCEPTION(s);
 }

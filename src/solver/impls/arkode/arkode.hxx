@@ -58,7 +58,7 @@ RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 
 class ArkodeSolver : public Solver {
   public:
-    ArkodeSolver(Options *opts = NULL);
+    ArkodeSolver(Options *opts = nullptr);
     ~ArkodeSolver();
 
     void setJacobian(Jacobian j) override { jacfunc = j; }

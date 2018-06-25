@@ -27,10 +27,10 @@
 #define LAPLACE_MULTIGRID "multigrid"
 #define LAPLACE_NAULIN "naulin"
 
-LaplaceFactory* LaplaceFactory::instance = NULL;
+LaplaceFactory *LaplaceFactory::instance = nullptr;
 
 LaplaceFactory* LaplaceFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new LaplaceFactory();
   }
@@ -38,7 +38,7 @@ LaplaceFactory* LaplaceFactory::getInstance() {
 }
 
 Laplacian* LaplaceFactory::createLaplacian(Options *options) {
-  if(options == NULL)
+  if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
   string type;

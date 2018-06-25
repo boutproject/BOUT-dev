@@ -27,8 +27,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   Timer timer("invert");
-  
-  if(opt == NULL) {
+
+  if (opt == nullptr) {
     // If no options supplied, use default
     opt = Options::getRoot()->getSection("laplacexy");
   }

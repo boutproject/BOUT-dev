@@ -57,7 +57,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 
 class CvodeSolver : public Solver {
   public:
-    CvodeSolver(Options *opts = NULL);
+    CvodeSolver(Options *opts = nullptr);
     ~CvodeSolver();
 
     void setJacobian(Jacobian j) override { jacfunc = j; }

@@ -56,7 +56,9 @@ public:
   /// to test whether the correct number of arguments is passed.
   ///
   /// @param[in] args   A (possibly empty) list of arguments to the generator function
-  virtual std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {return NULL;}
+  virtual std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {
+    return nullptr;
+  }
 
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
@@ -106,7 +108,9 @@ public:
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {return NULL;}
+  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {
+    return nullptr;
+  }
 
   /// Parses a given string into a tree of FieldGenerator objects
   std::shared_ptr<FieldGenerator> parseString(const std::string &input);

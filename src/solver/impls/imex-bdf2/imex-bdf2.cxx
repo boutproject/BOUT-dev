@@ -1196,8 +1196,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   }
 
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
-  SNESSolve(snesUse,NULL,snes_x);
+
+  SNESSolve(snesUse, nullptr, snes_x);
 
   // Find out if converged
   SNESConvergedReason reason;

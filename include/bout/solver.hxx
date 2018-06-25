@@ -297,14 +297,14 @@ class Solver {
    * Create a Solver object. This uses the "type" option
    * in the given Option section to determine which solver
    * type to create.
-   */ 
-  static Solver* create(Options *opts = NULL);
-  
+   */
+  static Solver *create(Options *opts = nullptr);
+
   /*!
    * Create a Solver object, specifying the type
-   */ 
-  static Solver* create(SolverType &type, Options *opts = NULL);
-  
+   */
+  static Solver *create(SolverType &type, Options *opts = nullptr);
+
   /*!
    * Pass the command-line arguments. This static function is
    * called by BoutInitialise, and puts references

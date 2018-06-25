@@ -49,7 +49,7 @@
  */
 class LaplaceXY {
  public:
-  LaplaceXY(Mesh *m, Options *opt = NULL) {
+  LaplaceXY(Mesh *m, Options *opt = nullptr) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
   void setCoefs(const Field2D &A, const Field2D &B) {}
@@ -68,7 +68,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m, Options *opt = NULL);
+  LaplaceXY(Mesh *m, Options *opt = nullptr);
   /*!
    * Destructor
    */

@@ -20,7 +20,7 @@ using std::vector;
 /// conventions.
 class BoutMesh : public Mesh {
  public:
-  BoutMesh(GridDataSource *s, Options *options = NULL);
+  BoutMesh(GridDataSource *s, Options *options = nullptr);
   ~BoutMesh();
 
   /// Read in the mesh from data sources

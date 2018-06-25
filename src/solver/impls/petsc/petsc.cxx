@@ -59,9 +59,9 @@ extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
 PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   has_constraints = false; // No constraints
-  J = 0;
-  Jmf = 0;
-  matfdcoloring = 0;
+  J = nullptr;
+  Jmf = nullptr;
+  matfdcoloring = nullptr;
   interpolate = PETSC_TRUE;
   initialised = false;
   bout_snes_time = .0;
@@ -492,7 +492,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  FILE *fp = NULL;
+  FILE *fp = nullptr;
 
   // Set when the next call to monitor is desired
   next_output = simtime + tstep;
