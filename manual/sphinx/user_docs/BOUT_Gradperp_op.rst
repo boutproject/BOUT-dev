@@ -1,12 +1,8 @@
 =======================================
-**Geometry and Differential Operator**
+Geometry and Differential Operator
 =======================================
 
 :Author: X. Q. Xu
-
-.. raw:: latex
-
-   \maketitle
 
 Geometry
 ========
@@ -16,22 +12,22 @@ as
 
 .. math:: {\bf B}=I(\psi)\nabla\zeta+\nabla\zeta\times\nabla\psi,
 
- where :math:`\psi` is the poloidal flux, :math:`\theta` is the poloidal
-angle-like coordinate, and :math:`\zeta` is the toroidal angle. Here,
-:math:`I(\psi)=RB_t`. The two important geometrical parameters are: the
-curvature, :math:`\bf \kappa`, and the local pitch,
-:math:`\nu(\psi,\theta)`,
+where :math:`\psi` is the poloidal flux, :math:`\theta` is the
+poloidal angle-like coordinate, and :math:`\zeta` is the toroidal
+angle. Here, :math:`I(\psi)=RB_t`. The two important geometrical
+parameters are: the curvature, :math:`\bf \kappa`, and the local
+pitch, :math:`\nu(\psi,\theta)`,
 
 .. math:: \nu(\psi,\theta)= {I(\psi){\bf \cal J}/R^2}.
 
- The local pitch :math:`\nu(\psi,\theta)` is related to the MHD safety q
-by :math:`\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in the
-closed flux surface region, and
-:math:`\hat q(\psi)={2\pi}^{-1}\int_{inboard}^{outboard}\nu(\psi,\theta) d\theta`
-in the scrape-off-layer. Here
-:math:`{\bf \cal J}=(\nabla\psi\times\nabla\theta\cdot\nabla\zeta)^{-1}`
-is the coordinate Jacobian, :math:`R` is the major radius, and :math:`Z`
-is the vertical position.
+The local pitch :math:`\nu(\psi,\theta)` is related to the MHD safety
+q by :math:`\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in
+the closed flux surface region, and :math:`\hat
+q(\psi)={2\pi}^{-1}\int_{inboard}^{outboard}\nu(\psi,\theta) d\theta`
+in the scrape-off-layer. Here :math:`{\bf \cal
+J}=(\nabla\psi\times\nabla\theta\cdot\nabla\zeta)^{-1}` is the
+coordinate Jacobian, :math:`R` is the major radius, and :math:`Z` is
+the vertical position.
 
 Geometry and Differential Operators
 ===================================
@@ -82,7 +78,7 @@ operators appear in the equations given as:
    +\left({B_t\over {\cal J}RB}\right)^2{\partial^2\over\partial\zeta^2}, \\
    \nabla_\perp^2\Phi&=&-\nabla\cdot[{\bf b}\times({\bf b}\times\nabla\Phi)]=\nabla^2\Phi-(\nabla\cdot{\bf b})({\bf b}\cdot\nabla\Phi)-\nabla_\|^2\Phi\end{aligned}
 
- where the coordinate Jacobian and metric coefficients are defined as
+where the coordinate Jacobian and metric coefficients are defined as
 following:
 
 .. math::
@@ -142,13 +138,13 @@ coordinates (:math:`\psi`, :math:`\theta`, :math:`\zeta`) is
    y&=&\theta, \nonumber \\
    z&=&\zeta-\int_{\theta_0}^\theta \nu(x,y)dy.\end{aligned}
 
- as shown in Fig. 1. The covering area given by the square ABCD in the
+as shown in Fig. 1. The covering area given by the square ABCD in the
 usual flux coordinates is the same as the parallelogram ABEF in the
 field-aligned coordinates. The magnetic separatrix is denoted by
-:math:`\psi=\psi_s`. In this choice of coordinates, :math:`x` is a flux
-surface label, :math:`y`, the poloidal angle, is also the coordinate
-along the field line, and :math:`z` is a field line label within the
-flux surface.
+:math:`\psi=\psi_s`. In this choice of coordinates, :math:`x` is a
+flux surface label, :math:`y`, the poloidal angle, is also the
+coordinate along the field line, and :math:`z` is a field line label
+within the flux surface.
 
 The coordinate Jacobian and metric coefficients are defined as
 following:
@@ -166,15 +162,16 @@ following:
    {\cal J}_{33}&=&|\nabla z|^2=\left |\nabla\zeta-\nu\nabla \theta-\nabla\psi\left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right)\right |^2, \\
    I_s &=&  {{\cal J}_{12}\over|\nabla\psi|^2}\nu(x,y)+\left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right).\end{aligned}
 
- Here :math:`h` is the local minor radius, :math:`I_s` is the integrated
-local shear, and :math:`y_0` is an arbitrary integration parameter,
-which, depending on the choice of Jacobian, determines the location
-where :math:`I_s=0`. The disadvantage of this choice of coordinates is
-that the Jacobian diverges near the X-point as :math:`B_p\rightarrow 0`
-and its effect spreads over the entire flux surafces near the separatrix
-as the results of coordinate transform :math:`z`. Therefore a better set
-of coordinates is needed for X-point divertor geometry. The derivatives
-are obtained from the chain rule as follows:
+Here :math:`h` is the local minor radius, :math:`I_s` is the
+integrated local shear, and :math:`y_0` is an arbitrary integration
+parameter, which, depending on the choice of Jacobian, determines the
+location where :math:`I_s=0`. The disadvantage of this choice of
+coordinates is that the Jacobian diverges near the X-point as
+:math:`B_p\rightarrow 0` and its effect spreads over the entire flux
+surafces near the separatrix as the results of coordinate transform
+:math:`z`. Therefore a better set of coordinates is needed for X-point
+divertor geometry. The derivatives are obtained from the chain rule as
+follows:
 
 .. math::
 
@@ -191,8 +188,8 @@ operator is simple, involving only one coordinate :math:`y`
    \begin{aligned}
    \partial_\|^0 &=&  {\bf b}_0\cdot\nabla_\|=\left({B_p\over hB}\right){\partial\over\partial y}.\end{aligned}
 
- which requires a few grid points. The total axisymmetric drift operator
-becomes
+which requires a few grid points. The total axisymmetric drift
+operator becomes
 
 The perturbed :math:`{\bf E}\times {\bf B}` drift operator becomes
 
@@ -216,9 +213,9 @@ The perturbed :math:`{\bf E}\times {\bf B}` drift operator becomes
    {\partial\langle\delta\phi\rangle\over\partial\theta}
    \right\}{\partial\over\partial z},\end{aligned}
 
- when the conventional turbulence ordering (:math:`k_\|\ll k_\perp`) is
-used, the perturbed :math:`{\bf E}\times {\bf B}` drift operator can be
-further reduced to a simple form
+when the conventional turbulence ordering (:math:`k_\|\ll k_\perp`) is
+used, the perturbed :math:`{\bf E}\times {\bf B}` drift operator can
+be further reduced to a simple form
 
 .. math::
 
@@ -228,12 +225,12 @@ further reduced to a simple form
    {\partial\langle\delta\phi\rangle\over\partial z}{\partial\over\partial x}
    -{\partial\langle\delta\phi\rangle\over\partial x}{\partial\over\partial z}\right)\end{aligned}
 
- where :math:`\partial/\partial\theta\simeq -\nu\partial/\partial z` is
-used. In the perturbed :math:`{\bf E}\times {\bf B}` drift operator the
-poloidal and radial derivatives are written in the usual flux
-:math:`(\psi,\theta,\zeta)` coordinates in order to have various options
-for valid discretizations. The general Laplacian operator for potential
-is
+where :math:`\partial/\partial\theta\simeq -\nu\partial/\partial z` is
+used. In the perturbed :math:`{\bf E}\times {\bf B}` drift operator
+the poloidal and radial derivatives are written in the usual flux
+:math:`(\psi,\theta,\zeta)` coordinates in order to have various
+options for valid discretizations. The general Laplacian operator for
+potential is
 
 .. math::
 
@@ -266,8 +263,8 @@ is
    \left[\left({B_p\over hB}\right){\partial\Phi\over\partial y}\right] \nonumber\\
    &-&\left({B_p\over hB}\right)^2{\partial\ln B\over\partial y}{\partial\Phi\over\partial y}.\end{aligned}
 
- The general perpendicular Laplacian operator for axisymmetric potential
-:math:`\Phi_0(x,y)` is
+The general perpendicular Laplacian operator for axisymmetric
+potential :math:`\Phi_0(x,y)` is
 
 .. math::
 
@@ -280,7 +277,7 @@ is
    \left[\left({B_p\over hB}\right){\partial\Phi_0\over\partial y}\right]  \nonumber\\
    &-&\left({B_p\over hB}\right)^2{\partial\ln B\over\partial y}{\partial\Phi\over\partial y}.\end{aligned}
 
- For the perturbed potential :math:`\delta\phi`, we can drop the
+For the perturbed potential :math:`\delta\phi`, we can drop the
 :math:`\partial/\partial y` terms in Eq. (69) due to the elongated
 nature of the turbulence (:math:`k_\|/k_\perp\ll1`). The general
 perpendicular Laplacian operator for perturbed potential
@@ -295,7 +292,7 @@ perpendicular Laplacian operator for perturbed potential
    &+&{\partial\over\partial z}\left({\cal J}{\cal J}_{31}{\partial\delta\phi\over\partial x}
    +{\cal J}{\cal J}_{33}{\partial\delta\phi\over\partial z}\right).\end{aligned}
 
- If the non-split potential :math:`\Phi` is a preferred option, the
+If the non-split potential :math:`\Phi` is a preferred option, the
 gyrokinetic Poisson equation (18) and the general perpendicular
 Laplacian operator Eq. (69) have to be used. Then the assumption
 :math:`k_\|/k_\perp\ll1` is not used to simplify the perpendicular
