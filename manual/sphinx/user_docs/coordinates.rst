@@ -1282,9 +1282,9 @@ and so
 Differential geometry
 =====================
 
-| WARNING: Several mistakes have been found (and is now corrected) in
-  this section, so it should be proof read before removing this warning!
-| The following is notes from :raw-latex:`\cite{haeseler-1}`.
+.. warning:: Several mistakes have been found (and is now corrected)
+  in this section, so it should be proof read before removing this
+  warning!  The following are notes from [haeseler]_.
 
 Sets of vectors :math:`\left\{\mathbf{A, B, C}\right\}` and
 :math:`\left\{\mathbf{a, b, c}\right\}` are reciprocal if
@@ -1536,8 +1536,7 @@ We would here like to find an expression for the Laplacian
    \begin{aligned}
        {\nabla}^2 = {\nabla\cdot}{\nabla}\end{aligned}
 
-In general we have (using equation (2.6.39) in D’Haeseleer
-:raw-latex:`\cite{haeseler-1}`)
+In general we have (using equation (2.6.39) in D’Haeseleer [haeseler]_)
 
 .. math::
 
@@ -1569,7 +1568,7 @@ Thus
        \frac{1}{J} g^{ij} J \partial_i \partial_j + \frac{1}{J} \partial_i \left(J
        g^{ij} \right) \partial_j\\ =& g^{ij} \partial_i \partial_j + G^j \partial_j\\\end{aligned}
 
-where we have defined  [1]_
+where we have defined [#f1]_
 
 .. math::
 
@@ -1895,15 +1894,20 @@ Alternatively, equation \ `[eq:exb1] <#eq:exb1>`__ can be expanded as
    \nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &=& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
                                                                  &+& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)\end{aligned}
 
-.. [1]
-   | Notice that :math:`G^i` is **not** the same as the *Christoffel
-     symbols of second kind* (also known as the *connection
-     coefficients* or
-     :math:`\Gamma^i_{jk}={\boldsymbol{e}}^i\cdot\partial_k {\boldsymbol{e}}_j`),
-     although the derivation of the two are quite similar.
-   | We find that
-     :math:`\Gamma^i_{ji}={\boldsymbol{e}}^i\cdot\partial_i {\boldsymbol{e}}_j = {\nabla\cdot}{\boldsymbol{e}}_j`,
-     whereas using equation `[eq:divA] <#eq:divA>`__ leads to
-     :math:`G^i={\boldsymbol{e}}^i\cdot\partial_i {\boldsymbol{e}}^j = {\nabla\cdot}
-     {\boldsymbol{e}}^j`, since :math:`g^{ji}=g^{ij}` due to
-     symmetry.
+.. [haeseler] Haeseler, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
+
+.. rubric:: Footnotes
+   
+.. [#f1] Notice that :math:`G^i` is **not** the same as the
+     *Christoffel symbols of second kind* (also known as the
+     *connection coefficients* or
+     :math:`\Gamma^i_{jk}={\boldsymbol{e}}^i\cdot\partial_k
+     {\boldsymbol{e}}_j`), although the derivation of the two are
+     quite similar.  | We find that
+     :math:`\Gamma^i_{ji}={\boldsymbol{e}}^i\cdot\partial_i
+     {\boldsymbol{e}}_j = {\nabla\cdot}{\boldsymbol{e}}_j`, whereas
+     using equation `[eq:divA] <#eq:divA>`__ leads to
+     :math:`G^i={\boldsymbol{e}}^i\cdot\partial_i {\boldsymbol{e}}^j =
+     {\nabla\cdot} {\boldsymbol{e}}^j`, since :math:`g^{ji}=g^{ij}`
+     due to symmetry.
+
