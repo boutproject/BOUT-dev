@@ -44,7 +44,7 @@ namespace { // These classes only visible in this file
   
   class FieldX : public FieldGenerator {
   public:
-    FieldGenerator_ptr clone(const list<FieldGenerator_ptr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
       return std::make_shared<FieldX>();
     }
     double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
@@ -55,7 +55,7 @@ namespace { // These classes only visible in this file
   
   class FieldY : public FieldGenerator {
   public:
-    FieldGenerator_ptr clone(const list<FieldGenerator_ptr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
       return std::make_shared<FieldY>();
     }
     double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
@@ -66,7 +66,7 @@ namespace { // These classes only visible in this file
 
   class FieldZ : public FieldGenerator {
   public:
-    FieldGenerator_ptr clone(const list<FieldGenerator_ptr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
       return std::make_shared<FieldZ>();
     }
     double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
@@ -77,7 +77,7 @@ namespace { // These classes only visible in this file
   
   class FieldT : public FieldGenerator {
   public:
-    FieldGenerator_ptr clone(const list<FieldGenerator_ptr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
       return std::make_shared<FieldT>();
     }
     double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
@@ -87,7 +87,7 @@ namespace { // These classes only visible in this file
   };
 }
 
-FieldGenerator_ptr FieldBinary::clone(const list<FieldGenerator_ptr> args) {
+FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 2)
     throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
   
@@ -125,15 +125,15 @@ ExpressionParser::ExpressionParser() {
   addGenerator("t", std::make_shared<FieldT>());
 }
 
-void ExpressionParser::addGenerator(string name, FieldGenerator_ptr g) {
+void ExpressionParser::addGenerator(string name, FieldGeneratorPtr g) {
   gen[name] = g;
 }
 
-void ExpressionParser::addBinaryOp(char sym, FieldGenerator_ptr b, int precedence) {
+void ExpressionParser::addBinaryOp(char sym, FieldGeneratorPtr b, int precedence) {
   bin_op[sym] = std::make_pair(b, precedence);
 }
 
-FieldGenerator_ptr ExpressionParser::parseString(const string &input) {
+FieldGeneratorPtr ExpressionParser::parseString(const string &input) {
   // Allocate a new lexer
   LexInfo lex(input);
 
@@ -144,7 +144,7 @@ FieldGenerator_ptr ExpressionParser::parseString(const string &input) {
 //////////////////////////////////////////////////////////
 // Private functions
 
-FieldGenerator_ptr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   string name = lowercase(lex.curident);
   lex.nextToken();
   
@@ -156,7 +156,7 @@ FieldGenerator_ptr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
       throw ParseException("Couldn't find generator '%s'", name.c_str());
     
     // Parse arguments (if any)
-    list<FieldGenerator_ptr> args;
+    list<FieldGeneratorPtr> args;
     
     lex.nextToken();
     if(lex.curtok == ')') {
@@ -187,20 +187,20 @@ FieldGenerator_ptr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
     auto it = gen.find(name);
     if(it == gen.end()) {
       // Not in internal map. Try to resolve
-      FieldGenerator_ptr g = resolve(name);
+      FieldGeneratorPtr g = resolve(name);
       if(g == nullptr)
         throw ParseException("Couldn't find generator '%s'", name.c_str());
       return g;
     }
-    list<FieldGenerator_ptr> args;
+    list<FieldGeneratorPtr> args;
     return it->second->clone(args);
   }
 }
 
-FieldGenerator_ptr ExpressionParser::parseParenExpr(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo &lex) {
   lex.nextToken(); // eat '('
   
-  FieldGenerator_ptr g = parseExpression(lex);
+  FieldGeneratorPtr g = parseExpression(lex);
 
   if ((lex.curtok != ')') && (lex.curtok != ']'))
     throw ParseException("Expecting ')' or ']' but got curtok=%d (%c)",
@@ -210,7 +210,7 @@ FieldGenerator_ptr ExpressionParser::parseParenExpr(LexInfo &lex) {
   return g;
 }
 
-FieldGenerator_ptr ExpressionParser::parsePrimary(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo &lex) {
   switch(lex.curtok) {
   case -1: { // a number
     lex.nextToken(); // Eat number
@@ -232,7 +232,7 @@ FieldGenerator_ptr ExpressionParser::parsePrimary(LexInfo &lex) {
                        static_cast<int>(lex.curtok), lex.curtok);
 }
 
-FieldGenerator_ptr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGenerator_ptr lhs) {
+FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGeneratorPtr lhs) {
   
   while(true) {
     // Check for end of input
@@ -245,7 +245,7 @@ FieldGenerator_ptr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, F
     if(it == bin_op.end())
       throw ParseException("Unexpected binary operator '%c'", lex.curtok);
     
-    FieldGenerator_ptr op = it->second.first;
+    FieldGeneratorPtr op = it->second.first;
     int TokPrec = it->second.second;
   
     if (TokPrec < ExprPrec)
@@ -253,12 +253,12 @@ FieldGenerator_ptr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, F
     
     lex.nextToken(); // Eat binop
     
-    FieldGenerator_ptr rhs = parsePrimary(lex);
+    FieldGeneratorPtr rhs = parsePrimary(lex);
     
     if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
       // Done
     
-      list<FieldGenerator_ptr> args;
+      list<FieldGeneratorPtr> args;
       args.push_front(lhs);
       args.push_back(rhs);
       return op->clone(args);
@@ -276,15 +276,15 @@ FieldGenerator_ptr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, F
     }
     
     // Merge lhs and rhs into new lhs
-    list<FieldGenerator_ptr> args;
+    list<FieldGeneratorPtr> args;
     args.push_front(lhs);
     args.push_back(rhs);
     lhs = op->clone(args);
   }
 }
 
-FieldGenerator_ptr ExpressionParser::parseExpression(LexInfo &lex) {
-  FieldGenerator_ptr lhs = parsePrimary(lex);
+FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo &lex) {
+  FieldGeneratorPtr lhs = parsePrimary(lex);
   return parseBinOpRHS(lex, 0, lhs);
 }
 
