@@ -42,7 +42,7 @@ const Field3D gyroPade0(const Field3D &f, BoutReal rho, int flags) {
   Field2D d = -rho*rho;
   
   // Invert, leaving boundaries unchanged
-  return invert_laplace(f, flags, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, nullptr, &d);
 }
 
 const Field3D gyroPade0(const Field3D &f, const Field2D &rho, int flags) {
@@ -52,7 +52,7 @@ const Field3D gyroPade0(const Field3D &f, const Field2D &rho, int flags) {
   Field2D d = -rho*rho;
   
   // Invert, leaving boundaries unchanged
-  return invert_laplace(f, flags, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, nullptr, &d);
 }
 
 const Field3D gyroPade0(const Field3D &f, const Field3D &rho, int flags) {
@@ -65,7 +65,7 @@ const Field3D gyroPade1(const Field3D &f, BoutReal rho, int flags) {
   Field2D d = -0.5*rho*rho;
   
   // Invert, leaving boundaries unchanged
-  return invert_laplace(f, flags, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, nullptr, &d);
 }
 
 const Field3D gyroPade1(const Field3D &f, const Field2D &rho, int flags) {
@@ -73,7 +73,7 @@ const Field3D gyroPade1(const Field3D &f, const Field2D &rho, int flags) {
   Field2D d = -0.5*rho*rho;
   
   // Invert, leaving boundaries unchanged
-  return invert_laplace(f, flags, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, nullptr, &d);
 }
 
 const Field3D gyroPade1(const Field3D &f, const Field3D &rho, int flags) {

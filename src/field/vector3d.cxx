@@ -39,16 +39,16 @@ Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : x(f.x), y(f.y), z(f.y), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::~Vector3D() {
-  if(deriv != NULL) {
+  if (deriv != nullptr) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
     // only delete once
-    x.deriv = NULL;
-    y.deriv = NULL;
-    z.deriv = NULL;
-    
+    x.deriv = nullptr;
+    y.deriv = nullptr;
+    z.deriv = nullptr;
+
     // Now delete them as part of the deriv vector
     delete deriv;
   }
@@ -94,22 +94,22 @@ void Vector3D::toContravariant() {
 }
 
 Vector3D* Vector3D::timeDeriv() {
-  if(deriv == NULL) {
+  if (deriv == nullptr) {
     deriv = new Vector3D(x.getMesh());
 
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
-    
-    if(x.deriv != NULL) {
+
+    if (x.deriv != nullptr) {
       // already set. Copy across then delete
       deriv->x = *(x.deriv);
       delete x.deriv;
     }
-    if(y.deriv != NULL) {
+    if (y.deriv != nullptr) {
       deriv->y = *(y.deriv);
       delete y.deriv;
     }
-    if(z.deriv != NULL) {
+    if (z.deriv != nullptr) {
       deriv->z = *(z.deriv);
       delete z.deriv;
     }

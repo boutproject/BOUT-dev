@@ -91,7 +91,7 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
 	@echo "Running unit test"
-	@./serial_tests | ./quiet.sh
+	@./quiet.sh ./serial_tests
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.

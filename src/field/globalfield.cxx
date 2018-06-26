@@ -32,8 +32,8 @@ void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {
     *x = mesh->xstart;
   
   *y = mesh->ystart;
-  
-  if(z != NULL)
+
+  if (z != nullptr)
     *z = 0;
 }
 
@@ -54,7 +54,7 @@ void GlobalField::proc_origin(int proc, int *x, int *y, int *z) const {
   // Set the origin values
   *x = pex * nx;
   *y = pey * ny;
-  if(z != NULL)
+  if (z != nullptr)
     *z = 0;
 
   if(pex != 0)
@@ -67,7 +67,7 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
   
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
-  if(lz != NULL)
+  if (lz != nullptr)
     *lz = mesh->LocalNz;
   
   int nxpe = mesh->getNXPE();

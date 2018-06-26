@@ -22,9 +22,10 @@
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(std::unique_ptr<DataFormat> format, const string gridfilename) : file(format.release()), filename(gridfilename) {
+GridFile::GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename)
+  : file(std::move(format)), filename(gridfilename) {
   TRACE("GridFile constructor");
-  
+
   if (! file->openr(filename) ) {
     throw BoutException("Could not open file '%s'", filename.c_str());
   }

@@ -157,8 +157,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
-            commX,pcheck);
+  kMG = std::unique_ptr<Multigrid1DP>(new Multigrid1DP(
+      aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi, commX, pcheck));
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
@@ -193,13 +193,6 @@ BOUT_OMP(master)
     } 
 #endif
   }  
-}
-
-LaplaceMultigrid::~LaplaceMultigrid() {
-  // Finalize, deallocate memory, etc.
-  kMG->cleanMem();
-  kMG->cleanS();
-  kMG = NULL;
 }
 
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
@@ -551,7 +544,6 @@ BOUT_OMP(for)
 
   return result;
 }
-
 
 void LaplaceMultigrid::generateMatrixF(int level) {
 

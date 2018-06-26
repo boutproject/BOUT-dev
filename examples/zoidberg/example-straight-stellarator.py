@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import numpy as np
 import zoidberg
 import matplotlib.pyplot as plt
 

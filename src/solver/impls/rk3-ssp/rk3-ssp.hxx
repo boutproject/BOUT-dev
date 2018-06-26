@@ -48,7 +48,7 @@ RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");
 
 class RK3SSP : public Solver {
  public:
-  RK3SSP(Options *opt = NULL);
+  RK3SSP(Options *opt = nullptr);
   ~RK3SSP(){};
   
   void setMaxTimestep(BoutReal dt) override;

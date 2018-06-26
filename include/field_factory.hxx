@@ -54,14 +54,16 @@ std::shared_ptr<FieldGenerator> generator(BoutReal *ptr);
 
 class FieldFactory : public ExpressionParser {
 public:
-  FieldFactory(Mesh *m, Options *opt = NULL);
+  FieldFactory(Mesh *m, Options *opt = nullptr);
   ~FieldFactory();
-  
-  const Field2D create2D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
-  const Field3D create3D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
+
+  const Field2D create2D(const std::string &value, Options *opt = nullptr,
+                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  const Field3D create3D(const std::string &value, Options *opt = nullptr,
+                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   // Parse a string into a tree of generators
-  std::shared_ptr<FieldGenerator> parse(const std::string &input, Options *opt=NULL);
+  std::shared_ptr<FieldGenerator> parse(const std::string &input, Options *opt = nullptr);
 
   // Singleton object
   static FieldFactory *get();
@@ -112,8 +114,8 @@ public:
   }
   /// Singeton
   static std::shared_ptr<FieldGenerator> get() {
-    static std::shared_ptr<FieldGenerator> instance = 0;
-    
+    static std::shared_ptr<FieldGenerator> instance = nullptr;
+
     if(!instance)
       instance = std::shared_ptr<FieldGenerator>(new FieldNull());
     return instance;

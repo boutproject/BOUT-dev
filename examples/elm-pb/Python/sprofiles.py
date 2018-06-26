@@ -5,10 +5,8 @@ from past.utils import old_div
 import numpy as np
 from boututils.file_import import file_import
 from boututils.surface_average import surface_average
-from boututils.showdata import showdata
 from boutdata.collect import collect
-from pylab import plot, show, annotate, xlabel, ylabel, figure, xlim, ylim, legend, gca
-import os
+from pylab import plot, show, xlabel, ylabel, figure, legend, gca
 
 
 path='./data'
@@ -57,19 +55,6 @@ legend(list(by_label.values()), list(by_label.keys()))
 xlabel(r"$\psi$",fontsize=25)
 ylabel(r"$2 \mu_0 <P^2> / B^2$",fontsize=25)
 
-#xlim(.6,.9)
-#ylim(0,.008)
-
-
 fig.set_tight_layout(True)
 
-#if not os.path.exists('image'):
-#   os.makedirs('image')
-
-#savefig('image/plotcollpase.png', bbox_inches='tight')
-
-
-
 show()
-#showdata(q.T, tslice=1)
-#showdata(q.T, tslice=1, movie=1)

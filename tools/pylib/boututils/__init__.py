@@ -2,6 +2,11 @@
 
 import sys
 
+try:
+    from builtins import str
+except ImportError:
+    raise ImportError("Please install the future module to use Python 2")
+
 # Modules to be imported independent of version
 for_all_versions = [\
                     'calculus',\

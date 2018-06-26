@@ -66,7 +66,7 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = NULL);
+  LaplaceSPT(Options *opt = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;

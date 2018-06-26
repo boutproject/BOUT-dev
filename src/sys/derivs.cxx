@@ -263,7 +263,7 @@ const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
  * ** Applies Neumann boundary in Y, communicates
  */
 const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  Field3D dfdy = DDY(f, outloc, method, region);
+  Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
   f.getMesh()->communicate(dfdy);
   return DDX(dfdy, outloc, method, region);
 }

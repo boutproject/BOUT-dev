@@ -1,49 +1,48 @@
 from numpy import ndarray, pi, cos, sin
 from numpy import fft
 
-def shiftz(var, zangle, zperiod=1.0):
-    """
-    Shift a variable in Z, changing between field-aligned
-    and orthogonal X-Z coordinates. This mainly used
-    for tokamak simulations in field-aligned coordinates.
-    
-    Inputs
-    ------
 
-    var   - a numpy array containing data to be shifted
+def shiftz(var, zangle, zperiod=1.0):
+    """Shift a variable in Z, changing between field-aligned and
+    orthogonal X-Z coordinates. This mainly used for tokamak
+    simulations in field-aligned coordinates.
+
+    Parameters
+    ----------
+    var : array_like
+        Data to be shifted
             4D [t,x,y,z]
             3D [x,y,z] or [t,x,z]
             2D [x,z]
-    
-    zangle - a numpy array containing the shift angle
+    zangle : array_like
+        The shift angle
             2D [x,y]  (if var is 4D or 3D [x,y,z])
             1D [x]    (if var is 3D [t,x,z] or 2D)
+    zperiod : float, optional
+        The fraction of 2pi covered by the variable in Z. This
+        corresponds to the ZPERIOD variable in BOUT.inp and multiplies
+        the kz wavenumbers by this factor.
 
-    zperiod - The fraction of 2pi covered by the variable in Z
-              This corresponds to the ZPERIOD variable in BOUT.inp
-              and multiplies the kz wavenumbers by this factor.
-
-    Outputs
+    Returns
     -------
-    
-    A numpy array of the same size and shape as var
+    ndarray
+        A numpy array of the same size and shape as var
 
-    Example
-    -------
-    
-    from boutdata import collect
-    n = collect("Ne")  # Read 4D variable [t,x,y,z]
-    
-    from boututils.datafile import DataFile
-    d = DataFile("grid.nc")    # Read the grid file
+    Examples
+    --------
 
-    from boutdata.shiftz import shiftz
-    nxz = shiftz(n, d["zShift"], zperiod=4)  
-    
+    >>> from boutdata import collect
+    >>> from boututils.datafile import DataFile
+    >>> from boutdata.shiftz import shiftz
+    >>> n = collect("Ne")  # Read 4D variable [t,x,y,z]
+    >>> d = DataFile("grid.nc")    # Read the grid file
+    >>> nxz = shiftz(n, d["zShift"], zperiod=4)
+
     nxz is now in orthogonal X-Z coordinates (X is psi).
 
     Note that in older grid files "qinty" is used rather
     than "zShift".
+
     """
     
     if len(var.shape) == 4:
