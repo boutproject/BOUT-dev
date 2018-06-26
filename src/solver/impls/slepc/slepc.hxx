@@ -3,7 +3,7 @@
  * NOTE: This class needs tidying, generalising to use FieldData interface
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2014 B.D.Dudson, D. Dickinson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -25,7 +25,7 @@
  **************************************************************************/
 
 #ifdef BOUT_HAS_SLEPC
-//Hacked together by <DD>
+
 class SlepcSolver;
 
 #ifndef __SLEPC_SOLVER_H__
