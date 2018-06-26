@@ -228,10 +228,10 @@ SlepcSolver::~SlepcSolver(){
 
 int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
-  TRACE("Initialising SLEPc-3.4 solver");
+  TRACE("Initialising SLEPc solver");
 
   //Report initialisation
-  output.write("Initialising SLEPc-3.4 solver\n");
+  output.write("Initialising SLEPc solver\n");
   if (selfSolve) {
     Solver::init(NOUT,TIMESTEP);
 
