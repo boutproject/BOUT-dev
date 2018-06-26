@@ -3,6 +3,7 @@
 
 #include "bout_types.hxx"
 #include "bout/assert.hxx"
+#include "utils.hxx"
 
 #include <cmath>
 
@@ -14,7 +15,12 @@ class Solver;
 inline bool isMultiple(BoutReal a, BoutReal b) {
   ASSERT2(a > 0);
   ASSERT2(b > 0);
-  return (std::fmod(a, b) == 0) || (std::fmod(b, a) == 0);
+
+  auto min = a>b?b:a;
+  auto max = a>b?a:b;
+  auto ratio = std::round(max/min);
+  auto error = ratio*min - max;
+  return (std::abs(error/max) < 1e-12);
 }
 
 /// Monitor baseclass for the Solver
