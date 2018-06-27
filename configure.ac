@@ -643,15 +643,15 @@ SLEPC_ERROR_MESSAGE])
 # install Slepc in a non-supported fashion. This is really the fault
 # of Slepc for their weird method of installation
   AS_IF([test $FOUND_SLEPC_HEADER = no], [
-    AC_CHECK_FILE([${SLEPC_CONFDIR}/slepcvariables], [], [
-      AC_MSG_ERROR([Unable to find either slepcversion.h or slepcvariables
+    AC_CHECK_FILE([${SLEPC_CONFDIR}/slepc_variables], [], [
+      AC_MSG_ERROR([Unable to find either slepcversion.h or slepc_variables
 SLEPC_ERROR_MESSAGE])
     ])
 
 # This relies on the assumption that SLEPC_ARCH is empty
-    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepcvariables | cut -d= -f 2-)
+    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepc_variables | cut -d= -f 2-)
 
-    AC_MSG_NOTICE([Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepcvariables])
+    AC_MSG_NOTICE([Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables])
 
     # This is the cache variable set by the previous call to
     # AC_CHECK_HEADER. We need to unset it so we can call the macro
@@ -686,7 +686,7 @@ SLEPC_ERROR_MESSAGE])
   CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/$SLEPC_ARCH/include"
 
   # Set the line to be included in the make.conf file
-  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepcvariables"
+  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
 
   HAS_SLEPC="yes"
 

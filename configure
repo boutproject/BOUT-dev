@@ -8952,15 +8952,15 @@ fi
 # of Slepc for their weird method of installation
   if test $FOUND_SLEPC_HEADER = no; then :
 
-    as_ac_File=`$as_echo "ac_cv_file_${SLEPC_CONFDIR}/slepcvariables" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_CONFDIR}/slepcvariables" >&5
-$as_echo_n "checking for ${SLEPC_CONFDIR}/slepcvariables... " >&6; }
+    as_ac_File=`$as_echo "ac_cv_file_${SLEPC_CONFDIR}/slepc_variables" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_CONFDIR}/slepc_variables" >&5
+$as_echo_n "checking for ${SLEPC_CONFDIR}/slepc_variables... " >&6; }
 if eval \${$as_ac_File+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   test "$cross_compiling" = yes &&
   as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${SLEPC_CONFDIR}/slepcvariables"; then
+if test -r "${SLEPC_CONFDIR}/slepc_variables"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -8973,7 +8973,7 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
 else
 
-      as_fn_error $? "Unable to find either slepcversion.h or slepcvariables
+      as_fn_error $? "Unable to find either slepcversion.h or slepc_variables
   You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
       --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
   Also see the help online:
@@ -8984,10 +8984,10 @@ fi
 
 
 # This relies on the assumption that SLEPC_ARCH is empty
-    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepcvariables | cut -d= -f 2-)
+    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepc_variables | cut -d= -f 2-)
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepcvariables" >&5
-$as_echo "$as_me: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepcvariables" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&5
+$as_echo "$as_me: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&6;}
 
     # This is the cache variable set by the previous call to
     # AC_CHECK_HEADER. We need to unset it so we can call the macro
@@ -9048,7 +9048,7 @@ fi
   CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/$SLEPC_ARCH/include"
 
   # Set the line to be included in the make.conf file
-  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepcvariables"
+  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
 
   HAS_SLEPC="yes"
 
