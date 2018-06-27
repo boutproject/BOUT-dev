@@ -469,7 +469,11 @@ void SlepcSolver::createEPS(){
     Vec initVec, rightVec;
     bool ddtModeBackup=ddtMode;
 
+#if PETSC_VERSION_LT(3, 6, 0)    
     MatGetVecs(shellMat,&rightVec,&initVec);
+#else
+    MatCreateVecs(shellMat,&rightVec,&initVec);
+#endif    
     ddtMode=false; //Temporarily disable as initial ddt values not set
     fieldsToVec(initVec);
     ddtMode=ddtModeBackup; //Restore state
@@ -704,7 +708,11 @@ void SlepcSolver::analyseResults(){
 
     //Declare and create vectors to store eigenfunctions
     Vec vecReal, vecImag;
+#if PETSC_VERSION_LT(3, 6, 0)        
     MatGetVecs(shellMat,&vecReal,&vecImag);
+#else
+    MatCreateVecs(shellMat,&vecReal,&vecImag);    
+#endif    
 
     //This allows us to set the simtime in bout++.cxx directly
     //rather than calling the monitors which are noisy |--> Not very nice way to do this
