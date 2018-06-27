@@ -227,7 +227,6 @@ class BoutOptionsFile(BoutOptions):
         Path to file to read
     name : str, optional
         Name of root section (default: "root")
-
     Examples
     --------
 
@@ -243,8 +242,28 @@ class BoutOptionsFile(BoutOptions):
 
     """
 
-    def __init__(self, filename, name="root"):
-        self.filename = filename
+    def __init__(self, filename="BOUT.inp", name="root", gridfilename=None, nx=None, ny=None, nz=None):
+        """Parameters
+        ---------
+        filename : str, optional
+            Name of input file to read options from
+        name : str, optional
+            Name to give root section of options tree
+        gridfilename : str, optional
+            If present, path to gridfile from which to read grid sizes (nx, ny, nz)
+        nx, ny : int, optional
+            - Specify sizes of grid, used when evaluating option strings
+            - Cannot be given if gridfilename is specified
+            - Must both be given if either is
+            - If neither gridfilename nor nx, ny are given then will try to
+              find nx, ny from (in order) the 'mesh' section of options,
+              outputfiles in the same directory is the input file, or the grid
+              file specified in the options file (used as a path relative to
+              the current directory)
+        nz : int, optional
+            Use this value for nz when evaluating option expressions, if given.
+            Overrides values found from input file, output files or grid files
+        """
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -299,38 +318,72 @@ class BoutOptionsFile(BoutOptions):
 
                         section[line[:eqpos].strip()] = value
                         
-        # define arrays of x, y, z to be used for substitutions
-        gridfile = None
         try:
-            self.nx = self["mesh"].evaluate_scalar("nx")
-            self.ny = self["mesh"].evaluate_scalar("ny")
-        except KeyError:
-            try:
-                gridfilename = self["mesh"]["file"]
-            except KeyError:
-                gridfilename = self["grid"]
-            gridfile = DataFile(gridfilename)
-            self.nx = float(gridfile["nx"])
-            self.ny = float(gridfile["ny"])
-        self.nz = None
-        if gridfile is not None:
-            try:
-                self.nz = gridfile["nz"]
-            except KeyError:
-                pass
-            gridfile.close()
-        if self.nz is None:
-            try:
-                self.nz = self["mesh"].evaluate_scalar("nz")
-            except KeyError:
-                self.nz = self.evaluate_scalar("mz")
-        mxg = self._keys.get("MXG", 2)
-        myg = self._keys.get("MYG", 2)
+            # define arrays of x, y, z to be used for substitutions
+            gridfile = None
+            nzfromfile = None
+            if gridfilename:
+                if nx is not None or ny is not None:
+                    raise ValueError("nx or ny given as inputs even though gridfilename was given explicitly, don't know which parameters to choose")
+                with DataFile(gridfilename) as gridfile:
+                    self.nx = float(gridfile["nx"])
+                    self.ny = float(gridfile["ny"])
+                    try:
+                        nzfromfile = gridfile["MZ"]
+                    except KeyError:
+                        pass
+            elif nx or ny:
+                if nx is None:
+                    raise ValueError("nx not specified. If either nx or ny are given, then both must be.")
+                if ny is None:
+                    raise ValueError("ny not specified. If either nx or ny are given, then both must be.")
+                self.nx = nx
+                self.ny = ny
+            else:
+                try:
+                    self.nx = self["mesh"].evaluate_scalar("nx")
+                    self.ny = self["mesh"].evaluate_scalar("ny")
+                except KeyError:
+                    try:
+                        # get nx, ny, nz from output files
+                        from boutdata.collect import findFiles
+                        file_list = findFiles(path=os.path.dirname(), prefix="BOUT.dmp")
+                        with DataFile(file_list[0]) as f:
+                            self.nx = f["nx"]
+                            self.ny = f["ny"]
+                            nzfromfile = f["MZ"]
+                    except (IOError, KeyError):
+                        try:
+                            gridfilename = self["mesh"]["file"]
+                        except KeyError:
+                            gridfilename = self["grid"]
+                        with DataFile(gridfilename) as gridfile:
+                            self.nx = float(gridfile["nx"])
+                            self.ny = float(gridfile["ny"])
+                            try:
+                                nzfromfile = float(gridfile["MZ"])
+                            except KeyError:
+                                pass
+            if nz is not None:
+                self.nz = nz
+            else:
+                try:
+                    self.nz = self["mesh"].evaluate_scalar("nz")
+                except KeyError:
+                    try:
+                        self.nz = self.evaluate_scalar("mz")
+                    except KeyError:
+                        if nzfromfile is not None:
+                            self.nz = nzfromfile
+            mxg = self._keys.get("MXG", 2)
+            myg = self._keys.get("MYG", 2)
 
-        # make self.x, self.y, self.z three dimensional now so that expressions broadcast together properly.
-        self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg), 1. - (0.5 - mxg)/(self.nx - 2*mxg), self.nx)[:, numpy.newaxis, numpy.newaxis]
-        self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny, 1.-(0.5 - myg)/self.ny, self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
-        self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz, 1.-0.5/self.nz, self.nz)[numpy.newaxis, numpy.newaxis, :]
+            # make self.x, self.y, self.z three dimensional now so that expressions broadcast together properly.
+            self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg), 1. - (0.5 - mxg)/(self.nx - 2*mxg), self.nx)[:, numpy.newaxis, numpy.newaxis]
+            self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny, 1.-(0.5 - myg)/self.ny, self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
+            self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz, 1.-0.5/self.nz, self.nz)[numpy.newaxis, numpy.newaxis, :]
+        except Exception as e:
+            alwayswarn("While building x, y, z coordiante arrays, an exception occured: " + str(e) + "\nEvaluating non-scalar options not available")
 
     def evaluate(self, name):
         """
