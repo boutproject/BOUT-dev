@@ -571,12 +571,12 @@ void derivs_set(std::vector<Options *> options, DiffLookup *table, DiffLookup *s
       for (auto &opts : options) {
         if (opts->isSet(_name)) {
           opts->get(_name, label, "");
-          goto endloop;
+          sf = lookupFunc(stable, label); // Find the function
+          return;
         }
       }
     }
   }
-endloop:
   sf = lookupFunc(stable, label); // Find the function
 }
 
