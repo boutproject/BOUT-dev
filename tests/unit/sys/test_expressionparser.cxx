@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
+
 #include "bout/sys/expressionparser.hxx"
+#include "bout_types.hxx"
+#include "unused.hxx"
 
 #include <vector>
 
@@ -17,6 +20,53 @@ public:
   std::vector<double> y_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> z_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
+};
+
+class IncrementGenerator : public FieldGenerator {
+public:
+  IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr) : gen(gen) {}
+
+  std::shared_ptr<FieldGenerator>
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+    if (args.size() != 1) {
+      throw ParseException(
+          "Incorrect number of arguments to increment function. Expecting 1, got %d",
+          args.size());
+    }
+
+    return std::make_shared<IncrementGenerator>(args.front());
+  }
+
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+    return gen->generate(x, y, z, t) + 1;
+  }
+  const std::string str() { return std::string{"increment(" + gen->str() + ")"}; }
+
+private:
+  std::shared_ptr<FieldGenerator> gen;
+};
+
+// Function that takes no arguments and returns 4.0
+class NullaryGenerator : public FieldGenerator {
+public:
+  NullaryGenerator() {}
+
+  std::shared_ptr<FieldGenerator>
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+    if (args.size() != 0) {
+      throw ParseException(
+          "Incorrect number of arguments to nullary function. Expecting 0, got %d",
+          args.size());
+    }
+
+    return std::make_shared<NullaryGenerator>();
+  }
+
+  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
+                    BoutReal UNUSED(t)) {
+    return 4.0;
+  }
+  const std::string str() { return std::string{"nullary()"}; }
 };
 
 TEST_F(ExpressionParserTest, Parse2) {
@@ -150,8 +200,8 @@ TEST_F(ExpressionParserTest, ParseXSquared) {
   }
 }
 
-TEST_F(ExpressionParserTest, MissingBracket) {
-  EXPECT_THROW(parser.parseString("sin(x"), ParseException);
+TEST_F(ExpressionParserTest, UnknownExpression) {
+  EXPECT_THROW(parser.parseString("foo"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, BadNumbers) {
@@ -160,4 +210,102 @@ TEST_F(ExpressionParserTest, BadNumbers) {
   EXPECT_THROW(parser.parseString("3.e8e4"), ParseException);
   EXPECT_THROW(parser.parseString("4ee"), ParseException);
   EXPECT_THROW(parser.parseString("5G"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, BadFunctions) {
+  EXPECT_THROW(parser.parseString("sin(--)"), ParseException);
+  EXPECT_THROW(parser.parseString("sin(x, )"), ParseException);
+  EXPECT_THROW(parser.parseString("sin(x = 1)"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, BadExpressions) {
+  EXPECT_THROW(parser.parseString("x = 1"), ParseException);
+  EXPECT_THROW(parser.parseString("sin(x"), ParseException);
+  EXPECT_THROW(parser.parseString("sin[x"), ParseException);
+  EXPECT_THROW(parser.parseString("2]"), ParseException);
+  EXPECT_THROW(parser.parseString("4+"), ParseException);
+  EXPECT_THROW(parser.parseString("+4"), ParseException);
+  EXPECT_THROW(parser.parseString("\n"), ParseException);
+  EXPECT_THROW(parser.parseString("(3"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, AddGenerator) {
+  parser.addGenerator("increment", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("increment(x)");
+  EXPECT_EQ(fieldgen->str(), "increment(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, AddFieldValue) {
+  parser.addGenerator("fourty_two", std::make_shared<FieldValue>(42.0));
+
+  auto fieldgen = parser.parseString("fourty_two(x)");
+
+  // This next EXPECT depends on how stringstream renders doubles. We
+  // may need to get rid of it if it proves fragile
+  EXPECT_EQ(fieldgen->str(), "42");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 42.0);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, AddNullaryFunction) {
+  parser.addGenerator("nullary", std::make_shared<NullaryGenerator>());
+
+  auto fieldgen = parser.parseString("nullary()");
+  EXPECT_EQ(fieldgen->str(), "nullary()");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 4.0);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, AddBinaryOp) {
+  // Add a synonym for multiply with a lower precedence than addition
+  parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 5);
+
+  auto fieldgen = parser.parseString("2 & x + 3");
+  EXPECT_EQ(fieldgen->str(), "(2*(x+3))");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2 * (x + 3));
+        }
+      }
+    }
+  }
+}
+
+TEST(ParseExceptionTest, WhatTest) {
+  try {
+    throw ParseException("%s", "test message");
+  } catch (ParseException &e) {
+    std::string message{e.what()};
+    EXPECT_NE(message.find("test message"), std::string::npos);
+  }
 }
