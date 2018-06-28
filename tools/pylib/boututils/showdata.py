@@ -426,8 +426,9 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_ar
 
         if not (global_colors):
             if isclose(fmin[i], fmax[i]):
-                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
-                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
+                # add/subtract very small constant in case fmin=fmax=0
+                thiscontourmin = fmin[i] - 3.e-15*abs(fmin[i]) - 1.e-36
+                thiscontourmax = fmax[i] + 3.e-15*abs(fmax[i]) + 1.e-36
                 alwayswarn("Contour levels too close, adding padding to colorbar range")
                 clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
@@ -436,16 +437,11 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_ar
     if(global_colors):
         fmaxglobal = max(fmax)
         fminglobal = min(fmin)
+        if isclose(fminglobal, fmaxglobal):
+            fminglobal = fminglobal - 3.e-15*abs(fminglobal) - 1.e-36
+            fmaxglobal = fmaxglobal + 3.e-15*abs(fmaxglobal) + 1.e-36
         for i in range(0,Nvar):
-            fmax[i]  = fmaxglobal
-            fmin[i]  = fminglobal
-            if isclose(fmin[i], fmax[i]):
-                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
-                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
-                alwayswarn("Contour levels too close, adding padding to colorbar range")
-                clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
-            else:
-                clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+            clevels.append(linspace(fminglobal, fmaxglobal, Ncolors))
 
     # Create figures for animation plotting
     if (Nvar < 2):
