@@ -621,6 +621,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
   result = sg * result + r2;
 
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
+
   return result;
 }
 
@@ -640,10 +643,15 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
 
+  if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f*0;
+  }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   Field3D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   int ncz = localmesh->LocalNz;
 
@@ -690,8 +698,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
   }
 
-  // Set the output location
-  result.setLocation(f.getLocation());
+  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }
@@ -768,6 +775,8 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
   Field3D result = G1 * ::DDX(f) + G2 * ::DDY(f) + G3 * ::DDZ(f) + g11 * D2DX2(f) +
                    g22 * D2DY2(f) + g33 * D2DZ2(f) +
                    2.0 * (g12 * D2DXDY(f) + g13 * D2DXDZ(f) + g23 * D2DYDZ(f));
+
+  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }

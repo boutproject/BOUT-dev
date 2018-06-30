@@ -70,7 +70,7 @@ void initial_profile(const string &name, Field3D &var) {
   VAROPTION(varOpts, function, "0.0");
   
   // Create a 3D variable
-  var = f.create3D(function, varOpts, NULL, loc);
+  var = f.create3D(function, varOpts, nullptr, loc);
 
   // Optionally scale the variable
   BoutReal scale;
@@ -96,7 +96,7 @@ void initial_profile(const string &name, Field2D &var) {
   string function;
   VAROPTION(varOpts, function, "0.0");
 
-  var = f.create2D(function, varOpts, NULL, loc);
+  var = f.create2D(function, varOpts, nullptr, loc);
 
   // Optionally scale the variable
   BoutReal scale;

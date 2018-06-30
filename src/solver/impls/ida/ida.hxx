@@ -27,12 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_IDA
+#ifdef BOUT_HAS_IDA
 
-#include "../emptysolver.hxx"
-typedef EmptySolver IdaSolver;
- 
-#else
 class IdaSolver;
 
 #ifndef __IDA_SOLVER_H__
@@ -61,7 +57,7 @@ RegisterSolver<IdaSolver> registersolverida("ida");
 
 class IdaSolver : public Solver {
  public:
-  IdaSolver(Options *opts = NULL);
+  IdaSolver(Options *opts = nullptr);
   ~IdaSolver();
   
   int init(int nout, BoutReal tstep) override;

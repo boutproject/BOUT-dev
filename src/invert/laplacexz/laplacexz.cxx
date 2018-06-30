@@ -7,7 +7,7 @@
 #include <strings.h>
 
 LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options) {
-  if(options == NULL)
+  if (options == nullptr)
     options = Options::getRoot()->getSection("laplacexz");
 
   string type;
@@ -20,5 +20,5 @@ LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options) {
   }else {
     throw BoutException("Unknown LaplaceXZ solver type '%s'", type.c_str());
   }
-  return 0;
+  return nullptr;
 }

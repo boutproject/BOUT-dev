@@ -3,44 +3,46 @@ from __future__ import division
 import numpy as np
 
 # Import classes representing poloidal grids
-from .poloidal_grid import RectangularPoloidalGrid, StructuredPoloidalGrid
+from .poloidal_grid import RectangularPoloidalGrid
+
 
 class Grid(object):
-    """
-    Represents a 3D grid, consisting of a collection of poloidal grids
+    """Represents a 3D grid, consisting of a collection of poloidal grids
 
-    Members
-    -------
-    
-    shape     tuple of grid sizes (nx,ny,nz)
-    
+    Attributes
+    ----------
+    shape : (int, int, int)
+        Tuple of grid sizes (nx, ny, nz)
+
+    Parameters
+    ----------
+    poloidal_grids : :py:obj:`list` of :py:obj:`~zoidberg.poloidal_grid.PoloidalGrid`
+        The collection of poloidal grids to group together
+    ycoords : array_like
+        The y-coordinate corresponding to each element of `poloidal_grids`
+
+    Examples
+    --------
+
+    >>> poloidal_grids = [RectangularPoloidalGrid(5, 5, 1, 1)]
+    >>> ycoords = [0.0]
+    >>> grid = Grid(poloidal_grids, ycoords)
+
+    To iterate over the poloidal grids, and get the grids to either side:
+
+    >>> for i in range(grid.numberOfPoloidalGrids()):
+    ...     pol, y = grid.getPoloidalGrid(i)
+    ...     pol_next, y_next = grid.getPoloidalGrid(i+1)
+    ...     pol_last, y_last = grid.getPoloidalGrid(i-1)
+
+    The `getPoloidalGrid()` method ensures that ``y_last <= y <= y_next``
+
     """
+
     def __init__(self, poloidal_grids, ycoords, Ly, yperiodic=False, name="fci_grid"):
-        """
-        Inputs
-        ------
-        
-        poloidal_grids
-        ycoords
-
-        Examples
-        --------
-
-        grid = Grid()
-        
-        To iterate over the poloidal grids, and get the grids to either side:
-        
-        for i in range(grid.numberOfPoloidalGrids()):
-            pol, y = grid.getPoloidalGrid(i)
-            pol_next, y_next = grid.getPoloidalGrid(i+1)
-            pol_last, y_last = grid.getPoloidalGrid(i-1)
-        
-        The getPoloidalGrid() method ensures that y_last <= y <= y_next
-        """
-        
         try:
             ngrids = len(poloidal_grids)
-            
+
             # Check this is the same length as ycoords
             assert len(ycoords) == ngrids
 
@@ -65,18 +67,35 @@ class Grid(object):
         return "Grid({0}, {1}:{2}:{3}, yperiodic={4})".format(self.poloidal_grids, 
                                                               np.amin(self.ycoords), np.amax(self.ycoords), self.ycoords.size, 
                                                               self.yperiodic)
+
     def numberOfPoloidalGrids(self):
-        """
-        Returns the number of poloidal grids i.e. number of points in Y
+        """Returns the number of poloidal grids i.e. number of points in Y
+
+        Returns
+        -------
+        int
+            Number of poloidal grids
         """
         return self.ycoords.size
 
     def getPoloidalGrid(self, yindex):
-        """
-        Returns the poloidal grid and y value at the given y index
-        
-        This handles negative values and values out of range, if the domain is periodic
-        
+        """Returns the poloidal grid and y value at the given y index
+
+        This handles negative values and values out of range, if the
+        domain is periodic
+
+        Parameters
+        ----------
+        yindex : int
+            The desired index in y
+
+        Returns
+        -------
+        :py:obj:`~zoidberg.poloidal_grid.PoloidalGrid`
+            The poloidal grid at `yindex`
+        float
+            The value of the y coordinate at `yindex`
+
         """
         yindex = int(yindex)
         
@@ -111,12 +130,19 @@ class Grid(object):
         if yindex < 0:
             return None, 0.0   # Hit the lower end in Y
         return None, self.Ly  # Hit the upper end in Y
-        
+
     def metric(self):
+        """Return the metric tensor, dx and dz
+
+        Returns
+        -------
+        dict
+            Dictionary containing:
+            - **dx, dy, dz**: Grid spacing
+            - **gxx, gxz, gyy, gzz**: Covariant components
+            - **g_xx, g_xz, g_yy, g_zz**: Contravariant components
         """
-        Return the metric tensor, dx and dz
-        """
-        
+
         # Gather dx,dz and x-z metrics from poloidal slices
         dx = np.zeros(self.shape)
         dz = np.zeros(self.shape)
@@ -147,7 +173,10 @@ class Grid(object):
         # To avoid edge effects, repeat array three times then take the middle
         ycoords = np.concatenate( (self.ycoords - self.Ly, self.ycoords, self.ycoords + self.Ly) )
         ny = self.ycoords.size
-        dy = np.gradient(ycoords[ny:(2*ny)])
+        if ny == 1:
+            dy = np.array([self.Ly])
+        else:
+            dy = np.gradient(ycoords[ny:(2*ny)])
         
         dy3d = np.zeros(self.shape)
         for i in range(self.shape[1]):
@@ -164,23 +193,33 @@ class Grid(object):
                 "gxz": gxz,  "g_xz":g_xz,
                 "gzz": gzz,  "g_zz":g_zz}
 
+
 def rectangular_grid(nx, ny, nz,
                      Lx=1.0, Ly=10., Lz=1.0,
                      xcentre=0.0, zcentre=0.0,
                      yperiodic=False):
+    """Create a rectangular grid in (x,y,z)
+
+    Here y is along the magnetic field (typically toroidal angle), and
+    (x,z) are in the poloidal plane
+
+    Parameters
+    ----------
+    nx, ny, nz : int
+        Number of points in x, y, z
+    Lx, Ly, Lz : float, optional
+        Size of the domain in x, y, z
+    xcentre, zcentre : float, optional
+        The middle of the domain
+    yperiodic : bool, optional
+        Determines if the y direction is periodic
+
+    Returns
+    -------
+    `Grid`
+        A `Grid` representing a rectangular domain
     """
-    Create a rectangular grid in (x,y,z). Here y is along the
-    magnetic field (typically toroidal angle), and (x,z) are in
-    the poloidal plane
-    
-    nx,ny,nz   Number of points in x,y,z
-    Lx,Ly,Lz   Size of the domain in x,y,z
-    xcentre, zcentre   The middle of the domain
-    yperiodic   Determines if the y direction is periodic
-    
-    
-    """
-    
+
     # In this simple case we only need one RectangularPoloidalGrid
     # to represent all poloidal planes
     

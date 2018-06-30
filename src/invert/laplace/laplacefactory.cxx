@@ -14,6 +14,7 @@
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/shoot/shoot_laplace.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
+#include "impls/naulin/naulin_laplace.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
@@ -24,11 +25,12 @@
 #define LAPLACE_CYCLIC "cyclic"
 #define LAPLACE_SHOOT "shoot"
 #define LAPLACE_MULTIGRID "multigrid"
+#define LAPLACE_NAULIN "naulin"
 
-LaplaceFactory* LaplaceFactory::instance = NULL;
+LaplaceFactory *LaplaceFactory::instance = nullptr;
 
 LaplaceFactory* LaplaceFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new LaplaceFactory();
   }
@@ -36,7 +38,7 @@ LaplaceFactory* LaplaceFactory::getInstance() {
 }
 
 Laplacian* LaplaceFactory::createLaplacian(Options *options) {
-  if(options == NULL)
+  if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
   string type;
@@ -62,6 +64,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
       return new LaplaceShoot(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
       return new LaplaceMultigrid(options);
+    }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
+      return new LaplaceNaulin(options);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -84,6 +88,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     return new LaplaceShoot(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
       return new LaplaceMultigrid(options);
+  }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
+    return new LaplaceNaulin(options);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }

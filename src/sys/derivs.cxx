@@ -68,6 +68,9 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION 
     result += f.getMesh()->coordinates()->IntShiftTorsion * DDZ(f, outloc, method, region);
   }
 
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
+
   return result;
 }
 
@@ -117,6 +120,9 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method, REGIO
     result.covariant = false;
   }
 
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == v.getLocation())) ||
+          (result.getLocation() == outloc));
+
   return result;
 }
 
@@ -150,6 +156,9 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
     result += f.getMesh()->coordinates()->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT, region)/f.getMesh()->coordinates()->dx;
   }
 
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
+
   return result;
 }
 
@@ -175,7 +184,10 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
     result += f.getMesh()->coordinates()->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT, region) / f.getMesh()->coordinates()->dy;
   }
 
-  return interp_to(result, outloc);
+  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
+          (result.getLocation() == outloc));
+
+  return result;
 }
 
 const Field2D D2DY2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
@@ -251,7 +263,7 @@ const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
  * ** Applies Neumann boundary in Y, communicates
  */
 const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  Field3D dfdy = DDY(f, outloc, method, region);
+  Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
   f.getMesh()->communicate(dfdy);
   return DDX(dfdy, outloc, method, region);
 }

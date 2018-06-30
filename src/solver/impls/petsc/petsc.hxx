@@ -24,15 +24,12 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC_DEV
+#ifdef BOUT_HAS_PETSC
 
 class PetscSolver;
 
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
-
-// Fix error in PETSC_DEPRECATED("Use SNESGetLineSearch()") on Hopper (PETSc-3.4)
-#define PETSC_DEPRECATED(a)
 
 #include <petsc.h>
 
@@ -53,25 +50,27 @@ RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
 typedef PetscScalar BoutReal;
-typedef PetscInt integer;
-typedef PetscBool boole;
 #define OPT_SIZE 40
-
-using std::vector;
 
 typedef int (*rhsfunc)(BoutReal);
 
 extern BoutReal simtime;
-extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
-extern PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
-extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-#if PETSC_VERSION_GE(3,5,0)
-extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat,Mat,void*);
+/// Monitor function called on every internal timestep
+extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
+/// Monitor function for SNES
+extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+
+/// Compute IJacobian = dF/dU + a dF/dUdot  - a dummy matrix used for pc=none
+#if PETSC_VERSION_GE(3, 5, 0)
+extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
+                                       void *);
 #else
-extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
+extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
+                                       MatStructure *, void *);
 #endif
 
+/// Data for SNES
 typedef struct snes_info {
   PetscInt it;
   PetscInt linear_its;
@@ -80,13 +79,13 @@ typedef struct snes_info {
 } snes_info;
 
 class PetscSolver : public Solver {
- public:
+public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
   // Can be called from physics initialisation to supply callbacks
-  void setPrecon(PhysicsPrecon f) {prefunc = f;}
-  void setJacobian(Jacobian j) {jacfunc = j; }
+  void setPrecon(PhysicsPrecon f) { prefunc = f; }
+  void setJacobian(Jacobian j) override { jacfunc = j; }
 
   int init(int NOUT, BoutReal TIMESTEP) override;
 
@@ -94,62 +93,59 @@ class PetscSolver : public Solver {
 
   // These functions used internally (but need to be public)
 
-  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);
+  /// Wrapper for the RHS function
+  PetscErrorCode rhs(TS ts, PetscReal t, Vec globalin, Vec globalout);
+  /// Wrapper for the preconditioner
   PetscErrorCode pre(PC pc, Vec x, Vec y);
+  /// Wrapper for the Jacobian function
   PetscErrorCode jac(Vec x, Vec y);
-  friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
-  friend PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
-#if PETSC_VERSION_GE(3,5,0)
-  friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat,Mat,void*);
+
+  // Call back functions that need to access internal state
+  friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
+  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+#if PETSC_VERSION_GE(3, 5, 0)
+  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
+                                         void *);
 #else
-  friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
+  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
+                                         MatStructure *, void *);
 #endif
 
   PetscLogEvent solver_event, loop_event, init_event;
- private:
-  PhysicsPrecon prefunc; // Preconditioner
-  Jacobian jacfunc; // Jacobian - vector function
 
-  BoutReal shift;   // Shift (alpha) parameter from TS
+private:
+  PhysicsPrecon prefunc; ///< Preconditioner
+  Jacobian jacfunc;      ///< Jacobian - vector function
+
+  BoutReal shift; ///< Shift (alpha) parameter from TS
   Vec state;
-  BoutReal ts_time;
+  BoutReal ts_time; ///< Internal PETSc timestepper time
 
-  PetscLib lib; // Handles initialising, finalising PETSc
-  
-  Vec           u;
-  TS            ts;
-  Mat           J,Jmf;
+  PetscLib lib; ///< Handles initialising, finalising PETSc
+
+  Vec u;      ///< PETSc solution vector
+  TS ts;      ///< PETSc timestepper object
+  Mat J, Jmf; ///< RHS Jacobian
   MatFDColoring matfdcoloring;
 
-  int nout;   // The number of outputs
-  BoutReal tstep; // Time between outputs
+  int nout;       ///< The number of outputs
+  BoutReal tstep; ///< Time between outputs
 
-  bool diagnose;
+  bool diagnose; ///< If true, print some information about current stage
 
-  BoutReal next_output;  // When the monitor should be called next
+  BoutReal next_output; ///< When the monitor should be called next
 
-  PetscBool interpolate; // Whether to interpolate or not
+  PetscBool interpolate; ///< Whether to interpolate or not
 
   char output_name[PETSC_MAX_PATH_LEN];
   PetscBool output_flag;
   PetscInt prev_linear_its;
   BoutReal bout_snes_time;
-  vector<snes_info> snes_list;
+  std::vector<snes_info> snes_list;
 
-  bool adaptive;   ///< Use adaptive timestepping
+  bool adaptive; ///< Use adaptive timestepping
 };
-
 
 #endif // __PETSC_SOLVER_H__
 
-#endif // BOUT_HAS_PETSC_DEV
-
-// Finally, if no other PETSc solvers defined
-
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
-
-#include "../emptysolver.hxx"
-typedef EmptySolver PetscSolver;
-
-#endif
+#endif // BOUT_HAS_PETSC

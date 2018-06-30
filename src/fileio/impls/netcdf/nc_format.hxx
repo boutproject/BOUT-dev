@@ -113,6 +113,13 @@ class NcFormat : public DataFormat {
   
   void setLowPrecision() override { lowPrecision = true; }
 
+  // Attributes
+
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    const std::string &text) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    int value) override;
+  
  private:
 
   char *fname; ///< Current file name

@@ -24,7 +24,6 @@
  **************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <bout/constants.hxx>
 // #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -34,7 +33,9 @@
 
 BoutReal max_error_at_ystart(const Field3D &error);
 
-int physics_init(bool restarting) {
+int main(int argc, char** argv) {
+
+  BoutInitialise(argc, argv);
   
   Options *options = Options::getRoot()->getSection("petsc2nd");
   class Laplacian* invert = Laplacian::create(options);
@@ -50,7 +51,7 @@ int physics_init(bool restarting) {
   // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
   // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart - 1;
-  BoutReal nz = mesh->GlobalNz-1;
+  BoutReal nz = mesh->GlobalNz;
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: Gaussian x-profiles, 2nd order Krylov
@@ -62,7 +63,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	f1(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
 			;
       }
@@ -72,7 +73,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-          f1(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+ 	  f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   if (mesh->lastX())
@@ -81,7 +82,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f1(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   
@@ -93,7 +94,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	d1(jx,jy,jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
+	d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -101,8 +102,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  d1(jx,jy,jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
-// 	  d1(jx,jy,jz) = d1(jx+1,jy,jz);
+	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -110,8 +110,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  d1(jx,jy,jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
-// 	  d1(jx,jy,jz) = d1(jx-1,jy,jz);
+	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
 	}
   
   p = 0.18439023;
@@ -122,7 +121,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	c1(jx,jy,jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
+	c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -130,8 +129,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  c1(jx,jy,jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
-// 	  c1(jx,jy,jz) = c1(jx+1,jy,jz);
+	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -139,8 +137,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  c1(jx,jy,jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
-// 	  c1(jx,jy,jz) = c1(jx-1,jy,jz);
+	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
 	}
   
   p = 0.612547;
@@ -151,7 +148,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	a1(jx,jy,jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
+	a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -159,8 +156,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  a1(jx,jy,jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
-// 	  a1(jx,jy,jz) = a1(jx+1,jy,jz);
+	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -168,24 +164,25 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  a1(jx,jy,jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
-// 	  a1(jx,jy,jz) = a1(jx-1,jy,jz);
+	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
 	}
   
   mesh->communicate(f1,a1,c1,d1);
+
+  f1.setBoundary("neumann");
   
   b1 = d1*Delp2(f1) + Grad_perp(c1)*Grad_perp(f1)/c1 + a1*f1;
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b1(jx,jy,jz) = b1(jx+1,jy,jz);
+	  b1(jx, jy, jz) = b1(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b1(jx,jy,jz) = b1(jx-1,jy,jz);
+	  b1(jx, jy, jz) = b1(jx-1, jy, jz);
 	}
   
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
@@ -284,13 +281,13 @@ int physics_init(bool restarting) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b3(jx,jy,jz) = b3(jx+1,jy,jz);
+	  b3(jx, jy, jz) = b3(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b3(jx,jy,jz) = b3(jx-1,jy,jz);
+	  b3(jx, jy, jz) = b3(jx-1, jy, jz);
 	}
   
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
@@ -374,7 +371,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	f5(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+	f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
 			;
       }
@@ -384,7 +381,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f5(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+          f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   if (mesh->lastX())
@@ -393,7 +390,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f5(jx,jy,jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+          f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   
@@ -405,7 +402,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	d5(jx,jy,jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
+	d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -413,7 +410,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  d5(jx,jy,jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
+	  d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -421,7 +418,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  d5(jx,jy,jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
+	  d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
 	}
   
   p = 0.160983834;
@@ -432,7 +429,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	c5(jx,jy,jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
+	c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -440,7 +437,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  c5(jx,jy,jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
+	  c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -448,7 +445,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  c5(jx,jy,jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
+	  c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
 	}
   
   p = 0.5378950;
@@ -459,7 +456,7 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	a5(jx,jy,jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
+	a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -467,7 +464,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  a5(jx,jy,jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
+	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -475,7 +472,7 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	  a5(jx,jy,jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
+	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}
     
   mesh->communicate(f5,a5,c5,d5);
@@ -485,13 +482,13 @@ int physics_init(bool restarting) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b5(jx,jy,jz) = b5(jx+1,jy,jz);
+	  b5(jx, jy, jz) = b5(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b5(jx,jy,jz) = b5(jx-1,jy,jz);
+	  b5(jx, jy, jz) = b5(jx-1, jy, jz);
 	}
   
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
@@ -588,13 +585,13 @@ int physics_init(bool restarting) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b7(jx,jy,jz) = b7(jx+1,jy,jz);
+	  b7(jx, jy, jz) = b7(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  b7(jx,jy,jz) = b7(jx-1,jy,jz);
+	  b7(jx, jy, jz) = b7(jx-1, jy, jz);
 	}
   
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
@@ -669,26 +666,23 @@ int physics_init(bool restarting) {
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   
-  return 1;
-  
-}
-
-int physics_run(BoutReal t) {
-  // Doesn't do anything;
-  return 1;
+  BoutFinalise();
+  return 0;
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
-  
-  BoutReal local_max_error = error(mesh->xstart,mesh->ystart,0);
-  
-  for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->LocalNz; jz++)
-      if (local_max_error<error(jx,mesh->ystart,jz)) local_max_error=error(jx,mesh->ystart,jz);
-  
+
+  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+
+  for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
+    for (int jz = 0; jz < mesh->LocalNz; jz++)
+      if (local_max_error < error(jx, mesh->ystart, jz)) {
+        local_max_error = error(jx, mesh->ystart, jz);
+      }
+
   BoutReal max_error;
-  
+
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
-  
+
   return max_error;
 }

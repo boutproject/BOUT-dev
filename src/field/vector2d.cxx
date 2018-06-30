@@ -41,13 +41,13 @@ Vector2D::Vector2D(const Vector2D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr) {}
 
 Vector2D::~Vector2D() {
-  if(deriv != NULL) {
+  if (deriv != nullptr) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
     // only delete once
-    x.deriv = NULL;
-    y.deriv = NULL;
-    z.deriv = NULL;
-    
+    x.deriv = nullptr;
+    y.deriv = nullptr;
+    z.deriv = nullptr;
+
     // Now delete them as part of the ddt vector
     delete deriv;
   }
@@ -94,22 +94,22 @@ void Vector2D::toContravariant() {
 }
 
 Vector2D* Vector2D::timeDeriv() {
-  if(deriv == NULL) {
+  if (deriv == nullptr) {
     deriv = new Vector2D(x.getMesh());
 
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
-    
-    if(x.deriv != NULL) {
+
+    if (x.deriv != nullptr) {
       // already set. Copy across then delete
       deriv->x = *(x.deriv);
       delete x.deriv;
     }
-    if(y.deriv != NULL) {
+    if (y.deriv != nullptr) {
       deriv->y = *(y.deriv);
       delete y.deriv;
     }
-    if(z.deriv != NULL) {
+    if (z.deriv != nullptr) {
       deriv->z = *(z.deriv);
       delete z.deriv;
     }
@@ -224,25 +224,9 @@ Vector2D & Vector2D::operator/=(const Field2D &rhs) {
 
 ///////////////// CROSS PRODUCT //////////////////
 
+// cross product implementation in vector3d.cxx
 Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
-  Vector2D result(x.getMesh());
-
-  // Make sure both vector components are covariant
-  Vector2D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-
-  Coordinates *metric = x.getMesh()->coordinates();
-
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
@@ -357,13 +341,11 @@ const Field3D Vector2D::operator*(const Vector3D &rhs) const {
 ///////////////// CROSS PRODUCT //////////////////
 
 const Vector2D Vector2D::operator^(const Vector2D &rhs) const {
-  Vector2D result = *this;
-  result ^= rhs;
-  return result;
+  return cross(*this,rhs);
 }
 
 const Vector3D Vector2D::operator^(const Vector3D &rhs) const {
-  return -1.0*rhs^(*this);
+  return cross(*this,rhs);
 }
 
 /***************************************************************
@@ -387,8 +369,8 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field2D abs(const Vector2D &v) {
-  return sqrt(v*v);
+const Field2D abs(const Vector2D &v, REGION region) {
+  return sqrt(v*v, region);
 }
 
 /***************************************************************

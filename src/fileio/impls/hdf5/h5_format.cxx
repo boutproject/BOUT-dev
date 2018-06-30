@@ -38,7 +38,7 @@ H5Format::H5Format(bool parallel_in) {
   parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
-  fname = NULL;
+  fname = nullptr;
   dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
   
@@ -63,7 +63,9 @@ H5Format::H5Format(bool parallel_in) {
       throw BoutException("Failed to set dataSet_plist");
 #endif
 
-  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+  // Disable automatic printing of error messages so that we can catch
+  // errors without printing error messages to stdout
+  if (H5Eset_auto(H5E_DEFAULT, nullptr, nullptr) < 0)
     throw BoutException("Failed to set error stack to not print errors");
 }
 
@@ -71,7 +73,7 @@ H5Format::H5Format(const char *name, bool parallel_in) {
   parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
-  fname = NULL;
+  fname = nullptr;
   dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
   
@@ -95,7 +97,9 @@ H5Format::H5Format(const char *name, bool parallel_in) {
       throw BoutException("Failed to set dataSet_plist");
 #endif
 
-  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+  // Disable automatic printing of error messages so that we can catch
+  // errors without printing error messages to stdout
+  if (H5Eset_auto(H5E_DEFAULT, nullptr, nullptr) < 0)
     throw BoutException("Failed to set error stack to not print errors");
 
   openr(name);
@@ -198,7 +202,7 @@ const vector<int> H5Format::getSize(const char *name) {
   }
   else {
     hsize_t* dims = new hsize_t[nd];
-    int error = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
+    int error = H5Sget_simple_extent_dims(dataSpace, dims, nullptr);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");
     
@@ -297,7 +301,8 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
   if (nd > 0 && !(nd==1 && lx==1))
-    if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                            /*block=*/nullptr) < 0)
       throw BoutException("Failed to select hyperslab");
   
   if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
@@ -389,7 +394,8 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts, /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
@@ -408,40 +414,14 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     if(ly != 0) datatype = "Field2D";
     if(lz != 0) datatype = "Field3D";
     
-    // Create new dataspace for attribute
-    hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
-    if (attribute_dataspace < 0)
-      throw BoutException("Failed to create attribute_dataspace");
-    
-    // Create new string datatype for attribute
-    hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
-    if (variable_length_string_type < 0)
-      throw BoutException("Failed to create variable_length_string_type");
-    if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
-      throw BoutException("Failed to create string type");
-    
-    // Create attribute and write to it
-    hid_t myatt_in = H5Acreate(dataSet, "bout_type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
-    if (myatt_in < 0)
-      throw BoutException("Failed to create attribute");
-    if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)
-      throw BoutException("Failed to write attribute");
-    
-    if (H5Sclose(init_space) < 0)
-      throw BoutException("Failed to close init_space");
-    if (H5Sclose(attribute_dataspace) < 0)
-      throw BoutException("Failed to close attribute_dataspace");
-    if (H5Tclose(variable_length_string_type) < 0)
-      throw BoutException("Failed to close variable_length_string_type");
-    if (H5Aclose(myatt_in) < 0)
-      throw BoutException("Failed to close myatt_in");
-    
+    setAttribute(dataSet, "bout_type", datatype);
   }
   
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
-  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
   
   if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
@@ -525,8 +505,8 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL,
-                          counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts, /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
 
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
@@ -536,8 +516,8 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
-  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts,
-                          /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
 
   if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
@@ -626,7 +606,8 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   hid_t mem_space = H5Screate_simple(nd_local, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts_local, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts_local, /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
@@ -636,7 +617,7 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     hid_t dataSpace = H5Dget_space(dataSet);
     if (dataSpace < 0)
       throw BoutException("Failed to create dataSpace");
-    if (H5Sget_simple_extent_dims(dataSpace, dims, /*maxdims=*/NULL) < 0)
+    if (H5Sget_simple_extent_dims(dataSpace, dims, /*maxdims=*/nullptr) < 0)
       throw BoutException("Failed to get dims");
     dims[0]+=1;
     if (t0 == -1) {
@@ -718,7 +699,8 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
-  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
     throw BoutException("Failed to select hyperslab");
   
   if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
@@ -732,6 +714,100 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
     throw BoutException("Failed to close dataSet");
   
   return true;
+}
+
+
+/***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
+                         const std::string &text) {
+  TRACE("H5Format::setAttribute(varname, attrname, string)");
+
+  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    // Negative value indicates error, i.e. variable does not exist
+    throw BoutException("Trying to create attribute for variable that does not exist");
+  }
+
+  setAttribute(dataSet, attrname, text);
+
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+}
+
+void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
+                         int value) {
+  TRACE("H5Format::setAttribute(varname, attrname, int)");
+
+  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    // Negative value indicates error, i.e. variable does not exist
+    throw BoutException("Trying to create attribute for variable that does not exist");
+  }
+
+  setAttribute(dataSet, attrname, value);
+
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+}
+
+void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
+                         const std::string &text) {
+  TRACE("H5Format::setAttribute(dataSet, attrname, string)");
+
+  // Create new dataspace for attribute
+  hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+  if (attribute_dataspace < 0)
+    throw BoutException("Failed to create attribute_dataspace");
+
+  // Create new string datatype for attribute
+  hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
+  if (variable_length_string_type < 0)
+    throw BoutException("Failed to create variable_length_string_type");
+  if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
+    throw BoutException("Failed to create string type");
+
+  // Create attribute if it does not exist and write to it
+  hid_t myatt_in = H5Aopen(dataSet, attrname.c_str(), H5P_DEFAULT);
+  if (myatt_in < 0) {
+    // Need to create attribute
+    myatt_in = H5Acreate(dataSet, attrname.c_str(), variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    if (myatt_in < 0)
+      throw BoutException("Failed to create attribute");
+  }
+  if (H5Awrite(myatt_in, variable_length_string_type, &text) < 0)
+    throw BoutException("Failed to write attribute");
+
+  if (H5Sclose(attribute_dataspace) < 0)
+    throw BoutException("Failed to close attribute_dataspace");
+  if (H5Tclose(variable_length_string_type) < 0)
+    throw BoutException("Failed to close variable_length_string_type");
+  if (H5Aclose(myatt_in) < 0)
+    throw BoutException("Failed to close myatt_in");
+}
+
+void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
+                         int value) {
+  TRACE("H5Format::setAttribute(dataSet, attrname, int)");
+
+  // Create new dataspace for attribute
+  hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+  if (attribute_dataspace < 0)
+    throw BoutException("Failed to create attribute_dataspace");
+
+  // Create attribute and write to it
+  hid_t myatt_in = H5Acreate(dataSet, attrname.c_str(), H5T_NATIVE_INT, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+  if (myatt_in < 0)
+    throw BoutException("Failed to create attribute");
+  if (H5Awrite(myatt_in, H5T_NATIVE_INT, &value) < 0)
+    throw BoutException("Failed to write attribute");
+
+  if (H5Sclose(attribute_dataspace) < 0)
+    throw BoutException("Failed to close attribute_dataspace");
+  if (H5Aclose(myatt_in) < 0)
+    throw BoutException("Failed to close myatt_in");
 }
 
 #endif // HDF5

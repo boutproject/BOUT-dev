@@ -17,9 +17,9 @@ class Requirements(object):
 
     #requires not make
 
-    #Requires not (travis and mpich)
+    #requires not (travis and hdf5)
     
-    The individual requirements (netcdf, make, travis, mpich etc.)
+    The individual requirements (netcdf, make, travis, etc.)
     are gathered from the bout-config scipt, or from executable
     scripts in the "requirements" directory (where this code is).
     

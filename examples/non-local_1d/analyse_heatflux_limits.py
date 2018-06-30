@@ -9,15 +9,12 @@ from __future__ import print_function
 from __future__ import division
 from builtins import range
 from past.utils import old_div
-nproc = 1  # Number of processors to use
 
-from boututils.run_wrapper import shell, launch
-from boutdata.plotdata import plotdata
 from boutdata.collect import collect
-import numpy as np
-from sys import argv, exit
-from math import sqrt, log10, pow, pi
+from math import sqrt, pow, pi
 from matplotlib import pyplot
+
+nproc = 1  # Number of processors to use
 
 def sign(x):
   if x>=0.:

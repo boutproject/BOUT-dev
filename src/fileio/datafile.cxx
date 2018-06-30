@@ -51,8 +51,9 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   filename=new char[filenamelen];
   filename[0] = 0; // Terminate the string
   
-  if(opt == NULL)
+  if (opt == nullptr) {
     return; // To allow static initialisation
+  }
   // Read options
   
   OPTION(opt, parallel, false); // By default no parallel formats for now
@@ -68,17 +69,19 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   
 }
 
-Datafile::Datafile(Datafile &&other) :
-  parallel(other.parallel), flush(other.flush), guards(other.guards),
-  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
-  file(other.file.release()), int_arr(other.int_arr),
-  BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
-  f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  filenamelen=other.filenamelen;
-  filename=other.filename;
-  other.filenamelen=0;
-  other.filename=nullptr;
+Datafile::Datafile(Datafile &&other) noexcept
+    : parallel(other.parallel), flush(other.flush), guards(other.guards),
+      floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly),
+      Lz(other.Lz), enabled(other.enabled), shiftOutput(other.shiftOutput),
+      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushFrequency(other.flushFrequency), file(std::move(other.file)),
+      int_arr(std::move(other.int_arr)), BoutReal_arr(std::move(other.BoutReal_arr)),
+      f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
+      v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
+  filenamelen = other.filenamelen;
+  filename = other.filename;
+  other.filenamelen = 0;
+  other.filename = nullptr;
   other.file = nullptr;
 }
 
@@ -95,8 +98,7 @@ Datafile::Datafile(const Datafile &other) :
   // Same added variables, but the file not the same 
 }
 
-
-Datafile& Datafile::operator=(Datafile &&rhs) {
+Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
@@ -109,13 +111,12 @@ Datafile& Datafile::operator=(Datafile &&rhs) {
   flushFrequencyCounter = 0;
   flushFrequency = rhs.flushFrequency;
   file         = std::move(rhs.file);
-  rhs.file     = nullptr; // not needed?
-  int_arr      = rhs.int_arr;
-  BoutReal_arr = rhs.BoutReal_arr;
-  f2d_arr      = rhs.f2d_arr;
-  f3d_arr      = rhs.f3d_arr;
-  v2d_arr      = rhs.v2d_arr;
-  v3d_arr      = rhs.v3d_arr;
+  int_arr      = std::move(rhs.int_arr);
+  BoutReal_arr = std::move(rhs.BoutReal_arr);
+  f2d_arr      = std::move(rhs.f2d_arr);
+  f3d_arr      = std::move(rhs.f3d_arr);
+  v2d_arr      = std::move(rhs.v2d_arr);
+  v3d_arr      = std::move(rhs.v3d_arr);
   if (filenamelen < rhs.filenamelen){
     delete[] filename;
     filenamelen=rhs.filenamelen;
@@ -134,8 +135,9 @@ Datafile::~Datafile() {
 }
 
 bool Datafile::openr(const char *format, ...) {
-  if(format == (const char*) NULL) 
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename,filenamelen, format);
   
@@ -168,8 +170,9 @@ bool Datafile::openw(const char *format, ...) {
   if(!enabled)
     return true;
   
-  if(format == (const char*) NULL)
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename, filenamelen, format);
   
@@ -208,9 +211,10 @@ bool Datafile::openw(const char *format, ...) {
 bool Datafile::opena(const char *format, ...) {
   if(!enabled)
     return true;
-  
-  if(format == (const char*) NULL)
+
+  if (format == nullptr) {
     throw BoutException("Datafile::open: No argument given for opening file!");
+  }
 
   bout_vsnprintf(filename, filenamelen, format);
 
@@ -552,6 +556,9 @@ bool Datafile::write() {
   for (const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -580,6 +587,9 @@ bool Datafile::write() {
   for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
 
+    // Add cell location
+    file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    
     // Add string attributes
     {
       auto it = attrib_string.find(var.name);
@@ -614,6 +624,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector2D v  = *(var.ptr);
@@ -622,6 +640,14 @@ bool Datafile::write() {
       write_f2d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f2d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f2d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
 
@@ -635,6 +661,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("_x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("_y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("_z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     } else {
       // Writing contravariant vector
       Vector3D v  = *(var.ptr);
@@ -643,6 +677,14 @@ bool Datafile::write() {
       write_f3d(var.name+string("x"), &(v.x), var.save_repeat);
       write_f3d(var.name+string("y"), &(v.y), var.save_repeat);
       write_f3d(var.name+string("z"), &(v.z), var.save_repeat);
+
+      // Add cell location
+      file->setAttribute(var.name+string("_x"), "cell_location",
+                         CELL_LOC_STRING(v.x.getLocation()));
+      file->setAttribute(var.name+string("_y"), "cell_location",
+                         CELL_LOC_STRING(v.y.getLocation()));
+      file->setAttribute(var.name+string("_z"), "cell_location",
+                         CELL_LOC_STRING(v.z.getLocation()));
     }
   }
   
@@ -657,8 +699,9 @@ bool Datafile::write(const char *format, ...) const {
   if(!enabled)
     return true;
 
-  if(format == (const char*) NULL)
+  if (format == nullptr) {
     throw BoutException("Datafile::write: No argument given!");
+  }
 
   int filenamelen=FILENAMELEN;
   char * filename=new char[filenamelen];

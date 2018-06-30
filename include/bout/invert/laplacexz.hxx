@@ -46,7 +46,8 @@ public:
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
-  static LaplaceXZ* create(Mesh *m, Options *opt = NULL);
+  static LaplaceXZ *create(Mesh *m, Options *opt = nullptr);
+
 protected:
   static const int INVERT_DC_GRAD  = 1;
   static const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)

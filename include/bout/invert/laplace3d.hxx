@@ -22,7 +22,7 @@ class Laplace3D;
 
 class Laplace3D {
 public:
-  Laplace3D(Options *opt = NULL) : flags(0) {}
+  Laplace3D(Options *opt = nullptr) : flags(0) {}
   virtual ~Laplace3D() {}
   
   virtual void setCoefA(const Field2D &f) = 0;
@@ -49,7 +49,7 @@ public:
   virtual const Field3D solve(const Field3D &b, const Field3D &x0) { return solve(b); }
   virtual const Field2D solve(const Field2D &b, const Field2D &x0) { return solve(b); }
   
-  static Laplace3D* create(Options *opt = NULL);
+  static Laplace3D* create(Options *opt = nullptr);
 protected:
   int flags;
   

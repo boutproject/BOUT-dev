@@ -1,21 +1,7 @@
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-except:
-    print("Warning: No str in builtins")
 
-try:
-    from builtins import range
-except:
-    print("Warning: No range in builtins")
-
-# Requires:
-#  - boututils
-#  - NumPy
-
-from boututils.datafile import DataFile
-from boututils.boutarray import BoutArray
+from builtins import str, range
 
 import os
 import sys
@@ -23,15 +9,29 @@ import glob
 
 import numpy as np
 
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
+
 
 def findVar(varname, varlist):
-    """
-    Find variable name in a list
+    """Find variable name in a list
 
     First does case insensitive comparison, then
     checks for abbreviations.
 
     Returns the matched string, or raises a ValueError
+
+    Parameters
+    ----------
+    varname : str
+        Variable name to look for
+    varlist : list of str
+        List of possible variable names
+
+    Returns
+    -------
+    str
+        The closest match to varname in varlist
 
     """
     # Try a variation on the case
@@ -58,35 +58,46 @@ def findVar(varname, varlist):
     raise ValueError("Variable '"+varname+"' not found")
 
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguards=False, xguards=True, info=True, prefix="BOUT.dmp", strict=False, tind_auto=False, datafile_cache=None):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
+            yguards=False, xguards=True, info=True, prefix="BOUT.dmp",
+            strict=False, tind_auto=False, datafile_cache=None):
     """Collect a variable from a set of BOUT++ outputs.
 
-    data = collect(name)
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    xind, yind, zind, tind : int, list of int, optional
+        Range of X, Y, Z or time indices to collect. Either a single index,
+        or [min, max] (inclusive). Default is to fetch all indices
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
+    yguards : bool, optional
+        Collect Y boundary guard cells? (default: False)
+    xguards : bool, optional
+        Collect X boundary guard cells? (default: True)
+        (Set to True to be consistent with the definition of nx)
+    info : bool, optional
+        Print information about collect? (default: True)
+    strict : bool, optional
+        Fail if the exact variable name is not found? (default: False)
+    tind_auto : bool, optional
+        Read all files, to get the shortest length of time_indices.
+        Useful if writing got interrupted (default: False)
+    datafile_cache : datafile_cache_tuple, optional
+        Optional cache of open DataFile instances: namedtuple as returned
+        by create_cache. Used by BoutOutputs to pass in a cache so that we
+        do not have to re-open the dump files to read another variable
+        (default: None)
 
-    varname   Name of the variable (string)
+    Examples
+    --------
 
-    Optional arguments:
+    >>> collect(name)
+    BoutArray([[[[...]]]])
 
-    xind = [min,max]   Range of X indices to collect
-    yind = [min,max]   Range of Y indices to collect
-    zind = [min,max]   Range of Z indices to collect
-    tind = [min,max]   Range of T indices to collect
-
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
-    yguards = False        Collect Y boundary guard cells?
-    xguards = True         Collect X boundary guard cells?
-                           (Set to True to be consistent with the
-                           definition of nx)
-    info    = True         Print information about collect?
-    strict  = False        Fail if the exact variable name is not found?
-    tind_auto = False      Read all files, to get the shortest length of time_indices
-                           useful if writing got interrupted.
-    datafile_cache = None  Optional cache of open DataFile instances:
-                           namedtuple as returned by create_cache. Used by
-                           BoutOutputs to pass in a cache so that we do not
-                           have to re-open the dump files to read another
-                           variable.
     """
 
     if datafile_cache is None:
@@ -136,7 +147,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
             ystart = 0
             ylim = None
         else:
-            ystart = mxg
+            ystart = myg
             if myg > 0:
                 ylim = -myg
             else:
@@ -504,16 +515,21 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".", yguar
 
 
 def attributes(varname, path=".", prefix="BOUT.dmp"):
-    """
-    Returns a dictionary of variable attributes
+    """Return a dictionary of variable attributes in an output file
 
-    varname   Name of the variable (string)
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
 
-    Optional arguments:
-
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
-
+    Returns
+    -------
+    dict
+        A dictionary of attributes of varname
     """
     # Search for BOUT++ dump files in NetCDF format
     file_list, _, _ = findFiles(path, prefix)
@@ -525,28 +541,47 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
 
 
 def dimensions(varname, path=".", prefix="BOUT.dmp"):
-    """
-    Returns a list of dimensions
+    """Return the names of dimensions of a variable in an output file
 
-    varname   Name of the variable (string)
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
 
-    Optional arguments:
+    Returns
+    -------
+    tuple of strs
+        The elements of the tuple give the names of corresponding variable
+        dimensions
 
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
     """
     file_list, _, _ = findFiles(path, prefix)
     return DataFile(file_list[0]).dimensions(varname)
 
 
 def findFiles(path, prefix):
-    """
-    Find files matching prefix in path.
+    """Find files matching prefix in path.
 
-    Netcdf (nc) and HDF5 (hdf5) files are searched.
+    Netcdf (".nc", ".ncdf", ".cdl") and HDF5 (".h5", ".hdf5", ".hdf")
+    files are searched.
 
-    Returns the list of files, whether the files are a parallel dump file and
-    the file suffix.
+    Parameters
+    ----------
+    path : str
+        Path to data files
+    prefix : str
+        File prefix
+
+    Returns
+    -------
+    tuple : (list of str, bool, str)
+        The first element of the tuple is the list of files, the second is
+        whether the files are a parallel dump file and the last element is
+        the file suffix.
 
     """
 
@@ -594,10 +629,22 @@ def findFiles(path, prefix):
 
 
 def create_cache(path, prefix):
-    """
-    Create a list of DataFile objects to be passed repeatedly to collect.
+    """Create a list of DataFile objects to be passed repeatedly to
+    collect.
 
-    Stores the cache in a namedtuple along with the file_list, and parallel and suffix attributes
+    Parameters
+    ----------
+    path : str
+        Path to data files
+    prefix : str
+        File prefix
+
+    Returns
+    -------
+    namedtuple : (list of str, bool, str, list of :py:obj:`~boututils.datafile.DataFile`)
+        The cache of DataFiles in a namedtuple along with the file_list,
+        and parallel and suffix attributes
+
     """
 
     # define namedtuple to return as the result

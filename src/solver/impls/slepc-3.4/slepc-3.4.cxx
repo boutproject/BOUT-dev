@@ -212,7 +212,7 @@ SlepcSolver::SlepcSolver(Options *options){
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
   }else{
-    advanceSolver=NULL;
+    advanceSolver = nullptr;
   }
 }
 
@@ -415,7 +415,7 @@ void SlepcSolver::createEPS(){
 
   //Now construct EPS
   EPSCreate(comm,&eps);
-  EPSSetOperators(eps,shellMat,NULL);
+  EPSSetOperators(eps, shellMat, nullptr);
   EPSSetProblemType(eps,EPS_NHEP);//Non-hermitian
 
   //Probably want to read options and set EPS properties
@@ -436,7 +436,7 @@ void SlepcSolver::createEPS(){
   EPSSetFromOptions(eps);
 
   //Register a monitor
-  EPSMonitorSet(eps,&monitorWrapper,this,NULL);
+  EPSMonitorSet(eps, &monitorWrapper, this, nullptr);
 
   //Initialize shell spectral transformation if selected by user
   //Note currently the only way to select this is with the
