@@ -272,7 +272,7 @@ and problem.
 Differencing methods
 --------------------
 
-Differencing methods are specified in the section (``[meesh:ddx]``,
+Differencing methods are specified in the section (``[mesh:ddx]``,
 ``[mesh:ddy]``, ``[mesh:ddz]`` and ``[mesh:diff]``), one for each
 dimension. The ``[mesh:diff]`` section is only used if the section for
 the dimension does not contain an option for the differencing method.
