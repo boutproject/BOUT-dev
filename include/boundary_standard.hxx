@@ -52,7 +52,7 @@ BoutReal default_func(BoutReal t, int x, int y, int z);
 /// 3nd-order boundary condition
 class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
-  BoundaryDirichlet_O3() : gen(NULL) {}
+  BoundaryDirichlet_O3() : gen(nullptr) {}
   BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
@@ -72,7 +72,7 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
 /// 4th-order boundary condition
 class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
-  BoundaryDirichlet_O4() : gen(NULL) {}
+  BoundaryDirichlet_O4() : gen(nullptr) {}
   BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
@@ -157,7 +157,7 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 // Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryNeumann : public BoundaryOp {
  public:
-  BoundaryNeumann() : gen(NULL) {}
+  BoundaryNeumann() : gen(nullptr) {}
   BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
@@ -196,7 +196,7 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
-  BoundaryNeumann_O4() : gen(NULL) {}
+  BoundaryNeumann_O4() : gen(nullptr) {}
   BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 

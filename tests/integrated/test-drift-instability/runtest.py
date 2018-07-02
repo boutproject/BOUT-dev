@@ -7,11 +7,7 @@
 from __future__ import print_function
 from __future__ import division
 
-try:
-  from builtins import str
-  from builtins import range
-except:
-  pass
+from builtins import str, range
 
 from math import isnan
 
@@ -28,7 +24,7 @@ from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
 import numpy as np
-from sys import stdout, exit ,argv
+from sys import exit ,argv
 
 nthreads=1
 MPIRUN = getmpirun()

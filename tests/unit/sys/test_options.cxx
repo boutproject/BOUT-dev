@@ -11,10 +11,12 @@ class OptionsTest : public ::testing::Test {
 public:
   OptionsTest() {
     output_info.disable();
+    output_warn.disable();
   }
 
   ~OptionsTest() {
     output_info.enable();
+    output_warn.enable();
   }
 };
 

@@ -138,7 +138,7 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
 
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
-  if(deriv != NULL) {
+  if (deriv != nullptr) {
     // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
     // only delete once
     // Also need to check that separate yup_field exists
@@ -528,8 +528,8 @@ void Field3D::applyBoundary(bool init) {
 #endif
 
   ASSERT1(isAllocated());
-  
-  if(background != NULL) {
+
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     
     Field3D tot = *this + (*background);
@@ -554,7 +554,7 @@ void Field3D::applyBoundary(BoutReal t) {
 
   ASSERT1(isAllocated())
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
 
     Field3D tot = *this + (*background);
@@ -572,8 +572,8 @@ void Field3D::applyBoundary(const string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   ASSERT1(isAllocated());
-  
-  if(background != NULL) {
+
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     
     Field3D tot = *this + (*background);
@@ -618,16 +618,16 @@ void Field3D::applyTDerivBoundary() {
   TRACE("Field3D::applyTDerivBoundary()");
   
   ASSERT1(isAllocated());
-  ASSERT1(deriv != NULL);
+  ASSERT1(deriv != nullptr);
   ASSERT1(deriv->isAllocated());
-  
-  if(background != NULL)
+
+  if (background != nullptr)
     *this += *background;
     
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
-  
-  if(background != NULL)
+
+  if (background != nullptr)
     *this -= *background;
 }
 
@@ -658,7 +658,7 @@ void Field3D::applyParallelBoundary() {
 
   ASSERT1(isAllocated());
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
     tot.applyParallelBoundary();
@@ -677,7 +677,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 
   ASSERT1(isAllocated());
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
     tot.applyParallelBoundary(t);
@@ -696,7 +696,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
 
   ASSERT1(isAllocated());
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
     tot.applyParallelBoundary(condition);
@@ -720,7 +720,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
 
   ASSERT1(isAllocated());
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
     tot.applyParallelBoundary(region, condition);
@@ -747,7 +747,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
 
   ASSERT1(isAllocated());
 
-  if(background != NULL) {
+  if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
     tot.applyParallelBoundary(region, condition, f);
@@ -926,6 +926,30 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   }
   
   return result;
+}
+
+BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
+  TRACE("Field3D::mean() %s",allpe? "over all PEs" : "");
+
+  ASSERT2(f.isAllocated());
+
+  Mesh *localmesh = f.getMesh();
+
+  // use first element for sum of values of f, second element for number of points
+  BoutReal result[2] = {0., 0.};
+  
+  for(const auto& i: f.region(rgn)) {
+    result[0] += f[i];
+    result[1] += 1.;
+  }
+
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult[2] = {result[0], result[1]};
+    MPI_Allreduce(&localresult, &result, 2, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  }
+  
+  return result[0]/result[1];
 }
 
 /////////////////////////////////////////////////////////////////////

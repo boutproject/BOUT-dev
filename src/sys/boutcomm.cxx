@@ -3,8 +3,8 @@
 
 BoutComm* BoutComm::instance = nullptr;
 
-BoutComm::BoutComm() : pargc(0), pargv(0), hasBeenSet(false), comm(MPI_COMM_NULL) {
-}
+BoutComm::BoutComm()
+    : pargc(nullptr), pargv(nullptr), hasBeenSet(false), comm(MPI_COMM_NULL) {}
 
 BoutComm::~BoutComm() {
   if(comm != MPI_COMM_NULL)
@@ -71,5 +71,5 @@ BoutComm* BoutComm::getInstance() {
 
 void BoutComm::cleanup() {
   if(instance != nullptr) delete instance;
-  instance = 0;
+  instance = nullptr;
 }

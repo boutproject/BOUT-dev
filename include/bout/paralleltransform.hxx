@@ -32,6 +32,12 @@ public:
 
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcYUpDown(Field3D &f) = 0;
+
+  /// Calculate Yup and Ydown fields by integrating over mapped points
+  /// This should be used for parallel divergence operators
+  virtual void integrateYUpDown(Field3D &f) {
+    return calcYUpDown(f);
+  }
   
   /// Convert a 3D field into field-aligned coordinates
   /// so that the y index is along the magnetic field

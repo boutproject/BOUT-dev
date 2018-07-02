@@ -10,7 +10,7 @@ addons:
   apt:
     # Note &<name> creates a reference that we can refer to later using
     # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
-    packages: &non-mpi
+    packages: &standard_packages
     - libfftw3-dev
     - libnetcdf-dev
     - netcdf-bin
@@ -20,8 +20,6 @@ addons:
     - python3-numpy
     - python3-scipy
     - lcov
-    packages: &standard_packages
-    - *non-mpi
     - libhdf5-mpi-dev
     - openmpi-bin
     - libopenmpi-dev
@@ -33,14 +31,8 @@ matrix:
       - CONFIGURE_OPTIONS=''
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='netcdf4 jinja2'
-  - addons:
-      apt:
-        packages: &mpich
-         - libmpich-dev
-         - mpich
-         - *non-mpi
-         - libhdf5-serial-dev
-    env:
+  - env:
+      - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
       - SCRIPT_FLAGS='-uimt python'
       - PIP_PACKAGES='netcdf4 cython jinja2'

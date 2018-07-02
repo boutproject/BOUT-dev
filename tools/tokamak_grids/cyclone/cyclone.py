@@ -3,24 +3,12 @@
 from __future__ import print_function
 from __future__ import division
 
-try:
-  from builtins import str
-  from builtins import range
-except:
-  print("Warning: No builtins module")
+from builtins import str, range
 
-try:
-    from numpy import *
-    from scipy.integrate import quad
-except ImportError:
-    print("ERROR: Need NumPy and SciPy modules")
-    raise
+from numpy import *
+from scipy.integrate import quad
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
-    raise
+from boututils.datafile import DataFile
 
 ######################################################
 

@@ -873,6 +873,11 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT1(localmesh == f.getMesh());
+
+  if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f*0;
+  }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   CELL_LOC outloc = f.getLocation();

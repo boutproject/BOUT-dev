@@ -10,13 +10,13 @@
 #include "impls/serial/serial.hxx"
 #include "impls/cyclic/cyclic.hxx"
 
-ParDerivFactory* ParDerivFactory::instance = NULL;
+ParDerivFactory *ParDerivFactory::instance = nullptr;
 
 /// Default Options section to look for configuration
 static const char* default_section = "parderiv";
 
 ParDerivFactory* ParDerivFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new ParDerivFactory();
   }
@@ -33,8 +33,8 @@ InvertPar* ParDerivFactory::createInvertPar() {
 InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {
   int NPES;
   MPI_Comm_size(BoutComm::get(), &NPES);
-  
-  if(opt == NULL)
+
+  if (opt == nullptr)
     opt = Options::getRoot()->getSection(default_section);
 
   if(!strcasecmp(type, PARDERIVSERIAL)) {

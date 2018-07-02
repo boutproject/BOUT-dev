@@ -5,12 +5,8 @@ from __future__ import division
 from builtins import str
 from builtins import range
 from past.utils import old_div
-from boututils.run_wrapper import shell, launch
-from boutdata.plotdata import plotdata
 from boutdata.collect import collect
-import numpy as np
 from sys import argv
-from math import sqrt, log, pi
 from matplotlib import pyplot, ticker, rc
 
 rc('text', usetex=True)

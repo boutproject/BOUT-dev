@@ -7,10 +7,10 @@
 
 #include <boutexception.hxx>
 
-RKSchemeFactory* RKSchemeFactory::instance = NULL;
+RKSchemeFactory *RKSchemeFactory::instance = nullptr;
 
 RKSchemeFactory* RKSchemeFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new RKSchemeFactory();
   }
@@ -18,7 +18,7 @@ RKSchemeFactory* RKSchemeFactory::getInstance() {
 }
 
 inline RKSchemeType RKSchemeFactory::getDefaultRKSchemeType() {
-  RKSchemeType type = NULL;
+  RKSchemeType type = nullptr;
   type = RKSCHEME_RKF45;
   return type;
 }
@@ -26,7 +26,7 @@ inline RKSchemeType RKSchemeFactory::getDefaultRKSchemeType() {
 RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
   RKSchemeType type = getDefaultRKSchemeType();
 
-  if(options == NULL) 
+  if (options == nullptr)
     options = Options::getRoot()->getSection("solver");
   
   string scheme;
@@ -38,7 +38,7 @@ RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
 }
 
 RKScheme* RKSchemeFactory::createRKScheme(RKSchemeType &type, Options *options) {
-  if(options == NULL)
+  if (options == nullptr)
     options = Options::getRoot()->getSection("solver");
   
   if(!strcasecmp(type, RKSCHEME_RKF45)) {

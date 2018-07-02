@@ -286,10 +286,10 @@ T **matrix(int xsize, int ysize) {
   if(ysize == 0)
      ysize = 1;
 
-  if((m = new T*[xsize]) == NULL)
+  if((m = new T*[xsize]) == nullptr)
     throw BoutException("Error: could not allocate memory:%d\n", xsize);
   
-  if((m[0] = new T[xsize*ysize]) == NULL)
+  if((m[0] = new T[xsize*ysize]) == nullptr)
     throw BoutException("Error: could not allocate memory\n");
 
   for(i=1;i<xsize;i++) {

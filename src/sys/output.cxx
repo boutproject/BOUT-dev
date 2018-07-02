@@ -41,7 +41,7 @@ void Output::disable() {
 
 int Output::open(const char *fname, ...) {
 
-  if (fname == (const char *)NULL) {
+  if (fname == (const char *)nullptr) {
     return 1;
   }
 
@@ -89,7 +89,7 @@ void Output::write(const char *string, ...) {
 }
 
 void Output::vwrite(const char *string, va_list va) {
-  if (string == (const char *)NULL) {
+  if (string == (const char *)nullptr) {
     return;
   }
 
@@ -110,11 +110,12 @@ void Output::vprint(const char *string, va_list ap) {
     return; // Only output if to screen
   }
 
-  if (string == (const char *)NULL) {
+  if (string == (const char *)nullptr) {
     return;
   }
   bout_vsnprintf_(buffer, buffer_len, string, ap);
   std::cout << std::string(buffer);
+  std::cout.flush();
 }
 
 Output *Output::getInstance() {

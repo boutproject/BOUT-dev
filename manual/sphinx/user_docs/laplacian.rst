@@ -30,28 +30,35 @@ implementations are listed in table :numref:`tab-laplacetypes`.
 .. _tab-laplacetypes:
 .. table:: Laplacian implementation types
 
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | Name        | Description                                                | Requirements                             |
-   +=============+============================================================+==========================================+
-   | cyclic      | Serial/parallel. Gathers boundary rows onto one processor. |                                          |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | petsc       | Serial/parallel. Lots of methods, no Boussinesq            | PETSc (section :ref:`sec-PETSc-install`) |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | multigrid   | Serial/parallel. Geometric multigrid, no Boussinesq        |                                          |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | serial_tri  | Serial only. Thomas algorithm for tridiagonal system.      | Lapack (section :ref:`sec-lapack`)       |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | serial_band | Serial only. Enables 4th-order accuracy                    | Lapack (section :ref:`sec-lapack`)       |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | spt         | Parallel only (NXPE>1). Thomas algorithm.                  |                                          |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | mumps       | Serial/parallel. Direct solver                             | MUMPS (section :ref:`sec-mumps`)         |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | pdd         | Parallel Diagnonally Dominant algorithm. Experimental      |                                          |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-   | shoot       | Shooting method. Experimental                              |                                          |
-   +-------------+------------------------------------------------------------+------------------------------------------+
-
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | Name                   | Description                                                  | Requirements                             |
+   +========================+==============================================================+==========================================+
+   | cyclic                 | Serial/parallel. Gathers boundary rows onto one processor.   |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `petsc                 | Serial/parallel. Lots of methods, no Boussinesq              | PETSc (section :ref:`sec-PETSc-install`) |
+   | <sec-petsc-laplace_>`__|                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
+   | <sec-naulin_>`__       |                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `serial_tri            | Serial only. Thomas algorithm for tridiagonal system.        | Lapack (section :ref:`sec-lapack`)       |
+   | <sec-tri_>`__          |                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `serial_band           | Serial only. Enables 4th-order accuracy                      | Lapack (section :ref:`sec-lapack`)       |
+   | <sec-band_>`__         |                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
+   | <sec-spt_>`__          |                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | mumps                  | Serial/parallel. Direct solver                               | MUMPS (section :ref:`sec-mumps`)         |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
+   | <sec-pdd_>`__          |                                                              |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | shoot                  | Shooting method. Experimental                                |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
 
 Usage of the laplacian inversion
 --------------------------------
@@ -478,6 +485,8 @@ This can be formulated as the matrix equation
 where the matrix :math:`A` is tridiagonal. The boundary conditions are
 set by setting the first and last rows in :math:`A` and :math:`B_z`.
 
+.. _sec-petsc-laplace:
+
 Using PETSc solvers
 ~~~~~~~~~~~~~~~~~~~
 
@@ -710,11 +719,15 @@ Laplacian inversion implementations.
 Each of the implementations is in a subdirectory of
 ``src/invert/laplace/impls`` and is discussed below.
 
+.. _sec-tri:
+
 Serial tridiagonal solver
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is the simplest implementation, and is in
 ``src/invert/laplace/impls/serial_tri/``
+
+.. _sec-band:
 
 Serial band solver
 ~~~~~~~~~~~~~~~~~~
@@ -723,6 +736,8 @@ This is band-solver which performs a :math:`4^{th}`-order inversion.
 Currently this is only available when ``NXPE=1``; when more than one
 processor is used in :math:`x`, the Laplacian algorithm currently
 reverts to :math:`3^{rd}`-order.
+
+.. _sec-spt:
 
 SPT parallel tridiagonal
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -749,6 +764,8 @@ set of 3 poloidal slices (i.e. MYSUB=3)
    periods are where a processor is idle - in this case about 40% of the
    time
 
+.. _sec-pdd:
+
 PDD algorithm
 ~~~~~~~~~~~~~
 
@@ -756,6 +773,18 @@ This is the Parallel Diagonally Dominant (PDD) algorithm. It’s very
 fast, but achieves this by neglecting some cross-processor terms. For
 ELM simulations, it has been found that these terms are important, so
 this method is not usually used.
+
+.. _sec-naulin:
+
+Naulin solver
+~~~~~~~~~~~~~
+
+This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
+<https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
+his thesis [Løiten2017]_.
+
+.. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
+   in a linear device", 2017, https://celma-project.github.io/.
 
 .. _sec-LaplaceXY:
 
