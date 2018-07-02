@@ -992,10 +992,6 @@ int IMEXBDF2::run() {
       // User signalled to quit
       break;
     }
-
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
-
   }
 
   return 0;
@@ -1200,8 +1196,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   }
 
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
-  SNESSolve(snesUse,NULL,snes_x);
+
+  SNESSolve(snesUse, nullptr, snes_x);
 
   // Find out if converged
   SNESConvergedReason reason;
@@ -1242,6 +1238,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   for(int i=0;i<nlocal;i++)
     u[i] = xdata[i];
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
+
+  return 0;
 }
 
 // f = (x - gamma*G(x)) - rhs

@@ -480,6 +480,11 @@ public:
     return *this;
   }
 
+  /// Number of indices (possibly repeated)
+  unsigned int size() const {
+    return indices.size();
+  }
+  
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
@@ -505,9 +510,13 @@ private:
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    ASSERT1(xend + 1 > xstart);
-    ASSERT1(yend + 1 > ystart);
-    ASSERT1(zend + 1 > zstart);
+    if ( (xend + 1 <= xstart) ||
+         (yend + 1 <= ystart) ||
+         (zend + 1 <= zstart) ) {
+      // Empty region
+      return {};
+    }
+    
     ASSERT1(ny > 0);
     ASSERT1(nz > 0);
 
@@ -630,4 +639,11 @@ Region<T> offset(const Region<T> &region, int offset){
   auto result = region;
   return result.offset(offset);
 }
+
+/// Return the number of indices in a Region
+template<typename T>
+unsigned int size(const Region<T> &region){
+  return region.size();
+}
+
 #endif /* __REGION_H__ */

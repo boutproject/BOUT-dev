@@ -18,9 +18,7 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
 
-Mesh* Mesh::create(Options *opt) {
-  return create(NULL, opt);
-}
+Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
   if(s == nullptr)
@@ -341,21 +339,21 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    }
    return found->second;
 }
-  
-void Mesh::addRegion3D(const std::string &region_name, Region<> region){
-   if (regionMap3D.count(region_name)) {
-     throw BoutException("Trying to add an already existing region %s to regionMap3D");
-   }
-   regionMap3D[region_name] = region;
+
+void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
+  if (regionMap3D.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMap3D");
+  }
+  regionMap3D[region_name] = region;
 }
 
-void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
+void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
   regionMap2D[region_name] = region;
 }
- 
+
 void Mesh::createDefaultRegions(){
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,

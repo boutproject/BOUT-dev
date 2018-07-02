@@ -19,7 +19,7 @@ class Laplace3DPetsc;
 
 class Laplace3DPetsc : public Laplace3D {
 public:
-  Laplace3DPetsc(Options *opt = NULL);
+  Laplace3DPetsc(Options *opt = nullptr);
   ~Laplace3DPetsc();
   
   void setCoefA(const Field2D &f) {A = f;}

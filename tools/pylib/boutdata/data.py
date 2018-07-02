@@ -1,42 +1,51 @@
-# Provides a class BoutData which makes access to code
-# inputs and outputs easier. Creates a tree of maps,
-# inspired by approach used in OMFIT
-#
-#
+"""Provides a class BoutData which makes access to code inputs and
+outputs easier. Creates a tree of maps, inspired by approach used in
+OMFIT
+
+"""
 
 import os
-import sys
 import glob
-import numpy
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
 
+
 class BoutOptions(object):
-    """
-    This class represents a tree structure.
-    Each node (BoutOptions object) can have several
-    sub-nodes (sections), and several key-value pairs.
+    """This class represents a tree structure. Each node (BoutOptions
+    object) can have several sub-nodes (sections), and several
+    key-value pairs.
 
-    Example
-    -------
+    Parameters
+    ----------
+    name : str, optional
+        Name of the root section (default: "root")
+    parent : BoutOptions, optional
+        A parent BoutOptions object (default: None)
 
-    optRoot = BoutOptions()  # Create a root
+    Examples
+    --------
 
-    # Specify value of a key in a section "test" 
-    # If the section does not exist then it is created
+    >>> optRoot = BoutOptions()  # Create a root
 
-    optRoot.getSection("test")["key"] = value
+    Specify value of a key in a section "test"
+    If the section does not exist then it is created
 
-    # Get the value of a key in a section "test"
-    # If the section does not exist then a KeyError is raised
+    >>> optRoot.getSection("test")["key"] = 4
 
-    print optRoot["test"]["key"]
+    Get the value of a key in a section "test"
+    If the section does not exist then a KeyError is raised
 
-    # To pretty print the options
+    >>> print(optRoot["test"]["key"])
+    4
 
-    print optRoot
+    To pretty print the options
+
+    >>> print(optRoot)
+    root
+     |- test
+     |   |- key = 4
 
     """
 
@@ -47,9 +56,19 @@ class BoutOptions(object):
         self._parent = parent
 
     def getSection(self, name):
-        """
-        Return a section object. If the section
-        does not exist then it is created
+        """Return a section object. If the section does not exist then it is
+        created
+
+        Parameters
+        ----------
+        name : str
+            Name of the section to get/create
+
+        Returns
+        -------
+        BoutOptions
+            A new section with the original object as the parent
+
         """
         name = name.lower()
 
@@ -81,9 +100,9 @@ class BoutOptions(object):
         self._keys[key.lower()] = value
 
     def path(self):
-        """
-        Returns the path of this section,
-        joining together names of parents
+        """Returns the path of this section, joining together names of
+        parents
+
         """
 
         if self._parent:
@@ -91,29 +110,37 @@ class BoutOptions(object):
         return self._name
 
     def keys(self):
+        """Returns all keys, including sections and values
+
         """
-        Returns all keys, including sections and values
-        """
-        return self._sections.keys() + self._keys.keys()
+        return list(self._sections) + list(self._keys)
 
     def sections(self):
-        """
-        Return a list of sub-sections
+        """Return a list of sub-sections
+
         """
         return self._sections.keys()
 
     def values(self):
-        """
-        Return a list of values
+        """Return a list of values
+
         """
         return self._keys.keys()
+
+    def as_dict(self):
+        """Return a nested dictionary of all the options.
+
+        """
+        dicttree = {name:self[name] for name in self.values()}
+        dicttree.update({name:self[name].as_dict() for name in self.sections()})
+        return dicttree
 
     def __len__(self):
         return len(self._sections) + len(self._keys)
 
     def __iter__(self):
-        """
-        Iterates over all keys. First values, then sections
+        """Iterates over all keys. First values, then sections
+
         """
         for k in self._keys:
             yield k
@@ -121,8 +148,8 @@ class BoutOptions(object):
             yield s
 
     def __str__(self, indent=""):
-        """
-        Print a pretty version of the options tree
+        """Print a pretty version of the options tree
+
         """
         text = self._name + "\n"
 
@@ -135,25 +162,36 @@ class BoutOptions(object):
 
 
 class BoutOptionsFile(BoutOptions):
-    """
-    Parses a BOUT.inp configuration file, producing
-    a tree of BoutOptions.
+    """Parses a BOUT.inp configuration file, producing a tree of
+    BoutOptions.
 
-    Slight differences from ConfigParser, including allowing
-    values before the first section header.
+    Slight differences from ConfigParser, including allowing values
+    before the first section header.
 
-    Example
-    -------
+    Parameters
+    ----------
+    filename : str
+        Path to file to read
+    name : str, optional
+        Name of root section (default: "root")
 
-    opts = BoutOptionsFile("BOUT.inp")
+    Examples
+    --------
 
-    print opts   # Print all options in a tree
+    >>> opts = BoutOptionsFile("BOUT.inp")
+    >>> print(opts)   # Print all options in a tree
+    root
+    |- nout = 100
+    |- timestep = 2
+    ...
 
-    opts["All"]["scale"] # Value "scale" in section "All"
+    >>> opts["All"]["scale"] # Value "scale" in section "All"
+    1.0
 
     """
 
     def __init__(self, filename, name="root"):
+        self.filename = filename
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -208,51 +246,99 @@ class BoutOptionsFile(BoutOptions):
 
                         section[line[:eqpos].strip()] = value
 
+    def write(self, filename=None, overwrite=False):
+        """ Write to BOUT++ options file
+
+        This method will throw an error rather than overwriting an existing
+        file unless the overwrite argument is set to true.
+        Note, no comments from the original input file are transferred to the
+        new one.
+
+        Parameters
+        ----------
+        filename : str
+            Path of the file to write
+            (defaults to path of the file that was read in)
+        overwrite : bool
+            If False then throw an exception if 'filename' already exists.
+            Otherwise, just overwrite without asking.
+            (default False)
+        """
+        if filename is None:
+            filename = self.filename
+
+        if not overwrite and os.path.exists(filename):
+            raise ValueError("Not overwriting existing file, cannot write output to "+filename)
+
+        def write_section(basename, opts, f):
+            if basename:
+                f.write("["+basename+"]\n")
+            for key, value in opts._keys.items():
+                f.write(key+" = "+str(value)+"\n")
+            for section in opts.sections():
+                section_name = basename+":"+section if basename else section
+                write_section(section_name, opts[section], f)
+
+        with open(filename, "w") as f:
+            write_section("", self, f)
+
 
 class BoutOutputs(object):
+    """Emulates a map class, represents the contents of a BOUT++ dmp
+    files. Does not allow writing, only reading of data.  By default
+    there is no cache, so each time a variable is read it is
+    collected; if caching is set to True variables are stored once
+    they are read.  Extra keyword arguments are passed through to
+    collect.
+
+    Parameters
+    ----------
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
+    suffix : str, optional
+        File suffix (default: None, searches all file extensions)
+    caching : bool, float, optional
+        Switches on caching of data, so it is only read into memory
+        when first accessed (default False) If caching is set to a
+        number, it gives the maximum size of the cache in GB, after
+        which entries will be discarded in first-in-first-out order to
+        prevent the cache getting too big.  If the variable being
+        returned is bigger than the maximum cache size, then the
+        variable will be returned without being added to the cache,
+        and the rest of the cache will be left (default: False)
+    DataFileCaching : bool, optional
+        Switch for creation of a cache of DataFile objects to be
+        passed to collect so that DataFiles do not need to be
+        re-opened to read each variable (default: True)
+
+    **kwargs
+        keyword arguments that are passed through to _caching_collect()
+
+    Examples
+    --------
+
+    >>> d = BoutOutputs(".")  # Current directory
+    >> d.keys()     # List all valid keys
+    ['iteration',
+     'zperiod',
+     'MYSUB',
+     ...
+    ]
+
+    >>> d.dimensions["ne"] # Get the dimensions of the field ne
+    ('t', 'x', 'y', 'z')
+
+    >>> d["ne"] # Read "ne" from data files
+    BoutArray([[[[...]]]])
+
+    >>> d = BoutOutputs(".", prefix="BOUT.dmp", caching=True) # Turn on caching
+
     """
-    Emulates a map class, represents the contents of a BOUT++ dmp files. Does
-    not allow writing, only reading of data.  By default there is no cache, so
-    each time a variable is read it is collected; if caching is set to True
-    variables are stored once they are read.  Extra keyword arguments are
-    passed through to collect.
 
-    Example
-    -------
-
-    d = BoutOutputs(".")  # Current directory
-
-    d.keys()     # List all valid keys
-
-    d.dimensions["ne"] # Get the dimensions of the field ne
-
-    d["ne"] # Read "ne" from data files
-
-    d = BoutOutputs(".", prefix="BOUT.dmp", caching=True) # Turn on caching
-
-    Options
-    -------
-    prefix - sets the prefix for data files (default "BOUT.dmp")
-
-    caching - switches on caching of data, so it is only read into memory when
-              first accessed (default False) If caching is set to a number, it
-              gives the maximum size of the cache in GB, after which entries
-              will be discarded in first-in-first-out order to prevent the
-              cache getting too big.  If the variable being returned is bigger
-              than the maximum cache size, then the variable will be returned
-              without being added to the cache, and the rest of the cache will
-              be left.
-              Default: False
-
-    DataFileCaching - switch for creation of a cache of DataFile objects to be
-                      passed to collect so that DataFiles do not need to be
-                      re-opened to read each variable.
-                      Default: True
-
-    **kwargs - keyword arguments that are passed through to _caching_collect()
-    """
-
-    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False, DataFileCaching=True, **kwargs):
+    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False,
+                 DataFileCaching=True, **kwargs):
         """
         Initialise BoutOutputs object
         """
@@ -327,28 +413,39 @@ class BoutOutputs(object):
         self._DataFileCache = None
 
     def keys(self):
-        """
-        Return a list of available variable names
+        """Return a list of available variable names
+
         """
         return self.varNames
 
     def evolvingVariables(self):
-        """
-        Return a list of names of time-evolving variables
+        """Return a list of names of time-evolving variables
+
         """
         return self.evolvingVariableNames
 
     def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
-        """
-        Create a new set of dump files for npes processors.
+        """Create a new set of dump files for npes processors.
+
         Useful for restarting simulations using more or fewer processors.
 
-        If nxpe==None, then an 'optimal' number will be selected automatically
+        Existing data and restart files are kept in the directory
+        "redistribution_backups". redistribute() will fail if this
+        directory already exists, to avoid overwriting anything
 
-        If include_restarts==True, then restart.redistribute will be used to redistribute the restart files also.
+        Parameters
+        ----------
+        npes : int
+            Number of new files to create
+        nxpe : int, optional
+            If nxpe is None (the default), then an 'optimal' number will be
+            selected automatically
+        mxg, myg : int, optional
+            Number of guard cells in x, y (default: 2)
+        include_restarts : bool, optional
+            If True, then restart.redistribute will be used to
+            redistribute the restart files also (default: True)
 
-        Existing data and restart files are kept in the directory "redistribution_backups"
-        redistribute() will fail if this directory already exists, to avoid overwriting anything
         """
         from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
         from os import rename, path, mkdir
@@ -475,8 +572,8 @@ class BoutOutputs(object):
                                  nxpe=nxpe, output=self._path, mxg=mxg, myg=myg)
 
     def _collect(self, *args, **kwargs):
-        """
-        Wrapper for collect to pass self._DataFileCache if necessary.
+        """Wrapper for collect to pass self._DataFileCache if necessary.
+
         """
         if self._DataFileCaching and self._DataFileCache is None:
             # Need to create the cache
@@ -487,9 +584,11 @@ class BoutOutputs(object):
         return len(self.varNames)
 
     def __getitem__(self, name):
-        """
-        Reads a variable using _caching_collect.
-        Caches result and returns later if called again, if self._caching=True
+        """Reads a variable
+
+        Caches result and returns later if called again, if caching is
+        turned on for this instance
+
         """
 
         if self._caching:
@@ -516,21 +615,23 @@ class BoutOutputs(object):
             return data
 
     def _removeFirstFromCache(self):
-        # pop the first item from the OrderedDict _datacache
+        """Pop the first item from the OrderedDict _datacache
+
+        """
         item = self._datacache.popitem(last=False)
         self._datacachesize -= item[1].nbytes
 
     def __iter__(self):
-        """
-        Iterate through all keys, starting with "options"
-        then going through all variables for _caching_collect
+        """Iterate through all keys, starting with "options" then going
+        through all variables for _caching_collect
+
         """
         for k in self.varNames:
             yield k
 
     def __str__(self, indent=""):
-        """
-        Print a pretty version of the tree
+        """Print a pretty version of the tree
+
         """
         text = ""
         for k in self.varNames:
@@ -540,43 +641,58 @@ class BoutOutputs(object):
 
 
 def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
-    """
-    Returns a dictionary, containing the contents of a BOUT++ output directory.
-    Does not allow writing, only reading of data.  By default there is no
-    cache, so each time a variable is read it is collected; if caching is set
-    to True variables are stored once they are read.
+    """Returns a dictionary, containing the contents of a BOUT++ output
+    directory.
 
-    Example
+    Does not allow writing, only reading of data.  By default there is
+    no cache, so each time a variable is read it is collected; if
+    caching is set to True variables are stored once they are read.
+
+    Parameters
+    ----------
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
+    caching : bool, float, optional
+        Switches on caching of data, so it is only read into memory
+        when first accessed (default False) If caching is set to a
+        number, it gives the maximum size of the cache in GB, after
+        which entries will be discarded in first-in-first-out order to
+        prevent the cache getting too big.  If the variable being
+        returned is bigger than the maximum cache size, then the
+        variable will be returned without being added to the cache,
+        and the rest of the cache will be left (default: False)
+    DataFileCaching : bool, optional
+        Switch for creation of a cache of DataFile objects to be
+        passed to collect so that DataFiles do not need to be
+        re-opened to read each variable (default: True)
+    **kwargs
+        Keyword arguments that are passed through to collect()
+
+    Returns
     -------
+    dict
+        Contents of a BOUT++ output directory, including options and
+        output files
 
-    d = BoutData(".")  # Current directory
+    Examples
+    --------
 
-    d.keys()     # List all valid keys
+    >>> d = BoutData(".")  # Current directory
 
-    print d["options"]  # Prints tree of options
+    >>> d.keys()     # List all valid keys
 
-    d["options"]["nout"]   # Value of nout in BOUT.inp file
+    >>> print(d["options"])  # Prints tree of options
 
-    print d["outputs"]    # Print available outputs
+    >>> d["options"]["nout"]   # Value of nout in BOUT.inp file
 
-    d["outputs"]["ne"] # Read "ne" from data files
+    >>> print(d["outputs"])    # Print available outputs
 
-    d = BoutData(".", prefix="BOUT.dmp", caching=True) # Turn on caching
+    >>> d["outputs"]["ne"] # Read "ne" from data files
 
-    Options
-    -------
-    prefix - sets the prefix for data files (default "BOUT.dmp")
+    >>> d = BoutData(".", prefix="BOUT.dmp", caching=True) # Turn on caching
 
-    caching - switches on caching of data, so it is only read into memory when
-              first accessed (default False) If caching is set to a number, it
-              gives the maximum size of the cache in GB, after which entries
-              will be discarded in first-in-first-out order to prevent the
-              cache getting too big.  If the variable being returned is bigger
-              than the maximum cache size, then the variable will be returned
-              without being added to the cache, and the rest of the cache will
-              be left.
-
-    **kwargs - keyword arguments that are passed through to collect()
     """
 
     data = {}  # Map for the result

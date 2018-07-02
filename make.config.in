@@ -17,7 +17,9 @@
 
 # PETSc config variables need to be first, else they may clobber other
 # options (e.g. CXX, CXXFLAGS)
-@PETSC@
+PETSC_DIR ?= @PETSC_DIR@
+PETSC_ARCH ?= @PETSC_ARCH@
+@PETSC_MAKE_INCLUDE@
 @SLEPC_VARS@
 
 # These lines can be replaced in "make install" to point to install directories
@@ -260,7 +262,7 @@ $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")

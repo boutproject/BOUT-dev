@@ -66,8 +66,8 @@ class PncFormat : public DataFormat {
   bool openw(const char *name, bool append=false) override;
   bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
 
-  bool is_valid() override { return fname != NULL;}
-  
+  bool is_valid() override { return fname != nullptr; }
+
   void close() override;
   
   void flush() override;

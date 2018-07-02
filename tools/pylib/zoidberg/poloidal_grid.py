@@ -1,18 +1,20 @@
-"""
-Routines for generating structured meshes on poloidal domains
+"""Routines for generating structured meshes on poloidal domains
 
 Classes
 -------
-
-RectangularPoloidalGrid   Simple rectangles in R-Z
-StructuredPoloidalGrid    Curvilinear structured grids in R-Z
+`RectangularPoloidalGrid`
+    Simple rectangles in R-Z
+`StructuredPoloidalGrid`
+    Curvilinear structured grids in R-Z
 
 Functions
 ---------
-
-grid_elliptic   Create a StructuredPoloidalGrid 
-                from inner and outer RZLine objects
-                using elliptic meshing method.
+`grid_annulus`
+    Create a `StructuredPoloidalGrid` from inner and outer RZLine
+    objects using a simple algorithm
+`grid_elliptic`
+    Create a `StructuredPoloidalGrid` from inner and outer RZLine
+    objects using elliptic meshing method
 
 """
 
@@ -36,31 +38,39 @@ except:
     # Python 2
     import rzline
 
+
 class PoloidalGrid(object):
-    """
-    Represents a poloidal grid 
-    
+    """Represents a poloidal grid
+
     Note: Here the 2D plane (R,Z) is labelled by (x,z) indices
 
-    Members
-    -------
-    
-    nx, nz  Number of points in x and z
+    Attributes
+    ----------
+    nx, nz : int
+        Number of points in x and z
+    R : ndarray
+        2D Numpy array of R coordinates
+    Z : ndarray
+        2D Numpy array of Z coordinates
 
-    R  2D Numpy array of R coordinates
-    Z  2D Numpy array of Z coordinates
-    
     """
-    
+
     def plot(self, axis=None, show=True):
-        """
-        Plot grid using matplotlib
-        
-        axis    The matplotlib axis to plot on. 
-                By default a new figure is created
-        
-        show    Calls plt.show() at the end
-        
+        """Plot grid using matplotlib
+
+        Parameters
+        ----------
+        axis : matplotlib axis, optional
+            A matplotlib axis to plot on. By default a new figure
+            is created
+        show : bool, optional
+            Calls plt.show() at the end
+
+        Returns
+        -------
+        axis
+            The matplotlib axis that was used
+
         """
 
         if not plotting_available:
@@ -78,41 +88,44 @@ class PoloidalGrid(object):
             plt.show()
             
         return axis
-    
+
+
 class RectangularPoloidalGrid(PoloidalGrid):
-    """
-    Represents a poloidal grid consisting of a rectangular domain
-    
+    """Represents a poloidal grid consisting of a rectangular domain
+
     Note: Here the 2D plane (R,Z) is labelled by (x,z) indices
 
-    Members
-    -------
-    
-    nx, nz  Number of points in x and z
+    Attributes
+    ----------
+    nx, nz : int
+        Number of points in x and z
+    R : ndarray
+        2D Numpy array of R coordinates
+    Z : ndarray
+        2D Numpy array of Z coordinates
 
-    R  2D Numpy array of R coordinates
-    Z  2D Numpy array of Z coordinates
-    
+    Parameters
+    ----------
+    nx : int
+        Number of points in major radius (including boundaries)
+    nz : int
+        Number of points in height (including boundaries)
+    Lx : float
+        Radial domain size  [m]
+    Lz : float
+        Vertical domain size [m]
+    Rcentre : float, optional
+        Coordinate at the middle of the domain
+    Zcentre : float, optional
+        Coordinate at the middle of the domain
+    MXG : int, optional
+        Number of guard cells in X. The boundary is put half-way
+        between the guard cell and the domain
+
     """
-    
+
     def __init__(self, nx, nz, Lx, Lz, Rcentre=0.0, Zcentre=0.0, MXG=2):
-        """
-        Inputs
-        ------
-        
-        nx  Number of points in major radius (including boundaries)
-        nz  Number of points in height (including boundaries)
-        Lx  Radial domain size  [m]
-        Lz  Vertical domain size [m]
-        
-        Rcentre  Coordinate at the middle of the domain
-        Zcentre  Coordinate at the middle of the domain
-        
-        MXG  Number of guard cells in X. The boundary is put half-way
-             between the guard cell and the domain
-        
-        """
-        
+
         self.nx = nx
         self.nz = nz
 
@@ -137,26 +150,27 @@ class RectangularPoloidalGrid(PoloidalGrid):
         
     def __repr__(self):
         return "RectangularPoloidalGrid({0},{1},{2},{3},Rcentre={4},Zcentre={5})".format(self.nx, self.nz, self.Lx, self.Lz, self.Rcentre, self.Zcentre)
-        
-    def getCoordinate(self, xind, zind, dx=0, dz=0):
-        """
-        Get coordinates (R,Z) at given (xind,zind) index
-    
-        Inputs
-        ------
 
-        xind, zind   Indices in X and Z. These should be the same shape
-        dx  Order of x derivative
-        dz  Order of z derivative
-        
+    def getCoordinate(self, xind, zind, dx=0, dz=0):
+        """Get coordinates (R,Z) at given (xind,zind) index
+
+        Parameters
+        ----------
+        xind, zind : array_like
+            Indices in X and Z. These should be the same shape
+        dx : int, optional
+            Order of x derivative
+        dz : int, optional
+            Order of z derivative
+
         Returns
         -------
-        
-        R, Z  Locations of point
-        or derivatives of R,Z with respect to indices if dx,dz != 0
-        
+        R, Z : (ndarray, ndarray)
+            Locations of point or derivatives of R,Z with respect to
+            indices if dx,dz != 0
+
         """
-        
+
         # Convert to NumPy arrays if not already
         xind = np.asfarray(xind)
         zind = np.asfarray(zind)
@@ -182,21 +196,19 @@ class RectangularPoloidalGrid(PoloidalGrid):
             return np.zeros(shape), np.full(shape, self.dZ)
         # Return (R,Z) location
         return self.Rmin + xind*self.dR,  self.Zmin + zind*self.dZ
-        
 
     def findIndex(self, R, Z):
-        """
-        Finds the (x,z) index corresponding to the given (R,Z) coordinate
-        
-        Inputs
-        ------
+        """Finds the (x,z) index corresponding to the given (R,Z) coordinate
 
-        R,Z    Locations. Can be scalar or array, must be the same shape 
-        
+        Parameters
+        ----------
+        R, Z : array_like
+            Locations to find indices for
+
         Returns
         -------
-        
-        x,z index as a float, same shape as R,Z
+        x, z : (ndarray, ndarray)
+            Index as a float, same shape as R,Z
 
         """
 
@@ -217,37 +229,46 @@ class RectangularPoloidalGrid(PoloidalGrid):
         return xind, zind
 
     def metric(self):
-        """
-        Return the metric tensor, dx and dz
+        """Return the metric tensor, dx and dz
+
         For this rectangular grid the metric is the identity
+
+        Returns
+        -------
+        dict
+            Dictionary containing:
+            - **dx, dz**: Grid spacing
+            - **gxx, gxz, gzz**: Covariant components
+            - **g_xx, g_xz, g_zz**: Contravariant components
         """
-        return {"dx": self.dR, "dz": self.dZ, # Grid spacing
-                "gxx": 1.0,  "g_xx":1.0,
-                "gxz": 0.0,  "g_xz":0.0,
-                "gzz": 1.0,  "g_zz":1.0}
-                
+        return {"dx": self.dR, "dz": self.dZ,  # Grid spacing
+                "gxx": 1.0,  "g_xx": 1.0,
+                "gxz": 0.0,  "g_xz": 0.0,
+                "gzz": 1.0,  "g_zz": 1.0}
+
 
 class StructuredPoloidalGrid(PoloidalGrid):
-    """
-    Represents a structured poloidal grid in R-Z
+    """Represents a structured poloidal grid in R-Z
 
-    Members
-    -------
+    Attributes
+    ----------
+    nx, nz : int
+        Number of points in x and z
+    R : ndarray
+        2D Numpy array of R coordinates
+    Z : ndarray
+        2D Numpy array of Z coordinates
 
-    nx, nz  Number of points in x and y
-    R, Z    2D NumPy arrays (nx,nz) of coordinates
-    
+    Parameters
+    ----------
+    R, Z : ndarray
+        2D Numpy arrays of R,Z points
+
+        .. note:: R,Z are not copied, so these arrays should not be
+                  modified afterwards
+
     """
     def __init__(self, R, Z):
-        """
-        
-        Inputs
-        ------
-        
-        R, Z   2D Numpy arrays of R,Z points. Must be the same shape
-
-        Note: R,Z are not copied, so these arrays should not be modified afterwards
-        """
         
         assert R.shape == Z.shape
         
@@ -278,22 +299,23 @@ class StructuredPoloidalGrid(PoloidalGrid):
         return "StructuredPoloidalGrid()"
 
     def getCoordinate(self, xind, zind, dx=0, dz=0):
-        """
-        Get coordinates (R,Z) at given (xind,zind) index
-    
-        Inputs
-        ------
+        """Get coordinates (R, Z) at given (xind, zind) index
 
-        xind, zind   Indices in X and Z. These should be the same shape
-        dx  Order of x derivative
-        dz  Order of z derivative
-        
+        Parameters
+        ----------
+        xind, zind : array_like
+            Indices in X and Z. These should be the same shape
+        dx : int, optional
+            Order of x derivative
+        dz : int, optional
+            Order of z derivative
+
         Returns
         -------
-        
-        R, Z  Locations of point
-        or derivatives of R,Z with respect to indices if dx,dz != 0
-        
+        R, Z : (ndarray, ndarray)
+            Locations of point or derivatives of R,Z with respect to
+            indices if dx,dz != 0
+
         """
         nx,nz = self.R.shape
         if (np.amin(xind) < 0) or (np.amax(xind) > nx-1):
@@ -308,19 +330,19 @@ class StructuredPoloidalGrid(PoloidalGrid):
         return R,Z
         
     def findIndex(self, R, Z, tol=1e-10, show=False):
-        """
-        Finds the (x,z) index corresponding to the given (R,Z) coordinate
-        
-        Inputs
-        ------
+        """Finds the (x, z) index corresponding to the given (R, Z) coordinate
 
-        R,Z    Locations. Can be scalar or array, must be the same shape 
-        tol    Maximum tolerance on the square distance
-        
+        Parameters
+        ----------
+        R, Z : array_like
+            Locations. Can be scalar or array, must be the same shape
+        tol : float, optional
+            Maximum tolerance on the square distance
+
         Returns
         -------
-        
-        x,z index as a float, same shape as R,Z
+        x, z : (ndarray, ndarray)
+            Index as a float, same shape as R, Z
 
         """
 
@@ -413,8 +435,16 @@ class StructuredPoloidalGrid(PoloidalGrid):
         return xind.reshape(input_shape), zind.reshape(input_shape)
 
     def metric(self):
-        """
-        Return the metric tensor, dx and dz
+        """Return the metric tensor, dx and dz
+
+        Returns
+        -------
+        dict
+            Dictionary containing:
+            - **dx, dz**: Grid spacing
+            - **gxx, gxz, gzz**: Covariant components
+            - **g_xx, g_xz, g_zz**: Contravariant components
+
         """
 
         dx = 1.0 / float(self.nx-1)      # x from 0 to 1 
@@ -444,20 +474,40 @@ class StructuredPoloidalGrid(PoloidalGrid):
         gzz = g_xx / determinant
         gxz = -g_xz / determinant
     
-        return {"dx": dx, "dz": dz, # Grid spacing
-                "gxx": gxx,  "g_xx":g_xx,
-                "gxz": gxz,  "g_xz":g_xz,
-                "gzz": gzz,  "g_zz":g_zz}
+        return {"dx": dx, "dz": dz,  # Grid spacing
+                "gxx": gxx,  "g_xx": g_xx,
+                "gxz": gxz,  "g_xz": g_xz,
+                "gzz": gzz,  "g_zz": g_zz}
+
 
 def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
-    """
-    Grid an annular region, given inner and outer boundaries
-    both of which are RZline objects
-    
+    """Grid an annular region, given inner and outer boundaries both of
+    which are RZline objects
+
     This is a very simple algorithm which just draws straight lines
     between inner and outer boundaries.
+
+    Parameters
+    ----------
+    inner, outer : `RZline`
+        Inner and outer boundaries of the domain
+    nx : int
+        The required radial resolution, including boundaries
+    nz : int
+        The required poloidal resolution
+    show : bool, optional
+        If True, plot the resulting grid
+    return_coords : bool, optional
+        If True, return the R, Z coordinates of the grid points,
+        instead of a `StructuredPoloidalGrid`
+
+    Returns
+    -------
+    StructuredPoloidalGrid
+        A grid of the region
+
     """
-    
+
     assert nx >= 2
     assert nz > 1
     
@@ -492,60 +542,76 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
     if return_coords:
         return R, Z
     return StructuredPoloidalGrid(R,Z)
-        
-def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True, restrict_size=20, restrict_factor=2, return_coords=False):
-    """
-    Create a structured grid between inner and outer boundaries
-    using elliptic method
-    
-    Input
-    -----
 
-    inner, outer   RZline objects describing inner and outer domain boundaries
-    nx             The required radial resolution, including boundaries
-    nz             The required poloidal resolution
-    show           Display plots of intermediate results
-    tol            Controls when iteration stops
-    align          Attempt to align the inner and outer boundaries
-    restrict_size    The size (nx or nz) above which the grid is coarsened
-    restrict_factor  The factor by which the grid is divided if coarsened
-    
+
+def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True,
+                  restrict_size=20, restrict_factor=2, return_coords=False):
+    """Create a structured grid between inner and outer boundaries using
+    elliptic method
+
+    Coordinates x = x(R, Z) and z = z(R,Z) obey an elliptic equation:
+
+    .. math::
+
+        d^2x/dR^2 + d^2x/dZ^2 = 0
+
+        d^2z/dR^2 + d^2z/dZ^2 = 0
+
+    where here x is in in the domain (0, 1) and z in (0, 2pi)
+
+    The above equations are inverted, giving:
+
+    .. math::
+
+        a*R_xx - 2*b*R_xz + c*R_zz = 0
+
+        a*Z_xx - 2*b*Z_xz + c*Z_zz = 0
+
+    where
+
+    .. math::
+
+        a &= R_z^2 + Z_z^2
+
+        b &= R_z*R_x + Z_x*Z_z
+
+        c &= R_x^2 + Z_x^2
+
+    This is a nonlinear system of equations which is solved
+    iteratively.
+
+    Parameters
+    ----------
+    inner, outer : `RZline`
+        Inner and outer boundaries of the domain
+    nx : int
+        The required radial resolution, including boundaries
+    nz : int
+        The required poloidal resolution
+    show : bool, optional
+        Display plots of intermediate results
+    tol : float, optional
+        Controls when iteration stops
+    align : bool, optional
+        Attempt to align the inner and outer boundaries
+    restrict_size : int, optional
+        The size (nx or nz) above which the grid is coarsened
+    restrict_factor : int, optional
+        The factor by which the grid is divided if coarsened
+    return_coords : bool, optional
+        If True, return the R, Z coordinates of the grid points,
+        instead of a `StructuredPoloidalGrid`
 
     Returns
     -------
-    If return_coords is true, returns R,Z as arrays. 
-    If return_coords is false, returns a StructuredPoloidalGrid object
+    If return_coords is true, returns R,Z as arrays.
+    If return_coords is false, returns a `StructuredPoloidalGrid` object
 
-    Details
-    -------
-
-    Coordinates x = x(R, Z) and z = z(R,Z)
-    obey an elliptic equation
-
-    d^2x/dR^2 + d^2x/dZ^2 = 0
-    
-    d^2z/dR^2 + d^2z/dZ^2 = 0
-    
-    where here x is in in the domain (0,1) and z in (0,2pi)
-    
-    The above equations are inverted, giving:
-
-    a*R_xx - 2*b*R_xz + c*R_zz = 0
-    
-    a*Z_xx - 2*b*Z_xz + c*Z_zz = 0
-
-    where 
-
-    a = R_z^2 + Z_z^2
-    b = R_z*R_x + Z_x*Z_z
-    c = R_x^2 + Z_x^2
-    
-    This is a nonlinear system of equations which is solved
-    iteratively.
-    
-    See:
+    References
+    ----------
     https://www.nada.kth.se/kurser/kth/2D1263/l2.pdf
     https://en.wikipedia.org/wiki/Principles_of_grid_generation
+
     """
     
     assert nx >= 2

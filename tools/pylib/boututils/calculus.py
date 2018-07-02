@@ -7,18 +7,15 @@ B.Dudson, University of York, Nov 2009
 from __future__ import print_function
 from __future__ import division
 
-try:
-    from builtins import range
-except:
-    pass
+from builtins import range
 
 try:
     from past.utils import old_div
-except:
-    def old_div(a,b):
+except ImportError:
+    def old_div(a, b):
         return a / b
 
-from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
+from numpy import zeros, pi, array, transpose, sum, where, arange, multiply
 from numpy.fft import rfft, irfft
 
 def deriv(*args, **kwargs):

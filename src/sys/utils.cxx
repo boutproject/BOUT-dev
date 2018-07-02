@@ -102,8 +102,8 @@ char* copy_string(const char* s) {
   char *s2;
   int n;
 
-  if(s == NULL)
-    return NULL;
+  if (s == nullptr)
+    return nullptr;
 
   n = strlen(s);
   s2 = (char*) malloc(n+1);
@@ -186,7 +186,6 @@ std::string trimLeft(const std::string &s, const std::string &c) {
 // Strips the comments from a string
 // This is the compliment of trimLeft
 std::string trimComments(const std::string &s, const std::string &c) {
-  std::string str(s);
-  return str.substr(0, s.find_first_of(c));
+  return s.substr(0, s.find_first_of(c));
 }
 

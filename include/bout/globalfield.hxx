@@ -57,10 +57,13 @@ protected:
 
   MPI_Comm comm; ///< Communicator for all mesh
   int npes, mype; ///< Number of MPI processes, this processor index
-  
-  void proc_local_origin(int proc, int *x, int *y, int *z = NULL) const;
-  void proc_origin(int proc, int *x, int *y, int *z = NULL) const;  ///< Return the global origin of processor proc
-  void proc_size(int proc, int *lx, int *ly, int *lz = NULL) const; ///< Return the array size of processor proc
+
+  void proc_local_origin(int proc, int *x, int *y, int *z = nullptr) const;
+  /// Return the global origin of processor proc
+  void proc_origin(int proc, int *x, int *y, int *z = nullptr) const;
+  /// Return the array size of processor proc
+  void proc_size(int proc, int *lx, int *ly, int *lz = nullptr) const;
+
 private:
   GlobalField();
 };
