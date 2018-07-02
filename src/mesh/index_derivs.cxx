@@ -2260,12 +2260,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    // There are four cases, corresponding to whether or not f and v
-    // have yup, ydown fields.
-
-    // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-    // will be used to calculate a derivative along
-    // the magnetic field
+    // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along the magnetic field
     bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
     bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
@@ -3010,12 +3006,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  // There are four cases, corresponding to whether or not f and v
-  // have yup, ydown fields.
-
-  // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-  // will be used to calculate a derivative along
-  // the magnetic field
+  // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+  // will be used to calculate a derivative along the magnetic field
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
