@@ -1006,8 +1006,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 
     Field3D var_fa = this->toFieldAligned(var);
-    Field3D result_fa(this);
-    result_fa.allocate();
 
     if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
       // Staggered differencing
@@ -1037,7 +1035,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
             s.m = s.c;
           }
 
-          result_fa[i] = func(s);
+          result[i] = func(s);
         }
       } else {
         // Only one guard cell, so no pp or mm values
@@ -1060,7 +1058,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
             s.m = s.c;
           }
 
-          result_fa[i] = func(s);
+          result[i] = func(s);
         }
       }
 
@@ -1079,7 +1077,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           s.pp = var_fa[i.offset(0, 2, 0)];
           s.mm = var_fa[i.offset(0, -2, 0)];
 
-          result_fa[i] = func(s);
+          result[i] = func(s);
         }
       } else {
         // Only one guard cell, so no pp or mm values
@@ -1092,14 +1090,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
           s.p = var_fa[i.yp()];
           s.m = var_fa[i.ym()];
 
-          result_fa[i] = func(s);
+          result[i] = func(s);
         }
       }
     }
 
     // Shift result back
 
-    result = this->fromFieldAligned(result_fa);
+    result = this->fromFieldAligned(result);
   }
 
   result.setLocation(diffloc);
@@ -2304,8 +2302,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // coordinates)
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
-      Field3D result_fa(this);
-      result_fa.allocate();
 
       stencil vval, fval;
       for (const auto &i : result.region(region)) {
@@ -2334,10 +2330,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           // Shifted in one direction -> shift in another
           // Could produce warning
         }
-        result_fa[i] = func(vval, fval);
+        result[i] = func(vval, fval);
       }
 
-      result = this->fromFieldAligned(result_fa);
+      result = this->fromFieldAligned(result);
     }
   } else {
     // Non-staggered case
@@ -2378,8 +2374,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
       Field3D f_fa = this->toFieldAligned(f);
       Field3D v_fa = this->toFieldAligned(v);
-      Field3D result_fa(this);
-      result_fa.allocate();
 
       if (this->ystart > 1) {
         stencil fs;
@@ -2391,7 +2385,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           fs.pp = f_fa[i.offset(0, 2, 0)];
           fs.mm = f_fa[i.offset(0, -2, 0)];
 
-          result_fa[i] = func(v_fa[i], fs);
+          result[i] = func(v_fa[i], fs);
         }
       } else {
         stencil fs;
@@ -2403,11 +2397,11 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           fs.p = f_fa[i.yp()];
           fs.m = f_fa[i.ym()];
 
-          result_fa[i] = func(v_fa[i], fs);
+          result[i] = func(v_fa[i], fs);
         }
       }
       // Shift result back
-      result = this->fromFieldAligned(result_fa);
+      result = this->fromFieldAligned(result);
     }
   }
 
@@ -3016,8 +3010,6 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // coordinates)
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
-    Field3D result_fa(this);
-    result_fa.allocate();
 
     stencil vval, fval;
 
@@ -3049,10 +3041,10 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Shifted in one direction -> shift in another
         // Could produce warning
       }
-      result_fa[i] = func(vval, fval);
+      result[i] = func(vval, fval);
     }
 
-    result = this->fromFieldAligned(result_fa);
+    result = this->fromFieldAligned(result);
   }
 
   result.setLocation(diffloc);
