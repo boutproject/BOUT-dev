@@ -2341,9 +2341,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupUpwindFunc(table, method);
     }
 
-    if ((f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) 
-        && (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)))) {
-      // f and v have yup and ydown fields which are distinct
+    if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
+      // f has yup and ydown fields which are distinct
 
       stencil fs;
       fs.pp = nan("");
