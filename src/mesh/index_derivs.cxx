@@ -677,8 +677,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     return Field2D(0., this);
   }
 
-  CELL_LOC diffloc = var.getLocation();
-
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -765,7 +763,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     }
   }
 
-  result.setLocation(diffloc);
+  result.setLocation(loc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -785,8 +783,6 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
   if (var.getNx() == 1) {
     return Field3D(0., this);
   }
-
-  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -874,7 +870,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     }
   }
 
-  result.setLocation(diffloc);
+  result.setLocation(loc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -950,8 +946,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (var.getNy() == 1) {
     return Field3D(0., this);
   }
-
-  CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -1100,7 +1094,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     result = this->fromFieldAligned(result);
   }
 
-  result.setLocation(diffloc);
+  result.setLocation(loc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -1121,9 +1115,6 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   if (var.getNz() == 1) {
     return Field3D(0., this);
   }
-
-
-  CELL_LOC diffloc = var.getLocation();
 
   if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
@@ -1147,7 +1138,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     result[i] = func(s);
   }
 
-  result.setLocation(diffloc);
+  result.setLocation(loc);
 
   return result;
 }
