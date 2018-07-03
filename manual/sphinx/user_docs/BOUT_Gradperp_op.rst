@@ -1,3 +1,5 @@
+.. default-role:: math
+
 =======================================
 Geometry and Differential Operator
 =======================================
@@ -12,41 +14,41 @@ as
 
 .. math:: {\bf B}=I(\psi)\nabla\zeta+\nabla\zeta\times\nabla\psi,
 
-where :math:`\psi` is the poloidal flux, :math:`\theta` is the
-poloidal angle-like coordinate, and :math:`\zeta` is the toroidal
-angle. Here, :math:`I(\psi)=RB_t`. The two important geometrical
-parameters are: the curvature, :math:`\bf \kappa`, and the local
-pitch, :math:`\nu(\psi,\theta)`,
+where `\psi` is the poloidal flux, `\theta` is the
+poloidal angle-like coordinate, and `\zeta` is the toroidal
+angle. Here, `I(\psi)=RB_t`. The two important geometrical
+parameters are: the curvature, `\bf \kappa`, and the local
+pitch, `\nu(\psi,\theta)`,
 
 .. math:: \nu(\psi,\theta)= {I(\psi){\bf \cal J}/R^2}.
 
-The local pitch :math:`\nu(\psi,\theta)` is related to the MHD safety
-q by :math:`\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in
-the closed flux surface region, and :math:`\hat
+The local pitch `\nu(\psi,\theta)` is related to the MHD safety
+q by `\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in
+the closed flux surface region, and `\hat
 q(\psi)={2\pi}^{-1}\int_{inboard}^{outboard}\nu(\psi,\theta) d\theta`
-in the scrape-off-layer. Here :math:`{\bf \cal
+in the scrape-off-layer. Here `{\bf \cal
 J}=(\nabla\psi\times\nabla\theta\cdot\nabla\zeta)^{-1}` is the
-coordinate Jacobian, :math:`R` is the major radius, and :math:`Z` is
+coordinate Jacobian, `R` is the major radius, and `Z` is
 the vertical position.
 
 Geometry and Differential Operators
 ===================================
 
 In a axisymmetric toroidal system, the magnetic field can be expressed
-as :math:`{\bf B}=I(\psi)\nabla\zeta+\nabla\zeta\times\nabla\psi`, where
-:math:`\psi` is the poloidal flux, :math:`\theta` is the poloidal
-angle-like coordinate, and :math:`\zeta` is the toroidal angle. Here,
-:math:`I(\psi)=RB_t`. The two important geometrical parameters are: the
-curvature, :math:`\bf \kappa`, and the local pitch,
-:math:`\nu(\psi,\theta)`, and
-:math:`\nu(\psi,\theta)= {I(\psi){\bf \cal J}/R^2}`. The local pitch
-:math:`\nu(\psi,\theta)` is related to the MHD safety q by
-:math:`\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in the
+as `{\bf B}=I(\psi)\nabla\zeta+\nabla\zeta\times\nabla\psi`, where
+`\psi` is the poloidal flux, `\theta` is the poloidal
+angle-like coordinate, and `\zeta` is the toroidal angle. Here,
+`I(\psi)=RB_t`. The two important geometrical parameters are: the
+curvature, `\bf \kappa`, and the local pitch,
+`\nu(\psi,\theta)`, and
+`\nu(\psi,\theta)= {I(\psi){\bf \cal J}/R^2}`. The local pitch
+`\nu(\psi,\theta)` is related to the MHD safety q by
+`\hat q(\psi)={2\pi}^{-1}\oint\nu(\psi,\theta) d\theta` in the
 closed flux surface region, and
-:math:`\hat q(\psi)={2\pi}^{-1}\int_{inboard}^{outboard}\nu(\psi,\theta) d\theta`
+`\hat q(\psi)={2\pi}^{-1}\int_{inboard}^{outboard}\nu(\psi,\theta) d\theta`
 in the scrape-off-layer. Here
-:math:`{\bf \cal J}=(\nabla\psi\times\nabla\theta\cdot\nabla\zeta)^{-1}`
-is the coordinate Jacobian, :math:`R` is the major radius, and :math:`Z`
+`{\bf \cal J}=(\nabla\psi\times\nabla\theta\cdot\nabla\zeta)^{-1}`
+is the coordinate Jacobian, `R` is the major radius, and `Z`
 is the vertical position.
 
 .. raw:: latex
@@ -57,10 +59,10 @@ Differential Operators
 ----------------------
 
 For such an axisymmetric equilibrium the metric coefficients are only
-functions of :math:`\psi` and :math:`\theta`. Three spatial differential
+functions of `\psi` and `\theta`. Three spatial differential
 operators appear in the equations given as:
-:math:`{\bf v_E}\cdot\nabla_\perp`, :math:`\nabla_\|` and
-:math:`\nabla_\perp^2`.
+`{\bf v_E}\cdot\nabla_\perp`, `\nabla_\|` and
+`\nabla_\perp^2`.
 
 .. math::
 
@@ -124,12 +126,12 @@ SOL, the differential operators are reduced to:
 
    \newpage
 
-**Field-aligned coordinates with :math:`\theta` as the coordinate along the field line**
+**Field-aligned coordinates with `\theta` as the coordinate along the field line**
 ----------------------------------------------------------------------------------------
 
 A suitable coordinate mapping between field-aligned ballooning
-coordinates (:math:`x`, :math:`y`, :math:`z`) and the usual flux
-coordinates (:math:`\psi`, :math:`\theta`, :math:`\zeta`) is
+coordinates (`x`, `y`, `z`) and the usual flux
+coordinates (`\psi`, `\theta`, `\zeta`) is
 
 .. math::
 
@@ -141,9 +143,9 @@ coordinates (:math:`\psi`, :math:`\theta`, :math:`\zeta`) is
 as shown in Fig. 1. The covering area given by the square ABCD in the
 usual flux coordinates is the same as the parallelogram ABEF in the
 field-aligned coordinates. The magnetic separatrix is denoted by
-:math:`\psi=\psi_s`. In this choice of coordinates, :math:`x` is a
-flux surface label, :math:`y`, the poloidal angle, is also the
-coordinate along the field line, and :math:`z` is a field line label
+`\psi=\psi_s`. In this choice of coordinates, `x` is a
+flux surface label, `y`, the poloidal angle, is also the
+coordinate along the field line, and `z` is a field line label
 within the flux surface.
 
 The coordinate Jacobian and metric coefficients are defined as
@@ -162,14 +164,14 @@ following:
    {\cal J}_{33}&=&|\nabla z|^2=\left |\nabla\zeta-\nu\nabla \theta-\nabla\psi\left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right)\right |^2, \\
    I_s &=&  {{\cal J}_{12}\over|\nabla\psi|^2}\nu(x,y)+\left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right).\end{aligned}
 
-Here :math:`h` is the local minor radius, :math:`I_s` is the
-integrated local shear, and :math:`y_0` is an arbitrary integration
+Here `h` is the local minor radius, `I_s` is the
+integrated local shear, and `y_0` is an arbitrary integration
 parameter, which, depending on the choice of Jacobian, determines the
-location where :math:`I_s=0`. The disadvantage of this choice of
+location where `I_s=0`. The disadvantage of this choice of
 coordinates is that the Jacobian diverges near the X-point as
-:math:`B_p\rightarrow 0` and its effect spreads over the entire flux
+`B_p\rightarrow 0` and its effect spreads over the entire flux
 surafces near the separatrix as the results of coordinate transform
-:math:`z`. Therefore a better set of coordinates is needed for X-point
+`z`. Therefore a better set of coordinates is needed for X-point
 divertor geometry. The derivatives are obtained from the chain rule as
 follows:
 
@@ -181,7 +183,7 @@ follows:
    {d\over d\zeta}&=&{\partial\over \partial z}.\end{aligned}
 
 In the field-aligned ballooning coordinates, the parallel differential
-operator is simple, involving only one coordinate :math:`y`
+operator is simple, involving only one coordinate `y`
 
 .. math::
 
@@ -191,7 +193,7 @@ operator is simple, involving only one coordinate :math:`y`
 which requires a few grid points. The total axisymmetric drift
 operator becomes
 
-The perturbed :math:`{\bf E}\times {\bf B}` drift operator becomes
+The perturbed `{\bf E}\times {\bf B}` drift operator becomes
 
 .. math::
 
@@ -213,8 +215,8 @@ The perturbed :math:`{\bf E}\times {\bf B}` drift operator becomes
    {\partial\langle\delta\phi\rangle\over\partial\theta}
    \right\}{\partial\over\partial z},\end{aligned}
 
-when the conventional turbulence ordering (:math:`k_\|\ll k_\perp`) is
-used, the perturbed :math:`{\bf E}\times {\bf B}` drift operator can
+when the conventional turbulence ordering (`k_\|\ll k_\perp`) is
+used, the perturbed `{\bf E}\times {\bf B}` drift operator can
 be further reduced to a simple form
 
 .. math::
@@ -225,10 +227,10 @@ be further reduced to a simple form
    {\partial\langle\delta\phi\rangle\over\partial z}{\partial\over\partial x}
    -{\partial\langle\delta\phi\rangle\over\partial x}{\partial\over\partial z}\right)\end{aligned}
 
-where :math:`\partial/\partial\theta\simeq -\nu\partial/\partial z` is
-used. In the perturbed :math:`{\bf E}\times {\bf B}` drift operator
+where `\partial/\partial\theta\simeq -\nu\partial/\partial z` is
+used. In the perturbed `{\bf E}\times {\bf B}` drift operator
 the poloidal and radial derivatives are written in the usual flux
-:math:`(\psi,\theta,\zeta)` coordinates in order to have various
+`(\psi,\theta,\zeta)` coordinates in order to have various
 options for valid discretizations. The general Laplacian operator for
 potential is
 
@@ -264,7 +266,7 @@ potential is
    &-&\left({B_p\over hB}\right)^2{\partial\ln B\over\partial y}{\partial\Phi\over\partial y}.\end{aligned}
 
 The general perpendicular Laplacian operator for axisymmetric
-potential :math:`\Phi_0(x,y)` is
+potential `\Phi_0(x,y)` is
 
 .. math::
 
@@ -277,11 +279,11 @@ potential :math:`\Phi_0(x,y)` is
    \left[\left({B_p\over hB}\right){\partial\Phi_0\over\partial y}\right]  \nonumber\\
    &-&\left({B_p\over hB}\right)^2{\partial\ln B\over\partial y}{\partial\Phi\over\partial y}.\end{aligned}
 
-For the perturbed potential :math:`\delta\phi`, we can drop the
-:math:`\partial/\partial y` terms in Eq. (69) due to the elongated
-nature of the turbulence (:math:`k_\|/k_\perp\ll1`). The general
+For the perturbed potential `\delta\phi`, we can drop the
+`\partial/\partial y` terms in Eq. (69) due to the elongated
+nature of the turbulence (`k_\|/k_\perp\ll1`). The general
 perpendicular Laplacian operator for perturbed potential
-:math:`\delta\phi` reduces to
+`\delta\phi` reduces to
 
 .. math::
 
@@ -292,8 +294,8 @@ perpendicular Laplacian operator for perturbed potential
    &+&{\partial\over\partial z}\left({\cal J}{\cal J}_{31}{\partial\delta\phi\over\partial x}
    +{\cal J}{\cal J}_{33}{\partial\delta\phi\over\partial z}\right).\end{aligned}
 
-If the non-split potential :math:`\Phi` is a preferred option, the
+If the non-split potential `\Phi` is a preferred option, the
 gyrokinetic Poisson equation (18) and the general perpendicular
 Laplacian operator Eq. (69) have to be used. Then the assumption
-:math:`k_\|/k_\perp\ll1` is not used to simplify the perpendicular
+`k_\|/k_\perp\ll1` is not used to simplify the perpendicular
 Laplacian operator.
