@@ -2207,7 +2207,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
           fval.mm = f_fa[i.ymm()];
           fval.m = f_fa[i.ym()];
-          fval.c = f[i];
+          fval.c = f_fa[i];
           fval.p = f_fa[i.yp()];
           fval.pp = f_fa[i.ypp()];
 
