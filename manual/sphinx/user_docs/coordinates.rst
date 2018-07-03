@@ -1432,7 +1432,6 @@ u^k` in equation :eq:`eq:laplacegen` gives
 .. math::
    :label: eq:general_laplacian
 
-   \begin{aligned}
    \nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
    x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
    z}\nabla z\right) \nonumber \\
@@ -1443,7 +1442,7 @@ u^k` in equation :eq:`eq:laplacegen` gives
    y\right) +2\frac{\partial^2 f}{\partial x\partial z}\left(\nabla x\cdot\nabla z\right)
    +2\frac{\partial^2 f}{\partial y\partial z}\left(\nabla y\cdot\nabla z\right)
    \nonumber \\ +\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
-   f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber\end{aligned}
+   f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
 
 Curl defined as:
 
@@ -1809,17 +1808,13 @@ The pure solenoidal advection is thus
 .. math::
    :label: eq:brackets
 
-   \begin{aligned}
        B{\boldsymbol{v}}_E\cdot\nabla =& -\nabla\phi\times{\boldsymbol{b}}\cdot\nabla\\
-       %
        =& {\boldsymbol{b}} \times \nabla\phi\cdot\nabla\\
-       %
        =& \frac{\sqrt{g_{yy}}}{Jg_{yy}} \left( g_{yx}\{\phi, \cdot\}_{y,z} +
        g_{yy}\{\phi, \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \right) \\
-       %
        =& \frac{1}{J\sqrt{g_{yy}}} \left( g_{yx}\{\phi, \cdot\}_{y,z} + g_{yy}\{\phi,
-   \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \right) \addtocounter{equation}{1}\tag{\theequation}
-                  \end{aligned}
+       \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \right)
+
 
 The brackets operator in BOUT++
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
