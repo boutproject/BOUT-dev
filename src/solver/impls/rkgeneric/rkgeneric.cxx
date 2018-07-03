@@ -15,6 +15,7 @@
 RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+  canReset = true;
 }
 
 RKGenericSolver::~RKGenericSolver() {
@@ -76,6 +77,16 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   scheme->init(nlocal,neq,adaptive,atol,rtol,options);
 
   return 0;
+}
+
+void RKGenericSolver::resetInternalFields(){
+  //Zero out history
+  for(int i=0;i<nlocal;i++){
+    tmpState[i]=0; f2[i]=0;
+  }
+  
+  //Copy fields into current step
+  save_vars(std::begin(f0));
 }
 
 int RKGenericSolver::run() {
