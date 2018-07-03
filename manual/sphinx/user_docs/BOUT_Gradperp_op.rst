@@ -119,7 +119,7 @@ SOL, the differential operators are reduced to:
    \nabla^2&\simeq&{1\over r}{\partial\over\partial r}\left(r{\partial\over\partial r}\right)+{1\over r^2}{\partial^2\over\partial \theta^2}+{1\over R^2}{\partial^2\over\partial \zeta^2}\end{aligned}
 
 
-**Field-aligned coordinates with `\theta` as the coordinate along the field line**
+Field-aligned coordinates with `\theta` as the coordinate along the field line
 ----------------------------------------------------------------------------------------
 
 A suitable coordinate mapping between field-aligned ballooning
