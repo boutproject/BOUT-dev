@@ -232,8 +232,8 @@ approximated using the Binomial theorem:
    \mathbb{D}^{-1} \simeq \mathbb{I} \color{blue}{- \gamma{\mathbf{v}}_E\cdot\nabla}
    \label{eq:dapprox}
 
-Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
-`\mathbb{M}` can be re-written as
+Following [chacon-2008]_, [chacon-2002]_, `\mathbb{M}` can be
+re-written as
 
 .. math::
 
@@ -251,8 +251,7 @@ Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
    \mathbb{U}_\psi
    \end{array}\right) \qquad \mathbb{L} = \left(\mathbb{L}_P \quad \mathbb{L}_\psi\right)
 
-The Schur factorization of `\mathbb{M}` yields
-:raw-latex:`\cite{chacon-2008}`
+The Schur factorization of `\mathbb{M}` yields ([chacon-2008]_)
 
 .. math::
 
@@ -348,6 +347,6 @@ corresponding to this variable. Evolving variables do not have an
 associated ``SparseMatrix`` object, but any fields which result from
 operations on evolving fields will have one.
 
-.. raw:: latex
+.. [chacon-2008] L. Chacón, An optimal, parallel, fully implicit Newton-Krylov solver for three-dimensional viscoresistive magnetohydrodynamics, POP, 2008, 15, 056103
 
-   \bibliographystyle{unsrt}
+.. [chacon-2002] L. Chacón, D.A. Knoll, and J.M. Finn, An Implicit, Nonlinear Reduced Resistive MHD Solver, JCP, 2002, 178, 15-36
