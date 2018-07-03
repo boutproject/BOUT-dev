@@ -5,9 +5,9 @@ Field-aligned coordinates
 =========================
 
 :Author: B.Dudson§, M.V.Umansky, L.C.Wang, X.Q.Xu, L.L.LoDestro
-§Department of Physics, University of York, UK
-Lawrence Livermore National Laboratory, USA
-IFTS, China
+         §Department of Physics, University of York, UK
+         Lawrence Livermore National Laboratory, USA
+         IFTS, China
 
 Introduction
 ============
