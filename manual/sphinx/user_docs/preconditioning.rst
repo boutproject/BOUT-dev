@@ -4,18 +4,6 @@ BOUT++ preconditioning
 
 :Author: B.Dudson, University of York
 
-.. role:: raw-latex(raw)
-   :format: latex
-..
-
-.. raw:: latex
-
-   \maketitle
-
-.. raw:: latex
-
-   \tableofcontents
-
 Introduction
 ============
 
