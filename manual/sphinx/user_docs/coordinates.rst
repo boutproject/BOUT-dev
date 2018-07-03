@@ -97,11 +97,12 @@ i.e. the sign of the poloidal field. The new coordinates
 `\left(x,y,z\right)` are defined by:
 
 .. math::
+   :label: eq:coordtransform
 
    \begin{aligned}
    x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad y = \theta \qquad z = \sigma_{B\theta}
    \left(\zeta - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
-   \label{eq:coordtransform}\end{aligned}
+   \end{aligned}
 
 Where `\nu` is the local field-line pitch given by
 
@@ -234,7 +235,7 @@ whilst the parallel divergence is given by
    \begin{aligned}
    \nabla^0_{||}f = B_0\partial^0_{||}\left(\frac{f}{B_0}\right)\end{aligned}
 
-Using equation (`[eq:general_laplacian] <#eq:general_laplacian>`__),
+Using equation :eq:`eq:general_laplacian`,
 the Laplacian operator is given by
 
 .. math::
@@ -248,7 +249,7 @@ the Laplacian operator is given by
        &+\frac{\partial}{\partial x}\nabla^2x + \frac{\partial}{\partial
    y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber\end{aligned}
 
-Using equation (`[eq:laplace_expand] <#eq:laplace_expand>`__) for
+Using equation :eq:`eq:laplace_expand` for
 `\nabla^2x = G^x` etc, the values are
 
 .. math::
@@ -284,7 +285,7 @@ The second derivative along the equilibrium field
    + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}\end{aligned}
 
 A common expression (the Poisson bracket in reduced MHD) is (from
-equation (`[eq:brackets] <#eq:brackets>`__)):
+equation :eq:`eq:brackets`)):
 
 .. math::
 
@@ -354,6 +355,7 @@ The second term can be simplified, again using
 From these, calculate covariant components:
 
 .. math::
+   :label: eq:curlb_y
 
    \begin{aligned}
    \left({\nabla\times {\boldsymbol{B}} }\right)_x =& -{B_{\text{tor}}}I R {\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
@@ -362,7 +364,7 @@ From these, calculate covariant components:
    %
    \left({\nabla\times {\boldsymbol{B}} }\right)_y =& -{\sigma_{B\theta}}\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
        {\sigma_{B\theta}}{B_{\text{tor}}}R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]
-       \label{eq:curlb_y}\\
+       \\
    %
    \left({\nabla\times {\boldsymbol{B}} }\right)_z =& -{B_{\text{tor}}}R{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
        \frac{R^2{B_{\text{pol}}}}{{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
@@ -404,12 +406,13 @@ Hence equating contravariant x components of
 `{\boldsymbol{J}}\times{\boldsymbol{B}}= \nabla P`,
 
 .. math::
+   :label: eq:xbalance
 
    \begin{aligned}
    {\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
    R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{R{B_{\text{pol}}}}\right) + \frac{\mu_0{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial P}{\partial x}} =
    0
-   \label{eq:xbalance}\end{aligned}
+   \end{aligned}
 
 Use this to calculate `{h_\theta}` profiles (need to fix
 `{h_\theta}` at one radial location).
@@ -451,7 +454,7 @@ Parallel current
    \begin{aligned}
    J_{||} = {\boldsymbol{b}}\cdot{\boldsymbol{J}}\qquad b^y = \frac{{B_{\text{pol}}}}{B{h_\theta}}\end{aligned}
 
-and from equation `[eq:curlb_y] <#eq:curlb_y>`__:
+and from equation :eq:`eq:curlb_y`:
 
 .. math::
 
@@ -500,12 +503,13 @@ Components of `\nabla\times{\boldsymbol{b}}` are:
 giving:
 
 .. math::
+   :label: eq:curvature
 
    \begin{aligned}
    {\boldsymbol{\kappa}} =& -\frac{{B_{\text{pol}}}}{B h_\theta}\left[{\frac{\partial }{\partial x}}\left(\frac{B
    h_\theta}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}I R}{B}\right)\right]\nabla x \nonumber
    \\ &+ {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B h_\theta}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\nabla z
-   \label{eq:curvature}\end{aligned}
+   \end{aligned}
 
 .. math::
 
@@ -528,7 +532,7 @@ therefore,
    \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
    R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
-Using equation \ `[eq:xbalance] <#eq:xbalance>`__:
+Using equation :eq:`eq:xbalance`:
 
 .. math::
 
@@ -634,11 +638,12 @@ curvature vector is given by
 i.e.
 
 .. math::
+   :label: eq:kappaline
 
    \begin{aligned}
    {\boldsymbol{\kappa}}= \left[{\frac{d^2 R}{d s^2}} - R\left({\frac{d \phi}{d s}}\right)^2\right]{\hat{{\boldsymbol{R}}}}+ {\frac{d^2 Z}{d s^2}}{\hat{{\boldsymbol{Z}}}}+
    \left[2{\frac{d R}{d s}}{\frac{d \phi}{d s}} + R{\frac{d^2 \phi}{d s^2}}\right]{\hat{{\boldsymbol{\phi}}}}
-   \label{eq:kappaline}\end{aligned}
+   \end{aligned}
 
 Want the components of
 `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}`,
@@ -674,23 +679,25 @@ and that the tangent vector `{\boldsymbol{T}} =
 {\boldsymbol{b}}`. This gives
 
 .. math::
+   :label: eq:flinenablapsi
 
    \begin{aligned}
    \nabla\psi = {\sigma_{B\theta}}BR\left[\frac{dR}{ds}{\boldsymbol{Z}} - \frac{dZ}{ds}{\boldsymbol{R}}\right]
-   \label{eq:flinenablapsi}\end{aligned}
+   \end{aligned}
 
 and so because
 `d\phi / ds = {B_{\text{tor}}}/ \left(RB\right)`
 
 .. math::
+   :label: eq:flinekappsi
 
    \begin{aligned}
    {\boldsymbol{\kappa}}\cdot\nabla\psi = {\sigma_{B\theta}}BR\left[ \left( \frac{{B_{\text{tor}}}^2}{RB^2} -
    {\frac{d^2 R}{d s^2}}\right){\frac{d Z}{d s}} + {\frac{d^2 Z}{d s^2}}\frac{dR}{ds} \right]
-   \label{eq:flinekappsi}\end{aligned}
+   \end{aligned}
 
 Taking the cross-product of the tangent vector with the curvature in
-equation \ `[eq:kappaline] <#eq:kappaline>`__ above gives
+equation :eq:`eq:kappaline` above gives
 
 .. math::
 
@@ -868,7 +875,7 @@ The poloidal field can be calculated from
    {\frac{\partial }{\partial s}}\left(\nabla\psi \cdot \nabla\psi\right) = {\frac{\partial }{\partial s}}\left(R^2{B_{\text{pol}}}^2\right) =
    R^2{\frac{\partial }{\partial s}}\left({B_{\text{pol}}}^2\right) + {B_{\text{pol}}}^2{\frac{\partial }{\partial s}}\left(R^2\right)\end{aligned}
 
-Using equation \ `[eq:flinenablapsi] <#eq:flinenablapsi>`__,
+Using equation :eq:`eq:flinenablapsi`,
 `\nabla\psi \cdot \nabla\psi` can also be written as
 
 .. math::
@@ -911,7 +918,7 @@ Magnetic shear from J x B
 -------------------------
 
 Re-arranging the radial force balance
-equation \ `[eq:xbalance] <#eq:xbalance>`__ gives
+equation :eq:`eq:xbalance` gives
 
 .. math::
 
@@ -945,7 +952,7 @@ The last three terms are given in the previous section, but
 psi derivative of h
 -------------------
 
-From the expression for curvature `[eq:curvature] <#eq:curvature>`__,
+From the expression for curvature (equation :eq:`eq:curvature`),
 and using
 `\nabla x \cdot \nabla \psi = {\sigma_{B\theta}}\left(R{B_{\text{pol}}}\right)^2`
 and
@@ -994,12 +1001,13 @@ and using
 this simplifies to give
 
 .. math::
+   :label: eq:dhdpsi
 
    \begin{aligned}
    \frac{{\boldsymbol{\kappa}}\cdot\nabla\psi}{{\left({R{B_{\text{pol}}}}\right)^2}} =
    -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}^2}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} - {\sigma_{B\theta}}\frac{{B_{\text{tor}}}^2}{B^2
    R}{\frac{\partial R}{\partial x}}
-   \label{eq:dhdpsi}\end{aligned}
+   \end{aligned}
 
 This can be transformed into an expression for
 `{\frac{\partial {h_\theta}}{\partial x}}`
@@ -1011,7 +1019,7 @@ involving only derivatives along field-lines. Writing `\nabla R =
    \begin{aligned}
    \nabla R \cdot \nabla\psi = {\frac{\partial R}{\partial \psi}}{\left({R{B_{\text{pol}}}}\right)^2}\end{aligned}
 
-Using `[eq:flinenablapsi] <#eq:flinenablapsi>`__,
+Using :eq:`eq:flinenablapsi`,
 
 .. math::
 
@@ -1025,9 +1033,9 @@ and so
    \begin{aligned}
    {\frac{\partial R}{\partial x}} = -\frac{BR}{{\left({R{B_{\text{pol}}}}\right)^2}}\frac{dZ}{ds}\end{aligned}
 
-Substituting this and equation `[eq:flinekappsi] <#eq:flinekappsi>`__
+Substituting this and equation :eq:`eq:flinekappsi`
 for `{\boldsymbol{\kappa}}\cdot\nabla\psi` into
-equation \ `[eq:dhdpsi] <#eq:dhdpsi>`__ the
+equation :eq:`eq:dhdpsi` the
 `{\frac{\partial R}{\partial x}}` term cancels with
 part of the `{\boldsymbol{\kappa}}\cdot\nabla\psi`
 term, simplifying to
@@ -1045,7 +1053,7 @@ Shifted radial derivatives
 ==========================
 
 The coordinate system given by
-equation \ `[eq:coordtransform] <#eq:coordtransform>`__ and used in the
+equation :eq:`eq:coordtransform` and used in the
 above sections has a problem: There is a special poloidal location
 `\theta_0` where the radial basis vector
 `{\boldsymbol{e}}_x` is purely in the
@@ -1092,11 +1100,12 @@ Perpendicular Laplacian
 transforms to
 
 .. math::
+   :label: eq:delp
 
    \begin{aligned}
    \nabla_\perp^2= {\left({R{B_{\text{pol}}}}\right)^2}\left[{\frac{\partial^2 }{\partial {\psi}^2}} + {\frac{\partial I}{\partial \psi}}{\frac{\partial }{\partial z}} +
    \frac{B^2}{\left({R{B_{\text{pol}}}}\right)^4}{\frac{\partial^2 }{\partial {z}^2}}\right]
-   \label{eq:delp}\end{aligned}
+   \end{aligned}
 
 The extra term involving `I` disappears, but only if both the
 `x` and `z` first derivatives are taken into account:
@@ -1116,30 +1125,32 @@ with
    \nabla^2 x = \frac{1}{J}{\frac{\partial }{\partial x}}\left[J{\left({R{B_{\text{pol}}}}\right)^2}\right]\end{aligned}
 
 .. math::
+   :label: eq:delpz
 
    \begin{aligned}
    \nabla^2 z =& \frac{1}{J}\left[-{\frac{\partial }{\partial x}}\left(JI{\left({R{B_{\text{pol}}}}\right)^2}\right) -
    {\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}^2R}\right)\right] \nonumber \\ =&
        \frac{1}{J}\left[-I{\frac{\partial }{\partial x}}\left(J{\left({R{B_{\text{pol}}}}\right)^2}\right) - {\frac{\partial I}{\partial x}}J{\left({R{B_{\text{pol}}}}\right)^2}-
-       {\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}^2R}\right)\right] \label{eq:delpz}\end{aligned}
+       {\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}^2R}\right)\right] \end{aligned}
 
 where `J={h_\theta}/ {B_{\text{pol}}}` is
 the Jacobian. Transforming into `\psi` derivatives, the middle
-term of equation \ `[eq:delpz] <#eq:delpz>`__ cancels the `I` term
-in equation \ `[eq:delp] <#eq:delp>`__, but introduces another `I`
-term (first term in equation \ `[eq:delpz] <#eq:delpz>`__). This term
+term of equation :eq:`eq:delpz` cancels the `I` term
+in equation :eq:`eq:delp`, but introduces another `I`
+term (first term in equation :eq:`eq:delpz`). This term
 cancels with the `\nabla^2 x` term when
 `{\frac{\partial }{\partial x}}` is expanded, so the
 full expression for `\nabla_\perp^2` using `\psi`
 derivatives is:
 
 .. math::
+   :label: eq:delp_shift
 
    \begin{aligned}
    \nabla_\perp^2=& {\left({R{B_{\text{pol}}}}\right)^2}\left[{\frac{\partial^2 }{\partial {\psi}^2}} + \frac{B^2}{\left({R{B_{\text{pol}}}}\right)^4}{\frac{\partial^2 }{\partial {z}^2}}\right]
        \nonumber \\ &+ \frac{1}{J}{\frac{\partial }{\partial \psi}}\left[J{\left({R{B_{\text{pol}}}}\right)^2}\right]{\frac{\partial }{\partial \psi}} -
        \frac{1}{J}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}^2R}\right){\frac{\partial }{\partial z}}
-   \label{eq:delp_shift}\end{aligned}
+   \end{aligned}
 
 In orthogonal (psi, theta, zeta) flux coordinates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1186,26 +1197,27 @@ and so
 Hence in orthogonal flux coordinates, the perpendicular Laplacian is:
 
 .. math::
+   :label: eq:delp_flux
 
    \begin{aligned}
    \nabla_\perp^2\equiv \nabla^2 - \partial_{||}^2 = {\left({R{B_{\text{pol}}}}\right)^2}\left[{\frac{\partial^2 }{\partial {\psi}^2}} +
    \frac{1}{R^4B^2}{\frac{\partial^2 }{\partial {\zeta^2}^2}}\right] +
    \frac{{B_{\text{tor}}}^2}{{h_\theta}^2B^2}{\frac{\partial^2 }{\partial {\theta}^2}} + \cdots
-   \label{eq:delp_flux}\end{aligned}
+   \end{aligned}
 
 where the neglected terms are first-order derivatives. The coefficient
 for the second-order `z` derivative differs from
-equation \ `[eq:delp_shift] <#eq:delp_shift>`__, and
-equation \ `[eq:delp_flux] <#eq:delp_flux>`__ still contains a
+equation :eq:`eq:delp_shift`, and
+equation :eq:`eq:delp_flux` still contains a
 derivative in `\theta`. This shows that the transformation made to
-get equation \ `[eq:delp_shift] <#eq:delp_shift>`__ doesn’t result in
+get equation :eq:`eq:delp_shift` doesn’t result in
 the same answer as orthogonal flux coordinates:
-equation \ `[eq:delp_shift] <#eq:delp_shift>`__ is in field-aligned
+equation :eq:`eq:delp_shift` is in field-aligned
 coordinates.
 
-Note that in the limit of `{B_{\text{pol}}}= B`, both
-equations \ `[eq:delp_shift] <#eq:delp_shift>`__ and
-`[eq:delp_flux] <#eq:delp_flux>`__ are the same, as they should be.
+Note that in the limit of `{B_{\text{pol}}}= B`, both equations
+:eq:`eq:delp_shift` and :eq:`eq:delp_flux` are the same, as they
+should be.
 
 Operator B x Nabla Phi Dot Nabla A
 ----------------------------------
@@ -1251,8 +1263,8 @@ coordinates. The magnetic field unit vector is:
 
 .. math:: \mathbf{b} = \frac{B_\theta h_\theta}{B}\nabla\theta + \frac{B_\zeta R}{B}\nabla\zeta
 
-and using the definition of curl
-(equation `[eq:curlcurvilinear] <#eq:curlcurvilinear>`__) we can write
+and using the definition of curl (equation :eq:`eq:curlcurvilinear`)
+we can write
 
 .. math:: \mathbf{b}\times\mathbf{\kappa} \simeq \frac{B}{2}\nabla\times\frac{\mathbf{b}}{B} = \frac{B}{2}\frac{B_\theta}{h_\theta}\left[\frac{\partial}{\partial\theta}\left(\frac{B_\zeta R}{B^2}\right) - \frac{\partial}{\partial\zeta}\left(\frac{B_\theta h_\theta}{B^2}\right)\right]\mathbf{e}_\psi + \left[\cdot\right]\mathbf{e}_\theta + \left[\cdot\right]\mathbf{e}_\zeta
 
@@ -1391,37 +1403,40 @@ and for a general set of (differentiable) coordinates
 `\left\{u^i\right\}`, the Laplacian is given by
 
 .. math::
+   :label: eq:laplacegen
 
    \begin{aligned}
    \nabla^2\phi = \frac{1}{J}\frac{\partial}{\partial
    u^i}\left(Jg^{ij}\frac{\partial\phi}{\partial u^j}\right)
-   \label{eq:laplacegen}\end{aligned}
+   \end{aligned}
 
 which can be expanded as
 
 .. math::
+   :label: eq:laplace_expand
 
    \begin{aligned}
    \nabla^2\phi = g^{ij}\frac{\partial^2\phi}{\partial u^i\partial u^j} +
    \underbrace{\frac{1}{J}\frac{\partial}{\partial
    u^i}\left(Jg^{ij}\right)}_{G^j}\frac{\partial\phi}{\partial u^j}
-   \label{eq:laplace_expand}\end{aligned}
+   \end{aligned}
 
 where `G^j` must **not** be mistaken as the so called connection
 coefficients (i.e. the Christoffel symbols of second kind). Setting
 `\phi =
-u^k` in equation (`[eq:laplacegen] <#eq:laplacegen>`__) gives
+u^k` in equation :eq:`eq:laplacegen` gives
 `\nabla^2u^k = G^k`. Expanding
-(`[eq:laplacegen] <#eq:laplacegen>`__) and setting
+:eq:`eq:laplacegen` and setting
 `\left\{u^i\right\} = \left\{x, y, z\right\}` gives
 
 .. math::
+   :label: eq:general_laplacian
 
    \begin{aligned}
    \nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
    x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
    z}\nabla z\right) \nonumber \\
-   \label{eq:general_laplacian}
+
    = \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
    f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla
    z\right|^2 \\ +2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
@@ -1433,11 +1448,12 @@ u^k` in equation (`[eq:laplacegen] <#eq:laplacegen>`__) gives
 Curl defined as:
 
 .. math::
+   :label: eq:curlcurvilinear
 
    \begin{aligned}
    \nabla\times\mathbf{A} = \frac{1}{\sqrt{g}}\sum_k\left(\frac{\partial
    A_j}{\partial u_i} - \frac{\partial A_i}{\partial u_j}\right){\boldsymbol{e}}_k \qquad i,j,k
-   \texttt{ cyc } 1,2,3 \label{eq:curlcurvilinear}\end{aligned}
+   \texttt{ cyc } 1,2,3 \end{aligned}
 
 Cross-product relation between contravariant and covariant vectors:
 
@@ -1523,10 +1539,11 @@ In the Laplacian inversion BOUT++ currently neglects the parallel
 thus
 
 .. math::
+   :label: eq:reduced_grad_perp
 
    \begin{aligned}
        {\nabla}_\perp \simeq& {\boldsymbol{e}}^x \partial_x +  {\boldsymbol{e}}^z \partial_z
-       \label{eq:reduced_grad_perp}\end{aligned}
+       \end{aligned}
 
 The Laplacian
 -------------
@@ -1541,10 +1558,11 @@ We would here like to find an expression for the Laplacian
 In general we have (using equation (2.6.39) in D’Haeseleer [haeseler]_)
 
 .. math::
+   :label: eq:divA
 
    \begin{aligned}
        {\nabla\cdot}{\boldsymbol{A}} = \frac{1}{J} \partial_i \left(JA^i\right)
-       \label{eq:divA}\end{aligned}
+       \end{aligned}
 
 and that
 
@@ -1644,7 +1662,7 @@ we have that
        {\nabla}_\|^i =& \left(\frac{{\boldsymbol{e}}_y}{g_{yy}} \partial_y\right)\cdot {\boldsymbol{e}}^i =
        {\boldsymbol{e}}^i \cdot \left(\frac{{\boldsymbol{e}}_y}{g_{yy}} \partial_y\right)\end{aligned}
 
-so that by equation (`[eq:divA] <#eq:divA>`__),
+so that by equation :eq:`eq:divA`,
 
 .. math::
 
@@ -1683,7 +1701,7 @@ Notice that BOUT++ currently assumes small parallel gradients in the
 dependent variable in Laplacian inversion if `g_{xy}` and
 `g_{yz}` are non-zero (if these are zero, the derivation can be
 done directly from equation
-(`[eq:reduced_grad_perp] <#eq:reduced_grad_perp>`__) instead), so that
+:eq:`eq:reduced_grad_perp` instead), so that
 
 .. math::
 
@@ -1789,6 +1807,7 @@ Where we have used the definition of the Poisson bracket
 The pure solenoidal advection is thus
 
 .. math::
+   :label: eq:brackets
 
    \begin{aligned}
        B{\boldsymbol{v}}_E\cdot\nabla =& -\nabla\phi\times{\boldsymbol{b}}\cdot\nabla\\
@@ -1800,7 +1819,7 @@ The pure solenoidal advection is thus
        %
        =& \frac{1}{J\sqrt{g_{yy}}} \left( g_{yx}\{\phi, \cdot\}_{y,z} + g_{yy}\{\phi,
    \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \right) \addtocounter{equation}{1}\tag{\theequation}
-                  \label{eq:brackets}\end{aligned}
+                  \end{aligned}
 
 The brackets operator in BOUT++
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1844,12 +1863,13 @@ the divergence of the
 velocity can be written as
 
 .. math::
+   :label: eq:exb1
 
    \begin{aligned}
    \nabla\cdot\left(\frac{1}{B}{\boldsymbol{b}}\times\nabla\phi\right) =
    \left[\nabla\times\left(\frac{1}{B}{\boldsymbol{b}}\right)\right]\cdot\nabla\phi -
    \frac{1}{B}{\boldsymbol{b}}\cdot\nabla\times\nabla\phi
-   \label{eq:exb1}\end{aligned}
+   \end{aligned}
 
 The second term on the right is identically zero (curl of a nablaient).
 The first term on the right can be expanded as
@@ -1879,7 +1899,7 @@ this becomes:
      \frac{1}{B}{\boldsymbol{b}}\times{\boldsymbol{\kappa}}\cdot\nabla\phi \\ &+
      \left[{\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right)\right]{\boldsymbol{b}}\cdot\nabla\phi\end{aligned}
 
-Alternatively, equation \ `[eq:exb1] <#eq:exb1>`__ can be expanded as
+Alternatively, equation :eq:`eq:exb1` can be expanded as
 
 .. math::
 
@@ -1899,7 +1919,7 @@ Alternatively, equation \ `[eq:exb1] <#eq:exb1>`__ can be expanded as
 .. [haeseler] Haeseler, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
 
 .. rubric:: Footnotes
-   
+
 .. [#f1] Notice that `G^i` is **not** the same as the
      *Christoffel symbols of second kind* (also known as the
      *connection coefficients* or
@@ -1908,8 +1928,7 @@ Alternatively, equation \ `[eq:exb1] <#eq:exb1>`__ can be expanded as
      quite similar.  | We find that
      `\Gamma^i_{ji}={\boldsymbol{e}}^i\cdot\partial_i
      {\boldsymbol{e}}_j = {\nabla\cdot}{\boldsymbol{e}}_j`, whereas
-     using equation `[eq:divA] <#eq:divA>`__ leads to
+     using equation :eq:`eq:divA` leads to
      `G^i={\boldsymbol{e}}^i\cdot\partial_i {\boldsymbol{e}}^j =
      {\nabla\cdot} {\boldsymbol{e}}^j`, since `g^{ji}=g^{ij}`
      due to symmetry.
-

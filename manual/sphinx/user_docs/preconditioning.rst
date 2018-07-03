@@ -108,6 +108,7 @@ The coupled set of equations to be solved are therefore
 The Jacobian of this system is therefore:
 
 .. math::
+   :label: eq:mhdjacobian
 
    \mathbb{J} = 
    \left[ \begin{array}{c|c|c}
@@ -119,7 +120,6 @@ The Jacobian of this system is therefore:
     & + \frac{B_0^2}{\rho}\left[{\mathbf{b}}_0\times\nabla\left(\frac{J_{||0}}{B_0}\right)\right]\cdot\nabla & \\
     & + \color{blue}{\frac{B_0^2}{\mu_0\rho}\nabla\left(\nabla_\perp^2\psi\right)\cdot\left({\mathbf{b}}_0\times\nabla\right)} & 
    \end{array}\right]
-   \label{eq:mhdjacobian}
 
 Where the blue terms are only included in nonlinear simulations.
 
@@ -228,9 +228,9 @@ For small flow velocities, the inverse of `\mathbb{D}` can be
 approximated using the Binomial theorem:
 
 .. math::
+   :label: eq:dapprox
 
    \mathbb{D}^{-1} \simeq \mathbb{I} \color{blue}{- \gamma{\mathbf{v}}_E\cdot\nabla}
-   \label{eq:dapprox}
 
 Following [chacon-2008]_, [chacon-2002]_, `\mathbb{M}` can be
 re-written as
@@ -277,7 +277,7 @@ Where
 `\mathbb{P}_{Schur} = \mathbb{D} - \mathbb{L}\mathbb{E}^{-1}\mathbb{U}`
 is the Schur complement. Note that this inversion is exact so far. Since
 `\mathbb{E}` is block-diagonal, and `\mathbb{D}` can be
-easily approximated using equation `[eq:dapprox] <#eq:dapprox>`__, this
+easily approximated using equation :eq:`eq:dapprox`, this
 simplifies the problem to inverting `\mathbb{P}_{Schur}`, which is
 much smaller than `\mathbb{M}`.
 
@@ -289,9 +289,8 @@ A possible approximation to `\mathbb{P}_{Schur}` is to neglect:
 
    -  the `J_{||0}` term in `\mathbb{L}_\psi`
 
--  All nonlinear terms (blue terms in equation
-   `[eq:mhdjacobian] <#eq:mhdjacobian>`__), including perpendicular
-   terms (so `\mathbb{D} = \mathbb{I}`)
+- All nonlinear terms (blue terms in equation :eq:`eq:mhdjacobian`),
+  including perpendicular terms (so `\mathbb{D} = \mathbb{I}`)
 
 This gives
 
