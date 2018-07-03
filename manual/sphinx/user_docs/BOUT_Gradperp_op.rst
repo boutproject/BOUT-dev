@@ -99,24 +99,23 @@ SOL, the differential operators are reduced to:
 
 .. math::
 
-   \begin{aligned}
-   R&=&R_0+r\cos\theta, \\
-   Z&=&r\sin\theta, \\
-   B_t&=&{B_{t0}R_0\over R}, \\
-   B_p&=&{1\over R}{\partial\psi\over\partial r}, \\
-   R_\psi&=&{\cos\theta\over RB_p}, \\
-   R_\theta&=&-r\sin\theta, \\
-   Z_\psi&=&{\sin\theta\over RB_p}, \\
-   Z_\theta&=&r\cos\theta, \\
-   {\cal J}&=&{r\over B_p}, \\
-   h&=&r, \\
-   J_{11}&=&|\nabla\psi|^2=r^2B_p^2, \\
-   J_{12}&=&J_{21}=\nabla\psi\cdot\nabla\theta=0,\\
-   J_{13}&=&J_{31}=0, \\
-   J_{22}&=&|\nabla\theta|^2={1\over r^2}, \\
-   J_{23}&=&J_{32}=0, \\
-   J_{33}&=&|\nabla\zeta|^2={1\over R^2},\\
-   \nabla^2&\simeq&{1\over r}{\partial\over\partial r}\left(r{\partial\over\partial r}\right)+{1\over r^2}{\partial^2\over\partial \theta^2}+{1\over R^2}{\partial^2\over\partial \zeta^2}\end{aligned}
+   R &= R_0+r\cos\theta, \\
+   Z &= r\sin\theta, \\
+   B_t &= {B_{t0}R_0\over R}, \\
+   B_p &= {1\over R}{\partial\psi\over\partial r}, \\
+   R_\psi &= {\cos\theta\over RB_p}, \\
+   R_\theta &= -r\sin\theta, \\
+   Z_\psi &= {\sin\theta\over RB_p}, \\
+   Z_\theta &= r\cos\theta, \\
+   {\cal J} &= {r\over B_p}, \\
+   h &= r, \\
+   J_{11} &= |\nabla\psi|^2=r^2B_p^2, \\
+   J_{12} = J_{21} &= \nabla\psi\cdot\nabla\theta=0,\\
+   J_{13} = J_{31} &= 0, \\
+   J_{22} &= |\nabla\theta|^2={1\over r^2}, \\
+   J_{23} = J_{32} &= 0, \\
+   J_{33} &= |\nabla\zeta|^2={1\over R^2},\\
+   \nabla^2 &\simeq {1\over r}{\partial\over\partial r}\left(r{\partial\over\partial r}\right)+{1\over r^2}{\partial^2\over\partial \theta^2}+{1\over R^2}{\partial^2\over\partial \zeta^2}
 
 
 Field-aligned coordinates with `\theta` as the coordinate along the field line
