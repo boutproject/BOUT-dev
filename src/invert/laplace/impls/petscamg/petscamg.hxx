@@ -88,6 +88,8 @@ public:
   
   const FieldPerp solve(const FieldPerp &b) override { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+
+  FieldPerp multiplyAx(const FieldPerp &x);
   
 private:
   Field3D A,C1,C2,D; // ODE Coefficients

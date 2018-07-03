@@ -199,3 +199,41 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   opts->get("elemf",elemf,0,true);     
 }
 
+FieldPerp LaplacePetscAmg::multiplyAx(const FieldPerp &x) {
+
+  PetscErrorCode ierr;
+  int i, k, i2, ind;
+  BoutReal val;
+
+  yindex = x.getIndex();
+
+  for (i=0; i < Nx_local; i++) {
+    i2 = i + mxstart;
+    for (k=0; k < Nz_local; k++) {
+      ind = gindices[(i+lxs)*nzt+k+lzs];
+      val = x(i2, k);
+      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+    }
+  }
+
+  VecAssemblyBegin(xs);
+  VecAssemblyEnd(xs);
+
+  generateMatrixA(0);
+
+  ierr = MatMult(MatA, xs, bs);
+  if (ierr) throw BoutException("multiplyAx: Petsc error %i", ierr);
+
+  FieldPerp result;
+  result.allocate();
+  result.setIndex(yindex);
+  for(i = 0;i < Nx_local;i++) {
+    for(k= 0;k < Nz_local;k++) {
+      ind = gindices[(i+lxs)*nzt+k+lzs];
+      VecGetValues(bs, 1, &ind, &val );
+      result(i+mxstart,k+mzstart) = val;
+    }
+  }
+
+  return result;
+}
