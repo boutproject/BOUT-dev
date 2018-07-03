@@ -295,7 +295,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  pcsolve = NULL;
+  pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
     OPTION(opts, rightprec, true); // Right preconditioning by default

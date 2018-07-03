@@ -206,11 +206,3 @@ private:
 #endif // __SLEPC_SOLVER_H__
 
 #endif
-
-#ifndef __SLEPC_SOLVER_H__
-#define __SLEPC_SOLVER_H__
-
-#include "../emptysolver.hxx"
-typedef EmptySolver SlepcSolver;
-
-#endif

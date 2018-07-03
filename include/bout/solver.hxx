@@ -268,10 +268,17 @@ class Solver {
     throw BoutException("resetInternalFields not supported by this Solver");}
 
   // Solver status. Optional functions used to query the solver
-  virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
-  virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
-  
-  int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
+  /// Number of 2D variables. Vectors count as 3
+  virtual int n2Dvars() const {return f2d.size();}
+  /// Number of 3D variables. Vectors count as 3
+  virtual int n3Dvars() const {return f3d.size();}
+
+  /// Get and reset the number of calls to the RHS function
+  int resetRHSCounter();
+  /// Same but for explicit timestep counter - for IMEX
+  int resetRHSCounter_e();
+  /// Same but fur implicit timestep counter - for IMEX
+  int resetRHSCounter_i();
   
   /*!
    * Test if this solver supports split operators (e.g. implicit/explicit)
@@ -290,14 +297,14 @@ class Solver {
    * Create a Solver object. This uses the "type" option
    * in the given Option section to determine which solver
    * type to create.
-   */ 
-  static Solver* create(Options *opts = NULL);
-  
+   */
+  static Solver *create(Options *opts = nullptr);
+
   /*!
    * Create a Solver object, specifying the type
-   */ 
-  static Solver* create(SolverType &type, Options *opts = NULL);
-  
+   */
+  static Solver *create(SolverType &type, Options *opts = nullptr);
+
   /*!
    * Pass the command-line arguments. This static function is
    * called by BoutInitialise, and puts references
@@ -372,6 +379,7 @@ protected:
   BoutReal max_dt; ///< Maximum internal timestep
   
 private:
+  int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
   bool initCalled=false; ///< Has the init function of the solver been called?
   int freqDefault=1;     ///< Default sampling rate at which to call monitors - same as output to screen
   BoutReal timestep=-1; ///< timestep - shouldn't be changed after init is called.
@@ -395,7 +403,7 @@ private:
   void post_rhs(BoutReal t); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
+  void loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added

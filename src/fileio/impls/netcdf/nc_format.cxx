@@ -35,7 +35,7 @@
 //#define NCDF_VERBOSE
 
 NcFormat::NcFormat() {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -44,11 +44,11 @@ NcFormat::NcFormat() {
   default_rec = 0;
   rec_nr.clear();
 
-  fname = NULL;
+  fname = nullptr;
 }
 
 NcFormat::NcFormat(const char *name) {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -69,7 +69,7 @@ NcFormat::~NcFormat() {
 bool NcFormat::openr(const char *name) {
   TRACE("NcFormat::openr");
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   // Create an error object so netCDF doesn't exit
@@ -83,7 +83,7 @@ bool NcFormat::openr(const char *name) {
 
   if(!dataFile->is_valid()) {
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
   }
 
@@ -93,11 +93,11 @@ bool NcFormat::openr(const char *name) {
     output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
     /*
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
     */
-    xDim = NULL;
-  }else if(mesh != NULL) {
+    xDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(xDim->size() != mesh->LocalNx) {
       throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
@@ -108,11 +108,11 @@ bool NcFormat::openr(const char *name) {
     output_warn.write("WARNING: NetCDF file should have a 'y' dimension\n");
     /*
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
     */
-    yDim = NULL;
-  }else if(mesh != NULL) {
+    yDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->LocalNy) {
       throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
@@ -124,8 +124,8 @@ bool NcFormat::openr(const char *name) {
 #ifdef NCDF_VERBOSE
     output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
-    zDim = NULL;
-  }else if(mesh != NULL) {
+    zDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->LocalNz) {
       throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
@@ -137,7 +137,7 @@ bool NcFormat::openr(const char *name) {
 #ifdef NCDF_VERBOSE
     output_info.write("INFO: NetCDF file has no 't' coordinate\n");
 #endif
-    tDim = NULL;
+    tDim = nullptr;
   }
   
   recDimList[0] = tDim;
@@ -161,7 +161,7 @@ bool NcFormat::openw(const char *name, bool append) {
   NcError err(NcError::silent_nonfatal);
 #endif
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   if(append) {
@@ -169,7 +169,7 @@ bool NcFormat::openw(const char *name, bool append) {
 
     if(!dataFile->is_valid()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -178,28 +178,28 @@ bool NcFormat::openw(const char *name, bool append) {
     if(!(xDim = dataFile->get_dim("x"))) {
       output_error.write("ERROR: NetCDF file should have an 'x' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(yDim = dataFile->get_dim("y"))) {
       output_error.write("ERROR: NetCDF file should have a 'y' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(zDim = dataFile->get_dim("z"))) {
       output_error.write("ERROR: NetCDF file should have a 'z' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(tDim = dataFile->get_dim("t"))) {
       output_error.write("ERROR: NetCDF file should have a 't' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -208,7 +208,7 @@ bool NcFormat::openw(const char *name, bool append) {
     if((xDim->size() != mesh->LocalNx) || (yDim->size() != mesh->LocalNy) || (zDim->size() != mesh->LocalNz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -220,7 +220,7 @@ bool NcFormat::openw(const char *name, bool append) {
     
     if(!dataFile->is_valid()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -228,25 +228,25 @@ bool NcFormat::openw(const char *name, bool append) {
     
     if(!(xDim = dataFile->add_dim("x", mesh->LocalNx))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
   
     if(!(yDim = dataFile->add_dim("y", mesh->LocalNy))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     if(!(zDim = dataFile->add_dim("z", mesh->LocalNz))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     if(!(tDim = dataFile->add_dim("t"))) { // unlimited dimension
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -264,13 +264,13 @@ bool NcFormat::openw(const char *name, bool append) {
 }
 
 bool NcFormat::is_valid() {
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return false;
   return dataFile->is_valid();
 }
 
 void NcFormat::close() {
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return;
   
   TRACE("NcFormat::close");
@@ -283,10 +283,10 @@ void NcFormat::close() {
 
   dataFile->close();
   delete dataFile;
-  dataFile = NULL;
-  
+  dataFile = nullptr;
+
   free(fname);
-  fname = NULL;
+  fname = nullptr;
 }
 
 void NcFormat::flush() {
@@ -475,7 +475,7 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
     // Variable not in file, so add it.
     
     var = dataFile->add_var(name, ncInt, nd, dimList);
-    if(var == NULL) {
+    if (var == nullptr) {
       output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
       return false;
     }

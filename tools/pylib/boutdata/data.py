@@ -5,9 +5,7 @@ OMFIT
 """
 
 import os
-import sys
 import glob
-import numpy
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
@@ -193,6 +191,7 @@ class BoutOptionsFile(BoutOptions):
     """
 
     def __init__(self, filename, name="root"):
+        self.filename = filename
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -246,6 +245,42 @@ class BoutOptionsFile(BoutOptions):
                                 pass
 
                         section[line[:eqpos].strip()] = value
+
+    def write(self, filename=None, overwrite=False):
+        """ Write to BOUT++ options file
+
+        This method will throw an error rather than overwriting an existing
+        file unless the overwrite argument is set to true.
+        Note, no comments from the original input file are transferred to the
+        new one.
+
+        Parameters
+        ----------
+        filename : str
+            Path of the file to write
+            (defaults to path of the file that was read in)
+        overwrite : bool
+            If False then throw an exception if 'filename' already exists.
+            Otherwise, just overwrite without asking.
+            (default False)
+        """
+        if filename is None:
+            filename = self.filename
+
+        if not overwrite and os.path.exists(filename):
+            raise ValueError("Not overwriting existing file, cannot write output to "+filename)
+
+        def write_section(basename, opts, f):
+            if basename:
+                f.write("["+basename+"]\n")
+            for key, value in opts._keys.items():
+                f.write(key+" = "+str(value)+"\n")
+            for section in opts.sections():
+                section_name = basename+":"+section if basename else section
+                write_section(section_name, opts[section], f)
+
+        with open(filename, "w") as f:
+            write_section("", self, f)
 
 
 class BoutOutputs(object):

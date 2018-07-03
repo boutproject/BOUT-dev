@@ -93,8 +93,6 @@ int main(int argc, char **argv) {
       Monitor *bout_monitor = new BoutMonitor();
       solver->addMonitor(bout_monitor, Solver::BACK);
 
-      std::string field_name = "field_" + name;
-
       solver->solve();
 
       if (fabs(model->field(1, 1, 0) - expected) > tolerance) {

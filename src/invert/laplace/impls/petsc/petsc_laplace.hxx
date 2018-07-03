@@ -37,7 +37,9 @@ class LaplacePetsc;
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *UNUSED(opt) = NULL, Mesh* UNUSED(passmesh) = mesh) { throw BoutException("No PETSc solver available"); }
+  LaplacePetsc(Options *UNUSED(opt) = nullptr) {
+    throw BoutException("No PETSc solver available");
+  }
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &UNUSED(val)) override {}
@@ -66,7 +68,7 @@ public:
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = NULL, Mesh *passmesh = mesh);
+  LaplacePetsc(Options *opt = nullptr);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );
@@ -158,6 +160,6 @@ private:
   #endif
 };
 
-#endif //BOUT_HAS_PETSC_DEV
+#endif //BOUT_HAS_PETSC
 
 #endif //__PETSC_LAPLACE_H__

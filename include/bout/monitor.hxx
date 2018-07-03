@@ -1,42 +1,57 @@
-#pragma once
+#ifndef __MONITOR_H__
+#define __MONITOR_H__
 
 #include "bout_types.hxx"
+#include "bout/assert.hxx"
+#include "utils.hxx"
+
+#include <cmath>
 
 class Solver;
-/// Check if two numbers are multiples of each other, with an accuracy
-/// of 1e-12
-bool isMultiple(BoutReal a, BoutReal b);
+
+/// Return true if either \p a is a multiple of \p b or vice-versa
+///
+/// Assumes both arguments are greater than zero
+inline bool isMultiple(BoutReal a, BoutReal b) {
+  ASSERT2(a > 0);
+  ASSERT2(b > 0);
+
+  auto min = a>b?b:a;
+  auto max = a>b?a:b;
+  auto ratio = std::round(max/min);
+  auto error = ratio*min - max;
+  return (std::abs(error/max) < 1e-12);
+}
 
 /// Monitor baseclass for the Solver
+///
 /// Can be called ether with a specified frequency, or with the
 /// frequency of the BOUT++ output monitor.
 class Monitor{
   friend class Solver; ///< needs access to timestep and freq
 public:
-  /// A timestep of -1 defaults to the the frequency of the BOUT++
+  /// A \p timestep_ of -1 defaults to the the frequency of the BOUT++
   /// output monitor
-  Monitor(BoutReal timestep_=-1):timestep(timestep_){};
+  Monitor(BoutReal timestep_ = -1) : timestep(timestep_){};
+
   virtual ~Monitor(){};
-  /// call is called by the solver after timestep_ has passed
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
-  /// cleanup is called when a clean shutdown is initiated
+
+  /// Callback function for the solver, called after timestep_ has passed
+  ///
+  /// @param[in] solver The solver calling this monitor
+  /// @param[in] time   The current simulation time
+  /// @param[in] iter   The current simulation iteration
+  /// @param[in] nout   The total number of iterations for this simulation
+  ///
+  /// @returns non-zero if simulation should be stopped
+  virtual int call(Solver *solver, BoutReal time, int iter, int nout) = 0;
+
+  /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
-  /// compare two monitors, check whether they are identicall
-  bool operator==(const Monitor& rhs) const;
+
 private:
   BoutReal timestep;
   int freq;
 };
 
-/// signature of legacy functions
-typedef int (* MonitorFuncPointer )(Solver *solver, BoutReal simtime, int iter, int NOUT);
-
-/// Class to wrap legacy monitor functions
-class MonitorFunc: public Monitor{
-public:
-  MonitorFunc(MonitorFuncPointer pntr);
-  virtual ~MonitorFunc(){};
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout) override;
-private:
-  MonitorFuncPointer callFunc;
-};
+#endif // __MONITOR_H__

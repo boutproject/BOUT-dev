@@ -23,19 +23,12 @@ TODO
 - Don't raise ``ImportError`` if no NetCDF libraries found, use HDF5
   instead?
 - Cleaner handling of different NetCDF libraries
-- Monkey-patch old version of scipy.io.netcdf if we're using it
 - Support for h5netcdf?
 
 """
 
 from __future__ import print_function
-try:
-    from builtins import map
-    from builtins import zip
-    from builtins import str
-    from builtins import object
-except:
-    pass
+from builtins import map, zip, str, object
 
 import numpy as np
 import time
@@ -61,7 +54,11 @@ except ImportError:
             from scipy.io.netcdf import netcdf_file as Dataset
             library = "scipy"
             has_netCDF = True
-        except:
+            if hasattr(Dataset, "create_dimension"):
+                # Monkey-patch old version
+                Dataset.createDimension = Dataset.create_dimension
+                Dataset.createVariable = Dataset.create_variable
+        except ImportError:
             raise ImportError(
                 "DataFile: No supported NetCDF modules available")
 
@@ -72,7 +69,7 @@ except ImportError:
     has_h5py = False
 
 
-class DataFile:
+class DataFile(object):
     """File I/O class
 
     A wrapper around various NetCDF libraries and h5py, used by BOUT++
@@ -91,7 +88,7 @@ class DataFile:
         truncated). Default is read-only mode
     format : str, optional
         Name of a filetype to use (e.g. ``NETCDF3_CLASSIC``,
-        ``NETCDF4``, ``HDF5``)
+        ``NETCDF3_64BIT``, ``NETCDF4``, ``HDF5``)
 
     TODO
     ----
@@ -104,7 +101,15 @@ class DataFile:
     """
     impl = None
 
-    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_CLASSIC'):
+    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_64BIT'):
+        """
+
+        NetCDF formats are described here: http://unidata.github.io/netcdf4-python/
+        - NETCDF3_CLASSIC   Limited to 2.1Gb files
+        - NETCDF3_64BIT_OFFSET or NETCDF3_64BIT is an extension to allow larger file sizes
+        - NETCDF3_64BIT_DATA adds 64-bit integer data types and 64-bit dimension sizes
+        - NETCDF4 and NETCDF4_CLASSIC use HDF5 as the disk format
+        """
         if filename is not None:
             if filename.split('.')[-1] in ('hdf5', 'hdf', 'h5'):
                 self.impl = DataFile_HDF5(
@@ -519,21 +524,16 @@ class DataFile_netCDF(DataFile):
 
     def _bout_type_from_dimensions(self, varname):
         dims = self.dimensions(varname)
-        if dims == ('t', 'x', 'y', 'z'):
-            return "Field3D_t"
-        elif dims == ('t', 'x', 'y'):
-            return "Field2D_t"
-        elif dims == ('t',):
-            return "scalar_t"
-        elif dims == ('x', 'y', 'z'):
-            return "Field3D"
-        elif dims == ('x', 'y'):
-            return "Field2D"
-        elif dims == ():
-            return "scalar"
-        else:
-            # Unknown bout_type, but still want to be able to read, so give it a value...
-            return None
+        dims_dict = {
+            ('t', 'x', 'y', 'z'): "Field3D_t",
+            ('t', 'x', 'y'): "Field2D_t",
+            ('t',): "scalar_t",
+            ('x', 'y', 'z'): "Field3D",
+            ('x', 'y'): "Field2D",
+            (): "scalar",
+        }
+
+        return dims_dict.get(dims, None)
 
     def write(self, name, data, info=False):
 
@@ -619,13 +619,10 @@ class DataFile_netCDF(DataFile):
                         except KeyError:
                             # Not found. Create
                             if info:
-                                print(
-                                    "Defining dimension " + dn + " of size %d" % size)
-                            try:
-                                self.handle.createDimension(dn, size)
-                            except AttributeError:
-                                # Try the old-style function
-                                self.handle.create_dimension(dn, size)
+                                print("Defining dimension {} of size {}"
+                                      .format(dn, size))
+
+                            self.handle.createDimension(dn, size)
                             return dn
                         i = i + 1
 
@@ -636,10 +633,8 @@ class DataFile_netCDF(DataFile):
                             "Defining dimension " + name + " of size %d" % size)
                     if name == 't':
                         size = None
-                    try:
-                        self.handle.createDimension(name, size)
-                    except AttributeError:
-                        self.handle.create_dimension(name, size)
+
+                    self.handle.createDimension(name, size)
 
                 return name
 
@@ -657,14 +652,6 @@ class DataFile_netCDF(DataFile):
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)
-
-            elif library == "scipy":
-                try:
-                    # New style functions
-                    var = self.handle.createVariable(name, t, dims)
-                except AttributeError:
-                    # Old style functions
-                    var = self.handle.create_variable(name, t, dims)
             else:
                 var = self.handle.createVariable(name, t, dims)
 
@@ -718,7 +705,7 @@ class DataFile_netCDF(DataFile):
                 print("Error reading attributes for " + varname)
                 # Result will be an empty map
 
-            if not "bout_type" in attributes:
+            if "bout_type" not in attributes:
                 attributes["bout_type"] = self._bout_type_from_dimensions(varname)
 
             # Save the attributes for this variable to the cache
@@ -840,20 +827,19 @@ class DataFile_HDF5(DataFile):
 
     def dimensions(self, varname):
         bout_type = self.bout_type(varname)
-        if bout_type == 'Field3D_t':
-            return ('t', 'x', 'y', 'z')
-        elif bout_type == 'Field2D_t':
-            return ('t', 'x', 'y')
-        elif bout_type == 'scalar_t':
-            return ('t')
-        elif bout_type == 'Field3D':
-            return ('x', 'y', 'z')
-        elif bout_type == 'Field2D':
-            return ('x', 'y')
-        elif bout_type == 'scalar':
-            return ()
-        else:
-            raise ValueError("Variable bout_type not recognized")
+        dims_dict = {
+            "Field3D_t": ('t', 'x', 'y', 'z'),
+            "Field2D_t": ('t', 'x', 'y'),
+            "scalar_t": ('t',),
+            "Field3D": ('x', 'y', 'z'),
+            "Field2D": ('x', 'y'),
+            "scalar": (),
+        }
+        try:
+            return dims_dict[bout_type]
+        except KeyError:
+            raise ValueError("Variable bout_type not recognized (got {})"
+                             .format(bout_type))
 
     def _bout_type_from_array(self, data):
         """Get the bout_type from the array 'data'
@@ -875,11 +861,14 @@ class DataFile_HDF5(DataFile):
         --------
         - `DataFile.bout_type`
 
+        TODO
+        ----
+        - Make standalone function
+
         """
         try:
             # If data is a BoutArray, it should have a type attribute that we can use
-            bout_type = data.attributes["bout_type"]
-            return bout_type
+            return data.attributes["bout_type"]
         except AttributeError:
             # Otherwise data is a numpy.ndarray and we have to guess the bout_type
             pass

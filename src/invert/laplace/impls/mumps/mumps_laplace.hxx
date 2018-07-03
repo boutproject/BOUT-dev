@@ -35,9 +35,11 @@ class LaplaceMumps;
 #include <boutexception.hxx>
  
 class LaplaceMumps : public Laplacian {
- public:
-  LaplaceMumps(Options *UNUSED(opt) = NULL) { throw BoutException("Mumps library not available"); }
-  
+public:
+  LaplaceMumps(Options *UNUSED(opt) = nullptr) {
+    throw BoutException("Mumps library not available");
+  }
+
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &UNUSED(val)) override {}
   using Laplacian::setCoefC;
@@ -74,7 +76,7 @@ class LaplaceMumps : public Laplacian {
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = NULL);
+  LaplaceMumps(Options *opt = nullptr);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);

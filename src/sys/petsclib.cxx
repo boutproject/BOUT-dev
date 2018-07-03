@@ -9,8 +9,8 @@
 // Define all the static member variables
 int PetscLib::count = 0;
 char PetscLib::help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-int* PetscLib::pargc = 0;
-char*** PetscLib::pargv = 0;
+int *PetscLib::pargc = nullptr;
+char ***PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
 
 PetscLib::PetscLib() {
