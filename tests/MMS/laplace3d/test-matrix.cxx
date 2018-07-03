@@ -17,8 +17,17 @@ int main(int argc, char **argv) {
     return init_err;
   }
 
+  Field3D D = 1.;
+  Field3D C1 = 1.;
+  Field3D C2 = 1.;
+  Field3D A = 0.;
+
   // Create a Laplacian inversion solver
   LaplacePetscAmg *lap = (LaplacePetscAmg*) Laplacian::create();
+  lap->setCoefD(D);
+  lap->setCoefC1(C1);
+  lap->setCoefC2(C2);
+  lap->setCoefA(A);
 
   FieldFactory fact(mesh);
 
@@ -29,7 +38,7 @@ int main(int argc, char **argv) {
 
   Field3D x = fact.create3D("solution");
 
-  Field3D bout_rhs = this_Grad_perp2(x);
+  Field3D bout_rhs = D*this_Grad_perp2(x) + this_Grad_perp_dot_Grad_perp(C2, x)/C1 + A*x;
 
   Field3D petsc_rhs(mesh);
   petsc_rhs.allocate();
