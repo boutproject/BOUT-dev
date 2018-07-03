@@ -51,10 +51,6 @@ in the scrape-off-layer. Here
 is the coordinate Jacobian, `R` is the major radius, and `Z`
 is the vertical position.
 
-.. raw:: latex
-
-   \newpage
-
 Differential Operators
 ----------------------
 
@@ -122,9 +118,6 @@ SOL, the differential operators are reduced to:
    J_{33}&=&|\nabla\zeta|^2={1\over R^2},\\
    \nabla^2&\simeq&{1\over r}{\partial\over\partial r}\left(r{\partial\over\partial r}\right)+{1\over r^2}{\partial^2\over\partial \theta^2}+{1\over R^2}{\partial^2\over\partial \zeta^2}\end{aligned}
 
-.. raw:: latex
-
-   \newpage
 
 **Field-aligned coordinates with `\theta` as the coordinate along the field line**
 ----------------------------------------------------------------------------------------
@@ -178,8 +171,8 @@ follows:
 .. math::
 
    \begin{aligned}
-   {d\over d\psi}&=&{\partial\over \partial x} - \left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right){\partial\over \partial z},   \\ 
-   {d\over d\theta}&=&{\partial\over \partial y} - \nu(x,y){\partial\over \partial z},   \\ 
+   {d\over d\psi}&=&{\partial\over \partial x} - \left(\int_{y_0}^y {\partial \nu(x,y)\over\partial\psi}dy\right){\partial\over \partial z},   \\
+   {d\over d\theta}&=&{\partial\over \partial y} - \nu(x,y){\partial\over \partial z},   \\
    {d\over d\zeta}&=&{\partial\over \partial z}.\end{aligned}
 
 In the field-aligned ballooning coordinates, the parallel differential
