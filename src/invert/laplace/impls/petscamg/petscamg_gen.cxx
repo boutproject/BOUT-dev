@@ -100,31 +100,30 @@ BOUT_OMP(for)
       ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
               // coefficient of 2nd derivative stencil (z-direction)
       
-      dxdz = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/2.; 
+      dxdz = 2.0*D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz; 
               // coefficient of mixed derivative stencil (could assume zero, at least initially, 
               // if easier; then check this is true in constructor)
       
-      dxd = (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
+      dxd = (D(i2, yindex, k2)*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex);
              // (could assume zero, at least initially, if easier; then check this is true in constructor)
              // coefficient of 1st derivative stencil (x-direction)
       
-      dzd = (D(i2, yindex, k2)*2.*coords->G3(i2, yindex) + coords->g33(i2, yindex)*ddz_C
+      dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex) + coords->g33(i2, yindex)*ddz_C
         + coords->g13(i2, yindex)*ddx_C)/coords->dz;
              // (could assume zero, at least initially, if easier; then check this is true in constructor)
              // coefficient of 1st derivative stencil (z-direction)
-      area = coords->dx(i2, yindex)*coords->dz;
 
       // Put Matrix element with global numbering
-      lval[0] = area*dxdz/4.;
-      lval[1] = (ddx - dxd/2.)*area;
-      lval[2] = -area*dxdz/4.;
-      lval[3] = (ddz - dzd/2.)*area;
-      lval[4] = (A(i2, yindex, k2) - 2.*(ddx+ddz))*area;
-      lval[5] = (ddz + dzd/2.)*area;
-      lval[6] = -area*dxdz/4.;
-      lval[7] = (ddx+dxd/2.)*area;
-      lval[8] = area*dxdz/4.;
+      lval[0] = dxdz/4.;
+      lval[1] = (ddx - dxd/2.);
+      lval[2] = -dxdz/4.;
+      lval[3] = (ddz - dzd/2.);
+      lval[4] = (A(i2, yindex, k2) - 2.*(ddx+ddz));
+      lval[5] = (ddz + dzd/2.);
+      lval[6] = -dxdz/4.;
+      lval[7] = (ddx+dxd/2.);
+      lval[8] = dxdz/4.;
       
       icc = (i+lxs)*nzt+k+lzs;
       irow = gindices[icc];
