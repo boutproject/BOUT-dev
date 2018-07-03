@@ -151,22 +151,22 @@ The contravariant components of this are then
    \begin{aligned}
    B^y = \frac{{B_{\text{pol}}}}{{h_\theta}} \qquad B^x = B^z = 0\end{aligned}
 
- i.e. `{\boldsymbol{B}}` can be written as
+i.e. `{\boldsymbol{B}}` can be written as
 
 .. math::
 
    \begin{aligned}
    {\boldsymbol{B}}= \frac{{B_{\text{pol}}}}{{h_\theta}}{\boldsymbol{e}}_y\end{aligned}
 
- and the covariant components calculated using `g_{ij}` as
+and the covariant components calculated using `g_{ij}` as
 
 .. math::
 
    \begin{aligned}
    B_x = {\sigma_{B\theta}}{B_{\text{tor}}}I R \qquad B_y = \frac{B^2 {h_\theta}}{{B_{\text{pol}}}} \qquad B_z = {\sigma_{B\theta}}{B_{\text{tor}}}R\end{aligned}
 
-The unit vector in the direction of equilibrium
-`{\boldsymbol{B}}` is therefore
+The unit vector in the direction of equilibrium `{\boldsymbol{B}}` is
+therefore
 
 .. math::
 
@@ -201,7 +201,7 @@ given by:
    %
     \right)\end{aligned}
 
- and the covariant metric tensor:
+and the covariant metric tensor:
 
 .. math::
 
@@ -227,7 +227,7 @@ magnetic field `{\boldsymbol{b}}_0` is given by
    \partial^0_{||}f \equiv {\boldsymbol{b}}_0 \cdot\nabla f =
    \frac{1}{\sqrt{g_{yy}}}{\frac{\partial f}{\partial y}} = \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial f}{\partial y}}\end{aligned}
 
- whilst the parallel divergence is given by
+whilst the parallel divergence is given by
 
 .. math::
 
@@ -316,7 +316,7 @@ Components of the magnetic field in field-aligned coordinates:
    \begin{aligned}
    B^y = \frac{{B_{\text{pol}}}}{{h_\theta}} \qquad B^x = B^z = 0\end{aligned}
 
- and
+and
 
 .. math::
 
@@ -631,7 +631,7 @@ curvature vector is given by
        \\ &+ {\frac{d^2 Z}{d s^2}}{\hat{{\boldsymbol{Z}}}}\\ &+ {\frac{d R}{d s}}{\frac{d \phi}{d s}}{\hat{{\boldsymbol{\phi}}}}+
        R{\frac{d^2 \phi}{d s^2}}{\hat{{\boldsymbol{\phi}}}}- R\left({\frac{d \phi}{d s}}\right)^2 {\hat{{\boldsymbol{R}}}}\end{aligned}
 
- i.e.
+i.e.
 
 .. math::
 

@@ -16,7 +16,7 @@ Some notation: The ODE being solved is of the form
 
 .. math:: {\frac{\partial {\mathbf{f}}}{\partial t}} = {\mathbf{F}}\left({\mathbf{f}}\right)
 
- Here the state vector :math:`f = \left(f_0, f_1, f_2, \ldots\right)^T`
+Here the state vector :math:`f = \left(f_0, f_1, f_2, \ldots\right)^T`
 is a vector containing the evolving (3D) variables
 :math:`f_i\left(x,y,z\right)`.
 
@@ -31,7 +31,7 @@ and (variable, position) i.e. :math:`\left(i,x,y,z\right)`
 
 .. math:: \mathbf{I} : \left(i,x,y,z\right) \mapsto k
 
- and it’s inverse
+and its inverse
 
 .. math:: \mathbf{I}^{-1} : k \mapsto \left(i,x,y,z\right)
 
@@ -119,7 +119,7 @@ The Jacobian of this system is therefore:
    \end{array}\right]
    \label{eq:mhdjacobian}
 
- Where the blue terms are only included in nonlinear simulations.
+Where the blue terms are only included in nonlinear simulations.
 
 This Jacobian has large dense blocks because of the Laplacian inversion
 terms (involving :math:`\nabla_\perp^{-2}` which couples together all
@@ -187,7 +187,9 @@ If instead the state vector is
    N_iT_i \\
    \end{array}\right)
 
- then the Jacobian is
+then the Jacobian is
+
+.. Result is missing!
 
 2-fluid turbulence
 ------------------
@@ -216,11 +218,11 @@ The matrix :math:`\mathbb{M}` to be inverted can therefore be written
    \mathbb{L}_P & \mathbb{L}_\psi & \mathbb{D}
    \end{array}\right]
 
- where
+where
 
 .. math:: \mathbb{D} = \mathbb{I} \color{blue}{+ \gamma{\mathbf{v}}_E\cdot\nabla}
 
- For small flow velocities, the inverse of :math:`\mathbb{D}` can be
+For small flow velocities, the inverse of :math:`\mathbb{D}` can be
 approximated using the Binomial theorem:
 
 .. math::
@@ -228,7 +230,7 @@ approximated using the Binomial theorem:
    \mathbb{D}^{-1} \simeq \mathbb{I} \color{blue}{- \gamma{\mathbf{v}}_E\cdot\nabla}
    \label{eq:dapprox}
 
- Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
+Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
 :math:`\mathbb{M}` can be re-written as
 
 .. math::
@@ -247,7 +249,7 @@ approximated using the Binomial theorem:
    \mathbb{U}_\psi
    \end{array}\right) \qquad \mathbb{L} = \left(\mathbb{L}_P \quad \mathbb{L}_\psi\right)
 
- The Schur factorization of :math:`\mathbb{M}` yields
+The Schur factorization of :math:`\mathbb{M}` yields
 :raw-latex:`\cite{chacon-2008}`
 
 .. math::
@@ -270,7 +272,7 @@ approximated using the Binomial theorem:
    -\mathbb{L}\mathbb{E}^{-1} & \mathbb{I}
    \end{array}\right]
 
- Where
+Where
 :math:`\mathbb{P}_{Schur} = \mathbb{D} - \mathbb{L}\mathbb{E}^{-1}\mathbb{U}`
 is the Schur complement. Note that this inversion is exact so far. Since
 :math:`\mathbb{E}` is block-diagonal, and :math:`\mathbb{D}` can be
@@ -298,7 +300,7 @@ This gives
    \mathbb{P}_{Schur} &\simeq& \mathbb{I} + \gamma^2 \frac{B_0^2}{\mu_0\rho}\left({\mathbf{b}}_0\cdot\nabla\right)\nabla_\perp^2\left({\mathbf{b}}_0\cdot\nabla\right)\nabla_\perp^{-2} \nonumber \\
    &\simeq& \mathbb{I} + \gamma^2 V_A^2 \left({\mathbf{b}}_0\cdot\nabla\right)^2\end{aligned}
 
- Where the commutation of parallel and perpendicular derivatives is also
+Where the commutation of parallel and perpendicular derivatives is also
 an approximation. This remaining term is just the shear Alfvén wave
 propagating along field-lines, the fastest wave supported by these
 equations.
@@ -336,7 +338,7 @@ JacIndex is set by the solver, so for the system
    U
    \end{array}\right)
 
- ``P.JacIndex = 0``, ``\psi.JacIndex = 1`` and ``U.JacIndex = 2``. All
+``P.JacIndex = 0``, ``\psi.JacIndex = 1`` and ``U.JacIndex = 2``. All
 other fields are given ``JacIndex = -1``.
 
 SparseMatrix stores the non-zero Jacobian components for the set of rows
