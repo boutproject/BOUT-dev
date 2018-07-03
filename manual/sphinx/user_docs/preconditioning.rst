@@ -1,3 +1,5 @@
+.. default-role:: math
+
 ======================
 BOUT++ preconditioning
 ======================
@@ -16,18 +18,18 @@ Some notation: The ODE being solved is of the form
 
 .. math:: {\frac{\partial {\mathbf{f}}}{\partial t}} = {\mathbf{F}}\left({\mathbf{f}}\right)
 
-Here the state vector :math:`f = \left(f_0, f_1, f_2, \ldots\right)^T`
+Here the state vector `f = \left(f_0, f_1, f_2, \ldots\right)^T`
 is a vector containing the evolving (3D) variables
-:math:`f_i\left(x,y,z\right)`.
+`f_i\left(x,y,z\right)`.
 
 The Jacobian of this system is then
 
 .. math:: {\mathbb{J}}= {\frac{\partial {\mathbf{F}}}{\partial {\mathbf{f}}}}
 
-The order of the elements in the vector :math:`{\mathbf{f}}`
+The order of the elements in the vector `{\mathbf{f}}`
 is determined in the solver code and SUNDIALS, so here just assume that
-there exists a map :math:`\mathbb{I}` between a global index :math:`k`
-and (variable, position) i.e. :math:`\left(i,x,y,z\right)`
+there exists a map `\mathbb{I}` between a global index `k`
+and (variable, position) i.e. `\left(i,x,y,z\right)`
 
 .. math:: \mathbf{I} : \left(i,x,y,z\right) \mapsto k
 
@@ -39,15 +41,15 @@ Some problem-specific operations which can be used to speed up the
 timestepping
 
 #. Jacobian-vector multiply: Given a vector, multiply it by
-   :math:`{\mathbb{J}}`
+   `{\mathbb{J}}`
 
 #. Preconditioner multiply: Given a vector, multiply by an approximate
-   inverse of :math:`\mathbb{M} = \mathbb{I} - \gamma\mathbb{J}`
+   inverse of `\mathbb{M} = \mathbb{I} - \gamma\mathbb{J}`
 
 #. Calculate the stencils i.e. non-zero elements in
-   :math:`{\mathbb{J}}`
+   `{\mathbb{J}}`
 
-#. Calculate the non-zero elements of :math:`{\mathbb{J}}`
+#. Calculate the non-zero elements of `{\mathbb{J}}`
 
 Physics problems
 ================
@@ -72,8 +74,8 @@ instabilities.
 Reduced 3-field MHD
 -------------------
 
-This is a 3-field system of pressure :math:`P`, magnetic flux
-:math:`\psi` and vorticity :math:`U`:
+This is a 3-field system of pressure `P`, magnetic flux
+`\psi` and vorticity `U`:
 
 .. math::
 
@@ -122,12 +124,12 @@ The Jacobian of this system is therefore:
 Where the blue terms are only included in nonlinear simulations.
 
 This Jacobian has large dense blocks because of the Laplacian inversion
-terms (involving :math:`\nabla_\perp^{-2}` which couples together all
-points in an X-Z plane. The way to make :math:`{\mathbb{J}}`
-sparse is to solve :math:`\phi` as a constraint (using e.g. the IDA
+terms (involving `\nabla_\perp^{-2}` which couples together all
+points in an X-Z plane. The way to make `{\mathbb{J}}`
+sparse is to solve `\phi` as a constraint (using e.g. the IDA
 solver) which moves the Laplacian inversion to the preconditioner.
 
-Solving :math:`\phi` as a constraint
+Solving `\phi` as a constraint
 ------------------------------------
 
 The evolving state vector becomes
@@ -207,7 +209,7 @@ Preconditioner-vector multiply
 Reduced 3-field MHD
 -------------------
 
-The matrix :math:`\mathbb{M}` to be inverted can therefore be written
+The matrix `\mathbb{M}` to be inverted can therefore be written
 
 .. math::
 
@@ -222,7 +224,7 @@ where
 
 .. math:: \mathbb{D} = \mathbb{I} \color{blue}{+ \gamma{\mathbf{v}}_E\cdot\nabla}
 
-For small flow velocities, the inverse of :math:`\mathbb{D}` can be
+For small flow velocities, the inverse of `\mathbb{D}` can be
 approximated using the Binomial theorem:
 
 .. math::
@@ -231,7 +233,7 @@ approximated using the Binomial theorem:
    \label{eq:dapprox}
 
 Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
-:math:`\mathbb{M}` can be re-written as
+`\mathbb{M}` can be re-written as
 
 .. math::
 
@@ -249,7 +251,7 @@ Following :raw-latex:`\cite{chacon-2008, chacon-2002}`,
    \mathbb{U}_\psi
    \end{array}\right) \qquad \mathbb{L} = \left(\mathbb{L}_P \quad \mathbb{L}_\psi\right)
 
-The Schur factorization of :math:`\mathbb{M}` yields
+The Schur factorization of `\mathbb{M}` yields
 :raw-latex:`\cite{chacon-2008}`
 
 .. math::
@@ -273,24 +275,24 @@ The Schur factorization of :math:`\mathbb{M}` yields
    \end{array}\right]
 
 Where
-:math:`\mathbb{P}_{Schur} = \mathbb{D} - \mathbb{L}\mathbb{E}^{-1}\mathbb{U}`
+`\mathbb{P}_{Schur} = \mathbb{D} - \mathbb{L}\mathbb{E}^{-1}\mathbb{U}`
 is the Schur complement. Note that this inversion is exact so far. Since
-:math:`\mathbb{E}` is block-diagonal, and :math:`\mathbb{D}` can be
+`\mathbb{E}` is block-diagonal, and `\mathbb{D}` can be
 easily approximated using equation `[eq:dapprox] <#eq:dapprox>`__, this
-simplifies the problem to inverting :math:`\mathbb{P}_{Schur}`, which is
-much smaller than :math:`\mathbb{M}`.
+simplifies the problem to inverting `\mathbb{P}_{Schur}`, which is
+much smaller than `\mathbb{M}`.
 
-A possible approximation to :math:`\mathbb{P}_{Schur}` is to neglect:
+A possible approximation to `\mathbb{P}_{Schur}` is to neglect:
 
 -  All drive terms
 
-   -  the curvature term :math:`\mathbb{L}_P`
+   -  the curvature term `\mathbb{L}_P`
 
-   -  the :math:`J_{||0}` term in :math:`\mathbb{L}_\psi`
+   -  the `J_{||0}` term in `\mathbb{L}_\psi`
 
 -  All nonlinear terms (blue terms in equation
    `[eq:mhdjacobian] <#eq:mhdjacobian>`__), including perpendicular
-   terms (so :math:`\mathbb{D} = \mathbb{I}`)
+   terms (so `\mathbb{D} = \mathbb{I}`)
 
 This gives
 
@@ -316,7 +318,7 @@ from the physics code by keeping track of the (linearised) operations
 going through the RHS function.
 
 For each point, keep the value (as usual), plus the non-zero elements in
-that row of :math:`{\mathbb{J}}` and the constant: result =
+that row of `{\mathbb{J}}` and the constant: result =
 Ax + b Keep track of elements using product rule.
 
 ::
