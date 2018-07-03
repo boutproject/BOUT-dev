@@ -71,6 +71,15 @@ The documentation is divided into the following sections:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Field-aligned coordinate systems
+   :name: coordinates
+
+   user_docs/coordinates
+   user_docs/preconditioning
+   user_docs/BOUT_Gradperp_op
+
+.. toctree::
+   :maxdepth: 1
    :caption: Developer Documentation
    :name: developer-docs
 
