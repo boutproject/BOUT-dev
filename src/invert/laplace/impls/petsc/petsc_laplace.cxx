@@ -57,11 +57,10 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
+LaplacePetsc::LaplacePetsc(Options *opt) :
   Laplacian(opt),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false), localmesh(passmesh),
-  sol(passmesh)
+  issetD(false), issetC(false), issetE(false)
 {
 
   // Get Options in Laplace Section
@@ -87,28 +86,28 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
     if ( outer_boundary_flags & ~implemented_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
-    if(localmesh->periodicX) {
-      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    if(mesh->periodicX) {
+      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
       }
   #endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.
-  comm = localmesh->getXcomm();
+  comm = mesh->getXcomm();
 
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
-  localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if(localmesh->firstX())
-    localN += localmesh->xstart * (localmesh->LocalNz);    // If on first processor add on width of boundary region
-  if(localmesh->lastX())
-    localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
+  localN = (mesh->xend - mesh->xstart + 1) * (mesh->LocalNz);
+  if(mesh->firstX())
+    localN += mesh->xstart * (mesh->LocalNz);    // If on first processor add on width of boundary region
+  if(mesh->lastX())
+    localN += mesh->xstart * (mesh->LocalNz);    // If on last processor add on width of boundary region
 
   // Calculate 'size' (the total number of points in physical grid)
   if(MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
 
   // Calculate total (physical) grid dimensions
-  meshz = localmesh->LocalNz;
+  meshz = mesh->LocalNz;
   meshx = size / meshz;
 
   // Create PETSc type of vectors for the solution and the RHS vector
@@ -138,43 +137,43 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
   PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
   PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
   if (fourth_order) {
-    // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if ( localmesh->firstX() && localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    // first and last 2*mesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    if ( mesh->firstX() && mesh->lastX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
         d_nnz[localN-1-i]=15;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=0;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
+      for (int i=(mesh->LocalNz); i<2*(mesh->LocalNz); i++) {
         d_nnz[i]=20;
         d_nnz[localN-1-i]=20;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=0;
       }
     }
-    else if ( localmesh->firstX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    else if ( mesh->firstX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
         d_nnz[localN-1-i]=15;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=10;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
+      for (int i=(mesh->LocalNz); i<2*(mesh->LocalNz); i++) {
         d_nnz[i]=20;
         d_nnz[localN-1-i]=20;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=5;
       }
     }
-    else if ( localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    else if ( mesh->lastX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
         d_nnz[localN-1-i]=15;
         o_nnz[i]=10;
         o_nnz[localN-1-i]=0;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
+      for (int i=(mesh->LocalNz); i<2*(mesh->LocalNz); i++) {
         d_nnz[i]=20;
         d_nnz[localN-1-i]=20;
         o_nnz[i]=5;
@@ -182,13 +181,13 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
       }
     }
     else {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=15;
         d_nnz[localN-1-i]=15;
         o_nnz[i]=10;
         o_nnz[localN-1-i]=10;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
+      for (int i=(mesh->LocalNz); i<2*(mesh->LocalNz); i++) {
         d_nnz[i]=20;
         d_nnz[localN-1-i]=20;
         o_nnz[i]=5;
@@ -196,7 +195,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
       }
     }
 
-    for (int i=2*(localmesh->LocalNz); i<localN-2*((localmesh->LocalNz));i++) {
+    for (int i=2*(mesh->LocalNz); i<localN-2*((mesh->LocalNz));i++) {
       d_nnz[i]=25;
         d_nnz[localN-1-i]=25;
         o_nnz[i]=0;
@@ -204,7 +203,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
     }
 
     // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
+    if (mesh->firstX() && mesh->lastX()) {
       // Only one processor in X
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
     }else {
@@ -212,25 +211,25 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
     }
   }
   else {
-    // first and last localmesh->LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if ( localmesh->firstX() && localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    // first and last mesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    if ( mesh->firstX() && mesh->lastX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=6;
         d_nnz[localN-1-i]=6;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=0;
       }
     }
-    else if ( localmesh->firstX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    else if ( mesh->firstX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=6;
         d_nnz[localN-1-i]=6;
         o_nnz[i]=0;
         o_nnz[localN-1-i]=3;
       }
     }
-    else if ( localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+    else if ( mesh->lastX() ) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=6;
         d_nnz[localN-1-i]=6;
         o_nnz[i]=3;
@@ -238,7 +237,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
       }
     }
     else {
-      for (int i=0; i<localmesh->LocalNz; i++) {
+      for (int i=0; i<mesh->LocalNz; i++) {
         d_nnz[i]=6;
         d_nnz[localN-1-i]=6;
         o_nnz[i]=3;
@@ -246,7 +245,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
       }
     }
 
-    for (int i=localmesh->LocalNz; i<localN-(localmesh->LocalNz);i++) {
+    for (int i=mesh->LocalNz; i<localN-(mesh->LocalNz);i++) {
       d_nnz[i]=9;
         d_nnz[localN-1-i]=9;
         o_nnz[i]=0;
@@ -254,7 +253,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, Mesh *passmesh) :
     }
 
     // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
+    if (mesh->firstX() && mesh->lastX()) {
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
     } else {
       MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
@@ -348,12 +347,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     }
   #endif
 
-  if (localmesh != b.getMesh()) {
-    throw BoutException("LaplacePetsc: error, RHS passed in has different mesh than this solver was created with.");
-  }
-
   // Get the metric tensor
-  Coordinates* coord = localmesh->coordinates();
+  Coordinates* coord = mesh->coordinates();
 
   int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
@@ -382,11 +377,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
    * In other word the indexing is done in a row-major order, but starting at
    * bottom left rather than top left
    */
-  // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
+  // X=0 to mesh->xstart-1 defines the boundary region of the domain.
   // Set the values for the inner boundary region
-  if( localmesh->firstX() ) {
-      for(int x=0; x<localmesh->xstart; x++) {
-          for(int z=0; z<localmesh->LocalNz; z++) {
+  if( mesh->firstX() ) {
+      for(int x=0; x<mesh->xstart; x++) {
+          for(int z=0; z<mesh->LocalNz; z++) {
               PetscScalar val; // Value of element to be set in the matrix
               // If Neumann Boundary Conditions are set.
               if(inner_boundary_flags & INVERT_AC_GRAD) {
@@ -453,8 +448,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     }
 
   // Set the values for the main domain
-  for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-    for(int z=0; z<localmesh->LocalNz; z++) {
+  for(int x=mesh->xstart; x <= mesh->xend; x++) {
+    for(int z=0; z<mesh->LocalNz; z++) {
         // NOTE: Only A0 is the A from setCoefA ()
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x,y,z);
@@ -628,11 +623,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
         }
     }
 
-  // X=localmesh->xend+1 to localmesh->LocalNx-1 defines the upper boundary region of the domain.
+  // X=mesh->xend+1 to mesh->LocalNx-1 defines the upper boundary region of the domain.
   // Set the values for the outer boundary region
-  if( localmesh->lastX() ) {
-      for(int x=localmesh->xend+1; x<localmesh->LocalNx; x++) {
-          for(int z=0; z<localmesh->LocalNz; z++) {
+  if( mesh->lastX() ) {
+      for(int x=mesh->xend+1; x<mesh->LocalNx; x++) {
+          for(int z=0; z<mesh->LocalNz; z++) {
               // Set Diagonal Values to 1
               PetscScalar val = 1;
               Element(i,x,z, 0, 0, val, MatA );
@@ -796,9 +791,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   // Add data to FieldPerp Object
   i = Istart;
   // Set the inner boundary values
-  if(localmesh->firstX()) {
-      for(int x=0; x<localmesh->xstart; x++) {
-          for(int z=0; z<localmesh->LocalNz; z++) {
+  if(mesh->firstX()) {
+      for(int x=0; x<mesh->xstart; x++) {
+          for(int z=0; z<mesh->LocalNz; z++) {
               PetscScalar val = 0;
               VecGetValues(xs, 1, &i, &val );
               sol[x][z] = val;
@@ -808,8 +803,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     }
 
   // Set the main domain values
-  for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-      for(int z=0; z<localmesh->LocalNz; z++) {
+  for(int x=mesh->xstart; x <= mesh->xend; x++) {
+      for(int z=0; z<mesh->LocalNz; z++) {
           PetscScalar val = 0;
           VecGetValues(xs, 1, &i, &val );
           sol[x][z] = val;
@@ -818,9 +813,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     }
 
   // Set the outer boundary values
-  if(localmesh->lastX()) {
-      for(int x=localmesh->xend+1; x<localmesh->LocalNx; x++) {
-          for(int z=0;z < localmesh->LocalNz; z++) {
+  if(mesh->lastX()) {
+      for(int x=mesh->xend+1; x<mesh->LocalNx; x++) {
+          for(int z=0;z < mesh->LocalNz; z++) {
               PetscScalar val = 0;
               VecGetValues(xs, 1, &i, &val );
               sol[x][z] = val;
@@ -834,7 +829,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   }
 
   // Return the solution
-  return copy(sol);
+  return sol;
 }
 
 /*!
@@ -864,7 +859,7 @@ void LaplacePetsc::Element(int i, int x, int z,
 
   // Calculate the row to be set
   int row_new = x + xshift; // should never be out of range.
-  if( !localmesh->firstX() ) row_new += (xoffset - localmesh->xstart);
+  if( !mesh->firstX() ) row_new += (xoffset - mesh->xstart);
 
   // Calculate the column to be set
   int col_new = z + zshift;
@@ -928,7 +923,7 @@ void LaplacePetsc::Element(int i, int x, int z,
  */
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 ) {
 
-  Coordinates *coord = localmesh->coordinates(); // Get metric tensor
+  Coordinates *coord = mesh->coordinates(); // Get metric tensor
 
   coef1 = coord->g11(x,y);     // X 2nd derivative coefficient
   coef2 = coord->g33(x,y);     // Z 2nd derivative coefficient
@@ -947,12 +942,12 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 
   if(nonuniform) {
     // non-uniform mesh correction
-    if((x != 0) && (x != (localmesh->LocalNx-1))) {
+    if((x != 0) && (x != (mesh->LocalNx-1))) {
       coef4 -= 0.5 * ( ( coord->dx(x+1,y) - coord->dx(x-1,y) ) / SQ(coord->dx(x,y)) ) * coef1; // BOUT-06 term
     }
   }
 
-  if(localmesh->IncIntShear) {
+  if(mesh->IncIntShear) {
     // d2dz2 term
     coef2 += coord->g11(x,y) * coord->IntShiftTorsion(x,y) * coord->IntShiftTorsion(x,y);
     // Mixed derivative
@@ -969,8 +964,8 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 
   // A second/fourth order derivative term
   if (issetC) {
-//   if( (x > 0) && (x < (localmesh->LocalNx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
-    if( (x > 1) && (x < (localmesh->LocalNx-2)) ) {
+//   if( (x > 0) && (x < (mesh->LocalNx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
+    if( (x > 1) && (x < (mesh->LocalNx-2)) ) {
           int zp = z+1;     // z plus 1
           if (zp > meshz-1) zp -= meshz;
           int zm = z-1;     // z minus 1
@@ -1019,11 +1014,11 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 void LaplacePetsc::vecToField(Vec xs, FieldPerp &f) {
   f.allocate();
   int i = Istart;
-  if(localmesh->firstX())
+  if(mesh->firstX())
     {
-      for(int x=0; x<localmesh->xstart; x++)
+      for(int x=0; x<mesh->xstart; x++)
         {
-          for(int z=0; z<localmesh->LocalNz; z++)
+          for(int z=0; z<mesh->LocalNz; z++)
             {
               PetscScalar val;
               VecGetValues(xs, 1, &i, &val );
@@ -1033,9 +1028,9 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp &f) {
         }
     }
 
-  for(int x=localmesh->xstart; x <= localmesh->xend; x++)
+  for(int x=mesh->xstart; x <= mesh->xend; x++)
     {
-      for(int z=0; z<localmesh->LocalNz; z++)
+      for(int z=0; z<mesh->LocalNz; z++)
         {
           PetscScalar val;
           VecGetValues(xs, 1, &i, &val );
@@ -1044,11 +1039,11 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp &f) {
         }
     }
 
-  if(localmesh->lastX())
+  if(mesh->lastX())
     {
-      for(int x=localmesh->xend+1; x<localmesh->LocalNx; x++)
+      for(int x=mesh->xend+1; x<mesh->LocalNx; x++)
         {
-          for(int z=0;z < localmesh->LocalNz; z++)
+          for(int z=0;z < mesh->LocalNz; z++)
             {
               PetscScalar val;
               VecGetValues(xs, 1, &i, &val );
@@ -1062,9 +1057,9 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp &f) {
 
 void LaplacePetsc::fieldToVec(const FieldPerp &f, Vec bs) {
   int i = Istart;
-  if(localmesh->firstX()) {
-    for(int x=0; x<localmesh->xstart; x++) {
-      for(int z=0; z<localmesh->LocalNz; z++) {
+  if(mesh->firstX()) {
+    for(int x=0; x<mesh->xstart; x++) {
+      for(int z=0; z<mesh->LocalNz; z++) {
         PetscScalar val = f[x][z];
         VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
         i++; // Increment row in Petsc matrix
@@ -1072,17 +1067,17 @@ void LaplacePetsc::fieldToVec(const FieldPerp &f, Vec bs) {
     }
   }
 
-  for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-    for(int z=0; z<localmesh->LocalNz; z++) {
+  for(int x=mesh->xstart; x <= mesh->xend; x++) {
+    for(int z=0; z<mesh->LocalNz; z++) {
       PetscScalar val = f[x][z];
       VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
       i++; // Increment row in Petsc matrix
     }
   }
 
-  if(localmesh->lastX()) {
-    for(int x=localmesh->xend+1; x<localmesh->LocalNx; x++) {
-      for(int z=0;z < localmesh->LocalNz; z++) {
+  if(mesh->lastX()) {
+    for(int x=mesh->xend+1; x<mesh->LocalNx; x++) {
+      for(int z=0;z < mesh->LocalNz; z++) {
         PetscScalar val = f[x][z];
         VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
         i++; // Increment row in Petsc matrix

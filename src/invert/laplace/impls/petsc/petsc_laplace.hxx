@@ -122,7 +122,6 @@ private:
   // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
   int Istart, Iend;
 
-  Mesh* localmesh;
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
   MPI_Comm comm;
   Mat MatA;
@@ -144,7 +143,7 @@ private:
   int maxits; // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
-  
+
   PetscLib lib;
 
   bool use_precon;  // Switch for preconditioning
