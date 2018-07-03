@@ -339,7 +339,7 @@ JacIndex is set by the solver, so for the system
    U
    \end{array}\right)
 
-``P.JacIndex = 0``, ``\psi.JacIndex = 1`` and ``U.JacIndex = 2``. All
+``P.JacIndex = 0``, ``psi.JacIndex = 1`` and ``U.JacIndex = 2``. All
 other fields are given ``JacIndex = -1``.
 
 SparseMatrix stores the non-zero Jacobian components for the set of rows
