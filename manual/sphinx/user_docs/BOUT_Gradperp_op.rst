@@ -100,14 +100,14 @@ SOL, the differential operators are reduced to:
 .. math::
 
    \begin{aligned}
-   R&=&R_0+rcos\theta, \\
-   Z&=&rsin\theta, \\
+   R&=&R_0+r\cos\theta, \\
+   Z&=&r\sin\theta, \\
    B_t&=&{B_{t0}R_0\over R}, \\
    B_p&=&{1\over R}{\partial\psi\over\partial r}, \\
-   R_\psi&=&{cos\theta\over RB_p}, \\
-   R_\theta&=&-rsin\theta, \\
-   Z_\psi&=&{sin\theta\over RB_p}, \\
-   Z_\theta&=&rcos\theta, \\
+   R_\psi&=&{\cos\theta\over RB_p}, \\
+   R_\theta&=&-r\sin\theta, \\
+   Z_\psi&=&{\sin\theta\over RB_p}, \\
+   Z_\theta&=&r\cos\theta, \\
    {\cal J}&=&{r\over B_p}, \\
    h&=&r, \\
    J_{11}&=&|\nabla\psi|^2=r^2B_p^2, \\
