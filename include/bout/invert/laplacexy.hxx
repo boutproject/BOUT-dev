@@ -119,7 +119,7 @@ private:
   int xstart, xend;
   int nloc, nsys;
   Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
-  CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<BoutReal>> cr; ///< Tridiagonal solver
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
