@@ -92,7 +92,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   bvals = Matrix<BoutReal>(nsys, nloc);
 
   // Create a cyclic reduction object
-  cr = new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc);
+  // FIXME: replace with make_unique when we upgrade to C++14 or add our own version
+  cr = std::unique_ptr<CyclicReduce<BoutReal>>(
+      new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc));
 
   //////////////////////////////////////////////////
   // Pre-allocate PETSc storage
