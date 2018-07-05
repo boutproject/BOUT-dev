@@ -13,9 +13,15 @@ from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
 
-# These are imported to be used by 'eval' in BoutOptions.evaluate_scalar() and BoutOptionsFile.evaluate()
-# Change the names to match those used by c++/BOUT++
-from numpy import pi, sin, cos, tan, arccos as acos, arcsin as asin, arctan as atan, arctan2 as atan2, sinh, cosh, tanh, arcsinh as asinh, arccosh as acosh, arctanh as atanh, exp, log, log10, power as pow, sqrt, ceil, floor, round, abs
+# These are imported to be used by 'eval' in
+# BoutOptions.evaluate_scalar() and BoutOptionsFile.evaluate().
+# Change the names to match those used by C++/BOUT++
+from numpy import (pi, sin, cos, tan, arccos as acos, arcsin as asin,
+                   arctan as atan, arctan2 as atan2, sinh, cosh, tanh,
+                   arcsinh as asinh, arccosh as acosh, arctanh as atanh,
+                   exp, log, log10, power as pow, sqrt, ceil, floor,
+                   round, abs)
+
 
 class BoutOptions(object):
     """This class represents a tree structure. Each node (BoutOptions
@@ -172,7 +178,7 @@ class BoutOptions(object):
         expression = self._substitute_expressions(name)
 
         # replace ^ with ** so that Python evaluates exponentiation
-        expression = expression.replace("^","**")
+        expression = expression.replace("^", "**")
 
         return eval(expression)
 
@@ -201,8 +207,11 @@ class BoutOptions(object):
                 nested_name = nested_sectionname + ":" + var
             else:
                 nested_name = var
-            if re.search(r"(?<!:)"+nested_name, expression): # match nested_name only if not preceded by colon (which indicates more nesting)
-                expression = re.sub(r"(?<!:)\b"+nested_name.lower()+r"\b", "("+self._substitute_expressions(var)+")", expression) # match nested_name only if not preceded by colon (which indicates more nesting)
+            if re.search(r"(?<!:)"+nested_name, expression):
+                # match nested_name only if not preceded by colon (which indicates more nesting)
+                expression = re.sub(r"(?<!:)\b" + nested_name.lower() + r"\b",
+                                    "(" + self._substitute_expressions(var) + ")",
+                                    expression)
 
         for subsection in self.sections():
             if nested_sectionname is not "":
@@ -311,14 +320,16 @@ class BoutOptionsFile(BoutOptions):
                                 pass
 
                         section[line[:eqpos].strip()] = value
-                        
+
         try:
             # define arrays of x, y, z to be used for substitutions
             gridfile = None
             nzfromfile = None
             if gridfilename:
                 if nx is not None or ny is not None:
-                    raise ValueError("nx or ny given as inputs even though gridfilename was given explicitly, don't know which parameters to choose")
+                    raise ValueError("nx or ny given as inputs even though "
+                                     "gridfilename was given explicitly, "
+                                     "don't know which parameters to choose")
                 with DataFile(gridfilename) as gridfile:
                     self.nx = float(gridfile["nx"])
                     self.ny = float(gridfile["ny"])
@@ -372,12 +383,21 @@ class BoutOptionsFile(BoutOptions):
             mxg = self._keys.get("MXG", 2)
             myg = self._keys.get("MYG", 2)
 
-            # make self.x, self.y, self.z three dimensional now so that expressions broadcast together properly.
-            self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg), 1. - (0.5 - mxg)/(self.nx - 2*mxg), self.nx)[:, numpy.newaxis, numpy.newaxis]
-            self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny, 1.-(0.5 - myg)/self.ny, self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
-            self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz, 1.-0.5/self.nz, self.nz)[numpy.newaxis, numpy.newaxis, :]
+            # make self.x, self.y, self.z three dimensional now so
+            # that expressions broadcast together properly.
+            self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg),
+                                    1. - (0.5 - mxg)/(self.nx - 2*mxg),
+                                    self.nx)[:, numpy.newaxis, numpy.newaxis]
+            self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny,
+                                                1.-(0.5 - myg)/self.ny,
+                                                self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
+            self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz,
+                                                1.-0.5/self.nz,
+                                                self.nz)[numpy.newaxis, numpy.newaxis, :]
         except Exception as e:
-            alwayswarn("While building x, y, z coordiante arrays, an exception occured: " + str(e) + "\nEvaluating non-scalar options not available")
+            alwayswarn("While building x, y, z coordinate arrays, an "
+                       "exception occured: " + str(e) +
+                       "\nEvaluating non-scalar options not available")
 
     def evaluate(self, name):
         """Evaluate (recursively) expressions
@@ -399,7 +419,7 @@ class BoutOptionsFile(BoutOptions):
         expression = section._substitute_expressions(split_name[-1])
 
         # replace ^ with ** so that Python evaluates exponentiation
-        expression = expression.replace("^","**")
+        expression = expression.replace("^", "**")
 
         # substitute for x, y and z coordinates
         for coord in ["x", "y", "z"]:
