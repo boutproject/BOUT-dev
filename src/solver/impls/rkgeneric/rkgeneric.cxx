@@ -81,9 +81,8 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 
 void RKGenericSolver::resetInternalFields(){
   //Zero out history
-  for(int i=0;i<nlocal;i++){
-    tmpState[i]=0; f2[i]=0;
-  }
+  tmpState.assign(tmpState.size(), 0.);
+  f2.assign(f2.size(), 0.);
   
   //Copy fields into current step
   save_vars(std::begin(f0));
