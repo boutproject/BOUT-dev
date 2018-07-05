@@ -834,8 +834,6 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  Mesh *localmesh = f.getMesh();
-
   // use first element for sum of values of f, second element for number of points
   BoutReal result[2] = {0., 0.};
   
