@@ -16,33 +16,15 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
-IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(nullptr) {
+IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt) {
 
   has_constraints = true; ///< This solver can handle constraints
   
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  if (u != nullptr) {
-    delete[] u;
-    for (int i = 0; i < uV.size(); i++) {
-      delete[] uV[i];
-    }
-    for (int i = 0; i < fV.size(); i++) {
-      delete[] fV[i];
-    }
-
-    delete[] rhs;
-
-    VecDestroy(&snes_f);
-    VecDestroy(&snes_x);
-
-    if (have_constraints)
-      delete[] is_dae;
-
-    if (adaptive)
-      delete[] err;
-  }
+  VecDestroy(&snes_f);
+  VecDestroy(&snes_x);
 }
 
 /*!
@@ -138,12 +120,12 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
       break;
     }
   }
-  
-  if(have_constraints) {
-    is_dae = new BoutReal[nlocal];
+
+  if (have_constraints) {
+    is_dae = Array<BoutReal>{nlocal};
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
-    set_id(is_dae);
+    set_id(std::begin(is_dae));
   }
 
   // Get options
@@ -166,18 +148,17 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Allocate memory and initialise structures
-  u = new BoutReal[nlocal];
+  u = Array<BoutReal>{nlocal};
   for(int i=0;i<maxOrder;i++){
-    uV.push_back(new BoutReal[nlocal]);
-    fV.push_back(new BoutReal[nlocal]);
-    //gV.push_back(new BoutReal[nlocal]);
+    uV.emplace_back(Array<BoutReal>{nlocal});
+    fV.emplace_back(Array<BoutReal>{nlocal});
     timesteps.push_back(timestep);
     uFac.push_back(0.0);
     fFac.push_back(0.0);
     gFac.push_back(0.0);
   }
 
-  rhs = new BoutReal[nlocal];
+  rhs = Array<BoutReal>{nlocal};
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -185,7 +166,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = new BoutReal[nlocal];
+    err = Array<BoutReal>{nlocal};
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);
@@ -193,10 +174,10 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Put starting values into u
-  saveVars(u);
+  saveVars(std::begin(u));
   for(int i=0; i<nlocal; i++){
-    for(int j=0; j<uV.size(); j++){
-      uV[j][i] = u[i];
+    for (auto& u_: uV) {
+      u_[i] = u[i];
     }
   }
 
@@ -780,9 +761,9 @@ int IMEXBDF2::run() {
 	need to loadVars(u) before doing the monitors. Would need a setup call outside
 	loops however and savings probably minimal.
       */
-      loadVars(uV[0]);
+      loadVars(std::begin(uV[0]));
       run_convective(simtime);
-      saveDerivs(fV[0]);
+      saveDerivs(std::begin(fV[0]));
 
       bool running = true;
       bool checkingErr = adaptive && (internalCounter%nadapt) ==0 && order>1;
@@ -981,7 +962,7 @@ int IMEXBDF2::run() {
       output.write("   Linear fails = %d, nonlinear fails = %d\n", linear_fails, nonlinear_fails);
     }
 
-    loadVars(u);// Put result into variables
+    loadVars(std::begin(u));// Put result into variables
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
     iteration++; // Advance iteration number
@@ -1093,7 +1074,7 @@ void IMEXBDF2::calculateCoeffs(int order){
 void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
 
   //First zero out rhs
-  std::fill(rhs, rhs+nlocal, 0.0);
+  std::fill(std::begin(rhs), std::end(rhs), 0.0);
 
   //Now add the contribution to rhs from each history step
   for(int j=0;j<order;j++){
@@ -1110,7 +1091,6 @@ void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
  *  Moves the solution histories along one step. Also handles the timesteps.
  */
 void IMEXBDF2::shuffleState(){
-  BoutReal *tmp;
 
   //Note: std::rotate takes the start and end of a range and a third value (2nd arg)
   //which says rotate the elements of the vector such that this element is first.
@@ -1128,9 +1108,7 @@ void IMEXBDF2::shuffleState(){
   std::rotate(uV.begin(),uV.end()-1,uV.end()); //Rotate
   //Slight extra handling required as the current state "u" is held externally 
   //from the history vector *for reasons*
-  tmp = uV[0];
-  uV[0] = u;
-  u = tmp;
+  std::swap(u, uV[0]);
 
   //Timesteps used
   std::rotate(timesteps.begin(),timesteps.end()-1,timesteps.end());
