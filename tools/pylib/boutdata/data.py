@@ -223,10 +223,25 @@ class BoutOptionsFile(BoutOptions):
 
     Parameters
     ----------
-    filename : str
+    filename : str, optional
         Path to file to read
     name : str, optional
         Name of root section (default: "root")
+    gridfilename : str, optional
+        If present, path to gridfile from which to read grid sizes (nx, ny, nz)
+    nx, ny : int, optional
+        - Specify sizes of grid, used when evaluating option strings
+        - Cannot be given if gridfilename is specified
+        - Must both be given if either is
+        - If neither gridfilename nor nx, ny are given then will try to
+          find nx, ny from (in order) the 'mesh' section of options,
+          outputfiles in the same directory is the input file, or the grid
+          file specified in the options file (used as a path relative to
+          the current directory)
+    nz : int, optional
+        Use this value for nz when evaluating option expressions, if given.
+        Overrides values found from input file, output files or grid files
+
     Examples
     --------
 
@@ -243,27 +258,6 @@ class BoutOptionsFile(BoutOptions):
     """
 
     def __init__(self, filename="BOUT.inp", name="root", gridfilename=None, nx=None, ny=None, nz=None):
-        """Parameters
-        ---------
-        filename : str, optional
-            Name of input file to read options from
-        name : str, optional
-            Name to give root section of options tree
-        gridfilename : str, optional
-            If present, path to gridfile from which to read grid sizes (nx, ny, nz)
-        nx, ny : int, optional
-            - Specify sizes of grid, used when evaluating option strings
-            - Cannot be given if gridfilename is specified
-            - Must both be given if either is
-            - If neither gridfilename nor nx, ny are given then will try to
-              find nx, ny from (in order) the 'mesh' section of options,
-              outputfiles in the same directory is the input file, or the grid
-              file specified in the options file (used as a path relative to
-              the current directory)
-        nz : int, optional
-            Use this value for nz when evaluating option expressions, if given.
-            Overrides values found from input file, output files or grid files
-        """
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -386,10 +380,17 @@ class BoutOptionsFile(BoutOptions):
             alwayswarn("While building x, y, z coordiante arrays, an exception occured: " + str(e) + "\nEvaluating non-scalar options not available")
 
     def evaluate(self, name):
-        """
-        Evaluate (recursively) expressions
+        """Evaluate (recursively) expressions
 
-        Sections and subsections must be given as part of 'name', separated by colons
+        Sections and subsections must be given as part of 'name',
+        separated by colons
+
+        Parameters
+        ----------
+        name : str
+            Name of variable to evaluate, including sections and
+            subsections
+
         """
         section = self
         split_name = name.split(":")
