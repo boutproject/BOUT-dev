@@ -2594,8 +2594,6 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
 
-  CELL_LOC diffloc = f.getLocation();
-
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)

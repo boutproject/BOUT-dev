@@ -526,7 +526,6 @@ PetscErrorCode PetscSolver::run() {
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   TRACE("Running RHS: PetscSolver::rhs(%e)", t);
 
-  int flag;
   const BoutReal *udata_array;
   BoutReal *dudata_array;
 
@@ -538,7 +537,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   VecRestoreArrayRead(udata, &udata_array);
 
   // Call RHS function
-  flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to PETSc
   VecGetArray(dudata, &dudata_array);

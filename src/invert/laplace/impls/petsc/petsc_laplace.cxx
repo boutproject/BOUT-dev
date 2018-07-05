@@ -353,7 +353,6 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
-  int ierr;             // Error flag for PETSc
 
   // Determine which row/columns of the matrix are locally owned
   MatGetOwnershipRange( MatA, &Istart, &Iend );
