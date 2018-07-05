@@ -152,7 +152,6 @@ class IMEXBDF2 : public Solver {
   Array<BoutReal> u ; ///< System state at current time
   vector<Array<BoutReal>> uV; ///< The solution history
   vector<Array<BoutReal>> fV; ///< The non-stiff solution history
-  //vector<BoutReal*> gV; ///< The stiff solution history
   vector<BoutReal> timesteps; ///< Timestep history
   Array<BoutReal> rhs;
   Array<BoutReal> err;

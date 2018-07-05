@@ -1079,7 +1079,7 @@ void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
   //Now add the contribution to rhs from each history step
   for(int j=0;j<order;j++){
     for(int i=0;i<nlocal;i++){
-      rhs[i] += uV[j][i]*uFac[j] + fV[j][i]*fFac[j]; //+gV[j][i]*gFac[j]
+      rhs[i] += uV[j][i]*uFac[j] + fV[j][i]*fFac[j];
     }
   }
 
@@ -1100,9 +1100,6 @@ void IMEXBDF2::shuffleState(){
   //Shuffle stashed values along a step
   //Non-stiff solutions
   std::rotate(fV.begin(),fV.end()-1,fV.end());
-
-  //Stiff solutions
-  //std::rotate(gV.begin(),gV.end()-1,gV.end());
 
   // Rotate u -> u_1, u_1 -> u_2, u_2 -> u . U later overwritten
   std::rotate(uV.begin(),uV.end()-1,uV.end()); //Rotate
