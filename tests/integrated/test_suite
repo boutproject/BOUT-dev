@@ -92,11 +92,9 @@ failed = []
 
 start_time = time.time()
 
-print("======= Starting {0} tests ========".format(savepath.split("/")[-1]))
-if args.make:
-    print("Making {0} tests".format(len(tests)))
-else:
-    print("Running {0} tests".format(len(tests)))
+test_type = "Making" if args.make else "Running"
+
+print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.split("/")[-1]))
 
 longest = max([len(s) for s in tests])
 output = '%-'+str(longest+1)+'s'
