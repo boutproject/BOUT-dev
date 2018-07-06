@@ -23,6 +23,8 @@ parser.add_argument("-g","--get-list",action='store_true',
                     help='Return a list of tests that would be run/build')
 parser.add_argument("-m","--make",action='store_true',
                     help='Build the tests, rather then run them.')
+parser.add_argument("-a","--all", action='store_true', dest="all_tests",
+                    help="Run all tests")
 parser.add_argument("-b","--set-bool",nargs="+",metavar=('value1=False','value2=True'),
                     help='Set a bool value for evaluating what scripts can be run.')
 parser.add_argument("-l","--set-list",nargs="+",metavar=('test1','test2'),
@@ -35,8 +37,8 @@ args=parser.parse_args()
 sys.path.append('..')
 from requirements import Requirements
 requirements = Requirements();
-# set default
-requirements.add('all_tests',False)
+
+requirements.add('all_tests', args.all_tests)
 
 if args.set_bool is not None:
     lookup={'false':False,
