@@ -19,39 +19,39 @@ from boututils.run_wrapper import shell
 
 import argparse
 parser = argparse.ArgumentParser(description='Run or build some tests.')
-parser.add_argument("-g","--get-list",action='store_true',
+parser.add_argument("-g", "--get-list", action='store_true',
                     help='Return a list of tests that would be run/build')
-parser.add_argument("-m","--make",action='store_true',
+parser.add_argument("-m", "--make", action='store_true',
                     help='Build the tests, rather then run them.')
-parser.add_argument("-a","--all", action='store_true', dest="all_tests",
+parser.add_argument("-a", "--all", action='store_true', dest="all_tests",
                     help="Run all tests")
-parser.add_argument("-b","--set-bool",nargs="+",metavar=('value1=False','value2=True'),
+parser.add_argument("-b", "--set-bool", nargs="+", metavar=('value1=False', 'value2=True'),
                     help='Set a bool value for evaluating what scripts can be run.')
-parser.add_argument("-l","--set-list",nargs="+",metavar=('test1','test2'),
+parser.add_argument("-l", "--set-list", nargs="+", metavar=('test1', 'test2'),
                     help='Set the tests that should be run.')
 
-args=parser.parse_args()
+args = parser.parse_args()
 
 ##################################################################
 
 sys.path.append('..')
 from requirements import Requirements
-requirements = Requirements();
+requirements = Requirements()
 
 requirements.add('all_tests', args.all_tests)
 
 if args.set_bool is not None:
-    lookup={'false':False,
-            'no'   :False,
-            'true' :True,
-            'yes'  :True}
+    lookup = {'false': False,
+              'no': False,
+              'true': True,
+              'yes': True}
     for setbool in args.set_bool:
-        k,v=setbool.split("=")
-        v=lookup[v.lower()]
-        requirements.add(k,v,override=True)
+        k, v = setbool.split("=")
+        v = lookup[v.lower()]
+        requirements.add(k, v, override=True)
 
 try:
-    requirements.add('make',args.make)
+    requirements.add('make', args.make)
 except RuntimeError:
     raise RuntimeError("The make flag needs to be set by passing --make")
 
@@ -61,18 +61,18 @@ if args.set_list is None:
     # Get list of directories containing test cases
     try:
         # Requires python >= 3.5
-        tests=glob.iglob('**/runtest', recursive=True)
+        tests = glob.iglob('**/runtest', recursive=True)
     except TypeError:
         # Fall back - check only a few folders ...
-        tests=glob.glob('*/runtest')
-        tests+=glob.glob('*/*/runtest')
-        tests+=glob.glob('*/*/*/runtest')
+        tests = glob.glob('*/runtest')
+        tests += glob.glob('*/*/runtest')
+        tests += glob.glob('*/*/*/runtest')
 
-    tests=[x.rsplit('/',1)[0] for x in tests]
+    tests = [x.rsplit('/', 1)[0] for x in tests]
 
 else:
     # Take the user provided list
-    tests=[x.rstrip('/') for x in args.set_list]
+    tests = [x.rstrip('/') for x in args.set_list]
 
 
 if args.get_list:
@@ -85,9 +85,9 @@ if args.get_list:
 ##################################################################
 # Run the actual test
 
-command='./runtest' if not args.make else 'make'
+command = './runtest' if not args.make else 'make'
 
-savepath = os.getcwd() # Save current working directory
+savepath = os.getcwd()  # Save current working directory
 failed = []
 
 start_time = time.time()
@@ -98,13 +98,13 @@ if args.make:
 else:
     print("Running {0} tests".format(len(tests)))
 
-longest=max([len(s) for s in tests])
-output='%-'+str(longest+1)+'s'
+longest = max([len(s) for s in tests])
+output = '%-'+str(longest+1)+'s'
 for t in tests:
     os.chdir(t)
 
-    print(output%t,end='')
-    sys.stdout.flush() # Make sure name is flushed
+    print(output % t, end='')
+    sys.stdout.flush()  # Make sure name is flushed
 
     # Check requirements
     req_met, req_expr = requirements.check("./runtest")
@@ -116,18 +116,18 @@ for t in tests:
 
     start_time_ = time.time()
     # Run test, piping stdout so it is not sent to console
-    status,out = shell("./runtest", pipe=True)
+    status, out = shell("./runtest", pipe=True)
 
     if status != 0:
         # ❌ Failed
-        print(u"\u274C", end='') # No newline
+        print(u"\u274C", end='')  # No newline
         failed.append((t, out))
     else:
         # ✓ Passed
-        print(u"\u2713", end='') # No newline
+        print(u"\u2713", end='')  # No newline
 
-    print(" %7.3f s"%(time.time() - start_time_))
-    sys.stdout.flush() # Make sure '✓' or '❌' is flushed
+    print(" %7.3f s" % (time.time() - start_time_))
+    sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
     os.chdir(savepath)
 
 elapsed_time = time.time() - start_time
@@ -140,9 +140,11 @@ if failed:
         # Note: need Unicode string in case output contains unicode
         print(u"\n----- {0} -----\n{1}".format(test, output))
 
-    print("======= {0} failed in {1:.2f} seconds ========".format(len(failed), elapsed_time))
+    print("======= {0} failed in {1:.2f} seconds ========".format(
+        len(failed), elapsed_time))
 
     sys.exit(1)
 
 else:
-    print("======= All tests passed in {0:.2f} seconds =======".format(elapsed_time))
+    print("======= All tests passed in {0:.2f} seconds =======".format(
+        elapsed_time))
