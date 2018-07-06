@@ -720,6 +720,11 @@ PETSC_ERROR_MESSAGE])
 
 AS_IF([test "x$with_slepc" != "x" && test "$with_slepc" != "no"], [
 
+  AS_IF([test $HAS_PETSC = "no"], [
+    AC_MSG_ERROR([--with-slepc specified, but no PETSc detected. Please reconfigure and specify --with-petsc
+PETSC_ERROR_MESSAGE])
+  ])
+
 # Supplying an argument to "--with-slepc" only works if SLEPC_ARCH
 # *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   AS_IF([test "$with_slepc" != "yes"], [

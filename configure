@@ -9100,6 +9100,17 @@ fi
 if test "x$with_slepc" != "x" && test "$with_slepc" != "no"; then :
 
 
+  if test $HAS_PETSC = "no"; then :
+
+    as_fn_error $? "--with-slepc specified, but no PETSc detected. Please reconfigure and specify --with-petsc
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+fi
+
 # Supplying an argument to "--with-slepc" only works if SLEPC_ARCH
 # *should* be empty. If it should be non-empty, THIS WILL NOT WORK
   if test "$with_slepc" != "yes"; then :
