@@ -116,7 +116,7 @@ for t in tests:
 
     start_time_ = time.time()
     # Run test, piping stdout so it is not sent to console
-    status, out = shell("./runtest", pipe=True)
+    status, out = shell(command, pipe=True)
 
     if status != 0:
         # ❌ Failed
