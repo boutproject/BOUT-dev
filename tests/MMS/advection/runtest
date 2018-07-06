@@ -5,7 +5,7 @@
 # Tests a range of different schemes
 #
 
-#requires: slow_tests
+#requires: all_tests
 #requires: make
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun

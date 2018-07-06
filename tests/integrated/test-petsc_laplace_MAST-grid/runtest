@@ -4,7 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
-#requires: slow_tests
+#requires: all_tests
 #requires: petsc
 
 # Variables to compare

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#requires: slow_tests
+#requires: all_tests
 
 for test in slab2d slab3d
 do

@@ -6,7 +6,7 @@
 # Checks that the convergence is 2nd order
 # Exits with status 1 if any test failed
 
-#requires: slow_tests
+#requires: all_tests
 
 from __future__ import division
 from __future__ import print_function

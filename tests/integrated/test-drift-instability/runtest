@@ -1,5 +1,5 @@
 #!/bin/sh
 
-#Requires: slow_tests
+#requires: all_tests
 
 ./runtest.py

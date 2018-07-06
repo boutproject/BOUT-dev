@@ -12,7 +12,7 @@ from builtins import str
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
-#requires: slow_tests
+#requires: all_tests
 
 verbose=False
 

@@ -36,7 +36,7 @@ sys.path.append('..')
 from requirements import Requirements
 requirements = Requirements();
 # set default
-requirements.add('slow_tests',False)
+requirements.add('all_tests',False)
 
 if args.set_bool is not None:
     lookup={'false':False,

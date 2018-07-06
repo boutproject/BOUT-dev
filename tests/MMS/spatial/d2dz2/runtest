@@ -14,7 +14,7 @@ try:
 except:
   plt=None
 
-#requires: slow_tests
+#requires: all_tests
 
 MPIRUN = getmpirun()
 
