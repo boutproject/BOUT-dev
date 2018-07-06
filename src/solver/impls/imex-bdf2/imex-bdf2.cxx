@@ -16,15 +16,20 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
-IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt) {
+IMEXBDF2::IMEXBDF2(Options *opt)
+    : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),
+      snesUse(nullptr), Jmf(nullptr) {
 
   has_constraints = true; ///< This solver can handle constraints
-  
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  VecDestroy(&snes_f);
-  VecDestroy(&snes_x);
+  if (snes_f != nullptr) {
+    VecDestroy(&snes_f);
+  }
+  if (snes_x != nullptr) {
+    VecDestroy(&snes_x);
+  }
 }
 
 /*!
