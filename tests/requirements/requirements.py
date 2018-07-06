@@ -29,7 +29,7 @@ class Requirements(object):
         selflocation = os.path.realpath(__file__)
         selflocation = selflocation.rsplit("/", 1)[0]
 
-        if path == None:
+        if path is None:
             path = selflocation
 
         # Get list of files in subdirectory, excluding common temporaries,
@@ -83,12 +83,12 @@ class Requirements(object):
                     print("Parsing '%s' from file %s failed." % (expr, script))
                     print("A list of known variable follows:")
                     for key, value in self._requirements.items():
-                        if not "_" in key:
+                        if "_" not in key:
                             print("  %s => %s" % (key, value))
                     raise
                 else:
                     # Only return if this one causes the test to skip
-                    if ret == False:
+                    if ret is False:
                         return ret, expr
 
         return True, ""  # Default, if no requirements specified
