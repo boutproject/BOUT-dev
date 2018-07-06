@@ -510,8 +510,10 @@ PetscErrorCode PetscSolver::run() {
   if(this->output_flag) {
     ierr = PetscFOpen(PETSC_COMM_WORLD, this->output_name, "w", &fp);CHKERRQ(ierr);
     ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "SNES Iteration, KSP Iterations, Wall Time, Norm\n");CHKERRQ(ierr);
-    for(int i =0;i < snes_list.size();i++) {
-      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", snes_list[i].it, snes_list[i].linear_its, snes_list[i].time, snes_list[i].norm);CHKERRQ(ierr);
+    for (const auto &info : snes_list) {
+      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", info.it,
+                          info.linear_its, info.time, info.norm);
+      CHKERRQ(ierr);
     }
     ierr = PetscFClose(PETSC_COMM_WORLD, fp);CHKERRQ(ierr);
   }
