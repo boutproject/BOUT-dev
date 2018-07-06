@@ -8845,226 +8845,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 fi
 
 #############################################################
-# SLEPc library
-#############################################################
-
-if test "x$with_slepc" != "x" && test "$with_slepc" != "no"; then :
-
-
-# Supplying an argument to "--with-slepc" only works if SLEPC_ARCH
-# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
-  if test "$with_slepc" != "yes"; then :
-
-    SLEPC_DIR="$with_slepc"
-    SLEPC_ARCH=
-
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Using SLEPC_DIR=$SLEPC_DIR, SLEPC_ARCH=$SLEPC_ARCH" >&5
-$as_echo "$as_me: Using SLEPC_DIR=$SLEPC_DIR, SLEPC_ARCH=$SLEPC_ARCH" >&6;}
-
-# Define a macro for a nice error message that preserves the
-# formatting. Use like:
-#
-# SLEPC_ERROR_MESSAGE
-#
-# with no identation
-
-
-# Slepc changed the location of the conf directory in 3.5, so we
-# need to check both locations
-  as_ac_File=`$as_echo "ac_cv_file_$SLEPC_DIR/$SLEPC_ARCH/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $SLEPC_DIR/$SLEPC_ARCH/conf" >&5
-$as_echo_n "checking for $SLEPC_DIR/$SLEPC_ARCH/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$SLEPC_DIR/$SLEPC_ARCH/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-    SLEPC_CONFDIR=${SLEPC_DIR}/conf
-
-else
-
-    as_ac_File=`$as_echo "ac_cv_file_$SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf" >&5
-$as_echo_n "checking for $SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-      SLEPC_CONFDIR=${SLEPC_DIR}/lib/slepc/conf
-
-else
-
-      as_fn_error $? "--with-slepc was specified but could not find Slepc distribution.
-  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
-      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
-  Also see the help online:
-      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
-  " "$LINENO" 5
-
-fi
-
-
-fi
-
-
-# We've found an installation, need to check we can use it. First we
-# need to be able to check the version number, for which we need
-# slepcverion.h
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/include"
-  ac_fn_cxx_check_header_mongrel "$LINENO" "slepcversion.h" "ac_cv_header_slepcversion_h" "$ac_includes_default"
-if test "x$ac_cv_header_slepcversion_h" = xyes; then :
-  FOUND_SLEPC_HEADER=yes
-else
-  FOUND_SLEPC_HEADER=no
-
-fi
-
-
-
-# This is a terrible hack for some Linux distributions (Fedora) that
-# install Slepc in a non-supported fashion. This is really the fault
-# of Slepc for their weird method of installation
-  if test $FOUND_SLEPC_HEADER = no; then :
-
-    as_ac_File=`$as_echo "ac_cv_file_${SLEPC_CONFDIR}/slepc_variables" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_CONFDIR}/slepc_variables" >&5
-$as_echo_n "checking for ${SLEPC_CONFDIR}/slepc_variables... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${SLEPC_CONFDIR}/slepc_variables"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-
-      as_fn_error $? "Unable to find either slepcversion.h or slepc_variables
-  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
-      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
-  Also see the help online:
-      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
-  " "$LINENO" 5
-
-fi
-
-
-# This relies on the assumption that SLEPC_ARCH is empty
-    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepc_variables | cut -d= -f 2-)
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&5
-$as_echo "$as_me: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&6;}
-
-    # This is the cache variable set by the previous call to
-    # AC_CHECK_HEADER. We need to unset it so we can call the macro
-    # again, but now with different CPPFLAGS
-    { ac_cv_header_slepcversion_h=; unset ac_cv_header_slepcversion_h;}
-
-    CPPFLAGS="$CPPFLAGS $SLEPC_CC_INCLUDES"
-    ac_fn_cxx_check_header_mongrel "$LINENO" "slepcversion.h" "ac_cv_header_slepcversion_h" "$ac_includes_default"
-if test "x$ac_cv_header_slepcversion_h" = xyes; then :
-
-else
-
-      as_fn_error $? "Couldn't find or include slepcversion.h.
-  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
-      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
-  Also see the help online:
-      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
-  " "$LINENO" 5
-
-fi
-
-
-
-fi
-
-# Now we have the header we want, we can check the version number
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking Slepc is at least 3.4.0" >&5
-$as_echo_n "checking Slepc is at least 3.4.0... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <slepcversion.h>
-    #if SLEPC_VERSION_GE(3, 4, 0)
-      yes
-    #endif
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1; then :
-  SLEPC_VERSION_OK="yes"
-else
-  SLEPC_VERSION_OK="no"
-fi
-rm -f conftest*
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SLEPC_VERSION_OK" >&5
-$as_echo "$SLEPC_VERSION_OK" >&6; }
-  CPPFLAGS="$save_CPPFLAGS"
-
-  if test $SLEPC_VERSION_OK = no; then :
-
-    as_fn_error $? "Slepc version must be at least 3.4.0" "$LINENO" 5
-
-fi
-
-# Check if Slepc was compiled with SUNDIALS
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/$SLEPC_ARCH/include"
-
-  # Set the line to be included in the make.conf file
-  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
-
-  HAS_SLEPC="yes"
-
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC"
-  EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDES)"
-  EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
-
-
-else
-
-  SLEPC_MAKE_INCLUDE=
-  HAS_SLEPC="no"
-
-fi
-
-#############################################################
 # PETSc library
 #############################################################
 
@@ -9310,6 +9090,226 @@ else
   PETSC_MAKE_INCLUDE=
   HAS_PETSC="no"
   PETSC_HAS_SUNDIALS="no"
+
+fi
+
+#############################################################
+# SLEPc library
+#############################################################
+
+if test "x$with_slepc" != "x" && test "$with_slepc" != "no"; then :
+
+
+# Supplying an argument to "--with-slepc" only works if SLEPC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
+  if test "$with_slepc" != "yes"; then :
+
+    SLEPC_DIR="$with_slepc"
+    SLEPC_ARCH=
+
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using SLEPC_DIR=$SLEPC_DIR, SLEPC_ARCH=$SLEPC_ARCH" >&5
+$as_echo "$as_me: Using SLEPC_DIR=$SLEPC_DIR, SLEPC_ARCH=$SLEPC_ARCH" >&6;}
+
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# SLEPC_ERROR_MESSAGE
+#
+# with no identation
+
+
+# Slepc changed the location of the conf directory in 3.5, so we
+# need to check both locations
+  as_ac_File=`$as_echo "ac_cv_file_$SLEPC_DIR/$SLEPC_ARCH/conf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $SLEPC_DIR/$SLEPC_ARCH/conf" >&5
+$as_echo_n "checking for $SLEPC_DIR/$SLEPC_ARCH/conf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$SLEPC_DIR/$SLEPC_ARCH/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+    SLEPC_CONFDIR=${SLEPC_DIR}/conf
+
+else
+
+    as_ac_File=`$as_echo "ac_cv_file_$SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf" >&5
+$as_echo_n "checking for $SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+      SLEPC_CONFDIR=${SLEPC_DIR}/lib/slepc/conf
+
+else
+
+      as_fn_error $? "--with-slepc was specified but could not find Slepc distribution.
+  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
+      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
+  " "$LINENO" 5
+
+fi
+
+
+fi
+
+
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# slepcverion.h
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/include"
+  ac_fn_cxx_check_header_mongrel "$LINENO" "slepcversion.h" "ac_cv_header_slepcversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_slepcversion_h" = xyes; then :
+  FOUND_SLEPC_HEADER=yes
+else
+  FOUND_SLEPC_HEADER=no
+
+fi
+
+
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install Slepc in a non-supported fashion. This is really the fault
+# of Slepc for their weird method of installation
+  if test $FOUND_SLEPC_HEADER = no; then :
+
+    as_ac_File=`$as_echo "ac_cv_file_${SLEPC_CONFDIR}/slepc_variables" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${SLEPC_CONFDIR}/slepc_variables" >&5
+$as_echo_n "checking for ${SLEPC_CONFDIR}/slepc_variables... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "${SLEPC_CONFDIR}/slepc_variables"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+
+      as_fn_error $? "Unable to find either slepcversion.h or slepc_variables
+  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
+      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
+  " "$LINENO" 5
+
+fi
+
+
+# This relies on the assumption that SLEPC_ARCH is empty
+    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepc_variables | cut -d= -f 2-)
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&5
+$as_echo "$as_me: Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables" >&6;}
+
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    { ac_cv_header_slepcversion_h=; unset ac_cv_header_slepcversion_h;}
+
+    CPPFLAGS="$CPPFLAGS $SLEPC_CC_INCLUDES"
+    ac_fn_cxx_check_header_mongrel "$LINENO" "slepcversion.h" "ac_cv_header_slepcversion_h" "$ac_includes_default"
+if test "x$ac_cv_header_slepcversion_h" = xyes; then :
+
+else
+
+      as_fn_error $? "Couldn't find or include slepcversion.h.
+  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
+      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
+  " "$LINENO" 5
+
+fi
+
+
+
+fi
+
+# Now we have the header we want, we can check the version number
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking Slepc is at least 3.4.0" >&5
+$as_echo_n "checking Slepc is at least 3.4.0... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <slepcversion.h>
+    #if SLEPC_VERSION_GE(3, 4, 0)
+      yes
+    #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then :
+  SLEPC_VERSION_OK="yes"
+else
+  SLEPC_VERSION_OK="no"
+fi
+rm -f conftest*
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SLEPC_VERSION_OK" >&5
+$as_echo "$SLEPC_VERSION_OK" >&6; }
+  CPPFLAGS="$save_CPPFLAGS"
+
+  if test $SLEPC_VERSION_OK = no; then :
+
+    as_fn_error $? "Slepc version must be at least 3.4.0" "$LINENO" 5
+
+fi
+
+# Check if Slepc was compiled with SUNDIALS
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/$SLEPC_ARCH/include"
+
+  # Set the line to be included in the make.conf file
+  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
+
+  HAS_SLEPC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC"
+  EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+
+
+else
+
+  SLEPC_MAKE_INCLUDE=
+  HAS_SLEPC="no"
 
 fi
 
