@@ -36,21 +36,109 @@ TEST_F(ArrayTest, ArrayValues) {
   EXPECT_DOUBLE_EQ(a[9], 9);
 }
 
-TEST_F(ArrayTest, CopyArray) {
-  Array<double> a(15);
+TEST_F(ArrayTest, CopyArrayConstructor) {
+  Array<double> a{15};
 
   int count = 0;
   for (auto &i : a) {
     i = count++;
   }
 
-  Array<double> b(a);
+  EXPECT_TRUE(a.unique());
 
+  Array<double> b{a};
+
+  ASSERT_FALSE(a.empty());
   ASSERT_FALSE(b.empty());
   EXPECT_EQ(b.size(), 15);
   EXPECT_DOUBLE_EQ(b[5], 5);
   EXPECT_FALSE(a.unique());
   EXPECT_FALSE(b.unique());
+}
+
+TEST_F(ArrayTest, CopyArrayOperator) {
+  Array<double> a{15};
+
+  int count = 0;
+  for (auto &i : a) {
+    i = count++;
+  }
+
+  EXPECT_TRUE(a.unique());
+
+  Array<double> b;
+  b = a;
+
+  ASSERT_FALSE(a.empty());
+  ASSERT_FALSE(b.empty());
+  EXPECT_EQ(b.size(), 15);
+  EXPECT_DOUBLE_EQ(b[5], 5);
+  EXPECT_FALSE(a.unique());
+  EXPECT_FALSE(b.unique());
+}
+
+TEST_F(ArrayTest, CopyArrayNonMemberFunction) {
+  Array<double> a{15};
+
+  int count = 0;
+  for (auto &i : a) {
+    i = count++;
+  }
+
+  Array<double> b;
+  b = copy(a);
+
+  ASSERT_FALSE(b.empty());
+  EXPECT_EQ(b.size(), 15);
+  EXPECT_DOUBLE_EQ(b[5], 5);
+  EXPECT_TRUE(a.unique());
+  EXPECT_TRUE(b.unique());
+}
+
+TEST_F(ArrayTest, SwapArray) {
+  Array<double> a{15};
+
+  int count = 0;
+  for (auto &i : a) {
+    i = count++;
+  }
+
+  Array<double> b{10};
+
+  count = 0;
+  for (auto &i : b) {
+    i = 2. * count++;
+  }
+
+  EXPECT_EQ(a.size(), 15);
+  EXPECT_EQ(b.size(), 10);
+  EXPECT_DOUBLE_EQ(a[5], 5);
+  EXPECT_DOUBLE_EQ(b[5], 10);
+
+  swap(a, b);
+
+  EXPECT_EQ(a.size(), 10);
+  EXPECT_EQ(b.size(), 15);
+  EXPECT_DOUBLE_EQ(a[5], 10);
+  EXPECT_DOUBLE_EQ(b[5], 5);
+}
+
+TEST_F(ArrayTest, MoveArrayConstructor) {
+  Array<double> a{15};
+
+  int count = 0;
+  for (auto &i : a) {
+    i = count++;
+  }
+
+  Array<double> b{std::move(a)};
+
+  ASSERT_TRUE(a.empty());
+  ASSERT_FALSE(b.empty());
+  EXPECT_EQ(b.size(), 15);
+  EXPECT_DOUBLE_EQ(b[5], 5);
+  EXPECT_FALSE(a.unique());
+  EXPECT_TRUE(b.unique());
 }
 
 TEST_F(ArrayTest, MakeUnique) {
