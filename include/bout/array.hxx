@@ -445,7 +445,7 @@ private:
  * Create a copy of an Array, which does not share data
  */ 
 template<typename T>
-Array<T>& copy(const Array<T> &other) {
+Array<T> copy(const Array<T> &other) {
   Array<T> a(other);
   a.ensureUnique();
   return a;
