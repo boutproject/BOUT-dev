@@ -283,6 +283,41 @@ TEST_F(ExpressionParserTest, AddNullaryFunction) {
   }
 }
 
+TEST_F(ExpressionParserTest, CloneBinaryOp) {
+  FieldBinary goodFieldBinary(nullptr, nullptr, '*');
+  std::list<FieldGeneratorPtr> args;
+  args.push_front(nullptr);
+  args.push_front(nullptr);
+  auto clonedFieldBinary = goodFieldBinary.clone(args);
+  parser.addBinaryOp('&', clonedFieldBinary, 10);
+  auto clonedFieldgen = parser.parseString("2 & (x + 3)");
+  auto actualFieldgen = parser.parseString("2 * (x + 3)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(actualFieldgen->generate(x, y, z, t),
+                           clonedFieldgen->generate(x, y, z, t));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, BadCloneBinaryOp) {
+  FieldBinary goodFieldBinary(nullptr, nullptr, '*');
+  std::list<FieldGeneratorPtr> args;
+  EXPECT_THROW(auto badFieldBinary = goodFieldBinary.clone(args), ParseException);
+}
+
+TEST_F(ExpressionParserTest, BadBinaryOp) {
+  // Refers to an unrecognised binary operator "?"
+  parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '?'), 5);
+  auto fieldgen = parser.parseString("2 & x + 3");
+  EXPECT_THROW(fieldgen->generate(0., 0., 0., 0.), ParseException);
+}
+
 TEST_F(ExpressionParserTest, AddBinaryOp) {
   // Add a synonym for multiply with a lower precedence than addition
   parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 5);
