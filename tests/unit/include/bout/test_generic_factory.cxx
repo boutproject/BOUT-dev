@@ -90,6 +90,26 @@ TEST(GenericFactory, ListAvailable) {
   EXPECT_EQ(available, expected);
 }
 
+TEST(GenericFactory, Remove) {
+  auto available = Factory<Base>::getInstance().listAvailable();
+  std::vector<std::string> expected{"base", "derived1", "derived2"};
+
+  EXPECT_EQ(available, expected);
+
+  EXPECT_EQ(Factory<Base>::getInstance().remove("derived2"), true);
+  std::vector<std::string> expected2{"base", "derived1"};
+  available = Factory<Base>::getInstance().listAvailable();
+  EXPECT_EQ(available, expected2);
+
+  // Better add this back in as this object is shared between tests!
+  RegisterInFactory<Base, Derived2> registerme("derived2");
+}
+
+TEST(GenericFactory, RemoveNonexistant) {
+  // Try a remove for something that shouldn't be registered
+  EXPECT_EQ(Factory<Base>::getInstance().remove("derived83"), false);
+}
+
 TEST(GenericFactory, GetUnknownType) {
   EXPECT_THROW(Factory<Base>::getInstance().create("unknown"), BoutException);
 }
