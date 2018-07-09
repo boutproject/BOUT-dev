@@ -29,6 +29,41 @@ TEST(MsgStackTest, PopTest) {
   EXPECT_EQ(dump, expected_dump);
 }
 
+TEST(MsgStackTest, PopValueTest) {
+  MsgStack msg_stack;
+
+  msg_stack.push("First");
+  msg_stack.push("Second");
+  msg_stack.push("Third");
+  msg_stack.pop(2);
+
+  auto dump = msg_stack.getDump();
+  auto first_dump = "====== Back trace ======\n -> Second\n -> First\n";
+  EXPECT_EQ(dump, first_dump);
+
+  msg_stack.pop(-5); // Points to first message only
+  dump = msg_stack.getDump();
+  auto second_dump = "====== Back trace ======\n";
+  EXPECT_EQ(dump, second_dump);
+}
+
+TEST(MsgStackTest, ReallocStorageTest) {
+  MsgStack msg_stack;
+
+  for (int i = 0; i < 20; i++) {
+    msg_stack.push("Message %i", i);
+  }
+}
+
+TEST(MsgStackTest, NoMessageTest) {
+  MsgStack msg_stack;
+  msg_stack.push(nullptr);
+  auto dump = msg_stack.getDump();
+  auto expected_dump = "====== Back trace ======\n";
+
+  EXPECT_EQ(dump, expected_dump);
+}
+
 TEST(MsgStackTest, ClearTest) {
   MsgStack msg_stack;
 
