@@ -4,6 +4,7 @@
 #include "boutexception.hxx"
 
 #include <iostream>
+#include <numeric>
 
 // In order to keep these tests independent, they need to use
 // different sized arrays in order to not just reuse the data from
@@ -27,10 +28,7 @@ TEST_F(ArrayTest, ArraySize) {
 TEST_F(ArrayTest, ArrayValues) {
   Array<double> a(10);
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   EXPECT_DOUBLE_EQ(a[1], 1);
   EXPECT_DOUBLE_EQ(a[9], 9);
@@ -39,10 +37,7 @@ TEST_F(ArrayTest, ArrayValues) {
 TEST_F(ArrayTest, CopyArrayConstructor) {
   Array<double> a{15};
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   EXPECT_TRUE(a.unique());
 
@@ -59,10 +54,7 @@ TEST_F(ArrayTest, CopyArrayConstructor) {
 TEST_F(ArrayTest, CopyArrayOperator) {
   Array<double> a{15};
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   EXPECT_TRUE(a.unique());
 
@@ -80,10 +72,7 @@ TEST_F(ArrayTest, CopyArrayOperator) {
 TEST_F(ArrayTest, CopyArrayNonMemberFunction) {
   Array<double> a{15};
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   Array<double> b;
   b = copy(a);
@@ -98,17 +87,11 @@ TEST_F(ArrayTest, CopyArrayNonMemberFunction) {
 TEST_F(ArrayTest, SwapArray) {
   Array<double> a{15};
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   Array<double> b{10};
 
-  count = 0;
-  for (auto &i : b) {
-    i = 2. * count++;
-  }
+  std::iota(b.begin(), b.end(), 5);
 
   EXPECT_EQ(a.size(), 15);
   EXPECT_EQ(b.size(), 10);
@@ -126,10 +109,7 @@ TEST_F(ArrayTest, SwapArray) {
 TEST_F(ArrayTest, MoveArrayConstructor) {
   Array<double> a{15};
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   Array<double> b{std::move(a)};
 
@@ -144,10 +124,7 @@ TEST_F(ArrayTest, MoveArrayConstructor) {
 TEST_F(ArrayTest, MakeUnique) {
   Array<double> a(20);
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   Array<double> b(a);
   // Make both b and a unique
@@ -180,10 +157,7 @@ TEST_F(ArrayTest, ReleaseData) {
 TEST_F(ArrayTest, RetrieveData) {
   Array<double> a(30);
 
-  int count = 0;
-  for (auto &i : a) {
-    i = count++;
-  }
+  std::iota(a.begin(), a.end(), 0);
 
   Array<double> b(a);
   // Make both b and a unique
