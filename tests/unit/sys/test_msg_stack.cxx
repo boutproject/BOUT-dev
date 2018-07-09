@@ -50,9 +50,15 @@ TEST(MsgStackTest, PopValueTest) {
 TEST(MsgStackTest, ReallocStorageTest) {
   MsgStack msg_stack;
 
+  std::string expected_dump = "";
+
   for (int i = 0; i < 20; i++) {
     msg_stack.push("Message %i", i);
+    expected_dump = " -> Message " + std::to_string(i) + "\n" + expected_dump;
   }
+  expected_dump = "====== Back trace ======\n" + expected_dump;
+  auto dump = msg_stack.getDump();
+  EXPECT_EQ(dump, expected_dump);
 }
 
 TEST(MsgStackTest, PushReturnTest) {
