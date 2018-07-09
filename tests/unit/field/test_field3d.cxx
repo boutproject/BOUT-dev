@@ -306,6 +306,23 @@ TEST_F(Field3DTest, ConstYnext) {
   EXPECT_THROW(field2.ynext(99), BoutException);
 }
 
+TEST_F(Field3DTest, GetGlobalMesh) {
+  Field3D field;
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, mesh);
+}
+
+TEST_F(Field3DTest, GetLocalMesh) {
+  auto myMesh = new FakeMesh(nx + 1, ny + 2, nz + 3);
+  Field3D field(myMesh);
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, myMesh);
+}
+
 TEST_F(Field3DTest, SetGetLocation) {
   Field3D field;
 
