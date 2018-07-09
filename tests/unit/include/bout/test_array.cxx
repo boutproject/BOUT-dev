@@ -127,17 +127,32 @@ TEST_F(ArrayTest, MakeUnique) {
   std::iota(a.begin(), a.end(), 0);
 
   Array<double> b(a);
-  // Make both b and a unique
-  b.ensureUnique();
 
-  ASSERT_TRUE(b.unique());
-  ASSERT_TRUE(a.unique());
+  std::iota(b.begin(), b.end(), 1);
+
+  EXPECT_FALSE(b.unique());
+  EXPECT_FALSE(a.unique());
   EXPECT_EQ(a.size(), 20);
   EXPECT_EQ(b.size(), 20);
 
   // Should have the same values
   for (auto ai = a.begin(), bi = b.begin(); ai != a.end(); ++ai, ++bi) {
     EXPECT_DOUBLE_EQ(*ai, *bi);
+  }
+
+  // Make both b and a unique
+  b.ensureUnique();
+
+  std::iota(b.begin(), b.end(), 2);
+
+  EXPECT_TRUE(b.unique());
+  EXPECT_TRUE(a.unique());
+  EXPECT_EQ(a.size(), 20);
+  EXPECT_EQ(b.size(), 20);
+
+  // Should have the same values but offset
+  for (auto ai = a.begin(), bi = b.begin(); ai != a.end(); ++ai, ++bi) {
+    EXPECT_DOUBLE_EQ(*ai + 1, *bi);
   }
 }
 
