@@ -740,6 +740,9 @@ TEST_F(Field3DTest, IndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
 #endif
 }
 
@@ -766,6 +769,10 @@ TEST_F(Field3DTest, ConstIndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  const Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
+
 #endif
 }
 
