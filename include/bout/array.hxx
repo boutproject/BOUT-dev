@@ -25,6 +25,7 @@
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
+#include <algorithm>
 #include <map>
 #include <vector>
 #include <memory>
@@ -201,8 +202,7 @@ public:
 #ifdef BOUT_ARRAY_WITH_VALARRAY    
     p->operator=((*ptr));
 #else
-    for(iterator it = begin(), ip = p->begin(); it != end(); ++it, ++ip)
-      *ip = *it;
+    std::copy(begin(), end(), p->begin());
 #endif    
 
     //Update the local pointer and release old
