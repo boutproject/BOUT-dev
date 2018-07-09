@@ -231,6 +231,7 @@ TEST_F(ExpressionParserTest, BadExpressions) {
   EXPECT_THROW(parser.parseString("+4"), ParseException);
   EXPECT_THROW(parser.parseString("\n"), ParseException);
   EXPECT_THROW(parser.parseString("(3"), ParseException);
+  EXPECT_THROW(parser.parseString("2-3[4"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddGenerator) {
