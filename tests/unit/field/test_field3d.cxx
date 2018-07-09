@@ -836,6 +836,45 @@ TEST_F(Field3DTest, CheckData) {
   
 }
 
+#if CHECK > 0
+TEST_F(Field3DTest, BndryValid) {
+  Field3D field = 1.0;
+  field.bndry_xin = true;
+  field.bndry_xout = true;
+  field.bndry_yup = true;
+  field.bndry_ydown = true;
+  EXPECT_EQ(field.bndryValid(), true);
+
+  field.bndry_xin = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xin = true;
+
+  field.bndry_xout = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xout = true;
+
+  field.bndry_yup = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_yup = true;
+
+  field.bndry_ydown = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_ydown = true;
+}
+
+TEST_F(Field3DTest, DoneComms) {
+  Field3D field = 1.0;
+  field.bndry_xin = false;
+  field.bndry_xout = false;
+  field.bndry_yup = false;
+  field.bndry_ydown = false;
+
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.doneComms();
+  EXPECT_EQ(field.bndryValid(), true);
+}
+#endif
+
 TEST_F(Field3DTest, InvalidateGuards) {
   Field3D field;
   field.allocate(); // Calls invalidateGuards
