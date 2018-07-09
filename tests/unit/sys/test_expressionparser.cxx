@@ -213,15 +213,19 @@ TEST_F(ExpressionParserTest, BadNumbers) {
 }
 
 TEST_F(ExpressionParserTest, BadFunctions) {
-  EXPECT_THROW(parser.parseString("sin(--)"), ParseException);
-  EXPECT_THROW(parser.parseString("sin(x, )"), ParseException);
-  EXPECT_THROW(parser.parseString("sin(x = 1)"), ParseException);
+  parser.addGenerator("increment", std::make_shared<IncrementGenerator>());
+
+  EXPECT_THROW(parser.parseString("increment(--)"), ParseException);
+  EXPECT_THROW(parser.parseString("increment(x, )"), ParseException);
+  EXPECT_THROW(parser.parseString("increment(x = 1)"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, BadExpressions) {
+  parser.addGenerator("increment", std::make_shared<IncrementGenerator>());
+
   EXPECT_THROW(parser.parseString("x = 1"), ParseException);
-  EXPECT_THROW(parser.parseString("sin(x"), ParseException);
-  EXPECT_THROW(parser.parseString("sin[x"), ParseException);
+  EXPECT_THROW(parser.parseString("increment(x"), ParseException);
+  EXPECT_THROW(parser.parseString("increment"), ParseException);
   EXPECT_THROW(parser.parseString("2]"), ParseException);
   EXPECT_THROW(parser.parseString("4+"), ParseException);
   EXPECT_THROW(parser.parseString("+4"), ParseException);
