@@ -927,6 +927,22 @@ public:
 typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
 
+TYPED_TEST(RegionIndexTest, MemberSize) {
+  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
+
+  int nmesh = 2 * 3 * 5;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TYPED_TEST(RegionIndexTest, NonMemberSize) {
+  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
+
+  int nmesh = 2 * 3 * 5;
+
+  EXPECT_EQ(size(region), nmesh);
+}
+
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
   Region<TypeParam> range(region);
