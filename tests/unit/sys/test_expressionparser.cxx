@@ -66,7 +66,6 @@ public:
                     BoutReal UNUSED(t)) {
     return 4.0;
   }
-  const std::string str() { return std::string{"nullary()"}; }
 };
 
 TEST_F(ExpressionParserTest, Parse2) {
@@ -279,7 +278,7 @@ TEST_F(ExpressionParserTest, AddNullaryFunction) {
   parser.addGenerator("nullary", std::make_shared<NullaryGenerator>());
 
   auto fieldgen = parser.parseString("nullary()");
-  EXPECT_EQ(fieldgen->str(), "nullary()");
+  EXPECT_EQ(fieldgen->str(), "?");
 
   for (auto x : x_array) {
     for (auto y : y_array) {
