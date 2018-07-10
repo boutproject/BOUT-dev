@@ -315,12 +315,12 @@ TEST_F(Field3DTest, GetGlobalMesh) {
 }
 
 TEST_F(Field3DTest, GetLocalMesh) {
-  auto myMesh = new FakeMesh(nx + 1, ny + 2, nz + 3);
-  Field3D field(myMesh);
+  FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  Field3D field(&myMesh);
 
   auto localmesh = field.getMesh();
 
-  EXPECT_EQ(localmesh, myMesh);
+  EXPECT_EQ(localmesh, &myMesh);
 }
 
 TEST_F(Field3DTest, SetGetLocation) {
