@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -76,9 +76,7 @@ void MsgStack::clear() {
   position = 0;
 }
 
-void MsgStack::dump() {
-  output << this->getDump();
-}
+void MsgStack::dump() { output << this->getDump(); }
 
 std::string MsgStack::getDump() {
   std::string res = "====== Back trace ======\n";
