@@ -345,7 +345,7 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
 Region<IndPerp> & Mesh::getRegionPerp(const std::string &region_name){
    auto found = regionMapPerp.find(region_name);
    if (found == end(regionMapPerp)) {
-     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+     throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
    }
    return found->second;
 }
