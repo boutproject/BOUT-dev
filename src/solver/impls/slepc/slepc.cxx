@@ -66,9 +66,9 @@ PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br
 
 //The callback function for the monitor
 //A simple wrapper around the SlepcSolver compareEigs routine
-PetscErrorCode monitorWrapper(EPS eps, PetscInt its, PetscInt nconv,
-                                  PetscScalar *eigr, PetscScalar *eigi,
-                                  PetscReal* errest, PetscInt nest, void *mctx){
+PetscErrorCode monitorWrapper(EPS UNUSED(eps), PetscInt its, PetscInt nconv,
+                              PetscScalar *eigr, PetscScalar *eigi, PetscReal *errest,
+                              PetscInt nest, void *mctx) {
   PetscFunctionBegin;
   //Cast context as SlepcSolver and call the actual compare routine
   SlepcSolver* myCtx;
@@ -485,7 +485,7 @@ void SlepcSolver::createEPS(){
 //advances them with the attached solver and then returns the evolved fields in a slepc
 //structure.
 //Note: Hidden "this" argument prevents Slepc calling this routine directly
-int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
+int SlepcSolver::advanceStep(Mat &UNUSED(matOperator), Vec &inData, Vec &outData){
 
   //First unpack input into fields
   vecToFields(inData);
@@ -568,7 +568,8 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
 //get the eigenvectors at the correct time indices later would require resetting the time index. I'm
 //not sure if the Datafile object supports this.
 //Note must be wrapped by non-member function to be called by Slepc
-void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest){
+void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
+                          PetscScalar eigi[], PetscReal errest[], PetscInt UNUSED(nest)) {
   static int nConvPrev=0;
 
   //No output until after first iteration

@@ -1390,8 +1390,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
   return result;
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method, REGION region) {
+const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
+                             DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(this == f.getMesh());
   return Field2D(0., this);
 }
@@ -1723,11 +1723,10 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
 }
 
 const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region){
+                               DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  return Field2D(0.,this);
+  return Field2D(0., this);
 }
-
 
 /*******************************************************************************
  * Mixed derivatives

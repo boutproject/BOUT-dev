@@ -525,7 +525,7 @@ PetscErrorCode PetscSolver::run() {
  * RHS function
  **************************************************************************/
 
-PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
+PetscErrorCode PetscSolver::rhs(TS UNUSED(ts), BoutReal t, Vec udata, Vec dudata) {
   TRACE("Running RHS: PetscSolver::rhs(%e)", t);
 
   const BoutReal *udata_array;
@@ -553,7 +553,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
  * Preconditioner function
  **************************************************************************/
 
-PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
+PetscErrorCode PetscSolver::pre(PC UNUSED(pc), Vec x, Vec y) {
   TRACE("PetscSolver::pre()");
 
   BoutReal *data;
@@ -655,7 +655,8 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
 #undef __FUNCT__
 #define __FUNCT__ "solver_rhsjacobian"
 #if PETSC_VERSION_GE(3,5,0)
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat J,Mat Jpre,void *f_data) {
+PetscErrorCode solver_rhsjacobian(TS UNUSED(ts), BoutReal UNUSED(t), Vec UNUSED(globalin),
+                                  Mat J, Mat Jpre, void *UNUSED(f_data)) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -688,7 +689,8 @@ PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre
 #undef __FUNCT__
 #define __FUNCT__ "solver_ijacobian"
 #if PETSC_VERSION_GE(3,5,0)
-PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat J,Mat Jpre,void *f_data) {
+PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(globalindot),
+                                PetscReal a, Mat J, Mat Jpre, void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -733,7 +735,9 @@ PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,Pe
 #undef __FUNCT__
 #define __FUNCT__ "solver_ijacobianfd"
 #if PETSC_VERSION_GE(3,5,0)
-PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat J,Mat Jpre,void *f_data) {
+PetscErrorCode solver_ijacobianfd(TS ts, BoutReal t, Vec globalin,
+                                  Vec UNUSED(globalindot), PetscReal UNUSED(a), Mat J, Mat Jpre,
+                                  void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -821,7 +825,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 
 #undef __FUNCT__
 #define __FUNCT__ "PetscMonitor"
-PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
+PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
   PetscSolver *s = (PetscSolver *)ctx;
   PetscReal tfinal, dt;
