@@ -34,17 +34,10 @@ class MsgStack;
 #include <stdio.h>
 #include <stdarg.h>
 #include <string>
+#include <vector>
 
 /// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
-
-/*!
- * Each message consists of a fixed length buffer
- */
-typedef struct {
-  char str[MSG_MAX_SIZE+1];
-}msg_item_t;
-
 
 /*!
  * Message stack 
@@ -60,9 +53,9 @@ typedef struct {
  */
 class MsgStack {
  public:
-  MsgStack();
-  ~MsgStack();
-  
+  MsgStack() : position(0) {};
+  ~MsgStack() { clear(); }
+
 #if CHECK > 1
   int push(const char *s, ...); ///< Add a message to the stack. Returns a message id
   
@@ -89,11 +82,10 @@ class MsgStack {
 #endif
   
  private:
-  char buffer[256];
+  char buffer[256];             ///< Buffer for vsnprintf
   
-  msg_item_t *msg;  ///< Message stack;
-  int nmsg;    ///< Current number of messages
-  int size;    ///< Size of the stack
+  std::vector<std::string> stack;  ///< Message stack;
+  int position;                  ///< Position in stack
 };
 
 /*!
