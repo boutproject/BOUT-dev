@@ -31,7 +31,7 @@ class MsgStack;
 
 #include "unused.hxx"
 
-#include <stdio.h>
+#include <exception>
 #include <stdarg.h>
 #include <string>
 #include <vector>
@@ -103,8 +103,6 @@ class MsgStack {
 GLOBAL MsgStack msg_stack;
 
 #undef GLOBAL
-
-#include <exception>
 
 /*!
  * MsgStackItem

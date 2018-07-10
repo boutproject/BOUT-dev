@@ -26,9 +26,8 @@
 
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <string.h>
-#include <string>
 #include <stdarg.h>
+#include <string>
 
 #if CHECK > 1
 int MsgStack::push(const char *s, ...) {
