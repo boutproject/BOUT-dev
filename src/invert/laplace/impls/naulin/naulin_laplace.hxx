@@ -74,7 +74,7 @@ public:
   void setInnerBoundaryFlags(int f) override { Laplacian::setInnerBoundaryFlags(f); delp2solver->setInnerBoundaryFlags(f); }
   void setOuterBoundaryFlags(int f) override { Laplacian::setOuterBoundaryFlags(f); delp2solver->setOuterBoundaryFlags(f); }
 
-  const BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
+  BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
