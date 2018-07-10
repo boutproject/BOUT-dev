@@ -680,10 +680,16 @@ class Mesh {
 
   /// Converts an IndPerp to an Ind3D using calculation
   /// Algebra not as simple as in Ind2D case:
-  ///   Ind3D   = (jx * ny + jy )* nz + jz
-  ///   IndPerp =  jx * nz + jz
-  /// Cannot eliminate both jx and jz, so deduce jz in function.
-  ///   Ind3D   = ny * (IndPerp - jz) + jy * nz + jz
+  ///   Ind3D   = (jx * ny + jy )* nz + jz           (1)
+  ///   IndPerp =  jx * nz + jz                      (2)
+  /// Cannot eliminate both jx and jz, so deduce jz in function and use this to eliminate jx.
+  /// i.e. Calculate from (2)
+  ///   jz = IndPerp % nz
+  /// Then
+  ///   jx * nz = IndPerp - jz
+  /// and from (1)
+  ///   Ind3D   = jx * ny * nz + jy * nz + jz
+  ///           = ny * (IndPerp - jz) + jy * nz + jz
   Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0){
     int jz = indPerp.ind % LocalNz;
     return Ind3D( (indPerp.ind - jz) * LocalNy + jy * LocalNz + jz);
