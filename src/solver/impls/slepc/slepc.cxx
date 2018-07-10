@@ -37,8 +37,6 @@
 #include <output.hxx>
 #include <boutcomm.hxx>
 
-static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-
 string formatEig(BoutReal reEig, BoutReal imEig);
 
 //The callback function for the shell matrix-multiply operation
