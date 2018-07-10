@@ -29,9 +29,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-using std::map;
 using std::string;
-using std::pair;
 using std::list;
 using std::stringstream;
 
