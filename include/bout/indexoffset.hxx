@@ -4,13 +4,13 @@
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
 
-/// Helper class for offsetting Ind2D/Ind3D
+/// Helper class for offsetting Ind2D/Ind3D/IndPerp
 ///
 /// Provides methods for offsetting by fixed amounts in x, y, z, as
 /// well as a generic method for offsetting by any amount in multiple
 /// directions
 ///
-/// Also provides helper methods for converting Ind2D/Ind3D to x, y, z
+/// Also provides helper methods for converting Ind2D/Ind3D/IndPerp to x, y, z
 /// indices
 ///
 /// Examples
@@ -25,15 +25,18 @@
 template <typename T = Ind3D>
 struct IndexOffset {
 
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
-                "IndexOffset must be templated with either Ind2D or Ind3D");
+  static_assert(std::is_base_of<Ind2D, T>::value 
+             || std::is_base_of<Ind3D, T>::value
+             || std::is_base_of<IndPerp, T>::value,
+                "IndexOffset must be templated with Ind2D, Ind3D or IndPerp");
 
   Mesh &mesh;
   const int nx, ny, nz;
 
   IndexOffset(Mesh &mesh)
-      : mesh(mesh), nx(mesh.LocalNx), ny(mesh.LocalNy),
-        nz(std::is_base_of<Ind3D, T>::value ? mesh.LocalNz : 1) {}
+      : mesh(mesh), nx(mesh.LocalNx), 
+        ny(std::is_base_of<IndPerp,T>::value ? 1 : mesh.LocalNy),
+        nz(std::is_base_of<Ind2D, T>::value ? 1 : mesh.LocalNz) {}
 
   /// Convenience functions for converting \p index to (x, y, z)
   int x(T index) const { return (index.ind / nz) / ny; }
@@ -58,6 +61,9 @@ struct IndexOffset {
       throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, index.ind);
     }
 #endif
+    if (ny == 1) {
+      return index;
+    }
     return index + (dy * nz);
   }
   /// Negative offset \p index by \p dy in y, default to offset by one
