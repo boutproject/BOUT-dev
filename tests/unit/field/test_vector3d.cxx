@@ -95,6 +95,18 @@ TEST_F(Vector3DTest, BoutRealSize) {
   EXPECT_EQ(vector.BoutRealSize(), 3);
 }
 
+TEST_F(Vector3DTest, TimeDeriv) {
+  Vector3D vector;
+
+  auto deriv = vector.timeDeriv();
+  EXPECT_NE(&vector, deriv);
+
+  auto deriv2 = vector.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(vector)), deriv);
+}
+
 TEST_F(Vector3DTest, AssignFromBoutReal) {
   Vector3D vector;
 

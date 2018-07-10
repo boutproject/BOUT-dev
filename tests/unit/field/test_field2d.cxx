@@ -529,6 +529,20 @@ TEST_F(Field2DTest, CheckData) {
 
 }
 
+#if CHECK > 0
+TEST_F(Field2DTest, DoneComms) {
+  Field2D field = 1.0;
+  field.bndry_xin = false;
+  field.bndry_xout = false;
+  field.bndry_yup = false;
+  field.bndry_ydown = false;
+
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.doneComms();
+  EXPECT_EQ(field.bndryValid(), true);
+}
+#endif
+
 TEST_F(Field2DTest, InvalidateGuards) {
   Field2D field;
   field.allocate(); // Calls invalidateGuards
