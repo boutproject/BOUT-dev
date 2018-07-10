@@ -204,6 +204,10 @@ TEST_F(ExpressionParserTest, UnknownExpression) {
   EXPECT_THROW(parser.parseString("foo"), ParseException);
 }
 
+TEST_F(ExpressionParserTest, UnknownGenerator) {
+  EXPECT_THROW(parser.parseString("aaa(1)"), ParseException);
+}
+
 TEST_F(ExpressionParserTest, BadNumbers) {
   EXPECT_THROW(parser.parseString("1.1.4"), ParseException);
   EXPECT_THROW(parser.parseString("2.1e4.5."), ParseException);
