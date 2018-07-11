@@ -718,7 +718,7 @@ TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -784,7 +784,7 @@ TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -922,7 +922,7 @@ TEST_F(IndexOffsetTest, XPlusOneIndPerp) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, YPlusOneIndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 
@@ -983,7 +983,7 @@ TEST_F(IndexOffsetTest, XMinusOneIndPerp) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, YMinusOneIndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 
@@ -1043,7 +1043,7 @@ TEST_F(IndexOffsetTest, XPlusTwoIndPerp) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, YPlusTwoIndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 
@@ -1103,7 +1103,7 @@ TEST_F(IndexOffsetTest, XMinusTwoIndPerp) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, YMinusTwoIndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 
@@ -1138,7 +1138,7 @@ TEST_F(IndexOffsetTest, ZMinusTwoIndPerp) {
   }
 }
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, Offset111IndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 
@@ -1150,7 +1150,7 @@ TEST_F(IndexOffsetTest, Offset111IndPerp) {
 }
 #endif
 
-#if CHECK > 2
+#if CHECK > 1
 TEST_F(IndexOffsetTest, Offsetm1m1m1IndPerp) {
   auto region = mesh->getRegionPerp("RGN_ALL");
 

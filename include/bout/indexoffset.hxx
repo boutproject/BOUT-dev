@@ -50,7 +50,7 @@ struct IndexOffset {
       throw BoutException("Offset in x (%d) would go out of bounds at %d", dx, index.ind);
     }
 #endif
-    ASSERT3(std::abs(dx) < nx);
+    ASSERT2(std::abs(dx) < nx);
     return index + (dx * ny * nz);
   }
   /// Negative offset \p index by \p dx in x, default to offset by one
@@ -62,7 +62,7 @@ struct IndexOffset {
       throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, index.ind);
     }
 #endif
-    ASSERT3(std::abs(dy) < ny);
+    ASSERT2(std::abs(dy) < ny);
     return index + (dy * nz);
   }
   /// Negative offset \p index by \p dy in y, default to offset by one
@@ -70,15 +70,15 @@ struct IndexOffset {
   /// Positive offset \p index by \p dz in z, default to offset by one.
   /// Periodic in z, cannot handle negative offsets
   const inline T zp(T index, int dz = 1) const {
-    ASSERT3(dz > 0);
-    ASSERT3(dz <= nz);
+    ASSERT2(dz > 0);
+    ASSERT2(dz <= nz);
     return (index + dz) % nz < dz ? index - nz + dz : index + dz;
   }
   /// Negative offset \p index by \p dz in z, default to offset by one.
   /// Periodic in z, cannot handle negative offsets
   const inline T zm(T index, int dz = 1) const {
-    ASSERT3(dz > 0);
-    ASSERT3(dz <= nz);
+    ASSERT2(dz > 0);
+    ASSERT2(dz <= nz);
     return (index) % nz < dz ? index + nz - dz : index - dz;
   }
 
