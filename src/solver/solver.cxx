@@ -702,7 +702,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       it->cleanup();
     }
     output_error.write("Monitor signalled to quit\n");
-    throw e;
+    throw;
   }
 
   if ( iter == NOUT ){
