@@ -38,8 +38,6 @@ sys.path.append('..')
 from requirements import Requirements
 requirements = Requirements()
 
-requirements.add('all_tests', args.all_tests)
-
 if args.set_bool is not None:
     lookup = {'false': False,
               'no': False,
@@ -53,7 +51,13 @@ if args.set_bool is not None:
 try:
     requirements.add('make', args.make)
 except RuntimeError:
-    raise RuntimeError("The make flag needs to be set by passing --make")
+    raise RuntimeError("The make flag needs to be set by passing --make rather then --set-bool make=True")
+
+try:
+    requirements.add('all_tests', args.all_tests)
+except RuntimeError:
+    raise RuntimeError("The all-tests flag needs to be set by passing --all rather then --set-bool all_tests=True")
+
 
 ##################################################################
 
