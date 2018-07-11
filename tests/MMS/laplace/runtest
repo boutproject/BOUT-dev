@@ -2,6 +2,8 @@
 
 # Python script to run and analyse MMS test
 
+#requires: all_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import str
@@ -89,8 +91,9 @@ try:
 except:
     pass
 
-if order < 1.9:
+if 1.9 < order < 2.1:
+    # check for success
+    exit(0)
+else:
     print("MMS test failed")
     exit(1)
-else:
-    exit(0)

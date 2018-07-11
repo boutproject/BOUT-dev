@@ -5,7 +5,8 @@
 # Outputs PDF figures in each subdirectory
 # Checks that the convergence is 2nd order
 # Exits with status 1 if any test failed
- 
+
+#requires: all_tests
 
 from __future__ import division
 from __future__ import print_function
@@ -91,9 +92,11 @@ for dir,sizes in inputs:
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
 
-    if order < 1.5:
-        print("=> FAILED\n")
+    if 1.8 < order < 2.2:
+        pass
+    else:
         success = False
+        print("=> FAILED\n")
     
     # plot errors
 

@@ -85,7 +85,7 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
-AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
+AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
