@@ -74,8 +74,7 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
   addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
-
-void FieldData::addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location){
+void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
   if(location == BNDRY_ALL){
     for(const auto& reg : mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
@@ -85,8 +84,8 @@ void FieldData::addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc 
   }
 }
 
-std::shared_ptr<FieldGenerator> FieldData::getBndryGenerator(BndryLoc location) {
-  std::map<BndryLoc,std::shared_ptr<FieldGenerator> >::iterator it = bndry_generator.find(location);
+FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
+  std::map<BndryLoc, FieldGeneratorPtr>::iterator it = bndry_generator.find(location);
   if(it == bndry_generator.end())
     return nullptr;
 

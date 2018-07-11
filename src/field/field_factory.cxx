@@ -34,12 +34,12 @@
 #include "fieldgenerators.hxx"
 
 /// Helper function to create a FieldValue generator from a BoutReal
-std::shared_ptr<FieldGenerator> generator(BoutReal value) {
+FieldGeneratorPtr generator(BoutReal value) {
   return std::make_shared<FieldValue>(value);
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
-std::shared_ptr<FieldGenerator> generator(BoutReal *ptr) {
+FieldGeneratorPtr generator(BoutReal *ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
 }
 
@@ -113,7 +113,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
   }
   result.setLocation(loc);
 
-  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
+  FieldGeneratorPtr gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 2D field from '"
            << value
@@ -175,7 +175,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
   result.setLocation(loc);
 
   // Parse expression to create a tree of generators
-  std::shared_ptr<FieldGenerator> gen = parse(value, opt);
+  FieldGeneratorPtr gen = parse(value, opt);
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
@@ -276,7 +276,7 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
   return result;
 }
 
-std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
+FieldGeneratorPtr FieldFactory::resolve(string &name) {
   if(options) {
     // Check if in cache
     string key;
@@ -321,7 +321,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
     lookup.push_back(key);
 
     // Parse
-    std::shared_ptr<FieldGenerator> g = parse(value, section);
+    FieldGeneratorPtr g = parse(value, section);
 
     // Cache
     cache[key] = g;
@@ -335,7 +335,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::resolve(string &name) {
   return nullptr;
 }
 
-std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options *opt) {
+FieldGeneratorPtr FieldFactory::parse(const string &input, Options *opt) {
 
   // Check if in the cache
   string key = string("#") + input;
@@ -356,7 +356,7 @@ std::shared_ptr<FieldGenerator> FieldFactory::parse(const string &input, Options
     options = opt;
 
   // Parse
-  std::shared_ptr<FieldGenerator> expr = parseString(input);
+  FieldGeneratorPtr expr = parseString(input);
 
   // Add to cache
   cache[key] = expr;

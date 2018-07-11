@@ -46,8 +46,8 @@ class FieldFactory;
 
 // Utility routines to create generators from values
 
-std::shared_ptr<FieldGenerator> generator(BoutReal value);
-std::shared_ptr<FieldGenerator> generator(BoutReal *ptr);
+FieldGeneratorPtr generator(BoutReal value);
+FieldGeneratorPtr generator(BoutReal *ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
@@ -63,7 +63,7 @@ public:
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   // Parse a string into a tree of generators
-  std::shared_ptr<FieldGenerator> parse(const std::string &input, Options *opt = nullptr);
+  FieldGeneratorPtr parse(const std::string &input, Options *opt = nullptr);
 
   // Singleton object
   static FieldFactory *get();
@@ -72,7 +72,7 @@ public:
   void cleanCache();
 protected:
   // These functions called by the parser
-  std::shared_ptr<FieldGenerator> resolve(std::string &name);
+  FieldGeneratorPtr resolve(std::string &name);
   
 private:
   Mesh *fieldmesh;  
@@ -81,7 +81,7 @@ private:
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
-  std::map<std::string, std::shared_ptr<FieldGenerator> > cache;
+  std::map<std::string, FieldGeneratorPtr > cache;
   
   Options* findOption(Options *opt, const std::string &name, std::string &val);
 };
@@ -109,12 +109,12 @@ public:
   double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
     return 0.0;
   }
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > UNUSED(args)) {
     return get();
   }
   /// Singeton
-  static std::shared_ptr<FieldGenerator> get() {
-    static std::shared_ptr<FieldGenerator> instance = nullptr;
+  static FieldGeneratorPtr get() {
+    static FieldGeneratorPtr instance = nullptr;
 
     if(!instance)
       instance = std::make_shared<FieldNull>();

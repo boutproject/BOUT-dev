@@ -6,7 +6,7 @@
 
 //////////////////////////////////////////////////////////
 
-std::shared_ptr<FieldGenerator> FieldSin::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldSin::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sin function. Expecting 1, got %d", args.size());
   }
@@ -18,7 +18,7 @@ BoutReal FieldSin::generate(double x, double y, double z, double t) {
   return sin(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldCos::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldCos::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to cos function. Expecting 1, got %d", args.size());
   }
@@ -30,7 +30,7 @@ BoutReal FieldCos::generate(double x, double y, double z, double t) {
   return cos(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldSinh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldSinh::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
   }
@@ -42,7 +42,7 @@ BoutReal FieldSinh::generate(double x, double y, double z, double t) {
   return sinh(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldCosh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldCosh::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to cosh function. Expecting 1, got %d", args.size());
   }
@@ -54,7 +54,7 @@ BoutReal FieldCosh::generate(double x, double y, double z, double t) {
   return cosh(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldTanh::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldTanh::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to tanh function. Expecting 1, got ", args.size());
   }
@@ -65,13 +65,13 @@ BoutReal FieldTanh::generate(double x, double y, double z, double t) {
   return tanh(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldGaussian::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldGaussian::clone(const list<FieldGeneratorPtr> args) {
   if((args.size() < 1) || (args.size() > 2)) {
     throw ParseException("Incorrect number of arguments to gaussian function. Expecting 1 or 2, got ", args.size());
   }
 
-  std::shared_ptr<FieldGenerator> xin = args.front();
-  std::shared_ptr<FieldGenerator> sin;
+  FieldGeneratorPtr xin = args.front();
+  FieldGeneratorPtr sin;
   if(args.size() == 2) {
     sin = args.back(); // Optional second argument
   }else
@@ -85,7 +85,7 @@ BoutReal FieldGaussian::generate(double x, double y, double z, double t) {
   return exp(-SQ(X->generate(x,y,z,t)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
-std::shared_ptr<FieldGenerator> FieldAbs::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldAbs::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to abs function. Expecting 1, got %d", args.size());
   }
@@ -97,7 +97,7 @@ BoutReal FieldAbs::generate(double x, double y, double z, double t) {
   return fabs(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldSqrt::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldSqrt::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sqrt function. Expecting 1, got %d", args.size());
   }
@@ -109,7 +109,7 @@ BoutReal FieldSqrt::generate(double x, double y, double z, double t) {
   return sqrt(gen->generate(x,y,z,t));
 }
 
-std::shared_ptr<FieldGenerator> FieldHeaviside::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldHeaviside::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to heaviside function. Expecting 1, got %d", args.size());
   }
@@ -121,7 +121,7 @@ BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
   return (gen->generate(x,y,z,t) > 0.0) ? 1.0 : 0.0;
 }
 
-std::shared_ptr<FieldGenerator> FieldErf::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldErf::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to erf function. Expecting 1, got %d", args.size());
   }
@@ -137,7 +137,7 @@ BoutReal FieldErf::generate(double x, double y, double z, double t) {
 // Ballooning transform
 // Use a truncated Ballooning transform to enforce periodicity in y and z
 
-std::shared_ptr<FieldGenerator> FieldBallooning::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldBallooning::clone(const list<FieldGeneratorPtr> args) {
   int n = ball_n;
   switch(args.size()) {
   case 2: {
@@ -187,8 +187,7 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
 ////////////////////////////////////////////////////////////////
 
-FieldMixmode::FieldMixmode(std::shared_ptr<FieldGenerator> a, BoutReal seed)
-    : arg(std::move(a)) {
+FieldMixmode::FieldMixmode(FieldGeneratorPtr a, BoutReal seed) : arg(std::move(a)) {
   // Calculate the phases -PI to +PI
   // using genRand [0,1]
 
@@ -196,7 +195,7 @@ FieldMixmode::FieldMixmode(std::shared_ptr<FieldGenerator> a, BoutReal seed)
     phase[i] = PI * (2.*genRand(seed + i) - 1.);
 }
 
-std::shared_ptr<FieldGenerator> FieldMixmode::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldMixmode::clone(const list<FieldGeneratorPtr> args) {
   BoutReal seed = 0.5;
   switch(args.size()) {
   case 2: {
@@ -245,7 +244,7 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
 
 //////////////////////////////////////////////////////////
 // TanhHat
-std::shared_ptr<FieldGenerator> FieldTanhHat::clone(const list<std::shared_ptr<FieldGenerator> > args) {
+FieldGeneratorPtr FieldTanhHat::clone(const list<FieldGeneratorPtr> args) {
   if(args.size() != 4) {
     throw ParseException("Incorrect number of arguments to TanhHat function. Expecting 4, got %d", args.size());
   }
@@ -253,16 +252,16 @@ std::shared_ptr<FieldGenerator> FieldTanhHat::clone(const list<std::shared_ptr<F
   // As lists are not meant to be indexed, we may use an iterator to get the
   // input arguments instead
   // Create the iterator
-  list<std::shared_ptr<FieldGenerator> >::const_iterator it = args.begin();
+  list<FieldGeneratorPtr>::const_iterator it = args.begin();
   // Assign the input arguments to the input of the constructor and advance the
   // iterator
-  std::shared_ptr<FieldGenerator> xin = *it;
+  FieldGeneratorPtr xin = *it;
   std::advance(it, 1);
-  std::shared_ptr<FieldGenerator> widthin = *it;
+  FieldGeneratorPtr widthin = *it;
   std::advance(it, 1);
-  std::shared_ptr<FieldGenerator> centerin = *it;
+  FieldGeneratorPtr centerin = *it;
   std::advance(it, 1);
-  std::shared_ptr<FieldGenerator> steepnessin = *it;
+  FieldGeneratorPtr steepnessin = *it;
 
   // Call the constructor
   return std::make_shared<FieldTanhHat>(xin, widthin, centerin, steepnessin);
