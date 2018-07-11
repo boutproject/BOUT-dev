@@ -578,7 +578,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   } catch (BoutException &e) {
     output_error << "Error encountered in solver run\n";
     output_error << e.what() << endl;
-    throw e;
+    throw;
   }
 
   return status;
