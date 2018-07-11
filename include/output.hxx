@@ -73,7 +73,7 @@ public:
     enable();
     open(fname);
   }
-  virtual ~Output() {
+  ~Output() override {
     close();
     delete[] buffer;
   }

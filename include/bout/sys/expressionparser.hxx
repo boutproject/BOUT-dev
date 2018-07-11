@@ -154,10 +154,14 @@ private:
 class FieldBinary : public FieldGenerator {
 public:
   FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o) : lhs(l), rhs(r), op(o) {}
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args);
-  double generate(double x, double y, double z, double t);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
+  double generate(double x, double y, double z, double t) override;
 
-  const std::string str() {return std::string("(")+lhs->str()+std::string(1,op)+rhs->str()+std::string(")");}
+  const std::string str() override {
+    return std::string("(") + lhs->str() + std::string(1, op) + rhs->str() +
+           std::string(")");
+  }
+
 private:
   FieldGeneratorPtr lhs, rhs;
   char op;
@@ -168,15 +172,15 @@ class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
 
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldValue>(value);
   }
 
   double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) {
+                  double UNUSED(t)) override {
     return value;
   }
-  const std::string str() {
+  const std::string str() override {
     std::stringstream ss;
     ss << value;
     return ss.str();
@@ -190,10 +194,10 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  virtual ~ParseException() {}
-  
-  const char* what() const noexcept;
-  
+  ~ParseException() override {}
+
+  const char *what() const noexcept override;
+
 protected:
   std::string message;
 };

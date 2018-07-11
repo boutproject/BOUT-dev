@@ -121,10 +121,10 @@ public:
   GlobalField2D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField2D();
-  
+  ~GlobalField2D() override;
+
   /// Is the data valid and on this processor?
-  bool valid() const { return data_valid; }
+  bool valid() const override { return data_valid; }
 
   /// Gather all data onto one processor
   void gather(const Field2D &f);
@@ -215,11 +215,11 @@ public:
   GlobalField3D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField3D();
-  
+  ~GlobalField3D() override;
+
   /// Test if the data is valid i.e. has been allocated
-  bool valid() const {return data_valid;}
-  
+  bool valid() const override { return data_valid; }
+
   /// Gather all data onto one processor
   void gather(const Field3D &f);
   /// Scatter data back from one to many processors

@@ -44,9 +44,7 @@ class multioutbuf : public std::basic_streambuf<char_type, traits> {
     
   }
 protected:
-  virtual std::streamsize xsputn(
-                    const char_type* sequence,
-                    std::streamsize num) {
+  std::streamsize xsputn(const char_type *sequence, std::streamsize num) override {
     iterator current = streams_.begin();
     iterator end = streams_.end();
 
@@ -58,7 +56,7 @@ protected:
     return num;
   }
 
-  virtual int overflow(int c) {
+  int overflow(int c) override {
     iterator current = streams_.begin();
     iterator end = streams_.end();
 

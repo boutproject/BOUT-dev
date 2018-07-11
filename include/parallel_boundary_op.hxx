@@ -25,7 +25,7 @@ public:
     bndry(region),
     real_value(value),
     value_type(REAL) {}
-  virtual ~BoundaryOpPar() {}
+  ~BoundaryOpPar() override {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return nullptr; }

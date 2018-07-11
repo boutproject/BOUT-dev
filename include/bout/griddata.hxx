@@ -73,19 +73,20 @@ public:
 class GridFile : public GridDataSource {
 public:
   GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename);
-  ~GridFile();
+  ~GridFile() override;
 
-  bool hasVar(const string &name);
+  bool hasVar(const string &name) override;
 
-  bool get(Mesh *m, int &ival, const string &name);      ///< Get an integer
-  bool get(Mesh *m, BoutReal &rval, const string &name); ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const string &name, BoutReal def = 0.0);
-  bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0);
+  bool get(Mesh *m, int &ival, const string &name) override; ///< Get an integer
+  bool get(Mesh *m, BoutReal &rval,
+           const string &name) override; ///< Get a BoutReal number
+  bool get(Mesh *m, Field2D &var, const string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0) override;
 
   bool get(Mesh *m, vector<int> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X);
+           GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X);
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
 private:
   GridFile();
@@ -118,7 +119,7 @@ public:
   /*!
    * Checks if the options has a given variable
    */
-  bool hasVar(const string &name);
+  bool hasVar(const string &name) override;
 
   /*!
    * Reads integers from options. Uses Options::get to handle
@@ -130,7 +131,7 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, int &ival, const string &name);
+  bool get(Mesh *mesh, int &ival, const string &name) override;
 
   /*!
    * Reads BoutReal from options. Uses Options::get to handle
@@ -142,7 +143,7 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, BoutReal &rval, const string &name);
+  bool get(Mesh *mesh, BoutReal &rval, const string &name) override;
 
   /*!
    * Get a Field2D object by finding the option with the given name,
@@ -153,7 +154,7 @@ public:
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
    */
-  bool get(Mesh *mesh, Field2D &var, const string &name, BoutReal def = 0.0);
+  bool get(Mesh *mesh, Field2D &var, const string &name, BoutReal def = 0.0) override;
 
   /*!
    * Get a Field3D object by finding the option with the given name,
@@ -164,7 +165,7 @@ public:
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
    */
-  bool get(Mesh *mesh, Field3D &var, const string &name, BoutReal def = 0.0);
+  bool get(Mesh *mesh, Field3D &var, const string &name, BoutReal def = 0.0) override;
 
   /*!
    * Get an array of integers. Currently reads a single
@@ -178,7 +179,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, vector<int> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X);
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
   /*!
    * Get an array of BoutReals. Uses FieldFactory to generate
@@ -194,7 +195,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, vector<BoutReal> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X);
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
 private:
   /// The options section to use. Could be nullptr

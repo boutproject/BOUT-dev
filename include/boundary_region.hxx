@@ -41,7 +41,7 @@ public:
   BoundaryRegion() {}
   BoundaryRegion(const string &name, BndryLoc loc) : BoundaryRegionBase(name, loc) {}
   BoundaryRegion(const string &name, int xd, int yd) : BoundaryRegionBase(name), bx(xd), by(yd), width(2) {}
-  virtual ~BoundaryRegion() {}
+  ~BoundaryRegion() override {}
 
   int x,y; ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
@@ -57,12 +57,13 @@ class BoundaryRegionXIn : public BoundaryRegion {
 public:
   BoundaryRegionXIn(const string &name, int ymin, int ymax);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
@@ -71,12 +72,13 @@ class BoundaryRegionXOut : public BoundaryRegion {
 public:
   BoundaryRegionXOut(const string &name, int ymin, int ymax);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
@@ -85,12 +87,13 @@ class BoundaryRegionYDown : public BoundaryRegion {
 public:
   BoundaryRegionYDown(const string &name, int xmin, int xmax);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };
@@ -99,12 +102,13 @@ class BoundaryRegionYUp : public BoundaryRegion {
 public:
   BoundaryRegionYUp(const string &name, int xmin, int xmax);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };
