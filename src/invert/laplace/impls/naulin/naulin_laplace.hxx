@@ -61,8 +61,12 @@ public:
   }
 
   const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override { throw BoutException("LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)"); }
-  const Field3D solve(const Field3D &b, const Field3D&x0) override;
+  const FieldPerp solve(const FieldPerp &UNUSED(b),
+                        const FieldPerp &UNUSED(x0)) override {
+    throw BoutException(
+        "LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)");
+  }
+  const Field3D solve(const Field3D &b, const Field3D &x0) override;
   const Field3D solve(const Field3D &b) override { return solve(b, Field3D(0.)); }
 
   // Override flag-setting methods to set delp2solver's flags as well
@@ -70,7 +74,7 @@ public:
   void setInnerBoundaryFlags(int f) override { Laplacian::setInnerBoundaryFlags(f); delp2solver->setInnerBoundaryFlags(f); }
   void setOuterBoundaryFlags(int f) override { Laplacian::setOuterBoundaryFlags(f); delp2solver->setOuterBoundaryFlags(f); }
 
-  const BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
+  BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);

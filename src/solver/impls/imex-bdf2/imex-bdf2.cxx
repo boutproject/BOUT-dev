@@ -41,8 +41,8 @@ IMEXBDF2::~IMEXBDF2() {
  */
 #undef __FUNCT__
 #define __FUNCT__ "FormFunction"
-static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
+  return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, false);
 }
 
 /*!
@@ -63,10 +63,10 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  */
 #undef __FUNCT__
 #define __FUNCT__ "FormFunctionForColoring"
-static PetscErrorCode FormFunctionForColoring(SNES snes, Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
+static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+                                              void *ctx) {
+  return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, true);
 }
-
 
 #undef __FUNCT__
 #define __FUNCT__ "imexbdf2PCapply"
@@ -1076,7 +1076,7 @@ void IMEXBDF2::calculateCoeffs(int order){
  * u   - Latest Solution
  * f1  - Non-stiff time derivative at current time
  */
-void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
+void IMEXBDF2::take_step(BoutReal curtime, BoutReal UNUSED(dt), int order) {
 
   //First zero out rhs
   std::fill(std::begin(rhs), std::end(rhs), 0.0);
@@ -1408,9 +1408,9 @@ void IMEXBDF2::loopVars(BoutReal *u) {
 class SaveVarOp {
 public:
   // Initialise with a Field2D iterator
-  SaveVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  SaveVarOp(Field2D *var, Field2D *UNUSED(F_var)) : var2D(var) {}
   // Initialise with a Field3D iterator
-  SaveVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  SaveVarOp(Field3D *var, Field3D *UNUSED(F_var)) : var3D(var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {
@@ -1439,9 +1439,9 @@ void IMEXBDF2::saveVars(BoutReal *u) {
 class LoadVarOp {
 public:
   // Initialise with a Field2D iterator
-  LoadVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  LoadVarOp(Field2D *var, Field2D *UNUSED(F_var)) : var2D(var) {}
   // Initialise with a Field3D iterator
-  LoadVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  LoadVarOp(Field3D *var, Field3D *UNUSED(F_var)) : var3D(var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {
@@ -1470,9 +1470,9 @@ void IMEXBDF2::loadVars(BoutReal *u) {
 class SaveDerivsOp {
 public:
   // Initialise with a Field2D iterator
-  SaveDerivsOp(Field2D *var, Field2D *F_var) : F_var2D(F_var) {}
+  SaveDerivsOp(Field2D *UNUSED(var), Field2D *F_var) : F_var2D(F_var) {}
   // Initialise with a Field3D iterator
-  SaveDerivsOp(Field3D *var, Field3D *F_var) : F_var3D(F_var) {}
+  SaveDerivsOp(Field3D *UNUSED(var), Field3D *F_var) : F_var3D(F_var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {

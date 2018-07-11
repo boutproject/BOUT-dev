@@ -94,7 +94,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION 
   return f.getMesh()->indexDDZ(f,outloc, method, region) / f.getMesh()->coordinates()->dz;
 }
 
-const Field2D DDZ(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D DDZ(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                  REGION UNUSED(region)) {
   return Field2D(0.0, f.getMesh());
 }
 
@@ -126,7 +127,8 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method, REGIO
   return result;
 }
 
-const Vector2D DDZ(const Vector2D &v, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Vector2D DDZ(const Vector2D &v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                   REGION UNUSED(region)) {
   Vector2D result(v.x.getMesh());
 
   result.covariant = v.covariant;
@@ -206,7 +208,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
   return f.getMesh()->indexD2DZ2(f, outloc, method, region) / SQ(f.getMesh()->coordinates()->dz);
 }
 
-const Field2D D2DZ2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DZ2(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                    REGION UNUSED(region)) {
   return Field2D(0.0, f.getMesh());
 }
 
@@ -268,7 +271,8 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   return DDX(dfdy, outloc, method, region);
 }
 
-const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DXDZ(const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   // TODO: mesh & loc
   return Field2D(0.0);
 }
@@ -297,12 +301,13 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
 }
 
-const Field2D D2DYDZ(const Field2D &UNUSED(f), CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DYDZ(const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   // TODO: mesh & loc
   return Field2D(0.0);
 }
 
-const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION UNUSED(region)) {
   Field3D result(f.getMesh());
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
   result.allocate();
@@ -362,13 +367,17 @@ const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_MET
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f), CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f),
+                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                   REGION UNUSED(region)) {
   // TODO: loc, mesh
   return Field2D(0.0);
 }
 
 // Note that this is zero because no compression is included
-const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f), CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f),
+                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                   REGION UNUSED(region)) {
   // TODO: loc, mesh
   return Field2D(0.0);
 }
@@ -401,8 +410,9 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_MET
 
 /////////////////////////////////////////////////////////////////////////
 
-
-const Field2D FDDZ(const Field2D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f),
+                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
+                   REGION UNUSED(region)) {
   // TODO: mesh & loc
   return Field2D(0.0);
 }

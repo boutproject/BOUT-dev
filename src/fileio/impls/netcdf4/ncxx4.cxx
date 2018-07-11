@@ -32,7 +32,6 @@
 #include <msg_stack.hxx>
 
 using std::string;
-using std::map;
 
 using namespace netCDF;
 

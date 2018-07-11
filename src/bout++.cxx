@@ -72,7 +72,6 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include <string>
 #include <list>
 using std::string;
-using std::list;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

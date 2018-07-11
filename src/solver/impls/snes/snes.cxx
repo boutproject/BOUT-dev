@@ -20,8 +20,8 @@
  *
  * This function assumes the context void pointer is a pointer
  * to an SNESSolver object.
- */ 
-static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
+ */
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 

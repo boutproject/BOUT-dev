@@ -512,7 +512,8 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
   return localmesh->indexDDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
+                               DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(f.getMesh() == localmesh);
   return Field2D(0.0, localmesh);
 }
