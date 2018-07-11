@@ -23,7 +23,7 @@ using std::list;
 class FieldValuePtr : public FieldGenerator {
 public:
   FieldValuePtr(BoutReal *val) : ptr(val) {}
-  std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>( new  FieldValuePtr(ptr)); }
+  std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::make_shared<FieldValuePtr>(ptr); }
   BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return *ptr; }
 private:
   BoutReal *ptr; 
@@ -67,7 +67,7 @@ public:
     if(args.size() != 1) {
       throw ParseException("Incorrect number of arguments to function. Expecting 1, got %d", args.size());
     }
-    return std::shared_ptr<FieldGenerator>( new  FieldGenOneArg<Op>(args.front()));
+    return std::make_shared<FieldGenOneArg<Op>>(args.front());
   }
   BoutReal generate(double x, double y, double z, double t) {
     return Op(gen->generate(x,y,z,t));
@@ -87,7 +87,7 @@ public:
     if(args.size() != 2) {
       throw ParseException("Incorrect number of arguments to function. Expecting 2, got %d", args.size());
     }
-    return std::shared_ptr<FieldGenerator>( new  FieldGenTwoArg<Op>(args.front(), args.back()));
+    return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back());
   }
   BoutReal generate(double x, double y, double z, double t) {
     return Op(A->generate(x,y,z,t), B->generate(x,y,z,t));
@@ -103,9 +103,9 @@ public:
   FieldATan(std::shared_ptr<FieldGenerator> a, std::shared_ptr<FieldGenerator> b=nullptr) : A(a), B(b) {}
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args) {
     if(args.size() == 1) {
-      return std::shared_ptr<FieldGenerator>( new  FieldATan(args.front()));
+      return std::make_shared<FieldATan>(args.front());
     }else if(args.size() == 2) {
-      return std::shared_ptr<FieldGenerator>( new  FieldATan(args.front(), args.back()));
+      return std::make_shared<FieldATan>(args.front(), args.back());
     }
     throw ParseException("Incorrect number of arguments to atan function. Expecting 1 or 2, got %d", args.size());
   }
@@ -216,7 +216,7 @@ public:
     if(args.size() == 0) {
       throw ParseException("min function must have some inputs");
     }
-    return std::shared_ptr<FieldGenerator>( new  FieldMin(args));
+    return std::make_shared<FieldMin>(args);
   }
   BoutReal generate(double x, double y, double z, double t) {
     list<std::shared_ptr<FieldGenerator> >::iterator it=input.begin();
@@ -241,7 +241,7 @@ public:
     if(args.size() == 0) {
       throw ParseException("max function must have some inputs");
     }
-    return std::shared_ptr<FieldGenerator>( new  FieldMax(args));
+    return std::make_shared<FieldMax>(args);
   }
   BoutReal generate(double x, double y, double z, double t) {
     list<std::shared_ptr<FieldGenerator> >::iterator it=input.begin();
@@ -265,7 +265,7 @@ public:
   std::shared_ptr<FieldGenerator> clone(const list<std::shared_ptr<FieldGenerator> > args) {
     if(args.size() != 1)
       throw BoutException("round function must have one input");
-    return std::shared_ptr<FieldGenerator>( new  FieldRound(args.front()));
+    return std::make_shared<FieldRound>(args.front());
   }
   BoutReal generate(double x, double y, double z, double t) {
     BoutReal val = gen->generate(x,y,z,t);

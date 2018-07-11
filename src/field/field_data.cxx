@@ -71,7 +71,7 @@ void FieldData::copyBoundary(const FieldData &f) {
 //JMAD
 void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
   /// NOTE: This will allocate memory, which may never be free'd
-  addBndryGenerator( std::shared_ptr<FieldGenerator>(new FieldFunction(userfunc)), location );
+  addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
 

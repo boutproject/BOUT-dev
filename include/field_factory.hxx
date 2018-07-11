@@ -117,7 +117,7 @@ public:
     static std::shared_ptr<FieldGenerator> instance = nullptr;
 
     if(!instance)
-      instance = std::shared_ptr<FieldGenerator>(new FieldNull());
+      instance = std::make_shared<FieldNull>();
     return instance;
   }
 private:
