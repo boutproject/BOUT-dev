@@ -8,7 +8,14 @@
 ///
 /// Provides methods for offsetting by fixed amounts in x, y, z, as
 /// well as a generic method for offsetting by any amount in multiple
-/// directions
+/// directions.
+///
+/// Assumes that the offset is less than the grid size in that
+/// direction. This assumption is checked for at CHECK=2. This
+/// assumption implies that a `FieldPerp` cannot be offset in y, and a
+/// `Field2D` cannot be offset in z. A stronger, more expensive check
+/// that the resulting offset index doesn't go out of bounds can be
+/// enabled at CHECK=4.
 ///
 /// Also provides helper methods for converting Ind2D/Ind3D/IndPerp to x, y, z
 /// indices
