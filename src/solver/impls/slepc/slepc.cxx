@@ -2,7 +2,7 @@
  * Interface to SLEPc solver
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2014 B.D.Dudson, D. Dickinson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -24,10 +24,9 @@
  **************************************************************************/
 
 
-#ifdef BOUT_HAS_SLEPC_3_4
-//Hacked together by <DD>
+#ifdef BOUT_HAS_SLEPC
 
-#include "slepc-3.4.hxx"
+#include "slepc.hxx"
 
 #include <globals.hxx>
 
@@ -212,7 +211,7 @@ SlepcSolver::SlepcSolver(Options *options){
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
   }else{
-    advanceSolver=NULL;
+    advanceSolver = nullptr;
   }
 }
 
@@ -228,10 +227,10 @@ SlepcSolver::~SlepcSolver(){
 
 int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
-  TRACE("Initialising SLEPc-3.4 solver");
+  TRACE("Initialising SLEPc solver");
 
   //Report initialisation
-  output.write("Initialising SLEPc-3.4 solver\n");
+  output.write("Initialising SLEPc solver\n");
   if (selfSolve) {
     Solver::init(NOUT,TIMESTEP);
 
@@ -415,7 +414,7 @@ void SlepcSolver::createEPS(){
 
   //Now construct EPS
   EPSCreate(comm,&eps);
-  EPSSetOperators(eps,shellMat,NULL);
+  EPSSetOperators(eps, shellMat, nullptr);
   EPSSetProblemType(eps,EPS_NHEP);//Non-hermitian
 
   //Probably want to read options and set EPS properties
@@ -436,7 +435,7 @@ void SlepcSolver::createEPS(){
   EPSSetFromOptions(eps);
 
   //Register a monitor
-  EPSMonitorSet(eps,&monitorWrapper,this,NULL);
+  EPSMonitorSet(eps, &monitorWrapper, this, nullptr);
 
   //Initialize shell spectral transformation if selected by user
   //Note currently the only way to select this is with the
@@ -470,7 +469,11 @@ void SlepcSolver::createEPS(){
     Vec initVec, rightVec;
     bool ddtModeBackup=ddtMode;
 
+#if PETSC_VERSION_LT(3, 6, 0)    
     MatGetVecs(shellMat,&rightVec,&initVec);
+#else
+    MatCreateVecs(shellMat,&rightVec,&initVec);
+#endif    
     ddtMode=false; //Temporarily disable as initial ddt values not set
     fieldsToVec(initVec);
     ddtMode=ddtModeBackup; //Restore state
@@ -705,7 +708,11 @@ void SlepcSolver::analyseResults(){
 
     //Declare and create vectors to store eigenfunctions
     Vec vecReal, vecImag;
+#if PETSC_VERSION_LT(3, 6, 0)        
     MatGetVecs(shellMat,&vecReal,&vecImag);
+#else
+    MatCreateVecs(shellMat,&vecReal,&vecImag);    
+#endif    
 
     //This allows us to set the simtime in bout++.cxx directly
     //rather than calling the monitors which are noisy |--> Not very nice way to do this
@@ -763,4 +770,4 @@ void SlepcSolver::analyseResults(){
   }
 }
 
-#endif // BOUT_HAS_SLEPC_3_4
+#endif // BOUT_HAS_SLEPC

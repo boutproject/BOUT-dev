@@ -44,7 +44,7 @@ class LaplaceCyclic;
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = NULL);
+  LaplaceCyclic(Options *opt = nullptr);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;

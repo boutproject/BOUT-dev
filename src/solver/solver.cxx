@@ -43,14 +43,14 @@
 
 // Static member variables
 
-int* Solver::pargc = 0;
-char*** Solver::pargv = 0;
+int *Solver::pargc = nullptr;
+char ***Solver::pargv = nullptr;
 
 /**************************************************************************
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
+Solver::Solver(Options *opts) : options(opts), model(nullptr), prefunc(nullptr) {
   if(options == nullptr)
     options = Options::getRoot()->getSection("solver");
 
@@ -92,18 +92,6 @@ Solver::~Solver(){
   }
 
   for(const auto& f : f2d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-
-  for(const auto& f : v3d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-
-  for(const auto& f : v2d) {
     if(f.MMS_err) {
       delete f.MMS_err;
     }
@@ -276,6 +264,8 @@ void Solver::add(Vector2D &v, const char* name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
+  // MMS errors set on individual components
+  d.MMS_err = nullptr;
 
   v2d.push_back(d);
 
@@ -318,6 +308,8 @@ void Solver::add(Vector3D &v, const char* name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = string(name);
+  // MMS errors set on individual components
+  d.MMS_err = nullptr;
   
   v3d.push_back(d);
 
@@ -537,8 +529,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   /// Run the solver
   output_info.write("Running simulation\n\n");
-  
-  time_t start_time = time((time_t*) NULL);
+
+  time_t start_time = time((time_t *)nullptr);
   output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
   
   Timer timer("run"); // Start timer
@@ -567,7 +559,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   try {
     status = run();
 
-    time_t end_time = time((time_t*) NULL);
+    time_t end_time = time((time_t *)nullptr);
     output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
     output_progress.write("Run time : ");
 
@@ -1344,8 +1336,8 @@ bool Solver::varAdded(const string &name) {
 bool Solver::have_user_precon() {
   if(model)
     return model->hasPrecon();
-  
-  return prefunc != 0;
+
+  return prefunc != nullptr;
 }
 
 int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {

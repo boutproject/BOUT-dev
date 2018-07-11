@@ -1,14 +1,12 @@
 from . import fieldtracer
 
 import numpy as np
-from scipy.integrate import odeint
 
 import warnings
 
 try:
     import matplotlib.animation as anim
     import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     plotting_available = True
 except ImportError:
     warnings.warn("Couldn't import matplotlib, plotting not available.")

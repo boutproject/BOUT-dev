@@ -319,7 +319,7 @@ void Field2D::applyTDerivBoundary() {
   TRACE("Field2D::applyTDerivBoundary()");
 
   ASSERT1(isAllocated());
-  ASSERT1(deriv != NULL);
+  ASSERT1(deriv != nullptr);
   ASSERT1(deriv->isAllocated());
 
   for(const auto& bndry : bndry_op)

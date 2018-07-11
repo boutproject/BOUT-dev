@@ -71,10 +71,10 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
     }
   }else {
     // Overlap multiple inversions
-    
-    static PDD_data *data = NULL;
-    
-    if(data == NULL) {
+
+    static PDD_data *data = nullptr;
+
+    if (data == nullptr) {
       data = new PDD_data[ye - ys + 1];
       data -= ys; // Re-number indices to start at jstart
     }

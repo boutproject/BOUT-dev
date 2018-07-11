@@ -1,21 +1,19 @@
 """Collection of functions which can be used to make a BOUT++ run"""
 
+from builtins import str
 import os
 import re
 import subprocess
-from os import getenv
+
 try:
     # Python 2.4 onwards
     from subprocess import call, Popen, STDOUT, PIPE
     lib = "call"
-except:
+except ImportError:
+    # FIXME: drop support for python < 2.4!
     # Use os.system (depreciated)
     from os import popen4, system
     lib = "system"
-try:
-  from builtins import str
-except:
-  pass
 
 
 def getmpirun(default="mpirun -np"):
@@ -28,7 +26,7 @@ def getmpirun(default="mpirun -np"):
       An mpirun command to return if ``MPIRUN`` is not set in the environment
 
   """
-  MPIRUN = getenv("MPIRUN")
+  MPIRUN = os.getenv("MPIRUN")
 
   if MPIRUN is None:
     MPIRUN = default

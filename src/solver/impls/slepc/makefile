@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= slepc-3.4.cxx
+SOURCEC		= slepc.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 

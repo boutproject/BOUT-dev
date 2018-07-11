@@ -44,6 +44,8 @@ class RKGenericSolver : public Solver {
   RKGenericSolver(Options *options);
   ~RKGenericSolver();
   
+  void resetInternalFields() override;
+  
   //Utilities only used by the CTU bracket approach
   void setMaxTimestep(BoutReal dt) override;
   BoutReal getCurrentTimestep() override {return timestep; }

@@ -53,12 +53,13 @@ using std::setw;
 class RKScheme {
  public:
 
-  RKScheme(Options *opts = NULL); //Options picks the scheme, pretty much everything else is automated
+  //Options picks the scheme, pretty much everything else is automated
+  RKScheme(Options *opts = nullptr);
   virtual ~RKScheme();
 
   //Finish generic initialisation
-  void init(int nlocalIn,int neqIn,bool adaptiveIn,BoutReal atolIn,
-	    const BoutReal rtolIn, Options *options=NULL);
+  void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
+            const BoutReal rtolIn, Options *options = nullptr);
 
   //Get the time at given stage
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);

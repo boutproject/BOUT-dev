@@ -59,9 +59,9 @@ extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
 PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   has_constraints = false; // No constraints
-  J = 0;
-  Jmf = 0;
-  matfdcoloring = 0;
+  J = nullptr;
+  Jmf = nullptr;
+  matfdcoloring = nullptr;
   interpolate = PETSC_TRUE;
   initialised = false;
   bout_snes_time = .0;
@@ -80,7 +80,14 @@ PetscSolver::~PetscSolver() {
     if (J) {MatDestroy(&J);}
     if (Jmf) {MatDestroy(&Jmf);}
     if (matfdcoloring) {MatFDColoringDestroy(&matfdcoloring);}
-    TSDestroy(&ts);
+
+    PetscBool petsc_is_finalised;
+    PetscFinalized(&petsc_is_finalised);
+
+    if (!petsc_is_finalised) {
+      // PetscFinalize may already have destroyed this object
+      TSDestroy(&ts);
+    }
 
     initialised = false;
   }
@@ -485,7 +492,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  FILE *fp = NULL;
+  FILE *fp = nullptr;
 
   // Set when the next call to monitor is desired
   next_output = simtime + tstep;
@@ -503,8 +510,10 @@ PetscErrorCode PetscSolver::run() {
   if(this->output_flag) {
     ierr = PetscFOpen(PETSC_COMM_WORLD, this->output_name, "w", &fp);CHKERRQ(ierr);
     ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "SNES Iteration, KSP Iterations, Wall Time, Norm\n");CHKERRQ(ierr);
-    for(int i =0;i < snes_list.size();i++) {
-      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", snes_list[i].it, snes_list[i].linear_its, snes_list[i].time, snes_list[i].norm);CHKERRQ(ierr);
+    for (const auto &info : snes_list) {
+      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", info.it,
+                          info.linear_its, info.time, info.norm);
+      CHKERRQ(ierr);
     }
     ierr = PetscFClose(PETSC_COMM_WORLD, fp);CHKERRQ(ierr);
   }
@@ -519,7 +528,6 @@ PetscErrorCode PetscSolver::run() {
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   TRACE("Running RHS: PetscSolver::rhs(%e)", t);
 
-  int flag;
   const BoutReal *udata_array;
   BoutReal *dudata_array;
 
@@ -531,7 +539,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   VecRestoreArrayRead(udata, &udata_array);
 
   // Call RHS function
-  flag = run_rhs(t);
+  run_rhs(t);
 
   // Save derivatives to PETSc
   VecGetArray(dudata, &dudata_array);

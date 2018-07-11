@@ -1,12 +1,6 @@
-try:
-    from builtins import object
-except:
-    pass
-
-# from math import pi, atan, cos, sin
+from builtins import object
 
 import numpy as np
-# from . import grid
 
 try:
     from . import boundary
@@ -317,7 +311,7 @@ class CurvedSlab(MagneticField):
         return np.full(x.shape, self.Rmaj)
 
 try:
-    from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
+    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify
 
     class StraightStellarator(MagneticField):
         """A "rotating ellipse" stellarator without curvature
@@ -566,7 +560,6 @@ class VMEC(MagneticField):
     def __init__(self, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
         # Only needed here
         from scipy.interpolate import griddata, RegularGridInterpolator
-        from scipy import ndimage
 
         self.read_vmec_file(vmec_file, ntheta, nzeta)
 

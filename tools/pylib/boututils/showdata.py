@@ -9,12 +9,7 @@ Additional functionality by George Breyiannis 26/12/2014
 """
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-    from builtins import chr
-    from builtins import range
-except:
-    pass
+from builtins import str, chr, range
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -38,7 +33,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
+def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_array=None,
              movie=0, fps=28, dpi=200, intv=1, Ncolors=25, x=[], y=[],
              global_colors=False, symmetric_colors=False, hold_aspect=False,
              cmap=None, clear_between_frames=None, return_animation=False, window_title=""):
@@ -98,6 +93,9 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
         Which axes to plot as a polar plot
     tslice : list of int
         Use these time values from a dump file (see above)
+    t_array : array
+        Pass in t_array using this argument to use the simulation time in plot
+        titles. Otherwise, just use the t-index.
     movie : int
         If 1, save the animation to file
     fps : int
@@ -361,17 +359,6 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
                 #if (Ny[i][j] != Ny[i][0]):
                 #    raise ValueError('Dimensions must be the same for all variables.')
 
-    # Collect time data from file
-    if (tslice == 0):           # Only wish to collect time data if it matches
-        try:
-            t = collect('t_array')
-            if t is None:
-                raise ValueError("t_array is None")
-            if len(t) != Nt[0][0]:
-                raise ValueError("t_array is wrong size")
-        except:
-            t = linspace(0,Nt[0][0], Nt[0][0])
-
     # Obtain number of frames
     Nframes = int(Nt[0][0]/intv)
 
@@ -439,8 +426,9 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
 
         if not (global_colors):
             if isclose(fmin[i], fmax[i]):
-                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
-                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
+                # add/subtract very small constant in case fmin=fmax=0
+                thiscontourmin = fmin[i] - 3.e-15*abs(fmin[i]) - 1.e-36
+                thiscontourmax = fmax[i] + 3.e-15*abs(fmax[i]) + 1.e-36
                 alwayswarn("Contour levels too close, adding padding to colorbar range")
                 clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
             else:
@@ -449,16 +437,11 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
     if(global_colors):
         fmaxglobal = max(fmax)
         fminglobal = min(fmin)
+        if isclose(fminglobal, fmaxglobal):
+            fminglobal = fminglobal - 3.e-15*abs(fminglobal) - 1.e-36
+            fmaxglobal = fmaxglobal + 3.e-15*abs(fmaxglobal) + 1.e-36
         for i in range(0,Nvar):
-            fmax[i]  = fmaxglobal
-            fmin[i]  = fminglobal
-            if isclose(fmin[i], fmax[i]):
-                thiscontourmin = fmin[i]-3.e-15*abs(fmin[i])
-                thiscontourmax = fmax[i]+3.e-15*abs(fmax[i])
-                alwayswarn("Contour levels too close, adding padding to colorbar range")
-                clevels.append(linspace(thiscontourmin, thiscontourmax, Ncolors))
-            else:
-                clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+            clevels.append(linspace(fminglobal, fmaxglobal, Ncolors))
 
     # Create figures for animation plotting
     if (Nvar < 2):
@@ -665,8 +648,8 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0,
                 ax[j].set_rmax(Nx[j][0]-1)
                 ax[j].set_title(titles[j])
 
-        if (tslice == 0):
-            title.set_text('t = %1.2e' % t[index])
+        if t_array is not None:
+            title.set_text('t = %1.2e' % t_array[index])
         else:
             title.set_text('t = %i' % index)
         return plots

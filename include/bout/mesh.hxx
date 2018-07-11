@@ -96,7 +96,7 @@ class Mesh {
   ///
   /// @param[in] source  The data source to use for loading variables
   /// @param[in] opt     The option section. By default this is "mesh"
-  static Mesh* create(GridDataSource *source, Options *opt = NULL);
+  static Mesh *create(GridDataSource *source, Options *opt = nullptr);
 
   /// Create a Mesh object
   ///
@@ -106,8 +106,8 @@ class Mesh {
   ///  3) Use options as data source
   ///
   /// @param[in] opt  Input options. Default is "mesh" section
-  static Mesh* create(Options *opt = NULL);
-  
+  static Mesh *create(Options *opt = nullptr);
+
   /// Loads the mesh values
   /// 
   /// Currently need to create and load mesh in separate calls
@@ -651,22 +651,22 @@ class Mesh {
   Region<Ind3D> &getRegion3D(const std::string &region_name);
   Region<Ind2D> &getRegion2D(const std::string &region_name);
   Region<IndPerp> &getRegionPerp(const std::string &region_name);
-  
+
   /// Add a new region to the region_map for the data iterator
   ///
   /// Outputs an error message if region_name already exists
-  void addRegion(const std::string &region_name, Region<> region){
+  void addRegion(const std::string &region_name, const Region<> &region) {
     return addRegion3D(region_name, region);
   }
-  void addRegion(const std::string &region_name, Region<Ind2D> region){
+  void addRegion(const std::string &region_name, const Region<Ind2D> &region) {
     return addRegion2D(region_name, region);
   }
-  void addRegion(const std::string &region_name, Region<IndPerp> region){
+  void addRegion(const std::string &region_name, const Region<IndPerp> &region) {
     return addRegionPerp(region_name, region);
   }
-  void addRegion3D(const std::string &region_name, Region<Ind3D> region);
-  void addRegion2D(const std::string &region_name, Region<Ind2D> region);
-  void addRegionPerp(const std::string &region_name, Region<IndPerp> region);
+  void addRegion3D(const std::string &region_name, const Region<Ind3D> &region);
+  void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
+  void addRegionPerp(const std::string &region_name, const Region<IndPerp> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
   Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){

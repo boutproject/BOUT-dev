@@ -18,9 +18,7 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
 
-Mesh* Mesh::create(Options *opt) {
-  return create(NULL, opt);
-}
+Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
   if(s == nullptr)
@@ -342,36 +340,36 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    return found->second;
 }
 
-Region<IndPerp> & Mesh::getRegionPerp(const std::string &region_name){
-   auto found = regionMapPerp.find(region_name);
-   if (found == end(regionMapPerp)) {
-     throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
-   }
-   return found->second;
-}
-  
-void Mesh::addRegion3D(const std::string &region_name, Region<> region){
-   if (regionMap3D.count(region_name)) {
-     throw BoutException("Trying to add an already existing region %s to regionMap3D");
-   }
-   regionMap3D[region_name] = region;
+Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) {
+  auto found = regionMapPerp.find(region_name);
+  if (found == end(regionMapPerp)) {
+    throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
+  }
+  return found->second;
 }
 
-void Mesh::addRegion2D(const std::string &region_name, Region<Ind2D> region){
+void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
+  if (regionMap3D.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMap3D");
+  }
+  regionMap3D[region_name] = region;
+}
+
+void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
   regionMap2D[region_name] = region;
 }
 
-void Mesh::addRegionPerp(const std::string &region_name, Region<IndPerp> region){
+void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
   if (regionMapPerp.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMapPerp");
   }
   regionMapPerp[region_name] = region;
 }
- 
-void Mesh::createDefaultRegions(){
+
+void Mesh::createDefaultRegions() {
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));

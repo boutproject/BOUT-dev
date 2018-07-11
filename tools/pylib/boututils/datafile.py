@@ -28,13 +28,7 @@ TODO
 """
 
 from __future__ import print_function
-try:
-    from builtins import map
-    from builtins import zip
-    from builtins import str
-    from builtins import object
-except:
-    pass
+from builtins import map, zip, str, object
 
 import numpy as np
 import time
@@ -75,7 +69,7 @@ except ImportError:
     has_h5py = False
 
 
-class DataFile:
+class DataFile(object):
     """File I/O class
 
     A wrapper around various NetCDF libraries and h5py, used by BOUT++

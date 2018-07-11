@@ -34,9 +34,9 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-        t) ### Set target to build
-            MAIN_TARGET="$OPTARG"
-            ;;
+    t) ### Set target to build
+        MAIN_TARGET="$OPTARG"
+        ;;
 	*) ### Show usage message
 	    usage
 	    ;;
@@ -70,7 +70,20 @@ then
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
-time make $MAIN_TARGET|| exit
+time make $MAIN_TARGET
+make_exit=$?
+if [[ $make_exit -gt 0 ]]; then
+    make clean > /dev/null
+    echo -e $RED_FG
+    echo "**************************************************"
+    echo "Printing make commands:"
+    echo "**************************************************"
+    echo -e $RESET_FG
+    echo
+    make -n $MAIN_TARGET
+    exit $make_exit
+fi
+
 if [[ ${TESTS} == 1 ]]
 then
     time make build-check || exit

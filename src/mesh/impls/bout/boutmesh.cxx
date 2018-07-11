@@ -1021,7 +1021,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 int BoutMesh::wait(comm_handle handle) {
   TRACE("BoutMesh::wait(comm_handle)");
 
-  if (handle == NULL)
+  if (handle == nullptr)
     return 1;
 
   CommHandle *ch = static_cast<CommHandle *>(handle);
@@ -1223,7 +1223,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1240,7 +1240,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1358,7 +1358,7 @@ int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1378,7 +1378,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1398,7 +1398,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1418,7 +1418,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -2238,20 +2238,20 @@ void BoutMesh::addBoundaryRegions() {
   // Join boundary regions together
   
   Region<Ind3D> bndry3d; // Empty
-  for(auto region_name : all_boundaries) {
+  for (const auto &region_name : all_boundaries) {
     bndry3d += getRegion3D(region_name);
   }
   bndry3d.unique(); // Ensure that the points are unique
-  
+
   // Create a region which is all boundaries
   addRegion3D("RGN_BNDRY", bndry3d);
 
   Region<Ind2D> bndry2d; // Empty
-  for(auto region_name : all_boundaries) {
+  for (const auto &region_name : all_boundaries) {
     bndry2d += getRegion2D(region_name);
   }
   bndry2d.unique(); // Ensure that the points are unique
-  
+
   // Create a region which is all boundaries
   addRegion2D("RGN_BNDRY", bndry2d);
 }

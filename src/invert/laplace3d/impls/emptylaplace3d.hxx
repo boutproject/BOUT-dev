@@ -7,7 +7,9 @@
 
 class EmptyLaplace3D : public Laplace3D {
 public:
-  EmptyLaplace3D(Options *opt = NULL) {throw BoutException("Laplace3D solver not available");}
+  EmptyLaplace3D(Options *opt = nullptr) {
+    throw BoutException("Laplace3D solver not available");
+  }
   void setCoefA(const Field2D &f) {}
   void setCoefB(const Field2D &f) {}
   void setCoefC(const Field2D &f) {}

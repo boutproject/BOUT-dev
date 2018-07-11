@@ -69,10 +69,10 @@ void Field::error(const char *s, ...) const {
   int buf_len=512;
   char * err_buffer=new char[buf_len];
 
-  if(s == (const char*) NULL) {
+  if (s == nullptr) {
     output_error.write("Unspecified error in field\n");
-  }else {
-  
+  } else {
+
     bout_vsnprintf(err_buffer,buf_len, s);
 
 #ifdef TRACK
