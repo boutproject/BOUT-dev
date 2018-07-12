@@ -16,6 +16,8 @@ engines:
       - tools/pylib/**
   cppcheck:
     enabled: true
+    exclude_paths:
+      - externalpackages/**
   pylint:
     enable: true
     include_paths:
