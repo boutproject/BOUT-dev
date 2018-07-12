@@ -110,7 +110,21 @@ matrix:
       - SCRIPT_FLAGS='-cu'
       - PIP_PACKAGES='gcovr'
       - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
-      
+
+  -jobs:
+    include:
+      - stage: finaliseCoverage
+        addons:
+          apt:
+            packages:
+              - *standard_packages
+              - jq
+        env:
+          - SCRIPT_FLAGS='-cu'
+          - PIP_PACKAGES='gcovr'
+          - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+        script: wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar ; java -jar ~/codacy-coverage-reporter-assembly-latest.jar final
+
 before_install:
   ##################################################
   # Job specific setup
@@ -132,18 +146,3 @@ notifications:
   # Send a notification to the BOUT++ Slack team
   slack:
     secure: keU2ApI8C1M5q1700iNWmhzAQN5iJCciuP6V1lAjVBE8C2C/8mnYK3Pe83wok97buvvfVs5Qjq1+MSYSTCEw+dEye7p+1aBH7qg8C2Jyw+ugFe+6vmijag3v8DqkkzUGyF4X7+ei7YfV4G7u7YAlq/BqzD9e0SA7aASZJ3CF42f4lHKwTe0mnJfqOb8MwCBbSytzdj/iQH/O/pch03CjVObv2A88gaC5YMwYpeTAMMNGZThHsJHcVFCAz4MbvOApKSnykbRbE4AooF6lhUnAg/V40+ews5Q0NhYSLoOcQohLljLTMKAL2oRS34WdunnAEdIighLztFBNI/CKO8uaFBsWZcT2E4qRrajYTnuhCop5fUtk2lsrwUV36WFKLswa74KaSjXgpjvrV1MIidkRztPhYwcJdk9yvEroZ67C4GPBLZ6jZF/nUU9l2toPNkzGkxhDB9r9MIU2l0PJ2d3wRCcZ59jZ/Gr1Bminsyr20AU1JO5tsiO+6UI+7hxXQXtz/1knlmiZ/pXj/3Sp8+KQ/Z0MUeayC0CROFoZt/HekA6z34YcmeN/nMcXCnO7HTZ+bw7LasaIsrHbQ3PYPn8Be2f1hj4sPBnPpruN5FFYYc29c/ek8FET9LLD8a3v1V8P2udy/y5RnDqFskx+OfqKL8tSJk/zSbK/JPCTnx1rfsU=
-
-
-jobs:
-  include:
-    - stage: finaliseCoverage
-      addons:
-        apt:
-          packages:
-            - *standard_packages
-            - jq
-      env:
-        - SCRIPT_FLAGS='-cu'
-        - PIP_PACKAGES='gcovr'
-        - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
-      script: wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar ; java -jar ~/codacy-coverage-reporter-assembly-latest.jar final --language CPP -f
