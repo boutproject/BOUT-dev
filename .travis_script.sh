@@ -106,9 +106,15 @@ fi
 
 if [[ ${COVERAGE} == 1 ]]
 then
-   # Ensure that there is a corresponding .gcda file for every .gcno file
-   # This is to try and make the coverage report slightly more accurate
-   # It still won't include, e.g. any solvers we don't build with though
-   find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-   bash <(curl -s https://codecov.io/bash)
+    # Ensure that there is a corresponding .gcda file for every .gcno file
+    # This is to try and make the coverage report slightly more accurate
+    # It still won't include, e.g. any solvers we don't build with though
+    find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+
+    #Upload for codecov
+    bash <(curl -s https://codecov.io/bash)
+
+    #For codacy
+    bash ./.codacy_coverage.sh
+    
 fi
