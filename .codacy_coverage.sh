@@ -8,4 +8,4 @@ wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/
 gcovr --root . -g -k -j 2 --xml -o gcovr_report.xml
 
 #Do the upload
-java -jar ~/codacy-coverage-reporter-assembly-latest.jar report --language CPP --forceLanguage -r gcovr_report.xml --partial
+java -jar ~/codacy-coverage-reporter-assembly-latest.jar report --language CPP -r gcovr_report.xml --partial
