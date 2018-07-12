@@ -4,7 +4,7 @@ wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.o
 #Analyse the existing gcov files and output in compatible xml format
 #The -g option says to use the existing gcov files, the -k options says to not delete the gcov files
 #The -j option is like make's -j
-gcovr --root . -g -k -j 2 --xml -o gcovr_report.xml
+gcovr --root . -g -k -j 2 --xml -o gcovr_report.xml --exclude-directories "tests/.*" --verbose
 
 #Do the upload
 java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -f --language CPP -r gcovr_report.xml
