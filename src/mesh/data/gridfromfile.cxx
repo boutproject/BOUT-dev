@@ -435,7 +435,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
       file->setGlobalOrigin(jx + m->OffsetX, yind);
       if (!file->read(std::begin(zdata), name, 1, 1, size[2])) {
-        return 1;
+        return true;
       }
 
       /// Load into dcomplex array
