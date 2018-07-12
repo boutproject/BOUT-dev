@@ -124,13 +124,13 @@ const string lowercasequote(const string &str) {
   string strlow(str);
 
   bool quote = false, dquote = false;
-  for(string::size_type i=0;i<strlow.length(); i++) {
-    if(strlow[i] == '\'') {
+  for (char &i : strlow) {
+    if (i == '\'') {
       quote ^= true;
-    }else if(strlow[i] == '"') {
+    } else if (i == '"') {
       dquote ^= true;
-    }else if( (!quote) && (!dquote) ){
-      strlow[i] = static_cast<char>(tolower(strlow[i]));
+    } else if ((!quote) && (!dquote)) {
+      i = static_cast<char>(tolower(i));
     }
   }
   return strlow;

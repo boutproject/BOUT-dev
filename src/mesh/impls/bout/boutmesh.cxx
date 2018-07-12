@@ -1849,9 +1849,9 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
-    CommHandle *ch = new CommHandle;
-    for (int i = 0; i < 6; i++)
-      ch->request[i] = MPI_REQUEST_NULL;
+    auto *ch = new CommHandle;
+    for (auto &i : ch->request)
+      i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
       ch->umsg_sendbuff = Array<BoutReal>(ylen);
