@@ -14,6 +14,10 @@
 #include <output.hxx>
 #include <string.h>
 
+#ifdef __cpp_lib_make_unique
+using std::make_unique;
+#endif
+
 FormatFactory *FormatFactory::instance = nullptr;
 
 FormatFactory* FormatFactory::getInstance() {
@@ -32,20 +36,20 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 
     if (parallel) {
 #ifdef PNCDF
-      return std::unique_ptr<DataFormat>(new PncFormat);
+      return make_unique<PncFormat>();
 #else
     }
 
 #ifdef NCDF4
-    return std::unique_ptr<DataFormat>(new Ncxx4);
+    return make_unique<Ncxx4>();
 #else
 
 #ifdef NCDF
-    return std::unique_ptr<DataFormat>(new NcFormat);
+    return make_unique<NcFormat>();
 #else
 
 #ifdef HDF5
-    return std::unique_ptr<DataFormat>(new H5Format);
+    return make_unique<H5Format>();
 #else
 
 #error No file format available; aborting.
@@ -75,7 +79,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
     const char *pncdf_match[] = {"cdl", "nc", "ncdf"};
     if(matchString(s, 3, pncdf_match) != -1) {
       output.write("\tUsing Parallel NetCDF format for file '%s'\n", filename);
-      return std::unique_ptr<DataFormat>(new PncFormat);
+      return make_unique<PncFormat>();
     }
   }
 #endif
@@ -84,7 +88,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
     output.write("\tUsing NetCDF4 format for file '%s'\n", filename);
-    return std::unique_ptr<DataFormat>(new Ncxx4);
+    return make_unique<Ncxx4>();
   }
 #endif
 
@@ -92,7 +96,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
     output.write("\tUsing NetCDF format for file '%s'\n", filename);
-    return std::unique_ptr<DataFormat>(new NcFormat);
+    return make_unique<NcFormat>();
   }
 #endif
 
@@ -101,9 +105,9 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   if(matchString(s, 3, hdf5_match) != -1) {
     output.write("\tUsing HDF5 format for file '%s'\n", filename);
 #ifdef PHDF5
-    return std::unique_ptr<DataFormat>(new H5Format(parallel));
+    return make_unique<H5Format>(parallel);
 #else
-    return std::unique_ptr<DataFormat>(new H5Format());
+    return make_unique<H5Format>();
 #endif
   }
 #endif

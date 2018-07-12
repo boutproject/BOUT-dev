@@ -125,8 +125,8 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
       int colors = rProcI/nz;
       int keys = rProcI/nz;
       MPI_Comm_split(commMG,colors,keys,&comm2D);
-      rMG = std::unique_ptr<Multigrid2DPf1D>(new Multigrid2DPf1D(
-          kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz, commMG, pcheck));
+      rMG = make_unique<Multigrid2DPf1D>(kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz,
+                                         commMG, pcheck);
     } 
     else {
       int nn = gnx[0];
@@ -144,8 +144,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
         output <<"To Ser "<<kk<<" xNP="<<xNP<<"("<<zNP<<")"<<endl;
         output <<kflag<<" total dim "<<gnx[0]<<"("<< lnz[0]<<")"<<endl;
       }
-      sMG = std::unique_ptr<MultigridSerial>(
-          new MultigridSerial(kk, gnx[0], lnz[0], commMG, pcheck));
+      sMG = make_unique<MultigridSerial>(kk, gnx[0], lnz[0], commMG, pcheck);
     }             
   }
   else kflag = 0;
@@ -552,8 +551,7 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
       output <<"total dim"<<gnx[0]<<"("<< gnz[0]<<")"<<endl;
     }
     kflag = 2;
-    sMG = std::unique_ptr<MultigridSerial>(
-        new MultigridSerial(kk, gnx[0], gnz[0], commMG, pcheck));
+    sMG = make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
   }
   else kflag = 0;
 }
