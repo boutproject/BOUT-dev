@@ -72,6 +72,7 @@ public:
  */
 class GridFile : public GridDataSource {
 public:
+  GridFile() = delete;
   GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename);
   ~GridFile() override;
 
@@ -89,8 +90,6 @@ public:
            GridDataSource::Direction dir = GridDataSource::X) override;
 
 private:
-  GridFile();
-
   std::unique_ptr<DataFormat> file;
   string filename;
 

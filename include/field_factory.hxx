@@ -91,13 +91,12 @@ private:
 
 class FieldFunction : public FieldGenerator {
 public:
+  FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
   double generate(double x, double y, double z, double t) override {
     return func(t, x, y, z);
   }
 private:
-  FieldFunction();
-  
   FuncPtr func;
 };
 

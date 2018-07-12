@@ -19,6 +19,7 @@ class GlobalField2D;
  */ 
 class GlobalField {
 public:
+  GlobalField() = delete;
   virtual ~GlobalField();
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
   bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
@@ -63,9 +64,6 @@ protected:
   void proc_origin(int proc, int *x, int *y, int *z = nullptr) const;
   /// Return the array size of processor proc
   void proc_size(int proc, int *lx, int *ly, int *lz = nullptr) const;
-
-private:
-  GlobalField();
 };
 
 /*!
@@ -114,6 +112,8 @@ private:
  */ 
 class GlobalField2D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField2D() = delete;
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
@@ -145,8 +145,7 @@ public:
 protected:
   
 private:
-  GlobalField2D(); ///< Private so can't be constructed without args
-  
+
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data
   BoutReal** buffer;
@@ -208,6 +207,9 @@ private:
  */
 class GlobalField3D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField3D() = delete;
+
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
@@ -235,7 +237,6 @@ public:
 protected:
   
 private:
-  GlobalField3D(); ///< Private so can't be constructed without args
 
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data
