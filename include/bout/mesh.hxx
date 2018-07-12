@@ -663,14 +663,10 @@ class Mesh {
   void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){
-    return Ind3D(ind2D.ind * LocalNz + jz);
-  }
+  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0) { return {ind2D.ind * LocalNz + jz}; }
 
   /// Converts an Ind3D to an Ind2D using calculation
-  Ind2D ind3Dto2D(const Ind3D &ind3D){
-    return Ind2D(ind3D.ind / LocalNz);
-  }
+  Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz}; }
 
   /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
   int map3Dto2D(const Ind3D &ind3D){
