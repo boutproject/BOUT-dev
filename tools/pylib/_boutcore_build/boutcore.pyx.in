@@ -445,7 +445,25 @@ cdef class Mesh:
     cdef double isNormalised
     cdef FieldFactory factory
     #factory=FieldFactory()
-    def __init__(self, create=True,OptionSection=None):
+    def __init__(self, create=True, section=None, options=None):
+        """
+        Create a Mesh
+
+        Parameter
+        ---------
+        create : bool
+            Create the underling C++ object. Disabled probably only
+            useful for internal usage. Use at own risk.
+        section : string
+            The section of the options which to read. If not given,
+            default to the root section.
+        options : Options
+            The Option which to use. Can be specified together with
+            \p section, in which case the subsection from the current
+            Options object is used. If nether \p section nor \p
+            options is given, the default section (`[mesh]`) fromt the
+            global Options object is used.
+        """
         checkInit()
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
@@ -454,14 +472,15 @@ cdef class Mesh:
         self.isNormalised=-1
         self.factory = FieldFactory()
         if create:
-            if OptionSection:
-                opt = c.Options.getRoot()
-                for sec in OptionSection.split(":"):
+            if options:
+                opt = (<Options?>options).cobj
+            if section:
+                if opt == NULL:
+                    opt = c.Options.getRoot()
+                for sec in section.split(":"):
                     tmp=sec.encode('ascii')
                     opt=opt.getSection(tmp)
-                self.cobj=c.Mesh.create(opt)
-            else:
-                self.cobj = c.Mesh.create(<c.Options *>0)
+            self.cobj = c.Mesh.create(opt)
             if self.cobj == NULL:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
@@ -785,6 +804,7 @@ def init(args=[]):
     free(string_buf)
     if ret:
         BoutFinalise()
+        raise RuntimeError("Failed to initialise the BOUT++ Library (Error code %d)"%ret)
     else:
         _isInit=True
     #atexit.register(finalise)
@@ -1102,6 +1122,7 @@ def setOption(name, value, source="PyInterface", force=False):
 
 cdef class Options:
     cdef c.Options * cobj
+    cdef c.bool isSelfOwned
 
     def __init__(self,name):
         checkInit()
@@ -1110,6 +1131,33 @@ cdef class Options:
         for sec in name.split(":"):
             sec_=sec.encode('ascii')
             self.cobj=self.cobj.getSection(sec_)
+        self.isSelfOwned=False
+
+    @classmethod
+    def fromFile(cls, file):
+        """
+        Create a new Options object by reading a file
+
+        Parameters
+        ----------
+        file : string
+            The path of the file to read
+
+        Returns
+        -------
+        Options
+            The Options object
+        """
+        checkInit()
+        opt = Options("")
+        opt.cobj = new c.Options()
+        opt.isSelfOwned = True
+        cdef char * file_
+        file__=file.encode('ascii')
+        file_=file__
+        c.OptionsReader.getInstance().read(opt.cobj, file_)
+        return opt
+
 
     def set(self,name,value,source="PyInterface", force=False):
         """
