@@ -7,4 +7,4 @@ wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.o
 gcovr --root . -g -k -j 2 --xml -o gcovr_report.xml --exclude-directories "tests/.*" --verbose
 
 #Do the upload
-java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -f --language CPP -r gcovr_report.xml
+java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -f --language CPP -r gcovr_report.xml --partial
