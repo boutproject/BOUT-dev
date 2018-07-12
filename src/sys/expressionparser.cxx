@@ -351,7 +351,7 @@ char ExpressionParser::LexInfo::nextToken() {
       LastChar = static_cast<signed char>(ss.get());
     }
     
-    curval = strtod(NumStr.c_str(), 0);
+    curval = std::stod(NumStr);
     curtok = -1;
     return curtok;
   }
