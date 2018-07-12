@@ -5,6 +5,7 @@ class BoundaryRegion;
 #define __BNDRY_REGION_H__
 
 #include <string>
+#include <utility>
 using std::string;
 
 /// Location of boundary
@@ -19,8 +20,8 @@ enum BndryLoc {BNDRY_XIN=1,
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() {}
-  BoundaryRegionBase(const string &name) : label(name) {}
-  BoundaryRegionBase(const string &name, BndryLoc loc) : label(name), location(loc) {}
+  BoundaryRegionBase(string name) : label(std::move(name)) {}
+  BoundaryRegionBase(string name, BndryLoc loc) : label(std::move(name)), location(loc) {}
   virtual ~BoundaryRegionBase() {}
 
   string label; ///< Label for this boundary region

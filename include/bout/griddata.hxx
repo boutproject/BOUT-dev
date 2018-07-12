@@ -73,7 +73,7 @@ public:
 class GridFile : public GridDataSource {
 public:
   GridFile() = delete;
-  GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename);
+  GridFile(std::unique_ptr<DataFormat> format, string gridfilename);
   ~GridFile() override;
 
   bool hasVar(const string &name) override;

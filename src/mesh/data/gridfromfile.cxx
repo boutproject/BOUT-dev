@@ -16,14 +16,16 @@
 
 #include <unused.hxx>
 
+#include <utility>
+
 /*!
  * Creates a GridFile object
  * 
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(std::unique_ptr<DataFormat> format, const string &gridfilename)
-  : file(std::move(format)), filename(gridfilename) {
+GridFile::GridFile(std::unique_ptr<DataFormat> format, string gridfilename)
+    : file(std::move(format)), filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {

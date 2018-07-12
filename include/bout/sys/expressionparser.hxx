@@ -153,7 +153,8 @@ private:
 /// Binary operators
 class FieldBinary : public FieldGenerator {
 public:
-  FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o) : lhs(l), rhs(r), op(o) {}
+  FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
+      : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   double generate(double x, double y, double z, double t) override;
 
