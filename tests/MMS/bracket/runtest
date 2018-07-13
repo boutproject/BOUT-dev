@@ -40,7 +40,7 @@ def genMesh(nx,ny,nz,**kwargs):
     bc.setOption("mesh:dz","1/(%d)"%(nz), force=True)
     for k,v in kwargs.items():
         bc.setOption(k,v, force=True)
-    return bc.Mesh(OptionSection="mesh")
+    return bc.Mesh(section="mesh")
 errlist=""
 brackets=[["ARAKAWA", 2,{}],
           ["STD", 1 , {"mesh:ddx:upwind":"U1",
