@@ -461,13 +461,13 @@ cdef class Mesh:
             The Option which to use. Can be specified together with
             \p section, in which case the subsection from the current
             Options object is used. If nether \p section nor \p
-            options is given, the default section (`[mesh]`) fromt the
+            options is given, the default section ([mesh]) fromt the
             global Options object is used.
         """
         checkInit()
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
-        cdef c.Options * opt
+        cdef c.Options * opt = NULL
         self.isGlobal=False
         self.isNormalised=-1
         self.factory = FieldFactory()
