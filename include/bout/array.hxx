@@ -25,6 +25,7 @@
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
+#include <algorithm>
 #include <map>
 #include <vector>
 #include <memory>
@@ -102,14 +103,11 @@ public:
   /*!
    * Assignment operator
    * After this both Arrays share the same ArrayData
+   *
+   * Uses copy-and-swap idiom
    */
-  Array& operator=(const Array &other) {
-    // Release the old data
-    release(ptr);
-    
-    // Add reference to new data
-    ptr = other.ptr;
-    
+  Array& operator=(Array other) {
+    swap(*this, other);
     return *this;
   }
 
@@ -117,20 +115,10 @@ public:
    * Move constructor
    */
   Array(Array&& other) {
-    ptr = std::move(other.ptr);
+    swap(*this, other);
   }
 
-  /*! 
-   * Move assignment
-   */
-  Array& operator=(Array &&other) {
-    release(ptr);
-    ptr = std::move(other.ptr);
-    
-    return *this;
-  }
-
-  /*!
+ /*!
    * Holds a static variable which controls whether
    * memory blocks (ArrayData) are put into a store
    * or new/deleted each time. 
@@ -214,8 +202,7 @@ public:
 #ifdef BOUT_ARRAY_WITH_VALARRAY    
     p->operator=((*ptr));
 #else
-    for(iterator it = begin(), ip = p->begin(); it != end(); ++it, ++ip)
-      *ip = *it;
+    std::copy(begin(), end(), p->begin());
 #endif    
 
     //Update the local pointer and release old
@@ -291,13 +278,12 @@ public:
   /*!
    * Exchange contents with another Array of the same type.
    * Sizes of the arrays may differ.
-   *
-   * This is called by the template function swap(Array&, Array&)
    */
-  void swap(Array<T> &other) {
-    std::swap(ptr,other.ptr);
+  friend void swap(Array<T> &first, Array<T> &second) {
+    using std::swap;
+    swap(first.ptr, second.ptr);
   }
-  
+
 private:
 
 #ifndef BOUT_ARRAY_WITH_VALARRAY  
@@ -445,19 +431,10 @@ private:
  * Create a copy of an Array, which does not share data
  */ 
 template<typename T>
-Array<T>& copy(const Array<T> &other) {
+Array<T> copy(const Array<T> &other) {
   Array<T> a(other);
   a.ensureUnique();
   return a;
-}
-
-/*!
- * Exchange contents of two Arrays of the same type.
- * Sizes of the arrays may differ.
- */
-template<typename T>
-void swap(Array<T> &a, Array<T> &b) {
-  a.swap(b);
 }
 
 #endif // __ARRAY_H__

@@ -306,6 +306,23 @@ TEST_F(Field3DTest, ConstYnext) {
   EXPECT_THROW(field2.ynext(99), BoutException);
 }
 
+TEST_F(Field3DTest, GetGlobalMesh) {
+  Field3D field;
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, mesh);
+}
+
+TEST_F(Field3DTest, GetLocalMesh) {
+  FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  Field3D field(&myMesh);
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, &myMesh);
+}
+
 TEST_F(Field3DTest, SetGetLocation) {
   Field3D field;
 
@@ -723,6 +740,9 @@ TEST_F(Field3DTest, IndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
 #endif
 }
 
@@ -749,6 +769,10 @@ TEST_F(Field3DTest, ConstIndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  const Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
+
 #endif
 }
 
@@ -811,6 +835,45 @@ TEST_F(Field3DTest, CheckData) {
   EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
   
 }
+
+#if CHECK > 0
+TEST_F(Field3DTest, BndryValid) {
+  Field3D field = 1.0;
+  field.bndry_xin = true;
+  field.bndry_xout = true;
+  field.bndry_yup = true;
+  field.bndry_ydown = true;
+  EXPECT_EQ(field.bndryValid(), true);
+
+  field.bndry_xin = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xin = true;
+
+  field.bndry_xout = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xout = true;
+
+  field.bndry_yup = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_yup = true;
+
+  field.bndry_ydown = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_ydown = true;
+}
+
+TEST_F(Field3DTest, DoneComms) {
+  Field3D field = 1.0;
+  field.bndry_xin = false;
+  field.bndry_xout = false;
+  field.bndry_yup = false;
+  field.bndry_ydown = false;
+
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.doneComms();
+  EXPECT_EQ(field.bndryValid(), true);
+}
+#endif
 
 TEST_F(Field3DTest, InvalidateGuards) {
   Field3D field;
@@ -1765,6 +1828,25 @@ TEST_F(Field3DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(Field3DTest, Mean) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = 1.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 109.0;
+
+  // mean doesn't include guard cells by default
+  const int npoints_all = nx*ny*nz;
+  const BoutReal mean_value_nobndry = 50.0;
+  const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
+
+  EXPECT_EQ(mean(field, false), mean_value_nobndry);
+  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {

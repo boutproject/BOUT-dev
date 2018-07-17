@@ -3,7 +3,6 @@ from __future__ import division
 from past.utils import old_div
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
-import matplotlib.pyplot as plt
 import itertools  
 
 def unique(a, atol=1e-08):

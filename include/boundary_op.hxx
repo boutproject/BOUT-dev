@@ -45,12 +45,17 @@ public:
 /// An operation on a boundary
 class BoundaryOp : public BoundaryOpBase {
 public:
-  BoundaryOp() {bndry = NULL; apply_to_ddt=false;}
+  BoundaryOp() {
+    bndry = nullptr;
+    apply_to_ddt = false;
+  }
   BoundaryOp(BoundaryRegion *region) {bndry = region; apply_to_ddt=false;}
   virtual ~BoundaryOp() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {return NULL; }
+  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
+    return nullptr;
+  }
 
   /// Apply a boundary condition on ddt(f)
   virtual void apply_ddt(Field2D &f) {
@@ -72,7 +77,7 @@ public:
 
 class BoundaryModifier : public BoundaryOp {
 public:
-  BoundaryModifier() : op(NULL) {}
+  BoundaryModifier() : op(nullptr) {}
   BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
 protected:

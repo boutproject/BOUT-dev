@@ -100,7 +100,8 @@ except:
   # matplotlib backend, so catch everything
   pass
 
-if order > 1.8:
+if 2.2 > order > 1.8:
+  # test for success
   print(" => Test passed")
   exit(0)
 else:

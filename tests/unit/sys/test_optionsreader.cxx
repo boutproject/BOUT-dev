@@ -305,6 +305,38 @@ TEST_F(OptionsReaderTest, ReadBadFile) {
   EXPECT_THROW(reader.read(options, filename), BoutException);
 }
 
+TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
+  const std::string text = R"(
+[section1
+int_key = 34
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename), BoutException);
+};
+
+TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
+  const std::string text = R"(
+[]
+int_key = 34
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename), BoutException);
+};
+
 TEST_F(OptionsReaderTest, WriteFile) {
   char *filename = std::tmpnam(nullptr);
   OptionsReader reader;

@@ -193,12 +193,14 @@ const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
  * These are a simple way to do staggered differencing
  */
 const Field3D Grad_par_CtoL(const Field3D &var);
+const Field2D Grad_par_CtoL(const Field2D &var);
 const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region=RGN_NOBNDRY);
 const Field3D Grad_par_LtoC(const Field3D &var);
-const Field3D Div_par_LtoC(const Field2D &var);
+const Field2D Grad_par_LtoC(const Field2D &var);
 const Field3D Div_par_LtoC(const Field3D &var);
-const Field3D Div_par_CtoL(const Field2D &var);
+const Field2D Div_par_LtoC(const Field2D &var);
 const Field3D Div_par_CtoL(const Field3D &var);
+const Field2D Div_par_CtoL(const Field2D &var);
 
 /*!
  * Parallel divergence of diffusive flux, K*Grad_par
@@ -301,9 +303,17 @@ enum BRACKET_METHOD {
  * @param[in] solver   Pointer to the time integration solver
  * 
  */
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
+const Field2D bracket(const Field2D &f, const Field2D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field2D &f, const Field3D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field3D &f, const Field2D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field3D &f, const Field3D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
 
 #endif /* __DIFOPS_H__ */

@@ -23,7 +23,7 @@
 #                                              model.solve()
 
 import boutcore as bc
-from numpy import sqrt, zeros
+from numpy import sqrt
 from boutcore import bracket, DDZ, Delp2, PhysicsModel
 import sys
 bc.init("-d blob".split(" ") + sys.argv[1:])

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#requires not (travis and mpich)
-
 #
 # Run the test, check the error
 #

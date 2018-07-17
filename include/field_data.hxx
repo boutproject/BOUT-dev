@@ -52,7 +52,7 @@ using std::map;
 #include "parallel_boundary_region.hxx"
 #include "bout/dataiterator.hxx"
 
-class FieldGenerator; // Forward declaration
+#include "bout/sys/expressionparser.hxx"
 
 class FieldVisitor;
 
@@ -88,9 +88,9 @@ public:
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
-  void addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location);
+  void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
   
-  std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
+  FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
   virtual bool isAllocated() {return true;};
   virtual inline const BoutReal& operator[](const Indices &i) const = 0;
@@ -103,7 +103,7 @@ protected:
   // Parallel boundaries
   vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
-  std::map <BndryLoc,std::shared_ptr<FieldGenerator>> bndry_generator;
+  std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };
 
 #include "bout/field_visitor.hxx"

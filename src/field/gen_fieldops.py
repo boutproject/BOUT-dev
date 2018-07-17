@@ -14,10 +14,7 @@ templates themselves.
 
 from __future__ import print_function
 
-try:
-    from builtins import object
-except ImportError:
-    pass
+from builtins import object
 
 import argparse
 from collections import OrderedDict

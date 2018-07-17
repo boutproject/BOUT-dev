@@ -291,6 +291,20 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   return result;
 }
 
+const Field2D Grad_par_CtoL(const Field2D &var) {
+  Field2D result;
+  result.allocate();
+  
+  Coordinates *metric = mesh->coordinates();
+
+  for(auto &i : result.region(RGN_NOBNDRY)) {
+    result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
+  }
+  
+  return result;
+}
+
+
 const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region) {
   ASSERT1(v.getMesh() == f.getMesh());
   ASSERT1(v.getLocation() == CELL_YLOW);
@@ -413,7 +427,9 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
-  ASSERT1(var.getLocation() == CELL_YLOW);
+  if (mesh->StaggerGrids) {
+    ASSERT1(var.getLocation() == CELL_YLOW);
+  } 
 
   Field3D result(var.getMesh());
   result.allocate();
@@ -439,24 +455,71 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   return result;
 }
 
-const Field3D Div_par_LtoC(const Field2D &var) {
+const Field2D Grad_par_LtoC(const Field2D &var) {
+  Field2D result;
+  result.allocate();
+  
+  Coordinates *metric = mesh->coordinates();
+
+  for(auto &i : result.region(RGN_NOBNDRY)) {
+    result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
+  }
+  
+  return result;
+}
+
+const Field2D Div_par_LtoC(const Field2D &var) {
   Coordinates *metric = mesh->coordinates();
   return metric->Bxy*Grad_par_LtoC(var/metric->Bxy);
 }
 
 const Field3D Div_par_LtoC(const Field3D &var) {
+  Field3D result;
+  result.allocate();
+
   Coordinates *metric = mesh->coordinates();
-  return metric->Bxy*Grad_par_LtoC(var/metric->Bxy);
+
+  // NOTE: Need to calculate one more point than centred vars
+  for (int jx = 0; jx < mesh->LocalNx; jx++) {
+    for (int jy = 0; jy < mesh->LocalNy - 1; jy++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        result(jx, jy, jz) = metric->Bxy(jx, jy) * 2. *
+                             (var.yup()(jx, jy + 1, jz) / metric->Bxy(jx, jy + 1) -
+                              var(jx, jy, jz) / metric->Bxy(jx, jy)) /
+                             (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) +
+                              metric->dy(jx, jy - 1) * sqrt(metric->g_22(jx, jy - 1)));
+      }
+    }
+  }
+
+  return result;
 }
 
-const Field3D Div_par_CtoL(const Field2D &var) {
+const Field2D Div_par_CtoL(const Field2D &var) {
   Coordinates *metric = mesh->coordinates();
-  return metric->Bxy*Grad_par_CtoL(var/metric->Bxy);
+  return metric->Bxy * Grad_par_CtoL(var / metric->Bxy);
 }
 
 const Field3D Div_par_CtoL(const Field3D &var) {
+  Field3D result;
+  result.allocate();
+
   Coordinates *metric = mesh->coordinates();
-  return metric->Bxy*Grad_par_CtoL(var/metric->Bxy);
+
+  // NOTE: Need to calculate one more point than centred vars
+  for (int jx = 0; jx < mesh->LocalNx; jx++) {
+    for (int jy = 1; jy < mesh->LocalNy; jy++) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        result(jx, jy, jz) = metric->Bxy(jx, jy) * 2. *
+                             (var(jx, jy, jz) / metric->Bxy(jx, jy) -
+                              var.ydown()(jx, jy - 1, jz) / metric->Bxy(jx, jy - 1)) /
+                             (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) +
+                              metric->dy(jx, jy - 1) * sqrt(metric->g_22(jx, jy - 1)));
+      }
+    }
+  }
+
+  return result;
 }
 
 /*******************************************************************************
@@ -921,6 +984,12 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   Field3D result(mesh);
 
   CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
+
+  if (mesh->GlobalNx == 1 || mesh->GlobalNz == 1) {
+    result=0;
+    result.setLocation(result_loc);
+    return result;
+  }
   
   switch(method) {
   case BRACKET_CTU: {

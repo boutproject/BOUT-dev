@@ -49,7 +49,7 @@
  */
 class LaplaceXY {
  public:
-  LaplaceXY(Mesh *m, Options *opt = NULL) {
+  LaplaceXY(Mesh *m, Options *opt = nullptr) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
   void setCoefs(const Field2D &A, const Field2D &B) {}
@@ -68,7 +68,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m, Options *opt = NULL);
+  LaplaceXY(Mesh *m, Options *opt = nullptr);
   /*!
    * Destructor
    */
@@ -119,7 +119,7 @@ private:
   int xstart, xend;
   int nloc, nsys;
   Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
-  CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<BoutReal>> cr; ///< Tridiagonal solver
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

@@ -65,7 +65,7 @@ RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 ///
 class IMEXBDF2 : public Solver {
  public:
-  IMEXBDF2(Options *opt = NULL);
+  IMEXBDF2(Options *opt = nullptr);
   ~IMEXBDF2();
 
   /// Returns the current internal timestep
@@ -149,13 +149,12 @@ class IMEXBDF2 : public Solver {
   void calculateCoeffs(int order);
 
   // Working memory
-  BoutReal *u ; ///< System state at current time
-  vector<BoutReal*> uV; ///< The solution history
-  vector<BoutReal*> fV; ///< The non-stiff solution history
-  //vector<BoutReal*> gV; ///< The stiff solution history
+  Array<BoutReal> u ; ///< System state at current time
+  vector<Array<BoutReal>> uV; ///< The solution history
+  vector<Array<BoutReal>> fV; ///< The non-stiff solution history
   vector<BoutReal> timesteps; ///< Timestep history
-  BoutReal *rhs;
-  BoutReal *err;
+  Array<BoutReal> rhs;
+  Array<BoutReal> err;
 
   // Implicit solver
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
@@ -177,7 +176,7 @@ class IMEXBDF2 : public Solver {
   int nonlinear_fails;  ///< Numbef of nonlinear (SNES) convergence failures
 
   bool have_constraints; ///< Are there any constraint variables?
-  BoutReal *is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
+  Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
 
   MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference Jacobian evaluation
 
@@ -197,10 +196,5 @@ class IMEXBDF2 : public Solver {
 };
 
 #endif // __IMEXBDF2_SOLVER_H__
-
-#else // BOUT_HAS_PETSC
-
-#include "../emptysolver.hxx"
-typedef EmptySolver IMEXBDF2;
 
 #endif // BOUT_HAS_PETSC

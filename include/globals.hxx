@@ -38,7 +38,7 @@
 #define SETTING(name, val) name = val
 #endif
 
-SETTING(Mesh *mesh, NULL); ///< The mesh object
+SETTING(Mesh *mesh, nullptr); ///< The mesh object
 
 /// Define for reading a variable from the grid
 #define GRID_LOAD(var) mesh->get(var, #var)

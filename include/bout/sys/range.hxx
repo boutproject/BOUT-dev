@@ -27,8 +27,8 @@
 class RangeIterator {
 public:
   /// Can be given a single range
-  RangeIterator() : is(1), ie(0), n(0), cur(0) {}
-  RangeIterator(int start, int end, RangeIterator *join = 0);
+  RangeIterator() : is(1), ie(0), n(nullptr), cur(nullptr) {}
+  RangeIterator(int start, int end, RangeIterator *join = nullptr);
   RangeIterator(int start, int end, const RangeIterator &join);
   RangeIterator(const RangeIterator &r);
   ~RangeIterator();

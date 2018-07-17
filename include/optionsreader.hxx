@@ -55,7 +55,9 @@ class OptionsReader {
   static OptionsReader *getInstance();
 
   /// Delete the instance
-  static void cleanup() {delete instance; instance = NULL;}
+  static void cleanup() {delete instance;
+    instance = nullptr;
+  }
 
   /// Read the given file, parse options into
   /// the options tree.

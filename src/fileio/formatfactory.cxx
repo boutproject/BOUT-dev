@@ -14,10 +14,10 @@
 #include <output.hxx>
 #include <string.h>
 
-FormatFactory* FormatFactory::instance = NULL;
+FormatFactory *FormatFactory::instance = nullptr;
 
 FormatFactory* FormatFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new FormatFactory();
   }
@@ -26,7 +26,7 @@ FormatFactory* FormatFactory::getInstance() {
 
 // Work out which data format to use for given filename
 std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename, bool parallel) {
-  if((filename == NULL) || (strcasecmp(filename, "default") == 0)) {
+  if ((filename == nullptr) || (strcasecmp(filename, "default") == 0)) {
     // Return default file format
     
 
@@ -109,7 +109,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #endif
 
   throw BoutException("\tFile extension not recognised for '%s'\n", filename);
-  return NULL;
+  return nullptr;
 }
 
 ////////////////////// Private functions /////////////////////////////

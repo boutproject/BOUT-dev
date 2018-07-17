@@ -8,8 +8,8 @@ RangeIterator::RangeIterator(int start, int end, RangeIterator* join)
     // Null range
     cur = n;
   }
-  
-  if(cur != 0) {
+
+  if (cur != nullptr) {
     ind = cur->is;
     curend = cur->ie;
   }
@@ -27,8 +27,8 @@ RangeIterator::RangeIterator(int start, int end, const RangeIterator& join)
     // Null range
     cur = n;
   }
-  
-  if(cur != 0) {
+
+  if (cur != nullptr) {
     ind = cur->is;
     curend = cur->ie;
   }
@@ -59,7 +59,7 @@ void RangeIterator::first() {
   if(is > ie) {
     // Null range, skip to next
     cur = cur->n;
-    if(cur != 0) {
+    if (cur != nullptr) {
       ind = cur->is;
       curend = cur->ie;
     }
@@ -73,7 +73,7 @@ void RangeIterator::next() {
   if(ind > curend) {
     // End of this range
     cur = cur->n;
-    if(cur != 0) {
+    if (cur != nullptr) {
       // Another range
       ind = cur->is;
       curend = cur->ie;
@@ -81,14 +81,12 @@ void RangeIterator::next() {
   }
 }
 
-bool RangeIterator::isDone() const {
-  return cur == 0;
-}
+bool RangeIterator::isDone() const { return cur == nullptr; }
 
 bool RangeIterator::intersects(const RangeIterator &other, bool all) const {
   if((other.is <= ie) && (other.ie >= is))
     return true;
-  if(all && (n != 0))
+  if (all && (n != nullptr))
     return n->intersects(other, all);
   return false;
 }
@@ -96,7 +94,7 @@ bool RangeIterator::intersects(const RangeIterator &other, bool all) const {
 bool RangeIterator::intersects(int ind, bool all) const {
   if( (is <= ind) && (ie >= ind) )
     return true;
-  if(all && (n != 0))
+  if (all && (n != nullptr))
     return n->intersects(ind, all);
   return false;
 }
@@ -117,7 +115,7 @@ RangeIterator& RangeIterator::operator=(const RangeIterator &r) {
 RangeIterator& RangeIterator::operator+=(const RangeIterator &r) {
   // For now just put at the end
   RangeIterator *it = this;
-  while(it->n != 0) {
+  while (it->n != nullptr) {
     it = it->n;
   }
   it->n = new RangeIterator(r);
@@ -152,12 +150,12 @@ RangeIterator& RangeIterator::operator-=(const RangeIterator &r) {
         }
       }
       itr = itr->n;
-    }while(itr != 0);
+    } while (itr != nullptr);
 
     // Check if this range is still valid
     if(is > ie) {
       // Invalid range
-      if(it->n != 0) {
+      if (it->n != nullptr) {
         // Copy from next one
         RangeIterator *tmp = it->n;
         *it = *it->n;
@@ -167,6 +165,6 @@ RangeIterator& RangeIterator::operator-=(const RangeIterator &r) {
       }
     }
     it = it->n;
-  }while(it != 0);
+  } while (it != nullptr);
   return *this;
 }

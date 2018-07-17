@@ -105,7 +105,7 @@ const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = NULL);
+  Laplacian(Options *options = nullptr);
   virtual ~Laplacian() {}
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -155,14 +155,16 @@ public:
   virtual const Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
-  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
+  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
+                   const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
+                   CELL_LOC outloc = CELL_DEFAULT);
 
   /*!
    * Create a new Laplacian solver
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
-   */ 
-  static Laplacian* create(Options *opt = NULL);
+   */
+  static Laplacian *create(Options *opt = nullptr);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
@@ -182,13 +184,15 @@ protected:
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 
-  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
+  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c,
+                   const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
+                   CELL_LOC outloc = CELL_DEFAULT);
 
-  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
-                    dcomplex **bk, int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
-                    const Field2D *a = NULL, const Field2D *ccoef=NULL, 
-                    const Field2D *d = NULL);
-  
+  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec, dcomplex **bk,
+                    int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
+                    const Field2D *a = nullptr, const Field2D *ccoef = nullptr,
+                    const Field2D *d = nullptr);
+
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                     dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, int inner_boundary_flags, int outer_boundary_flags,
@@ -204,15 +208,18 @@ private:
 // Legacy interface
 // These will be removed at some point
 
-void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL, CELL_LOC outloc = CELL_DEFAULT);
+void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
+                          const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
+                          CELL_LOC outloc = CELL_DEFAULT);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr);
+int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr);
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags,
-                             const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
-
+const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
+                             const Field2D *c = nullptr, const Field2D *d = nullptr);
 
 #endif // __LAPLACE_H__
 

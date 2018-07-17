@@ -63,17 +63,19 @@ TEST_F(RegionTest, regionFromRange) {
   Region<Ind3D> region2(0, 0, 0, 0, 0, 0, 1, 1);
   EXPECT_EQ(region2.getIndices().size(), 1);
 
-// Invalid range/size
+  // Invalid range results in empty region
+  { Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+  { Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+  { Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+
+  // Invalid size throws if CHECK >= 1
 #if CHECK >= 1
-  EXPECT_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1), BoutException);
-  EXPECT_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1), BoutException);
-  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1), BoutException);
   EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1), BoutException);
   EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0), BoutException);
 #else
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1));
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1));
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1));
   EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1));
   EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0));
 #endif
@@ -924,6 +926,22 @@ public:
 
 typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
+
+TYPED_TEST(RegionIndexTest, MemberSize) {
+  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
+
+  int nmesh = 2 * 3 * 5;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TYPED_TEST(RegionIndexTest, NonMemberSize) {
+  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
+
+  int nmesh = 2 * 3 * 5;
+
+  EXPECT_EQ(size(region), nmesh);
+}
 
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};

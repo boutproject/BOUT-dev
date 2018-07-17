@@ -84,8 +84,9 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
@@ -154,8 +155,9 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
        ((outer_boundary_flags & INVERT_SET) && mesh->lastX()) ) {
     Field3D bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
@@ -285,7 +287,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {
     tridagMatrix(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0), &data.bk(kz, 0),
-                 kz, kz * kwaveFactor, data.jy, global_flags, inner_boundary_flags,
+                 data.jy, kz, kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
   }
 

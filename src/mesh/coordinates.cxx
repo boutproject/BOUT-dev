@@ -724,7 +724,8 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
   return localmesh->indexDDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
+                               DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(f.getMesh() == localmesh);
   return Field2D(0.0, localmesh);
 }
@@ -734,7 +735,7 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
                                     DIFF_METHOD UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
@@ -868,6 +869,10 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   ASSERT1(localmesh == f.getMesh());
+  if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f*0;
+  }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   CELL_LOC outloc = f.getLocation();

@@ -1,4 +1,3 @@
-import numpy as np
 from boutdata.collect import collect
 from boututils.moment_xyzt import moment_xyzt
 from boututils.file_import import file_import

@@ -90,11 +90,11 @@ for var in varlist:
   order = log(error_2[var][-1] / error_2[var][-2]) / log(dy[-1] / dy[-2])
   stdout.write("%s Convergence order = %f" % (var, order))
 
-  if order < 1.5: # Should be second order accurate
-    print("............ FAIL")
-    success = False
-  else:
+  if 1.8 < order < 2.2: # Should be second order accurate
     print("............ PASS")
+  else:
+    success = False
+    print("............ FAIL")
 
 # plot errors
 try:

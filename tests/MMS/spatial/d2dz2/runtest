@@ -9,6 +9,13 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
+try:
+  import matplotlib.pyplot as plt
+except:
+  plt=None
+
+#requires: all_tests
+
 MPIRUN = getmpirun()
 
 print("Making MMS d2dz2 test")
@@ -58,33 +65,34 @@ for mz in mzlist:
 # Calculate grid spacing
 dx = 1. / (array(mzlist) - 2.)
 
-# plot errors
-
-import matplotlib.pyplot as plt
-
-plt.plot(dx, error_2, '-o', label=r'$l^2$')
-plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 print("Convergence order = %f" % (order))
 
-plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.legend(loc="upper left")
-plt.grid()
+# plot errors
+if plt:
+  plt.plot(dx, error_2, '-o', label=r'$l^2$')
+  plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 
-plt.yscale('log')
-plt.xscale('log')
 
-plt.xlabel(r'Mesh spacing $\delta z$')
-plt.ylabel("Error norm")
+  plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.savefig("norm.pdf")
+  plt.legend(loc="upper left")
+  plt.grid()
 
-#plt.show()
-plt.close()
+  plt.yscale('log')
+  plt.xscale('log')
 
-if order > 1.8:
+  plt.xlabel(r'Mesh spacing $\delta z$')
+  plt.ylabel("Error norm")
+
+  plt.savefig("norm.pdf")
+
+  #plt.show()
+  plt.close()
+
+if 2.2 > order > 1.8:
+  # check for success
   print(" => Test passed")
   exit(0)
 else:
