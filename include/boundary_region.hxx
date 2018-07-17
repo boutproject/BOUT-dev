@@ -7,6 +7,8 @@ class BoundaryRegion;
 #include <string>
 using std::string;
 
+class Mesh;
+
 /// Location of boundary
 enum BndryLoc {BNDRY_XIN=1,
                BNDRY_XOUT=2,
@@ -18,9 +20,9 @@ enum BndryLoc {BNDRY_XIN=1,
 
 class BoundaryRegionBase {
 public:
-  BoundaryRegionBase() {}
-  BoundaryRegionBase(const string &name) : label(name) {}
-  BoundaryRegionBase(const string &name, BndryLoc loc) : label(name), location(loc) {}
+  BoundaryRegionBase() :mesh(0) {}
+  BoundaryRegionBase(const string &name, Mesh * mesh) : label(name), mesh(mesh) {}
+  BoundaryRegionBase(const string &name, BndryLoc loc, Mesh * mesh) : label(name), location(loc), mesh(mesh) {}
   virtual ~BoundaryRegionBase() {}
 
   string label; ///< Label for this boundary region
@@ -33,14 +35,16 @@ public:
                              ///  over every element from inside out (in
                              ///  X or Y first)
   virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
+protected:
+  Mesh * mesh;
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion : public BoundaryRegionBase {
 public:
   BoundaryRegion() {}
-  BoundaryRegion(const string &name, BndryLoc loc) : BoundaryRegionBase(name, loc) {}
-  BoundaryRegion(const string &name, int xd, int yd) : BoundaryRegionBase(name), bx(xd), by(yd), width(2) {}
+  BoundaryRegion(const string &name, BndryLoc loc, Mesh * mesh) : BoundaryRegionBase(name, loc, mesh) {}
+  BoundaryRegion(const string &name, int xd, int yd, Mesh * mesh) : BoundaryRegionBase(name, mesh), bx(xd), by(yd), width(2) {}
   virtual ~BoundaryRegion() {}
 
   int x,y; ///< Indices of the point in the boundary
@@ -55,7 +59,7 @@ public:
 
 class BoundaryRegionXIn : public BoundaryRegion {
 public:
-  BoundaryRegionXIn(const string &name, int ymin, int ymax);
+  BoundaryRegionXIn(const string &name, int ymin, int ymax, Mesh * mesh);
 
   void first();
   void next();
@@ -69,7 +73,7 @@ private:
 
 class BoundaryRegionXOut : public BoundaryRegion {
 public:
-  BoundaryRegionXOut(const string &name, int ymin, int ymax);
+  BoundaryRegionXOut(const string &name, int ymin, int ymax, Mesh * mesh);
 
   void first();
   void next();
@@ -83,7 +87,7 @@ private:
 
 class BoundaryRegionYDown : public BoundaryRegion {
 public:
-  BoundaryRegionYDown(const string &name, int xmin, int xmax);
+  BoundaryRegionYDown(const string &name, int xmin, int xmax, Mesh * mesh);
 
   void first();
   void next();
@@ -97,7 +101,7 @@ private:
 
 class BoundaryRegionYUp : public BoundaryRegion {
 public:
-  BoundaryRegionYUp(const string &name, int xmin, int xmax);
+  BoundaryRegionYUp(const string &name, int xmin, int xmax, Mesh * mesh);
 
   void first();
   void next();

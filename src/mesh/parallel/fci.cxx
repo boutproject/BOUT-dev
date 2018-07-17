@@ -83,13 +83,13 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     mesh.get(zt_prime, "forward_zt_prime", 0.0, false);
     mesh.get(R_prime, "forward_R", 0.0, false);
     mesh.get(Z_prime, "forward_Z", 0.0, false);
-    boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, dir);
+    boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, dir, &mesh);
   } else if (dir == -1) {
     mesh.get(xt_prime, "backward_xt_prime", 0.0, false);
     mesh.get(zt_prime, "backward_zt_prime", 0.0, false);
     mesh.get(R_prime, "backward_R", 0.0, false);
     mesh.get(Z_prime, "backward_Z", 0.0, false);
-    boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir);
+    boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir, &mesh);
   } else {
     // Definitely shouldn't be called
     throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
