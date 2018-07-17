@@ -46,6 +46,7 @@
 #include <options.hxx>
 #include <output.hxx>
 #include <utils.hxx>
+#include <bout/scorepwrapper.hxx>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -851,6 +852,7 @@ const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
 void BoutMesh::post_receive(CommHandle &ch) {
+  SCOREP0();
   BoutReal *inbuff;
   int len;
 
@@ -903,6 +905,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
 }
 
 comm_handle BoutMesh::send(FieldGroup &g) {
+  SCOREP0();
   /// Start timer
   Timer timer("comms");
 
@@ -1842,6 +1845,7 @@ void BoutMesh::topology() {
  ****************************************************************/
 
 BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
+  SCOREP0();
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -1922,6 +1926,7 @@ void BoutMesh::clear_handles() {
 int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal *buffer) {
 
+  SCOREP0();
   int len = 0;
 
   /// Loop over variables
