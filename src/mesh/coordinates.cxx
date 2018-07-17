@@ -736,10 +736,10 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
 // Parallel gradient
 
 const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
-                                    DIFF_METHOD UNUSED(method)) {
+                                    DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  Field2D result = DDY(var, outloc);
+  Field2D result = DDY(var, outloc, method);
   result /= sqrt(g_22.get(result.getLocation()));
   return result;
 }
