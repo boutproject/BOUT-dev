@@ -37,8 +37,6 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  ShiftedMetric s(*mesh);
-
   // Read variable from mesh
   Field3D var;
   mesh->get(var, "var");
@@ -46,7 +44,7 @@ int main(int argc, char** argv) {
   // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
-  s.calcYUpDown(var);
+  mesh->communicate(var);
   
   // Calculate d/dy ysing yup() and ydown() fields
   Field3D ddy = DDY_yud(var);
