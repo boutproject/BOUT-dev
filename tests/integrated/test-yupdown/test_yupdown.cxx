@@ -42,6 +42,8 @@ int main(int argc, char** argv) {
   // Read variable from mesh
   Field3D var;
   mesh->get(var, "var");
+
+  Field3D var_tofieldaligned = copy(var);
   
   // Var starts in orthogonal X-Z coordinates
 
@@ -51,16 +53,19 @@ int main(int argc, char** argv) {
   // Calculate d/dy ysing yup() and ydown() fields
   Field3D ddy = DDY_yud(var);
 
+  // Calculate d/dy using ShiftToFieldAligned
+  Field3D ddy_tofieldaligned = DDY(var_tofieldaligned);
+
   // Change into field-aligned coordinates
   Field3D var_aligned = mesh->toFieldAligned(var);
   
   // var now field aligned
-  Field3D ddy2 = DDY_aligned(var_aligned);
+  Field3D ddy_check = DDY_aligned(var_aligned);
   
   // Shift back to orthogonal X-Z coordinates
-  ddy2 = mesh->fromFieldAligned(ddy2);
+  ddy_check = mesh->fromFieldAligned(ddy_check);
   
-  SAVE_ONCE2(ddy, ddy2);
+  SAVE_ONCE3(ddy, ddy_tofieldaligned, ddy_check);
   dump.write();
 
   BoutFinalise();
