@@ -316,8 +316,8 @@ void BoundaryFreeNonUniform_O2::apply(Field3D &f, BoutReal t) {
 
     const Field2D &dy =
         bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
-    Indices i0{bndry->x - 0 * bndry->bx, bndry->y - 0 * bndry->by, 0};
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+    Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+    Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stag == 0) {
       BoutReal st = 0;
       t = dy[i0];
@@ -719,9 +719,9 @@ void BoundaryFreeNonUniform_O3::apply(Field3D &f, BoutReal t) {
 
     const Field2D &dy =
         bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
-    Indices i0{bndry->x - 0 * bndry->bx, bndry->y - 0 * bndry->by, 0};
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
+    Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+    Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
+    Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stag == 0) {
       BoutReal st = 0;
       t = dy[i0];
@@ -1174,10 +1174,10 @@ void BoundaryFreeNonUniform_O4::apply(Field3D &f, BoutReal t) {
 
     const Field2D &dy =
         bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
-    Indices i0{bndry->x - 0 * bndry->bx, bndry->y - 0 * bndry->by, 0};
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
+    Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+    Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
+    Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
+    Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     if (stag == 0) {
       BoutReal st = 0;
       t = dy[i0];

@@ -109,7 +109,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
 {% else %}
 {% for i in range(order) %}
-    Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
+    Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
     if (stag == 0) {
       BoutReal st=0;
