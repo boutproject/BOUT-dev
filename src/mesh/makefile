@@ -11,4 +11,12 @@ SOURCEC		= difops.cxx interpolation.cxx mesh.cxx boundary_standard.cxx \
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 
+boundary_nonuniform.%: boundary_nonuniform.%.in.py
+	@echo "  Generating $@"
+	@./$< > $@.tmp || (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
+	@clang-format -i $@.tmp || echo "Formatting failed"
+	@mv $@.tmp $@
+
+boundary_factory.cxx: boundary_nonuniform.hxx
+
 include $(BOUT_TOP)/make.config
