@@ -2201,7 +2201,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
 
-      result = this->fromFieldAligned(result);
+      result = this->fromFieldAligned(result, RGN_NOBNDRY);
     }
   } else {
     // Non-staggered case
