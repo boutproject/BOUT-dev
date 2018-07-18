@@ -16,7 +16,14 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m),
+  has_toAligned_CENTRE(false), has_toAligned_XLOW(false), has_toAligned_YLOW(false),
+  has_fromAligned_CENTRE(false), has_fromAligned_XLOW(false), has_fromAligned_YLOW(false),
+  has_yupPhs1_CENTRE(false), has_yupPhs1_XLOW(false), has_yupPhs1_YLOW(false),
+  has_ydownPhs1_CENTRE(false), has_ydownPhs1_XLOW(false), has_ydownPhs1_YLOW(false),
+  has_yupPhs2_CENTRE(false), has_yupPhs2_XLOW(false), has_yupPhs2_YLOW(false),
+  has_ydownPhs2_CENTRE(false), has_ydownPhs2_XLOW(false), has_ydownPhs2_YLOW(false)
+{
   // Read the zShift angle from the mesh
   
   if(mesh.get(zShift, "zShift")) {
@@ -51,16 +58,13 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
 //once we've been created so cache the complex phases used in transformations
 //the first time they are needed
 Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_fromAligned_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_fromAligned_CENTRE = true;
       fromAlignedPhs_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -80,7 +84,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_fromAligned_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -88,7 +92,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_fromAligned_XLOW = true;
       fromAlignedPhs_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -108,7 +112,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_fromAligned_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -116,7 +120,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_fromAligned_YLOW = true;
       fromAlignedPhs_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -150,16 +154,13 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
 }
 
 Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_toAligned_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_toAligned_CENTRE = true;
       toAlignedPhs_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -179,7 +180,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_toAligned_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -187,7 +188,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_toAligned_XLOW = true;
       toAlignedPhs_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -207,7 +208,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_toAligned_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -215,7 +216,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_toAligned_YLOW = true;
       toAlignedPhs_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -249,16 +250,13 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
 }
 
 Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_yupPhs1_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_yupPhs1_CENTRE = true;
       yupPhs1_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs1_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -279,7 +277,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_yupPhs1_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -287,7 +285,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_yupPhs1_XLOW = true;
       yupPhs1_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs1_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -308,7 +306,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_yupPhs1_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -316,7 +314,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_yupPhs1_YLOW = true;
       yupPhs1_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs1_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -351,16 +349,13 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
 }
 
 Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_yupPhs2_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_yupPhs2_CENTRE = true;
       yupPhs2_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs2_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -381,7 +376,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_yupPhs2_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -389,7 +384,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_yupPhs2_XLOW = true;
       yupPhs2_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs2_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -410,7 +405,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_yupPhs2_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -418,7 +413,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_yupPhs2_YLOW = true;
       yupPhs2_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : yupPhs2_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -453,16 +448,13 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
 }
 
 Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (has_ydownPhs1_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_ydownPhs1_CENTRE = true;
       ydownPhs1_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs1_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -483,7 +475,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_ydownPhs1_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -491,7 +483,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_ydownPhs1_XLOW = true;
       ydownPhs1_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs1_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -512,7 +504,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_ydownPhs1_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -520,7 +512,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_ydownPhs1_YLOW = true;
       ydownPhs1_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs1_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -555,16 +547,13 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
 }
 
 Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_ydownPhs2_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_ydownPhs2_CENTRE = true;
       ydownPhs2_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs2_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -585,7 +574,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_ydownPhs2_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -593,7 +582,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
       // get zShift at XLOW
       Field2D zShift_XLOW = zShift.get(CELL_XLOW);
 
-      first_XLOW = false;
+      has_ydownPhs2_XLOW = true;
       ydownPhs2_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs2_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -614,7 +603,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_ydownPhs2_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
@@ -622,7 +611,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
       // get zShift at YLOW
       Field2D zShift_YLOW = zShift.get(CELL_YLOW);
 
-      first_YLOW = false;
+      has_ydownPhs2_YLOW = true;
       ydownPhs2_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : ydownPhs2_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);

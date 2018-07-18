@@ -147,6 +147,13 @@ private:
   Matrix< Array<dcomplex> > getYupPhs2(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
   Matrix< Array<dcomplex> > getYdownPhs2(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
 
+  bool has_toAligned_CENTRE, has_toAligned_XLOW, has_toAligned_YLOW; ///< Have phase shifts for shift to field aligned coordinates been calculated
+  bool has_fromAligned_CENTRE, has_fromAligned_XLOW, has_fromAligned_YLOW; ///< Have phase shifts for shift from field aligned coordinates been calculated
+  bool has_yupPhs1_CENTRE, has_yupPhs1_XLOW, has_yupPhs1_YLOW; ///< Have phase shifts for yup1 been calculated
+  bool has_ydownPhs1_CENTRE, has_ydownPhs1_XLOW, has_ydownPhs1_YLOW; ///< Have phase shifts for ydown1 been calculated
+  bool has_yupPhs2_CENTRE, has_yupPhs2_XLOW, has_yupPhs2_YLOW; ///< Have phase shifts for yup2 been calculated
+  bool has_ydownPhs2_CENTRE, has_ydownPhs2_XLOW, has_ydownPhs2_YLOW; ///< Have phase shifts for ydown2 been calculated
+
   Matrix< Array<dcomplex> > toAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Cell centre version.
   Matrix< Array<dcomplex> > fromAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Cell centre version.
   Matrix< Array<dcomplex> > toAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_XLOW.
