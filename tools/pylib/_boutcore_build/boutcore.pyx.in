@@ -209,7 +209,7 @@ cdef class Field3D:
             if ignoreDataType:
                 data=data.astype('float64')
             else:
-                raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+                raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
@@ -428,6 +428,13 @@ EOF
 
 done
 cat <<EOF
+    def applyBoundary(self, what):
+        cdef c.string bndry
+        tmp=what.encode('ascii')
+        bndry=tmp
+        self.cobj.applyBoundary(bndry)
+        #self.cobj.applyBoundary()
+
     def __dealloc__(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
@@ -1103,7 +1110,7 @@ def setOption(name, value, source="PyInterface", force=False):
 cdef class Options:
     cdef c.Options * cobj
 
-    def __init__(self,name):
+    def __init__(self,name=""):
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
