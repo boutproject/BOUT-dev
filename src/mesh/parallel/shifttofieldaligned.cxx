@@ -17,10 +17,12 @@
 
 #include <output.hxx>
 
-ShiftToFieldAligned::ShiftToFieldAligned(Mesh &m) : mesh(m), zShift_CENTRE(&m),
-  zShift_XLOW(&m), zShift_YLOW(&m) {
+ShiftToFieldAligned::ShiftToFieldAligned(Mesh &m) :
+  mesh(m), zShift_CENTRE(&m), zShift_XLOW(&m), zShift_YLOW(&m),
+  has_toAligned_CENTRE(false), has_toAligned_XLOW(false), has_toAligned_YLOW(false),
+  has_fromAligned_CENTRE(false), has_fromAligned_XLOW(false), has_fromAligned_YLOW(false) {
+
   // Read the zShift angle from the mesh
-  
   if(mesh.get(zShift_CENTRE, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
     mesh.get(zShift_CENTRE, "qinty");
@@ -49,16 +51,13 @@ ShiftToFieldAligned::ShiftToFieldAligned(Mesh &m) : mesh(m), zShift_CENTRE(&m),
 //once we've been created so cache the complex phases used in transformations
 //the first time they are needed
 Matrix< Array<dcomplex> > ShiftToFieldAligned::getFromAlignedPhs(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_toAligned_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_toAligned_CENTRE = true;
       fromAlignedPhs_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -78,12 +77,12 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getFromAlignedPhs(CELL_LOC locati
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_toAligned_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_XLOW = false;
+      has_toAligned_XLOW = true;
       fromAlignedPhs_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -103,12 +102,12 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getFromAlignedPhs(CELL_LOC locati
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_toAligned_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_YLOW = false;
+      has_toAligned_YLOW = true;
       fromAlignedPhs_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : fromAlignedPhs_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -142,16 +141,13 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getFromAlignedPhs(CELL_LOC locati
 }
 
 Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location) {
-  // bools so we only calculate the cached values the first time for each location
-  static bool first_CENTRE = true, first_XLOW=true, first_YLOW=true;
-
   switch (location) {
   case CELL_CENTRE: {
-    if (first_CENTRE) {
+    if (!has_fromAligned_CENTRE) {
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_CENTRE = false;
+      has_fromAligned_CENTRE = true;
       toAlignedPhs_CENTRE = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_CENTRE) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -171,12 +167,12 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location
     break;
   }
   case CELL_XLOW: {
-    if (first_XLOW) {
+    if (!has_fromAligned_XLOW) {
       ASSERT1(mesh.xstart>=2); //otherwise we cannot interpolate in the x-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_XLOW = false;
+      has_fromAligned_XLOW = true;
       toAlignedPhs_XLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_XLOW) {
         element = Array<dcomplex>(mesh.LocalNz);
@@ -196,12 +192,12 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location
     break;
   }
   case CELL_YLOW: {
-    if (first_YLOW) {
+    if (!has_fromAligned_YLOW) {
       ASSERT1(mesh.ystart>=2); //otherwise we cannot interpolate in the y-direction
       int nmodes = mesh.LocalNz/2 + 1;
       BoutReal zlength = mesh.coordinates()->zlength();
 
-      first_YLOW = false;
+      has_fromAligned_YLOW = true;
       toAlignedPhs_YLOW = Matrix< Array<dcomplex> >(mesh.LocalNx, mesh.LocalNy);
       for (auto &element : toAlignedPhs_YLOW) {
         element = Array<dcomplex>(mesh.LocalNz);

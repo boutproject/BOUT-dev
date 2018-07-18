@@ -246,6 +246,9 @@ private:
   Matrix< Array<dcomplex> > getToAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
   Matrix< Array<dcomplex> > getFromAlignedPhs(CELL_LOC location = CELL_CENTRE); ///< Get phase shifts, calculating if necessary;
 
+  bool has_toAligned_CENTRE, has_toAligned_XLOW, has_toAligned_YLOW; ///< Flags saying whether phases for shifts to field-aligned coordinates have been calculated.
+  bool has_fromAligned_CENTRE, has_fromAligned_XLOW, has_fromAligned_YLOW; ///< Flags saying whether phases for shifts from field-aligned coordinates have been calculated.
+
   Matrix< Array<dcomplex> > toAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Cell centre version.
   Matrix< Array<dcomplex> > fromAlignedPhs_CENTRE; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates. Cell centre version.
   Matrix< Array<dcomplex> > toAlignedPhs_XLOW; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates. Interpolated to CELL_XLOW.
