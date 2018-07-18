@@ -211,7 +211,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             }
           }
           
-          result = fieldmesh->fromFieldAligned(result_fa);
+          result = fieldmesh->fromFieldAligned(result_fa, RGN_NOBNDRY);
         }
         break;
       }

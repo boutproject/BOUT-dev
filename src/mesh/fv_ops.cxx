@@ -171,7 +171,7 @@ namespace FV {
     
     if (!use_yup_ydown) {
       // Shifted to field aligned coordinates, so need to shift back
-      result = mesh->fromFieldAligned(result);
+      result = mesh->fromFieldAligned(result, RGN_NOBNDRY);
     }
     
     return result;
@@ -226,7 +226,7 @@ namespace FV {
       }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result);
+    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
@@ -335,7 +335,7 @@ namespace FV {
     }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result);
+    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   void communicateFluxes(Field3D &f) {

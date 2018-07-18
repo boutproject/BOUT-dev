@@ -216,6 +216,6 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   // Delete cyclic reduction object
   delete cr;
 
-  return localmesh->fromFieldAligned(result);
+  return localmesh->fromFieldAligned(result, RGN_NOBNDRY);
 }
 

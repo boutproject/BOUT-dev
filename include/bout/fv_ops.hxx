@@ -322,7 +322,7 @@ namespace FV {
         }
       }
     }
-    return mesh->fromFieldAligned(result);
+    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
   
   /*!
@@ -483,7 +483,7 @@ namespace FV {
           yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
         }
     
-    return result + mesh->fromFieldAligned(yresult);
+    return result + mesh->fromFieldAligned(yresult, RGN_NOBNDRY);
   }
 }
 

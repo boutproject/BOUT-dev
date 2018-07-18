@@ -388,7 +388,7 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
         result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
       }
 
-    result = vMesh->fromFieldAligned(result);
+    result = vMesh->fromFieldAligned(result, region);
     }
   }
 
@@ -420,7 +420,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
-    result = varMesh->fromFieldAligned(result);
+    result = varMesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   result.setLocation(CELL_CENTRE);

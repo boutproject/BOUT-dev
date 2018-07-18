@@ -564,7 +564,7 @@ class Mesh {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
       T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::Standard>(
           f, outloc, method, region);
-      return f.getMesh()->fromFieldAligned(result);
+      return f.getMesh()->fromFieldAligned(result, region);
     }
   }
 
@@ -579,7 +579,7 @@ class Mesh {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
       T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(
           f, outloc, method, region);
-      return f.getMesh()->fromFieldAligned(result);
+      return f.getMesh()->fromFieldAligned(result, region);
     }
   }
 
@@ -594,7 +594,7 @@ class Mesh {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
       T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(
           f, outloc, method, region);
-      return f.getMesh()->fromFieldAligned(result);
+      return f.getMesh()->fromFieldAligned(result, region);
     }
   }
 
@@ -668,7 +668,7 @@ class Mesh {
       const T vel_aligned = vel.getMesh()->toFieldAligned(vel);
       T result = indexFlowDerivative<T, DIRECTION::Y, DERIV::Upwind>(
           vel_aligned, f_aligned, outloc, method, region);
-      return f.getMesh()->fromFieldAligned(result);
+      return f.getMesh()->fromFieldAligned(result, region);
     }
   }
 
@@ -687,7 +687,7 @@ class Mesh {
       const T vel_aligned = vel.getMesh()->toFieldAligned(vel);
       T result = indexFlowDerivative<T, DIRECTION::Y, DERIV::Flux>(
           vel_aligned, f_aligned, outloc, method, region);
-      return f.getMesh()->fromFieldAligned(result);
+      return f.getMesh()->fromFieldAligned(result, region);
     }
   }
 
@@ -712,18 +712,18 @@ class Mesh {
   ///////////////////////////////////////////////////////////
 
   /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform().toFieldAligned(f);
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+    return getParallelTransform().toFieldAligned(f, region);
   }
-  const Field2D toFieldAligned(const Field2D &f) {
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
     return f;
   }
   
   /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform().fromFieldAligned(f);
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+    return getParallelTransform().fromFieldAligned(f, region);
   }
-  const Field2D fromFieldAligned(const Field2D &f) {
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
     return f;
   }
 
