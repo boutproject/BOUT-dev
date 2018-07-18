@@ -120,30 +120,29 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
  */
-const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
-  return shiftZ(f, toAlignedPhs);
+const Field3D ShiftedMetric::toFieldAligned(const Field3D &f, const REGION region) {
+  return shiftZ(f, toAlignedPhs, region);
 }
 
 /*!
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
-  return shiftZ(f, fromAlignedPhs);
+const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION region) {
+  return shiftZ(f, fromAlignedPhs, region);
 }
 
-const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
+const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY); // Never calculate x-guard cells here
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
-  
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
-    }
+
+  for(auto i : f.region2D(region)) {
+    shiftZ(f(i.x,i.y), phs[i.x][i.y], result(i.x,i.y));
   }
   
   return result;
@@ -168,18 +167,25 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 }
 
 //Old approach retained so we can still specify a general zShift
-const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
+const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY); // Never calculate x-guard cells here
+  ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
+  invalidateGuards(result); // Won't set x-guard cells, so allow checking to throw exception if they are used.
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), mesh.LocalNz, zangle(jx,jy), result(jx,jy));
-    }
+  // We only use methods in ShiftedMetric to get fields for parallel operations
+  // like interp_to or DDY.
+  // Therefore we don't need x-guard cells, so do not set them.
+  // (Note valgrind complains about corner guard cells if we try to loop over
+  // the whole grid, because zShift is not initialized in the corner guard
+  // cells.)
+  for(auto i : f.region2D(region)) {
+    shiftZ(f(i.x, i.y), mesh.LocalNz, zangle(i.x,i.y), result(i.x, i.y));
   }
   
   return result;

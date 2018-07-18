@@ -38,11 +38,11 @@ public:
   
   /// Convert a 3D field into field-aligned coordinates
   /// so that the y index is along the magnetic field
-  virtual const Field3D toFieldAligned(const Field3D &f) = 0;
+  virtual const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
   
   /// Convert back from field-aligned coordinates
   /// into standard form
-  virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
+  virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
 };
@@ -65,7 +65,7 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */ 
-  const Field3D toFieldAligned(const Field3D &f) override {
+  const Field3D toFieldAligned(const Field3D &f, const REGION UNUSED(region)) override {
     return f;
   }
   
@@ -73,7 +73,7 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D fromFieldAligned(const Field3D &f) override {
+  const Field3D fromFieldAligned(const Field3D &f, const REGION UNUSED(region)) override {
     return f;
   }
 
@@ -108,13 +108,13 @@ public:
    * in X-Z, and the metric tensor will need to be changed 
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D &f) override;
+  const Field3D toFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f) override;
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
 
   bool canToFromFieldAligned() override{
     return true;
@@ -143,7 +143,7 @@ private:
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle)){return f;};
+  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle), const REGION UNUSED(region)=RGN_NOX){return f;};
 
   /*!
    * Shift a 3D field \p f in Z by the given \p zangle
@@ -152,7 +152,7 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */ 
-  const Field3D shiftZ(const Field3D &f, const Field2D &zangle);
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle, const REGION region=RGN_NOX);
 
   /*!
    * Shift a 3D field \p f by the given phase \p phs in Z
@@ -163,7 +163,7 @@ private:
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
    */
-  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs);
+  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region=RGN_NOX);
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
