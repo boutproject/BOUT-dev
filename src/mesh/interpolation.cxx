@@ -149,8 +149,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // coordinates
 
           Field3D var_fa = fieldmesh->toFieldAligned(var);
-          Field3D result_fa;
-          result_fa.allocate();
           if (fieldmesh->ystart > 1) {
 
             // More than one guard cell, so set pp and mm values
@@ -173,7 +171,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                   s.m = s.c;
                 }
 
-              result_fa[i] = interp(s);
+              result[i] = interp(s);
             }
           } else {
             // Only one guard cell, so no pp or mm values
@@ -198,11 +196,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                 s.m = s.c;
               }
 
-              result_fa[i] = interp(s);
+              result[i] = interp(s);
             }
           }
           
-          result = fieldmesh->fromFieldAligned(result_fa);
+          result = fieldmesh->fromFieldAligned(result, RGN_NOBNDRY);
         }
         break;
       }
@@ -234,6 +232,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                             " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
+
+      invalidateGuards(result); // Fill guard cells with NaN so we can check they are not used when unset.
 
       if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
         fieldmesh->communicate(result);

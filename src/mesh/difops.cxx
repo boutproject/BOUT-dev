@@ -341,63 +341,11 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
       result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
     }
   }
-  else if (vUseUpDown) {
-    // Only v has up/down fields
-    // f must shift to field aligned coordinates
-    Field3D f_fa = mesh->toFieldAligned(f);
-
-    vval.mm = nan("");
-    vval.pp = nan("");
-
-    for (const auto &i : result.region(region)) {
-
-      fval.mm = f_fa[i.offset(0, -2, 0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0, 2, 0)];
-
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-    }
-  }
-  else if (fUseUpDown) {
-    // Only f has up/down fields
-    // v must shift to field aligned coordinates
-    Field3D v_fa = mesh->toFieldAligned(v);
-
-    stencil vval;
-
-    stencil fval;
-    fval.mm = nan("");
-    fval.pp = nan("");
-
-    for (const auto &i : result.region(region)) {
-
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-    }
-  }
   else {
     // Both must shift to field aligned
+    // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+    // multiply them with one in field-aligned and one in non-field-aligned
+    // coordinates)
     Field3D v_fa = mesh->toFieldAligned(v);
     Field3D f_fa = mesh->toFieldAligned(f);
 
@@ -420,6 +368,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
       // Right side
       result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
     }
+
+    result = mesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
@@ -431,10 +381,11 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     ASSERT1(var.getLocation() == CELL_YLOW);
   } 
 
-  Field3D result(var.getMesh());
+  Mesh* fieldmesh = var.getMesh();
+  Field3D result(fieldmesh);
   result.allocate();
 
-  Coordinates *metric = var.getMesh()->coordinates();
+  Coordinates *metric = fieldmesh->coordinates();
 
   if (var.hasYupYdown()) {
     for (auto &i : result.region(RGN_NOBNDRY)) {
@@ -443,12 +394,13 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = var.getMesh()->toFieldAligned(var);
+    Field3D var_fa = fieldmesh->toFieldAligned(var);
 
     for(auto &i : result.region(RGN_NOBNDRY)) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22.get(CELL_CENTRE).operator[](i)));
     }
-    result = var.getMesh()->fromFieldAligned(result);
+
+    result = fieldmesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
