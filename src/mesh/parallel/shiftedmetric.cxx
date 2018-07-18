@@ -67,8 +67,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             fromAlignedPhs_CENTRE(jx, jy)[jz] = dcomplex(cos(kwave*zShift(jx,jy)) , -sin(kwave*zShift(jx,jy)));
@@ -95,8 +95,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             fromAlignedPhs_XLOW(jx, jy)[jz] = dcomplex(cos(kwave*zShift_XLOW(jx,jy)), -sin(kwave*zShift_XLOW(jx,jy)));
@@ -123,8 +123,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getFromAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             fromAlignedPhs_YLOW(jx, jy)[jz] = dcomplex(cos(kwave*zShift_YLOW(jx,jy)), -sin(kwave*zShift_YLOW(jx,jy)));
@@ -166,8 +166,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             toAlignedPhs_CENTRE(jx, jy)[jz] = dcomplex(cos(kwave*zShift(jx,jy)), sin(kwave*zShift(jx,jy)));
@@ -194,8 +194,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             toAlignedPhs_XLOW(jx, jy)[jz] = dcomplex(cos(kwave*zShift_XLOW(jx,jy)), sin(kwave*zShift_XLOW(jx,jy)));
@@ -222,8 +222,8 @@ Matrix< Array<dcomplex> > ShiftedMetric::getToAlignedPhs(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0;jx<mesh.LocalNx;jx++){
-        for(int jy=0;jy<mesh.LocalNy;jy++){
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
+        for(int jy=0;jy<mesh.LocalNy;jy++) {
           for(int jz=0;jz<nmodes;jz++) {
             BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
             toAlignedPhs_YLOW(jx, jy)[jz] = dcomplex(cos(kwave*zShift_YLOW(jx,jy)), sin(kwave*zShift_YLOW(jx,jy)));
@@ -265,7 +265,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift1 = zShift(jx,jy) - zShift(jx,jy+1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -294,7 +294,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift1 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy+1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -323,7 +323,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift1 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy+1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -367,7 +367,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift2 = zShift(jx,jy) - zShift(jx,jy+2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -396,7 +396,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift2 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy+2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -425,7 +425,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYupPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal yupShift2 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy+2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -469,7 +469,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift1 = zShift(jx,jy) - zShift(jx,jy-1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -498,7 +498,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift1 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy-1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -527,7 +527,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs1(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift1 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy-1);
           for(int jz=0;jz<nmodes;jz++) {
@@ -571,7 +571,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift2 = zShift(jx,jy) - zShift(jx,jy-2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -600,7 +600,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift2 = zShift_XLOW(jx,jy) - zShift_XLOW(jx,jy-2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -629,7 +629,7 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
       }
 
       //To/From field aligned phases
-      for(int jx=0; jx<mesh.LocalNx; jx++) {
+      for(int jx=mesh.xstart; jx<=mesh.xend; jx++) {
         for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
           BoutReal ydownShift2 = zShift_YLOW(jx,jy) - zShift_YLOW(jx,jy-2);
           for(int jz=0;jz<nmodes;jz++) {
@@ -660,44 +660,52 @@ Matrix< Array<dcomplex> > ShiftedMetric::getYdownPhs2(CELL_LOC location) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
+  ASSERT1(&mesh == f.getMesh());
   f.splitYupYdown();
   CELL_LOC location = f.getLocation();
   
+  // We only use methods in ShiftedMetric to get fields for parallel operations
+  // like interp_to or DDY.
+  // Therefore we don't need x-guard cells, so do not set them.
+  // (Note valgrind complains about corner guard cells if we try to loop over
+  // the whole grid, because zShift is not initialized in the corner guard
+  // cells.)
+  // Also, only makes sense to calculate yup/ydown for the y-grid points (not
+  // guard cells) since, e.g. yup(yend) contains the (shifted) value for f in
+  // the 'guard cell'.
+  // Therefore, only loop over RGN_NOBNDRY here.
+
   Field3D& yup1 = f.yup();
   yup1.allocate();
+  invalidateGuards(yup1); // Won't set x-guard cells, so allow checking to throw exception if they are used.
   Matrix< Array<dcomplex> > phases = getYupPhs1(location);
-  for(int jx=0; jx<mesh.LocalNx; jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), phases(jx, jy), &(yup1(jx,jy+1,0)));
-    }
+  for(auto i : f.region2D(RGN_NOBNDRY)) {
+    shiftZ(f(i.x, i.y+1), phases(i.x, i.y), yup1(i.x, i.y+1));
   }
   if (mesh.ystart>1) {
     Field3D& yup2 = f.yup(2);
     yup2.allocate();
+    invalidateGuards(yup2); // Won't set x-guard cells, so allow checking to throw exception if they are used.
     phases = getYupPhs2(location);
-    for(int jx=0; jx<mesh.LocalNx; jx++) {
-      for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-        shiftZ(&(f(jx,jy+2,0)), phases(jx, jy), &(yup2(jx,jy+2,0)));
-      }
+    for(auto i : f.region2D(RGN_NOBNDRY)) {
+      shiftZ(f(i.x, i.y+2), phases(i.x, i.y), yup2(i.x, i.y+2));
     }
   }
 
   Field3D& ydown1 = f.ydown();
   ydown1.allocate();
+  invalidateGuards(ydown1); // Won't set x-guard cells, so allow checking to throw exception if they are used.
   phases = getYdownPhs1(location);
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
-      shiftZ(&(f(jx,jy-1,0)), phases(jx, jy), &(ydown1(jx,jy-1,0)));
-    }
+  for(auto i : f.region2D(RGN_NOBNDRY)) {
+    shiftZ(f(i.x, i.y-1), phases(i.x, i.y), ydown1(i.x, i.y-1));
   }
   if (mesh.ystart > 1) {
     Field3D& ydown2 = f.ydown(2);
     ydown2.allocate();
+    invalidateGuards(ydown2); // Won't set x-guard cells, so allow checking to throw exception if they are used.
     phases = getYdownPhs2(location);
-    for(int jx=0;jx<mesh.LocalNx;jx++) {
-      for(int jy=mesh.ystart; jy<=mesh.yend; jy++) {
-        shiftZ(&(f(jx,jy-2,0)), phases(jx, jy), &(ydown2(jx,jy-2,0)));
-      }
+    for(auto i : f.region2D(RGN_NOBNDRY)) {
+      shiftZ(f(i.x, i.y-2), phases(i.x, i.y), ydown2(i.x, i.y-2));
     }
   }
 }
