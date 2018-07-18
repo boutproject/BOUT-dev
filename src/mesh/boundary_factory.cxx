@@ -10,6 +10,8 @@ using std::string;
 
 #include <output.hxx>
 
+#include "boundary_nonuniform.hxx"
+
 BoundaryFactory *BoundaryFactory::instance = nullptr;
 
 BoundaryFactory::BoundaryFactory() {
@@ -35,6 +37,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryFree(), "free");
   add(new BoundaryFree_O2(), "free_o2");
   add(new BoundaryFree_O3(), "free_o3");
+  add(new BoundaryDirichletNonUniform_O4(), "dirichlet_nu_o4");
   
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
