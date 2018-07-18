@@ -265,7 +265,7 @@ public:
 # Template to update a FlexibleField in place
 template_inplace = jinja2.Template("""\
 {% if field == 'BoutReal' %}\
-  // BoutReal does not has a location, so we can aplly the operation
+  // BoutReal does not has a location, so we can apply the operation
   // to all fields. Should be faster than re-interpolating the
   // fields. Further this conserves any fields that have been set.
   Flexible<F>& operator{{operator}}=({{field}} rhs) {

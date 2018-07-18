@@ -246,7 +246,7 @@ public:
     reset(false);
     return *this;
   };
-  // BoutReal does not has a location, so we can aplly the operation
+  // BoutReal does not has a location, so we can apply the operation
   // to all fields. Should be faster than re-interpolating the
   // fields. Further this conserves any fields that have been set.
   Flexible<F> &operator*=(BoutReal rhs) {
@@ -281,7 +281,7 @@ public:
     reset(false);
     return *this;
   };
-  // BoutReal does not has a location, so we can aplly the operation
+  // BoutReal does not has a location, so we can apply the operation
   // to all fields. Should be faster than re-interpolating the
   // fields. Further this conserves any fields that have been set.
   Flexible<F> &operator/=(BoutReal rhs) {
@@ -316,7 +316,7 @@ public:
     reset(false);
     return *this;
   };
-  // BoutReal does not has a location, so we can aplly the operation
+  // BoutReal does not has a location, so we can apply the operation
   // to all fields. Should be faster than re-interpolating the
   // fields. Further this conserves any fields that have been set.
   Flexible<F> &operator+=(BoutReal rhs) {
@@ -351,7 +351,7 @@ public:
     reset(false);
     return *this;
   };
-  // BoutReal does not has a location, so we can aplly the operation
+  // BoutReal does not has a location, so we can apply the operation
   // to all fields. Should be faster than re-interpolating the
   // fields. Further this conserves any fields that have been set.
   Flexible<F> &operator-=(BoutReal rhs) {
