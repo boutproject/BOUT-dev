@@ -209,7 +209,7 @@ cdef class Field3D:
             if ignoreDataType:
                 data=data.astype('float64')
             else:
-                raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+                raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
@@ -427,7 +427,36 @@ do
 EOF
 
 done
-cat <<EOF
+cat <<"EOF"
+    def applyBoundary(self, boundary=None, time=None):
+        """
+        Set the boundaries of a Field3D. Only one of both arguments
+        can be provided. If no value is provided, the default boundary
+        is applied.
+
+        Parameters
+        ----------
+        boundary : string
+           The boundary to be set. Has to be a valid boundary type,
+           e.g. "neumann".
+        time : float
+            The time to be used by the boundary, if time dependent
+            boundary conditions are used.
+        """
+        cdef c.string bndry
+        cdef double _time
+        if boundary is not None and time is not None:
+            raise RuntimeError("Can only pass one option at a time")
+        if time is not None:
+            _time = time
+            self.cobj.applyBoundary(_time)
+        elif boundary is not None:
+            tmp=boundary.encode('ascii')
+            bndry=tmp
+            self.cobj.applyBoundary(bndry)
+        else:
+            self.cobj.applyBoundary()
+
     def __dealloc__(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
@@ -976,7 +1005,7 @@ do
 
 "
 done
-cat <<EOF
+cat <<"EOF"
 
 def pow(Field3D a, exponent):
     """
@@ -985,7 +1014,7 @@ def pow(Field3D a, exponent):
     Parameters
     ----------
     a : Field3D
-        The field for which to calculate $fun
+        The field for which to calculate the power
     exponent : float
         The exponent
 
@@ -1080,13 +1109,15 @@ def interp_to(Field3D f3d,location):
 
 def setOption(name, value, source="PyInterface", force=False):
     """
-    Set an option in the global Options tree
+    Set an option in the global Options tree. Prefer
+    `Options.set` to avoid unexpected results if several Option
+    roots are avalaible.
 
     Parameters
     ----------
     name : string
         the name of the value to be set. Can be relative,
-        e.g. \`mesh:ddx:first\`.
+        e.g. `mesh:ddx:first`.
     value : string
         the value to be set
     source : string
@@ -1094,16 +1125,19 @@ def setOption(name, value, source="PyInterface", force=False):
         track of where what was set.
     force : bool
         If a value is overwritten, an exception is
-        thrown. setting this to \`True\` avoids the exception.
+        thrown. setting this to `True` avoids the exception.
     """
     checkInit()
     root=Options('')
     root.set(name,value,source,force)
 
 cdef class Options:
+    """
+    The Options class
+    """
     cdef c.Options * cobj
 
-    def __init__(self,name):
+    def __init__(self,name=""):
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
@@ -1119,7 +1153,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to be set. Can be relative,
-             e.g. \`mesh:ddx:first\`.
+             e.g. `mesh:ddx:first`.
         value : string
             the value to be set
         source : string
@@ -1127,7 +1161,7 @@ cdef class Options:
             track of where what was set.
         force : bool
             If a value is overwritten, an exception is
-            thrown. setting this to \`True\` avoids the exception.
+            thrown. setting this to `True` avoids the exception.
         """
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
@@ -1149,7 +1183,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to get. Can be relative,
-             e.g. \`mesh:ddx:first\`.
+             e.g. `mesh:ddx:first`.
         default : bool, string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float
