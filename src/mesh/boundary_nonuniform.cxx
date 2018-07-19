@@ -11,6 +11,227 @@
 
 #include "boundary_nonuniform.hxx"
 
+void BoundaryDirichletNonUniform_O1::apply(Field3D &f, BoutReal t) {
+  bndry->first();
+
+  // Decide which generator to use
+  std::shared_ptr<FieldGenerator> fg = gen;
+  if (!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
+  Mesh *mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
+
+  BoutReal vals[mesh->LocalNz];
+  int bx = bndry->bx;
+  int by = bndry->by;
+  int stag = 0;
+  if (loc == CELL_XLOW) {
+    if (bx == 0) {
+      bx = -1;
+    } else if (bx < 0) {
+      stag = -1;
+    } else {
+      stag = 1;
+    }
+  }
+  if (loc == CELL_YLOW) {
+    if (by == 0) {
+      by = -1;
+    } else if (by < 0) {
+      stag = -1;
+    } else {
+      stag = 1;
+    }
+  }
+  int istart = (stag == -1) ? -1 : 0;
+
+  for (; !bndry->isDone(); bndry->next1d()) {
+    if (fg) {
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        // Calculate the X and Y normalised values half-way between the guard cell and
+        // grid cell
+        BoutReal xnorm = 0.5 * (mesh->GlobalX(bndry->x)          // In the guard cell
+                                + mesh->GlobalX(bndry->x - bx)); // the grid cell
+
+        BoutReal ynorm = 0.5 * (mesh->GlobalY(bndry->y)          // In the guard cell
+                                + mesh->GlobalY(bndry->y - by)); // the grid cell
+
+        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+      }
+    }
+    BoutReal fac0;
+    BoutReal x0;
+
+    const Field2D &dy =
+        bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
+    BoutReal t;
+    if (stag == 0) {
+      x0 = 0;
+      BoutReal st = 0;
+    } else {
+      x0 = 0; // dy(bndry->x, bndry->y) / 2;
+    }
+    if (stag == -1) {
+    }
+    for (int i = istart; i < bndry->width; i++) {
+      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      if (stag == 0) {
+        t = dy[ic] / 2;
+        x0 += t;
+        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        calc_interp_to_stencil(x0, fac0);
+        x0 += t;
+      } else {
+        t = dy[ic];
+        if (stag == -1 && i != -1) {
+          x0 += t;
+        }
+        calc_interp_to_stencil(x0, fac0);
+        if (stag == 1) {
+          x0 += t;
+        }
+      }
+      for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
+        val = (fg) ? vals[ic.z] : 0.0;
+        t = fac0 * val;
+
+        f[ic] = t;
+      }
+    }
+  }
+}
+
+BoundaryOp *BoundaryDirichletNonUniform_O1::clone(BoundaryRegion *region,
+                                                  const list<string> &args) {
+  // verifyNumPoints(region, 3);
+
+  std::shared_ptr<FieldGenerator> newgen;
+  if (!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BoundaryDirichletNonUniform_O1(region, newgen);
+}
+
+void BoundaryDirichletNonUniform_O1::calc_interp_to_stencil(BoutReal x0,
+                                                            BoutReal &fac0) const {
+  // Stencil Code
+  fac0 = 1;
+}
+
+void BoundaryFreeNonUniform_O1::apply(Field3D &f, BoutReal t) {
+  bndry->first();
+
+  // Decide which generator to use
+  std::shared_ptr<FieldGenerator> fg = gen;
+  if (!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
+  Mesh *mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
+
+  BoutReal vals[mesh->LocalNz];
+  int bx = bndry->bx;
+  int by = bndry->by;
+  int stag = 0;
+  if (loc == CELL_XLOW) {
+    if (bx == 0) {
+      bx = -1;
+    } else if (bx < 0) {
+      stag = -1;
+    } else {
+      stag = 1;
+    }
+  }
+  if (loc == CELL_YLOW) {
+    if (by == 0) {
+      by = -1;
+    } else if (by < 0) {
+      stag = -1;
+    } else {
+      stag = 1;
+    }
+  }
+
+  for (; !bndry->isDone(); bndry->next1d()) {
+    if (fg) {
+      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        // Calculate the X and Y normalised values half-way between the guard cell and
+        // grid cell
+        BoutReal xnorm = 0.5 * (mesh->GlobalX(bndry->x)          // In the guard cell
+                                + mesh->GlobalX(bndry->x - bx)); // the grid cell
+
+        BoutReal ynorm = 0.5 * (mesh->GlobalY(bndry->y)          // In the guard cell
+                                + mesh->GlobalY(bndry->y - by)); // the grid cell
+
+        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+      }
+    }
+    BoutReal fac0;
+    BoutReal x0;
+
+    const Field2D &dy =
+        bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
+    Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+    if (stag == 0) {
+      BoutReal st = 0;
+      t = dy[i0];
+      x0 = st + t / 2;
+      st += t;
+    } else {
+      x0 = 0;
+    }
+
+    for (int i = 0; i < bndry->width; i++) {
+      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      if (stag == 0) {
+        t = dy[ic] / 2;
+        x0 += t;
+        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        calc_interp_to_stencil(x0, fac0);
+        x0 += t;
+      } else {
+        t = dy[ic];
+        if (stag == -1) {
+          x0 += t;
+        }
+        calc_interp_to_stencil(x0, fac0);
+        if (stag == 1) {
+          x0 += t;
+        }
+      }
+      for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
+        t = fac0 * f[i0];
+
+        f[ic] = t;
+      }
+    }
+  }
+}
+
+BoundaryOp *BoundaryFreeNonUniform_O1::clone(BoundaryRegion *region,
+                                             const list<string> &args) {
+  // verifyNumPoints(region, 3);
+
+  std::shared_ptr<FieldGenerator> newgen;
+  if (!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BoundaryFreeNonUniform_O1(region, newgen);
+}
+
+void BoundaryFreeNonUniform_O1::calc_interp_to_stencil(BoutReal x0,
+                                                       BoutReal &fac0) const {
+  // Stencil Code
+  fac0 = 1;
+}
+
 void BoundaryDirichletNonUniform_O2::apply(Field3D &f, BoutReal t) {
   bndry->first();
 

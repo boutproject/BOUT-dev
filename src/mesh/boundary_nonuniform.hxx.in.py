@@ -5,7 +5,7 @@ from jinja2 import Environment
 env=Environment(trim_blocks=True);
 
 
-orders=range(2,5)
+orders=range(1,5)
 whats=["Dirichlet","Neumann","Free"]
 
 class_str="""
@@ -37,6 +37,8 @@ private:
 if __name__ == "__main__":
     for order in orders:
         for what in whats:
+            if what == "Neumann" and order == 1:
+                continue
             args={
                 'order':order,
                 'what':what,

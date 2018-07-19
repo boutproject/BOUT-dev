@@ -40,12 +40,14 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichletNonUniform_O4(), "dirichlet_nu_o4");
   add(new BoundaryDirichletNonUniform_O3(), "dirichlet_nu_o3");
   add(new BoundaryDirichletNonUniform_O2(), "dirichlet_nu_o2");
+  add(new BoundaryDirichletNonUniform_O1(), "dirichlet_nu_o1");
   add(new BoundaryNeumannNonUniform_O4(), "neumann_nu_o4");
   add(new BoundaryNeumannNonUniform_O3(), "neumann_nu_o3");
   add(new BoundaryNeumannNonUniform_O2(), "neumann_nu_o2");
   add(new BoundaryFreeNonUniform_O4(), "free_nu_o4");
   add(new BoundaryFreeNonUniform_O3(), "free_nu_o3");
   add(new BoundaryFreeNonUniform_O2(), "free_nu_o2");
+  add(new BoundaryFreeNonUniform_O1(), "free_nu_o1");
   
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
