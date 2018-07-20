@@ -54,6 +54,7 @@ for j in range(1, x.shape[1]-1):
     pyplot.colorbar()
     pyplot.title('error')
 
-    pyplot.show()
+    #pyplot.show()
+    pyplot.savefig('test-matrix-result.pdf')
 
 exit(0)
