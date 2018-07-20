@@ -44,7 +44,7 @@ geometry.print_mesh()
 print("")
 print("[laplace]")
 print("")
-print("type = cyclic")
+print("type = petscamg")
 print("flags = 0")
 
 exit(0)
