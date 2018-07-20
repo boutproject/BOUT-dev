@@ -37,7 +37,7 @@ void LaplacePetscAmg::generateMatrixA(int kflag) {
   // Set (fine-level) matrix entries
   Coordinates *coords = mesh->coordinates();
   int i,k,i2,k2,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd,area;
+  BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd;
   PetscScalar lval[9],val;
   nn = Nx_local*Nz_local;
   dz = 9;
@@ -244,7 +244,7 @@ void LaplacePetscAmg::generateMatrixP(int kflag) {
 
   Coordinates *coords = mesh->coordinates();
   int i,k,i2,k2,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd,area;
+  BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd;
   PetscScalar lval[5],val;
   nn = Nx_local*Nz_local;
   dz = 5;
@@ -315,15 +315,13 @@ BOUT_OMP(for)
         + coords->g13(i2, yindex)*ddx_C)/coords->dz;
              // (could assume zero, at least initially, if easier; then check this is true in constructor)
              // coefficient of 1st derivative stencil (z-direction)
-      area = coords->dx(i2, yindex)*coords->dz;
-
 
       // Put Matrix element with global numbering
-      lval[0] = (ddx - dxd/2.)*area;
-      lval[1] = (ddz - dzd/2.)*area;
-      lval[2] = (A(i2, yindex, k2) - 2.*(ddx+ddz))*area;
-      lval[3] = (ddz + dzd/2.)*area;
-      lval[4] = (ddx+dxd/2.)*area;
+      lval[0] = ddx - dxd/2.;
+      lval[1] = ddz - dzd/2.;
+      lval[2] = A(i2, yindex, k2) - 2.*(ddx+ddz);
+      lval[3] = ddz + dzd/2.;
+      lval[4] = ddx+dxd/2.;
       
       icc = (i+lxs)*nzt+k+lzs;
       irow = gindices[icc];
