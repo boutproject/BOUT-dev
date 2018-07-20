@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
   Field3D rhs = fact.create3D("input");
 
   Field3D x = fact.create3D("solution");
+  x.applyBoundary("dirichlet");
 
   Field3D bout_rhs = D*this_Grad_perp2(x) + this_Grad_perp_dot_Grad_perp(C2, x)/C1 + A*x;
 
