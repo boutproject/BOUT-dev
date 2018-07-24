@@ -33,6 +33,8 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
+
+  setParallelTransform();
 }
 
 Mesh::~Mesh() {
@@ -310,10 +312,7 @@ void Mesh::setParallelTransform() {
 }
 
 ParallelTransform& Mesh::getParallelTransform() {
-  if(!transform) {
-    // No ParallelTransform object yet. Set from options
-    setParallelTransform();
-  }
+  ASSERT1(transform);
   
   // Return a reference to the ParallelTransform object
   return *transform;

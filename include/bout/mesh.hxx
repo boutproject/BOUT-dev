@@ -604,19 +604,25 @@ class Mesh {
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform().toFieldAligned(f);
+    return transform->toFieldAligned(f);
   }
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform().fromFieldAligned(f);
+    return transform->fromFieldAligned(f);
   }
 
   const string getCoordinateSystem() {
-    return getParallelTransform().getCoordinateSystem();
+    if (transform) {
+      return transform->getCoordinateSystem();
+    } else {
+      // ParallelTransform not initialized yet. Any Field3D created better not
+      // need to know its coordinate system.
+      return "none";
+    }
   }
 
   bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
+    return transform->canToFromFieldAligned();
   }
 
   /*!
