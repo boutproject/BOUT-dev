@@ -930,6 +930,12 @@ bool Datafile::write() {
   // Write 3D fields
   for (const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.save_repeat);
+    // Add coordinate system
+    if (shiftOutput) {
+      file->setAttribute(var.name, "coordinate_system", COORDINATE_SYSTEMtoString.at(COORDINATE_SYSTEM::FieldAligned));
+    } else {
+      file->setAttribute(var.name, "coordinate_system", COORDINATE_SYSTEMtoString.at(var.ptr->getCoordinateSystem()));
+    }
   }
   
   // 2D vectors

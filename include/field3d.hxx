@@ -40,6 +40,28 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+/*!
+ * Coordinate systems that Field3Ds can be stored in
+ *
+ * None - special value to be used for Field3Ds initialized before the Mesh and
+ * ParallelTransform have finished being initialized, because then we cannot
+ * get the COORDINATE_SYSTEM to use from the ParallelTransform, but Field3Ds
+ * created then must not need to know their COORDINATE_SYSTEM, or must set it
+ * explicitly later.
+ */
+enum class COORDINATE_SYSTEM { None, FieldAligned, Orthogonal, FCI };
+
+#define COORDENUMSTR(val) {COORDINATE_SYSTEM::val, #val}
+
+const std::map<COORDINATE_SYSTEM, std::string> COORDINATE_SYSTEMtoString = {
+  COORDENUMSTR(None),
+  COORDENUMSTR(FieldAligned),
+  COORDENUMSTR(Orthogonal),
+  COORDENUMSTR(FCI)
+};
+
+#undef COORDENUMSTR
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.
@@ -214,6 +236,16 @@ class Field3D : public Field, public FieldData {
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
+
+  /*!
+   * Return the coordinate system of this field
+   */
+  COORDINATE_SYSTEM getCoordinateSystem() const { return coordinate_system; }
+
+  /*!
+   * Reset the coordinate system of this field
+   */
+  void setCoordinateSystem(COORDINATE_SYSTEM new_coords) { coordinate_system = new_coords; }
 
   /*!
    * Ensure that this field has separate fields
@@ -477,6 +509,8 @@ private:
 
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
+
+  COORDINATE_SYSTEM coordinate_system; ///< Coordinate system used by this field, e.g. fieldaligned, orthogonal
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

@@ -81,6 +81,10 @@ public:
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
+  COORDINATE_SYSTEM getCoordinateSystem() const override {
+    return COORDINATE_SYSTEM::FCI;
+  }
+
   bool canToFromFieldAligned() override{
     return false;
   }

@@ -695,6 +695,10 @@ class Mesh {
     return f;
   }
 
+  COORDINATE_SYSTEM getCoordinateSystem() const {
+    return getParallelTransform().getCoordinateSystem();
+  }
+
   bool canToFromFieldAligned() {
     return getParallelTransform().canToFromFieldAligned();
   }
@@ -717,7 +721,7 @@ class Mesh {
   void setParallelTransform();
 
   /*!
-   * Return the parallel transform, setting it if need be
+   * Return the parallel transform
    */
   ParallelTransform& getParallelTransform();
   
