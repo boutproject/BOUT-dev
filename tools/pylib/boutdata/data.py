@@ -10,6 +10,7 @@ import numpy
 import re
 
 from boutdata.collect import collect, create_cache
+from boutdata.shiftz import shiftz
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
 
@@ -626,25 +627,37 @@ class BoutOutputs(object):
         """
         Return a variable shifted by zShift: if BOUT++ output is in
         'unshifted', i.e. toroidal, coordinates, this function returns a field
-        in field-aligned coordinates
+        in field-aligned coordinates. Does nothing if the variable is already
+        field aligned.
 
         Note: shiftz(x, zshift) takes field-aligned 'x' to 'x' in orthogonal
         coordinates. Therefore need to use -self.shiftAngle here
         """
-        from boutdata.shiftz import shiftz
-        return shiftz(self[name], -self.shiftAngle)
+        coords = self[name].attributes["coordinate_system"]
+        if coords == "fieldaligned":
+            return self[name]
+        elif coords == "orthogonal":
+            return shiftz(self[name], -self.shiftAngle)
+        else:
+            raise ValueError("Unrecognized coordinate system: "+coords)
 
     def getUnshifted(self, name):
         """
         Return a variable un-shifted by zShift: if BOUT++ output is in
         'shifted', i.e. field-aligned, coordinates, this function returns a
-        field in toroidal coordinates
+        field in toroidal coordinates. Does nothing if the variable is already
+        in toroidal coordinates.
 
         Note: shiftz(x, zshift) takes field-aligned 'x' to 'x' in orthogonal
         coordinates. Therefore need to use +self.shiftAngle here
         """
-        from boutdata.shiftz import shiftz
-        return shiftz(self[name], self.shiftAngle)
+        coords = self[name].attributes["coordinate_system"]
+        if coords == "fieldaligned":
+            return shiftz(self[name], self.shiftAngle)
+        elif coords == "orthogonal":
+            return self[name]
+        else:
+            raise ValueError("Unrecognized coordinate system: "+coords)
 
     def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
         """Create a new set of dump files for npes processors.
