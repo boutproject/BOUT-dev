@@ -64,7 +64,14 @@ Field3D::Field3D(Mesh *localmesh)
   }
 #endif
 
-  coordinate_system = fieldmesh->getCoordinateSystem();
+  if (fieldmesh) {
+    coordinate_system = fieldmesh->getCoordinateSystem();
+  }
+#if CHECK > 0
+  else {
+    coordinate_system = "none";
+  }
+#endif
 
   location = CELL_CENTRE; // Cell centred variable by default
 
