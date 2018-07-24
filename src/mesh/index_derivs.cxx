@@ -1035,6 +1035,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
 
     Field3D var_fa = this->toFieldAligned(var);
+    result.setCoordinateSystem("fieldaligned");
 
     if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
       // Staggered differencing
@@ -2295,6 +2296,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // coordinates)
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
+      result.setCoordinateSystem("fieldaligned");
 
       stencil vval, fval;
       for (const auto &i : result.region(region)) {
@@ -2366,6 +2368,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
       Field3D f_fa = this->toFieldAligned(f);
       Field3D v_fa = this->toFieldAligned(v);
+      result.setCoordinateSystem("fieldaligned");
 
       if (this->ystart > 1) {
         stencil fs;
@@ -2997,6 +3000,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // coordinates)
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
+    result.setCoordinateSystem("fieldaligned");
 
     stencil vval, fval;
 

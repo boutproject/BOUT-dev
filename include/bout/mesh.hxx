@@ -623,6 +623,10 @@ class Mesh {
     return getParallelTransform().fromFieldAligned(f, region);
   }
 
+  const string getCoordinateSystem() {
+    return getParallelTransform().getCoordinateSystem();
+  }
+
   bool canToFromFieldAligned() {
     return getParallelTransform().canToFromFieldAligned();
   }

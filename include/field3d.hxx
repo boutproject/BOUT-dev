@@ -229,6 +229,16 @@ class Field3D : public Field, public FieldData {
   int getNz() const override {return nz;};
 
   /*!
+   * Return the coordinate system of this field
+   */
+  const string getCoordinateSystem() const {return coordinate_system;};
+
+  /*!
+   * Reset the coordinate system of this field
+   */
+  void setCoordinateSystem(string new_coords) {coordinate_system = new_coords;};
+
+  /*!
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
@@ -538,6 +548,8 @@ private:
   const Field2D *background;
 
   int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+
+  string coordinate_system; ///< Coordinate system used by this field, e.g. fieldaligned, orthogonal
   
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

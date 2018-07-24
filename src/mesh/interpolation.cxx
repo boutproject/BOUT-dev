@@ -152,6 +152,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           if (region != RGN_NOBNDRY) {
             result = fieldmesh->toFieldAligned(result);
           }
+          result.setCoordinateSystem("fieldaligned");
           if (fieldmesh->ystart > 1) {
 
             // More than one guard cell, so set pp and mm values
