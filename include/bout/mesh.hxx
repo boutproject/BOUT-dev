@@ -681,7 +681,7 @@ class Mesh {
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
-    return getParallelTransform().toFieldAligned(f, region);
+    return transform->toFieldAligned(f, region);
   }
   const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
     return f;
@@ -689,18 +689,24 @@ class Mesh {
   
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
-    return getParallelTransform().fromFieldAligned(f, region);
+    return transform->fromFieldAligned(f, region);
   }
   const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
     return f;
   }
 
   COORDINATE_SYSTEM getCoordinateSystem() const {
-    return getParallelTransform().getCoordinateSystem();
+    if (transform) {
+      return transform->getCoordinateSystem();
+    } else {
+      // ParallelTransform not initialized yet. Any Field3D created better not
+      // need to know its coordinate system.
+      return COORDINATE_SYSTEM::None;
+    }
   }
 
   bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
+    return transform->canToFromFieldAligned();
   }
 
   /*!
