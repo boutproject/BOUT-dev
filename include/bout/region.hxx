@@ -267,7 +267,7 @@ inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 ///
 /// or the more convenient region for loop:
 ///
-///     for (auto &i : r) {
+///     for (const auto &i : r) {
 ///       f[i] = a[i] + b[i];
 ///     }
 ///

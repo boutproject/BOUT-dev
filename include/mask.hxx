@@ -39,7 +39,7 @@
  *     // Set an index to true to skip this index
  *     mask(3, 4, 5) = true;
  *     // Iterate over field
- *     for (auto index : field) {
+ *     for (const auto &index : field) {
  *       // Skip any indices which are set to true in the mask
  *       if (mask(index.x, index.y, index.z)) continue;
  *       ...
