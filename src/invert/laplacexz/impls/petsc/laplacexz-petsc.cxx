@@ -546,7 +546,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 #if PETSC_VERSION_GE(3,5,0)
       KSPSetOperators(it.ksp, it.MatA, it.MatP);
 #else
-      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_NONZERO_PATTERN);
+      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_NONZERO_PATTERN);
 #endif
     }
   }else {
@@ -555,9 +555,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
 #if PETSC_VERSION_GE(3,5,0)
       KSPSetReusePreconditioner(it.ksp, PETSC_TRUE);
-      //KSPSetOperators(it->ksp, it->MatA, it->MatP);
+      //KSPSetOperators(it.ksp, it.MatA, it.MatP);
 #else
-      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
+      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
 #endif
     }
   }
