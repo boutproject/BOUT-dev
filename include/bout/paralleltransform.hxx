@@ -241,6 +241,10 @@ public:
    */
   const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
 
+  const string getCoordinateSystem() const override {
+    return "orthogonal";
+  }
+
   bool canToFromFieldAligned() override{
     return true;
   }

@@ -265,6 +265,7 @@ Field3D& Field3D::fieldAligned() {
 
     field_fa = new Field3D(getMesh());
     field_fa->setLocation(location);
+    field_fa->setCoordinateSystem("fieldaligned");
   }
   return *field_fa;
 }

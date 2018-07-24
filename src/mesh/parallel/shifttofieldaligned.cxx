@@ -237,6 +237,7 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location
 void ShiftToFieldAligned::calcYUpDown(Field3D &f, REGION region) {
   ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY);
   ASSERT1(&mesh == f.getMesh());
+  ASSERT2(f.getCoordinateSystem() == "orthogonal");
   
   // We only use methods in ShiftToFieldAligned to get fields for parallel operations
   // like interp_to or DDY.
@@ -247,6 +248,7 @@ void ShiftToFieldAligned::calcYUpDown(Field3D &f, REGION region) {
 
   Field3D& f_fa = f.fieldAligned();
   f_fa = shiftZ(f, getToAlignedPhs(f.getLocation()), region);
+  f_fa.setCoordinateSystem("fieldaligned");
   f.setHasFieldAligned(true);
 }
 
@@ -259,6 +261,7 @@ const Field3D ShiftToFieldAligned::toFieldAligned(const Field3D &f, const REGION
   if (f.hasFieldAligned()) {
     return f.fieldAligned();
   } else {
+    ASSERT2(f.getCoordinateSystem() == "orthogonal");
 #if CHECK > 1
     static int count = 0;
 
@@ -279,7 +282,9 @@ const Field3D ShiftToFieldAligned::toFieldAligned(const Field3D &f, const REGION
       count++;
     }
 #endif
-    return shiftZ(f, getToAlignedPhs(f.getLocation()), region);
+    Field3D result = shiftZ(f, getToAlignedPhs(f.getLocation()), region);
+    result.setCoordinateSystem("fieldaligned");
+    return result;
   }
 }
 
@@ -288,7 +293,10 @@ const Field3D ShiftToFieldAligned::toFieldAligned(const Field3D &f, const REGION
  * but Y is not field aligned.
  */
 const Field3D ShiftToFieldAligned::fromFieldAligned(const Field3D &f, const REGION region) {
-  return shiftZ(f, getFromAlignedPhs(f.getLocation()), region);
+  ASSERT2(f.getCoordinateSystem() == "fieldaligned");
+  Field3D result = shiftZ(f, getFromAlignedPhs(f.getLocation()), region);
+  result.setCoordinateSystem(f.getMesh()->getCoordinateSystem());
+  return result;
 }
 
 const Field3D ShiftToFieldAligned::shiftZ(const Field3D &f, const Matrix< Array<dcomplex> > &phs, const REGION region) {
