@@ -199,14 +199,14 @@ void Field3D::mergeYupYdown() {
 
 void Field3D::clearYupYdown() {
   // Delete auxiliary fields if they have been set
-  if (yup_field != nullptr && yup_field != this) {
-    delete yup_field;
+  if (yup_field == this && ydown_field == this) {
+    return;
   }
+
+  delete yup_field;
   yup_field = nullptr;
 
-  if (ydown_field != nullptr && ydown_field != this) {
-    delete ydown_field;
-  }
+  delete ydown_field;
   ydown_field = nullptr;
 }
 

@@ -15,6 +15,8 @@
 
 #include <output.hxx>
 
+class Datafile;
+
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   // Read the zShift angle from the mesh
   
@@ -141,7 +143,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const
   Field3D result(&mesh);
   result.allocate();
 
-  for(auto i : f.region2D(region)) {
+  for (const auto &i : f.region2D(region)) {
     shiftZ(f(i.x,i.y), phs[i.x][i.y], result(i.x,i.y));
   }
   
@@ -184,7 +186,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
   // (Note valgrind complains about corner guard cells if we try to loop over
   // the whole grid, because zShift is not initialized in the corner guard
   // cells.)
-  for(auto i : f.region2D(region)) {
+  for(const auto &i : f.region2D(region)) {
     shiftZ(f(i.x, i.y), mesh.LocalNz, zangle(i.x,i.y), result(i.x, i.y));
   }
   

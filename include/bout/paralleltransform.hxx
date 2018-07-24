@@ -84,9 +84,6 @@ public:
   bool canToFromFieldAligned() override{
     return true;
   }
-
-  /// Write out ParallelTransform variables to file
-  virtual void outputVars(Datafile &UNUSED(file)) {};
 };
 
 /*!
@@ -191,7 +188,7 @@ private:
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
 
   /// Write out ParallelTransform variables to file
-  void outputVars(Datafile &file);
+  void outputVars(Datafile &file) override;
 };
 
 
