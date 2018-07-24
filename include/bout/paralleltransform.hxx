@@ -44,6 +44,11 @@ public:
   /// into standard form
   virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
 
+  /*!
+   * Return the coordinate system of this field
+   */
+  virtual const string getCoordinateSystem() const = 0;
+
   virtual bool canToFromFieldAligned() = 0;
 };
 
@@ -75,6 +80,10 @@ public:
    */
   const Field3D fromFieldAligned(const Field3D &f) override {
     return f;
+  }
+
+  const string getCoordinateSystem() const override {
+    return "fieldaligned";
   }
 
   bool canToFromFieldAligned() override{
@@ -115,6 +124,10 @@ public:
    * from field aligned coordinates.
    */
   const Field3D fromFieldAligned(const Field3D &f) override;
+
+  const string getCoordinateSystem() const override {
+    return "orthogonal";
+  }
 
   bool canToFromFieldAligned() override{
     return true;

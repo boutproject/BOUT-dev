@@ -86,6 +86,10 @@ public:
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
+  const string getCoordinateSystem() const override {
+    return "orthogonal";
+  }
+
   bool canToFromFieldAligned() override{
     return false;
   }

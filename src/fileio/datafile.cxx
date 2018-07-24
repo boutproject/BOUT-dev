@@ -589,6 +589,12 @@ bool Datafile::write() {
 
     // Add cell location
     file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+    // Add coordinate system
+    if (shiftOutput) {
+      file->setAttribute(var.name, "coordinate_system", "fieldaligned");
+    } else {
+      file->setAttribute(var.name, "coordinate_system", var.ptr->getCoordinateSystem());
+    }
     
     // Add string attributes
     {

@@ -121,7 +121,10 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
-  return shiftZ(f, toAlignedPhs);
+  ASSERT2(f.getCoordinateSystem() == "orthogonal");
+  Field3D result = shiftZ(f, toAlignedPhs);
+  result.setCoordinateSystem("fieldaligned");
+  return result;
 }
 
 /*!
@@ -129,7 +132,10 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
-  return shiftZ(f, fromAlignedPhs);
+  ASSERT2(f.getCoordinateSystem() == "fieldaligned");
+  Field3D result = shiftZ(f, fromAlignedPhs);
+  result.setCoordinateSystem(f.getMesh()->getCoordinateSystem());
+  return result;
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {

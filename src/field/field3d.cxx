@@ -64,6 +64,8 @@ Field3D::Field3D(Mesh *localmesh)
   }
 #endif
 
+  coordinate_system = fieldmesh->getCoordinateSystem();
+
   location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
@@ -73,7 +75,8 @@ Field3D::Field3D(Mesh *localmesh)
 /// later)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
-      background(nullptr), data(f.data), // This handles references to the data array
+      background(nullptr), coordinate_system(f.coordinate_system),
+      data(f.data), // This handles references to the data array
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D(Field3D&)");
@@ -106,6 +109,8 @@ Field3D::Field3D(const Field2D &f)
 
   TRACE("Field3D: Copy constructor from Field2D");
 
+  coordinate_system = fieldmesh->getCoordinateSystem();
+
   location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
@@ -123,6 +128,8 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
+
+  coordinate_system = fieldmesh->getCoordinateSystem();
 
   location = CELL_CENTRE; // Cell centred variable by default
 
@@ -353,6 +360,8 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
+  coordinate_system = rhs.coordinate_system;
+
   data = rhs.data;
   
   location = rhs.location;
