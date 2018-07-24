@@ -177,6 +177,7 @@ void Field3D::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data = Array<BoutReal>(nx*ny*nz);
+    coordinate_system = fieldmesh->getCoordinateSystem();
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
