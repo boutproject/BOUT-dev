@@ -73,6 +73,8 @@ public:
     ystart = 1;
     yend = ny - 2;
 
+    options = Options::getRoot()->getSection("mesh");
+
     // Unused variables
     periodicX = false;
     NXPE = 1;
