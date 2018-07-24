@@ -837,6 +837,9 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
+  // Set the ParallelTransform
+  setParallelTransform();
+
   output_info.write("\tdone\n");
 
   return 0;

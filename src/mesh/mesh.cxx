@@ -33,8 +33,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
-
-  setParallelTransform();
 }
 
 Mesh::~Mesh() {
