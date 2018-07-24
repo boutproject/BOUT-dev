@@ -230,6 +230,16 @@ inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
 inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
 inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
+struct RegionStats {
+  int numBlocks;           // How many blocks
+  int minBlockSize;        // Size of smallest block
+  int numMinBlocks;        // Number of blocks with min size
+  int maxBlockSize;        // Size of largest block
+  int numMaxBlocks;        // Number of blocks with max size
+  int numSmallBlocks;      // Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance;   // Ratio of largest block to smallest
+};
+
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
 ///
@@ -485,6 +495,36 @@ public:
     return indices.size();
   }
   
+  /// Returns a RegionStats struct desribing the region
+  RegionStats getStats() {
+    RegionStats result;
+
+    result.numBlocks = blocks.size();
+
+    std::vector<int> blockSizes(result.numBlocks);
+    
+    // Get the size of each block using lambda to calculate size
+    std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
+		   [](ContiguousBlock &a) { return 1 + a.second.ind - a.first.ind;});
+
+    auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
+
+    result.minBlockSize = *(minMaxSize.first); //Note have to derefence to get actual value
+    result.numMinBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
+
+    result.maxBlockSize = *(minMaxSize.second); //Note have to derefence to get actual value
+    result.numMaxBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
+
+    
+    result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)/static_cast<BoutReal>(result.minBlockSize);
+
+    // Count the number of small blocks, defined as blocks less than smallSizeFrac of maxBlockSize
+    const BoutReal smallSizeFrac = 0.5;
+    result.numSmallBlocks = std::count_if(std::begin(blockSizes), std::end(blockSizes), [&blockSizes, &result, smallSizeFrac](int theSize) { return theSize < smallSizeFrac * result.maxBlockSize;}) ;
+
+    return result;
+  }
+
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
