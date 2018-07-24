@@ -216,6 +216,7 @@ void Field3D::deleteYupYdown() {
     delete field_fa;
   }
   field_fa = nullptr;
+  has_field_aligned = false;
 }
 
 Field3D& Field3D::ynext(int dir) {
