@@ -66,6 +66,8 @@ public:
     yend = ny - 2;
 
     StaggerGrids=true;
+    options = Options::getRoot()->getSection("mesh");
+
     // Unused variables
     periodicX = false;
     NXPE = 1;
