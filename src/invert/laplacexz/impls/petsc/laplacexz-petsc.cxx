@@ -534,9 +534,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         MatDestroy(&it.MatP);
       }
       MatConvert(it.MatA, MATSAME, MAT_INITIAL_MATRIX, &it.MatP);
-
-      // Don't re-use preconditioner
-      //KSPSetReusePreconditioner(it->ksp, PETSC_FALSE); // PETSc >= 3.5
     }
 
     // Set operators
@@ -555,9 +552,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
 #if PETSC_VERSION_GE(3,5,0)
       KSPSetReusePreconditioner(it.ksp, PETSC_TRUE);
-      //KSPSetOperators(it.ksp, it.MatA, it.MatP);
 #else
-      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
+      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER);
 #endif
     }
   }
