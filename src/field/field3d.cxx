@@ -118,8 +118,6 @@ Field3D::Field3D(const Field2D &f)
 
   TRACE("Field3D: Copy constructor from Field2D");
 
-  coordinate_system = fieldmesh->getCoordinateSystem();
-
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -128,7 +126,8 @@ Field3D::Field3D(const Field2D &f)
 
   location = f.getLocation();
   fieldCoordinates = nullptr;
-    
+  coordinate_system = fieldmesh->getCoordinateSystem();
+
   *this = f;
 }
 
@@ -139,13 +138,13 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
 
   TRACE("Field3D: Copy constructor from value");
 
-  coordinate_system = fieldmesh->getCoordinateSystem();
-
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
+
+  coordinate_system = fieldmesh->getCoordinateSystem();
 
   *this = val;
 }
