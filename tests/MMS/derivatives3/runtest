@@ -32,7 +32,7 @@ def runtests(functions,derivatives,directions,stag,msg):
             boutcore.setOption("meshD:dD".replace("D",direction,)
                                ,"2*pi/(%d)"%(nz),force=True)
             dirnfac=direction+"*"+fac
-            mesh=boutcore.Mesh(OptionSection="mesh"+direction)
+            mesh=boutcore.Mesh(section="mesh"+direction)
             f=boutcore.create3D(infunc.replace("%s",dirnfac),mesh
                                 ,outloc=inloc)
             sim=diff_func(f,method=diff,outloc=outloc)
