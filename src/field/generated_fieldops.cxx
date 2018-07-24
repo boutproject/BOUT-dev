@@ -20,6 +20,8 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
 
   ASSERT1(localmesh == rhs.getMesh());
 
+  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
@@ -30,6 +32,7 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -40,6 +43,7 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(this->getCoordinateSystem() == rhs.getCoordinateSystem())
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in Field3D::operator*=(Field3D): fields at different "
@@ -81,6 +85,8 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
 
   ASSERT1(localmesh == rhs.getMesh());
 
+  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
@@ -91,6 +97,7 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -101,6 +108,7 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(this->getCoordinateSystem() == rhs.getCoordinateSystem())
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in Field3D::operator/=(Field3D): fields at different "
@@ -142,6 +150,8 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
 
   ASSERT1(localmesh == rhs.getMesh());
 
+  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
@@ -152,6 +162,7 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -162,6 +173,7 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(this->getCoordinateSystem() == rhs.getCoordinateSystem())
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in Field3D::operator+=(Field3D): fields at different "
@@ -203,6 +215,8 @@ Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
 
   ASSERT1(localmesh == rhs.getMesh());
 
+  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
+
   Field3D result(localmesh);
   result.allocate();
   checkData(lhs);
@@ -213,6 +227,7 @@ Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -223,6 +238,7 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(this->getCoordinateSystem() == rhs.getCoordinateSystem())
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException("Error in Field3D::operator-=(Field3D): fields at different "
@@ -270,6 +286,7 @@ Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
   }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -325,6 +342,7 @@ Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
   }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -380,6 +398,7 @@ Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
   }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -434,6 +453,7 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
   }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -481,6 +501,7 @@ Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs[index] * rhs; }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -521,6 +542,7 @@ Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs[index] / rhs; }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -561,6 +583,7 @@ Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs[index] + rhs; }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -601,6 +624,7 @@ Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs[index] - rhs; }
 
   result.setLocation(lhs.getLocation());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -648,6 +672,7 @@ Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -673,6 +698,7 @@ Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -698,6 +724,7 @@ Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -723,6 +750,7 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
   }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -1053,6 +1081,7 @@ Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs * rhs[index]; }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -1071,6 +1100,7 @@ Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs / rhs[index]; }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -1089,6 +1119,7 @@ Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs + rhs[index]; }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -1107,6 +1138,7 @@ Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
   BOUT_FOR(index, localmesh->getRegion3D("RGN_ALL")) { result[index] = lhs - rhs[index]; }
 
   result.setLocation(rhs.getLocation());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
 
   checkData(result);
   return result;
