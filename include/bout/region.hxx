@@ -496,7 +496,7 @@ public:
   }
   
   /// Returns a RegionStats struct desribing the region
-  RegionStats getStats() {
+  RegionStats getStats() const {
     RegionStats result;
 
     result.numBlocks = blocks.size();
@@ -505,7 +505,7 @@ public:
     
     // Get the size of each block using lambda to calculate size
     std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
-		   [](ContiguousBlock &a) { return 1 + a.second.ind - a.first.ind;});
+		   [](const ContiguousBlock &a) { return a.second.ind - a.first.ind;});
 
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 

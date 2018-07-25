@@ -932,13 +932,13 @@ TEST_F(RegionTest, regionGetStatsHomogenous) {
   Region<Ind3D>::ContiguousBlocks blocks;
 
   for (int i = 0; i < numMaxBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize));
   }
   for (int i = 0; i < numMinBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize));
   }
   for (int i = 0; i < numSmallBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize));
   }
 
   Region<Ind3D> region(blocks);
@@ -968,13 +968,13 @@ TEST_F(RegionTest, regionGetStatsHeterogenous) {
   Region<Ind3D>::ContiguousBlocks blocks;
 
   for (int i = 0; i < numMaxBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize));
   }
   for (int i = 0; i < numMinBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize));
   }
   for (int i = 0; i < numExtraSmallBlocks; i++) {
-    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize - 1));
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize));
   }
 
   Region<Ind3D> region(blocks);
