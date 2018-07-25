@@ -272,8 +272,13 @@ and problem.
 Differencing methods
 --------------------
 
-Differencing methods are specified in three section (``[ddx]``,
-``[ddy]`` and ``[ddz]``), one for each dimension.
+Differencing methods are specified in the section (``[mesh:ddx]``,
+``[mesh:ddy]``, ``[mesh:ddz]`` and ``[mesh:diff]``), one for each
+dimension. The ``[mesh:diff]`` section is only used if the section for
+the dimension does not contain an option for the differencing method.
+Note that ``[mesh]`` is the name of the section passed to the mesh
+constructor, which is most often ``mesh`` - but could have another
+name, e.g. if multiple meshes are used.
 
 -  ``first``, the method used for first derivatives
 
@@ -286,6 +291,14 @@ Differencing methods are specified in three section (``[ddx]``,
 The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
+
+The staggered derivatives can be specified as ``FirstStag`` or if the
+value is not set, then ``First`` is checked.
+Note that for the staggered quantities, if the staggered quantity in a
+dimension is not set, first the staggered quantity in the ``[mesh:diff]``
+section is checked. This is useful, as the staggered quantities are
+more restricted in the available choices than the non-staggered
+differenciating operators.
 
 Model-specific options
 ----------------------
