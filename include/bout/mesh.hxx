@@ -693,7 +693,7 @@ class Mesh {
   void createDefaultRegions();
   
   /*!
-   * Return the parallel transform, setting it if need be
+   * Return the parallel transform
    */
   ParallelTransform& getParallelTransform();
   
