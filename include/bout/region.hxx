@@ -230,6 +230,31 @@ inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
 inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
 inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
+/// Index-type for `FieldPerp`s
+class IndPerp : public SpecificInd {
+public:
+  IndPerp() : SpecificInd(){};
+  IndPerp(int i) : SpecificInd(i){};
+  IndPerp(SpecificInd baseIn) : SpecificInd(baseIn){};
+  
+  IndPerp &operator=(int i) {
+    ind = i;
+    return *this;
+  }
+
+  IndPerp &operator=(SpecificInd i) {
+    ind = i.ind;
+    return *this;
+  }
+};
+
+/// Arithmetic operators with integers
+inline IndPerp operator+(IndPerp lhs, const IndPerp &rhs) { return lhs += rhs; }
+inline IndPerp operator+(IndPerp lhs, int n) { return lhs += n; }
+inline IndPerp operator+(int n, IndPerp rhs) { return rhs += n; }
+inline IndPerp operator-(IndPerp lhs, int n) { return lhs -= n; }
+inline IndPerp operator-(IndPerp lhs, const IndPerp &rhs) { return lhs -= rhs; }
+
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
 ///
@@ -288,8 +313,10 @@ inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
-                "Region must be templated with either Ind2D or Ind3D");
+  static_assert(std::is_base_of<Ind2D, T>::value 
+             || std::is_base_of<Ind3D, T>::value
+             || std::is_base_of<IndPerp, T>::value,
+                "Region must be templated with Ind2D, IndPerp or Ind3D");
 
 public:
   typedef T data_type;

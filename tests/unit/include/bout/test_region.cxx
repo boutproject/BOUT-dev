@@ -924,7 +924,7 @@ public:
   T value_;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
+typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, MemberSize) {
@@ -1209,7 +1209,7 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 }
 
 /////////////////////////////////////////////////////////
-// Type-parameterised tests for Ind2D, Ind3D
+// Type-parameterised tests for Ind2D, Ind3D, IndPerp
 
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
@@ -1219,7 +1219,7 @@ class FieldIndexTest : public ::testing::Test {
   T value_;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
+typedef ::testing::Types<Ind2D, Ind3D, IndPerp> FieldIndexTypes;
 TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
