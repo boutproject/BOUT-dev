@@ -241,6 +241,22 @@ struct RegionStats {
   BoutReal maxImbalance = 0;   // Ratio of largest block to smallest
 };
 
+/// Provide an easy way to report a Region's statistics
+inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
+  if ( stats.numBlocks == 0 ) {
+    out << "Empty";
+    return out;
+  }
+  out << "Total blocks : "<< stats.numBlocks;
+  out << ", " << "min(count)/max(count) :";
+  out << " " << stats.minBlockSize << " (" << stats.numMinBlocks << ")/";
+  out << " " << stats.maxBlockSize << " (" << stats.numMaxBlocks << ")";
+  out << ", " << "Max imbalance : " << stats.maxImbalance;
+  out << ", " << "Small block count : " << stats.numSmallBlocks;
+  return out;
+}
+
+
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
 ///
