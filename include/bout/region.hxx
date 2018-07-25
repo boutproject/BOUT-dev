@@ -230,14 +230,15 @@ inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
 inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
 inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
+/// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
-  int numBlocks;           // How many blocks
-  int minBlockSize;        // Size of smallest block
-  int numMinBlocks;        // Number of blocks with min size
-  int maxBlockSize;        // Size of largest block
-  int numMaxBlocks;        // Number of blocks with max size
-  int numSmallBlocks;      // Number of "small" blocks, for definition see Region::getStats
-  BoutReal maxImbalance;   // Ratio of largest block to smallest
+  int numBlocks = 0;           // How many blocks
+  int minBlockSize = 0;        // Size of smallest block
+  int numMinBlocks = 0;        // Number of blocks with min size
+  int maxBlockSize = 0;        // Size of largest block
+  int numMaxBlocks = 0;        // Number of blocks with max size
+  int numSmallBlocks = 0;      // Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance = 0;   // Ratio of largest block to smallest
 };
 
 /// Specifies a set of indices which can be iterated over and begin()
@@ -500,7 +501,8 @@ public:
     RegionStats result;
 
     result.numBlocks = blocks.size();
-
+    if ( result.numBlocks == 0 ) return result;
+    
     std::vector<int> blockSizes(result.numBlocks);
     
     // Get the size of each block using lambda to calculate size
