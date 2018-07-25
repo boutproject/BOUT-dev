@@ -989,6 +989,29 @@ TEST_F(RegionTest, regionGetStatsHeterogenous) {
   EXPECT_EQ(stats.maxImbalance, maxImbalance);
 }
 
+TEST_F(RegionTest, regionGetStatsEmpty) {
+  int numBlocks = 0;
+  int maxBlockSize = 0;
+  int minBlockSize = 0;
+  int numMaxBlocks = 0;
+  int numMinBlocks = 0;
+  int numExtraSmallBlocks = 0;
+  BoutReal maxImbalance = 0.0;
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMinBlocks);
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+}
+
 template <typename T> class RegionIndexTest : public ::testing::Test {
 public:
   typedef std::list<T> List;
