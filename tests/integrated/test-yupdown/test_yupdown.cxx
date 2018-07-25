@@ -24,6 +24,7 @@ const Field3D DDY_aligned(const Field3D &f) {
   Field3D result;
   result.allocate();
   result = 0.0;
+  result.setCoordinateSystem(f.getCoordinateSystem());
   
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
