@@ -42,5 +42,5 @@ flags = 0
 [petscamg]
 solvertype = gamgag
 checking = 1
-
-
+rtol=1.e-15
+atol=1.e-50
