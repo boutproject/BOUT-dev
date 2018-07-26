@@ -33,7 +33,7 @@ print("Making MMS time integration test")
 shell_safe("make > make.log")
 
 # List of options to be passed for each test
-if "only_petsc":
+if "only_petsc" in sys.argv:
     # this requires petsc:
     options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]# What's the expected order?
     # should petsc solver also be added?
