@@ -133,12 +133,6 @@ plt.legend(loc="upper left")
 plt.savefig(join("./","norm.pdf"))
 plt.close()
 
-f = open('./errors.dat','w')
-pickle.dump(tot_error,f)
-pickle.dump(dx,f)
-pickle.dump(inputs,f)
-f.close()
-
 if success:
     print(" => All tests passed")
     exit(0)
