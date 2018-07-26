@@ -22,7 +22,8 @@ MPIRUN = getmpirun()
 print("Making MMS test")
 shell_safe("make > make.log")
 
-nxlist = [256, 128, 64, 32, 16, 8] # do in reverse order to save disk space
+#nxlist = [256, 128, 64, 32, 16, 8] # do in reverse order to save disk space
+nxlist = [32, 64]
 
 nout = 1
 timestep = 0.01
