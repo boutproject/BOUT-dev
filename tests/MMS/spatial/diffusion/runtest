@@ -102,26 +102,29 @@ for dir,sizes in inputs:
 
     # plot errors
 
-    plt.figure()
+    try:
+        plt.figure()
 
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+        plt.plot(dx, error_2, '-o', label=r'$l^2$')
+        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 
-    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-    plt.legend(loc="upper left")
-    plt.grid()
+        plt.legend(loc="upper left")
+        plt.grid()
 
-    plt.yscale('log')
-    plt.xscale('log')
+        plt.yscale('log')
+        plt.xscale('log')
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel("Error norm")
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
 
-    plt.savefig(join(dir,"norm.pdf"))
+        plt.savefig(join(dir,"norm.pdf"))
 
-    #plt.show()
-    plt.close()
+        #plt.show()
+        plt.close()
+    except:
+        pass
 
 if success:
   print(" => All tests passed")
