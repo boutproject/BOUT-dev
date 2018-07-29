@@ -545,57 +545,13 @@ bool Datafile::write() {
   // Write integers
   for(const auto& var : int_arr) {
     write_int(var.name, var.ptr, var.save_repeat);
-
-    // Add string attributes
-    {
-      auto it = attrib_string.find(var.name);
-      if (it != attrib_string.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
-    // Add integer attributes
-    {
-      auto it = attrib_int.find(var.name);
-      if (it != attrib_int.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
+    addAttributes(var.name);
   }
   
   // Write BoutReals
   for(const auto& var : BoutReal_arr) {
     write_real(var.name, var.ptr, var.save_repeat);
-
-    // Add string attributes
-    {
-      auto it = attrib_string.find(var.name);
-      if (it != attrib_string.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
-    // Add integer attributes
-    {
-      auto it = attrib_int.find(var.name);
-      if (it != attrib_int.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
+    addAttributes(var.name);
   }
 
   // Write 2D fields
@@ -605,28 +561,7 @@ bool Datafile::write() {
     // Add cell location
     file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
     
-    // Add string attributes
-    {
-      auto it = attrib_string.find(var.name);
-      if (it != attrib_string.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
-    // Add integer attributes
-    {
-      auto it = attrib_int.find(var.name);
-      if (it != attrib_int.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
+    addAttributes(var.name);
   }
 
   // Write 3D fields
@@ -636,28 +571,7 @@ bool Datafile::write() {
     // Add cell location
     file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
     
-    // Add string attributes
-    {
-      auto it = attrib_string.find(var.name);
-      if (it != attrib_string.end()) {
-        // Some string attributes are set
-        for (const auto& keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
-    // Add integer attributes
-    {
-      auto it = attrib_int.find(var.name);
-      if (it != attrib_int.end()) {
-        // Some string attributes are set
-        for (const auto &keyval : it->second) {
-          // keyval->first is the attribute name; second is the value
-          file->setAttribute(var.name, keyval.first, keyval.second);
-        }
-      }
-    }
+    addAttributes(var.name);
   }
   
   // 2D vectors
@@ -967,4 +881,29 @@ void *Datafile::varPtr(const string &name) {
     }
   }
   return nullptr;
+}
+
+void Datafile::addAttributes(string name) {
+  // Add string attributes
+  {
+    auto it = attrib_string.find(name);
+    if (it != attrib_string.end()) {
+      // Some string attributes are set
+      for (const auto &keyval : it->second) {
+        // keyval->first is the attribute name; second is the value
+        file->setAttribute(name, keyval.first, keyval.second);
+      }
+    }
+  }
+  // Add integer attributes
+  {
+    auto it = attrib_int.find(name);
+    if (it != attrib_int.end()) {
+      // Some string attributes are set
+      for (const auto &keyval : it->second) {
+        // keyval->first is the attribute name; second is the value
+        file->setAttribute(name, keyval.first, keyval.second);
+      }
+    }
+  }
 }

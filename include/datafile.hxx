@@ -149,6 +149,9 @@ class Datafile {
   
   /// Integer attributes. Maps variable name to maps <string name, int value>
   std::map<std::string, std::map<std::string, int>> attrib_int; 
+
+  /// Get the attributes from attrib_string and attrib_int and add them to the variable
+  void addAttributes(string name);
 };
 
 /// Write this variable once to the grid file
