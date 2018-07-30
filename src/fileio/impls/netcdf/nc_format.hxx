@@ -87,6 +87,12 @@ class NcFormat : public DataFormat {
   }
   bool setRecord(int t) override; // negative -> latest
   
+  // Add a variable to the file
+  bool addVar_int(const string &name, bool repeat) override;
+  bool addVar_BoutReal(const string &name, bool repeat) override;
+  bool addVar_Field2D(const string &name, bool repeat) override;
+  bool addVar_Field3D(const string &name, bool repeat) override;
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
@@ -119,6 +125,8 @@ class NcFormat : public DataFormat {
                     const std::string &text) override;
   void setAttribute(const std::string &varname, const std::string &attrname,
                     int value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, int &value) override;
   
  private:
 
