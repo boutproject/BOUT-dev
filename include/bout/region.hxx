@@ -538,7 +538,11 @@ public:
 
     // Count the number of small blocks, defined as blocks less than smallSizeFrac of maxBlockSize
     const BoutReal smallSizeFrac = 0.5;
-    result.numSmallBlocks = std::count_if(std::begin(blockSizes), std::end(blockSizes), [&blockSizes, &result, smallSizeFrac](int theSize) { return theSize < smallSizeFrac * result.maxBlockSize;}) ;
+    result.numSmallBlocks =
+      std::count_if(std::begin(blockSizes), std::end(blockSizes),
+		    [&blockSizes, &result, smallSizeFrac](int theSize) {
+		      return theSize < smallSizeFrac * result.maxBlockSize;
+		    });
 
     return result;
   }
