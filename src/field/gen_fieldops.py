@@ -157,6 +157,8 @@ def returnType(f1, f2):
         return copy(f2)
     elif f2 == 'BoutReal':
         return copy(f1)
+    elif fieldperp in [f1,f2]:
+        return copy(fieldperp)
     else:
         return copy(field3D)
 
@@ -177,22 +179,28 @@ if __name__ == "__main__":
     jz_var = 'jz'
     mixed_base_ind_var = "base_ind"
     region_name = '"RGN_ALL"'
-    
+
     if args.noOpenMP:
         region_loop = 'BLOCK_REGION_LOOP_SERIAL'
     else:
         region_loop = 'BLOCK_REGION_LOOP'
-        
-    # Declare what fields we currently support:
-    # Field perp is currently missing
+
     field3D = Field('Field3D', ['x', 'y', 'z'], index_var=index_var,
                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
     field2D = Field('Field2D', ['x', 'y'], index_var=index_var,
                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    fieldperp = Field('FieldPerp', ['x', 'z'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
     boutreal = Field('BoutReal', [], index_var=index_var,
                      jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
-    
-    fields = [field3D, field2D, boutreal]
+
+else:
+    field3D = Field('Field3D', ['x', 'y', 'z'])
+    field2D = Field('Field2D', ['x', 'y'])
+    fieldperp = Field('FieldPerp', ['x', 'z'])
+    boutreal = Field('BoutReal', [])
+
+if __name__ == "__main__":
 
     with smart_open(args.filename, "w") as f:
         f.write(header)
@@ -203,6 +211,10 @@ if __name__ == "__main__":
 
     template = env.get_template("gen_fieldops.jinja")
 
+    # Declare what fields we currently support:
+    # fieldperp not supported
+    fields = [field3D, field2D, boutreal]
+
     for lhs, rhs in itertools.product(fields, fields):
         # We don't have to define BoutReal BoutReal operations
         if lhs == rhs == 'BoutReal':
@@ -211,11 +223,11 @@ if __name__ == "__main__":
         lhs = copy(lhs)
 
         # The output of the operation. The `larger` of the two fields.
-        out = returnType(rhs, lhs)         
+        out = returnType(rhs, lhs)
         out.name = 'result'
         lhs.name = 'lhs'
         rhs.name = 'rhs'
-                
+
         for operator, operator_name in operators.items():
 
             template_args = {

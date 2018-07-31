@@ -39,7 +39,7 @@ class Coordinates;
 #include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
-
+#include <flexible.hxx>
 /*!
  * Represents a coordinate system, and associated operators
  *
@@ -59,41 +59,42 @@ public:
    */
   void outputVars(Datafile &file);
   
-  Field2D dx, dy; ///< Mesh spacing in x and y
+  Flexible<Field2D> dx, dy; ///< Mesh spacing in x and y
   BoutReal dz; ///< Mesh spacing in Z
 
   BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
-  Field2D d1_dx, d1_dy;  ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+  Flexible<Field2D> d1_dx, d1_dy;  ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
-  Field2D J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
+  Flexible<Field2D> J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 
-  Field2D Bxy; ///< Magnitude of B = nabla z times nabla x
+  Flexible<Field2D> Bxy; ///< Magnitude of B = nabla z times nabla x
   
   /// Contravariant metric tensor (g^{ij})
-  Field2D g11, g22, g33, g12, g13, g23;
+  Flexible<Field2D> g11, g22, g33, g12, g13, g23;
   
   /// Covariant metric tensor
-  Field2D g_11, g_22, g_33, g_12, g_13, g_23;
+  Flexible<Field2D> g_11, g_22, g_33, g_12, g_13, g_23;
   
   /// Christoffel symbol of the second kind (connection coefficients)
-  Field2D G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  Field2D G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  Field2D G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
+  Flexible<Field2D> G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
+  Flexible<Field2D> G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
+  Flexible<Field2D> G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
   
-  Field2D G1, G2, G3;
+  Flexible<Field2D> G1, G2, G3;
   
-  Field2D ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
+  Flexible<Field2D> ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
 
-  Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
+  Flexible<Field2D> IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry();
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
+  int setBxyBoundaries(); ///< If mesh->StaggerGrids==true, calculate CELL_XLOW and CELL_YLOW fields of Bxy and set their boundary cells
 
   // Operators
 
@@ -120,8 +121,8 @@ public:
   const Field3D Div_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
   
   // Second derivative along magnetic field
-  const Field2D Grad2_par2(const Field2D &f);
-  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc);
+  const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
@@ -132,12 +133,12 @@ public:
   
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) ) 
-  const Field2D Laplace_par(const Field2D &f);
-  const Field3D Laplace_par(const Field3D &f);
+  const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
+  const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  const Field2D Laplace(const Field2D &f);
-  const Field3D Laplace(const Field3D &f);
+  const Field2D Laplace(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
+  const Field3D Laplace(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
   
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1

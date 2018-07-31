@@ -43,6 +43,8 @@ bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
 }
 
 bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal def) {
+  ASSERT1(var.getMesh() == m);
+
   if (!hasVar(name)) {
     output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(), def);
     var = def;
@@ -54,6 +56,8 @@ bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal de
 }
 
 bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal def) {
+  ASSERT1(var.getMesh() == m);
+
   if(!hasVar(name)) {
     var = def;
     return false;

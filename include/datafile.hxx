@@ -18,6 +18,7 @@ class Datafile;
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "flexible.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"
@@ -60,6 +61,13 @@ class Datafile {
   template <typename t>
   void addOnce(t &value, std::string name){
     add(value,name.c_str(),false);
+  }
+  template <typename F>
+  void add(Flexible<F> & f, const char *name, bool save_repeat = false){
+    // Need a const cast here, we allow Datfile to get a non-const reference to
+    // member fields of Flexible objects even though we usually don't allow
+    // this
+    add(const_cast<F &>(f.get(CELL_DEFAULT)), name, save_repeat);
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);

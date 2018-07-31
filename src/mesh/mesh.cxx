@@ -75,6 +75,8 @@ int Mesh::get(BoutReal &rval, const string &name) {
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D)");
 
+  ASSERT1(var.getMesh() == this);
+
   // Ensure data allocated
   var.allocate();
 
@@ -92,6 +94,8 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D)");
+
+  ASSERT1(var.getMesh() == this);
 
   // Ensure data allocated
   var.allocate();
@@ -117,6 +121,8 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
 int Mesh::get(Vector2D &var, const string &name) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
+  ASSERT1(var.getMesh() == this);
+
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
 
@@ -137,6 +143,8 @@ int Mesh::get(Vector2D &var, const string &name) {
 
 int Mesh::get(Vector3D &var, const string &name) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+
+  ASSERT1(var.getMesh() == this);
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
