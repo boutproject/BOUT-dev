@@ -48,12 +48,11 @@ matrix:
       #in use in combination with the relatively new version of gcc. We should be able
       #to remove this if a newer openmpi version is introduced.
       - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
- - env:
+  - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
       - SCRIPT_FLAGS='-uimt python shared'
       - PIP_PACKAGES='netcdf4 cython'
-
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
