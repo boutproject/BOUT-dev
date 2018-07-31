@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+#include <sstream>
 
 /// Global mesh
 extern Mesh *mesh;
@@ -951,6 +952,18 @@ TEST_F(RegionTest, regionGetStatsHomogenous) {
   EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
   EXPECT_EQ(stats.numSmallBlocks, numSmallBlocks);
   EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  std::ostringstream expectedStrRepresentation;
+  expectedStrRepresentation << "Total blocks : "<< numBlocks;
+  expectedStrRepresentation << ", " << "min(count)/max(count) :";
+  expectedStrRepresentation << " " << minBlockSize << " (" << numMaxBlocks << ")/";
+  expectedStrRepresentation << " " << maxBlockSize << " (" << numMaxBlocks << ")";
+  expectedStrRepresentation << ", " << "Max imbalance : " << maxImbalance;
+  expectedStrRepresentation << ", " << "Small block count : " << numSmallBlocks;
+  EXPECT_EQ(strRepresentation.str(), expectedStrRepresentation.str());
+
 }
 
 TEST_F(RegionTest, regionGetStatsHeterogenous) {
@@ -1010,6 +1023,10 @@ TEST_F(RegionTest, regionGetStatsEmpty) {
   EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
   EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
   EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  EXPECT_EQ(strRepresentation.str(), "Empty");
 }
 
 template <typename T> class RegionIndexTest : public ::testing::Test {
