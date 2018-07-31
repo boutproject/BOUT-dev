@@ -28,7 +28,7 @@ matrix:
   fast_finish: true
   include:
   - env: &default_env
-      - CONFIGURE_OPTIONS=''
+      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='netcdf4'
   - addons:
@@ -57,9 +57,6 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
       - OMP_NUM_THREADS=2
-  - env:
-      - *default_env
-      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
 #CLANG
   - env:
       - *default_env
