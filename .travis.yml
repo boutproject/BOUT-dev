@@ -71,11 +71,6 @@ matrix:
 #CLANG
   - env:
       - *default_env
-      - MPICH_CC=clang MPICH_CXX=clang++
-      - OMPI_CC=clang OMPI_CXX=clang++
-    compiler: clang
-  - env:
-      - *default_env
       - CONFIGURE_OPTIONS='--enable-debug'
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
