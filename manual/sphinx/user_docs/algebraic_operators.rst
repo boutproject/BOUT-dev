@@ -6,8 +6,10 @@ Algebraic operators
 BOUT++ provides a wide variety of algebraic operators acting on fields.
 
 The algebraic operators are listed in :numref:`tab-algebraic-ops`.
-For a completely up-to-date list, see the ``Non-member functions`` part of
-field3d.hxx, field2d.hxx and fieldperp.hxx. 
+For a completely up-to-date list, see the ``Non-member functions``
+part of :doc:`field2d.hxx<../_breathe_autogen/file/field2d_8hxx>`,
+:doc:`field3d.hxx<../_breathe_autogen/file/field3d_8hxx>`,
+:doc:`fieldperp.hxx<../_breathe_autogen/file/fieldperp_8hxx>`.
 
 .. _tab-algebraic-ops:
 .. table:: Algebraic operators
@@ -19,7 +21,7 @@ field3d.hxx, field2d.hxx and fieldperp.hxx.
    +------------------------------------------+------------------------------------------------------+
    | ``max(f, allpe=true, region)``           | Maximum (optionally over all processes)              |
    +------------------------------------------+------------------------------------------------------+
-   | ``pow(lhs, rhs, region)``                | :math:`\mathtt{rhs}^\mathtt{lhs}`                    |
+   | ``pow(lhs, rhs, region)``                | :math:`\mathtt{lhs}^\mathtt{rhs}`                    |
    +------------------------------------------+------------------------------------------------------+
    | ``sqrt(f, region)``                      | :math:`\sqrt{(f)}`                                   |
    +------------------------------------------+------------------------------------------------------+
