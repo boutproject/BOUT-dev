@@ -4,6 +4,7 @@ inc_dirs=
 flags=
 libs=
 lib_dirs=
+ldflags=
 for fl in $(bout-config --cflags)
 do
     if test ".${fl:0:2}" == ".-I"
@@ -22,6 +23,8 @@ do
     elif test ".$s" == ".-l"
     then
         libs+=" ${fl:2}"
+    else
+	ldflags+=" $fl"
     fi
 done
 
@@ -41,6 +44,7 @@ cat <<EOF
 # distutils: library_dirs = $lib_dirs
 # distutils: sources = helper.cxx
 # distutils: extra_compile_args = $flags
+# distutils: extra_link_args = $ldflags
 
 # cython: binding=True
 
