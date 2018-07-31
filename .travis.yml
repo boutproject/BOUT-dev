@@ -67,6 +67,7 @@ matrix:
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
+
 #COVERAGE
   - stage: Coverage
     matrix:
