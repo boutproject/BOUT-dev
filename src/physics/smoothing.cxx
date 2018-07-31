@@ -327,7 +327,7 @@ BoutReal Average_XY(const Field2D &var) {
 BoutReal Vol_Integral(const Field2D &var) {
   Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = mesh->coordinates(var.getLocation());
 
   Field2D result = metric->J * var * metric->dx * metric->dy;
 

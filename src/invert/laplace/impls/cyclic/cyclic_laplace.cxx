@@ -90,7 +90,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   FieldPerp x(mesh); // Result
   x.allocate();
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);

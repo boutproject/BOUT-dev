@@ -167,7 +167,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   ASSERT1(x0.getLocation() == location);
 
   Mesh *mesh = rhs.getMesh();
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->coordinates(location);
   Field3D x(x0); // Result
 
   Field3D rhsOverD = rhs/Dcoef;

@@ -59,12 +59,21 @@ void Vector3D::toCovariant() {
     Mesh *localmesh = x.getMesh();
     Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = localmesh->coordinates();
+    Coordinates *metric_x, *metric_y, *metric_z;
+    if (location == CELL_VSHIFT) {
+      metric_x = coordinates(CELL_XLOW);
+      metric_y = coordinates(CELL_YLOW);
+      metric_z = coordinates(CELL_ZLOW);
+    } else {
+      metric_x = localmesh->coordinates(location);
+      metric_y = localmesh->coordinates(location);
+      metric_z = localmesh->coordinates(location);
+    }
 
     // multiply by g_{ij}
-    gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
-    gy = y*metric->g_22 + metric->g_12*x + metric->g_23*z;
-    gz = z*metric->g_33 + metric->g_13*x + metric->g_23*y;
+    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation*());
+    gy = y*metric_y->g_22 + metric_y->g_12*interp_to(x, y.getLocation()) + metric_y->g_23*interp_to(z, y.getLocation());
+    gz = z*metric_z->g_33 + metric_z->g_13*interp_to(x, z.getLocation()) + metric_z->g_23*interp_to(y, z.getLocation());
 
     x = gx;
     y = gy;
@@ -79,11 +88,21 @@ void Vector3D::toContravariant() {
     Mesh *localmesh = x.getMesh();
     Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = localmesh->coordinates();
+    Coordinates *metric_x, *metric_y, *metric_z;
+    if (location == CELL_VSHIFT) {
+      metric_x = coordinates(CELL_XLOW);
+      metric_y = coordinates(CELL_YLOW);
+      metric_z = coordinates(CELL_ZLOW);
+    } else {
+      metric_x = localmesh->coordinates(location);
+      metric_y = localmesh->coordinates(location);
+      metric_z = localmesh->coordinates(location);
+    }
 
-    gx = x*metric->g11 + metric->g12*y + metric->g13*z;
-    gy = y*metric->g22 + metric->g12*x + metric->g23*z;
-    gz = z*metric->g33 + metric->g13*x + metric->g23*y;
+    // multiply by g_{ij}
+    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation*());
+    gy = y*metric_y->g22 + metric_y->g12*interp_to(x, y.getLocation()) + metric_y->g23*interp_to(z, y.getLocation());
+    gz = z*metric_z->g33 + metric_z->g13*interp_to(x, z.getLocation()) + metric_z->g23*interp_to(y, z.getLocation());
 
     x = gx;
     y = gy;
@@ -294,7 +313,8 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 
 #define CROSS(v0, v1, v2)                                               \
                                                                         \
-  const v0 cross(const v1 &lhs, const v2 &rhs) {                       \
+  const v0 cross(const v1 &lhs, const v2 &rhs) {                        \
+    ASSERT1(lhs.getLocation() == rhs.getLocation());                    \
     Mesh *localmesh = lhs.x.getMesh();                                  \
     v0 result(localmesh);                                               \
                                                                         \
@@ -304,7 +324,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     v1 lco = lhs;                                                       \
     lco.toCovariant();                                                  \
                                                                         \
-    Coordinates *metric = localmesh->coordinates();                     \
+    Coordinates *metric = localmesh->coordinates(lhs.getLocation());    \
                                                                         \
     /* calculate contravariant components of cross-product */           \
     result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
@@ -407,6 +427,7 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
   Field3D result(x.getMesh());
+  ASSERT2(location == rhs.getLocation())
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -414,7 +435,7 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = mesh->coordinates(location);
     
     if(covariant) {
       // Both covariant
@@ -436,6 +457,8 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
 
 const Field3D Vector3D::operator*(const Vector2D &rhs) const
 {
+  ASSERT2(location == rhs.getLocation());
+
   Field3D result(x.getMesh());
 
   if(rhs.covariant ^ covariant) {
@@ -444,7 +467,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = x.getMesh()->coordinates();
+    Coordinates *metric = x.getMesh()->coordinates(location);
     if(covariant) {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;

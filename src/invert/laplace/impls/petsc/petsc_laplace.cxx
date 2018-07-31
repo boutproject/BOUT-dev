@@ -348,7 +348,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   #endif
 
   // Get the metric tensor
-  Coordinates* coord = mesh->coordinates();
+  Coordinates* coord = mesh->coordinates(location);
 
   int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
@@ -922,7 +922,7 @@ void LaplacePetsc::Element(int i, int x, int z,
  */
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 ) {
 
-  Coordinates *coord = mesh->coordinates(); // Get metric tensor
+  Coordinates *coord = mesh->coordinates(location); // Get metric tensor
 
   coef1 = coord->g11(x,y);     // X 2nd derivative coefficient
   coef2 = coord->g33(x,y);     // Z 2nd derivative coefficient

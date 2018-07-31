@@ -606,7 +606,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 { Timer timer("mumpssetup");
   int i = 0;
   
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   // Set Matrix Elements corresponding to index lists created in constructor (x,z) loop over rows
 
@@ -849,7 +849,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 
 void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 )
 {
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   coef1 = coord->g11[x][y];     // X 2nd derivative coefficient
   coef2 = coord->g33[x][y];     // Z 2nd derivative coefficient

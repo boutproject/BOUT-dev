@@ -200,6 +200,7 @@ protected:
 private:
   /// Singleton instance
   static Laplacian *instance;
+  CELL_LOC location;
 };
 
 ////////////////////////////////////////////

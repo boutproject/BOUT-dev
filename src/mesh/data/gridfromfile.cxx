@@ -402,7 +402,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
   int ncz = m->LocalNz;
 
-  BoutReal zlength = m->coordinates()->zlength();
+  BoutReal zlength = m->coordinates(var.getLocation())->zlength();
   
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 

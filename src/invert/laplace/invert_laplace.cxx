@@ -51,7 +51,7 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options *options) {
+Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
 
   if (options == nullptr) {
     // Use the default options
@@ -76,7 +76,7 @@ Laplacian::Laplacian(Options *options) {
   OPTION(options, low_mem, false);
 
   OPTION(options, nonuniform,
-         mesh->coordinates()->non_uniform); // Default is the mesh setting
+         mesh->coordinates(location)->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
@@ -99,13 +99,13 @@ Laplacian::Laplacian(Options *options) {
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
-Laplacian* Laplacian::create(Options *opts) {
+Laplacian* Laplacian::create(Options *opts, const CELL_LOC location) {
   // Factory pattern:
   // 1. getInstance() is making an instance of LaplacianFactory
   // 2. createLaplacian() is accessing this instance and returning a Laplacian
   //    form one of the child classes of the Laplacian (the laplace solver
   //    implementations)
-  return LaplaceFactory::getInstance()->createLaplacian(opts);
+  return LaplaceFactory::getInstance()->createLaplacian(opts, location);
 }
 
 Laplacian *Laplacian::instance = nullptr;
@@ -230,7 +230,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
@@ -270,7 +270,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    */
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
@@ -331,7 +331,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -391,7 +391,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
   // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.
