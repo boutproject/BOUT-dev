@@ -51,7 +51,7 @@ matrix:
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
-      - SCRIPT_FLAGS='-uimt "python shared"'
+      - SCRIPT_FLAGS="-uimt 'python shared'"
       - PIP_PACKAGES='netcdf4 cython'
   - env:
       - *default_env
