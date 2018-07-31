@@ -3,11 +3,17 @@
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
 #include "boutexception.hxx"
+#include "output.hxx"
 
 #include "test_extras.hxx"
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {
+protected:
+  static void SetUpTestCase() { output_info.disable(); }
+
+  static void TearDownTestCase() { output_info.enable(); }
+
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
   static const int nx = 3;
