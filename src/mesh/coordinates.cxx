@@ -26,7 +26,7 @@ Coordinates::Coordinates(Mesh *mesh)
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh) {
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
@@ -167,6 +167,98 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
+  }
+}
+
+Field2D interpolate_and_Neumann(const Field2D &f, CELL_LOC location) {
+  Mesh* localmesh = f.getMesh();
+  Field2D result = interp_to(f, location, RGN_NOBNDRY);
+  localmesh->communicate(result);
+
+  // Copy nearest value into boundaries so that differential geometry terms can
+  // be interpolated if necessary
+  // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+  // would try to create a new Coordinates object since we have not finished
+  // initializing yet, leading to an infinite recursion
+  for (auto bndry : localmesh->getBoundaries()) {
+    if (bndry->bx != 0) {
+      for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        for (int i=0; i<localmesh->xstart; i++)
+          result(bndry->x+i*bndry->bx,bndry->y) = result(bndry->x+(i-1)*bndry->bx, bndry->y-bndry->by);
+      }
+    }
+    if (bndry->by != 0) {
+      for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        for (int i=0; i<localmesh->ystart; i++)
+          result(bndry->x,bndry->y+i*bndry->by) = result(bndry->x-bndry->bx, bndry->y+(i-1)*bndry->by);
+      }
+    }
+  }
+
+  return result;
+}
+
+Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_centre)
+    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+      // Identity metric tensor
+      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
+      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
+      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
+      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+
+  dx = interpolate_and_Neumann(coords_centre->dx, location);
+  dy = interpolate_and_Neumann(coords_centre->dy, location);
+
+  nz = mesh->LocalNz;
+
+  dz = coords_centre->dz;
+
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  g11 = interpolate_and_Neumann(coords_centre->g11, location);
+  g22 = interpolate_and_Neumann(coords_centre->g22, location);
+  g33 = interpolate_and_Neumann(coords_centre->g33, location);
+
+  // Off-diagonal elements. Default to 0
+  g12 = interpolate_and_Neumann(coords_centre->g12, location);
+  g13 = interpolate_and_Neumann(coords_centre->g13, location);
+  g23 = interpolate_and_Neumann(coords_centre->g23, location);
+
+  // Check input metrics
+  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+    throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
+  }
+  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
+    throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
+  }
+  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+    throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
+  }
+
+  /// Always calculate contravariant metric components so that they are
+  /// consistent with the interpolated covariant components
+  if (calcCovariant()) {
+    throw BoutException("Error in calcCovariant call");
+  }
+
+  /// Calculate Jacobian and Bxy
+  if (jacobian())
+    throw BoutException("Error in jacobian call");
+
+  //////////////////////////////////////////////////////
+  /// Calculate Christoffel symbols. Needs communication
+  if (geometry()) {
+    throw BoutException("Differential geometry failed\n");
+  }
+
+  ShiftTorsion = interpolate_and_Neumann(coords_centre->ShiftTorsion, location);
+
+  //////////////////////////////////////////////////////
+
+  if (mesh->IncIntShear) {
+    IntShiftTorsion = interpolate_and_Neumann(coords_centre->IntShiftTorsion, location);
   }
 }
 

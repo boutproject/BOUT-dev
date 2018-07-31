@@ -47,8 +47,11 @@ class Coordinates;
  */ 
 class Coordinates {
 public:
-  /// Constructor
+  /// Standard constructor from input
   Coordinates(Mesh *mesh);
+
+  /// Constructor interpolating from CELL_CENTRE Coordinates object
+  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_centre);
   
   ~Coordinates() {}
   
@@ -142,6 +145,7 @@ public:
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
+  CELL_LOC location;
 };
 
 /*

@@ -81,7 +81,7 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -430,15 +430,15 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates() {
-    if (coords) { // True branch most common, returns immediately
-      return coords;
+  Coordinates *coordinates(const CELL_LOC location = CELL_DEFAULT) {
+    if (coords_map.count(location)) { // True branch most common, returns immediately
+      return coords_map[location];
+    } else if (location == CELL_DEFAULT) {
+      return coordinates(CELL_CENTRE);
+    } else {
+      coords_map.insert(std::pair<CELL_LOC, Coordinates*>(location, createDefaultCoordinates(location)));
+      return coords_map[location];
     }
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    coords = createDefaultCoordinates();
-    return coords;
   }
 
   // First derivatives in index space
@@ -704,7 +704,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  Coordinates *coords;    ///< Coordinate system. Initialised to Null
+  std::map<CELL_LOC, Coordinates*> coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
@@ -743,7 +743,7 @@ class Mesh {
 
 private:
   /// Allocates a default Coordinates object
-  Coordinates *createDefaultCoordinates();
+  Coordinates *createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
