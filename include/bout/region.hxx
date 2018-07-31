@@ -232,13 +232,13 @@ inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
-  int numBlocks = 0;           // How many blocks
-  int minBlockSize = 0;        // Size of smallest block
-  int numMinBlocks = 0;        // Number of blocks with min size
-  int maxBlockSize = 0;        // Size of largest block
-  int numMaxBlocks = 0;        // Number of blocks with max size
-  int numSmallBlocks = 0;      // Number of "small" blocks, for definition see Region::getStats
-  BoutReal maxImbalance = 0;   // Ratio of largest block to smallest
+  int numBlocks = 0;           ///< How many blocks
+  int minBlockSize = 0;        ///< Size of smallest block
+  int numMinBlocks = 0;        ///< Number of blocks with min size
+  int maxBlockSize = 0;        ///< Size of largest block
+  int numMaxBlocks = 0;        ///< Number of blocks with max size
+  int numSmallBlocks = 0;      ///< Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance = 0;   ///< Ratio of largest block to smallest
 };
 
 /// Provide an easy way to report a Region's statistics
