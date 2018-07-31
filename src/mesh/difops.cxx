@@ -75,7 +75,7 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) 
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   ASSERT1(apar.getMesh() == f.getMesh());
-  ASSERT2(APAR.getLocation() == f.getLocation());
+  ASSERT2(apar.getLocation() == f.getLocation());
 
   Mesh *mesh = apar.getMesh();
 
@@ -560,12 +560,12 @@ const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, const CELL
   return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, outloc, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY)*Grad_par(f, outloc);
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, const CELL_LOC outloc) {
+  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY)*Grad_par(f, outloc);
+  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, const CELL_LOC outloc) {
@@ -639,14 +639,13 @@ const Field3D Laplace(const Field3D &f, const CELL_LOC outloc) {
 * Used for ExB terms and perturbed B field using A_||
 *******************************************************************************/
 
-const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
+const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC outloc) {
   
   TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
   
-  ASSERT1(phi.getMesh() == A.getMesh());
-  ASSERT1(phi.getLocation() == A.getLocation());
+  if (outloc == CELL_DEFAULT) outloc = A.getLocation();
 
-  CELL_LOC outloc = A.getLocation();
+  ASSERT1(phi.getMesh() == A.getMesh());
 
   Mesh * mesh = phi.getMesh();
   Coordinates *metric = mesh->coordinates(outloc);
@@ -663,19 +662,20 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
   Field2D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
   result /= metric->J*sqrt(metric->g_22);
 
+  ASSERT1(result.getLocation() == outloc);
+
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
   return result;
 }
 
-const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
+const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC outloc) {
   TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
-  ASSERT1(phi.getMesh() == A.getMesh());
-  ASSERT1(phi.getLocation() == A.getLocation());
+  if (outloc == CELL_DEFAULT) outloc = A.getLocation();
 
-  CELL_LOC outloc = A.getLocation();
+  ASSERT1(phi.getMesh() == A.getMesh());
 
   Mesh *mesh = phi.getMesh();
 
@@ -705,7 +705,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
-  ASSERT2(result.getLocation() == A.getLocation());
+  ASSERT2(result.getLocation() == outloc);
   
   return result;
 }
@@ -713,10 +713,9 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
 const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outloc) {
   TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
-  ASSERT1(p.getMesh() == A.getMesh());
-  ASSERT1(phi.getLocation() == A.getLocation());
+  if (outloc == CELL_DEFAULT) outloc = A.getLocation();
 
-  CELL_LOC outloc = A.getLocation();
+  ASSERT1(p.getMesh() == A.getMesh());
 
   Coordinates *metric = p.getMesh()->coordinates(outloc);
 
@@ -733,19 +732,21 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /=  (metric->J*sqrt(metric->g_22));
+  result /= (metric->J*sqrt(metric->g_22));
   
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
   
-  ASSERT2(result.getLocation() == A.getLocation());
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
 
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc) {
   TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
+
+  if (outloc == CELL_DEFAULT) outloc = A.getLocation();
 
   ASSERT1(phi.getMesh() == A.getMesh());
 

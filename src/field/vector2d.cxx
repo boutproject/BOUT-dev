@@ -33,12 +33,13 @@
 #include <vector2d.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
+#include <interpolation.hxx>
 
 Vector2D::Vector2D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr) {}
+    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector2D::Vector2D(const Vector2D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr) {}
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector2D::~Vector2D() {
   if (deriv != nullptr) {
@@ -60,9 +61,9 @@ void Vector2D::toCovariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = coordinates(CELL_XLOW);
-      metric_y = coordinates(CELL_YLOW);
-      metric_z = coordinates(CELL_ZLOW);
+      metric_x = localmesh->coordinates(CELL_XLOW);
+      metric_y = localmesh->coordinates(CELL_YLOW);
+      metric_z = localmesh->coordinates(CELL_ZLOW);
     } else {
       metric_x = localmesh->coordinates(location);
       metric_y = localmesh->coordinates(location);
@@ -70,7 +71,7 @@ void Vector2D::toCovariant() {
     }
 
     // multiply by g_{ij}
-    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation*());
+    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation());
     gy = y*metric_y->g_22 + metric_y->g_12*interp_to(x, y.getLocation()) + metric_y->g_23*interp_to(z, y.getLocation());
     gz = z*metric_z->g_33 + metric_z->g_13*interp_to(x, z.getLocation()) + metric_z->g_23*interp_to(y, z.getLocation());
 
@@ -90,9 +91,9 @@ void Vector2D::toContravariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = coordinates(CELL_XLOW);
-      metric_y = coordinates(CELL_YLOW);
-      metric_z = coordinates(CELL_ZLOW);
+      metric_x = localmesh->coordinates(CELL_XLOW);
+      metric_y = localmesh->coordinates(CELL_YLOW);
+      metric_z = localmesh->coordinates(CELL_ZLOW);
     } else {
       metric_x = localmesh->coordinates(location);
       metric_y = localmesh->coordinates(location);
@@ -100,7 +101,7 @@ void Vector2D::toContravariant() {
     }
 
     // multiply by g_{ij}
-    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation*());
+    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation());
     gy = y*metric_y->g22 + metric_y->g12*interp_to(x, y.getLocation()) + metric_y->g23*interp_to(z, y.getLocation());
     gz = z*metric_z->g33 + metric_z->g13*interp_to(x, z.getLocation()) + metric_z->g23*interp_to(y, z.getLocation());
 
@@ -367,6 +368,36 @@ const Vector2D Vector2D::operator^(const Vector2D &rhs) const {
 
 const Vector3D Vector2D::operator^(const Vector3D &rhs) const {
   return cross(*this,rhs);
+}
+
+/***************************************************************
+ *       Get/set variable location for staggered meshes
+ ***************************************************************/
+
+CELL_LOC Vector2D::getLocation() const {
+
+  if (location == CELL_VSHIFT) {
+    ASSERT1((x.getLocation() == CELL_XLOW) && (y.getLocation() == CELL_YLOW) &&
+            (z.getLocation() == CELL_ZLOW));
+  } else {
+    ASSERT1((location == x.getLocation()) && (location == y.getLocation()) &&
+            (location == z.getLocation()));
+  }
+
+  return location;
+}
+
+void Vector2D::setLocation(CELL_LOC loc) {
+  location = loc;
+  if(loc == CELL_VSHIFT) {
+    x.setLocation(CELL_XLOW);
+    y.setLocation(CELL_YLOW);
+    z.setLocation(CELL_ZLOW);
+  } else {
+    x.setLocation(loc);
+    y.setLocation(loc);
+    z.setLocation(loc);
+  }
 }
 
 /***************************************************************

@@ -88,12 +88,12 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
   if(outloc_z == CELL_DEFAULT)
     outloc_z = f.getLocation();
 
-  Field3D parcoef = 1./ (metric->J * metric->Bxy);
-  parcoef *= parcoef;
+  Coordinates* metric_x = mesh->coordinates(outloc_x);
+  Coordinates* metric_z = mesh->coordinates(outloc_z);
 
-  result.x = DDX(f, outloc_x) - parcoef*mesh->coordinates(outloc_x)->g_12*DDY(f, outloc_x);
+  result.x = DDX(f, outloc_x) - metric_x->g_12*DDY(f, outloc_x) / SQ(metric_x->J * metric_x->Bxy);
   result.y = 0.0;
-  result.z = DDZ(f, outloc_z) - parcoef*mesh->coordinates(outloc_z)->g_23*DDY(f, outloc_z);
+  result.z = DDZ(f, outloc_z) - metric_z->g_23*DDY(f, outloc_z) / SQ(metric_z->J * metric_z->Bxy);
 
   result.covariant = true;
   
@@ -104,7 +104,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
  * Divergence operators
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
+const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   TRACE("Div( Vector2D )");
 
   Mesh *localmesh = v.x.getMesh();
@@ -116,9 +116,9 @@ const Field2D Div(const Vector2D &v, CELL_LOC UNUSED(outloc)) {
   Vector2D vcn = v;
   vcn.toContravariant();
   
-  result = DDX(metric->J*vcn.x);
-  result += DDY(metric->J*vcn.y);
-  result += DDZ(metric->J*vcn.z);
+  result = DDX(metric->J*vcn.x, outloc);
+  result += DDY(metric->J*vcn.y, outloc);
+  result += DDZ(metric->J*vcn.z, outloc);
   result /= metric->J;
   
   return result;
@@ -240,6 +240,8 @@ const Vector3D Curl(const Vector3D &v,
 
   Mesh *localmesh = v.x.getMesh();
 
+  Coordinates* metric_z = localmesh->coordinates(outloc_z);
+
   // Get covariant components of v
   Vector3D vco = v;
   vco.toCovariant();
@@ -248,10 +250,10 @@ const Vector3D Curl(const Vector3D &v,
   Vector3D result(localmesh);
   result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/localmesh->coordinates(outloc_x)->J;
   result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/localmesh->coordinates(outloc_y)->J;
-  result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/localmesh->coordinates(outloc_z)->J;
+  result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/metric_z->J;
 
   // Coordinate torsion
-  result.z -= metric->ShiftTorsion*vco.z / localmesh->coordinates(outloc_z)->J;
+  result.z -= metric_z->ShiftTorsion*vco.z / metric_z->J;
 
   result.covariant = false; // result is contravariant
 

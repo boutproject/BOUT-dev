@@ -34,6 +34,7 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 #include <bout/assert.hxx>
+#include <interpolation.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
@@ -61,9 +62,9 @@ void Vector3D::toCovariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = coordinates(CELL_XLOW);
-      metric_y = coordinates(CELL_YLOW);
-      metric_z = coordinates(CELL_ZLOW);
+      metric_x = localmesh->coordinates(CELL_XLOW);
+      metric_y = localmesh->coordinates(CELL_YLOW);
+      metric_z = localmesh->coordinates(CELL_ZLOW);
     } else {
       metric_x = localmesh->coordinates(location);
       metric_y = localmesh->coordinates(location);
@@ -71,7 +72,7 @@ void Vector3D::toCovariant() {
     }
 
     // multiply by g_{ij}
-    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation*());
+    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation());
     gy = y*metric_y->g_22 + metric_y->g_12*interp_to(x, y.getLocation()) + metric_y->g_23*interp_to(z, y.getLocation());
     gz = z*metric_z->g_33 + metric_z->g_13*interp_to(x, z.getLocation()) + metric_z->g_23*interp_to(y, z.getLocation());
 
@@ -90,9 +91,9 @@ void Vector3D::toContravariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = coordinates(CELL_XLOW);
-      metric_y = coordinates(CELL_YLOW);
-      metric_z = coordinates(CELL_ZLOW);
+      metric_x = localmesh->coordinates(CELL_XLOW);
+      metric_y = localmesh->coordinates(CELL_YLOW);
+      metric_z = localmesh->coordinates(CELL_ZLOW);
     } else {
       metric_x = localmesh->coordinates(location);
       metric_y = localmesh->coordinates(location);
@@ -100,7 +101,7 @@ void Vector3D::toContravariant() {
     }
 
     // multiply by g_{ij}
-    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation*());
+    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation());
     gy = y*metric_y->g22 + metric_y->g12*interp_to(x, y.getLocation()) + metric_y->g23*interp_to(z, y.getLocation());
     gz = z*metric_z->g33 + metric_z->g13*interp_to(x, z.getLocation()) + metric_z->g23*interp_to(y, z.getLocation());
 

@@ -57,8 +57,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplacePetsc::LaplacePetsc(Options *opt) :
-  Laplacian(opt),
+LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc) :
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {

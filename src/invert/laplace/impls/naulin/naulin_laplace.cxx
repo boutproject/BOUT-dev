@@ -120,8 +120,8 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options *opt)
-    : Laplacian(opt), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
+LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc)
+    : Laplacian(opt, loc), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory

@@ -36,7 +36,7 @@ class LaplaceSerialBand;
 
 class LaplaceSerialBand : public Laplacian {
 public:
-  LaplaceSerialBand(Options *opt = nullptr);
+  LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_DEFAULT);
   ~LaplaceSerialBand(){};
   
   using Laplacian::setCoefA;

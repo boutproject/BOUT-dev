@@ -132,7 +132,7 @@ private:
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options *opt = nullptr);
+  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
   ~LaplaceMultigrid() {};
   
   void setCoefA(const Field2D &val) override { A = val; }

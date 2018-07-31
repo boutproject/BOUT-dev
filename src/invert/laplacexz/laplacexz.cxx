@@ -6,7 +6,7 @@
 
 #include <strings.h>
 
-LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options) {
+LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplacexz");
 
@@ -14,9 +14,9 @@ LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options) {
   options->get("type", type, "cyclic");
 
   if(strcasecmp(type.c_str(), "cyclic") == 0) {
-    return new LaplaceXZcyclic(m, options);
+    return new LaplaceXZcyclic(m, options, loc);
   }else if(strcasecmp(type.c_str(), "petsc") == 0) {
-    return new LaplaceXZpetsc(m, options);
+    return new LaplaceXZpetsc(m, options, loc);
   }else {
     throw BoutException("Unknown LaplaceXZ solver type '%s'", type.c_str());
   }
