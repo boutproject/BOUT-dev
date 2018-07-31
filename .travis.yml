@@ -34,7 +34,7 @@ matrix:
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
-      - SCRIPT_FLAGS='-uimt python'
+      - SCRIPT_FLAGS='-uimt python shared'
       - PIP_PACKAGES='netcdf4 cython'
 
   - env:
@@ -44,10 +44,6 @@ matrix:
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-debug'
-  - env:
-      - *default_env
-      - CONFIGURE_OPTIONS='--enable-shared'
-      - SCRIPT_FLAGS="-ut shared"
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
