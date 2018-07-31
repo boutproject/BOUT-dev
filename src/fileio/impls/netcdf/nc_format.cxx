@@ -394,17 +394,11 @@ bool NcFormat::addVar_BoutReal(const string &name, bool repeat) {
   NcVar* var;
   if (!(var = dataFile->get_var(name.c_str()))) {
     // Variable not in file, so add it.
-    if(lowPrecision) {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncFloat, 1, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncFloat, 0, dimList);
-    } else {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncDouble, 1, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncDouble, 0, dimList);
-    }
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 1, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 0, dimList);
 
     if(!var->is_valid()) {
       output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name.c_str(), fname);
@@ -428,17 +422,11 @@ bool NcFormat::addVar_Field2D(const string &name, bool repeat) {
   NcVar* var;
   if (!(var = dataFile->get_var(name.c_str()))) {
     // Variable not in file, so add it.
-    if(lowPrecision) {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncFloat, 3, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncFloat, 2, dimList);
-    } else {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncDouble, 3, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncDouble, 2, dimList);
-    }
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 2, dimList);
 
     if(!var->is_valid()) {
       output_error.write("ERROR: NetCDF could not add Field2D '%s' to file '%s'\n", name.c_str(), fname);
@@ -462,17 +450,11 @@ bool NcFormat::addVar_Field3D(const string &name, bool repeat) {
   NcVar* var;
   if (!(var = dataFile->get_var(name.c_str()))) {
     // Variable not in file, so add it.
-    if(lowPrecision) {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncFloat, 4, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncFloat, 3, dimList);
-    } else {
-      if (repeat)
-        var = dataFile->add_var(name.c_str(), ncDouble, 4, recDimList);
-      else
-        var = dataFile->add_var(name.c_str(), ncDouble, 3, dimList);
-    }
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 4, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, dimList);
 
     if(!var->is_valid()) {
       output_error.write("ERROR: NetCDF could not add Field3D '%s' to file '%s'\n", name.c_str(), fname);

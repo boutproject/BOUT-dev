@@ -117,8 +117,8 @@ class DataFormat {
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] text        A string attribute to attach to the variable
-  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
-                            const string &UNUSED(text)) {}
+  virtual void setAttribute(const string &varname, const string &attrname,
+                            const string &text) = 0;
 
   /// Sets an integer attribute
   ///
@@ -128,8 +128,8 @@ class DataFormat {
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] value       A string attribute to attach to the variable
-  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
-                            int UNUSED(value)) {}
+  virtual void setAttribute(const string &varname, const string &attrname,
+                            int value) = 0;
   /// Gets a string attribute
   ///
   /// Inputs
@@ -141,7 +141,7 @@ class DataFormat {
   /// Returns
   /// -------
   /// text                   A string attribute of the variable
-  virtual bool getAttribute(const string &UNUSED(varname), const string &UNUSED(attrname), std::string &UNUSED(text)) {}
+  virtual bool getAttribute(const string &varname, const string &attrname, std::string &text) = 0;
 
   /// Sets an integer attribute
   ///
@@ -154,7 +154,7 @@ class DataFormat {
   /// Returns
   /// -------
   /// value                  An int attribute of the variable
-  virtual bool getAttribute(const string &UNUSED(varname), const string &UNUSED(attrname), int &UNUSED(value)) {}
+  virtual bool getAttribute(const string &varname, const string &attrname, int &value) = 0;
 };
 
 // For backwards compatability. In formatfactory.cxx

@@ -266,10 +266,16 @@ bool H5Format::addVar(const string &name, bool repeat, hid_t write_hdf5_type, in
 
     hsize_t init_size[4];
     if (parallel) {
-      init_size[0]=0;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
+      init_size[0]=0;
+      init_size[1]=mesh->GlobalNx-2*mesh->xstart;
+      init_size[2]=mesh->GlobalNy-2*mesh->ystart;
+      init_size[3]=mesh->GlobalNz;
     }
     else {
-      init_size[0]=0;init_size[1]=mesh->LocalNx; init_size[2]=mesh->LocalNy; init_size[3]=mesh->LocalNz;
+      init_size[0]=0;
+      init_size[1]=mesh->LocalNx;
+      init_size[2]=mesh->LocalNy;
+      init_size[3]=mesh->LocalNz;
     }
 
     // Modify dataset creation properties, i.e. enable chunking.
@@ -370,27 +376,18 @@ bool H5Format::addVar_int(const string &name, bool repeat) {
 }
 
 bool H5Format::addVar_BoutReal(const string &name, bool repeat) {
-  if(lowPrecision) {
-    return addVar(name, repeat, H5T_NATIVE_FLOAT, 0);
-  } else {
-    return addVar(name, repeat, H5T_NATIVE_DOUBLE, 0);
-  }
+  auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+  return addVar(name, repeat, h5_float_type, 0);
 }
 
 bool H5Format::addVar_Field2D(const string &name, bool repeat) {
-  if(lowPrecision) {
-    return addVar(name, repeat, H5T_NATIVE_FLOAT, 2);
-  } else {
-    return addVar(name, repeat, H5T_NATIVE_DOUBLE, 2);
-  }
+  auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+  return addVar(name, repeat, h5_float_type, 2);
 }
 
 bool H5Format::addVar_Field3D(const string &name, bool repeat) {
-  if(lowPrecision) {
-    return addVar(name, repeat, H5T_NATIVE_FLOAT, 3);
-  } else {
-    return addVar(name, repeat, H5T_NATIVE_DOUBLE, 3);
-  }
+  auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+  return addVar(name, repeat, h5_float_type, 3);
 }
 
 bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {
@@ -425,8 +422,14 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   hsize_t counts[3],offset[3],offset_local[3],init_size_local[3];
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  init_size_local[0]=offset_local[0]+counts[0]; init_size_local[1]=offset_local[1]+counts[1]; init_size_local[2]=offset_local[2]+counts[2]; // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
+  offset_local[0]=x0_local;
+  offset_local[1]=y0_local;
+  offset_local[2]=z0_local;
+
+  // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
+  init_size_local[0]=offset_local[0]+counts[0];
+  init_size_local[1]=offset_local[1]+counts[1];
+  init_size_local[2]=offset_local[2]+counts[2];
   
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
@@ -906,7 +909,7 @@ bool H5Format::getAttribute(const std::string &varname, const std::string &attrn
   hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
   if (dataSet < 0) {
     // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to create attribute for variable that does not exist");
+    throw BoutException("Trying to read attribute for variable that does not exist");
   }
 
   bool result = getAttribute(dataSet, attrname, text);
@@ -923,7 +926,7 @@ bool H5Format::getAttribute(const std::string &varname, const std::string &attrn
   hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
   if (dataSet < 0) {
     // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to create attribute for variable that does not exist");
+    throw BoutException("Trying to read attribute for variable that does not exist");
   }
 
   bool result = getAttribute(dataSet, attrname, value);
@@ -952,7 +955,7 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, s
 
   // Read attribute
   if (H5Aread(myatt, variable_length_string_type, &text) < 0)
-    throw BoutException("Failed to write attribute");
+    throw BoutException("Failed to read attribute");
 
   if (H5Tclose(variable_length_string_type) < 0)
     throw BoutException("Failed to close variable_length_string_type");
@@ -973,7 +976,7 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, i
 
   // Read attribute
   if (H5Aread(myatt, H5T_NATIVE_INT, &value) < 0)
-    throw BoutException("Failed to write attribute");
+    throw BoutException("Failed to read attribute");
 
   if (H5Aclose(myatt) < 0)
     throw BoutException("Failed to close myatt_in");
