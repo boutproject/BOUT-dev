@@ -70,37 +70,35 @@ matrix:
 
 #COVERAGE
   - stage: Coverage
-    matrix:
-      include:
-      - addons:
-          apt:
-            packages:
-              - *standard_packages
-              - libpetsc3.4.2-dev
-              - libslepc3.4.2-dev
-              - liblapack-dev
-              - libparpack2-dev
-              - jq
-        env:
-          - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
-          - OMP_NUM_THREADS=2
-          - PETSC_DIR=/usr/lib/petscdir/3.4.2
-          - PETSC_ARCH=linux-gnu-c-opt
-          - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
-          - SLEPC_ARCH=linux-gnu-c-opt
-          - SCRIPT_FLAGS='-cu'
-          - PIP_PACKAGES='gcovr'
-          - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
-      - addons:
-          apt:
-            packages:
-              - *standard_packages
-              - jq
-        env:
-          - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
-          - SCRIPT_FLAGS='-cu'
-          - PIP_PACKAGES='gcovr'
-          - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+    - addons:
+        apt:
+          packages:
+            - *standard_packages
+            - libpetsc3.4.2-dev
+            - libslepc3.4.2-dev
+            - liblapack-dev
+            - libparpack2-dev
+            - jq
+      env:
+        - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
+        - OMP_NUM_THREADS=2
+        - PETSC_DIR=/usr/lib/petscdir/3.4.2
+        - PETSC_ARCH=linux-gnu-c-opt
+        - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
+        - SLEPC_ARCH=linux-gnu-c-opt
+        - SCRIPT_FLAGS='-cu'
+        - PIP_PACKAGES='gcovr'
+        - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+    - addons:
+        apt:
+          packages:
+            - *standard_packages
+            - jq
+      env:
+        - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
+        - SCRIPT_FLAGS='-cu'
+        - PIP_PACKAGES='gcovr'
+        - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
 
   - stage: Finalise Coverage
     addons:
