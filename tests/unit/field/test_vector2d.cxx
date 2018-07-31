@@ -3,10 +3,11 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 /// Global mesh
 extern Mesh *mesh;
@@ -26,7 +27,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
 
     mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2));
     mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2));

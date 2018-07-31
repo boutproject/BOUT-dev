@@ -230,6 +230,33 @@ inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
 inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
 inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
+/// Structure to hold various derived "statistics" from a particular region
+struct RegionStats {
+  int numBlocks = 0;           ///< How many blocks
+  int minBlockSize = 0;        ///< Size of smallest block
+  int numMinBlocks = 0;        ///< Number of blocks with min size
+  int maxBlockSize = 0;        ///< Size of largest block
+  int numMaxBlocks = 0;        ///< Number of blocks with max size
+  int numSmallBlocks = 0;      ///< Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance = 0;   ///< Ratio of largest block to smallest
+};
+
+/// Provide an easy way to report a Region's statistics
+inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
+  if ( stats.numBlocks == 0 ) {
+    out << "Empty";
+    return out;
+  }
+  out << "Total blocks : "<< stats.numBlocks;
+  out << ", " << "min(count)/max(count) :";
+  out << " " << stats.minBlockSize << " (" << stats.numMinBlocks << ")/";
+  out << " " << stats.maxBlockSize << " (" << stats.numMaxBlocks << ")";
+  out << ", " << "Max imbalance : " << stats.maxImbalance;
+  out << ", " << "Small block count : " << stats.numSmallBlocks;
+  return out;
+}
+
+
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
 ///
@@ -485,6 +512,41 @@ public:
     return indices.size();
   }
   
+  /// Returns a RegionStats struct desribing the region
+  RegionStats getStats() const {
+    RegionStats result;
+
+    result.numBlocks = blocks.size();
+    if ( result.numBlocks == 0 ) return result;
+    
+    std::vector<int> blockSizes(result.numBlocks);
+    
+    // Get the size of each block using lambda to calculate size
+    std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
+		   [](const ContiguousBlock &a) { return a.second.ind - a.first.ind;});
+
+    auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
+
+    result.minBlockSize = *(minMaxSize.first); //Note have to derefence to get actual value
+    result.numMinBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
+
+    result.maxBlockSize = *(minMaxSize.second); //Note have to derefence to get actual value
+    result.numMaxBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
+
+    
+    result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)/static_cast<BoutReal>(result.minBlockSize);
+
+    // Count the number of small blocks, defined as blocks less than smallSizeFrac of maxBlockSize
+    const BoutReal smallSizeFrac = 0.5;
+    result.numSmallBlocks =
+      std::count_if(std::begin(blockSizes), std::end(blockSizes),
+		    [&blockSizes, &result, smallSizeFrac](int theSize) {
+		      return theSize < smallSizeFrac * result.maxBlockSize;
+		    });
+
+    return result;
+  }
+
   // TODO: Should be able to add regions (would just require extending
   // indices and recalculating blocks). This raises question of should
   // we be able to subtract regions, and if so what does that mean.
