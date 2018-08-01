@@ -170,7 +170,7 @@ Coordinates::Coordinates(Mesh *mesh)
   }
 }
 
-Field2D interpolate_and_Neumann(const Field2D &f, CELL_LOC location) {
+Field2D interpolate_and_Neumann(const Field2D &f, CELL_LOC location, bool diagonal) {
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, RGN_NOBNDRY);
   localmesh->communicate(result);
@@ -195,6 +195,28 @@ Field2D interpolate_and_Neumann(const Field2D &f, CELL_LOC location) {
     }
   }
 
+  // Set corner guard cells to avoid exceptions
+  // Set diagonal elements to a large value, and off-diagonal to zero
+  if (diagonal) {
+    for (int i=0; i<localmesh->xstart; i++) {
+      for (int j=0; j<localmesh->ystart; j++) {
+        result(i, j) = 1.e4;
+        result(i, localmesh->LocalNy-1-j) = 1.e4;
+        result(localmesh->LocalNx-1-i, j) = 1.e4;
+        result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = 1.e4;
+      }
+    }
+  } else {
+    for (int i=0; i<localmesh->xstart; i++) {
+      for (int j=0; j<localmesh->ystart; j++) {
+        result(i, j) = 0.;
+        result(i, localmesh->LocalNy-1-j) = 0.;
+        result(localmesh->LocalNx-1-i, j) = 0.;
+        result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = 0.;
+      }
+    }
+  }
+
   return result;
 }
 
@@ -209,22 +231,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolate_and_Neumann(coords_centre->dx, location);
-  dy = interpolate_and_Neumann(coords_centre->dy, location);
+  dx = interpolate_and_Neumann(coords_centre->dx, location, true);
+  dy = interpolate_and_Neumann(coords_centre->dy, location, true);
 
   nz = mesh->LocalNz;
 
   dz = coords_centre->dz;
 
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  g11 = interpolate_and_Neumann(coords_centre->g11, location);
-  g22 = interpolate_and_Neumann(coords_centre->g22, location);
-  g33 = interpolate_and_Neumann(coords_centre->g33, location);
+  // Diagonal components of metric tensor g^{ij}
+  g11 = interpolate_and_Neumann(coords_centre->g11, location, true);
+  g22 = interpolate_and_Neumann(coords_centre->g22, location, true);
+  g33 = interpolate_and_Neumann(coords_centre->g33, location, true);
 
-  // Off-diagonal elements. Default to 0
-  g12 = interpolate_and_Neumann(coords_centre->g12, location);
-  g13 = interpolate_and_Neumann(coords_centre->g13, location);
-  g23 = interpolate_and_Neumann(coords_centre->g23, location);
+  // Off-diagonal elements.
+  g12 = interpolate_and_Neumann(coords_centre->g12, location, false);
+  g13 = interpolate_and_Neumann(coords_centre->g13, location, false);
+  g23 = interpolate_and_Neumann(coords_centre->g23, location, false);
 
   // Check input metrics
   if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -253,12 +275,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolate_and_Neumann(coords_centre->ShiftTorsion, location);
+  ShiftTorsion = interpolate_and_Neumann(coords_centre->ShiftTorsion, location, true);
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolate_and_Neumann(coords_centre->IntShiftTorsion, location);
+    IntShiftTorsion = interpolate_and_Neumann(coords_centre->IntShiftTorsion, location, true);
   }
 }
 
