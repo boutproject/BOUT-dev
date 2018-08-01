@@ -50,8 +50,8 @@ public:
   /// Standard constructor from input
   Coordinates(Mesh *mesh);
 
-  /// Constructor interpolating from CELL_CENTRE Coordinates object
-  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_centre);
+  /// Constructor interpolating from another Coordinates object
+  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
   
   ~Coordinates() {}
   

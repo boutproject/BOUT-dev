@@ -436,6 +436,9 @@ class Mesh {
     } else if (location == CELL_DEFAULT) {
       return coordinates(CELL_CENTRE);
     } else {
+      // No coordinate system set. Create default
+      // Note that this can't be allocated here due to incomplete type
+      // (circular dependency between Mesh and Coordinates)
       coords_map.insert(std::pair<CELL_LOC, Coordinates*>(location, createDefaultCoordinates(location)));
       return coords_map[location];
     }
@@ -742,7 +745,7 @@ class Mesh {
                            REGION region = RGN_NOBNDRY);
 
 private:
-  /// Allocates a default Coordinates object
+  /// Allocates default Coordinates objects
   Coordinates *createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
