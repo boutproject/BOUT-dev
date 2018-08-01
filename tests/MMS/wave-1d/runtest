@@ -21,7 +21,7 @@ print("Making MMS wave test")
 shell_safe("make > make.log")
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64, 128]
+nxlist = [8, 12, 20, 36, 68, 132]
 
 nout = 1
 timestep = 0.1
