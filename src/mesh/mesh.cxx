@@ -40,7 +40,7 @@ Mesh::~Mesh() {
     delete source;
   }
 
-  for (const auto &it : coords_map) {
+  for (auto &it : coords_map) {
     delete it.second;
   }
 }
