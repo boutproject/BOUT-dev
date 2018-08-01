@@ -44,11 +44,11 @@ class BoundaryRegionPar : public BoundaryRegionBase {
   IndicesIter bndry_position;
 
 public:
-  BoundaryRegionPar(Mesh* mesh, const string &name,int dir) :
-    BoundaryRegionBase(mesh, name), dir(dir) {
+  BoundaryRegionPar(const string &name, int dir, Mesh* passmesh) :
+    BoundaryRegionBase(name, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
-  BoundaryRegionPar(Mesh* mesh, const string &name, BndryLoc loc,int dir) :
-    BoundaryRegionBase(mesh, name, loc), dir(dir) {
+  BoundaryRegionPar(const string &name, BndryLoc loc,int dir, Mesh* passmesh) :
+    BoundaryRegionBase(name, loc, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
 
   /// Add a point to the boundary

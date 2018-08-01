@@ -794,15 +794,15 @@ int BoutMesh::load() {
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
         // Core
-        boundary.push_back(new BoundaryRegionXIn(this, "core", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
       } else {
         // PF region
-        boundary.push_back(new BoundaryRegionXIn(this, "pf", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
     if (PE_XIND == (NXPE - 1)) {
       // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut(this, "sol", ystart, yend));
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
     }
   }
 
@@ -810,15 +810,15 @@ int BoutMesh::load() {
     // Need boundaries in Y
 
     if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp(this, "upper_target", xstart, UDATA_XSPLIT - 1));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
     if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp(this, "upper_target", UDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
 
     if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
       boundary.push_back(
-          new BoundaryRegionYDown(this, "lower_target", xstart, DDATA_XSPLIT - 1));
+          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
     if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown(this, "lower_target", DDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
   }
 
   if (!boundary.empty()) {

@@ -3,8 +3,16 @@
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
-BoundaryRegionXIn::BoundaryRegionXIn(Mesh* mesh, const string &name, int ymin, int ymax)
-  : BoundaryRegion(mesh, name, -1, 0), ys(ymin), ye(ymax)
+BoundaryRegionBase::BoundaryRegionBase(Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh) {}
+BoundaryRegionBase::BoundaryRegionBase(const string &name, Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh), label(name) {}
+BoundaryRegionBase::BoundaryRegionBase(const string &name, BndryLoc loc, Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh), label(name), location(loc) {}
+
+BoundaryRegion::BoundaryRegion(Mesh* passmesh) : BoundaryRegionBase(passmesh) {}
+BoundaryRegion::BoundaryRegion(const string &name, BndryLoc loc, Mesh* passmesh) : BoundaryRegionBase(name, loc, passmesh) {}
+BoundaryRegion::BoundaryRegion(const string &name, int xd, int yd, Mesh* passmesh) : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
+
+BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax, Mesh* passmesh)
+  : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)
 {
   location = BNDRY_XIN;
   width = localmesh->xstart;
@@ -57,8 +65,8 @@ bool BoundaryRegionXIn::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionXOut::BoundaryRegionXOut(Mesh* mesh, const string &name, int ymin, int ymax)
-  : BoundaryRegion(mesh, name, 1, 0), ys(ymin), ye(ymax)
+BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax, Mesh* passmesh)
+  : BoundaryRegion(name, 1, 0, passmesh), ys(ymin), ye(ymax)
 {
   location = BNDRY_XOUT;
   width = localmesh->LocalNx - localmesh->xend - 1;
@@ -111,8 +119,8 @@ bool BoundaryRegionXOut::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYDown::BoundaryRegionYDown(Mesh* mesh, const string &name, int xmin, int xmax)
-  : BoundaryRegion(mesh, name, 0, -1), xs(xmin), xe(xmax)
+BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax, Mesh* passmesh)
+  : BoundaryRegion(name, 0, -1, passmesh), xs(xmin), xe(xmax)
 {
   location = BNDRY_YDOWN;
   width = localmesh->ystart;
@@ -166,8 +174,8 @@ bool BoundaryRegionYDown::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYUp::BoundaryRegionYUp(Mesh* mesh, const string &name, int xmin, int xmax)
-  : BoundaryRegion(mesh, name, 0, 1), xs(xmin), xe(xmax)
+BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax, Mesh* passmesh)
+  : BoundaryRegion(name, 0, 1, passmesh), xs(xmin), xe(xmax)
 {
   location = BNDRY_YUP;
   width = localmesh->LocalNy - localmesh->yend - 1;
