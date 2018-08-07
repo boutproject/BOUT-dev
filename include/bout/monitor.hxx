@@ -49,8 +49,10 @@ public:
   /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
 
-private:
+protected:
   BoutReal timestep;
+
+private:
   int freq;
 };
 
