@@ -114,7 +114,21 @@ MPICH2 and the needed libraries by running::
 
     $ sudo apt-get install mpich2 libmpich2-dev
     $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
-   
+
+
+On Ubuntu 18.04::
+
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
+    $ pip3 install --user Cython
+
+
+The first line should be sufficient to install BOUT++, while the 2nd
+and 3rd line make sure that the tests work, and that the python
+interface can be build.
+Further, the encoding for python needs to be utf8 - it may be required
+to set `export LC_CTYPE=C.utf8`.
+
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
 See sections on :ref:`installing MPI <sec-mpi-from-source>`, :ref:`installing FFTW <sec-fftw-from-source>`
