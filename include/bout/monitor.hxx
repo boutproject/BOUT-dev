@@ -50,9 +50,23 @@ public:
   virtual void cleanup(){};
 
 protected:
-  BoutReal timestep;
+  /// Get the currently set timestep for this monitor
+  BoutReal getTimestep() const { return timestep; }
+
+  /// Set the timestep for this Monitor
+  ///
+  /// Can only be called before the Monitor is added to a Solver
+  void setTimestep(BoutReal new_timestep) {
+    if (is_added) {
+      throw BoutException("Monitor::set_timestep - Error: Monitor has already"
+          "been added to a Solver, so timestep cannot be changed.");
+    }
+    timestep = new_timestep;
+  }
 
 private:
+  bool is_added = false; ///< Set to true when Monitor is added to a Solver
+  BoutReal timestep;
   int freq;
 };
 
