@@ -230,6 +230,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         zind = _convert_to_nice_slice(zind, nz, "zind")
         tind = _convert_to_nice_slice(tind, nt, "tind")
 
+        if not xguards:
+            xind = slice(xind.start+mxg, xind.stop+mxg, xind.step)
+        if not yguards:
+            yind = slice(yind.start+myg, yind.stop+myg, yind.step)
+
         ndims = f.ndims(varname)
         if ndims == 0:
             ranges = []
