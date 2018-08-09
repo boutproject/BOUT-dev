@@ -10333,7 +10333,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_ida -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_ida -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS
@@ -10910,7 +10910,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS
@@ -11487,7 +11487,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS

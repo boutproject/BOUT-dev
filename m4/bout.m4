@@ -245,7 +245,7 @@ $2
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS
