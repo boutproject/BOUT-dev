@@ -190,7 +190,7 @@ AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
        AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $module_upper anyway])
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
     ])
     AC_LANG_PUSH([C++])
     AC_MSG_CHECKING([if we can compile with SUNDIALS $module_upper])

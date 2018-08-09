@@ -9973,7 +9973,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_ida -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_ida -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
@@ -10550,7 +10550,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
@@ -11127,7 +11127,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
