@@ -227,103 +227,156 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
-  // Calculate Christoffel symbol terms (18 independent values)
-  // Note: This calculation is completely general: metric
-  // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+  /// Find Christoffel symbol components
+  // Check if any of the components are present
+  // Check that all components are present
+  if (mesh->sourceHasVar("G1_11") and mesh->sourceHasVar("G1_22") and
+      mesh->sourceHasVar("G1_33") and mesh->sourceHasVar("G1_12") and
+      mesh->sourceHasVar("G1_13") and mesh->sourceHasVar("G1_23") and
+      mesh->sourceHasVar("G2_11") and mesh->sourceHasVar("G2_22") and
+      mesh->sourceHasVar("G2_33") and mesh->sourceHasVar("G2_12") and
+      mesh->sourceHasVar("G2_13") and mesh->sourceHasVar("G2_23") and
+      mesh->sourceHasVar("G3_11") and mesh->sourceHasVar("G3_22") and
+      mesh->sourceHasVar("G3_33") and mesh->sourceHasVar("G3_12") and
+      mesh->sourceHasVar("G3_13") and mesh->sourceHasVar("G3_23") and
+      mesh->sourceHasVar("G1") and mesh->sourceHasVar("G2") and
+      mesh->sourceHasVar("G3") ) {
+    mesh->get(G1_11, "G1_11");
+    mesh->get(G1_11, "G1_22");
+    mesh->get(G1_11, "G1_33");
+    mesh->get(G1_11, "G1_12");
+    mesh->get(G1_11, "G1_13");
+    mesh->get(G1_11, "G1_23");
+    mesh->get(G2_11, "G2_11");
+    mesh->get(G2_11, "G2_22");
+    mesh->get(G2_11, "G2_33");
+    mesh->get(G2_11, "G2_12");
+    mesh->get(G2_11, "G2_13");
+    mesh->get(G2_11, "G2_23");
+    mesh->get(G3_11, "G3_11");
+    mesh->get(G3_11, "G3_22");
+    mesh->get(G3_11, "G3_33");
+    mesh->get(G3_11, "G3_12");
+    mesh->get(G3_11, "G3_13");
+    mesh->get(G3_11, "G3_23");
+    mesh->get(G1, "G1");
+    mesh->get(G2, "G2");
+    mesh->get(G3, "G3");
+    output_warn.write("\tWARNING! Christoffel symbols set manually. "
+                      "Christoffel symbols NOT recalculated\n");
+  } else {
+    if (mesh->sourceHasVar("G1_11") or mesh->sourceHasVar("G1_22") or
+        mesh->sourceHasVar("G1_33") or mesh->sourceHasVar("G1_12") or
+        mesh->sourceHasVar("G1_13") or mesh->sourceHasVar("G1_23") or
+        mesh->sourceHasVar("G2_11") or mesh->sourceHasVar("G2_22") or
+        mesh->sourceHasVar("G2_33") or mesh->sourceHasVar("G2_12") or
+        mesh->sourceHasVar("G2_13") or mesh->sourceHasVar("G2_23") or
+        mesh->sourceHasVar("G3_11") or mesh->sourceHasVar("G3_22") or
+        mesh->sourceHasVar("G3_33") or mesh->sourceHasVar("G3_12") or
+        mesh->sourceHasVar("G3_13") or mesh->sourceHasVar("G3_23") or
+        mesh->sourceHasVar("G1") or mesh->sourceHasVar("G2") or
+        mesh->sourceHasVar("G3") ) {
+      output_warn.write("Not all components of Christoffel symbols found. "
+                        "Calculating all from the metric tensor\n");
+    }
+    // Calculate Christoffel symbol terms (18 independent values)
+    // Note: This calculation is completely general: metric
+    // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
-  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22) +
-          g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g13 * DDZ(g_33);
-  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22) +
-          0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
-          0.5 * g13 * DDX(g_33);
-  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) +
-          0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * g13 * DDY(g_33);
+    G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+            g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22) +
+            g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+    G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+            0.5 * g13 * DDZ(g_33);
+    G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22) +
+            0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
+            0.5 * g13 * DDX(g_33);
+    G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) +
+            0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+            // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+            // which equals
+            + 0.5 * g13 * DDY(g_33);
 
-  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22) +
-          g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g23 * DDZ(g_33);
-  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22) +
-          0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G2_13 =
-      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // which equals
-      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-      // which equals
-      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-      // which equals
-      + 0.5 * g23 * DDX(g_33);
-  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22) +
-          0.5 * g23 * DDY(g_33);
+    G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+            g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22) +
+            g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+    G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+            0.5 * g23 * DDZ(g_33);
+    G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22) +
+            0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G2_13 =
+        // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+        // which equals
+        0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+        // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+        // which equals
+        + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+        // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+        // which equals
+        + 0.5 * g23 * DDX(g_33);
+    G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22) +
+            0.5 * g23 * DDY(g_33);
 
-  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11)) +
-          g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22) +
-          g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
-          0.5 * g33 * DDZ(g_33);
-  G3_12 =
-      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-      // which equals to
-      0.5 * g13 * DDY(g_11)
-      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-      // which equals to
-      + 0.5 * g23 * DDX(g_22)
-      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-      // which equals to
-      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
-          0.5 * g33 * DDX(g_33);
-  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
-          0.5 * g33 * DDY(g_33);
+    G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11)) +
+            g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+    G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22) +
+            g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+    G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33)) +
+            0.5 * g33 * DDZ(g_33);
+    G3_12 =
+        // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+        // which equals to
+        0.5 * g13 * DDY(g_11)
+        // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+        // which equals to
+        + 0.5 * g23 * DDX(g_22)
+        //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+        // which equals to
+        + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+    G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13)) +
+            0.5 * g33 * DDX(g_33);
+    G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
+            0.5 * g33 * DDY(g_33);
 
-  G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
-  G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
-  G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
+    G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
+    G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
+    G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
 
-  // Communicate christoffel symbol terms
-  output_progress.write("\tCommunicating connection terms\n");
+    // Communicate christoffel symbol terms
+    output_progress.write("\tCommunicating connection terms\n");
 
-  FieldGroup com;
+    FieldGroup com;
 
-  com.add(G1_11);
-  com.add(G1_22);
-  com.add(G1_33);
-  com.add(G1_12);
-  com.add(G1_13);
-  com.add(G1_23);
+    com.add(G1_11);
+    com.add(G1_22);
+    com.add(G1_33);
+    com.add(G1_12);
+    com.add(G1_13);
+    com.add(G1_23);
 
-  com.add(G2_11);
-  com.add(G2_22);
-  com.add(G2_33);
-  com.add(G2_12);
-  com.add(G2_13);
-  com.add(G2_23);
+    com.add(G2_11);
+    com.add(G2_22);
+    com.add(G2_33);
+    com.add(G2_12);
+    com.add(G2_13);
+    com.add(G2_23);
 
-  com.add(G3_11);
-  com.add(G3_22);
-  com.add(G3_33);
-  com.add(G3_12);
-  com.add(G3_13);
-  com.add(G3_23);
+    com.add(G3_11);
+    com.add(G3_22);
+    com.add(G3_33);
+    com.add(G3_12);
+    com.add(G3_13);
+    com.add(G3_23);
 
-  com.add(G1);
-  com.add(G2);
-  com.add(G3);
+    com.add(G1);
+    com.add(G2);
+    com.add(G3);
 
-  localmesh->communicate(com);
+    localmesh->communicate(com);
+  }
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY

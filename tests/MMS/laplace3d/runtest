@@ -90,6 +90,7 @@ for nx in nxlist:
         pyplot.colorbar()
         pyplot.title("error")
 
+        pyplot.tight_layout()
         pyplot.savefig("error"+str(nx)+".pdf")
         pyplot.clf()
 

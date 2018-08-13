@@ -139,9 +139,7 @@ def Delp2(f, all_terms=True):
     result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
 
     if all_terms:
-        G1 = (DDX(metric.J*metric.g11) + DDY(metric.J*metric.g12) + DDZ(metric.J*metric.g13)) / metric.J
-        G3 = (DDX(metric.J*metric.g13) + DDY(metric.J*metric.g23) + DDZ(metric.J*metric.g33)) / metric.J
-        result += G1 * DDX(f) + G3 * DDZ(f)
+        result += metric.G1 * DDX(f) + metric.G3 * DDZ(f)
 
     return result
 
@@ -169,11 +167,7 @@ def Div_par(f):
 
 def Laplace(f):
     """The full Laplace operator"""
-    G1 = (DDX(metric.J*metric.g11) + DDY(metric.J*metric.g12) + DDZ(metric.J*metric.g13)) / metric.J
-    G2 = (DDX(metric.J*metric.g12) + DDY(metric.J*metric.g22) + DDZ(metric.J*metric.g23)) / metric.J
-    G3 = (DDX(metric.J*metric.g13) + DDY(metric.J*metric.g23) + DDZ(metric.J*metric.g33)) / metric.J
-
-    result  = G1*DDX(f) + G2*DDY(f) + G3*DDZ(f)\
+    result  = metric.G1*DDX(f) + metric.G2*DDY(f) + metric.G3*DDZ(f)\
 	      + metric.g11*D2DX2(f) + metric.g22*D2DY2(f) + metric.g33*D2DZ2(f)\
 	      + 2.0*(metric.g12*D2DXDY(f) + metric.g13*D2DXDZ(f) + metric.g23*D2DYDZ(f))
 
@@ -415,6 +409,32 @@ class BaseTokamak(object):
 
         self.metric_is_set = True
 
+        # Christoffel symbols
+        metric.G1_11 = 0.5 * metric.g11 * DDX(metric.g_11) + metric.g12 * (DDX(metric.g_12) - 0.5 * DDY(metric.g_11)) + metric.g13 * (DDX(metric.g_13) - 0.5 * DDZ(metric.g_11))
+        metric.G1_22 = metric.g11 * (DDY(metric.g_12) - 0.5 * DDX(metric.g_22)) + 0.5 * metric.g12 * DDY(metric.g_22) + metric.g13 * (DDY(metric.g_23) - 0.5 * DDZ(metric.g_22))
+        metric.G1_33 = metric.g11 * (DDZ(metric.g_13) - 0.5 * DDX(metric.g_33)) + metric.g12 * (DDZ(metric.g_23) - 0.5 * DDY(metric.g_33)) + 0.5 * metric.g13 * DDZ(metric.g_33)
+        metric.G1_12 = 0.5 * metric.g11 * DDY(metric.g_11) + 0.5 * metric.g12 * DDX(metric.g_22) + 0.5 * metric.g13 * (DDY(metric.g_13) + DDX(metric.g_23) - DDZ(metric.g_12))
+        metric.G1_13 = 0.5 * metric.g11 * DDZ(metric.g_11) + 0.5 * metric.g12 * (DDZ(metric.g_12) + DDX(metric.g_23) - DDY(metric.g_13)) + 0.5 * metric.g13 * DDX(metric.g_33)
+        metric.G1_23 = 0.5 * metric.g11 * (DDZ(metric.g_12) + DDY(metric.g_13) - DDX(metric.g_23)) + 0.5 * metric.g12 * (DDZ(metric.g_22) + DDY(metric.g_23) - DDY(metric.g_23)) + 0.5 * metric.g13 * DDY(metric.g_33)
+
+        metric.G2_11 = 0.5 * metric.g12 * DDX(metric.g_11) + metric.g22 * (DDX(metric.g_12) - 0.5 * DDY(metric.g_11)) + metric.g23 * (DDX(metric.g_13) - 0.5 * DDZ(metric.g_11))
+        metric.G2_22 = metric.g12 * (DDY(metric.g_12) - 0.5 * DDX(metric.g_22)) + 0.5 * metric.g22 * DDY(metric.g_22) + metric.g23 * (DDY(metric.g23) - 0.5 * DDZ(metric.g_22))
+        metric.G2_33 = metric.g12 * (DDZ(metric.g_13) - 0.5 * DDX(metric.g_33)) + metric.g22 * (DDZ(metric.g_23) - 0.5 * DDY(metric.g_33)) + 0.5 * metric.g23 * DDZ(metric.g_33)
+        metric.G2_12 = 0.5 * metric.g12 * DDY(metric.g_11) + 0.5 * metric.g22 * DDX(metric.g_22) + 0.5 * metric.g23 * (DDY(metric.g_13) + DDX(metric.g_23) - DDZ(metric.g_12))
+        metric.G2_13 = 0.5 * metric.g12 * (DDZ(metric.g_11) + DDX(metric.g_13) - DDX(metric.g_13)) + 0.5 * metric.g22 * (DDZ(metric.g_12) + DDX(metric.g_23) - DDY(metric.g_13)) + 0.5 * metric.g23 * DDX(metric.g_33)
+        metric.G2_23 = 0.5 * metric.g12 * (DDZ(metric.g_12) + DDY(metric.g_13) - DDX(metric.g_23)) + 0.5 * metric.g22 * DDZ(metric.g_22) + 0.5 * metric.g23 * DDY(metric.g_33)
+
+        metric.G3_11 = 0.5 * metric.g13 * DDX(metric.g_11) + metric.g23 * (DDX(metric.g_12) - 0.5 * DDY(metric.g_11)) + metric.g33 * (DDX(metric.g_13) - 0.5 * DDZ(metric.g_11))
+        metric.G3_22 = metric.g13 * (DDY(metric.g_12) - 0.5 * DDX(metric.g_22)) + 0.5 * metric.g23 * DDY(metric.g_22) + metric.g33 * (DDY(metric.g_23) - 0.5 * DDZ(metric.g_22))
+        metric.G3_33 = metric.g13 * (DDZ(metric.g_13) - 0.5 * DDX(metric.g_33)) + metric.g23 * (DDZ(metric.g_23) - 0.5 * DDY(metric.g_33)) + 0.5 * metric.g33 * DDZ(metric.g_33)
+        metric.G3_12 = 0.5 * metric.g13 * DDY(metric.g_11) + 0.5 * metric.g23 * DDX(metric.g_22) + 0.5 * metric.g33 * (DDY(metric.g_13) + DDX(metric.g_23) - DDZ(metric.g_12))
+        metric.G3_13 = 0.5 * metric.g13 * DDZ(metric.g_11) + 0.5 * metric.g23 * (DDZ(metric.g_12) + DDX(metric.g_23) - DDY(metric.g_13)) + 0.5 * metric.g33 * DDX(metric.g_33)
+        metric.G3_23 = 0.5 * metric.g13 * (DDZ(metric.g_12) + DDY(metric.g_13) - DDX(metric.g_23)) + 0.5 * metric.g23 * DDZ(metric.g_22) + 0.5 * metric.g33 * DDY(metric.g_33)
+
+        metric.G1 = (DDX(metric.J * metric.g11) + DDY(metric.J * metric.g12) + DDZ(metric.J * metric.g13)) / metric.J
+        metric.G2 = (DDX(metric.J * metric.g12) + DDY(metric.J * metric.g22) + DDZ(metric.J * metric.g23)) / metric.J
+        metric.G3 = (DDX(metric.J * metric.g13) + DDY(metric.J * metric.g23) + DDZ(metric.J * metric.g33)) / metric.J
+
     def print_mesh(self):
         """
         Prints the metrics to stdout to be copied to a BOUT.inp file
@@ -439,6 +459,28 @@ class BaseTokamak(object):
         print("g_23 = "+exprToStr(metric.g_23))
         print("J = "+exprToStr(metric.J))
         print("Bxy = "+exprToStr(metric.B))
+        print("G1_11 = "+exprToStr(metric.G1_11))
+        print("G1_22 = "+exprToStr(metric.G1_22))
+        print("G1_33 = "+exprToStr(metric.G1_33))
+        print("G1_12 = "+exprToStr(metric.G1_12))
+        print("G1_13 = "+exprToStr(metric.G1_13))
+        print("G1_23 = "+exprToStr(metric.G1_23))
+        print("G2_11 = "+exprToStr(metric.G2_11))
+        print("G2_22 = "+exprToStr(metric.G2_22))
+        print("G2_33 = "+exprToStr(metric.G2_33))
+        print("G2_12 = "+exprToStr(metric.G2_12))
+        print("G2_13 = "+exprToStr(metric.G2_13))
+        print("G2_23 = "+exprToStr(metric.G2_23))
+        print("G3_11 = "+exprToStr(metric.G3_11))
+        print("G3_22 = "+exprToStr(metric.G3_22))
+        print("G3_33 = "+exprToStr(metric.G3_33))
+        print("G3_12 = "+exprToStr(metric.G3_12))
+        print("G3_13 = "+exprToStr(metric.G3_13))
+        print("G3_23 = "+exprToStr(metric.G3_23))
+        print("G1 = "+exprToStr(metric.G1))
+        print("G2 = "+exprToStr(metric.G2))
+        print("G3 = "+exprToStr(metric.G3))
+
         print("Lx = "+exprToStr(metric.psiwidth))
         print("Lz = "+exprToStr((2.*pi*self.R/metric.zperiod).evalf()))
 
