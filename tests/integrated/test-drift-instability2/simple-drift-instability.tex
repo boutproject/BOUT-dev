@@ -1,0 +1,90 @@
+%% LyX 2.1.4 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\usepackage{amsmath}
+\usepackage{babel}
+\begin{document}
+
+\title{Simple resistive drift instability}
+
+\maketitle
+
+\section{Equations}
+
+Normalized equations:
+\begin{align*}
+\frac{\partial n}{\partial t} & =-\frac{\partial\phi}{\partial z}\frac{\partial n_{0}}{\partial x}=\frac{1}{L_{n}}\frac{\partial\phi}{\partial z}\\
+\frac{\partial w}{\partial t} & =\frac{\partial j}{\partial y}\\
+\nabla_{\perp}^{2}\phi & =w\\
+j & =\frac{1}{\mu\eta}\left(\frac{\partial n}{\partial y}-\frac{\partial\phi}{\partial y}\right)
+\end{align*}
+
+
+
+\section{Dispersion relation}
+
+In Fourier space, with $\omega_{*}=\frac{k_{z}}{L_{n}}$:
+\begin{align*}
+(-i\omega)n & =\frac{1}{L_{n}}(ik_{z})\phi=i\omega_{*}\phi\\
+(-i\omega)w & =(ik_{\|})j\\
+-k_{\perp}^{2}\phi & =w\\
+j & =\frac{(ik_{\|})}{\mu\eta}(n-\phi)
+\end{align*}
+\begin{align*}
+\omega n & =-\omega_{*}\phi\\
+\omega k_{\perp}^{2}\phi & =k_{\|}j\\
+j & =\frac{ik_{\|}}{\mu\eta}(n-\phi)
+\end{align*}
+\begin{align*}
+\omega k_{\perp}^{2}\phi & =\frac{ik_{\|}^{2}}{\mu\eta}(n-\phi)\\
+\left(\omega k_{\perp}^{2}+i\frac{k_{\|}^{2}}{\mu\eta}\right)\phi & =\frac{ik_{\|}^{2}}{\mu\eta}n\\
+\omega\left(\omega k_{\perp}^{2}+i\frac{k_{\|}^{2}}{\mu\eta}\right) & =-\frac{i\omega_{*}k_{\|}^{2}}{\mu\eta}\\
+\omega^{2}k_{\perp}^{2}+i\frac{k_{\|}^{2}}{\mu\eta}\omega+\frac{i\omega_{*}k_{\|}^{2}}{\mu\eta} & =0\\
+\mu\eta\omega^{2}k_{\perp}^{2}+ik_{\|}^{2}\omega+i\omega_{*}k_{\|}^{2} & =0
+\end{align*}
+\begin{align}
+\omega & =\frac{-ik_{\|}^{2}\pm\sqrt{-k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{2\mu\eta k_{\perp}^{2}}\nonumber \\
+\omega & =\frac{-ik_{\|}^{2}\pm i\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{2\mu\eta k_{\perp}^{2}}\label{eq:omega}
+\end{align}
+Taking positive root for growing solution, and noting $\sqrt{A}\pm\sqrt{B}=\sqrt{(\sqrt{A}\pm\sqrt{B})^{2}}=\sqrt{A+B\pm2\sqrt{AB}}$
+(this method loses the sign of $\sqrt{A}\pm\sqrt{B}$, so note that
+$\Re(\omega)>0$ by Taylor expanding (\ref{eq:omega})). 
+\begin{align*}
+\Re(\omega) & =\frac{1}{2}(\omega+\omega^{\dagger})\\
+ & =\frac{-ik_{\|}^{2}+i\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}+ik_{\|}^{2}-i\sqrt{k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =\frac{i\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}-i\sqrt{k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =-\frac{i\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}+k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}-2\sqrt{(k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})(k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =-\frac{i\sqrt{2k_{\|}^{4}-2\sqrt{(k_{\|}^{8}+16(\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})^{2}}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =-\frac{\sqrt{2\sqrt{(k_{\|}^{8}+16(\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})^{2}}-2k_{\|}^{4}}}{4\mu\eta k_{\perp}^{2}}
+\end{align*}
+\begin{align*}
+\Im(\omega) & =\frac{1}{2i}(\omega-\omega^{\dagger})\\
+ & =\frac{-ik_{\|}^{2}+i\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}-ik_{\|}^{2}+i\sqrt{k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{4i\mu\eta k_{\perp}^{2}}\\
+ & =\frac{-2k_{\|}^{2}+\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}+\sqrt{k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =\frac{-2k_{\|}^{2}+\sqrt{k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}+k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2}+2\sqrt{(k_{\|}^{4}+4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})(k_{\|}^{4}-4i\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})}}}{4\mu\eta k_{\perp}^{2}}\\
+ & =\frac{-2k_{\|}^{2}+\sqrt{2k_{\|}^{4}+2\sqrt{(k_{\|}^{8}+16(\mu\eta\omega_{*}k_{\|}^{2}k_{\perp}^{2})^{2}}}}{4\mu\eta k_{\perp}^{2}}
+\end{align*}
+
+
+
+\section{Mode structure}
+
+If $n$ is initially
+\[
+n=a\cos(k_{\|}y+k_{\perp}z)
+\]
+then as
+\begin{align*}
+w & =-k_{\perp}^{2}\phi\\
+ & =k_{\perp}^{2}\frac{\omega}{\omega_{*}}n
+\end{align*}
+$w$ is initially
+\[
+w=a\frac{k_{\perp}^{2}}{\omega_{*}}\left(\Re(\omega)\cos(k_{\|}y+k_{\perp}z)-\Im(\omega)\sin(k_{\|}y+k_{\perp}z)\right)
+\]
+
+\end{document}
