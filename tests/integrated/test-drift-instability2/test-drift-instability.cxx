@@ -22,6 +22,7 @@ private:
   Laplacian* phi_solver;
   CELL_LOC maybe_ylow;
   BoutReal omega, gamma; /// analytic expressions for mode frequency and growth rate
+  BoutReal hyperdiff; /// coefficient for hyperdiffusion, added for numerical stability
 };
 
 int DW::init(bool restarting) {
@@ -38,6 +39,9 @@ int DW::init(bool restarting) {
   OPTION(options, omega, 0.);
   OPTION(options, gamma, 0.);
   SAVE_ONCE2(omega, gamma);
+
+  OPTION(options, hyperdiff, 1.);
+  SAVE_ONCE(hyperdiff);
 
   output<<"expected omega="<<omega<<endl;
   output<<"expected gamma="<<gamma<<endl;
@@ -68,9 +72,11 @@ int DW::rhs(BoutReal time) {
   jpar = (Grad_par(n, maybe_ylow) - Grad_par(phi, maybe_ylow))/mu/eta;
   mesh->communicate(jpar);
 
+  Coordinates* coords = mesh->coordinates();
+
   ddt(n) = -DDZ(phi)*DDX(n0);
 
-  ddt(w) = Div_par(jpar, CELL_CENTRE);
+  ddt(w) = Div_par(jpar, CELL_CENTRE) - hyperdiff*(pow(coords->dy, 4)*D4DY4(w) + pow(coords->dz, 4)*D4DZ4(w));
 
   return 0;
 }

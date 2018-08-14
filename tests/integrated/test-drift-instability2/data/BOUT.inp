@@ -1,10 +1,9 @@
 timestep = 10
 nout = 30
 
-mz = 32
+mz = 128
 
 mxg = 1
-myg = 1
 
 [driftwave]
 mu = 9.10938291e-31/3.343583719e-27
@@ -23,6 +22,8 @@ gamma = ( sqrt(2.*kpar^4 + 2.*sqrt(kpar^8 + (4.*mu*eta*omegastar*kperp^2*kpar^2)
 amplitude = 0.001
 coskr = cos(y+z)
 sinkr = sin(y+z)
+
+hyperdiff = 1. # coefficient for hyperdiffusion added to stabilise high-k modes
 
 [n]
 function = driftwave:amplitude*driftwave:coskr
