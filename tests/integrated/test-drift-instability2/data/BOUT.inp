@@ -1,0 +1,57 @@
+timestep = 10
+nout = 30
+
+mz = 32
+
+mxg = 1
+myg = 1
+
+[driftwave]
+mu = 9.10938291e-31/3.343583719e-27
+nuei = 0.1
+eta = 0.51*nuei
+
+kpar = 2.*pi/mesh:Ly
+kperp = 2.*pi/mesh:Lz
+Ln = 10.
+omegastar = kperp/Ln
+
+# real frequency (analytic)
+omega = -sqrt(2.*sqrt(kpar^8 + (4*mu*eta*omegastar*kpar^2*kperp^2)^2) - 2.*kpar^4) / (4.*mu*eta*kperp^2)
+# growth rate (analytic)
+gamma = ( sqrt(2.*kpar^4 + 2.*sqrt(kpar^8 + (4.*mu*eta*omegastar*kperp^2*kpar^2)^2)) - 2.*kpar^2 ) / (4.*mu*eta*kperp^2)
+amplitude = 0.001
+coskr = cos(y+z)
+sinkr = sin(y+z)
+
+[n]
+function = driftwave:amplitude*driftwave:coskr
+
+[w]
+function = driftwave:amplitude*driftwave:kperp^2/driftwave:omegastar*(driftwave:omega*driftwave:coskr - driftwave:gamma*driftwave:sinkr)
+
+[n0]
+function = 1.
+bndry_xin = neumann(-1./driftwave:Ln)
+bndry_xout = neumann(-1./driftwave:Ln)
+
+[mesh]
+nx = 3
+ny = mz
+
+Lx = 1.
+Ly = 1000.
+Lz = 10.
+
+dx = Lx
+dy = Ly/ny
+dz = Lz/mz
+
+[laplace]
+global_flags          = 1 # zero DC component
+inner_boundary_flags  = 2 # Neumann AC component
+outer_boundary_flags  = 2 # Neumann AC component
+
+[all]
+bndry_all = neumann
+

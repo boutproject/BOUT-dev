@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+
+nproc = 4
+nthreads = 1
+
+# Relative tolerance in frequency and growth rate
+omega_tol = 1e-2
+gamma_tol = 1e-2
+
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.calculus import deriv
+from boututils.linear_regression import linear_regression
+from boutdata.data import BoutOutputs
+import numpy as np
+from math import isnan
+from sys import exit
+
+MPIRUN = getmpirun()
+
+print("Making resistive drift instability test")
+shell_safe("make > make.log")
+
+# Delete old output files
+shell("rm data/BOUT.dmp.*.nc")
+
+print("Running drift instability test")
+
+# Run the case
+s, out = launch_safe("./test-drift-instability", runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
+with open("run.log", "w") as f:
+    f.write(out)
+
+d = BoutOutputs(path="data", xind=1, yind=20, info=False)
+n = d['n']
+t_array  = d['t_array']
+# collect analytic omega and gamma from output so we only have to calculate them in one place (in BOUT.inp)
+omega_analytic = d['omega']
+gamma_analytic = d['gamma']
+
+dims = np.shape(n)
+nt = dims[0]
+ny = dims[2]
+nz = dims[3]
+
+nt0 = 1  # Skip initial part of the curve (if there are transients)
+
+# Measure exponential growth-rate using maximum value
+maxVal = np.zeros(nt - nt0)
+
+# Track the motion of the peak to infer phase velocity
+peak = np.zeros(nt-nt0)
+
+for t in range(nt0, nt):
+    ind = np.argmax(n[t,0,0,:])  # Index of maximum value
+    maxVal[t-nt0] = n[t,0,0,ind] # Store maximum value (for gamma)
+    # Refine maximum location by fitting a quadratic through 3 points
+    c = n[t,0,0,ind]
+    m = n[t,0,0,(ind-1) % nz] # Python '%' always positive
+    p = n[t,0,0,(ind+1) % nz]
+    # Fit y = c + ax + bx**2
+    a = 0.5*(p-m)
+    b = p - (c + a)
+    peak[t-nt0] = ind - 0.5*a/b # Maximum
+
+# Check for periodic recurrence
+if peak[1] > peak[0]:
+    # Increasing; watch for wrapping around the top
+    for i in range(nt-nt0):
+        if peak[i] < peak[i-1]:
+            peak[i:(nt-nt0)] = peak[i:(nt-nt0)] + nz
+else:
+    # Decreasing; watch for wrapping around the bottom
+    for i in range(nt-nt0):
+        if peak[i] > peak[i-1]:
+            peak[i:(nt-nt0)] = peak[i:(nt-nt0)] - nz
+
+# Fit y = a + gamma*x
+a, gamma = linear_regression(t_array[nt0:nt], np.log(maxVal))
+
+# Get phase velocity
+a, Vphase = linear_regression(t_array[nt0:nt], peak/nz)
+omega = Vphase*2.*np.pi # omega=Vphase*kperp Vphase is measured in terms of box size, and mode has one period in box, so k=2pi in 'box units'
+
+omegadiff = np.abs(omega - omega_analytic) / np.abs(omega_analytic)
+gammadiff = np.abs(gamma - gamma_analytic) / np.abs(gamma_analytic)
+
+print("  omega = ", omega, " analytic = ", omega_analytic, " (", 100.*omegadiff,"%)")
+print("  gamma = ", gamma, " analytic = ", gamma_analytic, " (", 100.*gammadiff,"%)")
+
+if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
+    print("  => FAILED")
+    exit(1)
+else:
+    print("  => PASSED")
+    exit(0)
+
