@@ -9,12 +9,17 @@ Getting started
 .. _sec-getting-started:
 
 This section goes through the process of getting, installing, and
-starting to run BOUT++. Only the basic functionality needed to use
+starting to run BOUT++. 
+
+The quickest way to get started is to use a pre-built binary. These
+take care of all dependencies, configuration and compilation. See
+section :ref:`sec-prebuiltinstall`. 
+
+The remainder of this section will go through the following steps to
+manually install BOUT++. Only the basic functionality needed to use
 BOUT++ is described here; the next section (:ref:`sec-advancedinstall`) goes
 through more advanced options, configurations for particular machines,
 and how to fix some common problems.
-
-This section will go through the following steps:
 
 #. :ref:`Obtaining a copy of BOUT++ <sec-obtainbout>`
 
@@ -37,10 +42,57 @@ This section will go through the following steps:
 **Note**: In this manual commands to run in a BASH shell will begin with
 ’$’, and commands specific to CSH with a ’%’.
 
-.. _sec-obtainbout:
+Pre-built binaries
+------------------
 
-Obtaining BOUT++
+.. _sec-prebuiltinstall:
+
+Docker image
+~~~~~~~~~~~~
+
+`Docker <https://www.docker.com>`_ is a widely used container system,
+which packages together the operating system environment, libraries
+and other dependencies into an image. This image can be downloaded and
+run reproducibly on a wide range of hosts, including Windows, Linux and OS X. 
+Here is the starting page for `instructions on installing Docker
+<https://docs.docker.com/install/>`_. 
+
+The BOUT++ docker images are `hosted on dockerhub
+<https://hub.docker.com/u/boutproject/>`_ for some releases and
+snapshots. Check the `list of BOUT-next tags <https://hub.docker.com/r/boutproject/bout-next/tags/>`_
+if you want a recent version of BOUT++ “next” (development) branch.
+First download the image::
+
+    $ sudo docker pull boutproject/boutproject/bout-next:9f4c663-petsc
+
+then run::
+
+    $ sudo docker run --rm -it boutproject/bout-next:9f4c663-petsc
+
+This should give a terminal in a "boutuser" home directory, in which
+there is "BOUT-next", containing BOUT++ configured and compiled with
+NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
+with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
+an X11 display is needed. Alternatively a shared directory can be
+created to pass files between the docker image and host. The following
+commands both enable X11 and create a shared directory::
+
+    $ mkdir shared
+    $ sudo docker run --rm -it \
+       -e DISPLAY -v $HOME/.Xauthority:/home/boutuser/.Xauthority --net=host \
+       -v $PWD/shared:/home/boutuser/bout-img-shared \
+       boutproject/bout-next:9f4c663-petsc
+
+This should enable plotting from python, and files in the docker image
+put in "/home/boutuser/bout-img-shared" should be visible on the host in
+the "shared" directory.
+
+If this is successful, then you can skip to section :ref:`sec-running`.
+
+ Obtaining BOUT++
 ----------------
+
+.. _sec-obtainbout:
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable
