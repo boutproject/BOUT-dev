@@ -130,6 +130,32 @@ int main(int argc, char **argv) {
 		      result[i] = (a[i.yp()] - a[i.ym()])/(2.*mesh->coordinates()->dy[i]);
 		    }
 		    );
+
+  ITERATOR_TEST_BLOCK("C++11 range-based for [i] with offset", 
+		    IndexOffset<Ind3D> offset(*mesh);
+                    BOUT_OMP(parallel)
+{
+		    for(const auto &i : mesh->getRegion3D("RGN_NOY")){
+		      result[i] = (a[offset.yp(i)] - a[offset.ym(i)])/(2.*mesh->coordinates()->dy[i]);
+		    }
+}
+		    );
+
+
+  ITERATOR_TEST_BLOCK("C++11 range-based for [i] with stencil", 
+                    BOUT_OMP(parallel)
+                    {
+                    stencil s;
+		    for(const auto &i : result.region(RGN_NOY)){
+	              s.mm = nan("");
+		      s.m = a[i.ym()];
+		      s.c = a[i];
+		      s.p = a[i.yp()];
+		      s.pp = nan("");
+                      result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+		    }
+                    }
+		    );
   
   // DataIterator over fields
 ///  ITERATOR_TEST_BLOCK("DI (done) [i]",
@@ -146,10 +172,10 @@ int main(int argc, char **argv) {
 ///		    );
 
   // Region macro
-  stencil s;
-  IndexOffset<Ind3D> offset(*mesh);
   ITERATOR_TEST_BLOCK(
       "Region (serial)",
+      stencil s;
+      IndexOffset<Ind3D> offset(*mesh);
       BLOCK_REGION_LOOP_SERIAL(mesh->getRegion3D("RGN_NOY"), i,
         s.mm = nan("");
         s.m = a[offset.ym(i)];
@@ -162,8 +188,10 @@ int main(int argc, char **argv) {
 		      );
 #ifdef _OPENMP
   ITERATOR_TEST_BLOCK("Region (omp)",
+IndexOffset<Ind3D> offset(*mesh);
 BOUT_OMP(parallel)
 {
+      stencil s;
       BLOCK_REGION_LOOP_PARALLEL_SECTION(mesh->getRegion3D("RGN_NOY"), i,
         s.mm = nan("");
         s.m = a[offset.ym(i)];
