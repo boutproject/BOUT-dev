@@ -332,23 +332,28 @@ class Field3D : public Field, public FieldData {
    * performed if CHECK > 2.
    */
   BoutReal& operator[](const DataIterator &d) {
+    SCOREP0();
     return operator()(d.x, d.y, d.z);
   }
   const BoutReal& operator[](const DataIterator &d) const {
     return operator()(d.x, d.y, d.z);
   }
   BoutReal& operator[](const Indices &i) {
+    SCOREP0();
     return operator()(i.x, i.y, i.z);
   }
   const BoutReal& operator[](const Indices &i) const override {
+    SCOREP0();
     return operator()(i.x, i.y, i.z);
   }
   
 
   BoutReal& operator[](const Ind3D &d) {
+    SCOREP0();
     return data[d.ind];
   }
   const BoutReal& operator[](const Ind3D &d) const {
+    SCOREP0();
     return data[d.ind];
   }
   BoutReal& operator()(const IndPerp &d, int jy); 

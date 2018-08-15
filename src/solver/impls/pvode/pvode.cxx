@@ -38,6 +38,7 @@
 #include <pvode/iterativ.h>  // contains the enum for types of preconditioning
 #include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
+#include <bout/scorepwrapper.hxx>
 
 using namespace pvode;
 
@@ -70,6 +71,7 @@ PvodeSolver::~PvodeSolver() {
  **************************************************************************/
 
 int PvodeSolver::init(int nout, BoutReal tstep) {
+  SCOREP0();
   TRACE("Initialising PVODE solver");
 
   int mudq, mldq, mukeep, mlkeep;
@@ -197,6 +199,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
  **************************************************************************/
 
 int PvodeSolver::run() {
+  SCOREP0();
   TRACE("PvodeSolver::run()");
   
   if(!initialised)
@@ -228,6 +231,7 @@ int PvodeSolver::run() {
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
+  SCOREP0();
   TRACE("Running solver: solver::run(%e)", tout);
 
   BoutReal *udata;
@@ -284,6 +288,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
+  SCOREP0();
   TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
 
   // Get current timestep
