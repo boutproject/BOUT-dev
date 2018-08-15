@@ -10,7 +10,7 @@ gamma_tol = 1e-2
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
-from boutdata.data import BoutOutputs
+from boutdata.data import BoutOutputs, BoutOptionsFile
 import numpy as np
 from math import isnan
 from sys import exit
@@ -25,9 +25,12 @@ shell("rm data/BOUT.dmp.*.nc")
 
 print("Running drift instability test")
 
+options = BoutOptionsFile("data/BOUT.inp")
+mz = options.evaluate_scalar("mz")
+
 # Run the case
 s, out = launch_safe("./test-drift-instability", runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
-with open("run.log", "w") as f:
+with open("run.log."+str(mz), "w") as f:
     f.write(out)
 
 d = BoutOutputs(path="data", xind=1, yind=20, info=False)
