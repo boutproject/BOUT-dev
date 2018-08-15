@@ -537,7 +537,7 @@ class basic_runner(object):
                      job_dependencies=None,
                      remove_old=False,
                      post_processing_function=None,
-                     post_process_after_every_run=True,
+                     post_process_after_every_run=False,
                      **kwargs):
         #{{{docstring
         """
@@ -556,7 +556,7 @@ class basic_runner(object):
             function must accept the string of self._dmp_folder if
             post_process_after_each_run is True, and a tuple of dmp
             folders if post_process_after_each_run is False
-        post_process_after_each_run : bool, default: True
+        post_process_after_each_run : bool, default: False
             Boolean telling whether post_processing_function should be
             called after each run (if True), or after the number of runs
             decided by self._sort_by (see the constructor of
@@ -1585,8 +1585,8 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that the post_process_after_every_run is not set alone
-        if (post_process_after_every_run is not None) and\
-           (isinstance(post_processing_function, None)):
+        if (post_process_after_every_run and
+            post_processing_function is None):
             self._errors.append("RuntimeError")
             message = ("post_process_after_every_run can only be set if"
                        " post_processing_function is given")
