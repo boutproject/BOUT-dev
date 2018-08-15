@@ -96,10 +96,22 @@ int main(int argc, char **argv) {
 		      }
 		      }
 		      );
+
+  ITERATOR_TEST_BLOCK("Nested loop (omp, collapse)",
+		      BOUT_OMP(parallel for collapse(3))
+		      for(int i=0;i<mesh->LocalNx;++i) {
+			for(int j=0;j<mesh->LocalNy;++j) {
+			  for(int k=0;k<mesh->LocalNz;++k) {
+			    result(i,j,k) = a(i,j,k) + b(i,j,k);
+			  }
+		      }
+		      }
+		      );
 #endif
   
   // DataIterator using begin(), end()
   ITERATOR_TEST_BLOCK("DI begin/end",
+		    BOUT_OMP(parallel)
 		    for(DataIterator i = std::begin(result), rend=std::end(result); i != rend; ++i){
 		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
 		    }
@@ -107,37 +119,49 @@ int main(int argc, char **argv) {
 
   // DataIterator with done()
   ITERATOR_TEST_BLOCK("DI begin/done",
+		    BOUT_OMP(parallel)
+{
 		    for(DataIterator i = std::begin(result); !i.done() ; ++i){
 		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
 		    }
+}
 		    );
   
   // Range based for DataIterator with indices
   ITERATOR_TEST_BLOCK("C++11 range-based for",
+		    BOUT_OMP(parallel)
+{
 		    for(auto i : result){
 		      result(i.x,i.y,i.z) = a(i.x,i.y,i.z) + b(i.x,i.y,i.z);
 		    }
+}
 		    );
 
   // Range based DataIterator 
   ITERATOR_TEST_BLOCK("C++11 range-based for [i]", 
+		    BOUT_OMP(parallel)
+{
 		    for (const auto &i : result) {
 		      result[i] = a[i] + b[i];
 		    }
+}
 		    );
   
   // DataIterator over fields
   ITERATOR_TEST_BLOCK("DI (done) [i]",
+		    BOUT_OMP(parallel)
+{
 		    for(DataIterator d = result.iterator(); !d.done(); d++)
 		      result[d] = a[d] + b[d];
+}
 		    );
 
-  //Raw C loop
-  ITERATOR_TEST_BLOCK("C loop repeat",
-		    for(int j=0;j<len;++j) {
-		      rd[j] = ad[j] + bd[j];
-		    };
-		    );
+///  //Raw C loop
+///  ITERATOR_TEST_BLOCK("C loop repeat",
+///		    for(int j=0;j<len;++j) {
+///		      rd[j] = ad[j] + bd[j];
+///		    };
+///		    );
 
   // Region macro
   ITERATOR_TEST_BLOCK(
