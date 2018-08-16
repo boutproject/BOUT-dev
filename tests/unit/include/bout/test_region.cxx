@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+#include <sstream>
 
 /// Global mesh
 extern Mesh *mesh;
@@ -25,7 +26,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -915,6 +918,117 @@ TEST_F(RegionTest, regionPeriodicShift) {
     EXPECT_TRUE(shiftXReg[i] < nmesh);
     EXPECT_TRUE(shiftXReg[i] >= 0);
   }
+}
+
+TEST_F(RegionTest, regionGetStatsHomogenous) {
+  int numBlocks = 10;
+  int maxBlockSize = 64;
+  int minBlockSize = 64;
+  int smallBlockSize = static_cast<int>(maxBlockSize * 0.5) - 1;
+  smallBlockSize = smallBlockSize < 1 ? 1 : smallBlockSize;
+  int numMaxBlocks = numBlocks;
+  int numMinBlocks = 0;
+  int numSmallBlocks = 0;
+  BoutReal maxImbalance =
+      static_cast<BoutReal>(maxBlockSize) / static_cast<BoutReal>(minBlockSize);
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  for (int i = 0; i < numMaxBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize));
+  }
+  for (int i = 0; i < numMinBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize));
+  }
+  for (int i = 0; i < numSmallBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize));
+  }
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMaxBlocks); // As maxBlockSize == minBlockSize
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numSmallBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  std::ostringstream expectedStrRepresentation;
+  expectedStrRepresentation << "Total blocks : "<< numBlocks;
+  expectedStrRepresentation << ", " << "min(count)/max(count) :";
+  expectedStrRepresentation << " " << minBlockSize << " (" << numMaxBlocks << ")/";
+  expectedStrRepresentation << " " << maxBlockSize << " (" << numMaxBlocks << ")";
+  expectedStrRepresentation << ", " << "Max imbalance : " << maxImbalance;
+  expectedStrRepresentation << ", " << "Small block count : " << numSmallBlocks;
+  EXPECT_EQ(strRepresentation.str(), expectedStrRepresentation.str());
+
+}
+
+TEST_F(RegionTest, regionGetStatsHeterogenous) {
+  int numBlocks = 20;
+  int maxBlockSize = 64;
+  int minBlockSize = 4;
+  int smallBlockSize = static_cast<int>(maxBlockSize * 0.5) - 1;
+  smallBlockSize = smallBlockSize < 1 ? 1 : smallBlockSize;
+  int numMaxBlocks = 10;
+  int numMinBlocks = 6;
+  int numExtraSmallBlocks = 4;
+  BoutReal maxImbalance =
+      static_cast<BoutReal>(maxBlockSize) / static_cast<BoutReal>(minBlockSize);
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  for (int i = 0; i < numMaxBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, maxBlockSize));
+  }
+  for (int i = 0; i < numMinBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, minBlockSize));
+  }
+  for (int i = 0; i < numExtraSmallBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(0, smallBlockSize));
+  }
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMinBlocks);
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+}
+
+TEST_F(RegionTest, regionGetStatsEmpty) {
+  int numBlocks = 0;
+  int maxBlockSize = 0;
+  int minBlockSize = 0;
+  int numMaxBlocks = 0;
+  int numMinBlocks = 0;
+  int numExtraSmallBlocks = 0;
+  BoutReal maxImbalance = 0.0;
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMinBlocks);
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  EXPECT_EQ(strRepresentation.str(), "Empty");
 }
 
 template <typename T> class RegionIndexTest : public ::testing::Test {

@@ -3,11 +3,17 @@
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
 #include "boutexception.hxx"
+#include "output.hxx"
 
 #include "test_extras.hxx"
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {
+protected:
+  static void SetUpTestCase() { output_info.disable(); }
+
+  static void TearDownTestCase() { output_info.enable(); }
+
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
   static const int nx = 3;
@@ -98,3 +104,121 @@ TEST_F(MeshTest, MapInd3DTo2D) {
   EXPECT_EQ(localmesh.ind3Dto2D(index3d_49), 7);
   EXPECT_EQ(localmesh.ind3Dto2D(index3d_98), 14);
 }
+
+extern Mesh::deriv_func fDDX, fDDY, fDDZ;       ///< Differencing methods for each dimension
+extern Mesh::deriv_func fD2DX2, fD2DY2, fD2DZ2; ///< second differential operators
+extern Mesh::upwind_func fVDDX, fVDDY, fVDDZ;   ///< Upwind functions in the three directions
+extern Mesh::flux_func fFDDX, fFDDY, fFDDZ;     ///< Default flux functions
+extern Mesh::deriv_func sfDDX, sfDDY, sfDDZ;
+extern Mesh::deriv_func sfD2DX2, sfD2DY2, sfD2DZ2;
+extern Mesh::flux_func sfVDDX, sfVDDY, sfVDDZ;
+extern Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
+
+#define RESET                                   \
+  fDDX=nullptr; fDDY=nullptr; fDDZ=nullptr;     \
+  fD2DX2=nullptr; fD2DY2=nullptr; fD2DZ2=nullptr;       \
+  fVDDX=nullptr; fVDDY=nullptr; fVDDZ=nullptr;          \
+  fFDDX=nullptr; fFDDY=nullptr; fFDDZ=nullptr;          \
+  sfDDX=nullptr; sfDDY=nullptr; sfDDZ=nullptr;          \
+  sfD2DX2=nullptr; sfD2DY2=nullptr; sfD2DZ2=nullptr;    \
+  sfVDDX=nullptr; sfVDDY=nullptr; sfVDDZ=nullptr;       \
+  sfFDDX=nullptr; sfFDDY=nullptr; sfFDDZ=nullptr;
+
+
+BoutReal DDX_C2(stencil &f);
+BoutReal DDX_C4(stencil &f);
+BoutReal DDX_CWENO2(stencil &f);
+BoutReal DDX_S2(stencil &f);
+BoutReal VDDX_C2(BoutReal vc, stencil &f);
+BoutReal VDDX_C4(BoutReal vc, stencil &f);
+BoutReal VDDX_U1(BoutReal vc, stencil &f);
+BoutReal VDDX_U2(BoutReal vc, stencil &f);
+BoutReal VDDX_U3(BoutReal vc, stencil &f);
+BoutReal VDDX_WENO3(BoutReal vc, stencil &f);
+BoutReal DDX_CWENO3(stencil &f);
+BoutReal FDDX_U1(stencil &v, stencil &f);
+BoutReal FDDX_C2(stencil &v, stencil &f);
+BoutReal FDDX_C4(stencil &v, stencil &f);
+BoutReal DDX_C2_stag(stencil &f);
+BoutReal DDX_C4_stag(stencil &f);
+BoutReal VDDX_U1_stag(stencil &v, stencil &f);
+BoutReal VDDX_U2_stag(stencil &v, stencil &f);
+BoutReal VDDX_C2_stag(stencil &v, stencil &f);
+BoutReal VDDX_C4_stag(stencil &v, stencil &f);
+BoutReal FDDX_U1_stag(stencil &v, stencil &f);
+
+TEST_F(MeshTest, SetDerivativesDefault) {
+  RESET
+  Options opt;
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(fDDX,&DDX_C2);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesDiff) {
+  RESET
+  Options opt;
+  opt.getSection("diff")->set("first","C4","test");
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(fDDY,&DDX_C4);
+  EXPECT_EQ(sfDDY,&DDX_C4_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesDiffStag) {
+  RESET
+  Options opt;
+  opt.getSection("diff")->set("first","C2","test");
+  opt.getSection("diff")->set("firstStag","C4","test");
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(fDDZ,&DDX_C2);
+  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesDdxBeforeDiff) {
+  RESET
+  Options opt;
+  opt.getSection("diff")->set("firstStag","C4","test");
+  opt.getSection("ddx")->set("firstStag","C2","test");
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesDiffStagBeforeDDXNone) {
+  RESET
+  Options opt;
+  opt.getSection("diff")->set("firstStag","C4","test");
+  opt.getSection("ddx")->set("first","C2","test");
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(sfDDX,&DDX_C4_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesInvalid) {
+  RESET
+  Options opt;
+  // An invalid but unused option is fine
+  opt.getSection("diff")->set("firstStag","XXX","test");
+  opt.getSection("ddx")->set("firstStag","C2","test");
+  opt.getSection("ddy")->set("firstStag","C2","test");
+  opt.getSection("ddz")->set("firstStag","C2","test");
+  localmesh.initDerivs(&opt);
+  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+}
+
+TEST_F(MeshTest, SetDerivativesInvalid2) {
+  RESET
+  Options opt;
+  opt.getSection("diff")->set("firstStag","XXX","test");
+  EXPECT_THROW(localmesh.initDerivs(&opt),BoutException);
+}
+
+TEST_F(MeshTest, SetDerivativesInvalid3) {
+  RESET
+  Options opt;
+  // Invalid for this option - expect error
+  opt.getSection("diff")->set("SecondStag","C4","test");
+  EXPECT_THROW(localmesh.initDerivs(&opt),BoutException);
+}
+
+
+#undef RESET

@@ -209,7 +209,7 @@ cdef class Field3D:
             if ignoreDataType:
                 data=data.astype('float64')
             else:
-                raise TypeError("expected float64 data - add ignoreDataType=True to cast")
+                raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(data)
         c_set_f3d_all(self.cobj,&data_[0,0,0]);
@@ -427,7 +427,36 @@ do
 EOF
 
 done
-cat <<EOF
+cat <<"EOF"
+    def applyBoundary(self, boundary=None, time=None):
+        """
+        Set the boundaries of a Field3D. Only one of both arguments
+        can be provided. If no value is provided, the default boundary
+        is applied.
+
+        Parameters
+        ----------
+        boundary : string
+           The boundary to be set. Has to be a valid boundary type,
+           e.g. "neumann".
+        time : float
+            The time to be used by the boundary, if time dependent
+            boundary conditions are used.
+        """
+        cdef c.string bndry
+        cdef double _time
+        if boundary is not None and time is not None:
+            raise RuntimeError("Can only pass one option at a time")
+        if time is not None:
+            _time = time
+            self.cobj.applyBoundary(_time)
+        elif boundary is not None:
+            tmp=boundary.encode('ascii')
+            bndry=tmp
+            self.cobj.applyBoundary(bndry)
+        else:
+            self.cobj.applyBoundary()
+
     def __dealloc__(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
@@ -445,23 +474,42 @@ cdef class Mesh:
     cdef double isNormalised
     cdef FieldFactory factory
     #factory=FieldFactory()
-    def __init__(self, create=True,OptionSection=None):
+    def __init__(self, create=True, section=None, options=None):
+        """
+        Create a Mesh
+
+        Parameter
+        ---------
+        create : bool
+            Create the underling C++ object. Disabled probably only
+            useful for internal usage. Use at own risk.
+        section : string
+            The section of the options which to read. If not given,
+            default to the root section.
+        options : Options
+            The Option which to use. Can be specified together with
+            \p section, in which case the subsection from the current
+            Options object is used. If nether \p section nor \p
+            options is given, the default section ([mesh]) fromt the
+            global Options object is used.
+        """
         checkInit()
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
-        cdef c.Options * opt
+        cdef c.Options * opt = NULL
         self.isGlobal=False
         self.isNormalised=-1
         self.factory = FieldFactory()
         if create:
-            if OptionSection:
-                opt = c.Options.getRoot()
-                for sec in OptionSection.split(":"):
+            if options:
+                opt = (<Options?>options).cobj
+            if section:
+                if opt == NULL:
+                    opt = c.Options.getRoot()
+                for sec in section.split(":"):
                     tmp=sec.encode('ascii')
                     opt=opt.getSection(tmp)
-                self.cobj=c.Mesh.create(opt)
-            else:
-                self.cobj = c.Mesh.create(<c.Options *>0)
+            self.cobj = c.Mesh.create(opt)
             if self.cobj == NULL:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
@@ -785,6 +833,7 @@ def init(args=[]):
     free(string_buf)
     if ret:
         BoutFinalise()
+        raise RuntimeError("Failed to initialise the BOUT++ Library (Error code %d)"%ret)
     else:
         _isInit=True
     #atexit.register(finalise)
@@ -976,7 +1025,7 @@ do
 
 "
 done
-cat <<EOF
+cat <<"EOF"
 
 def pow(Field3D a, exponent):
     """
@@ -985,7 +1034,7 @@ def pow(Field3D a, exponent):
     Parameters
     ----------
     a : Field3D
-        The field for which to calculate $fun
+        The field for which to calculate the power
     exponent : float
         The exponent
 
@@ -1080,13 +1129,15 @@ def interp_to(Field3D f3d,location):
 
 def setOption(name, value, source="PyInterface", force=False):
     """
-    Set an option in the global Options tree
+    Set an option in the global Options tree. Prefer
+    `Options.set` to avoid unexpected results if several Option
+    roots are avalaible.
 
     Parameters
     ----------
     name : string
         the name of the value to be set. Can be relative,
-        e.g. \`mesh:ddx:first\`.
+        e.g. `mesh:ddx:first`.
     value : string
         the value to be set
     source : string
@@ -1094,22 +1145,53 @@ def setOption(name, value, source="PyInterface", force=False):
         track of where what was set.
     force : bool
         If a value is overwritten, an exception is
-        thrown. setting this to \`True\` avoids the exception.
+        thrown. setting this to `True` avoids the exception.
     """
     checkInit()
     root=Options('')
     root.set(name,value,source,force)
 
 cdef class Options:
+    """
+    The Options class
+    """
     cdef c.Options * cobj
+    cdef c.bool isSelfOwned
 
-    def __init__(self,name):
+    def __init__(self,name=""):
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
         for sec in name.split(":"):
             sec_=sec.encode('ascii')
             self.cobj=self.cobj.getSection(sec_)
+        self.isSelfOwned=False
+
+    @classmethod
+    def fromFile(cls, file):
+        """
+        Create a new Options object by reading a file
+
+        Parameters
+        ----------
+        file : string
+            The path of the file to read
+
+        Returns
+        -------
+        Options
+            The Options object
+        """
+        checkInit()
+        opt = Options("")
+        opt.cobj = new c.Options()
+        opt.isSelfOwned = True
+        cdef char * file_
+        file__=file.encode('ascii')
+        file_=file__
+        c.OptionsReader.getInstance().read(opt.cobj, file_)
+        return opt
+
 
     def set(self,name,value,source="PyInterface", force=False):
         """
@@ -1119,7 +1201,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to be set. Can be relative,
-             e.g. \`mesh:ddx:first\`.
+             e.g. `mesh:ddx:first`.
         value : string
             the value to be set
         source : string
@@ -1127,7 +1209,7 @@ cdef class Options:
             track of where what was set.
         force : bool
             If a value is overwritten, an exception is
-            thrown. setting this to \`True\` avoids the exception.
+            thrown. setting this to `True` avoids the exception.
         """
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
@@ -1149,7 +1231,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to get. Can be relative,
-             e.g. \`mesh:ddx:first\`.
+             e.g. `mesh:ddx:first`.
         default : bool, string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float

@@ -854,8 +854,8 @@ int IMEXBDF2::run() {
         }catch (const BoutException &e) {
           // An error occurred. If adaptive, reduce timestep
           if(!adaptive)
-            throw e;
-          
+            throw;
+
           failCounter++;
           if(failCounter > 10) {
             throw BoutException("Too many failed steps\n");

@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -26,54 +26,28 @@
 
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <string.h>
-#include <string>
 #include <stdarg.h>
-
-MsgStack::MsgStack()
-{
-  nmsg = 0;
-  size = 0;
-}
-
-MsgStack::~MsgStack()
-{
-  clear();
-}
+#include <string>
 
 #if CHECK > 1
-int MsgStack::push(const char *s, ...)
-{
-  va_list ap;  // List of arguments
-  msg_item_t *m;
-
-  if(size > nmsg) {
-    m = &msg[nmsg];
-  }else {
-    // need to allocate more memory
-    if(size == 0) {
-      msg = (msg_item_t*) malloc(sizeof(msg_item_t)*10);
-      size = 10;
-      m = msg;
-    }else {
-      msg = (msg_item_t*) realloc(msg, sizeof(msg_item_t)*(size + 10));
-      m = &msg[size];
-      size += 10;
-    }
-  }
+int MsgStack::push(const char *s, ...) {
+  va_list ap; // List of arguments
 
   if (s != nullptr) {
-
     va_start(ap, s);
-      vsnprintf(buffer,MSG_MAX_SIZE, s, ap);
+    vsnprintf(buffer, MSG_MAX_SIZE, s, ap);
     va_end(ap);
-    
-    strncpy(m->str, buffer, MSG_MAX_SIZE);
-  }else
-    m->str[0] = '\0';
+  } else {
+    buffer[0] = '\0';
+  }
 
-  nmsg++;
-  return nmsg-1;
+  if (position >= stack.size()) {
+    stack.emplace_back(buffer);
+  } else {
+    stack[position] = buffer;
+  }
+
+  return position++;
 }
 
 int MsgStack::setPoint() {
@@ -82,40 +56,35 @@ int MsgStack::setPoint() {
 }
 
 void MsgStack::pop() {
-  if(nmsg <= 0)
+  if (position <= 0)
     return;
-
-  nmsg--;
+  --position;
 }
 
 void MsgStack::pop(int id) {
-  if(id < 0)
+  if (id < 0)
     id = 0;
 
-  if(id > nmsg)
+  if (id > position)
     return;
 
-  nmsg = id;
+  position = id;
 }
 
 void MsgStack::clear() {
-  if(size > 0)
-    free(msg);
-  size = 0;
-  nmsg = 0;
+  stack.clear();
+  position = 0;
 }
 
-void MsgStack::dump() {
-  output << this->getDump();
-}
+void MsgStack::dump() { output << this->getDump(); }
 
 std::string MsgStack::getDump() {
   std::string res = "====== Back trace ======\n";
-  for(int i=nmsg-1;i>=0;i--) {
-    if(msg[i].str[0] != '\0') {
-      res+=" -> ";
-      res+=msg[i].str;
-      res+="\n";
+  for (int i = position - 1; i >= 0; i--) {
+    if (stack[i] != "") {
+      res += " -> ";
+      res += stack[i];
+      res += "\n";
     }
   }
   return res;

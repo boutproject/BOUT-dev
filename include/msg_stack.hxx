@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,23 +31,16 @@ class MsgStack;
 
 #include "unused.hxx"
 
-#include <stdio.h>
+#include <exception>
 #include <stdarg.h>
 #include <string>
+#include <vector>
 
 /// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
 
 /*!
- * Each message consists of a fixed length buffer
- */
-typedef struct {
-  char str[MSG_MAX_SIZE+1];
-}msg_item_t;
-
-
-/*!
- * Message stack 
+ * Message stack
  *
  * Implements a stack of messages which can be pushed onto the top
  * and popped off the top. This is used for debugging: messages are put
@@ -59,48 +52,47 @@ typedef struct {
  * the optimiser
  */
 class MsgStack {
- public:
-  MsgStack();
-  ~MsgStack();
-  
+public:
+  MsgStack() : position(0){};
+  ~MsgStack() { clear(); }
+
 #if CHECK > 1
   int push(const char *s, ...); ///< Add a message to the stack. Returns a message id
-  
-  int setPoint();     ///< get a message point
-  
-  void pop();          ///< Remove the last message
-  void pop(int id);    ///< Remove all messages back to msg \p id
-  void clear();        ///< Clear all message
-  
-  void dump();         ///< Write out all messages (using output)
-  std::string getDump();    ///< Write out all messages to a string
+
+  int setPoint(); ///< get a message point
+
+  void pop();       ///< Remove the last message
+  void pop(int id); ///< Remove all messages back to msg \p id
+  void clear();     ///< Clear all message
+
+  void dump();           ///< Write out all messages (using output)
+  std::string getDump(); ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *UNUSED(s), ...) {return 0;}
-  
-  int setPoint() {return 0;}
-  
+  int push(const char *UNUSED(s), ...) { return 0; }
+
+  int setPoint() { return 0; }
+
   void pop() {}
   void pop(int UNUSED(id)) {}
   void clear() {}
-  
+
   void dump() {}
   std::string getDump() { return ""; }
 #endif
-  
- private:
-  char buffer[256];
-  
-  msg_item_t *msg;  ///< Message stack;
-  int nmsg;    ///< Current number of messages
-  int size;    ///< Size of the stack
+
+private:
+  char buffer[256]; ///< Buffer for vsnprintf
+
+  std::vector<std::string> stack; ///< Message stack;
+  int position;                   ///< Position in stack
 };
 
 /*!
  * This is a way to define a global object,
  * so that it is declared extern in all files except one
  * where GLOBALORIGIN is defined.
- */ 
+ */
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #else
@@ -112,35 +104,35 @@ GLOBAL MsgStack msg_stack;
 
 #undef GLOBAL
 
-#include <exception>
-
 /*!
  * MsgStackItem
- * 
+ *
  * Simple class to manage pushing and popping messages
- * from the message stack. Pushes a message in the 
+ * from the message stack. Pushes a message in the
  * constructor, and pops the message on destruction.
  */
 class MsgStackItem {
 public:
-  MsgStackItem(const char* msg) { //Not currently used anywhere
-    point = msg_stack.push(msg);
-  }
-  MsgStackItem(const char* msg, const char* file, int line) {  //Not currently used anywhere
+  // Not currently used anywhere
+  MsgStackItem(const char *msg) { point = msg_stack.push(msg); }
+  // Not currently used anywhere
+  MsgStackItem(const char *msg, const char *file, int line) {
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
   }
-  MsgStackItem(const char* file, int line, const char* msg, ...) {
+  MsgStackItem(const char *file, int line, const char *msg, ...) {
     va_list args;
     va_start(args, msg);
-    vsnprintf(buffer,MSG_MAX_SIZE, msg, args);
+    vsnprintf(buffer, MSG_MAX_SIZE, msg, args);
     point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
     va_end(args);
   }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
-    if(!std::uncaught_exception())
+    if (!std::uncaught_exception()) {
       msg_stack.pop(point);
+    }
   }
+
 private:
   int point;
   char buffer[256];
@@ -154,29 +146,30 @@ private:
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
  * It pushes a message onto the stack, and pops it when the scope ends
- * 
+ *
  * Example
  * -------
- * 
+ *
  * {
  *   TRACE("Starting calculation")
- * 
+ *
  * } // Scope ends, message popped
  */
 #if CHECK > 0
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
    we want to allow TRACE("Message with no args") we have to deal with the case where
-   __VA_ARGS__ is empty. There's a GCC specific extension such that 
-    //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here
-    would achieve this for us. However to be more portable have to instead just reorder
-    the arguments from the original MsgStackItem constructor so that the message is the
-    last of the required arguments and the optional arguments follow from there.
+   __VA_ARGS__ is empty. There's a GCC specific extension such that
+    //#define TRACE(message, ...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message,
+   __FILE__, __LINE__, ##__VA_ARGS__) //## is non-standard here would achieve this for us.
+   However to be more portable have to instead just reorder the arguments from the
+   original MsgStackItem constructor so that the message is the last of the required
+   arguments and the optional arguments follow from there.
  */
-#define TRACE(...) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (__FILE__, __LINE__, __VA_ARGS__)
+#define TRACE(...)                                                                       \
+  MsgStackItem CONCATENATE(msgTrace_, __LINE__)(__FILE__, __LINE__, __VA_ARGS__)
 #else
 #define TRACE(...)
 #endif
 
 #endif // __MSG_STACK_H__
-
