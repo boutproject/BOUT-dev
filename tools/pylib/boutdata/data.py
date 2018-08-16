@@ -207,7 +207,7 @@ class BoutOptions(object):
                 nested_name = nested_sectionname + ":" + var
             else:
                 nested_name = var
-            if re.search(r"(?<!:)"+re.escape(nested_name.lower()), expression.lower()):
+            if re.search(r"(?<!:)\b"+re.escape(nested_name.lower())+r"\b", expression.lower()):
                 # match nested_name only if not preceded by colon (which indicates more nesting)
                 expression = re.sub(r"(?<!:)\b" + re.escape(nested_name.lower()) + r"\b",
                                     "(" + self._substitute_expressions(var) + ")",
