@@ -66,6 +66,8 @@ private:
   inline void omp_init(bool end);
 #endif
 public:
+  /// Disable null constructor
+  DataIterator() = delete;
   /*!
    * Constructor. This sets index ranges.
    * If OpenMP is enabled, the index range is divided
@@ -249,7 +251,6 @@ public:
   }
   
 private:
-  DataIterator(); // Disable null constructor
 
   /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP

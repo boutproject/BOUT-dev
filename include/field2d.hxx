@@ -86,8 +86,8 @@ class Field2D : public Field, public FieldData {
 
   /*!
    * Destructor
-   */ 
-  ~Field2D();
+   */
+  ~Field2D() override;
 
   /// Data type
   using value_type = BoutReal;

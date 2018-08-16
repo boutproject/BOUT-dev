@@ -5,9 +5,11 @@ class BoundaryRegion;
 #define __BNDRY_REGION_H__
 
 #include <string>
+#include <utility>
 using std::string;
 
 class Mesh;
+extern Mesh* mesh;
 
 /// Location of boundary
 enum BndryLoc {BNDRY_XIN=1,
@@ -20,11 +22,13 @@ enum BndryLoc {BNDRY_XIN=1,
 
 class BoundaryRegionBase {
 public:
+
   BoundaryRegionBase() = delete;
   // default to global mesh object if none is passed as argument
-  BoundaryRegionBase(Mesh* passmesh = nullptr);
-  BoundaryRegionBase(const string &name, Mesh* passmesh = nullptr);
-  BoundaryRegionBase(const string &name, BndryLoc loc, Mesh* passmesh = nullptr);
+  BoundaryRegionBase(Mesh* passmesh = nullptr) : localmesh(passmesh ? passmesh : mesh) {}
+  BoundaryRegionBase(const string &name, Mesh* passmesh = nullptr) : localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
+  BoundaryRegionBase(const string &name, BndryLoc loc, Mesh* passmesh = nullptr)  : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
+  
   virtual ~BoundaryRegionBase() {}
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
@@ -45,10 +49,10 @@ public:
 class BoundaryRegion : public BoundaryRegionBase {
 public:
   BoundaryRegion() = delete;
-  BoundaryRegion(Mesh* passmesh = nullptr);
-  BoundaryRegion(const string &name, BndryLoc loc, Mesh* passmesh = nullptr);
-  BoundaryRegion(const string &name, int xd, int yd, Mesh* passmesh = nullptr);
-  virtual ~BoundaryRegion() {}
+  BoundaryRegion(Mesh* passmesh = nullptr) : BoundaryRegionBase(passmesh) {}
+  BoundaryRegion(const string &name, BndryLoc loc, Mesh* passmesh = nullptr) : BoundaryRegionBase(name, loc, passmesh) {}
+  BoundaryRegion(const string &name, int xd, int yd, Mesh* passmesh = nullptr) : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
+  ~BoundaryRegion() override {}
 
   int x,y; ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
@@ -64,12 +68,13 @@ class BoundaryRegionXIn : public BoundaryRegion {
 public:
   BoundaryRegionXIn(const string &name, int ymin, int ymax, Mesh* passmesh);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
@@ -78,12 +83,13 @@ class BoundaryRegionXOut : public BoundaryRegion {
 public:
   BoundaryRegionXOut(const string &name, int ymin, int ymax, Mesh* passmesh);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
@@ -92,12 +98,13 @@ class BoundaryRegionYDown : public BoundaryRegion {
 public:
   BoundaryRegionYDown(const string &name, int xmin, int xmax, Mesh* passmesh);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };
@@ -106,12 +113,13 @@ class BoundaryRegionYUp : public BoundaryRegion {
 public:
   BoundaryRegionYUp(const string &name, int xmin, int xmax, Mesh* passmesh);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };

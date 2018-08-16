@@ -71,7 +71,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() {}
+  ~FieldPerp() override {}
 
   /*!
    * Assignment operators
@@ -235,7 +235,7 @@ class FieldPerp : public Field {
   /*!
    * Return the number of ny points
    */
-  virtual int getNy() const override{ return 1;};
+  int getNy() const override { return 1; };
   /*!
    * Return the number of nz points
    */

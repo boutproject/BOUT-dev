@@ -171,25 +171,25 @@ Coordinates::Coordinates(Mesh *mesh)
 }
 
 void Coordinates::outputVars(Datafile &file) {
-  file.add(dx, "dx", 0);
-  file.add(dy, "dy", 0);
-  file.add(dz, "dz", 0);
+  file.add(dx, "dx", false);
+  file.add(dy, "dy", false);
+  file.add(dz, "dz", false);
 
-  file.add(g11, "g11", 0);
-  file.add(g22, "g22", 0);
-  file.add(g33, "g33", 0);
-  file.add(g12, "g12", 0);
-  file.add(g13, "g13", 0);
-  file.add(g23, "g23", 0);
+  file.add(g11, "g11", false);
+  file.add(g22, "g22", false);
+  file.add(g33, "g33", false);
+  file.add(g12, "g12", false);
+  file.add(g13, "g13", false);
+  file.add(g23, "g23", false);
 
-  file.add(g_11, "g_11", 0);
-  file.add(g_22, "g_22", 0);
-  file.add(g_33, "g_33", 0);
-  file.add(g_12, "g_12", 0);
-  file.add(g_13, "g_13", 0);
-  file.add(g_23, "g_23", 0);
+  file.add(g_11, "g_11", false);
+  file.add(g_22, "g_22", false);
+  file.add(g_33, "g_33", false);
+  file.add(g_12, "g_12", false);
+  file.add(g_13, "g_13", false);
+  file.add(g_23, "g_23", false);
 
-  file.add(J, "J", 0);
+  file.add(J, "J", false);
 }
 
 int Coordinates::geometry() {

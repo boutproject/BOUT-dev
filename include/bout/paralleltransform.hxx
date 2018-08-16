@@ -92,6 +92,7 @@ public:
  */
 class ShiftedMetric : public ParallelTransform {
 public:
+  ShiftedMetric() = delete;
   ShiftedMetric(Mesh &mesh);
   
   /*!
@@ -123,8 +124,6 @@ public:
   /// A 3D array, implemented as nested vectors
   typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
 private:
-  ShiftedMetric();
-
   Mesh &mesh; ///< The mesh this paralleltransform is part of
 
   /// This is the shift in toroidal angle (z) which takes a point from

@@ -49,7 +49,7 @@ class Vector2D : public FieldData {
  public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
-  ~Vector2D();
+  ~Vector2D() override;
 
   Field2D x, y, z; ///< components
 

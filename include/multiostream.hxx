@@ -11,60 +11,46 @@
 */
 template<typename char_type, typename traits = std::char_traits<char_type> >
 class multioutbuf : public std::basic_streambuf<char_type, traits> {
-  private:
-  typedef std::vector<std::basic_ostream<char_type, traits>* >
-  stream_container;
-  typedef typename stream_container::iterator
-  iterator;
+private:
+  using stream_container = std::vector<std::basic_ostream<char_type, traits> *>;
   stream_container streams_;
-  
-  public:
-  void add(std::basic_ostream<char_type,
-	   traits>& str) {
-    iterator pos = std::find(streams_.begin(),
-                        streams_.end(), &str);
+
+public:
+  void add(std::basic_ostream<char_type, traits> &str) {
+    auto pos = std::find(streams_.begin(), streams_.end(), &str);
 
     // Already been added
-    if(pos != streams_.end()) {
+    if (pos != streams_.end()) {
       return;
     }
-    
-    streams_.push_back(&str);
 
+    streams_.push_back(&str);
   }
 
-  void remove(std::basic_ostream<char_type,
-                               traits>& str) {
-    iterator pos = std::find(streams_.begin(),
-                        streams_.end(), &str);
+  void remove(std::basic_ostream<char_type, traits> &str) {
+    auto pos = std::find(streams_.begin(), streams_.end(), &str);
 
-    if(pos != streams_.end()) {
+    if (pos != streams_.end()) {
       streams_.erase(pos);
     }
-    
   }
-protected:
-  virtual std::streamsize xsputn(
-                    const char_type* sequence,
-                    std::streamsize num) {
-    iterator current = streams_.begin();
-    iterator end = streams_.end();
 
-    for(; current != end; ++current) {
-      (*current)->write(sequence, num);
-      (*current)->flush();
+protected:
+  std::streamsize xsputn(const char_type *sequence, std::streamsize num) override {
+
+    for (auto &current : streams_) {
+      current->write(sequence, num);
+      current->flush();
     }
 
     return num;
   }
 
-  virtual int overflow(int c) {
-    iterator current = streams_.begin();
-    iterator end = streams_.end();
+  int overflow(int c) override {
 
-    for(; current != end; ++current) {
-      (*current)->put(static_cast<char>(c));
-      (*current)->flush();
+    for (auto &current : streams_) {
+      current->put(static_cast<char>(c));
+      current->flush();
     }
 
     return c;

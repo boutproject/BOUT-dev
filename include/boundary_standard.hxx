@@ -8,6 +8,8 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
+#include <utility>
+
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  public:
@@ -31,7 +33,8 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
 class BoundaryDirichlet : public BoundaryOp {
  public:
   BoundaryDirichlet() : gen(nullptr) {}
-  BoundaryDirichlet(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
@@ -53,7 +56,8 @@ BoutReal default_func(BoutReal t, int x, int y, int z);
 class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
   BoundaryDirichlet_O3() : gen(nullptr) {}
-  BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
@@ -73,7 +77,8 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
 class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
   BoundaryDirichlet_O4() : gen(nullptr) {}
-  BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g) : BoundaryOp(region), gen(g) {}
+  BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
@@ -158,7 +163,8 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 class BoundaryNeumann : public BoundaryOp {
  public:
   BoundaryNeumann() : gen(nullptr) {}
-  BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
+  BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
@@ -197,7 +203,8 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
   BoundaryNeumann_O4() : gen(nullptr) {}
-  BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g):BoundaryOp(region), gen(g) {}
+  BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;

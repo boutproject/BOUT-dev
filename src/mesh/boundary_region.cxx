@@ -3,14 +3,6 @@
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
-BoundaryRegionBase::BoundaryRegionBase(Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh) {}
-BoundaryRegionBase::BoundaryRegionBase(const string &name, Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh), label(name) {}
-BoundaryRegionBase::BoundaryRegionBase(const string &name, BndryLoc loc, Mesh* passmesh) : localmesh(passmesh ? passmesh : mesh), label(name), location(loc) {}
-
-BoundaryRegion::BoundaryRegion(Mesh* passmesh) : BoundaryRegionBase(passmesh) {}
-BoundaryRegion::BoundaryRegion(const string &name, BndryLoc loc, Mesh* passmesh) : BoundaryRegionBase(name, loc, passmesh) {}
-BoundaryRegion::BoundaryRegion(const string &name, int xd, int yd, Mesh* passmesh) : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
-
 BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax, Mesh* passmesh)
   : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)
 {

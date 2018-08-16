@@ -56,9 +56,9 @@ public:
                  const BoutReal x,BoutReal y,BoutReal z,
                  const BoutReal length,BoutReal angle);
 
-  void first();
-  void next();
-  bool isDone();
+  void first() override;
+  void next() override;
+  bool isDone() override;
 
   /// Index of the point in the boundary
   int x, y, z;

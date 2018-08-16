@@ -1849,9 +1849,9 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
-    CommHandle *ch = new CommHandle;
-    for (int i = 0; i < 6; i++)
-      ch->request[i] = MPI_REQUEST_NULL;
+    auto *ch = new CommHandle;
+    for (auto &i : ch->request)
+      i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
       ch->umsg_sendbuff = Array<BoutReal>(ylen);
@@ -2082,7 +2082,7 @@ void BoutMesh::addBoundaryRegions() {
   addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
 
-  all_boundaries.push_back("RGN_LOWER_INNER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_INNER_Y");
 
   // Lower Outer Y
   
@@ -2107,7 +2107,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_LOWER_OUTER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_OUTER_Y");
   
   // Lower Y
 
@@ -2127,7 +2127,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_LOWER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_Y");
   
   // Upper Inner Y
 
@@ -2153,7 +2153,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_INNER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
   // Upper Outer Y
   
@@ -2179,7 +2179,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_OUTER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
   // Upper Y
 
@@ -2199,7 +2199,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
   if(mesh->firstX() && !mesh->periodicX) {
@@ -2207,7 +2207,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    all_boundaries.push_back("RGN_INNER_X");
+    all_boundaries.emplace_back("RGN_INNER_X");
     
     output_info.write("\tBoundary region inner X\n");
   } else {
@@ -2224,7 +2224,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    all_boundaries.push_back("RGN_OUTER_X");
+    all_boundaries.emplace_back("RGN_OUTER_X");
     
     output_info.write("\tBoundary region outer X\n");
   } else {
@@ -2528,24 +2528,24 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", 0);
-  file.add(MXSUB, "MXSUB", 0);
-  file.add(MYSUB, "MYSUB", 0);
-  file.add(MXG, "MXG", 0);
-  file.add(MYG, "MYG", 0);
-  file.add(nx, "nx", 0);
-  file.add(ny, "ny", 0);
-  file.add(LocalNz, "MZ", 0);
-  file.add(NXPE, "NXPE", 0);
-  file.add(NYPE, "NYPE", 0);
-  file.add(ZMAX, "ZMAX", 0);
-  file.add(ZMIN, "ZMIN", 0);
-  file.add(ixseps1, "ixseps1", 0);
-  file.add(ixseps2, "ixseps2", 0);
-  file.add(jyseps1_1, "jyseps1_1", 0);
-  file.add(jyseps1_2, "jyseps1_2", 0);
-  file.add(jyseps2_1, "jyseps2_1", 0);
-  file.add(jyseps2_2, "jyseps2_2", 0);
+  file.add(zperiod, "zperiod", false);
+  file.add(MXSUB, "MXSUB", false);
+  file.add(MYSUB, "MYSUB", false);
+  file.add(MXG, "MXG", false);
+  file.add(MYG, "MYG", false);
+  file.add(nx, "nx", false);
+  file.add(ny, "ny", false);
+  file.add(LocalNz, "MZ", false);
+  file.add(NXPE, "NXPE", false);
+  file.add(NYPE, "NYPE", false);
+  file.add(ZMAX, "ZMAX", false);
+  file.add(ZMIN, "ZMIN", false);
+  file.add(ixseps1, "ixseps1", false);
+  file.add(ixseps2, "ixseps2", false);
+  file.add(jyseps1_1, "jyseps1_1", false);
+  file.add(jyseps1_2, "jyseps1_2", false);
+  file.add(jyseps2_1, "jyseps2_1", false);
+  file.add(jyseps2_2, "jyseps2_2", false);
 
   coordinates()->outputVars(file);
 }
