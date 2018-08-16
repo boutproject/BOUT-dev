@@ -35,12 +35,6 @@ typedef double BoutReal;
  * stencil class
  *******************************************************************************/
 
-stencil::stencil()
-{
-  jx = jy = jz = 0;
-  c = p = m = pp = mm = 0.0;
-}
-
 stencil::stencil(const stencil &s)
 {
   *this = s;
