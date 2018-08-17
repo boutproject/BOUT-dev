@@ -311,18 +311,16 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
 }
 
 BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
-  BoutReal result;
+  // Calculate d(v*f)/dx = (v*f)[i+1/2] - (v*f)[i-1/2]
 
-  if (v.p > 0 && v.m > 0) {
-    // Extrapolate v to centre from below, use 2nd order backward difference on f
-    result = (1.5 * v.m - .5 * v.mm) * (.5 * f.mm - 2. * f.m + 1.5 * f.c);
-  } else if (v.p < 0 && v.m < 0) {
-    // Extrapolate v to centre from above, use 2nd order forward difference on f
-    result = (1.5 * v.p - .5 * v.pp) * (-1.5 * f.c + 2. * f.p - .5 * f.pp);
-  } else {
-    // Velocity changes sign, hence is almost zero: use centred interpolation/differencing
-    result = .25 * (v.p + v.m) * (f.p - f.m);
-  }
+  // Upper cell boundary
+  BoutReal result = (v.p >= 0.) ? v.p * (1.5*f.c - 0.5*f.m) : v.p * (1.5*f.p - 0.5*f.pp);
+
+  // Lower cell boundary
+  result -= (v.m >= 0.) ? v.m * (1.5*f.m - 0.5*f.mm) : v.m * (1.5*f.c - 0.5*f.p);
+
+  // result is now d/dx(v*f), but want v*d/dx(f) so subtract f*d/dx(v)
+  result -= f.c * (v.p - v.m);
 
   return result;
 }
