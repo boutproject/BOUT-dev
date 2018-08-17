@@ -107,6 +107,28 @@
   }
 
 /// Indices base class for Fields -- Regions are dereferenced into these
+///
+/// Provides methods for offsetting by fixed amounts in x, y, z, as
+/// well as a generic method for offsetting by any amount in multiple
+/// directions.
+///
+/// Assumes that the offset is less than the grid size in that
+/// direction. This assumption is checked for at CHECK=2. This
+/// assumption implies that a `FieldPerp` cannot be offset in y, and a
+/// `Field2D` cannot be offset in z. A stronger, more expensive check
+/// that the resulting offset index doesn't go out of bounds can be
+/// enabled at CHECK=4.
+///
+/// Also provides helper methods for converting Ind2D/Ind3D/IndPerp to x, y, z
+/// indices
+///
+/// Examples
+/// --------
+///
+///     Field3D field, result;
+///     auto index = std::begin(region);
+///
+///     result = field[index->yp()] - field[index->ym()];
 class SpecificInd {
 public:
   int ind = -1; //< 1D index into Field
@@ -343,17 +365,17 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// For performance the BLOCK_REGION_LOOP macro should
 /// allow OpenMP parallelisation and hardware vectorisation.
 ///
-///     BLOCK_REGION_LOOP(region, i,
+///     BLOCK_REGION_LOOP(i, region) {
 ///       f[i] = a[i] + b[i];
-///     );
+///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
 /// there is a serial verion of the macro:
 ///
 ///     BoutReal max=0.;
-///     BLOCK_REGION_LOOP_SERIAL(region, i,
+///     BLOCK_REGION_LOOP_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
-///     );
+///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
