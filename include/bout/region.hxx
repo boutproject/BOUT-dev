@@ -65,9 +65,8 @@
 /// Helper macros for iterating over a Region making use of the
 /// contiguous blocks of indices
 ///
-/// @param[in] region An already existing Region
 /// @param[in] index  The name of the index variable to use in the loop
-/// The rest of the arguments form the loop body.
+/// @param[in] region An already existing Region
 ///
 /// The following loops vectorise well when index is type int, needs testing
 /// with current approach where index is Ind2D or ind3D
@@ -82,29 +81,22 @@
 ///
 /// can be converted to a block region loop like so:
 ///
-///     BLOCK_REGION_LOOP(region, index,
+///     BLOCK_REGION_LOOP(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     )
-#define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+#define BLOCK_REGION_LOOP_SERIAL(index, region)                                          \
+  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
+       block < end; ++block)                                                             \
+    for (auto index = block->first; index < block->second; ++index)
 
-#define BLOCK_REGION_LOOP(region, index, ...)                                            \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-  BOUT_OMP(parallel for)                                                                 \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+#define BLOCK_REGION_LOOP_SECTION(index, region, omp_pragmas)                            \
+  BOUT_OMP(omp_pragmas)                                                                  \
+  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
+       ++block)                                                                          \
+    for (auto index = block->first; index < block->second; ++index)
+
+#define BLOCK_REGION_LOOP(index, region) BLOCK_REGION_LOOP_SECTION(index, region, parallel for)
+
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
@@ -368,8 +360,8 @@ public:
   typename RegionIndices::iterator end() { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
-  ContiguousBlocks getBlocks() const { return blocks; };
-  RegionIndices getIndices() const { return indices; };
+  const ContiguousBlocks &getBlocks() const { return blocks; };
+  const RegionIndices &getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
@@ -659,7 +651,9 @@ private:
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
     // otherwise there will be a race between threads to extend the vector
-    BLOCK_REGION_LOOP_SERIAL((*this), curInd, result.push_back(curInd););
+    BLOCK_REGION_LOOP_SERIAL(curInd, (*this)) {
+      result.push_back(curInd);
+    }
     return result;
   }
 };
