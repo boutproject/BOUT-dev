@@ -75,9 +75,13 @@ public:
   }
   
   inline T& operator()(size_type i1, size_type i2) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
   inline const T& operator()(size_type i1, size_type i2) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
 
