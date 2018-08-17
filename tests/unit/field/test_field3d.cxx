@@ -129,10 +129,9 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
-  Field3D field(fieldmesh);
-  field.allocate();
+  Field3D field(0.0, fieldmesh);
 
-  Field3D field2(field);
+  Field3D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
