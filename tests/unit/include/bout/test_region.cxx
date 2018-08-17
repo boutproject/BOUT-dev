@@ -1497,3 +1497,777 @@ TYPED_TEST(FieldIndexTest, Modulus) {
   EXPECT_EQ(index, 28);
   EXPECT_EQ(index2, 1);
 }
+
+/// Test fixture to make sure the global mesh is our fake one
+class IndexOffsetTest : public ::testing::Test {
+protected:
+  static void SetUpTestCase() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+  }
+
+  static void TearDownTestCase() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+public:
+  static const int nx;
+  static const int ny;
+  static const int nz;
+};
+
+const int IndexOffsetTest::nx = 3;
+const int IndexOffsetTest::ny = 5;
+const int IndexOffsetTest::nz = 7;
+
+TEST_F(IndexOffsetTest, X) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Y) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->y(), j);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Z) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(index->xp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->xp().x(), i + 1);
+          EXPECT_EQ(index->xp().y(), j);
+          EXPECT_EQ(index->xp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(index->yp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->yp().x(), i);
+          EXPECT_EQ(index->yp().y(), j + 1);
+          EXPECT_EQ(index->yp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zp().x(), i);
+        EXPECT_EQ(index->zp().y(), j);
+        EXPECT_EQ(index->zp().z(), (k + 1) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i < 1) {
+#if CHECK > 3
+          EXPECT_THROW(index->xm(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->xm().x(), i - 1);
+          EXPECT_EQ(index->xm().y(), j);
+          EXPECT_EQ(index->xm().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(index->ym(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->ym().x(), i);
+          EXPECT_EQ(index->ym().y(), j - 1);
+          EXPECT_EQ(index->ym().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOne) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zm().x(), i);
+        EXPECT_EQ(index->zm().y(), j);
+        EXPECT_EQ(index->zm().z(), (k - 1 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 2)) {
+#if CHECK > 3
+          EXPECT_THROW(index->xpp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->xpp().x(), i + 2);
+          EXPECT_EQ(index->xpp().y(), j);
+          EXPECT_EQ(index->xpp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j >= (ny - 2)) {
+#if CHECK > 3
+          EXPECT_THROW(index->ypp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->ypp().x(), i);
+          EXPECT_EQ(index->ypp().y(), j + 2);
+          EXPECT_EQ(index->ypp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zpp().x(), i);
+        EXPECT_EQ(index->zpp().y(), j);
+        EXPECT_EQ(index->zpp().z(), (k + 2 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int j = 0; j < ny; ++j) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+      ++index;
+    }
+  }
+  for (int i = 2; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->xmm().x(), i - 2);
+        EXPECT_EQ(index->xmm().y(), j);
+        EXPECT_EQ(index->xmm().z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+      ++index;
+    }
+    for (int j = 2; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->ymm().x(), i);
+        EXPECT_EQ(index->ymm().y(), j - 2);
+        EXPECT_EQ(index->ymm().z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusTwo) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zmm().x(), i);
+        EXPECT_EQ(index->zmm().y(), j);
+        EXPECT_EQ(index->zmm().z(), (k - 2 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offset111) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 1) or j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
+          EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
+          EXPECT_EQ(index->offset(1, 1, 1).z(), (k + 1 + nz) % nz);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i < 1 or j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
+          EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
+          EXPECT_EQ(index->offset(-1, -1, -1).z(), (k - 1 + nz) % nz);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->y(), j);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(index->xp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->xp().x(), i + 1);
+        EXPECT_EQ(index->xp().y(), j);
+        EXPECT_EQ(index->xp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(index->yp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->yp().x(), i);
+        EXPECT_EQ(index->yp().y(), j + 1);
+        EXPECT_EQ(index->yp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ(index->zp().x(), i);
+      EXPECT_EQ(index->zp().y(), j);
+      EXPECT_EQ(index->zp().z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 1) {
+#if CHECK > 3
+        EXPECT_THROW(index->xm(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->xm().x(), i - 1);
+        EXPECT_EQ(index->xm().y(), j);
+        EXPECT_EQ(index->xm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(index->ym(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ym().x(), i);
+        EXPECT_EQ(index->ym().y(), j - 1);
+        EXPECT_EQ(index->ym().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOneInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ(index->zm().x(), i);
+      EXPECT_EQ(index->zm().y(), j);
+      EXPECT_EQ(index->zm().z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 2)) {
+#if CHECK > 3
+        EXPECT_THROW(index->xpp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->xpp().x(), i + 2);
+        EXPECT_EQ(index->xpp().y(), j);
+        EXPECT_EQ(index->xpp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j >= (ny - 2)) {
+#if CHECK > 3
+        EXPECT_THROW(index->ypp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ypp().x(), i);
+        EXPECT_EQ(index->ypp().y(), j + 2);
+        EXPECT_EQ(index->ypp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+#if CHECK > 1
+TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_THROW(index->zpp(), BoutException);
+}
+#endif
+
+TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 2) {
+#if CHECK > 3
+        EXPECT_THROW(index->xmm(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->xmm().x(), i - 2);
+        EXPECT_EQ(index->xmm().y(), j);
+        EXPECT_EQ(index->xmm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j < 2) {
+#if CHECK > 3
+        EXPECT_THROW(index->ymm(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ymm().x(), i);
+        EXPECT_EQ(index->ymm().y(), j - 2);
+        EXPECT_EQ(index->ymm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+#if CHECK > 1
+TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_THROW(index->zmm(), BoutException);
+}
+#endif
+
+TEST_F(IndexOffsetTest, Offset111Ind2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 1) or j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
+        EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
+        EXPECT_EQ(index->offset(1, 1, 1).z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 1 or j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
+        EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
+        EXPECT_EQ(index->offset(-1, -1, -1).z(), 0);
+      }
+      ++index;
+    }
+  }
+}

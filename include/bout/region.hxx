@@ -109,9 +109,13 @@
 /// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
 public:
-  int ind; //< 1D index into Field
+  int ind = -1; //< 1D index into Field
+private:
+  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+
+public:
   SpecificInd() : ind(-1){};
-  SpecificInd(int i) : ind(i){};
+  SpecificInd(int i, int ny = -1, int nz = -1) : ind(i), ny(ny), nz(nz){};
 
   /// Pre-increment operator
   SpecificInd &operator++() {
@@ -153,8 +157,46 @@ public:
 
   /// Modulus operator
   SpecificInd operator%(int n) {
-    SpecificInd new_ind(ind % n);
+    SpecificInd new_ind{ind % n, ny, nz};
     return new_ind;
+  }
+
+  /// Convenience functions for converting to (x, y, z)
+  int x() const { return (ind / nz) / ny; }
+  int y() const { return (ind / nz) % ny; }
+  int z() const { return (ind % nz); }
+
+  const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  /// The index one point -1 in x
+  const inline SpecificInd xm(int dx = 1) const { return {ind - (dx * ny * nz), ny, nz}; }
+  /// The index one point +1 in y
+  const inline SpecificInd yp(int dy = 1) const { return {ind + (dy * nz), ny, nz}; }
+  /// The index one point -1 in y
+  const inline SpecificInd ym(int dy = 1) const { return {ind - (dy * nz), ny, nz}; }
+  /// The index one point +1 in z. Wraps around zend to zstart
+  const inline SpecificInd zp(int dz = 1) const {
+    ASSERT2(dz > 0);
+    ASSERT2(dz <= nz);
+    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+  }
+  /// The index one point -1 in z. Wraps around zstart to zend
+  const inline SpecificInd zm(int dz = 1) const {
+    ASSERT2(dz > 0);
+    ASSERT2(dz <= nz);
+    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+  }
+  // and for 2 cells
+  const inline SpecificInd xpp() const { return xp(2); }
+  const inline SpecificInd xmm() const { return xm(2); }
+  const inline SpecificInd ypp() const { return yp(2); }
+  const inline SpecificInd ymm() const { return ym(2); }
+  const inline SpecificInd zpp() const { return zp(2); }
+  const inline SpecificInd zmm() const { return zm(2); }
+
+  /// Generic offset of \p index in multiple directions simultaneously
+  const inline SpecificInd offset(int dx, int dy, int dz) {
+    auto temp = (dz > 0) ? zp(dz) : zm(-dz);
+    return temp.yp(dy).xp(dx);
   }
 };
 
@@ -182,7 +224,7 @@ inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
 class Ind3D : public SpecificInd {
 public:
   Ind3D() : SpecificInd(){};
-  Ind3D(int i) : SpecificInd(i){};
+  Ind3D(int i, int ny=-1, int nz=-1) : SpecificInd(i, ny, nz){};
   Ind3D(SpecificInd baseIn) : SpecificInd(baseIn){};
 
   // Note operator= from base class is always hidden
@@ -209,7 +251,7 @@ inline Ind3D operator-(Ind3D lhs, const Ind3D &rhs) { return lhs -= rhs; }
 class Ind2D : public SpecificInd {
 public:
   Ind2D() : SpecificInd(){};
-  Ind2D(int i) : SpecificInd(i){};
+  Ind2D(int i, int ny=-1, int nz=-1) : SpecificInd(i, ny, nz){};
   Ind2D(SpecificInd baseIn) : SpecificInd(baseIn){};
 
   Ind2D &operator=(int i) {
@@ -342,7 +384,8 @@ public:
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
+            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+      : ny(ny), nz(nz) {
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
@@ -467,7 +510,7 @@ public:
     RegionIndices newInd(oldInd.size());
 
     for (unsigned int i = 0; i < oldInd.size(); i++) {
-      newInd[i] = T(oldInd[i].ind + offset);
+      newInd[i] = T{oldInd[i].ind + offset, ny, nz};
     }
 
     setIndices(newInd);
@@ -499,7 +542,7 @@ public:
     for (unsigned int i = 0; i < newInd.size(); i++){
       int index = newInd[i].ind;
       int whichBlock = index / period;
-      newInd[i] = ((index + shift) % period) + period * whichBlock;
+      newInd[i].ind = ((index + shift) % period) + period * whichBlock;
     };
 
     setIndices(newInd);
@@ -511,7 +554,7 @@ public:
   unsigned int size() const {
     return indices.size();
   }
-  
+
   /// Returns a RegionStats struct desribing the region
   RegionStats getStats() const {
     RegionStats result;
@@ -566,28 +609,30 @@ public:
 private:
   RegionIndices indices;   //< Flattened indices
   ContiguousBlocks blocks; //< Contiguous sections of flattened indices
+  int ny = -1;             //< Size of y dimension
+  int nz = -1;             //< Size of z dimension
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    if ( (xend + 1 <= xstart) ||
-         (yend + 1 <= ystart) ||
-         (zend + 1 <= zstart) ) {
+    if ((xend + 1 <= xstart) ||
+        (yend + 1 <= ystart) ||
+        (zend + 1 <= zstart)) {
       // Empty region
       return {};
     }
-    
+
     ASSERT1(ny > 0);
     ASSERT1(nz > 0);
 
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
-    RegionIndices region;
     // Guard against invalid length ranges
-    if (len <= 0 ) return region;
-    region.resize(len);
+    if (len <= 0 ) return {};
+
+    RegionIndices region(len, {-1, ny, nz});
 
     int x = xstart;
     int y = ystart;
@@ -597,7 +642,7 @@ private:
     int j = -1;
     while (!done) {
       j++;
-      region[j] = (x * ny + y) * nz + z;
+      region[j].ind = (x * ny + y) * nz + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
