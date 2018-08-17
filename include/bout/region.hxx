@@ -190,11 +190,11 @@ public:
 
   const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
-  const inline SpecificInd xm(int dx = 1) const { return {ind - (dx * ny * nz), ny, nz}; }
+  const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
   const inline SpecificInd yp(int dy = 1) const { return {ind + (dy * nz), ny, nz}; }
   /// The index one point -1 in y
-  const inline SpecificInd ym(int dy = 1) const { return {ind - (dy * nz), ny, nz}; }
+  const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline SpecificInd zp(int dz = 1) const {
     ASSERT2(dz > 0);
