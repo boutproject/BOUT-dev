@@ -113,7 +113,7 @@
 /// directions.
 ///
 /// Assumes that the offset is less than the grid size in that
-/// direction. This assumption is checked for at CHECK=2. This
+/// direction. This assumption is checked for at CHECK=3. This
 /// assumption implies that a `FieldPerp` cannot be offset in y, and a
 /// `Field2D` cannot be offset in z. A stronger, more expensive check
 /// that the resulting offset index doesn't go out of bounds can be
@@ -205,14 +205,14 @@ public:
   const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline SpecificInd zp(int dz = 1) const {
-    ASSERT2(dz > 0);
-    ASSERT2(dz <= nz);
+    ASSERT3(dz > 0);
+    ASSERT3(dz <= nz);
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline SpecificInd zm(int dz = 1) const {
-    ASSERT2(dz > 0);
-    ASSERT2(dz <= nz);
+    ASSERT3(dz > 0);
+    ASSERT3(dz <= nz);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
   // and for 2 cells
