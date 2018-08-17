@@ -1,11 +1,8 @@
 /*!************************************************************************
  * \file stencils.hxx
  * 
- * Sets stencils for differencing, and handles indexing
+ * Sets stencils for differencing
  * 
- * NOTE: These methods, classes are all deprecated, and should be replaced
- *       with DataIterator iterations and indexing
- *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
