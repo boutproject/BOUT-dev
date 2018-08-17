@@ -1586,9 +1586,7 @@ TEST_F(IndexOffsetTest, XPlusOne) {
         EXPECT_EQ(index->z(), k);
 
         if (i >= (nx - 1)) {
-#if CHECK > 3
-          EXPECT_THROW(index->xp(), BoutException);
-#endif
+          // skip this point
         } else {
           EXPECT_EQ(index->xp().x(), i + 1);
           EXPECT_EQ(index->xp().y(), j);
@@ -1661,9 +1659,7 @@ TEST_F(IndexOffsetTest, XMinusOne) {
         EXPECT_EQ(index->z(), k);
 
         if (i < 1) {
-#if CHECK > 3
-          EXPECT_THROW(index->xm(), BoutException);
-#endif
+          // skip this point
         } else {
           EXPECT_EQ(index->xm().x(), i - 1);
           EXPECT_EQ(index->xm().y(), j);
@@ -1736,9 +1732,7 @@ TEST_F(IndexOffsetTest, XPlusTwo) {
         EXPECT_EQ(index->z(), k);
 
         if (i >= (nx - 2)) {
-#if CHECK > 3
-          EXPECT_THROW(index->xpp(), BoutException);
-#endif
+          // skip this point
         } else {
           EXPECT_EQ(index->xpp().x(), i + 2);
           EXPECT_EQ(index->xpp().y(), j);
@@ -1884,9 +1878,7 @@ TEST_F(IndexOffsetTest, Offset111) {
         EXPECT_EQ(index->z(), k);
 
         if (i >= (nx - 1) or j >= (ny - 1)) {
-#if CHECK > 3
-          EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
-#endif
+          // skip this point
         } else {
           EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
           EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
@@ -1911,9 +1903,7 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1) {
         EXPECT_EQ(index->z(), k);
 
         if (i < 1 or j < 1) {
-#if CHECK > 3
-          EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
-#endif
+          // skip this point
         } else {
           EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
           EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
@@ -1976,9 +1966,7 @@ TEST_F(IndexOffsetTest, XPlusOneInd2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i >= (nx - 1)) {
-#if CHECK > 3
-        EXPECT_THROW(index->xp(), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->xp().x(), i + 1);
         EXPECT_EQ(index->xp().y(), j);
@@ -2045,9 +2033,7 @@ TEST_F(IndexOffsetTest, XMinusOneInd2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i < 1) {
-#if CHECK > 3
-        EXPECT_THROW(index->xm(), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->xm().x(), i - 1);
         EXPECT_EQ(index->xm().y(), j);
@@ -2114,9 +2100,7 @@ TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i >= (nx - 2)) {
-#if CHECK > 3
-        EXPECT_THROW(index->xpp(), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->xpp().x(), i + 2);
         EXPECT_EQ(index->xpp().y(), j);
@@ -2152,7 +2136,7 @@ TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
   }
 }
 
-#if CHECK > 1
+#if CHECK > 2
 TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -2174,9 +2158,7 @@ TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i < 2) {
-#if CHECK > 3
-        EXPECT_THROW(index->xmm(), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->xmm().x(), i - 2);
         EXPECT_EQ(index->xmm().y(), j);
@@ -2212,7 +2194,7 @@ TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
   }
 }
 
-#if CHECK > 1
+#if CHECK > 2
 TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -2234,9 +2216,7 @@ TEST_F(IndexOffsetTest, Offset111Ind2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i >= (nx - 1) or j >= (ny - 1)) {
-#if CHECK > 3
-        EXPECT_THROW(index->offset(1, 1, 1), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
         EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
@@ -2259,9 +2239,7 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
       EXPECT_EQ(index->z(), 0);
 
       if (i < 1 or j < 1) {
-#if CHECK > 3
-        EXPECT_THROW(index->offset(-1, -1, -1), BoutException);
-#endif
+        // skip this point
       } else {
         EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
         EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
