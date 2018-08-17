@@ -89,14 +89,19 @@
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
+#ifdef _OPENMP
 #define BLOCK_REGION_LOOP_SECTION(index, region, omp_pragmas)                            \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
        ++block)                                                                          \
     for (auto index = block->first; index < block->second; ++index)
+#else
+// No OpenMP, so fall back to slightly more efficient serial form
+#define BLOCK_REGION_LOOP_SECTION(index, region, omp_pragmas)                            \
+  BLOCK_REGION_LOOP_SERIAL(index, region)
+#endif
 
 #define BLOCK_REGION_LOOP(index, region) BLOCK_REGION_LOOP_SECTION(index, region, parallel for)
-
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
