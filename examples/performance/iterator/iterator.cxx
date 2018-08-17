@@ -141,17 +141,19 @@ int main(int argc, char **argv) {
 
   // Region macro
   ITERATOR_TEST_BLOCK(
-      "Region (serial)",
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion("RGN_ALL"), i,
-			       result[i] = a[i] + b[i];
-			       );
-		      );
+    "Region (serial)",
+    BLOCK_REGION_LOOP_SERIAL(i, mesh->getRegion("RGN_ALL")) {
+      result[i] = a[i] + b[i];
+    }
+    );
+
 #ifdef _OPENMP
-  ITERATOR_TEST_BLOCK("Region (omp)",
-		      BLOCK_REGION_LOOP(mesh->getRegion("RGN_ALL"), i,
-					result[i] = a[i] + b[i];
-					);
-		      );
+  ITERATOR_TEST_BLOCK(
+    "Region (omp)",
+    BLOCK_REGION_LOOP(i, mesh->getRegion("RGN_ALL")) {
+      result[i] = a[i] + b[i];
+    }
+    );
 #endif
   
   if(profileMode){

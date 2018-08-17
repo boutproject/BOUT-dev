@@ -207,7 +207,7 @@ TEST_F(RegionTest, regionLoopAll) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP(region, i, a[i] = 1.0;);
+  BLOCK_REGION_LOOP(i, region) { a[i] = 1.0; }
 
   for (const auto &i : a.region(RGN_ALL)) {
     EXPECT_EQ(a[i], 1.0);
@@ -218,7 +218,7 @@ TEST_F(RegionTest, regionLoopNoBndry) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP(region, i, a[i] = 1.0;);
+  BLOCK_REGION_LOOP(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -242,7 +242,7 @@ TEST_F(RegionTest, regionLoopAllSerial) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(region, i, a[i] = 1.0;);
+  BLOCK_REGION_LOOP_SERIAL(i, region) { a[i] = 1.0; }
 
   for (const auto &i : a.region(RGN_ALL)) {
     EXPECT_EQ(a[i], 1.0);
@@ -253,7 +253,7 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(region, i, a[i] = 1.0;);
+  BLOCK_REGION_LOOP_SERIAL(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
