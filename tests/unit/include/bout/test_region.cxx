@@ -2235,7 +2235,7 @@ TEST_F(IndexOffsetTest, Offset111Ind2D) {
 
       if (i >= (nx - 1) or j >= (ny - 1)) {
 #if CHECK > 3
-        EXPECT_THROW(offset.offset(*index, 1, 1, 1), BoutException);
+        EXPECT_THROW(index->offset(1, 1, 1), BoutException);
 #endif
       } else {
         EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
@@ -2260,7 +2260,7 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
 
       if (i < 1 or j < 1) {
 #if CHECK > 3
-        EXPECT_THROW(offset.offset(*index, -1, -1, -1), BoutException);
+        EXPECT_THROW(index->offset(-1, -1, -1), BoutException);
 #endif
       } else {
         EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
