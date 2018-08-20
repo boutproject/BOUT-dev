@@ -13,7 +13,6 @@
 
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
-#include <bout/indexoffset.hxx>
 
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
@@ -112,12 +111,11 @@ int main(int argc, char **argv) {
     );
 
   ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] with offset (omp)",
-    const IndexOffset<Ind3D> offset(*mesh);
+    "C++11 range-based for over Region [i] (omp)",
     BOUT_OMP(parallel)
     {
       for(const auto &i : mesh->getRegion3D("RGN_NOY")){
-        result[i] = (a[offset.yp(i)] - a[offset.ym(i)]);
+        result[i] = (a[i.yp()] - a[i.ym()]);
       }
     }
     );
@@ -156,12 +154,11 @@ int main(int argc, char **argv) {
   ITERATOR_TEST_BLOCK(
       "Region with stencil (serial)",
       stencil s;
-      const IndexOffset<Ind3D> offset(*mesh);
       BLOCK_REGION_LOOP_SERIAL(mesh->getRegion3D("RGN_NOY"), i,
         s.mm = nan("");
-        s.m = a[offset.ym(i)];
+        s.m = a[i.ym()];
         s.c = a[i];
-        s.p = a[offset.yp(i)];
+        s.p = a[i.yp()];
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
@@ -171,16 +168,15 @@ int main(int argc, char **argv) {
 
   ITERATOR_TEST_BLOCK(
     "Region with stencil (outside) (parallel section omp)",
-    const IndexOffset<Ind3D> offset(*mesh);
     BOUT_OMP(parallel)
     {
       stencil s;
       BLOCK_REGION_LOOP_PARALLEL_SECTION(
         mesh->getRegion3D("RGN_NOY"), i,
         s.mm = nan("");
-        s.m = a[offset.ym(i)];
+        s.m = a[i.ym()];
         s.c = a[i];
-        s.p = a[offset.yp(i)];
+        s.p = a[i.yp()];
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
@@ -192,14 +188,13 @@ int main(int argc, char **argv) {
     "Region with stencil (inside) (parallel section omp)",
     BOUT_OMP(parallel)
     {
-      const IndexOffset<Ind3D> offset(*mesh);
       stencil s;
       BLOCK_REGION_LOOP_PARALLEL_SECTION(
         mesh->getRegion3D("RGN_NOY"), i,
         s.mm = nan("");
-        s.m = a[offset.ym(i)];
+        s.m = a[i.ym()];
         s.c = a[i];
-        s.p = a[offset.yp(i)];
+        s.p = a[i.yp()];
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
@@ -230,15 +225,14 @@ int main(int argc, char **argv) {
     "Region with stencil (single loop omp)",
     BOUT_OMP(parallel)
     {
-      const IndexOffset<Ind3D> offset{*mesh};
       stencil s;
       const auto &region = mesh->getRegion3D("RGN_NOY").getIndices();
       BOUT_OMP(for schedule(guided))
         for (auto i = region.cbegin(); i < region.cend(); ++i) {
           s.mm = nan("");
-          s.m = a[offset.ym(*i)];
+          s.m = a[i->ym()];
           s.c = a[*i];
-          s.p = a[offset.yp(*i)];
+          s.p = a[i->yp()];
           s.pp = nan("");
 
           result[*i] = (s.p - s.m);
@@ -250,13 +244,12 @@ int main(int argc, char **argv) {
     "Region with stencil (inside) (parallel section omp)",
     BOUT_OMP(parallel)
     {
-      const IndexOffset<Ind3D> offset(*mesh);
       stencil s;
       NEW_BOUT_REGION_LOOP_PARALLEL_SECTION(i, mesh->getRegion3D("RGN_NOY"), for schedule(guided) nowait) {
         s.mm = nan("");
-        s.m = a[offset.ym(i)];
+        s.m = a[i.ym()];
         s.c = a[i];
-        s.p = a[offset.yp(i)];
+        s.p = a[i.yp()];
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
