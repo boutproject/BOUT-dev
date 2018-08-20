@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<mesh->LocalNx;++i) {
       for(int j=mesh->ystart;j<mesh->yend;++j) {
         for(int k=0;k<mesh->LocalNz;++k) {
-          result(i,j,k) = (a(i,j+1,k) - a(i,j-1,k))/(2.*mesh->coordinates()->dy(i,j));
+          result(i,j,k) = (a(i,j+1,k) - a(i,j-1,k));
         }
       }
     }
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<mesh->LocalNx;++i) {
       for(int j=mesh->ystart;j<mesh->yend;++j) {
         for(int k=0;k<mesh->LocalNz;++k) {
-          result(i,j,k) = (a(i,j+1,k) - a(i,j-1,k))/(2.*mesh->coordinates()->dy(i,j));
+          result(i,j,k) = (a(i,j+1,k) - a(i,j-1,k));
         }
       }
     }
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     "C++11 range-based for (omp)",
     BOUT_OMP(parallel)
     for(auto i : result.region(RGN_NOY)){
-      result(i.x,i.y,i.z) = (a(i.x,i.y+1,i.z) - a(i.x,i.y-1,i.z))/(2.*mesh->coordinates()->dy(i.x,i.y));
+      result(i.x,i.y,i.z) = (a(i.x,i.y+1,i.z) - a(i.x,i.y-1,i.z));
     }
     );
 
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
     "C++11 range-based for [i] (omp)",
     BOUT_OMP(parallel)
     for(const auto &i : result.region(RGN_NOY)){
-      result[i] = (a[i.yp()] - a[i.ym()])/(2.*mesh->coordinates()->dy[i]);
+      result[i] = (a[i.yp()] - a[i.ym()]);
     }
     );
 
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     BOUT_OMP(parallel)
     {
       for(const auto &i : mesh->getRegion3D("RGN_NOY")){
-        result[i] = (a[offset.yp(i)] - a[offset.ym(i)])/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (a[offset.yp(i)] - a[offset.ym(i)]);
       }
     }
     );
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
         s.c = a[i];
         s.p = a[i.yp()];
         s.pp = nan("");
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
       }
     }
     );
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
       s.c = a[i];
       s.p = a[i.yp()];
       s.pp = nan("");
-      result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+      result[i] = (s.p - s.m);
     }
     );
 
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
         s.p = a[offset.yp(i)];
         s.pp = nan("");
 
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
         );
     );
 #ifdef _OPENMP
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
         s.p = a[offset.yp(i)];
         s.pp = nan("");
 
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
         );
     }
     );
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
         s.p = a[offset.yp(i)];
         s.pp = nan("");
 
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
         );
     }
     );
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
         s.p = a[i.ind + (nz)];
         s.pp = nan("");
 
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
         );
     }
     );
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
           s.p = a[offset.yp(*i)];
           s.pp = nan("");
 
-          result[*i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[*i]);
+          result[*i] = (s.p - s.m);
         }
     }
     );
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
         s.p = a[offset.yp(i)];
         s.pp = nan("");
 
-        result[i] = (s.p - s.m)/(2.*mesh->coordinates()->dy[i]);
+        result[i] = (s.p - s.m);
       }
     }
     );
