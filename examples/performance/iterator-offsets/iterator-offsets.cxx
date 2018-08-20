@@ -18,18 +18,6 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define NEW_BLOCK_REGION_LOOP(index, region)                                             \
-  BOUT_OMP(parallel for)                                                                 \
-  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
-       ++block)                                                                          \
-    for (auto index = block->first; index < block->second; ++index)
-
-#define NEW_BOUT_REGION_LOOP_PARALLEL_SECTION(index, region, omp_pragmas)                \
-  BOUT_OMP(omp_pragmas)                                                                  \
-  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
-       ++block)                                                                          \
-    for (auto index = block->first; index < block->second; ++index)
-
 #define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
   {                                                                                      \
     __VA_ARGS__                                                                          \
@@ -237,23 +225,6 @@ int main(int argc, char **argv) {
 
           result[*i] = (s.p - s.m);
         }
-    }
-    );
-
-   ITERATOR_TEST_BLOCK(
-    "Region with stencil (inside) (parallel section omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      NEW_BOUT_REGION_LOOP_PARALLEL_SECTION(i, mesh->getRegion3D("RGN_NOY"), for schedule(guided) nowait) {
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = (s.p - s.m);
-      }
     }
     );
 
