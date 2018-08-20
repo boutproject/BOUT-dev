@@ -87,7 +87,7 @@
 ///     )
 #define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
   {                                                                                      \
-    const auto & blocks = region.getBlocks();                                            \
+    const auto &blocks = region.getBlocks();                                             \
     for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                 \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
@@ -97,11 +97,9 @@
 
 #define BLOCK_REGION_LOOP_PARALLEL_SECTION(region, index, ...)                           \
   {                                                                                      \
-    const auto & blocks = region.getBlocks();                                            \
+    const auto &blocks = region.getBlocks();                                             \
     BOUT_OMP(for schedule(guided))                                                       \
-    _Pragma("ivdep vector always")                                                       \
     for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                 \
-      _Pragma("ivdep vector always")                                                     \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \
@@ -110,10 +108,9 @@
 
 #define BLOCK_REGION_LOOP(region, index, ...)                                            \
   {                                                                                      \
-    const auto & blocks = region.getBlocks();                                            \
-  BOUT_OMP(parallel for schedule(guided))                                                \
+    const auto &blocks = region.getBlocks();                                             \
+    BOUT_OMP(parallel for schedule(guided))                                              \
     for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                 \
-      _Pragma("ivdep vector always")                                                     \
       for (auto index = block->first; index < block->second; ++index) {                  \
         __VA_ARGS__                                                                      \
       }                                                                                  \
