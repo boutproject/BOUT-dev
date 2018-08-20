@@ -33,7 +33,7 @@
 /// Defines a set of values in 1D in the neighbourhood of an index
 /// Used for calculating derivatives
 struct stencil {
-  ///< stencil 2 each side of the centre -- in effect means M?G > 2 is not supported
+  /// stencil 2 each side of the centre -- in effect means M?G > 2 is not supported
   BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN; 
 };
 
