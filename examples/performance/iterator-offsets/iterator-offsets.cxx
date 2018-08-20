@@ -90,7 +90,6 @@ int main(int argc, char **argv) {
       }
     }
     );
-#endif
 
   // Range based for DataIterator with indices
   ITERATOR_TEST_BLOCK(
@@ -120,7 +119,6 @@ int main(int argc, char **argv) {
     }
     );
 
-#ifdef _OPENMP
   ITERATOR_TEST_BLOCK(
     "C++11 range-based for [i] with stencil (omp)",
     BOUT_OMP(parallel)
@@ -137,6 +135,7 @@ int main(int argc, char **argv) {
     }
     );
 #endif
+
   ITERATOR_TEST_BLOCK(
     "C++11 range-based for [i] with stencil (serial)",
     stencil s;
@@ -164,6 +163,7 @@ int main(int argc, char **argv) {
         result[i] = (s.p - s.m);
         );
     );
+
 #ifdef _OPENMP
 
   ITERATOR_TEST_BLOCK(
