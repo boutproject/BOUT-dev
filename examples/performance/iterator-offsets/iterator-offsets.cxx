@@ -41,6 +41,12 @@ using namespace std::chrono;
     times.push_back(steady_clock::now() - start);                                        \
   }
 
+BoutReal test_ddy(stencil &s) {
+  return (s.p - s.m);
+}
+
+Mesh::deriv_func func_ptr = &test_ddy;
+
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
   std::vector<std::string> names;
@@ -237,6 +243,24 @@ int main(int argc, char **argv) {
 
           result[*i] = (s.p - s.m);
         }
+    }
+    );
+
+  ITERATOR_TEST_BLOCK(
+    "Region with stencil and function pointer (parallel section nowait omp)",
+    BOUT_OMP(parallel)
+    {
+      stencil s;
+      BLOCK_REGION_LOOP_PARALLEL_SECTION_NOWAIT(
+        mesh->getRegion3D("RGN_NOY"), i,
+        s.mm = nan("");
+        s.m = a[i.ym()];
+        s.c = a[i];
+        s.p = a[i.yp()];
+        s.pp = nan("");
+
+        result[i] = func_ptr(s);
+        );
     }
     );
 
