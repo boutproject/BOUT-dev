@@ -294,7 +294,7 @@ const Field2D Grad_par_CtoL(const Field2D &var) {
   
   Coordinates *metric = mesh->coordinates();
 
-  for(auto &i : result.region(RGN_NOBNDRY)) {
+  for(const auto &i : result.region(RGN_NOBNDRY)) {
     result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
   
@@ -434,7 +434,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   Coordinates *metric = var.getMesh()->coordinates();
 
   if (var.hasYupYdown()) {
-    for (auto &i : result.region(RGN_NOBNDRY)) {
+    for (const auto &i : result.region(RGN_NOBNDRY)) {
       result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
   } else {
@@ -442,7 +442,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
 
     Field3D var_fa = var.getMesh()->toFieldAligned(var);
 
-    for(auto &i : result.region(RGN_NOBNDRY)) {
+    for(const auto &i : result.region(RGN_NOBNDRY)) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
     result = var.getMesh()->fromFieldAligned(result);
@@ -458,7 +458,7 @@ const Field2D Grad_par_LtoC(const Field2D &var) {
   
   Coordinates *metric = mesh->coordinates();
 
-  for(auto &i : result.region(RGN_NOBNDRY)) {
+  for(const auto &i : result.region(RGN_NOBNDRY)) {
     result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
   

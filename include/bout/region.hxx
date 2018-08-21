@@ -294,7 +294,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///
 /// or the more convenient region for loop:
 ///
-///     for (auto &i : r) {
+///     for (const auto &i : r) {
 ///       f[i] = a[i] + b[i];
 ///     }
 ///

@@ -86,7 +86,7 @@ public:
   }
 
   Matrix& operator=(const T&val){
-    for(auto &i: data){
+    for (auto &i: data) {
       i = val;
     };
     return *this;

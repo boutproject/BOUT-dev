@@ -123,7 +123,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(auto i : result) {
+    for(const auto &i : result) {
       BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
       result[i] = gen->generate(xpos,
                                 TWOPI*localmesh->GlobalY(i.y),
@@ -133,7 +133,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
     break;
   }
   case CELL_YLOW: {
-    for(auto i : result) {
+    for(const auto &i : result) {
       BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
@@ -143,7 +143,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
     break;
   }
   default: {// CELL_CENTRE or CELL_ZLOW
-    for(auto i : result) {
+    for(const auto &i : result) {
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 0.0,  // Z
@@ -182,7 +182,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(auto i : result) {
+    for(const auto &i : result) {
       BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
       result[i] = gen->generate(xpos,
                                 TWOPI*localmesh->GlobalY(i.y),
@@ -192,7 +192,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
     break;
   }
   case CELL_YLOW: {
-    for(auto i : result) {
+    for(const auto &i : result) {
       BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 ypos,
@@ -202,7 +202,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
     break;
   }
   case CELL_ZLOW: {
-    for(auto i : result) {
+    for(const auto &i : result) {
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
@@ -211,7 +211,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
     break;
   }
   default: {// CELL_CENTRE
-    for(auto i : result) {
+    for(const auto &i : result) {
       result[i] = gen->generate(localmesh->GlobalX(i.x),
                                 TWOPI*localmesh->GlobalY(i.y),
                                 TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z

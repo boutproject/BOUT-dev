@@ -50,7 +50,7 @@ struct Indices {
  * and Field3D::end() return DataIterator objects:
  * 
  *     Field3D f(0.0); // Initialise field
- *     for(auto i : f) { // Loop over all indices, including guard cells
+ *     for(const auto &i : f) { // Loop over all indices, including guard cells
  *       f[i] = i.x; // Indexing using DataIterator
  *     }
  * 
@@ -313,7 +313,7 @@ private:
  *
  * or the more convenient range for loop:
  *
- *     for( auto i : r ) {
+ *     for( const auto &i : r ) {
  *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
  *     }
  *
@@ -321,7 +321,7 @@ private:
  * regions of a field:
  *
  *     Field3D f(0.0);
- *     for( auto i : f.region(RGN_NOBNDRY) ) {
+ *     for( const auto &i : f.region(RGN_NOBNDRY) ) {
  *       f[i] = 1.0;
  *     }
  * 
