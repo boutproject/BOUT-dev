@@ -51,6 +51,9 @@ control over how BOUT++ is built:
 
 - ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
 
+- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
+  to SUNDIALS, which are put at the end of the link command.
+  
 It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.

@@ -100,9 +100,9 @@ TEST_F(MeshTest, MapInd3DTo2D) {
   Ind3D index3d_49(49);
   Ind3D index3d_98(98);
 
-  EXPECT_EQ(localmesh.ind3Dto2D(index3d_0), 0);
-  EXPECT_EQ(localmesh.ind3Dto2D(index3d_49), 7);
-  EXPECT_EQ(localmesh.ind3Dto2D(index3d_98), 14);
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_0).ind, 0);
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_49).ind, 7);
+  EXPECT_EQ(localmesh.ind3Dto2D(index3d_98).ind, 14);
 }
 
 extern Mesh::deriv_func fDDX, fDDY, fDDZ;       ///< Differencing methods for each dimension

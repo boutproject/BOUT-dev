@@ -1,11 +1,8 @@
 /*!************************************************************************
  * \file stencils.hxx
  * 
- * Sets stencils for differencing, and handles indexing
+ * Sets stencils for differencing
  * 
- * NOTE: These methods, classes are all deprecated, and should be replaced
- *       with DataIterator iterations and indexing
- *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -35,57 +32,9 @@
 
 /// Defines a set of values in 1D in the neighbourhood of an index
 /// Used for calculating derivatives
-class stencil {
- public:
-  int jx = 0, jy = 0, jz = 0; ///< central location
-  
-  BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN; ///< stencil 2 each side of the centre -- in effect means M?G>2 is invalid
-  
-  /// constructor
-  stencil(){};
-  /// Constructor like pre r115 upwind methods (debugging)
-  stencil(BoutReal fc);
-  /// Constructor like pre r115 derivative methods
-  stencil(BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp);
-
-  /// Copy constructor
-  stencil(const stencil &s);
-
-  // operators
-  
-  stencil & operator=(const stencil &rhs);
-  stencil & operator=(BoutReal rhs);
-
-  stencil & operator+=(const stencil &rhs);
-  stencil & operator+=(BoutReal rhs);
-  stencil & operator-=(const stencil &rhs);
-  stencil & operator-=(BoutReal rhs);
-  stencil & operator*=(const stencil &rhs);
-  stencil & operator*=(BoutReal rhs);
-  stencil & operator/=(const stencil &rhs);
-  stencil & operator/=(BoutReal rhs);
-
-  const stencil operator+(const stencil &other) const;
-  const stencil operator+(BoutReal other) const;
-  const stencil operator-(const stencil &other) const;
-  const stencil operator-(BoutReal other) const;
-  const stencil operator*(const stencil &other) const;
-  const stencil operator*(BoutReal other) const;
-  const stencil operator/(const stencil &other) const;
-  const stencil operator/(BoutReal other) const;
-
-  friend const stencil operator+(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator-(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator*(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator/(BoutReal lhs, const stencil &rhs);
-  
-  BoutReal min() const; ///< Minimum value over stencil
-  BoutReal max() const; ///< Maximum value over stencil
-  const stencil abs() const; ///< Stencil with all values replaced by absolute values
+struct stencil {
+  /// stencil 2 each side of the centre -- in effect means M?G > 2 is not supported
+  BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN; 
 };
-
-BoutReal min(const stencil &s); ///< Minimum value over a stencil
-BoutReal max(const stencil &s); ///< Maximum value over a stencil
-const stencil abs(const stencil &s);  ///< Copy of stencil with all values replaced by absolute values
 
 #endif /* __STENCILS_H__ */

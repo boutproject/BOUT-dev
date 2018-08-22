@@ -206,10 +206,19 @@ BoutReal DDX_CWENO3(stencil &f) {
   if (a > ma)
     ma = a;
 
-  stencil sp, vp, sm, vm;
+  stencil sp, sm;
 
-  sp = f + ma;
-  sm = ma - f;
+  sp.mm = f.mm + ma;
+  sp.m = f.m + ma;
+  sp.c = f.c + ma;
+  sp.p = f.p + ma;
+  sp.pp = f.pp + ma;
+
+  sm.mm = ma - f.mm;
+  sm.m = ma - f.m;
+  sm.c = ma - f.c;
+  sm.p = ma - f.p;
+  sm.pp = ma - f.pp;
 
   return VDDX_WENO3(0.5, sp) + VDDX_WENO3(-0.5, sm);
 }
