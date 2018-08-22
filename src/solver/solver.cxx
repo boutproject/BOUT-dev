@@ -658,6 +658,7 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
   } else {
     mon->freq = freqDefault;
   }
+  mon->is_added = true; // Records that monitor has been added to solver so timestep should not be updated
   if(pos == Solver::FRONT) {
     monitors.push_front(mon);
   }else
