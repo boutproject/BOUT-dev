@@ -316,6 +316,49 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
   EXPECT_EQ(numMatching, ninner);
 }
 
+TEST_F(RegionTest, regionLoopAllInner) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  Field3D a = 0.0;
+  BOUT_OMP(parallel) {
+    BLOCK_REGION_LOOP_INNER(i, region) {
+      a[i] = 1.0;
+    }
+  }
+
+  for (const auto &i : a.region(RGN_ALL)) {
+    EXPECT_EQ(a[i], 1.0);
+  }
+}
+
+TEST_F(RegionTest, regionLoopNoBndryInner) {
+  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+
+  Field3D a = 0.0;
+  BOUT_OMP(parallel) {
+    BLOCK_REGION_LOOP_INNER(i, region) {
+      a[i] = 1.0;
+    }
+  }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+  const int ninner =
+      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  int numExpectNotMatching = nmesh - ninner;
+
+  int numNotMatching = 0;
+  int numMatching = 0;
+  for (const auto &i : a.region(RGN_ALL)) {
+    if (a[i] != 1.0) {
+      numNotMatching++;
+    } else {
+      numMatching++;
+    }
+  }
+  EXPECT_EQ(numNotMatching, numExpectNotMatching);
+  EXPECT_EQ(numMatching, ninner);
+}
+
 TEST_F(RegionTest, regionAsSorted) {
   // Contiguous blocks to insert
   std::vector<std::pair<int, int>> blocksIn = {
