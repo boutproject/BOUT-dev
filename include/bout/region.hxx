@@ -68,8 +68,29 @@
 /// @param[in] index  The name of the index variable to use in the loop
 /// @param[in] region An already existing Region
 ///
-/// The following loops vectorise well when index is type int, needs testing
-/// with current approach where index is Ind2D or ind3D
+/// These macros all have the same basic form: an outer loop over
+/// blocks of contiguous indices, and an inner loop over the indices
+/// themselves. This allows the outer loop to be parallelised with
+/// OpenMP while the inner loop can be vectorised with the CPU's
+/// native SIMD instructions.
+///
+/// Alternative forms are also provided for loops that must be done
+/// serially, as well as for more control over the OpenMP directives
+/// used.
+///
+/// The different macros:
+///
+/// - BOUT_FOR: OpenMP-aware version that allows speedup with both
+///   OpenMP and native SIMD vectorisation. This should be the
+///   preferred form for most loops
+/// - BOUT_FOR_SERIAL: for use with inherently serial loops. If BOUT++
+///   was not compiled with OpenMP, BOUT_FOR falls back to using this
+///   form
+/// - BOUT_FOR_INNER: for use on loops inside OpenMP parallel regions,
+///   e.g. in order to declare thread private variables outside of the
+///   loop
+/// - BOUT_FOR_OMP: the most generic form, that takes arbitrary OpenMP
+///   directives as an extra argument
 ///
 /// Example
 /// -------
