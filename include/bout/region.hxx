@@ -103,6 +103,9 @@
 
 #define BLOCK_REGION_LOOP(index, region) BLOCK_REGION_LOOP_SECTION(index, region, parallel for)
 
+#define BLOCK_REGION_LOOP_INNER(index, region, omp_pragmas)                              \
+  BLOCK_REGION_LOOP_SECTION(index, region, for schedule(guided) nowait omp_pragmas)
+
 /// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
 public:
