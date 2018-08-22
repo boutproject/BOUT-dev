@@ -19,17 +19,6 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define BLOCK_REGION_LOOP_PARALLEL_SECTION_NOWAIT(region, index, ...)                    \
-  {                                                                                      \
-    const auto &blocks = region.getBlocks();                                             \
-    BOUT_OMP(for schedule(guided) nowait)                                                \
-    for (auto block = blocks.cbegin(); block < blocks.cend(); ++block) {                 \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
-
 #define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
   {                                                                                      \
     __VA_ARGS__                                                                          \
@@ -159,7 +148,7 @@ int main(int argc, char **argv) {
   ITERATOR_TEST_BLOCK(
       "Region with stencil (serial)",
       stencil s;
-      BLOCK_REGION_LOOP_SERIAL(mesh->getRegion3D("RGN_NOY"), i,
+      BOUT_FOR_SERIAL(i, mesh->getRegion3D("RGN_NOY")) {
         s.mm = nan("");
         s.m = a[i.ym()];
         s.c = a[i];
@@ -167,36 +156,17 @@ int main(int argc, char **argv) {
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
-        );
+      }
     );
 
 #ifdef _OPENMP
 
   ITERATOR_TEST_BLOCK(
-    "Region with stencil (parallel section wait omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION(
-        mesh->getRegion3D("RGN_NOY"), i,
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = (s.p - s.m);
-        );
-    }
-    );
-
-   ITERATOR_TEST_BLOCK(
     "Region with stencil (parallel section nowait omp)",
     BOUT_OMP(parallel)
     {
       stencil s;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION_NOWAIT(
-        mesh->getRegion3D("RGN_NOY"), i,
+      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
         s.mm = nan("");
         s.m = a[i.ym()];
         s.c = a[i];
@@ -204,7 +174,24 @@ int main(int argc, char **argv) {
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
-        );
+      }
+    }
+    );
+
+   ITERATOR_TEST_BLOCK(
+    "Region with stencil (parallel section wait omp)",
+    BOUT_OMP(parallel)
+    {
+      stencil s;
+      BOUT_FOR_OMP(i, mesh->getRegion3D("RGN_NOY"), for schedule(guided)) {
+        s.mm = nan("");
+        s.m = a[i.ym()];
+        s.c = a[i];
+        s.p = a[i.yp()];
+        s.pp = nan("");
+
+        result[i] = (s.p - s.m);
+      }
     }
     );
 
@@ -214,8 +201,7 @@ int main(int argc, char **argv) {
     BOUT_OMP(parallel)
     {
       stencil s;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION(
-        mesh->getRegion3D("RGN_NOY"), i,
+      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
         s.mm = nan("");
         s.m = a[i.ind - (nz)];
         s.c = a[i.ind];
@@ -223,7 +209,7 @@ int main(int argc, char **argv) {
         s.pp = nan("");
 
         result[i] = (s.p - s.m);
-        );
+      }
     }
     );
 
@@ -251,8 +237,7 @@ int main(int argc, char **argv) {
     BOUT_OMP(parallel)
     {
       stencil s;
-      BLOCK_REGION_LOOP_PARALLEL_SECTION_NOWAIT(
-        mesh->getRegion3D("RGN_NOY"), i,
+      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
         s.mm = nan("");
         s.m = a[i.ym()];
         s.c = a[i];
@@ -260,7 +245,7 @@ int main(int argc, char **argv) {
         s.pp = nan("");
 
         result[i] = func_ptr(s);
-        );
+      }
     }
     );
 
