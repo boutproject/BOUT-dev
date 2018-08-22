@@ -298,7 +298,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// For performance the BLOCK_REGION_LOOP macro should
 /// allow OpenMP parallelisation and hardware vectorisation.
 ///
-///     BLOCK_REGION_LOOP(region, i,
+///     BLOCK_REGION_LOOP(i, region) {
 ///       f[i] = a[i] + b[i];
 ///     );
 ///
@@ -306,7 +306,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// there is a serial verion of the macro:
 ///
 ///     BoutReal max=0.;
-///     BLOCK_REGION_LOOP_SERIAL(region, i,
+///     BLOCK_REGION_LOOP_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
 ///     );
 template <typename T = Ind3D> class Region {
