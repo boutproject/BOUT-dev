@@ -101,7 +101,8 @@
   BLOCK_REGION_LOOP_SERIAL(index, region)
 #endif
 
-#define BLOCK_REGION_LOOP(index, region) BLOCK_REGION_LOOP_OMP(index, region, parallel for)
+#define BLOCK_REGION_LOOP(index, region)                                                 \
+  BLOCK_REGION_LOOP_OMP(index, region, parallel for schedule(guided))
 
 #define BLOCK_REGION_LOOP_INNER(index, region)                                           \
   BLOCK_REGION_LOOP_OMP(index, region, for schedule(guided) nowait)
