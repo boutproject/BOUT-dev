@@ -209,6 +209,7 @@ inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= n; }
 template<IND_TYPE N>
 inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
 
+/// Define aliases for global indices in 3D and 2D 
 using Ind3D = SpecificInd<IND_3D>;
 using Ind2D = SpecificInd<IND_2D>;
 
