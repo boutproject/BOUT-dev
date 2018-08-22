@@ -107,7 +107,7 @@
   }
 
 
-enum IND_TYPE { IND_3D = 0, IND_2D = 1};
+enum class IND_TYPE { 3D = 0, 2D = 1};
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 template<IND_TYPE N>
@@ -210,8 +210,8 @@ template<IND_TYPE N>
 inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
 
 /// Define aliases for global indices in 3D and 2D 
-using Ind3D = SpecificInd<IND_3D>;
-using Ind2D = SpecificInd<IND_2D>;
+using Ind3D = SpecificInd<IND_TYPE::3D>;
+using Ind2D = SpecificInd<IND_TYPE::2D>;
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
