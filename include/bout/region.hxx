@@ -30,7 +30,7 @@
 /// contiguous indices may be used instead, which allows OpenMP
 /// parallelisation.
 ///
-/// The BLOCK_REGION_LOOP helper macro is provided as a replacement
+/// The BOUT_FOR helper macro is provided as a replacement
 /// for for-loops.
 ///
 /// Separate index classes are available for Field2Ds (Ind2D) and
@@ -65,12 +65,32 @@
 /// Helper macros for iterating over a Region making use of the
 /// contiguous blocks of indices
 ///
-/// @param[in] region An already existing Region
 /// @param[in] index  The name of the index variable to use in the loop
-/// The rest of the arguments form the loop body.
+/// @param[in] region An already existing Region
 ///
-/// The following loops vectorise well when index is type int, needs testing
-/// with current approach where index is Ind2D or ind3D
+/// These macros all have the same basic form: an outer loop over
+/// blocks of contiguous indices, and an inner loop over the indices
+/// themselves. This allows the outer loop to be parallelised with
+/// OpenMP while the inner loop can be vectorised with the CPU's
+/// native SIMD instructions.
+///
+/// Alternative forms are also provided for loops that must be done
+/// serially, as well as for more control over the OpenMP directives
+/// used.
+///
+/// The different macros:
+///
+/// - BOUT_FOR: OpenMP-aware version that allows speedup with both
+///   OpenMP and native SIMD vectorisation. This should be the
+///   preferred form for most loops
+/// - BOUT_FOR_SERIAL: for use with inherently serial loops. If BOUT++
+///   was not compiled with OpenMP, BOUT_FOR falls back to using this
+///   form
+/// - BOUT_FOR_INNER: for use on loops inside OpenMP parallel regions,
+///   e.g. in order to declare thread private variables outside of the
+///   loop
+/// - BOUT_FOR_OMP: the most generic form, that takes arbitrary OpenMP
+///   directives as an extra argument
 ///
 /// Example
 /// -------
@@ -82,29 +102,30 @@
 ///
 /// can be converted to a block region loop like so:
 ///
-///     BLOCK_REGION_LOOP(region, index,
+///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
-///     )
-#define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+///     }
+#define BOUT_FOR_SERIAL(index, region)                                                   \
+  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
+       block < end; ++block)                                                             \
+    for (auto index = block->first; index < block->second; ++index)
 
-#define BLOCK_REGION_LOOP(region, index, ...)                                            \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-  BOUT_OMP(parallel for)                                                                 \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+#ifdef _OPENMP
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
+  BOUT_OMP(omp_pragmas)                                                                  \
+  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
+       ++block)                                                                          \
+    for (auto index = block->first; index < block->second; ++index)
+#else
+// No OpenMP, so fall back to slightly more efficient serial form
+#define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
+#endif
+
+#define BOUT_FOR(index, region)                                                          \
+  BOUT_FOR_OMP(index, region, parallel for schedule(guided))
+
+#define BOUT_FOR_INNER(index, region)                                                    \
+  BOUT_FOR_OMP(index, region, for schedule(guided) nowait)
 
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1};
@@ -251,7 +272,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// blocks of at most MAXREGIONBLOCKSIZE indices. This allows loops to
 /// be parallelised with OpenMP. Iterating using a "block region" may
 /// be more efficient, although it requires a bit more set up. The
-/// helper macro BLOCK_REGION_LOOP is provided to simplify things.
+/// helper macro BOUT_FOR is provided to simplify things.
 ///
 /// Example
 /// -------
@@ -281,10 +302,10 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///       f[i] = a[i] + b[i];
 ///     }
 ///
-/// For performance the BLOCK_REGION_LOOP macro should
+/// For performance the BOUT_FOR macro should
 /// allow OpenMP parallelisation and hardware vectorisation.
 ///
-///     BLOCK_REGION_LOOP(region, i,
+///     BOUT_FOR(i, region) {
 ///       f[i] = a[i] + b[i];
 ///     );
 ///
@@ -292,7 +313,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// there is a serial verion of the macro:
 ///
 ///     BoutReal max=0.;
-///     BLOCK_REGION_LOOP_SERIAL(region, i,
+///     BOUT_FOR_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
 ///     );
 template <typename T = Ind3D> class Region {
@@ -351,8 +372,8 @@ public:
   typename RegionIndices::iterator end() { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
-  ContiguousBlocks getBlocks() const { return blocks; };
-  RegionIndices getIndices() const { return indices; };
+  const ContiguousBlocks &getBlocks() const { return blocks; };
+  const RegionIndices &getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
@@ -642,7 +663,9 @@ private:
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
     // otherwise there will be a race between threads to extend the vector
-    BLOCK_REGION_LOOP_SERIAL((*this), curInd, result.push_back(curInd););
+    BOUT_FOR_SERIAL(curInd, (*this)) {
+      result.push_back(curInd);
+    }
     return result;
   }
 };
