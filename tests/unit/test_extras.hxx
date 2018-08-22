@@ -30,17 +30,8 @@ const BoutReal BoutRealTolerance = 1e-15;
 
 
 /// Teach googletest how to print SpecificInds
-inline std::ostream& operator<< (std::ostream &out, const SpecificInd &index) {
-  return out << index.ind;
-}
-
-/// Teach googletest how to print Ind2D
-inline std::ostream& operator<< (std::ostream &out, const Ind2D &index) {
-  return out << index.ind;
-}
-
-/// Teach googletest how to print Ind3D
-inline std::ostream& operator<< (std::ostream &out, const Ind3D &index) {
+template<IND_TYPE N>
+inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
   return out << index.ind;
 }
 
