@@ -151,7 +151,7 @@ private:
   int ny = -1, nz = -1; //< Sizes of y and z dimensions
 
 public:
-  SpecificInd<N>() : ind(-1){};
+  SpecificInd<N>() = default;
   SpecificInd<N>(int i, int ny = -1, int nz = -1) : ind(i), ny(ny), nz(nz){};
 
   /// Pre-increment operator
