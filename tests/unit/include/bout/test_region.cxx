@@ -278,7 +278,7 @@ TEST_F(RegionTest, regionLoopAllSection) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_SECTION(i, region, for) {
+    BLOCK_REGION_LOOP_OMP(i, region, for) {
       a[i] = 1.0;
     }
   }
@@ -293,7 +293,7 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_SECTION(i, region, for) {
+    BLOCK_REGION_LOOP_OMP(i, region, for) {
       a[i] = 1.0;
     }
   }
