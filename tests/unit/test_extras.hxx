@@ -30,7 +30,7 @@ const BoutReal BoutRealTolerance = 1e-15;
 
 
 /// Teach googletest how to print SpecificInds
-template<int N>
+template<IND_TYPE N>
 inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
   return out << index.ind;
 }
