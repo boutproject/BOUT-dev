@@ -30,7 +30,7 @@
 /// contiguous indices may be used instead, which allows OpenMP
 /// parallelisation.
 ///
-/// The BLOCK_REGION_LOOP helper macro is provided as a replacement
+/// The BOUT_FOR helper macro is provided as a replacement
 /// for for-loops.
 ///
 /// Separate index classes are available for Field2Ds (Ind2D) and
@@ -81,31 +81,30 @@
 ///
 /// can be converted to a block region loop like so:
 ///
-///     BLOCK_REGION_LOOP(index, region) {
+///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
-///     )
-#define BLOCK_REGION_LOOP_SERIAL(index, region)                                          \
+///     }
+#define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
 #ifdef _OPENMP
-#define BLOCK_REGION_LOOP_OMP(index, region, omp_pragmas)                                \
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
        ++block)                                                                          \
     for (auto index = block->first; index < block->second; ++index)
 #else
 // No OpenMP, so fall back to slightly more efficient serial form
-#define BLOCK_REGION_LOOP_OMP(index, region, omp_pragmas)                                \
-  BLOCK_REGION_LOOP_SERIAL(index, region)
+#define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
 #endif
 
-#define BLOCK_REGION_LOOP(index, region)                                                 \
-  BLOCK_REGION_LOOP_OMP(index, region, parallel for schedule(guided))
+#define BOUT_FOR(index, region)                                                          \
+  BOUT_FOR_OMP(index, region, parallel for schedule(guided))
 
-#define BLOCK_REGION_LOOP_INNER(index, region)                                           \
-  BLOCK_REGION_LOOP_OMP(index, region, for schedule(guided) nowait)
+#define BOUT_FOR_INNER(index, region)                                                    \
+  BOUT_FOR_OMP(index, region, for schedule(guided) nowait)
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 class SpecificInd {
@@ -269,7 +268,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// blocks of at most MAXREGIONBLOCKSIZE indices. This allows loops to
 /// be parallelised with OpenMP. Iterating using a "block region" may
 /// be more efficient, although it requires a bit more set up. The
-/// helper macro BLOCK_REGION_LOOP is provided to simplify things.
+/// helper macro BOUT_FOR is provided to simplify things.
 ///
 /// Example
 /// -------
@@ -299,10 +298,10 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///       f[i] = a[i] + b[i];
 ///     }
 ///
-/// For performance the BLOCK_REGION_LOOP macro should
+/// For performance the BOUT_FOR macro should
 /// allow OpenMP parallelisation and hardware vectorisation.
 ///
-///     BLOCK_REGION_LOOP(i, region) {
+///     BOUT_FOR(i, region) {
 ///       f[i] = a[i] + b[i];
 ///     );
 ///
@@ -310,7 +309,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 /// there is a serial verion of the macro:
 ///
 ///     BoutReal max=0.;
-///     BLOCK_REGION_LOOP_SERIAL(i, region) {
+///     BOUT_FOR_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
 ///     );
 template <typename T = Ind3D> class Region {
@@ -660,7 +659,7 @@ private:
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
     // otherwise there will be a race between threads to extend the vector
-    BLOCK_REGION_LOOP_SERIAL(curInd, (*this)) {
+    BOUT_FOR_SERIAL(curInd, (*this)) {
       result.push_back(curInd);
     }
     return result;

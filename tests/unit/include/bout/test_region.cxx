@@ -207,7 +207,7 @@ TEST_F(RegionTest, regionLoopAll) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP(i, region) { a[i] = 1.0; }
+  BOUT_FOR(i, region) { a[i] = 1.0; }
 
   for (const auto &i : a.region(RGN_ALL)) {
     EXPECT_EQ(a[i], 1.0);
@@ -218,7 +218,7 @@ TEST_F(RegionTest, regionLoopNoBndry) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP(i, region) { a[i] = 1.0; }
+  BOUT_FOR(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -242,7 +242,7 @@ TEST_F(RegionTest, regionLoopAllSerial) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(i, region) { a[i] = 1.0; }
+  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
 
   for (const auto &i : a.region(RGN_ALL)) {
     EXPECT_EQ(a[i], 1.0);
@@ -253,7 +253,7 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(i, region) { a[i] = 1.0; }
+  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -278,7 +278,7 @@ TEST_F(RegionTest, regionLoopAllSection) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_OMP(i, region, for) {
+    BOUT_FOR_OMP(i, region, for) {
       a[i] = 1.0;
     }
   }
@@ -293,7 +293,7 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_OMP(i, region, for) {
+    BOUT_FOR_OMP(i, region, for) {
       a[i] = 1.0;
     }
   }
@@ -321,7 +321,7 @@ TEST_F(RegionTest, regionLoopAllInner) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_INNER(i, region) {
+    BOUT_FOR_INNER(i, region) {
       a[i] = 1.0;
     }
   }
@@ -336,7 +336,7 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
 
   Field3D a = 0.0;
   BOUT_OMP(parallel) {
-    BLOCK_REGION_LOOP_INNER(i, region) {
+    BOUT_FOR_INNER(i, region) {
       a[i] = 1.0;
     }
   }
