@@ -151,50 +151,50 @@ private:
   int ny = -1, nz = -1; //< Sizes of y and z dimensions
 
 public:
-  SpecificInd<N>() = default;
-  SpecificInd<N>(int i, int ny = -1, int nz = -1) : ind(i), ny(ny), nz(nz){};
+  SpecificInd() = default;
+  SpecificInd(int i, int ny = -1, int nz = -1) : ind(i), ny(ny), nz(nz){};
 
   /// Pre-increment operator
-  SpecificInd<N> &operator++() {
+  SpecificInd &operator++() {
     ++ind;
     return *this;
   }
 
   /// Post-increment operator
-  SpecificInd<N> operator++(int) {
-    SpecificInd<N> original(*this);
+  SpecificInd operator++(int) {
+    SpecificInd original(*this);
     ++ind;
     return original;
   }
 
   /// Pre-decrement operator
-  SpecificInd<N> &operator--() {
+  SpecificInd &operator--() {
     --ind;
     return *this;
   }
 
   /// Post-decrement operator
-  SpecificInd<N> operator--(int) {
-    SpecificInd<N> original(*this);
+  SpecificInd operator--(int) {
+    SpecificInd original(*this);
     --ind;
     return original;
   }
 
   /// In-place addition
-  SpecificInd<N> &operator+=(SpecificInd<N> n) {
+  SpecificInd &operator+=(SpecificInd n) {
     ind += n.ind;
     return *this;
   }
 
   /// In-place subtraction
-  SpecificInd<N> &operator-=(SpecificInd<N> n) {
+  SpecificInd &operator-=(SpecificInd n) {
     ind -= n.ind;
     return *this;
   }
 
   /// Modulus operator
-  SpecificInd<N> operator%(int n) {
-    SpecificInd<N> new_ind{ind % n, ny, nz};
+  SpecificInd operator%(int n) {
+    SpecificInd new_ind{ind % n, ny, nz};
     return new_ind;
   }
 
