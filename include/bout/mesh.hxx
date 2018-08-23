@@ -669,8 +669,8 @@ class Mesh {
   Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
 
   /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
-  int map3Dto2D(const Ind3D &ind3D){
-    return indexLookup3Dto2D[ind3D.ind];
+  Ind2D map3Dto2D(const Ind3D &ind3D){
+    return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
   
   /// Create the default regions for the data iterator
