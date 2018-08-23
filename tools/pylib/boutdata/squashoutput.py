@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 """
 Collect all data from BOUT.dmp.* files and create a single output file.
@@ -104,6 +105,10 @@ if __name__=="__main__":
 
     import argparse
     from sys import exit
+    try:
+        import argcomplete
+    except ImportError:
+        argcomplete=None
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(__doc__+"\n\n"+squashoutput.__doc__)
@@ -128,6 +133,9 @@ if __name__=="__main__":
     parser.add_argument("--complevel", type=int_or_none, default=None)
     parser.add_argument("--least-significant-digit", type=int_or_none, default=None)
     parser.add_argument("--quiet", action="store_true", default=False)
+
+    if argcomplete:
+        argcomplete.autocomplete(parser)
 
     args = parser.parse_args()
 
