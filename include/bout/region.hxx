@@ -241,13 +241,13 @@ public:
   const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   const inline SpecificInd zp(int dz = 1) const {
-    ASSERT3(dz > 0);
+    ASSERT3(dz >= 0);
     ASSERT3(dz <= nz);
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   const inline SpecificInd zm(int dz = 1) const {
-    ASSERT3(dz > 0);
+    ASSERT3(dz >= 0);
     ASSERT3(dz <= nz);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }

@@ -2097,6 +2097,27 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1) {
   }
 }
 
+#if CHECK > 2
+TEST_F(IndexOffsetTest, ZNegativeOffsetInd3D) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_THROW(index->zp(-1), BoutException);
+  EXPECT_THROW(index->zm(-1), BoutException);
+}
+#endif
+
+TEST_F(IndexOffsetTest, ZOffsetZeroInd3D) {
+  auto region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_EQ(index->zp(0), *index);
+  EXPECT_EQ(index->zm(0), *index);
+  EXPECT_EQ(index->offset(0, 0, 0), *index);
+}
+
 TEST_F(IndexOffsetTest, XInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
 
@@ -2326,7 +2347,26 @@ TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
 
   EXPECT_THROW(index->zpp(), BoutException);
 }
+
+TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_THROW(index->zp(-1), BoutException);
+  EXPECT_THROW(index->zm(-1), BoutException);
+}
 #endif
+
+TEST_F(IndexOffsetTest, ZOffsetZeroInd2D) {
+  auto region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = std::begin(region);
+
+  EXPECT_EQ(index->zp(0), *index);
+  EXPECT_EQ(index->zm(0), *index);
+  EXPECT_EQ(index->offset(0, 0, 0), *index);
+}
 
 TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
   auto region = mesh->getRegion2D("RGN_ALL");
