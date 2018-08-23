@@ -587,6 +587,8 @@ cdef class Laplacian:
     Laplacian inversion solver
 
     Compute the Laplacian inversion of objects.
+
+    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
     """
     cdef c.Laplacian * cobj
     def __init__(self,section=None):
