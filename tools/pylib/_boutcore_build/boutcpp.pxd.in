@@ -60,6 +60,14 @@ cdef extern from "invert_laplace.hxx":
         @staticmethod
         Laplacian * create(Options *)
         Field3D solve(Field3D,Field3D)
+        void setCoefA(Field3D)
+        void setCoefC(Field3D)
+        void setCoefC1(Field3D)
+        void setCoefC2(Field3D)
+        void setCoefD(Field3D)
+        void setCoefEx(Field3D)
+        void setCoefEy(Field3D)
+        void setCoefEz(Field3D)
 
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
