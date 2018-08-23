@@ -1345,49 +1345,53 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-    auto region_index = f.region(region);
-    int xs = region_index.xstart;
-    int xe = region_index.xend;
-    int ys = region_index.ystart;
-    int ye = region_index.yend;
-    ASSERT2(region_index.zstart == 0);
-    int ncz = region_index.zend + 1;
+    // Calculate how many Z wavenumbers will be removed
+    const int ncz = this->LocalNz;
+    int kfilter =
+        static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
+    if (kfilter < 0)
+      kfilter = 0;
+    if (kfilter > (ncz / 2))
+      kfilter = ncz / 2;
+    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+
+    const auto region_str = REGION_STRING(region);
+
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
     BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
 
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
+        rfft(f(i.x(), i.y()), ncz, cv.begin()); // Forward FFT
 
-      // Calculate how many Z wavenumbers will be removed
-      int kfilter =
-          static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
-      if (kfilter < 0)
-        kfilter = 0;
-      if (kfilter > (ncz / 2))
-        kfilter = ncz / 2;
-      int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
 
-      BOUT_OMP(for)
-      for (int jx = xs; jx <= xe; jx++) {
-        for (int jy = ys; jy <= ye; jy++) {
-          rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
-
-          for (int jz = 0; jz <= kmax; jz++) {
-            BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
-
-            cv[jz] *= dcomplex(0.0, kwave);
-            if (shift)
-              cv[jz] *= exp(Im * (shift * kwave));
-          }
-          for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
-            cv[jz] = 0.0;
-          }
-
-          irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
+          cv[jz] *= dcomplex(0, kwave);
+          if (shift)
+            cv[jz] *= exp(Im * (shift * kwave));
         }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
+
+        irfft(cv.begin(), ncz, result(i.x(), i.y())); // Reverse FFT
       }
     }
-      // End of parallel section
 
 #if CHECK > 0
     // Mark boundaries as invalid
@@ -1652,31 +1656,51 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     result.allocate(); // Make sure data allocated
 
     auto region_index = f.region(region);
-    int xs = region_index.xstart;
-    int xe = region_index.xend;
-    int ys = region_index.ystart;
-    int ye = region_index.yend;
-    ASSERT2(region_index.zstart == 0);
-    int ncz = region_index.zend + 1;
 
-    // TODO: The comment does not match the check
-    ASSERT1(ncz % 2 == 0); // Must be a power of 2
-    Array<dcomplex> cv(ncz / 2 + 1);
-    
-    for (int jx = xs; jx <= xe; jx++) {
-      for (int jy = ys; jy <= ye; jy++) {
+    // Calculate how many Z wavenumbers will be removed
+    const int ncz = this->LocalNz;
+    int kfilter =
+        static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
+    if (kfilter < 0)
+      kfilter = 0;
+    if (kfilter > (ncz / 2))
+      kfilter = ncz / 2;
+    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-        rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
+    const auto region_str = REGION_STRING(region);
 
-        for (int jz = 0; jz <= ncz / 2; jz++) {
-          BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-          cv[jz] *= -SQ(kwave);
+    BOUT_OMP(parallel) {
+      Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
+
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
+        rfft(f(i.x(), i.y()), ncz, cv.begin()); // Forward FFT
+
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
+
+          cv[jz] *= -kwave * kwave;
           if (shift)
             cv[jz] *= exp(0.5 * Im * (shift * kwave));
         }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
 
-        irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
+        irfft(cv.begin(), ncz, result(i.x(), i.y())); // Reverse FFT
       }
     }
 
