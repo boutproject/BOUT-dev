@@ -21,7 +21,9 @@ from boututils.boutarray import BoutArray
 import numpy
 import os
 
-def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None, xind=None, yind=None, zind=None, singleprecision=False):
+def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
+                 xind=None, yind=None, zind=None, singleprecision=False, compress=False,
+                 least_significant_digit=None, quiet=False, complevel=None):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -52,6 +54,17 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     singleprecision : bool
         If true convert data to single-precision floats
         default False
+    compress : bool
+        If true enable compression in the output file
+    least_significant_digit : int or None
+        How many digits should be retained? Enables lossy
+        compression. Default is lossless compression. Needs
+        compression to be enabled.
+    complevel : int or None
+        Compression level, 1 should be fastest, and 9 should yield
+        highest compression.
+    quiet : bool
+        Be less verbose. default False
     """
 
     fullpath = os.path.join(datadir,outputname)
@@ -64,10 +77,19 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
 
+    kwargs={}
+    if compress:
+        kwargs['zlib']=True
+        if least_significant_digit is not None:
+            kwargs['least_significant_digit']=least_significant_digit
+        if complevel is not None:
+            kwargs['complevel']=complevel
+    print(kwargs)
     # Create single file for output and write data
-    with DataFile(fullpath,create=True,write=True,format=format) as f:
+    with DataFile(fullpath,create=True,write=True,format=format, **kwargs) as f:
         for varname in outputvars:
-            print(varname)
+            if not quiet:
+                print(varname)
 
             var = outputs[varname]
             if singleprecision:
@@ -84,7 +106,7 @@ if __name__=="__main__":
     from sys import exit
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(__doc__+"\n\n"+squashoutput.__doc__)
     def str_to_bool(string):
         return string=="True" or string=="true" or string=="T" or string=="t"
     def int_or_none(string):
@@ -101,7 +123,12 @@ if __name__=="__main__":
     parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
     parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
     parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
-    parser.add_argument("--singleprecision", type=str_to_bool, default=True)
+    parser.add_argument("--singleprecision", action="store_true", default=False)
+    parser.add_argument("--compress", action="store_true", default=False)
+    parser.add_argument("--complevel", type=int_or_none, default=None)
+    parser.add_argument("--least-significant-digit", type=int_or_none, default=None)
+    parser.add_argument("--quiet", action="store_true", default=False)
+
     args = parser.parse_args()
 
     for ind in "txyz":
