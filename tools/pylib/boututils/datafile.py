@@ -120,7 +120,7 @@ class DataFile(object):
         elif format == 'HDF5':
             self.impl = DataFile_HDF5(
                 filename=filename, write=write, create=create,
-                format=format, **kwargs)
+                format=format)
         else:
             self.impl = DataFile_netCDF(
                 filename=filename, write=write, create=create, format=format, **kwargs)
