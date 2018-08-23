@@ -127,18 +127,19 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   int test_ny = Field2DTest::ny + 2;
   int test_nz = Field2DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
-  Field2D field(fieldmesh);
-  field = 1.0;
+  // createDefaultRegions is noisy
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
 
-  Field2D field2(field);
+  Field2D field{1.0, &fieldmesh};
+  Field2D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), 1);
-
-  delete fieldmesh;
 }
 
 #if CHECK > 0
