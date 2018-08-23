@@ -10,6 +10,7 @@
 #include <iostream>
 #include "unused.hxx"
 #include "assert.hxx"
+#include "bout/deprecated.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -73,9 +74,9 @@ public:
    * If OpenMP is enabled, the index range is divided
    * between threads using the omp_init method.
    */ 
-  DataIterator(int xs, int xe,
+  DEPRECATED(DataIterator(int xs, int xe,
 	       int ys, int ye,
-	       int zs, int ze) : 
+			 int zs, int ze)) : 
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
     // start / end : start and end point of the iterator
@@ -102,9 +103,9 @@ public:
    * set end();
    * use as DataIterator(int,int,int,int,int,int,DI_GET_END);
    */
-  DataIterator(int xs, int xe,
+  DEPRECATED(DataIterator(int xs, int xe,
                int ys, int ye,
-               int zs, int ze, void* UNUSED(dummy)) :
+			  int zs, int ze, void* UNUSED(dummy))) :
 #ifndef _OPENMP
     x(xe), y(ye), z(ze),
     xstart(xs),   ystart(ys),   zstart(zs),
