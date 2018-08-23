@@ -625,6 +625,40 @@ cdef class Laplacian:
         """
         return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
 
+    def setCoefs(self, **kwargs):
+        """
+        Set the coefficients for the Laplacian solver.
+        The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
+        """
+        try:
+            self.setCoefA(kwargs['A'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefC(kwargs['C'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefC1(kwargs['C1'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefC2(kwargs['C2'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefD(kwargs['D'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefEx(kwargs['Ex'])
+        except KeyError:
+            pass
+        try:
+            self.setCoefEz(kwargs['Ez'])
+        except KeyError:
+            pass
+
     def setCoefA(self,Field3D A):
         """
         Set the 'A' coefficient of the Laplacian solver
