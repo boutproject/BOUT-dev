@@ -94,7 +94,7 @@ TEST_F(RegionTest, regionFromIndices) {
     maxContiguousSizeUsed =
         currBlockSize > maxContiguousSizeUsed ? currBlockSize : maxContiguousSizeUsed;
     for (int i = block.first; i <= block.second; i++) {
-      indicesIn.push_back(i);
+      indicesIn.push_back(Ind3D{i});
     }
   }
 
@@ -367,7 +367,7 @@ TEST_F(RegionTest, regionAsSorted) {
 
   for (auto &block : blocksIn) {
     for (int i = block.first; i <= block.second; i++) {
-      indicesIn.push_back(i);
+      indicesIn.push_back(Ind3D{i});
     }
   }
 
@@ -401,7 +401,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -421,7 +421,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -438,7 +438,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn3;
   for (auto i : rawIndicesIn3) {
-    indicesIn3.push_back(i);
+    indicesIn3.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -463,12 +463,12 @@ TEST_F(RegionTest, regionSetIndices) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -521,7 +521,7 @@ TEST_F(RegionTest, regionSortInPlace) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesBwd) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -549,7 +549,7 @@ TEST_F(RegionTest, regionFriendSort) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesBwd) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -577,7 +577,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -606,7 +606,7 @@ TEST_F(RegionTest, regionFriendUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -633,19 +633,19 @@ TEST_F(RegionTest, regionMask) {
   std::vector<int> rawIndicesIn = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn;
   for (auto i : rawIndicesIn) {
-    indicesIn.push_back(i);
+    indicesIn.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask1 = {1, 3, 5, 7, 9};
   Region<Ind3D>::RegionIndices indicesMask1;
   for (auto i : rawIndicesMask1) {
-    indicesMask1.push_back(i);
+    indicesMask1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask2 = {11, 13, 15, 17, 19};
   Region<Ind3D>::RegionIndices indicesMask2;
   for (auto i : rawIndicesMask2) {
-    indicesMask2.push_back(i);
+    indicesMask2.push_back(Ind3D{i});
   }
 
   // Create base region and two masks
@@ -692,19 +692,19 @@ TEST_F(RegionTest, regionFriendMask) {
   std::vector<int> rawIndicesIn = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn;
   for (auto i : rawIndicesIn) {
-    indicesIn.push_back(i);
+    indicesIn.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask1 = {1, 3, 5, 7, 9};
   Region<Ind3D>::RegionIndices indicesMask1;
   for (auto i : rawIndicesMask1) {
-    indicesMask1.push_back(i);
+    indicesMask1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask2 = {11, 13, 15, 17, 19};
   Region<Ind3D>::RegionIndices indicesMask2;
   for (auto i : rawIndicesMask2) {
-    indicesMask2.push_back(i);
+    indicesMask2.push_back(Ind3D{i});
   }
 
   // Create base region and two masks
@@ -752,13 +752,13 @@ TEST_F(RegionTest, regionOperatorAdd) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesIn2 = {5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -790,13 +790,13 @@ TEST_F(RegionTest, regionOperatorAccumulate) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesIn2 = {5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -830,7 +830,7 @@ TEST_F(RegionTest, regionOffset) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -887,7 +887,7 @@ TEST_F(RegionTest, regionFriendOffset) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -1144,7 +1144,7 @@ TYPED_TEST(RegionIndexTest, NonMemberSize) {
 }
 
 TYPED_TEST(RegionIndexTest, Begin) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1155,7 +1155,7 @@ TYPED_TEST(RegionIndexTest, Begin) {
 // end() works a little indirectly. If the addition and less-than
 // tests fail, this one is suspect!
 TYPED_TEST(RegionIndexTest, End) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin() + 8;
@@ -1167,7 +1167,7 @@ TYPED_TEST(RegionIndexTest, End) {
 }
 
 TYPED_TEST(RegionIndexTest, PrefixIncrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1178,7 +1178,7 @@ TYPED_TEST(RegionIndexTest, PrefixIncrement) {
 }
 
 TYPED_TEST(RegionIndexTest, PostfixIncrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1191,7 +1191,7 @@ TYPED_TEST(RegionIndexTest, PostfixIncrement) {
 }
 
 TYPED_TEST(RegionIndexTest, PrefixDecrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
@@ -1202,7 +1202,7 @@ TYPED_TEST(RegionIndexTest, PrefixDecrement) {
 }
 
 TYPED_TEST(RegionIndexTest, PostfixDecrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   // end() is one-past-the-last element, so we need to decrement it in
@@ -1217,7 +1217,7 @@ TYPED_TEST(RegionIndexTest, PostfixDecrement) {
 }
 
 TYPED_TEST(RegionIndexTest, NotEquals) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1230,7 +1230,7 @@ TYPED_TEST(RegionIndexTest, NotEquals) {
 }
 
 TYPED_TEST(RegionIndexTest, Equals) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1244,7 +1244,7 @@ TYPED_TEST(RegionIndexTest, Equals) {
 }
 
 TYPED_TEST(RegionIndexTest, LessThan) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1259,7 +1259,7 @@ TYPED_TEST(RegionIndexTest, LessThan) {
 }
 
 TYPED_TEST(RegionIndexTest, MoreThan) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1274,7 +1274,7 @@ TYPED_TEST(RegionIndexTest, MoreThan) {
 }
 
 TYPED_TEST(RegionIndexTest, LessThanOrEqualTo) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1289,7 +1289,7 @@ TYPED_TEST(RegionIndexTest, LessThanOrEqualTo) {
 }
 
 TYPED_TEST(RegionIndexTest, MoreThanOrEqualTo) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1304,7 +1304,7 @@ TYPED_TEST(RegionIndexTest, MoreThanOrEqualTo) {
 }
 
 TYPED_TEST(RegionIndexTest, PlusEqualsInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1315,7 +1315,7 @@ TYPED_TEST(RegionIndexTest, PlusEqualsInt) {
 }
 
 TYPED_TEST(RegionIndexTest, PlusInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1326,7 +1326,7 @@ TYPED_TEST(RegionIndexTest, PlusInt) {
 }
 
 TYPED_TEST(RegionIndexTest, IntPlus) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1337,7 +1337,7 @@ TYPED_TEST(RegionIndexTest, IntPlus) {
 }
 
 TYPED_TEST(RegionIndexTest, MinusEqualsInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
@@ -1348,7 +1348,7 @@ TYPED_TEST(RegionIndexTest, MinusEqualsInt) {
 }
 
 TYPED_TEST(RegionIndexTest, MinusInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
@@ -1359,7 +1359,7 @@ TYPED_TEST(RegionIndexTest, MinusInt) {
 }
 
 TYPED_TEST(RegionIndexTest, MinusIterator) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto start = range.begin();
@@ -1369,7 +1369,7 @@ TYPED_TEST(RegionIndexTest, MinusIterator) {
 }
 
 TYPED_TEST(RegionIndexTest, IndexInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1379,7 +1379,7 @@ TYPED_TEST(RegionIndexTest, IndexInt) {
 }
 
 TYPED_TEST(RegionIndexTest, Iteration) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}};
   Region<TypeParam> range(region);
   typename Region<TypeParam>::RegionIndices region2;
 
@@ -1394,7 +1394,7 @@ TYPED_TEST(RegionIndexTest, Iteration) {
 }
 
 TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}};
   Region<TypeParam> range(region);
   typename Region<TypeParam>::RegionIndices region2;
 
@@ -1435,7 +1435,7 @@ TYPED_TEST(FieldIndexTest, CopyConstructor) {
 
 TYPED_TEST(FieldIndexTest, Assignment) {
   TypeParam index;
-  index = 3;
+  index = TypeParam{3};
   EXPECT_EQ(index.ind, 3);
 }
 

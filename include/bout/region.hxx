@@ -162,7 +162,8 @@ private:
 
 public:
   SpecificInd() = default;
-  SpecificInd(int i, int ny = -1, int nz = -1) : ind(i), ny(ny), nz(nz){};
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Pre-increment operator
   SpecificInd &operator++() {
@@ -196,9 +197,19 @@ public:
     return *this;
   }
 
+  SpecificInd &operator+=(int n) {
+    ind += n;
+    return *this;
+  }
+
   /// In-place subtraction
   SpecificInd &operator-=(SpecificInd n) {
     ind -= n.ind;
+    return *this;
+  }
+
+  SpecificInd &operator-=(int n) {
+    ind -= n;
     return *this;
   }
 
@@ -291,13 +302,13 @@ template<IND_TYPE N>
 inline SpecificInd<N> operator+(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs += rhs; }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += n; }
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += SpecificInd<N>(n); }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += n; }
+inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += SpecificInd<N>(n); }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= n; }
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= SpecificInd<N>(n); }
 
 template<IND_TYPE N>
 inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
