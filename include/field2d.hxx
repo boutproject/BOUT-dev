@@ -133,7 +133,7 @@ class Field2D : public Field, public FieldData {
   // Data access
 
   /// Iterator over the Field2D indices
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
   const DataIterator begin() const;
   const DataIterator end() const;

@@ -278,7 +278,7 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
   
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
   /*!
    * These begin and end functions are used to iterate over

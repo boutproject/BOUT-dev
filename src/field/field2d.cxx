@@ -137,7 +137,9 @@ const DataIterator Field2D::iterator() const {
 }
 
 const DataIterator Field2D::begin() const {
-  return Field2D::iterator();
+  return DataIterator(0, nx-1,
+                      0, ny-1,
+                      0, 0);
 }
 
 const DataIterator Field2D::end() const {
