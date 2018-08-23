@@ -2632,46 +2632,44 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->xstart > 1) {
     // Two or more guard cells
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.mm = f[i.offset(-2, 0, 0)];
+        fs.m = f[i.xm()];
+        fs.c = f[i];
+        fs.p = f[i.xp()];
+        fs.pp = f[i.offset(2, 0, 0)];
 
-    stencil fs;
-    stencil vs;
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-      fs.pp = f[i.offset(2, 0, 0)];
-      fs.mm = f[i.offset(-2, 0, 0)];
+        vs.mm = v[i.offset(-2, 0, 0)];
+        vs.m = v[i.xm()];
+        vs.c = v[i];
+        vs.p = v[i.xp()];
+        vs.pp = v[i.offset(2, 0, 0)];
 
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-      vs.pp = v[i.offset(2, 0, 0)];
-      vs.mm = v[i.offset(-2, 0, 0)];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else if (this->xstart == 1) {
     // Only one guard cell
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.m = f[i.xm()];
+        fs.c = f[i];
+        fs.p = f[i.xp()];
 
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
+        vs.m = v[i.xm()];
+        vs.c = v[i];
+        vs.p = v[i.xp()];
 
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else {
     // No guard cells
@@ -2737,134 +2735,137 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->xstart > 1) {
     // Two or more guard cells
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.mm = f[i.offset(-2, 0, 0)];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.offset(2, 0, 0)];
 
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+            // Note: Location in diffloc
+            vs.mm = v[i.offset(-2, 0, 0)];
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-          // Note: Location in diffloc
-
-          vs.mm = v[i.offset(-2, 0, 0)];
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         // Stencil centred around a cell centre
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.mm = f[i.offset(-2, 0, 0)];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.offset(2, 0, 0)];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
-          vs.pp = v[i.offset(2, 0, 0)];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
+            vs.pp = v[i.offset(2, 0, 0)];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled staggering");
       }
     } else {
       // Non-staggered, two or more guard cells
-      stencil fs;
-      stencil vs;
-      for (const auto &i : result.region(region)) {
-        // Location of f always the same as the output
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
-        fs.pp = f[i.offset(2, 0, 0)];
-        fs.mm = f[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel) {
+        stencil fs, vs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          // Location of f always the same as the output
+          fs.mm = f[i.offset(-2, 0, 0)];
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.pp = f[i.offset(2, 0, 0)];
 
-        // Note: Location in diffloc
-        vs.c = v[i];
-        vs.p = v[i.xp()];
-        vs.m = v[i.xm()];
-        vs.pp = v[i.offset(2, 0, 0)];
-        vs.mm = v[i.offset(-2, 0, 0)];
+          // Note: Location in diffloc
+          vs.mm = v[i.offset(-2, 0, 0)];
+          vs.m = v[i.xm()];
+          vs.c = v[i];
+          vs.p = v[i.xp()];
+          vs.pp = v[i.offset(2, 0, 0)];
 
-        result[i] = func(vs, fs);
+          result[i] = func(vs, fs);
+        }
       }
     }
   } else if (this->xstart == 1) {
     // One guard cell
-
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
-    vs.c = nan("");
-
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
 
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-          // Note: Location in diffloc
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
+            // Note: Location in diffloc
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         // Stencil centred around a cell centre
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled staggering");
       }
     } else {
       // Non-staggered, one guard cell
-      for (const auto &i : result.region(region)) {
-        // Location of f always the same as the output
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
+      BOUT_OMP(parallel) {
+        stencil fs, vs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          // Location of f always the same as the output
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
 
-        vs.c = v[i];
-        vs.p = v[i.xp()];
-        vs.m = v[i.xm()];
+          vs.m = v[i.xm()];
+          vs.c = v[i];
+          vs.p = v[i.xp()];
 
-        result[i] = func(vs, fs);
+          result[i] = func(vs, fs);
+        }
       }
     }
   } else {
@@ -2917,45 +2918,45 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result.setLocation(CELL_CENTRE);
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->ystart > 1) {
     // Two or more guard cells
-    stencil fs, vs;
-    for (const auto &i : result.region(region)) {
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.mm = f[i.offset(0, -2, 0)];
+        fs.m = f[i.ym()];
+        fs.c = f[i];
+        fs.p = f[i.yp()];
+        fs.pp = f[i.offset(0, 2, 0)];
 
-      fs.c = f[i];
-      fs.p = f[i.yp()];
-      fs.m = f[i.ym()];
-      fs.pp = f[i.offset(0, 2, 0)];
-      fs.mm = f[i.offset(0, -2, 0)];
+        vs.mm = v[i.offset(0, -2, 0)];
+        vs.m = v[i.ym()];
+        vs.c = v[i];
+        vs.p = v[i.yp()];
+        vs.pp = v[i.offset(0, 2, 0)];
 
-      vs.c = v[i];
-      vs.p = v[i.yp()];
-      vs.m = v[i.ym()];
-      vs.pp = v[i.offset(0, 2, 0)];
-      vs.mm = v[i.offset(0, -2, 0)];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
 
   } else if (this->ystart == 1) {
     // Only one guard cell
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.m = f[i.ym()];
+        fs.c = f[i];
+        fs.p = f[i.yp()];
 
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
+        vs.m = v[i.ym()];
+        vs.c = v[i];
+        vs.p = v[i.yp()];
 
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.yp()];
-      fs.m = f[i.ym()];
-
-      vs.c = v[i];
-      vs.p = v[i.yp()];
-      vs.m = v[i.ym()];
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else {
     // No guard cells
@@ -3036,155 +3037,145 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
-    stencil vval, fval;
-    vval.mm = nan("");
-    vval.pp = nan("");
-    fval.mm = nan("");
-    fval.pp = nan("");
-    for (const auto &i : result.region(region)) {
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else if (vUseUpDown) {
     // Only v has up/down fields
     // f must shift to field aligned coordinates
     Field3D f_fa = this->toFieldAligned(f);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.offset(0, 2, 0)];
 
-    stencil vval;
-    vval.mm = nan("");
-    vval.pp = nan("");
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-    stencil fval;
-    for (const auto &i : result.region(region)) {
-
-      fval.mm = f_fa[i.offset(0, -2, 0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0, 2, 0)];
-
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else if (fUseUpDown) {
     // Only f has up/down fields
     // v must shift to field aligned coordinates
     Field3D v_fa = this->toFieldAligned(v);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-    stencil vval;
+        vval.mm = v_fa[i.offset(0, -2, 0)];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.offset(0, 2, 0)];
 
-    stencil fval;
-    fval.pp = nan("");
-    fval.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
-
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else {
     // Both must shift to field aligned
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f_fa[i.offset(0, -2, 0)];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.offset(0, 2, 0)];
 
-    stencil vval, fval;
+        vval.mm = v_fa[i.offset(0, -2, 0)];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.offset(0, 2, 0)];
 
-    for (const auto &i : result.region(region)) {
-
-      fval.mm = f_fa[i.offset(0,-2,0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0,2,0)];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
 
@@ -3251,41 +3242,44 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  stencil vval, fval;
-  for (const auto &i : result.region(region)) {
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
 
-    fval.mm = f[i.offset(0,0,-2)];
-    fval.m = f[i.zm()];
-    fval.c = f[i];
-    fval.p = f[i.zp()];
-    fval.pp = f[i.offset(0,0,2)];
+  BOUT_OMP(parallel) {
+    stencil vval, fval;
+    BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      fval.mm = f[i.offset(0, 0, -2)];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.offset(0, 0, 2)];
 
-    vval.mm = v[i.offset(0,0,-2)];
-    vval.m = v[i.zm()];
-    vval.c = v[i];
-    vval.p = v[i.zp()];
-    vval.pp = v[i.offset(0,0,2)];
+      vval.mm = v[i.offset(0, 0, -2)];
+      vval.m = v[i.zm()];
+      vval.c = v[i];
+      vval.p = v[i.zp()];
+      vval.pp = v[i.offset(0, 0, 2)];
 
-    if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-      // Non-centred stencil
+      if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
 
-      if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-      // Producing a stencil centred around a lower Z value
-        vval.pp = vval.p;
-        vval.p  = vval.c;
+        if ((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+          // Producing a stencil centred around a lower Z value
+          vval.pp = vval.p;
+          vval.p = vval.c;
 
-      }else if(vloc == CELL_ZLOW) {
-        // Stencil centred around a cell centre
+        } else if (vloc == CELL_ZLOW) {
+          // Stencil centred around a cell centre
 
-        vval.mm = vval.m;
-        vval.m  = vval.c;
+          vval.mm = vval.m;
+          vval.m = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
       }
-      // Shifted in one direction -> shift in another
-      // Could produce warning
+      result[i] = func(vval, fval);
     }
-    result[i] = func(vval, fval);
   }
-
   result.setLocation(diffloc);
 
 #if CHECK > 0
