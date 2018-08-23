@@ -357,11 +357,15 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
-  for(const auto& i : f.region(rgn))
-    if(f[i] < result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
+    if (f[i] < result) {
       result = f[i];
+    }
+  }
 
   if(allpe) {
     // MPI reduce
@@ -377,11 +381,15 @@ BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
-  for(const auto& i : f.region(rgn))
-    if(f[i] > result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+    if (f[i] > result) {
       result = f[i];
+    }
+  }
 
   if(allpe) {
     // MPI reduce
@@ -399,7 +407,9 @@ bool finite(const Field2D &f, REGION rgn) {
     return false;
   }
 
-  for (const auto &i : f.region(rgn)) {
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR_SERIAL(i, region) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -435,8 +445,8 @@ bool finite(const Field2D &f, REGION rgn) {
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
-    /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));          \
+    BOUT_FOR(d, region) {                                                                \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
     checkData(result);                                                                   \
@@ -467,9 +477,13 @@ const Field2D copy(const Field2D &f) {
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
   Field2D result = copy(var);
 
-  for(const auto& d : result.region(rgn))
-    if(result[d] < f)
+  const Region<Ind2D> &region = var.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(d, region) {
+    if (result[d] < f) {
       result[d] = f;
+    }
+  }
 
   return result;
 }
@@ -485,8 +499,9 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
@@ -503,8 +518,9 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
@@ -521,8 +537,9 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   Field2D result(rhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = rhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs, rhs[i]);
   }
 
@@ -533,15 +550,18 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
 #if CHECK > 0
 /// Check if the data is valid
 void checkData(const Field2D &f, REGION region) {
-  if(!f.isAllocated()) {
+  if (!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
 #if CHECK > 2
+  const Region<Ind2D> &new_region = f.getMesh()->getRegion2D(REGION_STRING(region));
+
   // Do full checks
-  for(const auto& i : f.region(region)){
-    if(!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
+  BOUT_FOR_SERIAL (i, new_region) {
+    if (!::finite(f[i])) {
+      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
+                          i.y());
     }
   }
 #endif
