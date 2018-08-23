@@ -139,7 +139,7 @@ public:
   
   virtual void setCoefEz(const Field2D &val) = 0;
   virtual void setCoefEz(const Field3D &val) { setCoefEz(DC(val)); }
-  virtual void setCoefEz(BoutReal r) { Field2D f(r); setCoefD(f); }
+  virtual void setCoefEz(BoutReal r) { Field2D f(r); setCoefEz(f); }
   
   virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
