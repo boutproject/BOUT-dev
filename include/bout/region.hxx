@@ -431,6 +431,11 @@ public:
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
+#if CHECK > 1
+    if (std::is_base_of<Ind2D, T>::value and nz != 1) {
+      throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+    }
+#endif
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };

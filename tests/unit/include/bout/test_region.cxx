@@ -1117,6 +1117,44 @@ TEST_F(RegionTest, regionGetStatsEmpty) {
   EXPECT_EQ(strRepresentation.str(), "Empty");
 }
 
+
+
+TEST(RegionIndex2DTest, MemberSize) {
+  const int nx = 2, ny = 3, nz = 1;
+  Region<Ind2D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TEST(RegionIndex2DTest, NonMemberSize) {
+  const int nx = 2, ny = 3, nz = 1;
+  Region<Ind2D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(size(region), nmesh);
+}
+
+TEST(RegionIndex3DTest, MemberSize) {
+  const int nx = 2, ny = 3, nz = 5;
+  Region<Ind3D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TEST(RegionIndex3DTest, NonMemberSize) {
+  const int nx = 2, ny = 3, nz = 5;
+  Region<Ind3D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(size(region), nmesh);
+}
+
 template <typename T> class RegionIndexTest : public ::testing::Test {
 public:
   typedef std::list<T> List;
@@ -1126,22 +1164,6 @@ public:
 
 typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
-
-TYPED_TEST(RegionIndexTest, MemberSize) {
-  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
-
-  int nmesh = 2 * 3 * 5;
-
-  EXPECT_EQ(region.size(), nmesh);
-}
-
-TYPED_TEST(RegionIndexTest, NonMemberSize) {
-  Region<TypeParam> region(0, 1, 0, 2, 0, 4, 3, 5);
-
-  int nmesh = 2 * 3 * 5;
-
-  EXPECT_EQ(size(region), nmesh);
-}
 
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{TypeParam{0}, TypeParam{2}, TypeParam{4}, TypeParam{6}, TypeParam{8}, TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
