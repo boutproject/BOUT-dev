@@ -12,6 +12,7 @@
 #include <list>
 #include <vector>
 #include <sstream>
+#include <type_traits>
 
 /// Global mesh
 extern Mesh *mesh;
@@ -1117,7 +1118,38 @@ TEST_F(RegionTest, regionGetStatsEmpty) {
   EXPECT_EQ(strRepresentation.str(), "Empty");
 }
 
+TEST(RegionIndexConversionTest, Ind3DtoInd2D) {
+  // This could just be:
+  //     EXPECT_FALSE(std::is_convertible<Ind3D, Ind2D>::value());
+  // but requires C++14
+  bool convert = std::is_convertible<Ind3D, Ind2D>::value;
+  EXPECT_FALSE(convert);
+}
 
+TEST(RegionIndexConversionTest, Ind2DtoInd3D) {
+  bool convert = std::is_convertible<Ind2D, Ind3D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, Ind2Dtoint) {
+  bool convert = std::is_convertible<Ind2D, int>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, Ind3Dtoint) {
+  bool convert = std::is_convertible<Ind3D, int>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, inttoInd2D) {
+  bool convert = std::is_convertible<int, Ind2D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, inttoInd3D) {
+  bool convert = std::is_convertible<int, Ind3D>::value;
+  EXPECT_FALSE(convert);
+}
 
 TEST(RegionIndex2DTest, MemberSize) {
   const int nx = 2, ny = 3, nz = 1;
