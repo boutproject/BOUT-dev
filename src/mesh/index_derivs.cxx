@@ -1655,8 +1655,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-    auto region_index = f.region(region);
-
     // Calculate how many Z wavenumbers will be removed
     const int ncz = this->LocalNz;
     int kfilter =
