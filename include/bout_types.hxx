@@ -65,6 +65,10 @@ const std::map<REGION, std::string> REGIONtoString = {
   ENUMSTR(RGN_NOZ)
 };
 
+inline const std::string& REGION_STRING(REGION region) {
+  return REGIONtoString.at(region);
+}
+
 /// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
