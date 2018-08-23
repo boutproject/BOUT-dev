@@ -85,7 +85,7 @@ def _convert_to_nice_slice(r, N, name="range"):
         "Sensible" slice with no Nones for start, stop or step
     """
 
-    if not r:
+    if r is None:
         temp_slice = slice(N)
     elif isinstance(r, slice):
         temp_slice = r
