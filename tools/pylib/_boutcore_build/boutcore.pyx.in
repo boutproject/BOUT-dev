@@ -591,7 +591,7 @@ cdef class Laplacian:
     cdef c.Laplacian * cobj
     def __init__(self,section=None):
         """
-        Initialiase a laplacion solver
+        Initialiase a Laplacian solver
 
         Parameters
         ----------
@@ -622,6 +622,83 @@ cdef class Laplacian:
             the inversion of x, where guess is a guess to start with
         """
         return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
+
+    def setCoefA(self,Field3D A):
+        """
+        Set the 'A' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        A : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefA(A.cobj[0])
+
+    def setCoefC(self,Field3D C):
+        """
+        Set the 'C' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        C : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefC(C.cobj[0])
+
+    def setCoefC1(self,Field3D C1):
+        """
+        Set the 'C1' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        C1 : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefC1(C1.cobj[0])
+
+    def setCoefC2(self,Field3D C2):
+        """
+        Set the 'C2' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        C2 : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefC2(C2.cobj[0])
+
+    def setCoefD(self,Field3D D):
+        """
+        Set the 'D' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        D : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefD(D.cobj[0])
+
+    def setCoefEx(self,Field3D Ex):
+        """
+        Set the 'Ex' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        Ex : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefEx(Ex.cobj[0])
+
+    def setCoefEz(self,Field3D Ez):
+        """
+        Set the 'Ez' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        Ez : Field3D
+            Field to set as coefficient
+        """
+        self.cobj.setCoefEz(Ez.cobj[0])
 
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
