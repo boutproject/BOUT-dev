@@ -104,7 +104,9 @@ if __name__=="__main__":
     parser.add_argument("--singleprecision", type=str_to_bool, default=True)
     args = parser.parse_args()
 
+    for ind in "txyz":
+        args.__dict__[ind+"ind"]=slice(*args.__dict__[ind+"ind"])
     # Call the function, using command line arguments
-    squashoutput(datadir=args.datadir, outputname=args.outputname, tind=args.tind, xind=args.xind, yind=args.yind, zind=args.zind, singleprecision=args.singleprecision)
+    squashoutput(**args.__dict__)
 
     exit(0)
