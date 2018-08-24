@@ -1194,7 +1194,7 @@ public:
   T value_;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
+typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
