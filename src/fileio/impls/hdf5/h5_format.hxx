@@ -84,10 +84,10 @@ class H5Format : public DataFormat {
   bool setRecord(int t) override; // negative -> latest
 
   // Add a variable to the file
-  bool addVar_int(const string &name, bool repeat) override;
-  bool addVar_BoutReal(const string &name, bool repeat) override;
-  bool addVar_Field2D(const string &name, bool repeat) override;
-  bool addVar_Field3D(const string &name, bool repeat) override;
+  bool addVarInt(const string &name, bool repeat) override;
+  bool addVarBoutReal(const string &name, bool repeat) override;
+  bool addVarField2D(const string &name, bool repeat) override;
+  bool addVarField3D(const string &name, bool repeat) override;
   
   // Read / Write simple variables up to 3D
 

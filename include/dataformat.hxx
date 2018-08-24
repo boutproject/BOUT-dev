@@ -74,10 +74,10 @@ class DataFormat {
   virtual bool setRecord(int t) = 0; // negative -> latest
 
   // Add a variable to the file
-  virtual bool addVar_int(const string &name, bool repeat) = 0;
-  virtual bool addVar_BoutReal(const string &name, bool repeat) = 0;
-  virtual bool addVar_Field2D(const string &name, bool repeat) = 0;
-  virtual bool addVar_Field3D(const string &name, bool repeat) = 0;
+  virtual bool addVarInt(const string &name, bool repeat) = 0;
+  virtual bool addVarBoutReal(const string &name, bool repeat) = 0;
+  virtual bool addVarField2D(const string &name, bool repeat) = 0;
+  virtual bool addVarField3D(const string &name, bool repeat) = 0;
   
   // Read / Write simple variables up to 3D
 

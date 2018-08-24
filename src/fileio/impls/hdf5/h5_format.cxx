@@ -371,21 +371,21 @@ bool H5Format::addVar(const string &name, bool repeat, hid_t write_hdf5_type, in
   return true;
 }
 
-bool H5Format::addVar_int(const string &name, bool repeat) {
+bool H5Format::addVarInt(const string &name, bool repeat) {
   return addVar(name, repeat, H5T_NATIVE_INT, 0);
 }
 
-bool H5Format::addVar_BoutReal(const string &name, bool repeat) {
+bool H5Format::addVarBoutReal(const string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 0);
 }
 
-bool H5Format::addVar_Field2D(const string &name, bool repeat) {
+bool H5Format::addVarField2D(const string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 2);
 }
 
-bool H5Format::addVar_Field3D(const string &name, bool repeat) {
+bool H5Format::addVarField3D(const string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 3);
 }

@@ -353,7 +353,7 @@ bool NcFormat::setRecord(int t) {
 }
 
 // Add a variable to the file
-bool NcFormat::addVar_int(const string &name, bool repeat) {
+bool NcFormat::addVarInt(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -380,7 +380,7 @@ bool NcFormat::addVar_int(const string &name, bool repeat) {
   return true;
 }
 
-bool NcFormat::addVar_BoutReal(const string &name, bool repeat) {
+bool NcFormat::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -408,7 +408,7 @@ bool NcFormat::addVar_BoutReal(const string &name, bool repeat) {
   return true;
 }
 
-bool NcFormat::addVar_Field2D(const string &name, bool repeat) {
+bool NcFormat::addVarField2D(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -436,7 +436,7 @@ bool NcFormat::addVar_Field2D(const string &name, bool repeat) {
   return true;
 }
 
-bool NcFormat::addVar_Field3D(const string &name, bool repeat) {
+bool NcFormat::addVarField3D(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 

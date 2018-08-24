@@ -315,7 +315,7 @@ bool Ncxx4::setRecord(int t) {
 }
 
 // Add a variable to the file
-bool Ncxx4::addVar_int(const string &name, bool repeat) {
+bool Ncxx4::addVarInt(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -335,7 +335,7 @@ bool Ncxx4::addVar_int(const string &name, bool repeat) {
   return true;
 }
 
-bool Ncxx4::addVar_BoutReal(const string &name, bool repeat) {
+bool Ncxx4::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -362,7 +362,7 @@ bool Ncxx4::addVar_BoutReal(const string &name, bool repeat) {
   return true;
 }
 
-bool Ncxx4::addVar_Field2D(const string &name, bool repeat) {
+bool Ncxx4::addVarField2D(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
@@ -389,7 +389,7 @@ bool Ncxx4::addVar_Field2D(const string &name, bool repeat) {
   return true;
 }
 
-bool Ncxx4::addVar_Field3D(const string &name, bool repeat) {
+bool Ncxx4::addVarField3D(const string &name, bool repeat) {
   if(!is_valid())
     return false;
 
