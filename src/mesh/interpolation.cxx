@@ -83,7 +83,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
-        ASSERT0(mesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+        // At least 2 boundary cells needed for interpolation in x-direction
+        ASSERT0(fieldmesh->xstart >= 2);
 
         BOUT_OMP(parallel) {
           stencil s;
@@ -111,7 +112,8 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_YLOW: {
-        ASSERT0(mesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+        // At least 2 boundary cells needed for interpolation in y-direction
+        ASSERT0(fieldmesh->ystart >= 2);
 
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
