@@ -673,7 +673,14 @@ class Mesh {
   /// Converts an Ind3D to an Ind2D using calculation
   Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
 
-  /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
+  /// Converts an Ind3D to an IndPerp using calculation
+  IndPerp ind3DtoPerp(const Ind3D &ind3D) { return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz}; }
+
+  /// Converts an IndPerp to an Ind3D using calculation
+  Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
+    return { indPerp.z() + LocalNz * ( jy + LocalNy * indPerp.x() ) , LocalNy, LocalNz};
+  }
+  
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   Ind2D map3Dto2D(const Ind3D &ind3D){
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
