@@ -150,7 +150,7 @@ class Field2D : public Field, public FieldData {
   const BoutReal& operator[](const Ind2D &d) const {
     return data[d.ind];
   }
-  BoutReal& operator[](const Ind3D &d); 
+  BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
 
   /*!

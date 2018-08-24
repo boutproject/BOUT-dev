@@ -131,55 +131,138 @@
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1};
 
 /// Indices base class for Fields -- Regions are dereferenced into these
+///
+/// Provides methods for offsetting by fixed amounts in x, y, z, as
+/// well as a generic method for offsetting by any amount in multiple
+/// directions.
+///
+/// Assumes that the offset is less than the grid size in that
+/// direction. This assumption is checked for at CHECK=3. This
+/// assumption implies that a `FieldPerp` cannot be offset in y, and a
+/// `Field2D` cannot be offset in z. A stronger, more expensive check
+/// that the resulting offset index doesn't go out of bounds can be
+/// enabled at CHECK=4.
+///
+/// Also provides helper methods for converting Ind2D/Ind3D/IndPerp to x, y, z
+/// indices
+///
+/// Examples
+/// --------
+///
+///     Field3D field, result;
+///     auto index = std::begin(region);
+///
+///     result = field[index->yp()] - field[index->ym()];
 template<IND_TYPE N>
 class SpecificInd {
 public:
-  int ind; //< 1D index into Field
-  SpecificInd<N>() : ind(-1){};
-  SpecificInd<N>(int i) : ind(i){};
+  int ind = -1; //< 1D index into Field
+private:
+  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+
+public:
+  SpecificInd() = default;
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Pre-increment operator
-  SpecificInd<N> &operator++() {
+  SpecificInd &operator++() {
     ++ind;
     return *this;
   }
 
   /// Post-increment operator
-  SpecificInd<N> operator++(int) {
-    SpecificInd<N> original(*this);
+  SpecificInd operator++(int) {
+    SpecificInd original(*this);
     ++ind;
     return original;
   }
 
   /// Pre-decrement operator
-  SpecificInd<N> &operator--() {
+  SpecificInd &operator--() {
     --ind;
     return *this;
   }
 
   /// Post-decrement operator
-  SpecificInd<N> operator--(int) {
-    SpecificInd<N> original(*this);
+  SpecificInd operator--(int) {
+    SpecificInd original(*this);
     --ind;
     return original;
   }
 
   /// In-place addition
-  SpecificInd<N> &operator+=(SpecificInd<N> n) {
+  SpecificInd &operator+=(SpecificInd n) {
     ind += n.ind;
     return *this;
   }
 
+  SpecificInd &operator+=(int n) {
+    ind += n;
+    return *this;
+  }
+
   /// In-place subtraction
-  SpecificInd<N> &operator-=(SpecificInd<N> n) {
+  SpecificInd &operator-=(SpecificInd n) {
     ind -= n.ind;
     return *this;
   }
 
+  SpecificInd &operator-=(int n) {
+    ind -= n;
+    return *this;
+  }
+
   /// Modulus operator
-  SpecificInd<N> operator%(int n) {
-    SpecificInd<N> new_ind(ind % n);
+  SpecificInd operator%(int n) {
+    SpecificInd new_ind{ind % n, ny, nz};
     return new_ind;
+  }
+
+  /// Convenience functions for converting to (x, y, z)
+  int x() const { return (ind / nz) / ny; }
+  int y() const { return (ind / nz) % ny; }
+  int z() const { return (ind % nz); }
+
+  const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  /// The index one point -1 in x
+  const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
+  /// The index one point +1 in y
+  const inline SpecificInd yp(int dy = 1) const {
+#if CHECK >= 4
+    if (y() + dy < 0 or y() + dy >= ny) {
+      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+    }
+#endif
+    ASSERT3(std::abs(dy) < ny);
+    return {ind + (dy * nz), ny, nz};
+  }
+  /// The index one point -1 in y
+  const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
+  /// The index one point +1 in z. Wraps around zend to zstart
+  const inline SpecificInd zp(int dz = 1) const {
+    ASSERT3(dz >= 0);
+    ASSERT3(dz <= nz);
+    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+  }
+  /// The index one point -1 in z. Wraps around zstart to zend
+  const inline SpecificInd zm(int dz = 1) const {
+    ASSERT3(dz >= 0);
+    ASSERT3(dz <= nz);
+    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+  }
+  // and for 2 cells
+  const inline SpecificInd xpp() const { return xp(2); }
+  const inline SpecificInd xmm() const { return xm(2); }
+  const inline SpecificInd ypp() const { return yp(2); }
+  const inline SpecificInd ymm() const { return ym(2); }
+  const inline SpecificInd zpp() const { return zp(2); }
+  const inline SpecificInd zmm() const { return zm(2); }
+
+  /// Generic offset of \p index in multiple directions simultaneously
+  const inline SpecificInd offset(int dx, int dy, int dz) {
+    auto temp = (dz > 0) ? zp(dz) : zm(-dz);
+    return temp.yp(dy).xp(dx);
   }
 };
 
@@ -219,13 +302,13 @@ template<IND_TYPE N>
 inline SpecificInd<N> operator+(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs += rhs; }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += n; }
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += SpecificInd<N>(n); }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += n; }
+inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += SpecificInd<N>(n); }
 
 template<IND_TYPE N>
-inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= n; }
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= SpecificInd<N>(n); }
 
 template<IND_TYPE N>
 inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
@@ -307,7 +390,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///
 ///     BOUT_FOR(i, region) {
 ///       f[i] = a[i] + b[i];
-///     );
+///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
 /// there is a serial verion of the macro:
@@ -315,7 +398,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     BoutReal max=0.;
 ///     BOUT_FOR_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
-///     );
+///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
@@ -346,7 +429,13 @@ public:
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
+            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+      : ny(ny), nz(nz) {
+#if CHECK > 1
+    if (std::is_base_of<Ind2D, T>::value and nz != 1) {
+      throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+    }
+#endif
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
@@ -471,7 +560,7 @@ public:
     RegionIndices newInd(oldInd.size());
 
     for (unsigned int i = 0; i < oldInd.size(); i++) {
-      newInd[i] = T(oldInd[i].ind + offset);
+      newInd[i] = T{oldInd[i].ind + offset, ny, nz};
     }
 
     setIndices(newInd);
@@ -503,7 +592,7 @@ public:
     for (unsigned int i = 0; i < newInd.size(); i++){
       int index = newInd[i].ind;
       int whichBlock = index / period;
-      newInd[i] = ((index + shift) % period) + period * whichBlock;
+      newInd[i].ind = ((index + shift) % period) + period * whichBlock;
     };
 
     setIndices(newInd);
@@ -515,7 +604,7 @@ public:
   unsigned int size() const {
     return indices.size();
   }
-  
+
   /// Returns a RegionStats struct desribing the region
   RegionStats getStats() const {
     RegionStats result;
@@ -570,28 +659,30 @@ public:
 private:
   RegionIndices indices;   //< Flattened indices
   ContiguousBlocks blocks; //< Contiguous sections of flattened indices
+  int ny = -1;             //< Size of y dimension
+  int nz = -1;             //< Size of z dimension
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    if ( (xend + 1 <= xstart) ||
-         (yend + 1 <= ystart) ||
-         (zend + 1 <= zstart) ) {
+    if ((xend + 1 <= xstart) ||
+        (yend + 1 <= ystart) ||
+        (zend + 1 <= zstart)) {
       // Empty region
       return {};
     }
-    
+
     ASSERT1(ny > 0);
     ASSERT1(nz > 0);
 
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
-    RegionIndices region;
     // Guard against invalid length ranges
-    if (len <= 0 ) return region;
-    region.resize(len);
+    if (len <= 0 ) return {};
+
+    RegionIndices region(len, {-1, ny, nz});
 
     int x = xstart;
     int y = ystart;
@@ -601,7 +692,7 @@ private:
     int j = -1;
     while (!done) {
       j++;
-      region[j] = (x * ny + y) * nz + z;
+      region[j].ind = (x * ny + y) * nz + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
