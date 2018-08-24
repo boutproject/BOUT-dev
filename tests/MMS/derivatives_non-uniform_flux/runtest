@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+
+import boutcore
+import numpy as np
+import itertools
+import sys
+
+#requires boutcore
+#requires not make
+
+errorlist=""
+
+boutcore.init("-d data -q -q -q")
+
+def runtests(functions,derivatives,directions,stag,msg):
+    errorlist=''
+    for vs,fs, anas in functions:
+        for order,diff in derivatives:
+            for direction,fac,guards, diff_func in directions:
+                locations=['CENTRE']
+                if stag:
+                    locations.append(direction.upper()+"LOW")
+                for locs in itertools.product(locations,locations):
+                    errorlist+=runtest(nzs,guards,diff_func,diff,order,direction,fac,fs,vs,anas,locs,msg)
+    return errorlist
+
+def runtest(nzs,guards,diff_func,diff,order,direction,fac,fs,vs,anas,locs,msg):
+    errors=[]
+    if direction != "y":
+        return ""
+    for nz in nzs:
+        boutcore.setOption("meshD:nD".replace("D",direction)
+                           ,"%d"% (nz+ (2*guards if direction == "x" else 0)),force=True)
+        boutcore.setOption("meshD:dD".replace("D",direction)
+                           ,"2*pi*(1+(pi-y)*.2)/(%d)"%(nz),force=True)
+        #boutcore.setOption("meshD:dD".replace("D",direction)
+        #                   ,"2*pi*(1+sin(y+2)*.7)/(%d)"%nz,force=True)
+        dirnfac="realy"#direction+"*"+fac
+        mesh=boutcore.Mesh(section="mesh"+direction)
+        v=boutcore.create3D(vs.replace("%s",dirnfac),mesh
+                            ,outloc=locs[0])
+        f=boutcore.create3D(fs.replace("%s",dirnfac)
+                            ,mesh,outloc=locs[1])
+        sim=diff_func(v,f,method=diff,outloc=locs[1])
+        ana=boutcore.create3D(anas.replace("%s",dirnfac),mesh, outloc=locs[1])
+        err=sim-ana
+        err=err.getAll().flatten()
+        if guards:
+            err=err[guards:-guards]
+        err=np.max(np.abs(err))
+        errors.append(err)
+    #return errors
+    print(errors)
+    errc=np.log(errors[-2]/errors[-1])
+    difc=np.log(nzs[-1]/nzs[-2])
+    conv=errc/difc
+    if order-.1 < conv < order+.1:
+        #print("The convergence is: %f"%conv)
+        fail=False
+        error=""
+    else:
+        info="%s %s - %s - %s - %s %s -> %s "%(vs,fs,diff, direction,locs[0],locs[1],locs[1])
+        error="%s: %s is not working. Expected %f got %f"%(msg,info,order,conv)
+        print(error)
+        fail=True
+    if doPlot and fail:
+        from matplotlib import pyplot as plt
+        #plt.plot(1/np.array(nzs),errors,'-o')
+        x=boutcore.create3D(dirnfac,mesh,outloc=locs[1]).get().flatten()
+        lx=None
+        dx=[]
+        for i in x:
+            if lx:
+                dx.append(i-lx)
+            lx=i
+        #print(x)
+        plt.plot(dx,'-x')
+        plt.show()
+        plt.plot(x,(ana).getAll().flatten(),'-o')
+        plt.plot(x,(sim).getAll().flatten(),'-x')
+        plt.show()
+    return error
+
+
+start=2
+mmax=7
+nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
+
+doPlot=False
+if "-p" in sys.argv:
+    doPlot=True
+
+functions=[
+    ["1","sin(%s)","cos(%s)"] ,
+#    ["sin(%s)" , "sin(%s)", "sin(2*%s)"]
+]
+
+derivatives=[
+    #[1,"U1"],
+    #[2,"C2"] ,
+    [4,"C4"],
+    # disable NND: expected convergence not tested
+    #, [1, "NND"]
+]
+
+directions=[
+    #["x","2*pi",2 ,boutcore.FDDX],
+    ["y","1"   ,2 ,boutcore.FDDY],
+    #["z","1"   ,0 ,boutcore.FDDZ]
+]
+
+runtests(functions,derivatives,directions,stag=False,msg="FDD")
+
+# derivatives=[[1,"U1"]]
+
+# runtests(functions,derivatives,directions,stag=True,msg="FDD")
+
+
+# functions=[
+#     ["1","sin(%s)","cos(%s)"],
+#     ["sin(%s)"  , "sin(%s)" , "sin(%s)*cos(%s)"]
+# ]
+
+# derivatives=[[1,"U1"], [2,"U2"], [3,"U3"], [2,"C2"], [4,"C4"] ]
+
+# directions=[
+#     ["x","2*pi",2 ,boutcore.VDDX],
+#     ["y","1"   ,2 ,boutcore.VDDY],
+#     ["z","1"   ,0 ,boutcore.VDDZ]
+# ]
+
+# runtests(functions,derivatives,directions,False,"VDD")
+
+# derivatives=[[1,"U1"], [2,"U2"], [2,"C2"], [4,"C4"] ]
+
+# runtests(functions,derivatives,directions,True,"VDD")
+
+
+
+# if errorlist != "":
+#     exit(1)

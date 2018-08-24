@@ -1,0 +1,60 @@
+nout = 10
+timestep = 0.1
+
+mxg = 1
+myg = 1
+
+non_uniform = true
+
+[mesh]
+staggergrids=true
+n=1
+nx=n+2*mxg
+ny=n
+nz=n
+mxg=0
+myg=0
+dy=1/n/2/pi
+
+[solver]
+rtol = 1e-14
+atol = 1e-18
+
+
+[meshz]
+type=aiolos
+staggergrids=true
+nx=1
+ny=1
+nz=n
+n=2
+dz=2*Pi/nz
+MXG=0
+MYG=0
+
+[meshy]
+type=aiolos
+staggergrids=true
+nx=1
+ny=n
+nz=1
+n=6
+dy=2*Pi/ny
+MXG=0
+MYG=2
+symetricglobaly = true
+nonuniform = true
+ixseps1 = -1
+ixseps2 = -1
+
+[meshx]
+type=aiolos
+staggergrids=true
+nx=n+2*mxg
+ny=1
+nz=1
+n=2
+dx=2*Pi/ny
+MXG=2
+MYG=0
+
