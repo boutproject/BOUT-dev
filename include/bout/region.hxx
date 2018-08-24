@@ -432,8 +432,15 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of<Ind2D, T>::value and nz != 1) {
-      throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+    if (std::is_base_of<Ind2D, T>::value) {
+      if (nz != 1)
+	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
+
+    }
     }
 #endif
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
