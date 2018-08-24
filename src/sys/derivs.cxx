@@ -323,14 +323,12 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
                     / f.getMesh()->coordinates()->dz;
       }
   // TODO: use region aware implementation
-  /*
-    for (const auto &i : f.region(region)){
-    result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
-                                 / (f.getMesh()->coordinates()->dy[i.yp()])
-                       -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])
-                                 / (f.getMesh()->coordinates()->dy[i.ym()]))
-      / f.getMesh()->coordinates()->dz;
-      }*/
+  // BOUT_FOR(i, f.getMesh()->getREgion3D(REGION_STRING(region))) {
+  // result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
+  //                              / (f.getMesh()->coordinates()->dy[i.yp()])
+  //                    -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])
+  //                              / (f.getMesh()->coordinates()->dy[i.ym()]))
+  //   / f.getMesh()->coordinates()->dz; }
   return result;
 }
 
