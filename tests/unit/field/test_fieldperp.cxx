@@ -5,6 +5,7 @@
 #include "boutexception.hxx"
 #include "fieldperp.hxx"
 #include "test_extras.hxx"
+#include "output.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
 
@@ -25,6 +26,10 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {

@@ -97,8 +97,6 @@ TEST_F(Field2DTest, IsFinite) {
 TEST_F(Field2DTest, GetGridSizes) {
   Field2D field;
 
-  field.allocate();
-
   EXPECT_EQ(field.getNx(), nx);
   EXPECT_EQ(field.getNy(), ny);
   EXPECT_EQ(field.getNz(), 1);
@@ -109,17 +107,13 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
   int test_ny = Field2DTest::ny + 2;
   int test_nz = Field2DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
-  Field2D field(fieldmesh);
-
-  field.allocate();
+  Field2D field{&fieldmesh};
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), test_ny);
   EXPECT_EQ(field.getNz(), 1);
-
-  delete fieldmesh;
 }
 
 TEST_F(Field2DTest, CopyCheckFieldmesh) {
