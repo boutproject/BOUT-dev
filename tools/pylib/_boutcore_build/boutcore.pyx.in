@@ -1073,6 +1073,16 @@ cat <<EOF
 def Laplace(Field3D a):
     """
     Compute the full Laplacian \\nabla^2(a)
+
+    Parameters
+    ----------
+    a : Field3D
+        The Field3D object of which to calculate the derivative
+
+    Returns
+    -------
+    Field3D
+        The computed Laplacian
     """
     checkInit()
     return f3dFromObj(c.Laplace(a.cobj[0]))
