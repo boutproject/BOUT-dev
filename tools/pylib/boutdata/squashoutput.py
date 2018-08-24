@@ -24,7 +24,8 @@ import os
 
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
-                 least_significant_digit=None, quiet=False, complevel=None):
+                 least_significant_digit=None, quiet=False, complevel=None, append=False,
+                 delete=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -66,15 +67,39 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         highest compression.
     quiet : bool
         Be less verbose. default False
+    append : bool
+        Append to existing squashed file
+    delete : bool
+        Delete the original files after squashing.
     """
 
     fullpath = os.path.join(datadir,outputname)
-    if os.path.isfile(fullpath):
+
+    if append:
+        import tempfile
+        import shutil
+        import glob
+        datadirnew = tempfile.mkdtemp(dir=datadir)
+        for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
+            if not quiet:
+                print("moving",f)
+            shutil.move(f,datadirnew)
+        oldfile=datadirnew+"/"+outputname
+        datadir=datadirnew
+
+    if os.path.isfile(fullpath) and not append:
         raise ValueError(fullpath+" already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
     # useful object from BOUT pylib to access output data
     outputs = BoutOutputs(datadir, info=False, xguards=True, yguards=True, tind=tind, xind=xind, yind=yind, zind=zind)
     outputvars = outputs.keys()
+    # Read a value to cache the files
+    outputs[outputvars[0]]
+
+    if append:
+        # move only after the file list is cached
+        shutil.move(fullpath,oldfile)
+
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
 
@@ -85,7 +110,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             kwargs['least_significant_digit']=least_significant_digit
         if complevel is not None:
             kwargs['complevel']=complevel
-    print(kwargs)
+    if append:
+        old=DataFile(oldfile)
     # Create single file for output and write data
     with DataFile(fullpath,create=True,write=True,format=format, **kwargs) as f:
         for varname in outputvars:
@@ -93,12 +119,27 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
                 print(varname)
 
             var = outputs[varname]
+            if append:
+                dims=old.dimensions(varname)
+                if 't' in dims:
+                    varold=old[varname]
+                    var=BoutArray(numpy.append(varold,var,axis=0),var.attributes)
+
             if singleprecision:
                 if not isinstance(var, int):
                     var = BoutArray(numpy.float32(var), var.attributes)
 
             f.write(varname, var)
 
+    if delete:
+        if append:
+            os.remove(oldfile)
+        for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
+            if not quiet:
+                print("Deleting",f)
+            os.remove(f)
+        if append:
+            os.rmdir(datadir)
 if __name__=="__main__":
     # Call the squashoutput function using arguments from
     # command line when this file is called as an executable
@@ -128,11 +169,13 @@ if __name__=="__main__":
     parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
     parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
     parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
-    parser.add_argument("--singleprecision", action="store_true", default=False)
-    parser.add_argument("--compress", action="store_true", default=False)
-    parser.add_argument("--complevel", type=int_or_none, default=None)
-    parser.add_argument("--least-significant-digit", type=int_or_none, default=None)
-    parser.add_argument("--quiet", action="store_true", default=False)
+    parser.add_argument("-s","--singleprecision", action="store_true", default=False)
+    parser.add_argument("-c","--compress", action="store_true", default=False)
+    parser.add_argument("-l","--complevel", type=int_or_none, default=None)
+    parser.add_argument("-i","--least-significant-digit", type=int_or_none, default=None)
+    parser.add_argument("-q","--quiet", action="store_true", default=False)
+    parser.add_argument("-a","--append", action="store_true", default=False)
+    parser.add_argument("-d","--delete", action="store_true", default=False)
 
     if argcomplete:
         argcomplete.autocomplete(parser)
