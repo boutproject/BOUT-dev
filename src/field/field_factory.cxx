@@ -123,31 +123,30 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(const auto &i : result) {
-      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
-      result[i] = gen->generate(xpos,
-                                TWOPI*localmesh->GlobalY(i.y),
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
+      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
+                                0.0, // Z
+                                t);  // T
     }
     break;
   }
   case CELL_YLOW: {
-    for(const auto &i : result) {
-      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                ypos,
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      BoutReal ypos =
+          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
+      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
+                                0.0, // Z
+                                t);  // T
     }
     break;
   }
   default: {// CELL_CENTRE or CELL_ZLOW
-    for(const auto &i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        0.0, // Z
+                        t);  // T
     }
   }
   };
@@ -182,40 +181,43 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(const auto &i : result) {
-      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
-      result[i] = gen->generate(xpos,
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
+      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
+                                TWOPI * static_cast<BoutReal>(i.z()) /
+                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
+                                t);                                            // T
     }
     break;
   }
   case CELL_YLOW: {
-    for(const auto &i : result) {
-      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                ypos,
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      BoutReal ypos =
+          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
+      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
+                                TWOPI * static_cast<BoutReal>(i.z()) /
+                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
+                                t);                                            // T
     }
     break;
   }
   case CELL_ZLOW: {
-    for(const auto &i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
+                            static_cast<BoutReal>(localmesh->LocalNz), // Z
+                        t);                                            // T
     }
     break;
   }
   default: {// CELL_CENTRE
-    for(const auto &i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        TWOPI * static_cast<BoutReal>(i.z()) /
+                            static_cast<BoutReal>(localmesh->LocalNz), // Z
+                        t);                                            // T
     }
   }
   };
