@@ -1070,6 +1070,13 @@ do
 done
 cat <<EOF
 
+def Laplace(Field3D a):
+    """
+    Compute the full Laplacian \\nabla^2(a)
+    """
+    checkInit()
+    return f3dFromObj(c.Laplace(a.cobj[0]))
+
 def Delp2(Field3D a, zsmooth=-1):
 #    """Delp2(Field3D a, zsmooth=-1)"""
     checkInit()
