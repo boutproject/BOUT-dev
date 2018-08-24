@@ -678,7 +678,8 @@ class Mesh {
 
   /// Converts an IndPerp to an Ind3D using calculation
   Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
-    return { indPerp.z() + LocalNz * ( jy + LocalNy * indPerp.x() ) , LocalNy, LocalNz};
+    int jz = indPerp.z();
+    return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
   }
   
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
