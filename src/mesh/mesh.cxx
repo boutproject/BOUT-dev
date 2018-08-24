@@ -381,7 +381,7 @@ void Mesh::createDefaultRegions(){
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
-  for (const auto &ind3D: getRegion3D("RGN_ALL")){
+  BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }
