@@ -1340,20 +1340,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-#if CHECK < 1
-    // In production (proxied by CHECK<1) warn if using a non-power of two MZ with FFTs
-    {
-      static bool first = true;
-      if (first and ((this->LocalNz % 2) != 0)) {
-        output_warn << "Warning : Using a non-power of two for nz (" << this->LocalNz
-                    << ") with FFT method for first order derivatives in z -- this may "
-                       "be sub-optimal."
-                    << endl;
-        first = false;
-      }
-    }
-#endif
-
     // Calculate how many Z wavenumbers will be removed
     const int ncz = this->LocalNz;
     int kfilter =
@@ -1679,20 +1665,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     // Only allow a whitelist of regions for now
     ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
             region_str == "RGN_NOX" || region_str == "RGN_NOY");
-
-#if CHECK < 1
-    // In production (proxied by CHECK<1) warn if using a non-power of two MZ with FFTs
-    {
-      static bool first = true;
-      if (first and ((this->LocalNz % 2) != 0)) {
-        output_warn << "Warning : Using a non-power of two for nz (" << this->LocalNz
-                    << ") with FFT method for second order derivatives in z -- this may "
-                       "be sub-optimal."
-                    << endl;
-        first = false;
-      }
-    }
-#endif
 
     BOUT_OMP(parallel) {
       Array<dcomplex> cv(ncz / 2 + 1);
