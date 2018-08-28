@@ -29,11 +29,9 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
         cursor = u'█'
 
     status = ""
-    if isinstance(progress, int):
-        progress = float(progress)
-    if not isinstance(progress, float):
-        progress = 0
-        status = "error: progress var must be float\r\n"
+
+    progress = float(progress)
+
     if progress < 0:
         progress = 0
         status = "Halt...\r\n"
