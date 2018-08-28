@@ -712,10 +712,11 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
     FieldPerp result;                                                                    \
     result.allocate();                                                                   \
     result.setIndex(rhs.getIndex());                                                     \
-    for (const auto &i : rhs)                                                            \
-      result[i] = lhs[i] op rhs[i];                                                      \
-    return result;                                                                       \
-  }
+    const Region<IndPerp> &region_all = rhs.getMesh()->getRegionPerp("RGN_ALL");         \
+    BOUT_FOR(i, region_all) {                                                            \
+      result[i] = lhs(i, rhs.getIndex()) op rhs[i];                                      \
+      return result;                                                                     \
+    }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 

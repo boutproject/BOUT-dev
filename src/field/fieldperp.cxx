@@ -233,9 +233,10 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
     int y = lhs.getIndex();                                                              \
     result.setIndex(y);                                                                  \
                                                                                          \
-    for (const auto &i : result)                                                         \
+    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
+    BOUT_FOR (i, region) {                                                               \
       result[i] = lhs[i] op rhs;                                                         \
-                                                                                         \
+    }                                                                                    \
     return result;                                                                       \
   }
 
@@ -252,8 +253,10 @@ FPERP_FPERP_OP_REAL(/);
     int y = rhs.getIndex();                                                              \
     result.setIndex(y);                                                                  \
                                                                                          \
-    for (const auto &i : result)                                                         \
+    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
+    BOUT_FOR (i, region) {                                                               \
       result[i] = lhs op rhs[i];                                                         \
+    }                                                                                    \
                                                                                          \
     return result;                                                                       \
   }
