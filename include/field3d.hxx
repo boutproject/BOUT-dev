@@ -352,6 +352,12 @@ class Field3D : public Field, public FieldData {
     return data[d.ind];
   }
 
+  BoutReal& operator()(const IndPerp &d, int jy);
+  const BoutReal& operator()(const IndPerp &d, int jy) const;
+
+  BoutReal& operator()(const Ind2D &d, int jz);
+  const BoutReal& operator()(const Ind2D &d, int jz) const;
+  
   /*!
    * Direct access to the underlying data array
    *

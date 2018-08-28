@@ -128,7 +128,7 @@
   BOUT_FOR_OMP(index, region, for schedule(guided) nowait)
 
 
-enum class IND_TYPE { IND_3D = 0, IND_2D = 1};
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///
@@ -316,6 +316,7 @@ inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) {
 /// Define aliases for global indices in 3D and 2D 
 using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
+using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
@@ -402,8 +403,8 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
-                "Region must be templated with either Ind2D or Ind3D");
+  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   typedef T data_type;
@@ -432,10 +433,26 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of<Ind2D, T>::value and nz != 1) {
-      throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+    if (std::is_base_of<Ind2D, T>::value) {
+      if (nz != 1)
+	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
+
+    }
+
+    if (std::is_base_of<IndPerp, T>::value) {
+      if (ny != 1)
+	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
     }
 #endif
+    
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
