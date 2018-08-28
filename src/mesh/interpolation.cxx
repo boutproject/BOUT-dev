@@ -146,7 +146,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // coordinates
 
           Field3D var_fa = fieldmesh->toFieldAligned(var);
-          Field3D result_fa = fieldmesh->toFieldAligned(result);
+          Field3D result_fa(fieldmesh);
+          if (region != RGN_NOBNDRY) {
+            result_fa = fieldmesh->toFieldAligned(result);
+          }
           result_fa.allocate();
           if (fieldmesh->ystart > 1) {
 
