@@ -849,23 +849,26 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  // use first element for sum of values of f, second element for number of points
-  BoutReal result[2] = {0., 0.};
-  
+  // Intitialise the cummulative sum and counter
+  BoutReal result = 0.;
+  int count = 0;
+
   const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));
 
-  BOUT_FOR_OMP(i, region, parallel for reduction(+:result)) {
-    result[0] += f[i];
-    result[1] += 1.;
+  BOUT_FOR_OMP(i, region, parallel for reduction(+:result,count)) {
+    result += f[i];
+    count += 1;
   }
 
   if(allpe) {
     // MPI reduce
-    BoutReal localresult[2] = {result[0], result[1]};
-    MPI_Allreduce(&localresult, &result, 2, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+    int localcount = count;
+    MPI_Allreduce(&localcount, &count, 1, MPI_INT, MPI_SUM, BoutComm::get());
   }
-  
-  return result[0]/result[1];
+
+  return result / static_cast<BoutReal>(count);
 }
 
 /////////////////////////////////////////////////////////////////////
