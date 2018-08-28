@@ -41,6 +41,7 @@ parser.add_argument("-q","--quiet", action="store_true", default=False)
 parser.add_argument("-a","--append", action="store_true", default=False)
 parser.add_argument("-d","--delete", action="store_true", default=False)
 parser.add_argument("-p","--progress", action="store_true", default=False)
+parser.add_argument("-C","--docontinue", action="store_true", default=False)
 
 if argcomplete:
     argcomplete.autocomplete(parser)
