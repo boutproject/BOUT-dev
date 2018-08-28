@@ -35,9 +35,20 @@
 
 #include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
+
+
+#if 1
+#include "../sundials/nvector_hybrid.h"
+#define NVEC_CREATE(comm, nlocal, nglobal) N_VNew_Hybrid(comm, nlocal, nglobal)
+#define NVEC_DESTROY(nvec) N_VDestroy_Hybrid(nvec)
+#else
+#include <nvector/nvector_parallel.h>
+#define NVEC_CREATE(comm, nlocal, nglobal) N_VNew_Parallel(comm, nlocal, nglobal)
+#define NVEC_DESTROY(nvec) N_VDestroy_Parallel(nvec)
+#endif
+
 
 #include <output.hxx>
 
@@ -73,7 +84,7 @@ CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
 
 CvodeSolver::~CvodeSolver() {
   if(initialised) {
-    N_VDestroy_Parallel(uvec);
+    NVEC_DESTROY(uvec);
     CVodeFree(&cvode_mem);
   }
 }
@@ -110,8 +121,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
                     n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
-  {TRACE("Allocating memory with N_VNew_Parallel");
-    if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  {TRACE("Allocating memory with NVEC_CREATE");
+    if ((uvec = NVEC_CREATE(BoutComm::get(), local_N, neq)) == nullptr)
       throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   }
 
@@ -150,7 +161,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if (use_vector_abstol) {
       Options *abstol_options = Options::getRoot();
       BoutReal tempabstol;
-      if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+      if ((abstolvec = NVEC_CREATE(BoutComm::get(), local_N, neq)) == nullptr)
         throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
       vector<BoutReal> f2dtols;
       vector<BoutReal> f3dtols;

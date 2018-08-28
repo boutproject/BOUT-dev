@@ -45,7 +45,8 @@ class CvodeSolver;
 
 #include <cvode/cvode_spgmr.h>
 #include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
+
+#include <sundials/sundials_nvector.h>
 
 #include <vector>
 using std::vector;
