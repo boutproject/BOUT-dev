@@ -223,8 +223,11 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   if (!finite(rhs))
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
-  for (const auto &i : (*this))
+
+  const Region<Ind2D> &region_all = fieldmesh->getRegion2D("RGN_ALL");
+  BOUT_FOR(i, region_all) {
     (*this)[i] = rhs;
+  }
 
   return *this;
 }

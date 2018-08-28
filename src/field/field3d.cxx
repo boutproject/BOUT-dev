@@ -389,8 +389,11 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   allocate();
 
   /// Copy data
-  for(const auto& i : (*this))
+  const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
+
+  BOUT_FOR(i, region_all) {
     (*this)[i] = rhs[i];
+  }
   
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
@@ -405,8 +408,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
   allocate();
 
   /// Copy data
-  for(const auto& i : rhs) {
-    (*this)[i] = rhs[i];
+  const Region<IndPerp> &region_all = fieldmesh->getRegionPerp("RGN_ALL");
+
+  BOUT_FOR(i, region_all) {
+    (*this)(i, rhs.getIndex()) = rhs[i];
   }
 }
 
@@ -418,8 +423,12 @@ Field3D & Field3D::operator=(const BoutReal val) {
   if(!finite(val))
     throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
-  for(const auto& i : (*this))
+
+  const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
+
+  BOUT_FOR(i, region_all) {
     (*this)[i] = val;
+  }
 
   // Only 3D fields have locations
   //location = CELL_CENTRE;
