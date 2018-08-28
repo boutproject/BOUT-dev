@@ -33,6 +33,7 @@ class FieldPerp;
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -103,7 +104,23 @@ class FieldPerp : public Field {
   const BoutReal& operator[](const Indices &i) const override{
     return operator()(i.x, i.z);
   }
-  
+
+  inline BoutReal& operator[](const IndPerp &d) {
+    return data[d.ind];
+  }
+  inline const BoutReal& operator[](const IndPerp &d) const {
+    return data[d.ind];
+  }  
+
+  inline BoutReal& operator[](const Ind3D &d) {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z()); //Could use mesh->ind3DtoPerp if we had access to mesh here
+  }
+  inline const BoutReal& operator[](const Ind3D &d) const {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z());
+  }  
+
   /*!
    * Returns the y index at which this field is defined
    */ 

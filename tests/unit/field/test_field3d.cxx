@@ -778,6 +778,30 @@ TEST_F(Field3DTest, ConstIndexingInd3D) {
   EXPECT_DOUBLE_EQ(field2[ind], 6);
 }
 
+TEST_F(Field3DTest, IndexingInd2D) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  Ind2D ind{iy + ny * ix, ny, 1};
+  EXPECT_DOUBLE_EQ(field(ind, iz), sentinel);
+  field(ind, iz) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
+}
+
+TEST_F(Field3DTest, IndexingIndPerp) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  IndPerp ind{iz + nz * ix, 1, nz};
+  EXPECT_DOUBLE_EQ(field(ind, iy), sentinel);
+  field(ind, iy) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
+}
+
 TEST_F(Field3DTest, IndexingToZPointer) {
   Field3D field;
 

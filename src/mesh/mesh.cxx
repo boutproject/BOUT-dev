@@ -340,6 +340,14 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    return found->second;
 }
 
+Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) {
+  auto found = regionMapPerp.find(region_name);
+  if (found == end(regionMapPerp)) {
+    throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
+  }
+  return found->second;
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap3D");
@@ -355,6 +363,15 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
   }
   regionMap2D[region_name] = region;
   output_info << "Registered region 2D " << region_name << ": \n";
+  output_info << "\t" << region.getStats() << "\n";
+}
+
+void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
+  if (regionMapPerp.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMapPerp");
+  }
+  regionMapPerp[region_name] = region;
+  output_info << "Registered region Perp " << region_name << ": \n";
   output_info << "\t" << region.getStats() << "\n";
 }
 
@@ -380,6 +397,16 @@ void Mesh::createDefaultRegions(){
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
   addRegion2D("RGN_GUARDS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOBNDRY")));
+
+  // Perp regions
+  addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1,
+                                               LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                           maxregionblocksize)); // Same as NOBNDRY
+  addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize)); // Same as ALL
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);

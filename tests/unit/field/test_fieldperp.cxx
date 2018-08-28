@@ -460,6 +460,62 @@ TEST_F(FieldPerpTest, ConstIndexingWithIndices) {
   EXPECT_DOUBLE_EQ(field[ii], 2.0);
 }
 
+TEST_F(FieldPerpTest, IndexingWithIndPerp) {
+  FieldPerp field(0.0);
+  const BoutReal sentinel = 2.0;
+  field(1, 5) = sentinel;
+  IndPerp firstPoint(1 * nz + 5, 1, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  IndPerp secondPoint((nx - 1) * nz + 1, 1, nz);
+  field[secondPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(nx - 1, 1), -sentinel);
+}
+
+TEST_F(FieldPerpTest, ConstIndexingWithIndPerp) {
+  FieldPerp field(0.0);
+  const BoutReal sentinel = 2.0;
+  field(1, 5) = sentinel;
+  const IndPerp firstPoint(1 * nz + 5, 1, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  const IndPerp secondPoint((nx - 1) * nz + 1, 1, nz);
+  field[secondPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(nx - 1, 1), -sentinel);
+}
+
+TEST_F(FieldPerpTest, IndexingWithInd3D) {
+  FieldPerp field(0.0);
+  field.setIndex(2);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = field.getIndex(), iz = 4;
+  field(ix, iz) = sentinel;
+  Ind3D firstPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  field[firstPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iz), -sentinel);
+#if CHECK > 2
+  iy++;
+  Ind3D secondPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_THROW(field[secondPoint], BoutException);
+#endif
+}
+
+TEST_F(FieldPerpTest, ConstIndexingWithInd3D) {
+  FieldPerp field(0.0);
+  field.setIndex(2);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = field.getIndex(), iz = 4;
+  field(ix, iz) = sentinel;
+  const Ind3D firstPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  field[firstPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iz), -sentinel);
+#if CHECK > 2
+  iy++;
+  const Ind3D secondPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_THROW(field[secondPoint], BoutException);
+#endif
+}
+
 TEST_F(FieldPerpTest, IndexingToPointer) {
   FieldPerp field;
 

@@ -101,7 +101,7 @@ class DataFile(object):
     """
     impl = None
 
-    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_64BIT'):
+    def __init__(self, filename=None, write=False, create=False, format='NETCDF3_64BIT', **kwargs):
         """
 
         NetCDF formats are described here: http://unidata.github.io/netcdf4-python/
@@ -116,14 +116,14 @@ class DataFile(object):
                     filename=filename, write=write, create=create, format=format)
             else:
                 self.impl = DataFile_netCDF(
-                    filename=filename, write=write, create=create, format=format)
+                    filename=filename, write=write, create=create, format=format, **kwargs)
         elif format == 'HDF5':
             self.impl = DataFile_HDF5(
                 filename=filename, write=write, create=create,
                 format=format)
         else:
             self.impl = DataFile_netCDF(
-                filename=filename, write=write, create=create, format=format)
+                filename=filename, write=write, create=create, format=format, **kwargs)
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
@@ -382,7 +382,8 @@ class DataFile_netCDF(DataFile):
         self.handle = None
 
     def __init__(self, filename=None, write=False, create=False,
-                 format='NETCDF3_CLASSIC'):
+                 format='NETCDF3_CLASSIC', **kwargs):
+        self._kwargs = kwargs
         if not has_netCDF:
             message = "DataFile: No supported NetCDF python-modules available"
             raise ImportError(message)
@@ -635,9 +636,9 @@ class DataFile_netCDF(DataFile):
                     tc = Float32
                 else:
                     tc = Float
-                var = self.handle.createVariable(name, tc, dims)
+                var = self.handle.createVariable(name, tc, dims, **self._kwargs)
             else:
-                var = self.handle.createVariable(name, t, dims)
+                var = self.handle.createVariable(name, t, dims, **self._kwargs)
 
             if var is None:
                 raise Exception("Couldn't create variable")

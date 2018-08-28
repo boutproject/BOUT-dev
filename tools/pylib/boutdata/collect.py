@@ -85,7 +85,7 @@ def _convert_to_nice_slice(r, N, name="range"):
         "Sensible" slice with no Nones for start, stop or step
     """
 
-    if not r:
+    if r is None:
         temp_slice = slice(N)
     elif isinstance(r, slice):
         temp_slice = r
@@ -94,11 +94,12 @@ def _convert_to_nice_slice(r, N, name="range"):
             temp_slice = slice(r, None)
         else:
             temp_slice = slice(r, r + 1)
-    elif len(r) < 3:
-        # Make sure r has two elements in the range [0, N]
+    elif len(r) == 0:
+        return _convert_to_nice_slice(None, N, name)
+    elif len(r) == 1:
+        return _convert_to_nice_slice(r[0], N, name)
+    elif len(r) == 2:
         r2 = list(r)
-        if len(r2) == 1:
-            r2 = [r2, r2]
         if r2[0] < 0:
             r2[0] += N
         if r2[1] < 0:
@@ -108,6 +109,9 @@ def _convert_to_nice_slice(r, N, name="range"):
                              .format(name, *r2))
         # Lists uses inclusive end, we need exclusive end
         temp_slice = slice(r2[0], r2[1] + 1)
+    elif len(r) == 3:
+        # Convert 3 element list to slice object
+        temp_slice = slice(r[0],r[1],r[2])
     else:
         raise ValueError("Couldn't convert {} ('{}') to slice".format(name, r))
 

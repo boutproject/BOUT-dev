@@ -258,6 +258,23 @@ CELL_LOC Field3D::getLocation() const {
   return location;
 }
 
+// Not in header because we need to access fieldmesh
+BoutReal &Field3D::operator()(const IndPerp &d, int jy) {
+  return operator[](fieldmesh->indPerpto3D(d, jy));
+}
+
+const BoutReal &Field3D::operator()(const IndPerp &d, int jy) const {
+  return operator[](fieldmesh->indPerpto3D(d, jy));
+}
+
+BoutReal &Field3D::operator()(const Ind2D &d, int jz) {
+  return operator[](fieldmesh->ind2Dto3D(d, jz));
+}
+
+const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
+  return operator[](fieldmesh->ind2Dto3D(d, jz));
+}
+
 /***************************************************************
  *                         OPERATORS 
  ***************************************************************/
