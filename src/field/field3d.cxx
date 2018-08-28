@@ -752,11 +752,11 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   return result;
 }
 
-Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
+FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   TRACE("pow(Field3D, FieldPerp)");
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
-  Field3D result(lhs.getMesh());
+  FieldPerp result{rhs.getMesh()};
   result.allocate();
 
   // Iterate over indices
