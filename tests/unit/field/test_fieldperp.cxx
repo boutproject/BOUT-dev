@@ -127,17 +127,18 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
 
-  FieldPerp field(fieldmesh);
+  FieldPerp field{&fieldmesh};
 
   field.allocate();
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), 1);
   EXPECT_EQ(field.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
@@ -145,18 +146,19 @@ TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
 
-  FieldPerp field(fieldmesh);
+  FieldPerp field{&fieldmesh};
   field = 1.0;
 
-  FieldPerp field2(field);
+  FieldPerp field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), 1);
   EXPECT_EQ(field2.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 #if CHECK > 0
