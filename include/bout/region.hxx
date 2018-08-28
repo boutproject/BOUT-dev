@@ -43,10 +43,12 @@
 #define __REGION_H__
 
 #include <algorithm>
+#include <ostream>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
