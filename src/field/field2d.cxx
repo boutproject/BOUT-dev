@@ -574,9 +574,7 @@ void invalidateGuards(Field2D &var){
 #if CHECK > 2
   Mesh *localmesh = var.getMesh();
 
-  const Region<Ind2D> &region_all = localmesh->getRegion2D("RGN_ALL");
-  const Region<Ind2D> &region_no_guards = localmesh->getRegion2D("RGN_NOBNDRY");
-  const Region<Ind2D> region_guards = mask(region_all, region_no_guards);
+  const Region<Ind2D> &region_guards = localmesh->getRegion2D("RGN_GUARDS");
 
   BOUT_FOR(i, region_guards) {
     var[i] = BoutNaN;

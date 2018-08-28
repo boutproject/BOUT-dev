@@ -1190,9 +1190,7 @@ void invalidateGuards(Field3D &var){
 #if CHECK > 2 // Strip out if not checking
   Mesh *localmesh = var.getMesh();
 
-  const Region<Ind3D> &region_all = localmesh->getRegion3D("RGN_ALL");
-  const Region<Ind3D> &region_no_guards = localmesh->getRegion3D("RGN_NOBNDRY");
-  const Region<Ind3D> region_guards = mask(region_all, region_no_guards);
+  const Region<Ind3D> &region_guards = localmesh->getRegion3D("RGN_GUARDS");
 
   BOUT_FOR(i, region_guards) {
     var[i] = BoutNaN;
