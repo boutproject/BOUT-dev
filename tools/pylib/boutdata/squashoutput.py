@@ -20,11 +20,12 @@ from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
 import numpy
 import os
+from zoidberg import progress as bar
 
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
                  least_significant_digit=None, quiet=False, complevel=None, append=False,
-                 delete=False):
+                 delete=False, progress=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -70,6 +71,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         Append to existing squashed file
     delete : bool
         Delete the original files after squashing.
+    progress : bool
+        Print a progress bar
     """
 
     fullpath = os.path.join(datadir,outputname)
@@ -102,6 +105,19 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
 
+    if progress:
+        sizes_=outputs.sizes()
+        sizes={}
+        total=0
+        for var,size in sizes_.items():
+            cur=1
+            for s in size:
+                cur*=s
+            total+=cur
+            sizes[var]=cur
+        sizes_=None
+        done=0
+
     kwargs={}
     if compress:
         kwargs['zlib']=True
@@ -129,6 +145,10 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
                     var = BoutArray(numpy.float32(var), var.attributes)
 
             f.write(varname, var)
+            if progress:
+                done+=sizes[varname]
+                bar.update_progress(done/total,zoidberg=True)
+
 
     if delete:
         if append:
