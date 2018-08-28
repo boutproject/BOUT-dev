@@ -665,7 +665,8 @@ class DataFile_netCDF(DataFile):
             pass
 
         # Rename variable - as close as atomic as possible
-        self.handle.renameVariable(tmpname, name)
+        if tmpname:
+            self.handle.renameVariable(tmpname, name)
 
     def attributes(self, varname):
         try:
