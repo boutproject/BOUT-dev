@@ -605,6 +605,31 @@ class BoutOutputs(object):
         """
         return self.evolvingVariableNames
 
+    def sizes(self):
+        """Return a dictionary of the sizes of the variables
+
+        """
+        sizes={}
+        sizes['x']=self['nx']
+        sizes['y']=self['ny']+2*self['MYG']
+        sizes['z']=self['MZ']
+        sizes['t']=self['t_array'].shape[0]
+        result={}
+        if self._DataFileCaching and self._DataFileCache is None:
+            # Need to create the cache
+            self._DataFileCache = create_cache(self._path, self._prefix)
+        if self._DataFileCache is None:
+            lst,_,_=findFiles(self._path, self._prefix)[0]
+            tmp=DataFile(lst[0])
+        else:
+            tmp=DataFile(self._DataFileCache[0][0])
+        for var in self.varNames:
+            dims=tmp.dimensions(var)
+            result[var]=[]
+            for dim in dims:
+                result[var].append(sizes[dim])
+        return result
+
     def redistribute(self, npes, nxpe=None, mxg=2, myg=2, include_restarts=True):
         """Create a new set of dump files for npes processors.
 
