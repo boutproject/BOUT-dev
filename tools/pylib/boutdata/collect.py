@@ -90,7 +90,11 @@ def _convert_to_nice_slice(r, N, name="range"):
     elif isinstance(r, slice):
         temp_slice = r
     elif isinstance(r, int):
-        if r == -1:
+        if r >= N or r <-N:
+            # raise out of bounds error as if we'd tried to index the array with r
+            # without this, would return an empty array instead
+            raise IndexError(name+" index out of range, value was "+str(r))
+        elif r == -1:
             temp_slice = slice(r, None)
         else:
             temp_slice = slice(r, r + 1)
