@@ -18,14 +18,17 @@ When run as script:
 from boutdata.data import BoutOutputs
 from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
+from zoidberg import progress as bar
 import numpy
 import os
-from zoidberg import progress as bar
+import tempfile
+import shutil
+import glob
 
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
                  least_significant_digit=None, quiet=False, complevel=None, append=False,
-                 delete=False, progress=False):
+                 delete=False, progress=False, docontinue=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -73,14 +76,13 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         Delete the original files after squashing.
     progress : bool
         Print a progress bar
+    docontinue : bool
+        Try to progress a previously interrupted squash
     """
 
     fullpath = os.path.join(datadir,outputname)
 
     if append:
-        import tempfile
-        import shutil
-        import glob
         datadirnew = tempfile.mkdtemp(dir=datadir)
         for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
             if not quiet:
@@ -88,6 +90,11 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             shutil.move(f,datadirnew)
         oldfile=datadirnew+"/"+outputname
         datadir=datadirnew
+    if docontinue:
+        if append:
+            raise NotImplemented("append & docontinue: Case not handled")
+        datadirtmp = tempfile.mkdtemp(dir=datadir)
+        shutil.move(fullpath,datadirtmp)
 
     if os.path.isfile(fullpath) and not append:
         raise ValueError(fullpath+" already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
@@ -101,6 +108,10 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     if append:
         # move only after the file list is cached
         shutil.move(fullpath,oldfile)
+
+    if docontinue:
+        shutil.move(os.path.join(datadirtmp,outputname),datadir)
+        os.rmdir(datadirtmp)
 
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
@@ -127,11 +138,18 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             kwargs['complevel']=complevel
     if append:
         old=DataFile(oldfile)
+    create=True
+    if docontinue:
+        create=False
     # Create single file for output and write data
-    with DataFile(fullpath,create=True,write=True,format=format, **kwargs) as f:
+    with DataFile(fullpath,create=create,write=True,format=format, **kwargs) as f:
         for varname in outputvars:
             if not quiet:
                 print(varname)
+
+            if docontinue:
+                if varname in f.keys():
+                    continue
 
             var = outputs[varname]
             if append:

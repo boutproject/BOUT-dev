@@ -628,6 +628,12 @@ class DataFile_netCDF(DataFile):
             # Get new list of variables, and turn into a tuple
             dims = tuple(map(find_dim, dlist))
 
+            if name in self.handle.variables:
+                raise IOError("Variable %s already present",name)
+            tmpname=name+"_bout_temp"
+            i=0
+            while tmpname in self.handle.variables:
+                tmpname=name+"_bout_temp_%d"%i
             # Create the variable
             if library == "Scientific":
                 if t == 'int' or t == '<i4' or t == 'int32':
@@ -636,9 +642,9 @@ class DataFile_netCDF(DataFile):
                     tc = Float32
                 else:
                     tc = Float
-                var = self.handle.createVariable(name, tc, dims, **self._kwargs)
+                var = self.handle.createVariable(tmpname, tc, dims, **self._kwargs)
             else:
-                var = self.handle.createVariable(name, t, dims, **self._kwargs)
+                var = self.handle.createVariable(tmpname, t, dims, **self._kwargs)
 
             if var is None:
                 raise Exception("Couldn't create variable")
@@ -657,6 +663,9 @@ class DataFile_netCDF(DataFile):
                 var.setncattr(attrname, data.attributes[attrname])
         except AttributeError:
             pass
+
+        # Rename variable - as close as atomic as possible
+        self.handle.renameVariable(tmpname, name)
 
     def attributes(self, varname):
         try:
