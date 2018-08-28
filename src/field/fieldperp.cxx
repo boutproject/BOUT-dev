@@ -286,8 +286,8 @@ FPERP_REAL_OP_FPERP(/);
     /* Define and allocate the output result */                                          \
     FieldPerp result(f.getMesh());                                                       \
     result.allocate();                                                                   \
-    /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));      \
+    BOUT_FOR (d, region) {                                                               \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
     checkData(result);                                                                   \
@@ -318,9 +318,12 @@ const FieldPerp copy(const FieldPerp &f) {
 const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
   FieldPerp result = copy(var);
 
-  for (const auto &d : result.region(rgn))
-    if (result[d] < f)
+  const Region<IndPerp> &region = var.getMesh()->getRegionPerp(REGION_STRING(rgn));
+  BOUT_FOR(d, region) {
+    if (result[d] < f) {
       result[d] = f;
+    }
+  }
 
   return result;
 }
@@ -335,8 +338,10 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   result.allocate();
   result.setIndex(y);
 
-  for(const auto &i : result)
-    result[i] = f[i];
+  const Region<IndPerp> &region_all = f.getMesh()->getRegionPerp("RGN_ALL");
+  BOUT_FOR(i, region_all) {
+    result[i] = f(i, y);
+  }
   
   return result;
 }
@@ -346,11 +351,15 @@ BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
 
-  for (const auto &i : f.region(rgn))
-    if (f[i] < result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
+    if (f[i] < result) {
       result = f[i];
+    }
+  }
 
   if (allpe) {
     // MPI reduce
@@ -366,11 +375,15 @@ BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
 
   ASSERT2(f.isAllocated());
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
 
-  for (const auto &i : f.region(rgn))
-    if (f[i] > result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+    if (f[i] > result) {
       result = f[i];
+    }
+  }
 
   if (allpe) {
     // MPI reduce
@@ -388,7 +401,9 @@ bool finite(const FieldPerp &f, REGION rgn) {
     return false;
   }
 
-  for (const auto &i : f.region(rgn)) {
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR_SERIAL(i, region) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -408,8 +423,9 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
   FieldPerp result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
@@ -426,8 +442,9 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
   FieldPerp result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs);
   }
 
@@ -444,8 +461,9 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   FieldPerp result(rhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for (const auto &i : result.region(rgn)) {
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs, rhs[i]);
   }
 
@@ -461,11 +479,13 @@ void checkData(const FieldPerp &f, REGION region) {
   }
 
 #if CHECK > 2
+  const Region<IndPerp> &new_region = f.getMesh()->getRegionPerp(REGION_STRING(region));
+
   // Do full checks
-  for (const auto &i : f.region(region)) {
+  BOUT_FOR_SERIAL(i, new_region) {
     if (!::finite(f[i])) {
-      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x,
-                          i.z);
+      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x(),
+                          i.z());
     }
   }
 #endif
@@ -476,18 +496,10 @@ void invalidateGuards(FieldPerp &var) {
 #if CHECK > 2
   Mesh *localmesh = var.getMesh();
 
-  // Inner x -- all z
-  for (int ix = 0; ix < localmesh->xstart; ix++) {
-    for (int iz = 0; iz < localmesh->LocalNz; iz++) {
-      var(ix, iz) = std::nan("");
-    }
-  }
+  const Region<IndPerp> &region_guards = localmesh->getRegionPerp("RGN_GUARDS");
 
-  // Outer x -- all z
-  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-    for (int iz = 0; iz < localmesh->LocalNz; iz++) {
-      var(ix, iz) = std::nan("");
-    }
+  BOUT_FOR(i, region_guards) {
+    var[i] = BoutNaN;
   }
 #endif
   return;
