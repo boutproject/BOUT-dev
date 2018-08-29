@@ -340,6 +340,9 @@ protected:
       bool evolve_bndry; // Are the boundary regions being evolved?
 
       string name;    // Name of the variable
+
+      /// Starting index in 1D data arrays. Set in calc_start_index()
+      unsigned int start_index;
     };
   
   /// Vectors of variables to evolve
@@ -372,6 +375,28 @@ protected:
   void save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
   void set_id(BoutReal *udata);
+
+  // Newer implementation of load/save routines.
+  // These do not interleave values and are OpenMP parallelised so should be faster
+  bool loadsave_chunks; // Use new methods?
+  
+  /// Calculate starting index of each field into 1D arrays
+  void calc_start_index();
+
+  /// Copy data from 1D array `udata` into BOUT++ fields
+  void loadVars(BoutReal *udata);
+  
+  /// Copy time derivatives from 1D array `udata` into BOUT++ fields
+  void loadDerivs(BoutReal *udata);
+  
+  /// Copy data from BOUT++ fields into `udata`
+  void saveVars(BoutReal *udata);
+  
+  /// Copy data from BOUT++ time-derivative fields into `udata`
+  void saveDerivs(BoutReal *udata);
+  
+  /// Sets `udata` to 0 for constraints, 1 for time evolving
+  void setID(BoutReal *udata);
   
   // 
   const Field3D globalIndex(int localStart);

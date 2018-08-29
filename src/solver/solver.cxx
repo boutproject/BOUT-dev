@@ -78,6 +78,9 @@ Solver::Solver(Options *opts) : options(opts), model(nullptr), prefunc(nullptr) 
   // Method of Manufactured Solutions (MMS)
   options->get("mms", mms, false);
   options->get("mms_initialise", mms_initialise, mms);
+
+  // Load/save method
+  options->get("loadsave_chunks", loadsave_chunks, false);
 }
 
 /**************************************************************************
@@ -603,6 +606,10 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
+  
+  // Calculate start index of each evolving field into 1D arrays.
+  // This is used for load/save if loadsave_chunks = true
+  calc_start_index();
 
   return 0;
 }
@@ -978,6 +985,12 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
 }
 
 void Solver::load_vars(BoutReal *udata) {
+
+  if (loadsave_chunks) {
+    // Call new method
+    return loadVars(udata);
+  }
+  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.var->allocate();
@@ -997,6 +1010,11 @@ void Solver::load_vars(BoutReal *udata) {
 }
 
 void Solver::load_derivs(BoutReal *udata) {
+  if (loadsave_chunks) {
+    // Call new method
+    return loadDerivs(udata);
+  }
+  
   // Make sure data is allocated
   for(const auto& f : f2d) 
     f.F_var->allocate();
@@ -1017,6 +1035,11 @@ void Solver::load_derivs(BoutReal *udata) {
 
 // This function only called during initialisation
 void Solver::save_vars(BoutReal *udata) {
+  if (loadsave_chunks) {
+    // Call new method
+    return saveVars(udata);
+  }
+  
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
       throw BoutException("Variable '%s' not initialised", f.name.c_str());
@@ -1043,6 +1066,11 @@ void Solver::save_vars(BoutReal *udata) {
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
+  if (loadsave_chunks) {
+    // Call new method
+    return saveDerivs(dudata);
+  }
+  
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
     if(v.covariant) {
@@ -1068,9 +1096,390 @@ void Solver::save_derivs(BoutReal *dudata) {
 }
 
 void Solver::set_id(BoutReal *udata) {
+  if (loadsave_chunks) {
+    // Call new method
+    return setID(udata);
+  }
+  
   loop_vars(udata, SET_ID);
 }
 
+//////////////////////////////////////////////////////////////////////////
+
+#include "bout/openmpwrap.hxx"
+
+void Solver::calc_start_index() {
+  // Create a region
+  // Note: don't use RGN_ALL because might include corners,
+  // and RGN_BNDRY used in getLocalN()
+  mesh->addRegion2D("RGN_WITHBNDRY",
+                    mesh->getRegion2D("RGN_NOBNDRY") + mesh->getRegion2D("RGN_BNDRY"));
+  mesh->addRegion3D("RGN_WITHBNDRY",
+                    mesh->getRegion3D("RGN_NOBNDRY") + mesh->getRegion3D("RGN_BNDRY"));
+
+  // Get the size of the regions
+  auto core2D_size = size(mesh->getRegion2D("RGN_NOBNDRY"));
+  auto all2D_size = size(mesh->getRegion2D("RGN_WITHBNDRY"));
+
+  auto core3D_size = size(mesh->getRegion3D("RGN_NOBNDRY"));
+  auto all3D_size = size(mesh->getRegion3D("RGN_WITHBNDRY"));
+
+  unsigned int index = 0;
+  for (auto &f : f2d) {
+    f.start_index = index;
+
+    if (f.evolve_bndry) {
+      index += all2D_size;
+    } else {
+      index += core2D_size;
+    }
+  }
+
+  for (auto &f : f3d) {
+    f.start_index = index;
+
+    if (f.evolve_bndry) {
+      index += all3D_size;
+    } else {
+      index += core3D_size;
+    }
+  }
+
+  // Check that everything adds up
+  ASSERT1(index == getLocalN());
+}
+
+/// Copy data from 1D array `udata` into BOUT++ fields
+void Solver::loadVars(BoutReal *udata) {
+  // Get the regions for iterating over
+  auto &region2D_core = mesh->getRegion2D("RGN_NOBNDRY");
+  auto &region2D_all = mesh->getRegion2D("RGN_WITHBNDRY");
+
+  auto &region3D_core = mesh->getRegion3D("RGN_NOBNDRY");
+  auto &region3D_all = mesh->getRegion3D("RGN_WITHBNDRY");
+
+  BOUT_OMP(parallel) {
+
+    BOUT_OMP(for nowait)
+    for (auto f = f2d.cbegin(); f < f2d.cend(); ++f) {
+      // Make sure data is allocated
+      f->var->allocate();
+
+      // Get the region being solved
+      auto &region = region2D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region2D_all;
+      }
+
+      // copy data into field
+      // Note: Done in serial due to need to map between region and index
+      auto index = f->start_index; // This is set in calc_start_index
+      BOUT_FOR_SERIAL(i, region) {
+        (*f->var)[i] = udata[index];
+        index++;
+      }
+    }
+
+    BOUT_OMP(for nowait)
+    for (auto f = f3d.cbegin(); f < f3d.cend(); ++f) {
+      f->var->allocate();
+      f->var->setLocation(f->location);
+
+      auto &region = region3D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region3D_all;
+      }
+
+      auto index = f->start_index;
+      BOUT_FOR_SERIAL(i, region) {
+        (*f->var)[i] = udata[index];
+        ++index;
+      }
+    }
+
+    // Mark each vector as either co- or contra-variant
+
+    BOUT_OMP(for nowait)
+    for (auto v = v2d.cbegin(); v < v2d.cend(); v++)
+      v->var->covariant = v->covariant;
+
+    BOUT_OMP(for nowait)
+    for (auto v = v3d.cbegin(); v < v3d.cend(); v++)
+      v->var->covariant = v->covariant;
+  }
+}
+
+void Solver::loadDerivs(BoutReal *udata) {
+  // Get the regions for iterating over
+  auto &region2D_core = mesh->getRegion2D("RGN_NOBNDRY");
+  auto &region2D_all = mesh->getRegion2D("RGN_WITHBNDRY");
+
+  auto &region3D_core = mesh->getRegion3D("RGN_NOBNDRY");
+  auto &region3D_all = mesh->getRegion3D("RGN_WITHBNDRY");
+
+  BOUT_OMP(parallel) {
+
+    BOUT_OMP(for nowait)
+    for (auto f = f2d.cbegin(); f < f2d.cend(); ++f) {
+      // Make sure data is allocated
+      f->F_var->allocate();
+
+      // Get the region being solved
+      auto &region = region2D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region2D_all;
+      }
+
+      // copy data into field
+      auto index = f->start_index; // This is set in calc_start_index
+      BOUT_FOR_SERIAL(i, region) {
+        (*f->F_var)[i] = udata[index];
+        ++index;
+      }
+    }
+
+      BOUT_OMP(for nowait)
+      for (auto f = f3d.cbegin(); f < f3d.cend(); ++f) {
+        f->F_var->allocate();
+        f->F_var->setLocation(f->location);
+
+        auto &region = region3D_core;
+        if (f->evolve_bndry) {
+          // Evolving boundary region
+          region = region3D_all;
+        }
+
+        auto index = f->start_index;
+        BOUT_FOR_SERIAL(i, region) {
+          (*f->F_var)[i] = udata[index];
+          ++index;
+        }
+      }
+
+      // Mark each vector as either co- or contra-variant
+
+    BOUT_OMP(for nowait)
+    for (auto v = v2d.cbegin(); v < v2d.cend(); v++)
+      v->F_var->covariant = v->covariant;
+
+    BOUT_OMP(for nowait)
+    for (auto v = v3d.cbegin(); v < v3d.cend(); v++)
+      v->F_var->covariant = v->covariant;
+  }
+}
+
+void Solver::saveVars(BoutReal *udata) {
+
+  // Check that all fields have been given a value
+  for (const auto &f : f2d)
+    if (!f.var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+
+  for (const auto &f : f3d)
+    if (!f.var->isAllocated())
+      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+
+  // Make sure vectors in correct basis
+  BOUT_OMP(parallel) {
+    BOUT_OMP(for nowait)
+    for (auto v = v2d.cbegin(); v < v2d.cend(); ++v) {
+      if (v->covariant) {
+        v->var->toCovariant();
+      } else
+        v->var->toContravariant();
+    }
+
+    BOUT_OMP(for nowait)
+    for (auto v = v3d.cbegin(); v < v3d.cend(); ++v) {
+      if (v->covariant) {
+        v->var->toCovariant();
+      } else
+        v->var->toContravariant();
+    }
+  }
+
+  // Get the regions for iterating over
+  auto &region2D_core = mesh->getRegion2D("RGN_NOBNDRY");
+  auto &region2D_all = mesh->getRegion2D("RGN_WITHBNDRY");
+
+  auto &region3D_core = mesh->getRegion3D("RGN_NOBNDRY");
+  auto &region3D_all = mesh->getRegion3D("RGN_WITHBNDRY");
+
+  BOUT_OMP(parallel) {
+
+    BOUT_OMP(for nowait)
+    for (auto f = f2d.cbegin(); f < f2d.cend(); ++f) {
+      // Get the region being solved
+      auto &region = region2D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region2D_all;
+      }
+
+      // copy data into field
+      auto index = f->start_index; // This is set in calc_start_index
+      BOUT_FOR_SERIAL(i, region) {
+        udata[index] = (*f->var)[i];
+        index++;
+      }
+    }
+
+    BOUT_OMP(for nowait)
+    for (auto f = f3d.cbegin(); f < f3d.cend(); ++f) {
+
+      auto &region = region3D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region3D_all;
+      }
+
+      auto index = f->start_index;
+      BOUT_FOR_SERIAL(i, region) {
+        udata[index] = (*f->var)[i];
+        index++;
+      }
+    }
+  }
+}
+
+void Solver::saveDerivs(BoutReal *udata) {
+
+  // Check that all time derivatives have been given a value
+  for (const auto &f : f2d)
+    if (!f.F_var->isAllocated())
+      throw BoutException("Time derivative of '%s' not set", f.name.c_str());
+
+  for (const auto &f : f3d)
+    if (!f.F_var->isAllocated())
+      throw BoutException("Time derivative of '%s' not initialised", f.name.c_str());
+
+  // Make sure vectors in correct basis
+  BOUT_OMP(parallel) {
+    BOUT_OMP(for nowait)
+    for (auto v = v2d.cbegin(); v < v2d.cend(); ++v) {
+      if (v->covariant) {
+        v->F_var->toCovariant();
+      } else
+        v->F_var->toContravariant();
+    }
+
+    BOUT_OMP(for nowait)
+    for (auto v = v3d.cbegin(); v < v3d.cend(); ++v) {
+      if (v->covariant) {
+        v->F_var->toCovariant();
+      } else
+        v->F_var->toContravariant();
+    }
+  }
+
+  // Make sure 3D fields are at the correct cell location
+  for (const auto &f : f3d) {
+    if (f.var->getLocation() != (f.F_var)->getLocation()) {
+      throw BoutException("Time derivative at wrong location - Field is at %s, "
+                          "derivative is at %s for field '%s'\n",
+                          strLocation(f.var->getLocation()),
+                          strLocation(f.F_var->getLocation()), f.name.c_str());
+    }
+  }
+
+  // Get the regions for iterating over
+  auto &region2D_core = mesh->getRegion2D("RGN_NOBNDRY");
+  auto &region2D_all = mesh->getRegion2D("RGN_WITHBNDRY");
+
+  auto &region3D_core = mesh->getRegion3D("RGN_NOBNDRY");
+  auto &region3D_all = mesh->getRegion3D("RGN_WITHBNDRY");
+
+  BOUT_OMP(parallel) {
+
+    BOUT_OMP(for nowait)
+    for (auto f = f2d.cbegin(); f < f2d.cend(); ++f) {
+      // Get the region being solved
+      auto &region = region2D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region2D_all;
+      }
+
+      // copy data into field
+      auto index = f->start_index; // This is set in calc_start_index
+      BOUT_FOR_SERIAL(i, region) {
+        udata[index] = (*f->F_var)[i];
+        index++;
+      }
+    }
+
+    BOUT_OMP(for nowait)
+    for (auto f = f3d.cbegin(); f < f3d.cend(); ++f) {
+      auto &region = region3D_core;
+      if (f->evolve_bndry) {
+        // Evolving boundary region
+        region = region3D_all;
+      }
+
+      auto index = f->start_index;
+      BOUT_FOR_SERIAL(i, region) {
+        udata[index] = (*f->F_var)[i];
+        index++;
+      }
+    }
+  }
+}
+
+void Solver::setID(BoutReal *udata) {
+
+  // Get the size of the regions
+  auto core2D_size = size(mesh->getRegion2D("RGN_NOBNDRY"));
+  auto all2D_size = size(mesh->getRegion2D("RGN_WITHBNDRY"));
+
+  auto core3D_size = size(mesh->getRegion3D("RGN_NOBNDRY"));
+  auto all3D_size = size(mesh->getRegion3D("RGN_WITHBNDRY"));
+
+  // BOUT_OMP(parallel) {
+
+  // BOUT_OMP(for nowait)
+  for (auto f = f2d.cbegin(); f < f2d.cend(); ++f) {
+    // Get the size of the region
+
+    auto region_size = core2D_size;
+    if (f->evolve_bndry) {
+      // Evolving boundary region
+      region_size = all2D_size;
+    }
+
+    // value = 0 if constraint
+    BoutReal value = f->constraint ? 0.0 : 1.0;
+
+    // copy data into field
+      BOUT_OMP(for nowait)
+      for (auto index = f->start_index; index < f->start_index + region_size; ++index) {
+        udata[index] = value;
+      }
+  }
+
+  // BOUT_OMP(for nowait)
+  for (auto f = f3d.cbegin(); f < f3d.cend(); ++f) {
+    auto region_size = core3D_size;
+    if (f->evolve_bndry) {
+      // Evolving boundary region
+      region_size = all3D_size;
+    }
+
+    // value = 0 if constraint
+    BoutReal value = f->constraint ? 0.0 : 1.0;
+
+    // copy data into field
+      BOUT_OMP(for nowait)
+      for (auto index = f->start_index; index < f->start_index + region_size; ++index) {
+        udata[index] = value;
+      }
+  }
+  //}
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 /*!
  * Returns a Field3D containing the global indices
