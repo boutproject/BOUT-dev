@@ -606,23 +606,29 @@ class BoutOutputs(object):
         return self.evolvingVariableNames
 
     def sizes(self):
-        """Return a dictionary of the sizes of the variables
+        """Return a dictionary of the sizes of the variables in the
+        dump file.
+
+        Note that the maximal size of the fields in the dump file
+        returned, including all guard cells.
+        Thus the returned size will not match the shape of the
+        returned data, if not all cells are requested.
 
         """
-        sizes={}
-        sizes['x']=self['nx']
-        sizes['y']=self['ny']+2*self['MYG']
-        sizes['z']=self['MZ']
-        sizes['t']=self['t_array'].shape[0]
-        result={}
+        sizes = {}
+        sizes['x'] = self['nx']
+        sizes['y'] = self['ny'] + 2 * self['MYG']
+        sizes['z'] = self['MZ']
+        sizes['t'] = self['t_array'].shape[0]
+        result = {}
         if self._DataFileCache is None:
-            lst,_,_=findFiles(self._path, self._prefix)[0]
-            tmp=DataFile(lst[0])
+            lst, _, _ = findFiles(self._path, self._prefix)[0]
+            tmp = DataFile(lst[0])
         else:
-            tmp=DataFile(self._DataFileCache[0][0])
+            tmp = DataFile(self._DataFileCache[0][0])
         for var in self.varNames:
-            dims=tmp.dimensions(var)
-            result[var]=[]
+            dims = tmp.dimensions(var)
+            result[var] = []
             for dim in dims:
                 result[var].append(sizes[dim])
         return result

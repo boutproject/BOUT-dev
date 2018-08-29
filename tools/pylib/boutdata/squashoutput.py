@@ -7,12 +7,6 @@ Output file named BOUT.dmp.nc by default
 
 Useful because this discards ghost cell data (that is only useful for debugging)
 and because single files are quicker to download.
-
-When run as script:
-    - first command line argument specifies data directory (default is the
-      current directory where the script is run)
-    - optional argument "--outputname <name>" can be given to change the name
-      of the output file
 """
 
 # imports in function for fast bash completion
@@ -87,7 +81,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
     if append:
         datadirnew = tempfile.mkdtemp(dir=datadir)
-        for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
+        for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
             if not quiet:
                 print("moving", f)
             shutil.move(f, datadirnew)
@@ -95,7 +89,9 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         datadir = datadirnew
     if docontinue:
         if append:
-            raise NotImplemented("append & docontinue: Case not handled")
+            raise NotImplementedError("append & docontinue: Case not handled")
+        # move temporary to subdir, so that when the BoutOutputs
+        # caches the file list, this file is not found
         datadirtmp = tempfile.mkdtemp(dir=datadir)
         shutil.move(fullpath, datadirtmp)
 
@@ -122,6 +118,9 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     outputvars.append(outputvars.pop(t_array_index))
 
     if progress:
+        # outputs.sizes() returns for each variable a list with the
+        # length in each dimension. We are interrested in the total
+        # length of each variable.
         sizes_ = outputs.sizes()
         sizes = {}
         total = 0
@@ -176,7 +175,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     if delete:
         if append:
             os.remove(oldfile)
-        for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
+        for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
             if not quiet:
                 print("Deleting", f)
             os.remove(f)
