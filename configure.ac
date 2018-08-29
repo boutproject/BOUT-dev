@@ -87,6 +87,8 @@ AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(sundials_openmp, [AS_HELP_STRING([--enable-sundials-openmp],
+        [Enable building OpenMP-MPI NVector for SUNDIALS])],,[enable_sundials_openmp=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -980,6 +982,8 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   ])
 ])
 
+has_some_sundials="no"
+
 AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
   BOUT_FIND_SUNDIALS_MODULE([ida], [
     #include <nvector/nvector_parallel.h>
@@ -989,6 +993,7 @@ AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
     #include <ida/ida_bbdpre.h>
     extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
   ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
+  has_some_sundials="yes"
 ])
 
 AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
@@ -1000,6 +1005,7 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
     #include <cvode/cvode_bbdpre.h>
     extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
   ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
+  has_some_sundials="yes"
 ])
 
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
@@ -1011,6 +1017,13 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
     #include <arkode/arkode_bbdpre.h>
     extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
   ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
+  has_some_sundials="yes"
+])
+
+# Set a flag to enable compilation of hybrid OpenMP-MPI NVector
+AS_IF([test "x$has_some_sundials" != "no" && test "x$enable_sundials_openmp" != "x" && test "x$enable_sundials_openmp" != "xno"],[
+  CXXFLAGS="$CXXFLAGS -DBOUT_SUNDIALS_HYBRID"
+  AC_MSG_RESULT([Enabling Sundials hybrid OpenMP-MPI NVector])
 ])
 
 #############################################################

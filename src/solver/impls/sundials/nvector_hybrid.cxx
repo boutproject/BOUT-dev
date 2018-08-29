@@ -21,7 +21,7 @@
  * -----------------------------------------------------------------
  */
 
-#if defined(BOUT_HAS_CVODE) || defined(BOUT_HAS_IDA) || defined(BOUT_HAS_ARKODE)
+#ifdef BOUT_SUNDIALS_HYBRID
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -547,7 +547,8 @@ void N_VLinearSum_Hybrid(realtype a, N_Vector x, realtype b, N_Vector y, N_Vecto
   xd = NV_DATA_P(x);
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = (a*xd[i])+(b*yd[i]);
 
@@ -563,7 +564,8 @@ void N_VConst_Hybrid(realtype c, N_Vector z)
 
   N  = NV_LOCLENGTH_P(z);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++) zd[i] = c;
 
   return;
@@ -581,6 +583,7 @@ void N_VProd_Hybrid(N_Vector x, N_Vector y, N_Vector z)
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = xd[i]*yd[i];
 
@@ -598,7 +601,8 @@ void N_VDiv_Hybrid(N_Vector x, N_Vector y, N_Vector z)
   xd = NV_DATA_P(x);
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = xd[i]/yd[i];
 
@@ -625,6 +629,7 @@ void N_VScale_Hybrid(realtype c, N_Vector x, N_Vector z)
     N  = NV_LOCLENGTH_P(x);
     xd = NV_DATA_P(x);
     zd = NV_DATA_P(z);
+#pragma omp parallel for
     for (i = 0; i < N; i++)
       zd[i] = c*xd[i];
   }
@@ -643,6 +648,7 @@ void N_VAbs_Hybrid(N_Vector x, N_Vector z)
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = SUNRabs(xd[i]);
 
@@ -659,7 +665,8 @@ void N_VInv_Hybrid(N_Vector x, N_Vector z)
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = ONE/xd[i];
 
@@ -676,7 +683,8 @@ void N_VAddConst_Hybrid(N_Vector x, realtype b, N_Vector z)
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
-  
+
+#pragma omp parallel for
   for (i = 0; i < N; i++) zd[i] = xd[i]+b;
 
   return;
@@ -696,6 +704,7 @@ realtype N_VDotProd_Hybrid(N_Vector x, N_Vector y)
   yd = NV_DATA_P(y);
   comm = NV_COMM_P(x);
 
+#pragma omp parallel for reduction(+:sum)
   for (i = 0; i < N; i++) sum += xd[i]*yd[i];
 
   gsum = VAllReduce_Hybrid(sum, 1, comm);
@@ -717,6 +726,7 @@ realtype N_VMaxNorm_Hybrid(N_Vector x)
 
   max = ZERO;
 
+#pragma omp parallel for reduction(max:max)
   for (i = 0; i < N; i++) {
     if (SUNRabs(xd[i]) > max) max = SUNRabs(xd[i]);
   }
@@ -741,6 +751,7 @@ realtype N_VWrmsNorm_Hybrid(N_Vector x, N_Vector w)
   wd       = NV_DATA_P(w);
   comm = NV_COMM_P(x);
 
+#pragma omp parallel for private(prodi) reduction(+:sum)
   for (i = 0; i < N; i++) {
     prodi = xd[i]*wd[i];
     sum += SUNSQR(prodi);
@@ -767,6 +778,7 @@ realtype N_VWrmsNormMask_Hybrid(N_Vector x, N_Vector w, N_Vector id)
   idd      = NV_DATA_P(id);
   comm = NV_COMM_P(x);
 
+#pragma omp parallel for private(prodi) reduction(+:sum)
   for (i = 0; i < N; i++) {
     if (idd[i] > ZERO) {
       prodi = xd[i]*wd[i];
@@ -798,10 +810,11 @@ realtype N_VMin_Hybrid(N_Vector x)
 
     min = xd[0];
 
+#pragma omp parallel for reduction(min:min)
     for (i = 1; i < N; i++) {
       if (xd[i] < min) min = xd[i];
     }
-
+    
   }
 
   gmin = VAllReduce_Hybrid(min, 3, comm);
@@ -823,6 +836,7 @@ realtype N_VWL2Norm_Hybrid(N_Vector x, N_Vector w)
   wd = NV_DATA_P(w);
   comm = NV_COMM_P(x);
 
+#pragma omp parallel for private(prodi)
   for (i = 0; i < N; i++) {
     prodi = xd[i]*wd[i];
     sum += SUNSQR(prodi);
@@ -846,6 +860,7 @@ realtype N_VL1Norm_Hybrid(N_Vector x)
   xd = NV_DATA_P(x);
   comm = NV_COMM_P(x);
 
+#pragma omp parallel for reduction(+:sum)
   for (i = 0; i<N; i++) 
     sum += SUNRabs(xd[i]);
 
@@ -865,6 +880,7 @@ void N_VCompare_Hybrid(realtype c, N_Vector x, N_Vector z)
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++) {
     zd[i] = (SUNRabs(xd[i]) >= c) ? ONE : ZERO;
   }
@@ -886,6 +902,7 @@ booleantype N_VInvTest_Hybrid(N_Vector x, N_Vector z)
   comm = NV_COMM_P(x);
 
   val = ONE;
+#pragma omp parallel for reduction(min:val)
   for (i = 0; i < N; i++) {
     if (xd[i] == ZERO) 
       val = ZERO;
@@ -917,7 +934,8 @@ booleantype N_VConstrMask_Hybrid(N_Vector c, N_Vector x, N_Vector m)
   comm = NV_COMM_P(x);
 
   temp = ONE;
-
+  
+#pragma omp parallel for reduction(min:temp)
   for (i = 0; i < N; i++) {
     md[i] = ZERO;
     if (cd[i] == ZERO) continue;
@@ -1012,6 +1030,7 @@ static void VCopy_Hybrid(N_Vector x, N_Vector z)
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = xd[i]; 
 
@@ -1030,6 +1049,7 @@ static void VSum_Hybrid(N_Vector x, N_Vector y, N_Vector z)
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = xd[i]+yd[i];
 
@@ -1047,7 +1067,8 @@ static void VDiff_Hybrid(N_Vector x, N_Vector y, N_Vector z)
   xd = NV_DATA_P(x);
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = xd[i]-yd[i];
 
@@ -1064,7 +1085,8 @@ static void VNeg_Hybrid(N_Vector x, N_Vector z)
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = -xd[i];
 
@@ -1083,6 +1105,7 @@ static void VScaleSum_Hybrid(realtype c, N_Vector x, N_Vector y, N_Vector z)
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = c*(xd[i]+yd[i]);
 
@@ -1100,7 +1123,8 @@ static void VScaleDiff_Hybrid(realtype c, N_Vector x, N_Vector y, N_Vector z)
   xd = NV_DATA_P(x);
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = c*(xd[i]-yd[i]);
 
@@ -1119,6 +1143,7 @@ static void VLin1_Hybrid(realtype a, N_Vector x, N_Vector y, N_Vector z)
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = (a*xd[i])+yd[i];
 
@@ -1137,6 +1162,7 @@ static void VLin2_Hybrid(realtype a, N_Vector x, N_Vector y, N_Vector z)
   yd = NV_DATA_P(y);
   zd = NV_DATA_P(z);
 
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     zd[i] = (a*xd[i])-yd[i];
 
@@ -1155,17 +1181,19 @@ static void Vaxpy_Hybrid(realtype a, N_Vector x, N_Vector y)
   yd = NV_DATA_P(y);
 
   if (a == ONE) {
+#pragma omp parallel for
     for (i = 0; i < N; i++)
       yd[i] += xd[i];
     return;
   }
   
   if (a == -ONE) {
+#pragma omp parallel for
     for (i = 0; i < N; i++)
       yd[i] -= xd[i];
     return;
   }    
-  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     yd[i] += a*xd[i];
 
@@ -1181,11 +1209,12 @@ static void VScaleBy_Hybrid(realtype a, N_Vector x)
 
   N  = NV_LOCLENGTH_P(x);
   xd = NV_DATA_P(x);
-
+  
+#pragma omp parallel for
   for (i = 0; i < N; i++)
     xd[i] *= a;
 
   return;
 }
 
-#endif // BOUT_HAS_SUNDIALS
+#endif // BOUT_SUNDIALS_HYBRID

@@ -38,8 +38,7 @@
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
-
-#if 1
+#ifdef BOUT_SUNDIALS_HYBRID
 #include "../sundials/nvector_hybrid.h"
 #define NVEC_CREATE(comm, nlocal, nglobal) N_VNew_Hybrid(comm, nlocal, nglobal)
 #define NVEC_DESTROY(nvec) N_VDestroy_Hybrid(nvec)
