@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
                         result = bracket(a, c, BRACKET_SIMPLE););
 
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT",
-                        result = bracket(a, c, BRACKET_SIMPLE););
+                        result = bracket(a, c, BRACKET_STD););
   }
 
   if (do3D3D) {
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
                         result = bracket(a, b, BRACKET_SIMPLE););
 
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT",
-                        result = bracket(a, b, BRACKET_SIMPLE););
+                        result = bracket(a, b, BRACKET_STD););
   }
 
   // Uncomment below for a "correctness" check
