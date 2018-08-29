@@ -495,7 +495,7 @@ class BoutOutputs(object):
         re-opened to read each variable (default: True)
 
     **kwargs
-        keyword arguments that are passed through to _caching_collect()
+        keyword arguments that are passed through to collect()
 
     Examples
     --------
@@ -591,7 +591,7 @@ class BoutOutputs(object):
                 self._datacachesize = 0
                 self._datacachemaxsize = self._caching*1.e9
 
-        self._DataFileCache = None
+        self._DataFileCacheTuple = None
 
     def keys(self):
         """Return a list of available variable names
@@ -615,9 +615,6 @@ class BoutOutputs(object):
         sizes['z']=self['MZ']
         sizes['t']=self['t_array'].shape[0]
         result={}
-        if self._DataFileCaching and self._DataFileCache is None:
-            # Need to create the cache
-            self._DataFileCache = create_cache(self._path, self._prefix)
         if self._DataFileCache is None:
             lst,_,_=findFiles(self._path, self._prefix)[0]
             tmp=DataFile(lst[0])
@@ -777,14 +774,13 @@ class BoutOutputs(object):
             restart.redistribute(npes, path=backupdir,
                                  nxpe=nxpe, output=self._path, mxg=mxg, myg=myg)
 
-    def _collect(self, *args, **kwargs):
-        """Wrapper for collect to pass self._DataFileCache if necessary.
-
-        """
-        if self._DataFileCaching and self._DataFileCache is None:
-            # Need to create the cache
-            self._DataFileCache = create_cache(self._path, self._prefix)
-        return collect(*args, datafile_cache=self._DataFileCache, **kwargs)
+    @property
+    def _DataFileCache(self):
+        if not self._DataFileCaching:
+            return None
+        if self._DataFileCacheTuple is None:
+            self._DataFileCacheTuple = create_cache(self._path, self._prefix)
+        return self._DataFileCacheTuple
 
     def __len__(self):
         return len(self.varNames)
@@ -799,8 +795,9 @@ class BoutOutputs(object):
 
         if self._caching:
             if name not in self._datacache.keys():
-                item = self._collect(name, path=self._path,
-                                     prefix=self._prefix, **self._kwargs)
+                item = collect(
+                    name, path=self._path, prefix=self._prefix,
+                    datafile_cache=self._DataFileCache, **self._kwargs)
                 if self._caching is not True:
                     itemsize = item.nbytes
                     if itemsize > self._datacachemaxsize:
@@ -816,8 +813,9 @@ class BoutOutputs(object):
                 return self._datacache[name]
         else:
             # Collect the data from the repository
-            data = self._collect(name, path=self._path,
-                                 prefix=self._prefix, **self._kwargs)
+            data = collect(
+                name, path=self._path, prefix=self._prefix,
+                datafile_cache=self._DataFileCache, **self._kwargs)
             return data
 
     def _removeFirstFromCache(self):
@@ -828,8 +826,7 @@ class BoutOutputs(object):
         self._datacachesize -= item[1].nbytes
 
     def __iter__(self):
-        """Iterate through all keys, starting with "options" then going
-        through all variables for _caching_collect
+        """Iterate through all keys
 
         """
         for k in self.varNames:
