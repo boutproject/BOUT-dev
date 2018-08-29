@@ -1,7 +1,22 @@
 /************************************************************************//**
- * \brief Openmp utilitiy wrappers
+ * \brief OpenMP utility wrappers
  * 
+ * A macro wrapper BOUT_OMP avoids noisy `unknown pragma` warnings when
+ * compiling without OpenMP support.
  * 
+ * Example
+ * -------
+ *
+ *    BOUT_OMP(parallel) {
+ *       ...
+ *    }
+ *
+ * becomes
+ *
+ *    #pragma omp parallel {
+ *       
+ *    } 
+ *
  **************************************************************************
  * Copyright 2017
  *
