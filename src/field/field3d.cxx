@@ -758,6 +758,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   FieldPerp result{rhs.getMesh()};
   result.allocate();
+  result.setIndex(rhs.getIndex());
 
   // Iterate over indices
   for(const auto& i : result.region(rgn)) {

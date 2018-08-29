@@ -205,9 +205,7 @@ FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
     checkData(rhs);                                                                      \
     FieldPerp result(lhs.getMesh());                                                     \
     result.allocate();                                                                   \
-                                                                                         \
-    int y = lhs.getIndex();                                                              \
-    result.setIndex(y);                                                                  \
+    result.setIndex(lhs.getIndex());                                                     \
                                                                                          \
     for (const auto &i : result)                                                         \
       result[i] = lhs[i] op rhs[i];                                                      \
@@ -239,9 +237,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
     checkData(rhs);                                                                      \
     FieldPerp result(lhs.getMesh());                                                     \
     result.allocate();                                                                   \
-                                                                                         \
-    int y = lhs.getIndex();                                                              \
-    result.setIndex(y);                                                                  \
+    result.setIndex(lhs.getIndex());                                                     \
                                                                                          \
     for (const auto &i : result)                                                         \
       result[i] = lhs[i] op rhs;                                                         \
@@ -261,9 +257,7 @@ FPERP_FPERP_OP_REAL(/);
     checkData(rhs);                                                                      \
     FieldPerp result(rhs.getMesh());                                                     \
     result.allocate();                                                                   \
-                                                                                         \
-    int y = rhs.getIndex();                                                              \
-    result.setIndex(y);                                                                  \
+    result.setIndex(rhs.getIndex());                                                     \
                                                                                          \
     for (const auto &i : result)                                                         \
       result[i] = lhs op rhs[i];                                                         \
@@ -304,6 +298,7 @@ FPERP_REAL_OP_FPERP(/);
     /* Define and allocate the output result */                                          \
     FieldPerp result(f.getMesh());                                                       \
     result.allocate();                                                                   \
+    result.setIndex(f.getIndex());                                                       \
     /* Loop over domain */                                                               \
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
@@ -426,8 +421,10 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
+  ASSERT1(lhs.getIndex() == rhs.getIndex());
   FieldPerp result(lhs.getMesh());
   result.allocate();
+  result.setIndex(lhs.getIndex());
 
   // Loop over domain
   for (const auto &i : result.region(rgn)) {
@@ -447,6 +444,7 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
   // Define and allocate the output result
   FieldPerp result(lhs.getMesh());
   result.allocate();
+  result.setIndex(lhs.getIndex());
 
   // Loop over domain
   for (const auto &i : result.region(rgn)) {
@@ -466,6 +464,7 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   // Define and allocate the output result
   FieldPerp result(rhs.getMesh());
   result.allocate();
+  result.setIndex(rhs.getIndex());
 
   // Loop over domain
   for (const auto &i : result.region(rgn)) {
@@ -482,6 +481,8 @@ void checkData(const FieldPerp &f, REGION region) {
   if (!f.isAllocated()) {
     throw BoutException("FieldPerp: Operation on empty data\n");
   }
+
+  ASSERT3(f.getIndex() >= 0 && f.getIndex() < f.getMesh()->LocalNy);
 
 #if CHECK > 2
   // Do full checks
