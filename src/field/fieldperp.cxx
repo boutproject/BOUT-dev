@@ -34,7 +34,7 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
+FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
@@ -48,7 +48,7 @@ FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh), yindex(-1) {
 #endif
 }
 
-FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh), yindex(-1) {
+FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {
   nx = fieldmesh->LocalNx;
   nz = fieldmesh->LocalNz;
   *this = val;
