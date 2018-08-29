@@ -380,8 +380,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
   
-  ASSERT1(rhs.isAllocated());
-  
   /// Check that the data is valid
   checkData(rhs);
  
@@ -401,6 +399,9 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   ASSERT1(rhs.isAllocated());
   
+  /// Check that the data is valid
+  checkData(rhs);
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -414,10 +415,9 @@ Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   allocate();
 
-#if CHECK > 0
-  if(!finite(val))
-    throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
-#endif
+  /// Check that the data is valid
+  checkData(val);
+
   for(const auto& i : (*this))
     (*this)[i] = val;
 
