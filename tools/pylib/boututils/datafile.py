@@ -548,6 +548,7 @@ class DataFile_netCDF(DataFile):
             data = np.int32(data)
             t = data.dtype.str
 
+        tmpname=None
         try:
             # See if the variable already exists
             var = self.handle.variables[name]
