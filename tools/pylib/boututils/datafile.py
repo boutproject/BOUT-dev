@@ -489,6 +489,9 @@ class DataFile_netCDF(DataFile):
             raise ValueError("No such variable")
         return len(var.dimensions)
 
+    def sync(self):
+        self.handle.sync()
+
     def size(self, varname):
         if self.handle is None:
             return []
@@ -885,6 +888,9 @@ class DataFile_HDF5(DataFile):
             return 0
         else:
             return len(var.shape)
+
+    def sync(self):
+        self.handle.flush()
 
     def size(self, varname):
         if self.handle is None:

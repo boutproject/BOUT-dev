@@ -72,6 +72,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         Delete the original files after squashing.
     """
 
+    import gc
+
     fullpath = os.path.join(datadir,outputname)
 
     if append:
@@ -129,6 +131,10 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
                     var = BoutArray(numpy.float32(var), var.attributes)
 
             f.write(varname, var)
+            # Write changes, free memory
+            f.sync()
+            var=None
+            gc.collect()
 
     if delete:
         if append:
