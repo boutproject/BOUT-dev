@@ -17,6 +17,7 @@ When run as script:
 
 # imports in function for fast bash completion
 
+
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
                  least_significant_digit=None, quiet=False, complevel=None, append=False,
@@ -82,69 +83,71 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     import shutil
     import glob
 
-    fullpath = os.path.join(datadir,outputname)
+    fullpath = os.path.join(datadir, outputname)
 
     if append:
         datadirnew = tempfile.mkdtemp(dir=datadir)
-        for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
+        for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
             if not quiet:
-                print("moving",f)
-            shutil.move(f,datadirnew)
-        oldfile=datadirnew+"/"+outputname
-        datadir=datadirnew
+                print("moving", f)
+            shutil.move(f, datadirnew)
+        oldfile = datadirnew + "/" + outputname
+        datadir = datadirnew
     if docontinue:
         if append:
             raise NotImplemented("append & docontinue: Case not handled")
         datadirtmp = tempfile.mkdtemp(dir=datadir)
-        shutil.move(fullpath,datadirtmp)
+        shutil.move(fullpath, datadirtmp)
 
     if os.path.isfile(fullpath) and not append:
-        raise ValueError(fullpath+" already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
+        raise ValueError(
+            fullpath + " already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
     # useful object from BOUT pylib to access output data
-    outputs = BoutOutputs(datadir, info=False, xguards=True, yguards=True, tind=tind, xind=xind, yind=yind, zind=zind)
+    outputs = BoutOutputs(datadir, info=False, xguards=True,
+                          yguards=True, tind=tind, xind=xind, yind=yind, zind=zind)
     outputvars = outputs.keys()
     # Read a value to cache the files
     outputs[outputvars[0]]
 
     if append:
         # move only after the file list is cached
-        shutil.move(fullpath,oldfile)
+        shutil.move(fullpath, oldfile)
 
     if docontinue:
-        shutil.move(os.path.join(datadirtmp,outputname),datadir)
+        shutil.move(os.path.join(datadirtmp, outputname), datadir)
         os.rmdir(datadirtmp)
 
     t_array_index = outputvars.index("t_array")
     outputvars.append(outputvars.pop(t_array_index))
 
     if progress:
-        sizes_=outputs.sizes()
-        sizes={}
-        total=0
-        for var,size in sizes_.items():
-            cur=1
+        sizes_ = outputs.sizes()
+        sizes = {}
+        total = 0
+        for var, size in sizes_.items():
+            cur = 1
             for s in size:
-                cur*=s
-            total+=cur
-            sizes[var]=cur
-        sizes_=None
-        done=0
+                cur *= s
+            total += cur
+            sizes[var] = cur
+        sizes_ = None
+        done = 0
 
-    kwargs={}
+    kwargs = {}
     if compress:
-        kwargs['zlib']=True
+        kwargs['zlib'] = True
         if least_significant_digit is not None:
-            kwargs['least_significant_digit']=least_significant_digit
+            kwargs['least_significant_digit'] = least_significant_digit
         if complevel is not None:
-            kwargs['complevel']=complevel
+            kwargs['complevel'] = complevel
     if append:
-        old=DataFile(oldfile)
-    create=True
+        old = DataFile(oldfile)
+    create = True
     if docontinue:
-        create=False
+        create = False
     # Create single file for output and write data
-    with DataFile(fullpath,create=create,write=True,format=format, **kwargs) as f:
+    with DataFile(fullpath, create=create, write=True, format=format, **kwargs) as f:
         for varname in outputvars:
             if not quiet:
                 print(varname)
@@ -155,10 +158,11 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             var = outputs[varname]
             if append:
-                dims=old.dimensions(varname)
+                dims = old.dimensions(varname)
                 if 't' in dims:
-                    varold=old[varname]
-                    var=BoutArray(numpy.append(varold,var,axis=0),var.attributes)
+                    varold = old[varname]
+                    var = BoutArray(numpy.append(
+                        varold, var, axis=0), var.attributes)
 
             if singleprecision:
                 if not isinstance(var, int):
@@ -166,16 +170,15 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             f.write(varname, var)
             if progress:
-                done+=sizes[varname]
-                bar.update_progress(done/total,zoidberg=True)
-
+                done += sizes[varname]
+                bar.update_progress(done / total, zoidberg=True)
 
     if delete:
         if append:
             os.remove(oldfile)
-        for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
+        for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
             if not quiet:
-                print("Deleting",f)
+                print("Deleting", f)
             os.remove(f)
         if append:
             os.rmdir(datadir)
