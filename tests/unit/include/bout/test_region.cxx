@@ -207,157 +207,117 @@ TEST_F(RegionTest, defaultRegions) {
 TEST_F(RegionTest, regionLoopAll) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BOUT_FOR(i, region) { a[i] = 1.0; }
-
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  int count = 0;
+  BOUT_FOR(i, region) {
+    ++count;
   }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndry) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BOUT_FOR(i, region) { a[i] = 1.0; }
+  int count = 0;
+  BOUT_FOR(i, region) {
+    ++count;
+  }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
-    }
-  }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllSerial) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
-
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
   }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndrySerial) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
+  }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
-    }
-  }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllSection) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
+  int count = 0;
   BOUT_OMP(parallel) {
     BOUT_FOR_OMP(i, region, for) {
-      a[i] = 1.0;
+      ++count;
     }
   }
 
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
-  }
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndrySection) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
+  int count = 0;
   BOUT_OMP(parallel) {
     BOUT_FOR_OMP(i, region, for) {
-      a[i] = 1.0;
+      ++count;
     }
   }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
-    }
-  }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllInner) {
   auto region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
+  int count = 0;
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
-      a[i] = 1.0;
+      ++count;
     }
   }
 
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
-  }
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndryInner) {
   auto region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
+  int count = 0;
+
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
-      a[i] = 1.0;
+      ++count;
     }
   }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
-    }
-  }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionAsSorted) {
