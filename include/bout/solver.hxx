@@ -342,7 +342,7 @@ protected:
       string name;    // Name of the variable
 
       /// Starting index in 1D data arrays. Set in calc_start_index()
-      unsigned int start_index;
+      std::size_t start_index;
     };
   
   /// Vectors of variables to evolve

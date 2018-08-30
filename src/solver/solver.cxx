@@ -1112,10 +1112,14 @@ void Solver::calc_start_index() {
   // Create a region
   // Note: don't use RGN_ALL because might include corners,
   // and RGN_BNDRY used in getLocalN()
-  mesh->addRegion2D("RGN_WITHBNDRY",
-                    mesh->getRegion2D("RGN_NOBNDRY") + mesh->getRegion2D("RGN_BNDRY"));
-  mesh->addRegion3D("RGN_WITHBNDRY",
-                    mesh->getRegion3D("RGN_NOBNDRY") + mesh->getRegion3D("RGN_BNDRY"));
+  try {
+    mesh->addRegion2D("RGN_WITHBNDRY",
+                      mesh->getRegion2D("RGN_NOBNDRY") + mesh->getRegion2D("RGN_BNDRY"));
+    mesh->addRegion3D("RGN_WITHBNDRY",
+                      mesh->getRegion3D("RGN_NOBNDRY") + mesh->getRegion3D("RGN_BNDRY"));
+  }catch(BoutException &e) {
+    // Ignore; region probably already added
+  }
 
   // Get the size of the regions
   auto core2D_size = size(mesh->getRegion2D("RGN_NOBNDRY"));
@@ -1124,7 +1128,7 @@ void Solver::calc_start_index() {
   auto core3D_size = size(mesh->getRegion3D("RGN_NOBNDRY"));
   auto all3D_size = size(mesh->getRegion3D("RGN_WITHBNDRY"));
 
-  unsigned int index = 0;
+  std::size_t index = 0;
   for (auto &f : f2d) {
     f.start_index = index;
 
