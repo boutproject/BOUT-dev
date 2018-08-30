@@ -465,7 +465,7 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
 }
 
 bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
-  return write(data, H5T_NATIVE_INT, H5T_NATIVE_INT, name, lx, ly, lz);
+  return write(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::write(int *var, const string &name, int lx, int ly, int lz) {
@@ -490,10 +490,10 @@ bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
         data[i] = -1e20;
     }
     
-    return write(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, name, lx, ly, lz);
+    return write(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
   }
   else {
-    return write(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
+    return write(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
   }
   
 }
@@ -502,7 +502,8 @@ bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) 
   return write(var, name.c_str(), lx, ly, lz);
 }
 
-bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
+bool H5Format::write(void *data, hid_t mem_hdf5_type, const char *name, int lx, int ly,
+                     int lz) {
   TRACE("H5Format::write(void)");
 
   if(!is_valid())
@@ -670,7 +671,7 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
 }
 
 bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
-  return write_rec(data, H5T_NATIVE_INT, H5T_NATIVE_INT, name, lx, ly, lz);
+  return write_rec(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::write_rec(int *var, const string &name, int lx, int ly, int lz) {
@@ -694,17 +695,17 @@ bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
       if(data[i] < -1e20)
         data[i] = -1e20;
     }
-    return write_rec(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, name, lx, ly, lz);
+    return write_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
   }
   
-  return write_rec(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
+  return write_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
 }
 
 bool H5Format::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
+bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
