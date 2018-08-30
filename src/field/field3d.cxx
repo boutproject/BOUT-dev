@@ -397,8 +397,8 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 }
 
 void Field3D::operator=(const FieldPerp &rhs) {
-  ASSERT1(rhs.isAllocated());
-  
+  TRACE("Field3D = FieldPerp");
+
   /// Check that the data is valid
   checkData(rhs);
 
