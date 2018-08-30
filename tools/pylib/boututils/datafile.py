@@ -164,7 +164,8 @@ class DataFile(object):
             self.impl.__del__()
 
     def __enter__(self):
-        return self.impl.__enter__()
+        self.impl.__enter__()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.impl.__exit__(type, value, traceback)
