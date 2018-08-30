@@ -687,12 +687,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   
   ++iter;
   try {
-    // Call physics model monitor
-    if(model) {
-      if(model->runOutputMonitor(simtime, iter-1, NOUT))
-        throw BoutException("Monitor signalled to quit");
-    }
-    
     // Call monitors
     for (const auto &it : monitors){
       if ((iter % it->freq)==0){
