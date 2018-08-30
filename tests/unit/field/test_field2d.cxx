@@ -1,3 +1,7 @@
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -1140,3 +1144,5 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
+
+#pragma GCC diagnostic pop

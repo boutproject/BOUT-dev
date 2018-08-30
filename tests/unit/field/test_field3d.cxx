@@ -1,3 +1,7 @@
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -1990,3 +1994,6 @@ TEST_F(Field3DTest, OpenMPIterator) {
   delete[] d3;
 }
 #endif
+
+// Restore compiler warnings
+#pragma GCC diagnostic pop
