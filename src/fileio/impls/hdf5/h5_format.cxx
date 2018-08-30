@@ -334,12 +334,15 @@ bool H5Format::addVar(const string &name, bool repeat, hid_t write_hdf5_type, in
     dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
     if (dataSet < 0) {
       // Negative value indicates error, i.e. file does not exist, so create:
-      hsize_t init_size[3],init_size_local[3];
+      hsize_t init_size[3];
       if (parallel) {
-        init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
-      }
-      else {
-        init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
+        init_size[0] = mesh->GlobalNx - 2 * mesh->xstart;
+        init_size[1] = mesh->GlobalNy - 2 * mesh->ystart;
+        init_size[2] = mesh->GlobalNz;
+      } else {
+        init_size[0] = mesh->LocalNx;
+        init_size[1] = mesh->LocalNy;
+        init_size[2] = mesh->LocalNz;
       }
 
       // Create value for attribute to say what kind of field this is
@@ -512,25 +515,26 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3],offset_local[3],init_size[3],init_size_local[3];
-  counts[0]=lx; counts[1]=ly; counts[2]=lz;
-  offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
-  }
-  else {
-    init_size[0]=mesh->LocalNx; init_size[1]=mesh->LocalNy; init_size[2]=mesh->LocalNz;
-  }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
-  
+  hsize_t counts[3], offset[3], offset_local[3], init_size_local[3];
+  counts[0] = lx;
+  counts[1] = ly;
+  counts[2] = lz;
+  offset[0] = x0;
+  offset[1] = y0;
+  offset[2] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = y0_local;
+  offset_local[2] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNy;
+  init_size_local[2] = mesh->LocalNz;
+
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
     nd = 1;
     counts[0] = 1;
     offset[0] = 0;
     offset_local[0] = 0;
-    init_size[0] = 1;
     init_size_local[0] = 1;
   }
   
@@ -712,22 +716,27 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
   int nd_local = nd-1;
-  hsize_t counts[4],offset[4],init_size[4];
-  hsize_t counts_local[3],offset_local[3],init_size_local[3];
-  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
-  counts_local[0]=lx; counts_local[1]=ly; counts_local[2]=lz;
-// Do this later, after setting t0//  offset[0]=t0;
-  offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  if (parallel) {
-    init_size[0]=1;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
-  }
-  else {
-    init_size[0]=1;init_size[1]=mesh->LocalNx; init_size[2]=mesh->LocalNy; init_size[3]=mesh->LocalNz;
-  }
-  init_size_local[0]=mesh->LocalNx; init_size_local[1]=mesh->LocalNy; init_size_local[2]=mesh->LocalNz;
-  
-  if (nd_local==0) {
+  hsize_t counts[4], offset[4];
+  hsize_t counts_local[3], offset_local[3], init_size_local[3];
+  counts[0] = 1;
+  counts[1] = lx;
+  counts[2] = ly;
+  counts[3] = lz;
+  counts_local[0] = lx;
+  counts_local[1] = ly;
+  counts_local[2] = lz;
+  // Do this later, after setting t0//  offset[0]=t0;
+  offset[1] = x0;
+  offset[2] = y0;
+  offset[3] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = y0_local;
+  offset_local[2] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNy;
+  init_size_local[2] = mesh->LocalNz;
+
+  if (nd_local == 0) {
     nd_local = 1;
     // Need to write a time-series of scalars
     counts_local[0] = 1;
