@@ -240,7 +240,7 @@ void Field2D::applyBoundary(bool init) {
   }
 #endif
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
@@ -250,7 +250,7 @@ void Field2D::applyBoundary(bool init) {
 void Field2D::applyBoundary(const string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -282,7 +282,7 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -319,9 +319,9 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 void Field2D::applyTDerivBoundary() {
   TRACE("Field2D::applyTDerivBoundary()");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
   ASSERT1(deriv != nullptr);
-  ASSERT1(deriv->isAllocated());
+  checkData(*deriv);
 
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
@@ -329,9 +329,10 @@ void Field2D::applyTDerivBoundary() {
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
   TRACE("Field2D::setBoundary(const Field2D&)");
-  allocate(); // Make sure data allocated
 
-  ASSERT0(f2d.isAllocated());
+  checkData(f2d);
+
+  allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
@@ -465,6 +466,8 @@ const Field2D copy(const Field2D &f) {
 }
 
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
+  checkData(var);
+
   Field2D result = copy(var);
 
   for(const auto& d : result.region(rgn))
