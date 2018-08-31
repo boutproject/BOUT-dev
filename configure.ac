@@ -65,6 +65,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
+AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
+        [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
@@ -202,6 +204,35 @@ AC_SUBST([COVERAGE_FLAGS])
 #############################################################
 # General Options
 #############################################################
+
+# Always pass -Werror=unknown-warning-option to get Clang to fail on bad
+# flags, otherwise they are always appended to the warn_cxxflags variable,
+# and Clang warns on them for every compilation unit.
+# If this is passed to GCC, it will explode, so the flag must be enabled
+# conditionally.
+# This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
+  extra_compiler_flags_test="-Werror=unknown-warning-option"
+],[
+  extra_compiler_flags_test=""
+])
+
+
+AS_IF([test "x$enable_warnings" != "xno"], [
+# Some hopefully sensible default compiler warning flags
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wall dnl
+     -Wextra dnl
+     -Wnull-dereference dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test])
+], [
+  AC_MSG_NOTICE([Compiler warnings disabled])
+])
 
 OPT_FLAGS=""
 AS_IF([test "$enable_debug" != ""], [
