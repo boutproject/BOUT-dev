@@ -148,10 +148,15 @@ public:
   void setCoefC1(const Field3D &val) override { C1 = val; }
   void setCoefC2(const Field3D &val) override { C2 = val; }
   void setCoefD(const Field3D &val) override { D = val; }
-  
-  const FieldPerp solve(const FieldPerp &b) override { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
+
+  const FieldPerp solve(const FieldPerp &b) override {
+    FieldPerp zero(b.getMesh());
+    zero = 0.;
+    zero.setIndex(b.getIndex());
+    return solve(b, zero);
+  }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
-  
+
 private:
   Field3D A,C1,C2,D; // ODE Coefficients
   int Nx_local, Nx_global, Nz_local, Nz_global; // Local and global grid sizes
