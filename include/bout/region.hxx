@@ -262,7 +262,7 @@ public:
   const inline SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  const inline SpecificInd offset(int dx, int dy, int dz) {
+  const inline SpecificInd offset(int dx, int dy, int dz) const {
     auto temp = (dz > 0) ? zp(dz) : zm(-dz);
     return temp.yp(dy).xp(dx);
   }
