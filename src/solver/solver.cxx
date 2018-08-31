@@ -530,7 +530,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   /// Run the solver
   output_info.write("Running simulation\n\n");
 
-  time_t start_time = time((time_t *)nullptr);
+  time_t start_time = time(nullptr);
   output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
   
   Timer timer("run"); // Start timer
@@ -559,7 +559,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   try {
     status = run();
 
-    time_t end_time = time((time_t *)nullptr);
+    time_t end_time = time(nullptr);
     output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
     output_progress.write("Run time : ");
 
