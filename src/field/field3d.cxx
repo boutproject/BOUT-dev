@@ -774,9 +774,10 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
   result.setIndex(rhs.getIndex());
 
-  // Iterate over indices
-  for(const auto& i : result.region(rgn)) {
-    result[i] = ::pow(lhs[i], rhs[i]);
+  const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
+    result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
   }
 
   result.setLocation( lhs.getLocation() );
