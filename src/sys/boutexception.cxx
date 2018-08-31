@@ -108,7 +108,7 @@ std::string BoutException::BacktraceGenerate() const{
   {                                                                                      \
     buflen = 0;                                                                          \
     buffer = nullptr;                                                                    \
-    if (s == (const char *)nullptr) {                                                    \
+    if (s == nullptr) {                                                                  \
       message = "No error message given!\n";                                             \
     } else {                                                                             \
       buflen = BoutException::BUFFER_LEN;                                                \

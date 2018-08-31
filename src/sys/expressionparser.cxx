@@ -357,7 +357,7 @@ char ExpressionParser::LexInfo::nextToken() {
   }
 
   // LastChar is unsigned, explicitly cast
-  curtok = static_cast<signed char>(LastChar);
+  curtok = LastChar;
   LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }
