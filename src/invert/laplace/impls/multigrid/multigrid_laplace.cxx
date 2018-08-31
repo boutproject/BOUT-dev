@@ -427,8 +427,9 @@ BOUT_OMP(for)
 
   #if CHECK>2
   // Make any unused elements NaN so that user does not try to do calculations with them
-  for (const auto &i : result) {
-    result[i] = std::nan("");
+  const auto &region = mesh->getRegionPerp("RGN_ALL");
+  BOUT_FOR(i, region) {
+    result[i] = BoutNaN;
   }
   #endif
   // Copy solution into a FieldPerp to return
