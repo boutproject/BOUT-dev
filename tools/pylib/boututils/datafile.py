@@ -253,6 +253,12 @@ class DataFile(object):
         """
         return self.impl.ndims(varname)
 
+    def sync(self):
+        """Write pending changes to disk.
+
+        """
+        self.impl.sync()
+
     def size(self, varname):
         """Return the size of each dimension of a variable
 
