@@ -1749,8 +1749,8 @@ TEST_F(Field3DTest, PowField3DBoutReal) {
 }
 
 TEST_F(Field3DTest, PowField3DFieldPerp) {
-  Field3D a, c;
-  FieldPerp b(mesh);
+  Field3D a{mesh};
+  FieldPerp b{mesh}, c{mesh};
   const int yindex = 2;
   b.setIndex(yindex);
 
@@ -1758,7 +1758,7 @@ TEST_F(Field3DTest, PowField3DFieldPerp) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 64.0));
 }
 
 TEST_F(Field3DTest, PowField3DField2D) {

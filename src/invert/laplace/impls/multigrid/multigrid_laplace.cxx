@@ -199,10 +199,9 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
-#if CHECK > 2
   checkData(b_in);
   checkData(x0);
-#endif
+  ASSERT3(b_in.getIndex() == x0.getIndex());
 
   Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
@@ -424,8 +423,10 @@ BOUT_OMP(for)
 
   FieldPerp result(mesh);
   result.allocate();
+  result.setIndex(yindex);
+
   #if CHECK>2
-    // Make any unused elements NaN so that user does not try to do calculations with them
+  // Make any unused elements NaN so that user does not try to do calculations with them
   for (const auto &i : result) {
     result[i] = std::nan("");
   }
@@ -536,7 +537,6 @@ BOUT_OMP(for)
       }
     }
   }
-  result.setIndex(yindex); // Set the index of the FieldPerp to be returned
 
 #if CHECK > 2
   checkData(result);

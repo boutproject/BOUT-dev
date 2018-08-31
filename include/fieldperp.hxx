@@ -259,7 +259,7 @@ class FieldPerp : public Field {
   int getNz() const override {return nz;};
   
  private:
-  int yindex; ///< The Y index at which this FieldPerp is defined
+  int yindex = -1; ///< The Y index at which this FieldPerp is defined
 
   /// The size of the data array
   int nx, nz;

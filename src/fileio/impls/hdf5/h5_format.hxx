@@ -142,9 +142,9 @@ class H5Format : public DataFormat {
 
   bool addVar(const string &name, bool repeat, hid_t write_hdf5_type, int nd);
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool write_rec(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
 
   // Attributes
 

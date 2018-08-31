@@ -146,8 +146,8 @@ public:
   }
 
   /*!
-   * Test if a key is set to a value
-   *
+   * Test if a key is set by the user.
+   * Values set via default values are ignored.
    */
   bool isSet(const string &key);
 

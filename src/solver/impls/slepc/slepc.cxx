@@ -682,7 +682,7 @@ void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
   if(ddtMode){
     slepcEig=-ci*boutEig;
   }else{
-    slepcEig=exp(-ci*boutEig* static_cast<BoutReal>(tstep*nout));
+    slepcEig = exp(-ci * boutEig * (tstep * nout));
   };
 
   //Set return values

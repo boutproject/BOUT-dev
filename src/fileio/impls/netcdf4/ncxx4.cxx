@@ -495,11 +495,6 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
     output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
@@ -540,11 +535,6 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
     output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
@@ -658,11 +648,6 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
   
   // Try to find variable
   NcVar var = dataFile->getVar(name);
@@ -709,11 +694,6 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
 
   // Try to find variable
   NcVar var = dataFile->getVar(name);

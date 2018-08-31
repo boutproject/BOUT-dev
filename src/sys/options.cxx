@@ -85,7 +85,10 @@ void Options::_set(const string &key, const string &val, const string &source,
 
 bool Options::isSet(const string &key) {
   std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  return it != options.end();
+  if (it != options.end()) {
+    return it->second.source != DEFAULT_SOURCE;
+  }
+  return false;
 }
 
 void Options::get(const string &key, int &val, int def) {

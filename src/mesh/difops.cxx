@@ -878,8 +878,79 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
     result.allocate();
+
+    const BoutReal fac = 1.0 / (12 * metric->dz);
+    const int ncz = mesh->LocalNz;
+
+    BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
+      // Get constants for this iteration
+      const BoutReal spacingFactor = fac / metric->dx[j2D];
+      const int jy = j2D.y(), jx = j2D.x();
+      const int xm = jx - 1, xp = jx + 1;
+
+      // Extract relevant Field2D values
+      const BoutReal gxm = g(xm, jy), gc = g(jx, jy), gxp = g(xp, jy);
+
+      // Index Field3D as 2D to get start of z data block
+      const auto fxm = f(xm, jy), fc = f(jx, jy), fxp = f(xp, jy);
+
+      // Here we split the loop over z into three parts; the first value, the middle block
+      // and the last value
+      // this is to allow the loop used in the middle block to vectorise.
+
+      // The first value
+      {
+        const int jzp = 1;
+        const int jzm = ncz - 1;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = 2 * (fc[jzp] - fc[jzm]) * (gxp - gxm);
+
+        // J+x
+        const BoutReal Jpx = gxp * (fxp[jzp] - fxp[jzm]) - gxm * (fxm[jzp] - fxm[jzm]) +
+                             gc * (fxp[jzm] - fxp[jzp] - fxm[jzm] + fxm[jzp]);
+
+        result(jx, jy, 0) = (Jpp + Jpx) * spacingFactor;
+      }
+
+      // The middle block
+      for (int jz = 1; jz < ncz - 1; jz++) {
+        const int jzp = jz + 1;
+        const int jzm = jz - 1;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = 2 * (fc[jzp] - fc[jzm]) * (gxp - gxm);
+
+        // J+x
+        const BoutReal Jpx = gxp * (fxp[jzp] - fxp[jzm]) - gxm * (fxm[jzp] - fxm[jzm]) +
+                             gc * (fxp[jzm] - fxp[jzp] - fxm[jzm] + fxm[jzp]);
+
+        result(jx, jy, jz) = (Jpp + Jpx) * spacingFactor;
+      }
+
+      // The last value
+      {
+        const int jzp = 0;
+        const int jzm = ncz - 2;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = 2 * (fc[jzp] - fc[jzm]) * (gxp - gxm);
+
+        // J+x
+        const BoutReal Jpx = gxp * (fxp[jzp] - fxp[jzm]) - gxm * (fxm[jzp] - fxm[jzm]) +
+                             gc * (fxp[jzm] - fxp[jzp] - fxm[jzm] + fxm[jzp]);
+
+        result(jx, jy, ncz - 1) = (Jpp + Jpx) * spacingFactor;
+      }
+    }
+
+    break;
+  }
+  case BRACKET_ARAKAWA_OLD: {
+    result.allocate();
     const int ncz = mesh->LocalNz;
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
+    BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
 	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
@@ -1095,6 +1166,100 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     Field3D f_temp = f;
     Field3D g_temp = g;
 
+    BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
+      const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
+      const int jy = j2D.y(), jx = j2D.x();
+      const int xm = jx - 1, xp = jx + 1;
+
+      const auto Fxm = f_temp(xm, jy), Fx = f_temp(jx, jy), Fxp = f_temp(xp, jy);
+      const auto Gxm = g_temp(xm, jy), Gx = g_temp(jx, jy), Gxp = g_temp(xp, jy);
+
+      // Here we split the loop over z into three parts; the first value, the middle block
+      // and the last value
+      // this is to allow the loop used in the middle block to vectorise.
+
+      {
+        const int jz = 0;
+        const int jzp = 1;
+        const int jzm = ncz - 1;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz]) -
+                              (Fxp[jz] - Fxm[jz]) * (Gx[jzp] - Gx[jzm]));
+
+        // J+x
+        const BoutReal Jpx =
+            (Gxp[jz] * (Fxp[jzp] - Fxp[jzm]) - Gxm[jz] * (Fxm[jzp] - Fxm[jzm]) -
+             Gx[jzp] * (Fxp[jzp] - Fxm[jzp]) + Gx[jzm] * (Fxp[jzm] - Fxm[jzm]));
+
+        // Jx+
+        const BoutReal Jxp =
+            (Gxp[jzp] * (Fx[jzp] - Fxp[jz]) - Gxm[jzm] * (Fxm[jz] - Fx[jzm]) -
+             Gxm[jzp] * (Fx[jzp] - Fxm[jz]) + Gxp[jzm] * (Fxp[jz] - Fx[jzm]));
+
+        result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
+      }
+
+      for (int jz = 1; jz < ncz - 1; jz++) {
+        const int jzp = jz + 1;
+        const int jzm = jz - 1;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz]) -
+                              (Fxp[jz] - Fxm[jz]) * (Gx[jzp] - Gx[jzm]));
+
+        // J+x
+        const BoutReal Jpx =
+            (Gxp[jz] * (Fxp[jzp] - Fxp[jzm]) - Gxm[jz] * (Fxm[jzp] - Fxm[jzm]) -
+             Gx[jzp] * (Fxp[jzp] - Fxm[jzp]) + Gx[jzm] * (Fxp[jzm] - Fxm[jzm]));
+
+        // Jx+
+        const BoutReal Jxp =
+            (Gxp[jzp] * (Fx[jzp] - Fxp[jz]) - Gxm[jzm] * (Fxm[jz] - Fx[jzm]) -
+             Gxm[jzp] * (Fx[jzp] - Fxm[jz]) + Gxp[jzm] * (Fxp[jz] - Fx[jzm]));
+
+        result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
+      }
+
+      {
+        const int jz = ncz - 1;
+        const int jzp = 0;
+        const int jzm = ncz - 2;
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz]) -
+                              (Fxp[jz] - Fxm[jz]) * (Gx[jzp] - Gx[jzm]));
+
+        // J+x
+        const BoutReal Jpx =
+            (Gxp[jz] * (Fxp[jzp] - Fxp[jzm]) - Gxm[jz] * (Fxm[jzp] - Fxm[jzm]) -
+             Gx[jzp] * (Fxp[jzp] - Fxm[jzp]) + Gx[jzm] * (Fxp[jzm] - Fxm[jzm]));
+
+        // Jx+
+        const BoutReal Jxp =
+            (Gxp[jzp] * (Fx[jzp] - Fxp[jz]) - Gxm[jzm] * (Fxm[jz] - Fx[jzm]) -
+             Gxm[jzp] * (Fx[jzp] - Fxm[jz]) + Gxp[jzm] * (Fxp[jz] - Fx[jzm]));
+
+        result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
+      }
+    }
+
+    break;
+  }
+  case BRACKET_ARAKAWA_OLD: {
+    // Arakawa scheme for perpendicular flow
+
+    result.allocate();
+
+    const int ncz = mesh->LocalNz;
+    const BoutReal partialFactor = 1.0 / (12 * metric->dz);
+
+    // We need to discard const qualifier in order to manipulate
+    // storage array directly
+    Field3D f_temp = f;
+    Field3D g_temp = g;
+
+    BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
         const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
@@ -1127,46 +1292,6 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 			   Gxp[jzm]*(Fxp[jz]-Fx[jzm]));
 			  
           result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
-        }
-      }
-    }
-    break;
-  }
-  case BRACKET_ARAKAWA_OLD: {
-    // Arakawa scheme for perpendicular flow
-    
-    result.allocate();
-
-    const int ncz = mesh->LocalNz;
-    const BoutReal partialFactor = 1.0/(12 * metric->dz);
-    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
-        for(int jz=0;jz<ncz;jz++) {
-	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
-	  //Above is alternative to const int jzp = (jz + 1) % ncz;
-	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
-	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
-          
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
-			   (g(jx+1,jy,jz) - g(jx-1,jy,jz)) -
-			   (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
-			   (g(jx,jy,jzp) - g(jx,jy,jzm)) );
-
-          // J+x
-          BoutReal Jpx = ( g(jx+1,jy,jz)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
-			   g(jx-1,jy,jz)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
-			   g(jx,jy,jzp)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
-			   g(jx,jy,jzm)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)));
-
-          // Jx+
-          BoutReal Jxp = ( g(jx+1,jy,jzp)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
-			   g(jx-1,jy,jzm)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
-			   g(jx-1,jy,jzp)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
-			   g(jx+1,jy,jzm)*(f(jx+1,jy,jz)-f(jx,jy,jzm)));
-          
-          result(jx,jy,jz) = (Jpp + Jpx + Jxp) * spacingFactor;
         }
       }
     }

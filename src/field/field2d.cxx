@@ -245,7 +245,7 @@ void Field2D::applyBoundary(bool init) {
   }
 #endif
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
@@ -255,7 +255,7 @@ void Field2D::applyBoundary(bool init) {
 void Field2D::applyBoundary(const string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -287,7 +287,7 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -324,9 +324,9 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 void Field2D::applyTDerivBoundary() {
   TRACE("Field2D::applyTDerivBoundary()");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
   ASSERT1(deriv != nullptr);
-  ASSERT1(deriv->isAllocated());
+  checkData(*deriv);
 
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
@@ -334,9 +334,10 @@ void Field2D::applyTDerivBoundary() {
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
   TRACE("Field2D::setBoundary(const Field2D&)");
-  allocate(); // Make sure data allocated
 
-  ASSERT0(f2d.isAllocated());
+  checkData(f2d);
+
+  allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
@@ -360,7 +361,7 @@ Field2D operator-(const Field2D &f) { return -1.0 * f; }
 BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
   const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
@@ -384,7 +385,7 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
   const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
@@ -446,7 +447,7 @@ bool finite(const Field2D &f, REGION rgn) {
   const Field2D name(const Field2D &f, REGION rgn) {                                     \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
-    ASSERT1(f.isAllocated());                                                            \
+    checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
@@ -480,6 +481,8 @@ const Field2D copy(const Field2D &f) {
 }
 
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
+  checkData(var);
+
   Field2D result = copy(var);
 
   const Region<Ind2D> &region = var.getMesh()->getRegion2D(REGION_STRING(rgn));
@@ -496,8 +499,8 @@ const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
 Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
@@ -517,7 +520,8 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
 Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(lhs.getMesh());
@@ -536,7 +540,8 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
 Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(rhs.getMesh());

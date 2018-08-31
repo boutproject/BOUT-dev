@@ -20,6 +20,8 @@ from numpy import sqrt, max, abs, mean, array, log, pi
 
 from os.path import join
 
+import sys
+
 try:
     import matplotlib.pyplot as plt
 except:
@@ -31,22 +33,24 @@ print("Making MMS time integration test")
 shell_safe("make > make.log")
 
 # List of options to be passed for each test
-options = [
-    ("solver:type=euler", "Euler", "-^",1)
-    ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
-    ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
-    ,("solver:type=rk4", "RK4", "-o",4)
-    ,("solver:type=rkgeneric solver:adaptive=false", "RK-generic", "-o",4)
-    #,("solver:type=pvode solver:", "P-Vode", "-o",2)
-    ]
-#Missing: cvode, ida, slepc, power, arkode, snes
-# Is there a better way to check a certain solver should be enabled?
-s,out=shell_safe("grep DBOUT_HAS_PETSC  ../../../make.config")
-if s == 0:
+if "only_petsc" in sys.argv:
     # this requires petsc:
-    options.append(("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2))# What's the expected order?
+    options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]# What's the expected order?
     # should petsc solver also be added?
     #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
+else:
+    options = [
+        ("solver:type=euler", "Euler", "-^",1)
+        ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
+        ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
+        ,("solver:type=rk4", "RK4", "-o",4)
+        ,("solver:type=rkgeneric solver:adaptive=false", "RK-generic", "-o",4)
+        #,("solver:type=pvode solver:", "P-Vode", "-o",2)
+    ]
+
+#Missing: cvode, ida, slepc, power, arkode, snes
+# Is there a better way to check a certain solver should be enabled?
+
 #options.append(("solver:type=power",    "power",     "-+",2))# What's the expected order?
 
 # List of NX values to use

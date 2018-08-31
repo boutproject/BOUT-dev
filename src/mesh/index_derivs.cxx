@@ -473,7 +473,6 @@ bool isImplemented(DiffLookup *table, DIFF_METHOD method) {
 
 
 DiffLookup lookupFunc(DiffLookup * table, DIFF_METHOD method) {
-  int i=0;
   for (int i=0; ; ++i){
     if (table[i].method == method) {
       return table[i];
