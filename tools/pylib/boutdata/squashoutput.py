@@ -153,6 +153,9 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             if docontinue:
                 if varname in f.keys():
+                    if progress:
+                        done += sizes[varname]
+                        bar.update_progress(done / total, zoidberg=True)
                     continue
 
             var = outputs[varname]
