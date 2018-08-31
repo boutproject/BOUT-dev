@@ -31,8 +31,8 @@
 #include <bout/physicsmodel.hxx>
 
 PhysicsModel::PhysicsModel()
-    : solver(nullptr), splitop(false), userprecon(nullptr), userjacobian(nullptr),
-      initialised(false), modelMonitor(this) {
+    : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
+      userjacobian(nullptr), initialised(false) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
@@ -142,7 +142,7 @@ int PhysicsModel::postInit(bool restarting) {
   return 0;
 }
 
-int PhysicsModelMonitor::call(Solver* solver, BoutReal simtime, int iter, int nout) {
+int PhysicsModelMonitor::call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
   // Save state to restart file
   model->restart.write();
   // Call user output monitor

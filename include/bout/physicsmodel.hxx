@@ -49,8 +49,6 @@ class PhysicsModel;
 class PhysicsModelMonitor : public Monitor {
 public:
   PhysicsModelMonitor() = delete;
-  PhysicsModelMonitor(PhysicsModelMonitor &f) = delete;
-  PhysicsModelMonitor &operator=(PhysicsModelMonitor &f) = delete;
 
   PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
 
@@ -272,7 +270,7 @@ protected:
    */ 
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 
-  // write restarts and pass outputMonitor method inside a Monitor subclass
+  /// write restarts and pass outputMonitor method inside a Monitor subclass
   friend class PhysicsModelMonitor;
   PhysicsModelMonitor modelMonitor;
 private:
