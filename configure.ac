@@ -266,16 +266,10 @@ AS_IF([test "$enable_debug" != ""], [
   ], [OPT_FLAGS=""])
 ])
 
-for flag in $OPT_FLAGS
-do
-  CXXFLAGS_save=$CXXFLAGS
-  CXXFLAGS="$CXXFLAGS $flag"
-  AC_MSG_CHECKING([flag $flag is supported])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-    [AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)
-     CXXFLAGS=$CXXFLAGS_save])
-done
+# Append optimisation/debug flags if they work with this compiler
+AX_APPEND_COMPILE_FLAGS([ dnl
+    $OPT_FLAGS dnl
+], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
 AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
