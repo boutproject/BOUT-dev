@@ -207,28 +207,49 @@ TEST_F(RegionTest, defaultRegions) {
 TEST_F(RegionTest, regionLoopAll) {
   const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  int count = 0;
+  // Need to use a Field3D as a jig as OpenMP complicates things here
+  Field3D a{0.};
   BOUT_FOR(i, region) {
-    ++count;
+    a[i] = 1.0;
   }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-
-  EXPECT_EQ(count, nmesh);
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
+  }
 }
 
 TEST_F(RegionTest, regionLoopNoBndry) {
   const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  int count = 0;
+  Field3D a{0.};
   BOUT_FOR(i, region) {
-    ++count;
+    a[i] = 1.0;
   }
 
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  int numExpectNotMatching = nmesh - ninner;
 
-  EXPECT_EQ(count, ninner);
+  int numNotMatching = 0;
+  int numMatching = 0;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
+    }
+  }
+  EXPECT_EQ(numNotMatching, numExpectNotMatching);
+  EXPECT_EQ(numMatching, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllSerial) {
@@ -263,7 +284,7 @@ TEST_F(RegionTest, regionLoopAllSection) {
 
   int count = 0;
   BOUT_OMP(parallel) {
-    BOUT_FOR_OMP(i, region, for) {
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
     }
   }
@@ -278,7 +299,7 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
 
   int count = 0;
   BOUT_OMP(parallel) {
-    BOUT_FOR_OMP(i, region, for) {
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
     }
   }
@@ -292,32 +313,52 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
 TEST_F(RegionTest, regionLoopAllInner) {
   const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  int count = 0;
+  Field3D a{0.};
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
-      ++count;
+      a[i] = 1.0;
     }
   }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  EXPECT_EQ(count, nmesh);
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
+  }
 }
 
 TEST_F(RegionTest, regionLoopNoBndryInner) {
   const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  int count = 0;
-
+  Field3D a{0.};
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
-      ++count;
+      a[i] = 1.0;
     }
   }
 
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+  int numExpectNotMatching = nmesh - ninner;
 
-  EXPECT_EQ(count, ninner);
+  int numNotMatching = 0;
+  int numMatching = 0;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
+    }
+  }
+  EXPECT_EQ(numNotMatching, numExpectNotMatching);
+  EXPECT_EQ(numMatching, ninner);
 }
 
 TEST_F(RegionTest, regionAsSorted) {
