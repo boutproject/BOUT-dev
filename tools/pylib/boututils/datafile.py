@@ -773,8 +773,8 @@ class DataFile_HDF5(DataFile):
                     raise ValueError("Incorrect number of elements in ranges argument "
                                      "(got {}, expected {} or {})"
                                      .format(len(ranges), ndims, 2 * ndims))
-
-                data = var[ranges[:ndims]]
+                # Probably a bug in h5py, work around by passing tuple
+                data = var[tuple(ranges[:ndims])]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
