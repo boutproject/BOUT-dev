@@ -1649,15 +1649,9 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-    // Calculate how many Z wavenumbers will be removed
+    // No filtering in 2nd derivative method
     const int ncz = this->LocalNz;
-    int kfilter =
-        static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
-    if (kfilter < 0)
-      kfilter = 0;
-    if (kfilter > (ncz / 2))
-      kfilter = ncz / 2;
-    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+    const int kmax = ncz / 2; // Up to and including this wavenumber index
 
     const auto region_str = REGION_STRING(region);
 
