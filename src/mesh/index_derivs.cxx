@@ -1370,7 +1370,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
       // here,
       // but should be ok for now.
       BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
-        rfft(f(i.x(), i.y()), ncz, cv.begin()); // Forward FFT
+        auto i3D = mesh->ind2Dto3D(i, 0);
+        rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
           const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
@@ -1383,7 +1384,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
           cv[jz] = 0.0;
         }
 
-        irfft(cv.begin(), ncz, result(i.x(), i.y())); // Reverse FFT
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
 
@@ -1673,7 +1674,9 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
       // here,
       // but should be ok for now.
       BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
-        rfft(f(i.x(), i.y()), ncz, cv.begin()); // Forward FFT
+        auto i3D = mesh->ind2Dto3D(i, 0);
+
+        rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
           const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
@@ -1686,7 +1689,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
           cv[jz] = 0.0;
         }
 
-        irfft(cv.begin(), ncz, result(i.x(), i.y())); // Reverse FFT
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
 
