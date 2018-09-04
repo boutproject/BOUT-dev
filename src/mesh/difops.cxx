@@ -397,17 +397,13 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
     BOUT_OMP(parallel) {
       stencil fval, vval;
       BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
-        fval.mm = f_fa[i.ymm()];
         fval.m = f_fa[i.ym()];
         fval.c = f_fa[i];
         fval.p = f_fa[i.yp()];
-        fval.pp = f_fa[i.ypp()];
 
-        vval.mm = v_fa[i.ymm()];
         vval.m = v_fa[i.ym()];
         vval.c = v_fa[i];
         vval.p = v_fa[i.yp()];
-        vval.pp = v_fa[i.ypp()];
 
         // Left side
         result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
