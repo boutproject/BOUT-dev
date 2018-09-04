@@ -115,7 +115,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 
       // Loop over X indices, including boundaries but not guard cells. (unless periodic
       // in x)
-      BOUT_OMP(for nowait)
+      BOUT_OMP(for)
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
@@ -175,14 +175,15 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       }
     }
   }else {
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((mesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
 
       // Loop over X indices, including boundaries but not guard cells (unless periodic in
       // x)
-      BOUT_OMP(for nowait)
+      BOUT_OMP(for)
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
@@ -219,7 +220,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((mesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
