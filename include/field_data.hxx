@@ -51,7 +51,7 @@ using std::map;
 #include "boundary_region.hxx"
 #include "parallel_boundary_region.hxx"
 
-class FieldGenerator; // Forward declaration
+#include "bout/sys/expressionparser.hxx"
 
 class FieldVisitor;
 
@@ -87,9 +87,9 @@ public:
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
-  void addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location);
+  void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
   
-  std::shared_ptr<FieldGenerator> getBndryGenerator(BndryLoc location);
+  FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
 protected:
   vector<BoundaryOp *> bndry_op; ///< Boundary conditions
@@ -98,7 +98,7 @@ protected:
   // Parallel boundaries
   vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
-  std::map <BndryLoc,std::shared_ptr<FieldGenerator>> bndry_generator;
+  std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };
 
 #include "bout/field_visitor.hxx"

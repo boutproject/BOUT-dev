@@ -71,7 +71,7 @@ class Vector3D : public FieldData {
    * used, then some book-keeping is needed to ensure
    * that fields are only destroyed once.
    */
-  ~Vector3D();
+  ~Vector3D() override;
 
   /*!
    * The components of the vector. These can be 

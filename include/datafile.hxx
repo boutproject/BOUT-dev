@@ -77,12 +77,9 @@ class Datafile {
   DEPRECATED(bool writeVar(const int &i, const char *name));
   DEPRECATED(bool writeVar(BoutReal r, const char *name));
 
-  void setAttribute(const string &varname, const string &attrname, const string &text) {
-    attrib_string[varname][attrname] = text;
-  }
-  void setAttribute(const string &varname, const string &attrname, int value) {
-    attrib_int[varname][attrname] = value;
-  }
+  void setAttribute(const string &varname, const string &attrname, const string &text);
+  void setAttribute(const string &varname, const string &attrname, int value);
+
  private:
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
@@ -101,7 +98,9 @@ class Datafile {
   size_t filenamelen;
   static const size_t FILENAMELEN=512;
   char *filename;
+  bool writable; // is file open for writing?
   bool appending;
+  bool first_time; // is this the first time the data will be written?
 
   /// Shallow copy, not including dataformat, therefore private
   Datafile(const Datafile& other);
@@ -138,17 +137,6 @@ class Datafile {
   /// Get the pointer to the variable, nullptr if not added
   /// This is used to check if the same variable is being added
   void* varPtr(const string &name);
-  
-  // Metadata (attributes)
-  // Note: These should be stored with each variable, but this would require
-  // a number of changes to the data storage (maps rather than vectors etc).
-  // For now this is a bit of a hack to see if it works
-
-  /// String attributes. Maps variable name to maps of <string name, string value>
-  std::map<std::string, std::map<std::string, std::string>> attrib_string;
-  
-  /// Integer attributes. Maps variable name to maps <string name, int value>
-  std::map<std::string, std::map<std::string, int>> attrib_int; 
 };
 
 /// Write this variable once to the grid file

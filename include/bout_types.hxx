@@ -25,9 +25,13 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <limits>
 
 /// Size of real numbers
 typedef double BoutReal;
+
+/// Quiet NaN
+const BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
 #define ENUMSTR(val) {val, #val}
 

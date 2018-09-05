@@ -72,6 +72,12 @@ class DataFormat {
   virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0; 
   virtual bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
   virtual bool setRecord(int t) = 0; // negative -> latest
+
+  // Add a variable to the file
+  virtual bool addVarInt(const string &name, bool repeat) = 0;
+  virtual bool addVarBoutReal(const string &name, bool repeat) = 0;
+  virtual bool addVarField2D(const string &name, bool repeat) = 0;
+  virtual bool addVarField3D(const string &name, bool repeat) = 0;
   
   // Read / Write simple variables up to 3D
 
@@ -107,23 +113,48 @@ class DataFormat {
   ///
   /// Inputs
   /// ------
-  /// 
+  ///
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] text        A string attribute to attach to the variable
-  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
-                            const string &UNUSED(text)) {}
+  virtual void setAttribute(const string &varname, const string &attrname,
+                            const string &text) = 0;
 
   /// Sets an integer attribute
   ///
   /// Inputs
   /// ------
-  /// 
+  ///
   /// @param[in] varname     Variable name. The variable must already exist
   /// @param[in] attrname    Attribute name
   /// @param[in] value       A string attribute to attach to the variable
-  virtual void setAttribute(const string &UNUSED(varname), const string &UNUSED(attrname),
-                            int UNUSED(value)) {}
+  virtual void setAttribute(const string &varname, const string &attrname,
+                            int value) = 0;
+  /// Gets a string attribute
+  ///
+  /// Inputs
+  /// ------
+  ///
+  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] attrname    Attribute name
+  ///
+  /// Returns
+  /// -------
+  /// text                   A string attribute of the variable
+  virtual bool getAttribute(const string &varname, const string &attrname, std::string &text) = 0;
+
+  /// Sets an integer attribute
+  ///
+  /// Inputs
+  /// ------
+  ///
+  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] attrname    Attribute name
+  ///
+  /// Returns
+  /// -------
+  /// value                  An int attribute of the variable
+  virtual bool getAttribute(const string &varname, const string &attrname, int &value) = 0;
 };
 
 // For backwards compatability. In formatfactory.cxx

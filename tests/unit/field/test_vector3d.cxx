@@ -3,9 +3,10 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
-#include "vector3d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "vector3d.hxx"
 
 /// Global mesh
 extern Mesh *mesh;
@@ -25,12 +26,14 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2));
+    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
   }
 
   static void TearDownTestCase() {
@@ -93,6 +96,18 @@ TEST_F(Vector3DTest, BoutRealSize) {
   Vector3D vector;
 
   EXPECT_EQ(vector.BoutRealSize(), 3);
+}
+
+TEST_F(Vector3DTest, TimeDeriv) {
+  Vector3D vector;
+
+  auto deriv = vector.timeDeriv();
+  EXPECT_NE(&vector, deriv);
+
+  auto deriv2 = vector.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
 TEST_F(Vector3DTest, AssignFromBoutReal) {

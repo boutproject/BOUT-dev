@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#requires: all_tests
 #Requires: not make
 
 BOUT_TOP=../../..
@@ -7,6 +8,7 @@ export PATH=$BOUT_TOP/bin:$PATH
 
 error=0
 
+failed=
 for header in $(cd $BOUT_TOP/include ; find |grep hxx\$)
 do
     echo "#include <$header>" > test.cxx
@@ -19,8 +21,12 @@ do
     then
         echo $header failed
         error=1
+	failed="$failed
+$header failed"
     fi
 
 done
+
+echo $failed
 
 exit $error

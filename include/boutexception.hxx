@@ -17,8 +17,8 @@ class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
   BoutException(const std::string&);
-  virtual ~BoutException();
-  
+  ~BoutException() override;
+
   const char* what() const noexcept override;
   void Backtrace();
 protected:

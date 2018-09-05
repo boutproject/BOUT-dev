@@ -6,10 +6,21 @@ OMFIT
 
 import os
 import glob
+import numpy
+import re
 
 from boutdata.collect import collect, create_cache
 from boututils.boutwarnings import alwayswarn
 from boututils.datafile import DataFile
+
+# These are imported to be used by 'eval' in
+# BoutOptions.evaluate_scalar() and BoutOptionsFile.evaluate().
+# Change the names to match those used by C++/BOUT++
+from numpy import (pi, sin, cos, tan, arccos as acos, arcsin as asin,
+                   arctan as atan, arctan2 as atan2, sinh, cosh, tanh,
+                   arcsinh as asinh, arccosh as acosh, arctanh as atanh,
+                   exp, log, log10, power as pow, sqrt, ceil, floor,
+                   round, abs)
 
 
 class BoutOptions(object):
@@ -160,6 +171,57 @@ class BoutOptions(object):
             text += indent + " |- " + self._sections[s].__str__(indent+" |  ")
         return text
 
+    def evaluate_scalar(self, name):
+        """
+        Evaluate (recursively) scalar expressions
+        """
+        expression = self._substitute_expressions(name)
+
+        # replace ^ with ** so that Python evaluates exponentiation
+        expression = expression.replace("^", "**")
+
+        return eval(expression)
+
+    def _substitute_expressions(self, name):
+        expression = str(self[name]).lower()
+        expression = self._evaluate_section(expression, "")
+        parent = self._parent
+        while parent is not None:
+            sectionname = parent._name
+            if sectionname is "root":
+                sectionname = ""
+            expression = parent._evaluate_section(expression, sectionname)
+            parent = parent._parent
+
+        return expression
+
+    def _evaluate_section(self, expression, nested_sectionname):
+        # pass a nested section name so that we can traverse the options tree
+        # rooted at our own level and each level above us so that we can use
+        # relatively qualified variable names, e.g. if we are in section
+        # 'foo:bar:baz' then a variable 'x' from section 'bar' could be called
+        # 'bar:x' (found traversing the tree starting from 'bar') or
+        # 'foo:bar:x' (found when traversing tree starting from 'foo').
+        for var in self.values():
+            if nested_sectionname is not "":
+                nested_name = nested_sectionname + ":" + var
+            else:
+                nested_name = var
+            if re.search(r"(?<!:)\b"+re.escape(nested_name.lower())+r"\b", expression.lower()):
+                # match nested_name only if not preceded by colon (which indicates more nesting)
+                expression = re.sub(r"(?<!:)\b" + re.escape(nested_name.lower()) + r"\b",
+                                    "(" + self._substitute_expressions(var) + ")",
+                                    expression)
+
+        for subsection in self.sections():
+            if nested_sectionname is not "":
+                nested_name = nested_sectionname + ":" + subsection
+            else:
+                nested_name = subsection
+            expression = self.getSection(subsection)._evaluate_section(expression, nested_name)
+
+        return expression
+
 
 class BoutOptionsFile(BoutOptions):
     """Parses a BOUT.inp configuration file, producing a tree of
@@ -170,10 +232,24 @@ class BoutOptionsFile(BoutOptions):
 
     Parameters
     ----------
-    filename : str
+    filename : str, optional
         Path to file to read
     name : str, optional
         Name of root section (default: "root")
+    gridfilename : str, optional
+        If present, path to gridfile from which to read grid sizes (nx, ny, nz)
+    nx, ny : int, optional
+        - Specify sizes of grid, used when evaluating option strings
+        - Cannot be given if gridfilename is specified
+        - Must both be given if either is
+        - If neither gridfilename nor nx, ny are given then will try to
+          find nx, ny from (in order) the 'mesh' section of options,
+          outputfiles in the same directory is the input file, or the grid
+          file specified in the options file (used as a path relative to
+          the current directory)
+    nz : int, optional
+        Use this value for nz when evaluating option expressions, if given.
+        Overrides values found from input file, output files or grid files
 
     Examples
     --------
@@ -190,8 +266,7 @@ class BoutOptionsFile(BoutOptions):
 
     """
 
-    def __init__(self, filename, name="root"):
-        self.filename = filename
+    def __init__(self, filename="BOUT.inp", name="root", gridfilename=None, nx=None, ny=None, nz=None):
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -245,6 +320,112 @@ class BoutOptionsFile(BoutOptions):
                                 pass
 
                         section[line[:eqpos].strip()] = value
+
+        try:
+            # define arrays of x, y, z to be used for substitutions
+            gridfile = None
+            nzfromfile = None
+            if gridfilename:
+                if nx is not None or ny is not None:
+                    raise ValueError("nx or ny given as inputs even though "
+                                     "gridfilename was given explicitly, "
+                                     "don't know which parameters to choose")
+                with DataFile(gridfilename) as gridfile:
+                    self.nx = float(gridfile["nx"])
+                    self.ny = float(gridfile["ny"])
+                    try:
+                        nzfromfile = gridfile["MZ"]
+                    except KeyError:
+                        pass
+            elif nx or ny:
+                if nx is None:
+                    raise ValueError("nx not specified. If either nx or ny are given, then both must be.")
+                if ny is None:
+                    raise ValueError("ny not specified. If either nx or ny are given, then both must be.")
+                self.nx = nx
+                self.ny = ny
+            else:
+                try:
+                    self.nx = self["mesh"].evaluate_scalar("nx")
+                    self.ny = self["mesh"].evaluate_scalar("ny")
+                except KeyError:
+                    try:
+                        # get nx, ny, nz from output files
+                        from boutdata.collect import findFiles
+                        file_list = findFiles(path=os.path.dirname(), prefix="BOUT.dmp")
+                        with DataFile(file_list[0]) as f:
+                            self.nx = f["nx"]
+                            self.ny = f["ny"]
+                            nzfromfile = f["MZ"]
+                    except (IOError, KeyError):
+                        try:
+                            gridfilename = self["mesh"]["file"]
+                        except KeyError:
+                            gridfilename = self["grid"]
+                        with DataFile(gridfilename) as gridfile:
+                            self.nx = float(gridfile["nx"])
+                            self.ny = float(gridfile["ny"])
+                            try:
+                                nzfromfile = float(gridfile["MZ"])
+                            except KeyError:
+                                pass
+            if nz is not None:
+                self.nz = nz
+            else:
+                try:
+                    self.nz = self["mesh"].evaluate_scalar("nz")
+                except KeyError:
+                    try:
+                        self.nz = self.evaluate_scalar("mz")
+                    except KeyError:
+                        if nzfromfile is not None:
+                            self.nz = nzfromfile
+            mxg = self._keys.get("MXG", 2)
+            myg = self._keys.get("MYG", 2)
+
+            # make self.x, self.y, self.z three dimensional now so
+            # that expressions broadcast together properly.
+            self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg),
+                                    1. - (0.5 - mxg)/(self.nx - 2*mxg),
+                                    self.nx)[:, numpy.newaxis, numpy.newaxis]
+            self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny,
+                                                1.-(0.5 - myg)/self.ny,
+                                                self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
+            self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz,
+                                                1.-0.5/self.nz,
+                                                self.nz)[numpy.newaxis, numpy.newaxis, :]
+        except Exception as e:
+            alwayswarn("While building x, y, z coordinate arrays, an "
+                       "exception occured: " + str(e) +
+                       "\nEvaluating non-scalar options not available")
+
+    def evaluate(self, name):
+        """Evaluate (recursively) expressions
+
+        Sections and subsections must be given as part of 'name',
+        separated by colons
+
+        Parameters
+        ----------
+        name : str
+            Name of variable to evaluate, including sections and
+            subsections
+
+        """
+        section = self
+        split_name = name.split(":")
+        for subsection in split_name[:-1]:
+            section = section.getSection(subsection)
+        expression = section._substitute_expressions(split_name[-1])
+
+        # replace ^ with ** so that Python evaluates exponentiation
+        expression = expression.replace("^", "**")
+
+        # substitute for x, y and z coordinates
+        for coord in ["x", "y", "z"]:
+            expression = re.sub(r"\b"+coord.lower()+r"\b", "self."+coord, expression)
+
+        return eval(expression)
 
     def write(self, filename=None, overwrite=False):
         """ Write to BOUT++ options file

@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+ 	  f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   if (mesh->lastX())
@@ -103,7 +103,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
-// 	  d1(jx, jy, jz) = d1(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -112,7 +111,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
-// 	  d1(jx, jy, jz) = d1(jx-1, jy, jz);
 	}
   
   p = 0.18439023;
@@ -132,7 +130,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
-// 	  c1(jx, jy, jz) = c1(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -141,7 +138,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
-// 	  c1(jx, jy, jz) = c1(jx-1, jy, jz);
 	}
   
   p = 0.612547;
@@ -161,7 +157,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
-// 	  a1(jx, jy, jz) = a1(jx+1, jy, jz);
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -170,7 +165,6 @@ int main(int argc, char** argv) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
-// 	  a1(jx, jy, jz) = a1(jx-1, jy, jz);
 	}
   
   mesh->communicate(f1,a1,c1,d1);
@@ -387,7 +381,7 @@ int main(int argc, char** argv) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+          f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   if (mesh->lastX())
@@ -396,7 +390,7 @@ int main(int argc, char** argv) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-	f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+          f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
 	}
   
@@ -677,16 +671,18 @@ int main(int argc, char** argv) {
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
-  
+
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
-  
-  for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->LocalNz; jz++)
-      if (local_max_error<error(jx, mesh->ystart, jz)) local_max_error=error(jx, mesh->ystart, jz);
-  
+
+  for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
+    for (int jz = 0; jz < mesh->LocalNz; jz++)
+      if (local_max_error < error(jx, mesh->ystart, jz)) {
+        local_max_error = error(jx, mesh->ystart, jz);
+      }
+
   BoutReal max_error;
-  
+
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
-  
+
   return max_error;
 }

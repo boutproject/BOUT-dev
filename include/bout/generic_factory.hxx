@@ -67,7 +67,7 @@ public:
   /// @returns a vector of std::string
   virtual std::vector<std::string> listAvailable() {
     std::vector<std::string> available;
-    for (auto &name : type_map) {
+    for (const auto &name : type_map) {
       available.push_back(name.first);
     }
     return available;

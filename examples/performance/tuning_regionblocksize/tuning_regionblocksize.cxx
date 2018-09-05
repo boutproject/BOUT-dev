@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         Region<Ind3D>(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                       mesh->LocalNy, mesh->LocalNz, blocksize);
 
-    ITERATOR_TEST_BLOCK(name, BLOCK_REGION_LOOP(region, i, result[i] = a[i] + b[i];););
+    ITERATOR_TEST_BLOCK(name, BOUT_FOR(i, region) { result[i] = a[i] + b[i]; });
     blocksize *= 2;
   }
 

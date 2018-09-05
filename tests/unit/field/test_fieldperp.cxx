@@ -455,6 +455,62 @@ TEST_F(FieldPerpTest, ConstIndexingWithIndices) {
   EXPECT_DOUBLE_EQ(field[ii], 2.0);
 }
 
+TEST_F(FieldPerpTest, IndexingWithIndPerp) {
+  FieldPerp field(0.0);
+  const BoutReal sentinel = 2.0;
+  field(1, 5) = sentinel;
+  IndPerp firstPoint(1 * nz + 5, 1, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  IndPerp secondPoint((nx - 1) * nz + 1, 1, nz);
+  field[secondPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(nx - 1, 1), -sentinel);
+}
+
+TEST_F(FieldPerpTest, ConstIndexingWithIndPerp) {
+  FieldPerp field(0.0);
+  const BoutReal sentinel = 2.0;
+  field(1, 5) = sentinel;
+  const IndPerp firstPoint(1 * nz + 5, 1, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  const IndPerp secondPoint((nx - 1) * nz + 1, 1, nz);
+  field[secondPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(nx - 1, 1), -sentinel);
+}
+
+TEST_F(FieldPerpTest, IndexingWithInd3D) {
+  FieldPerp field(0.0);
+  field.setIndex(2);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = field.getIndex(), iz = 4;
+  field(ix, iz) = sentinel;
+  Ind3D firstPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  field[firstPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iz), -sentinel);
+#if CHECK > 2
+  iy++;
+  Ind3D secondPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_THROW(field[secondPoint], BoutException);
+#endif
+}
+
+TEST_F(FieldPerpTest, ConstIndexingWithInd3D) {
+  FieldPerp field(0.0);
+  field.setIndex(2);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = field.getIndex(), iz = 4;
+  field(ix, iz) = sentinel;
+  const Ind3D firstPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_DOUBLE_EQ(field[firstPoint], sentinel);
+  field[firstPoint] = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iz), -sentinel);
+#if CHECK > 2
+  iy++;
+  const Ind3D secondPoint(iz + nz * (iy + ny * ix), ny, nz);
+  EXPECT_THROW(field[secondPoint], BoutException);
+#endif
+}
+
 TEST_F(FieldPerpTest, IndexingToPointer) {
   FieldPerp field;
 
@@ -546,14 +602,26 @@ TEST_F(FieldPerpTest, CheckData) {
 
   field = 1.0;
 
+  EXPECT_THROW(checkData(field), BoutException);
+
+  field.setIndex(-10);
+
+  EXPECT_THROW(checkData(field), BoutException);
+
+  field.setIndex(100);
+
+  EXPECT_THROW(checkData(field), BoutException);
+
+  field.setIndex(0);
+
   EXPECT_NO_THROW(checkData(field));
 
-  field(1, 1) = std::nan("");
+  field(1, 1) = BoutNaN;
 
   EXPECT_THROW(checkData(field), BoutException);
 
   field = 1.0;
-  field(0, 0) = std::nan("");
+  field(0, 0) = BoutNaN;
 
   EXPECT_NO_THROW(checkData(field));
   EXPECT_NO_THROW(checkData(field, RGN_NOX));
@@ -634,6 +702,7 @@ TEST_F(FieldPerpTest, AssignFromInvalid) {
 
 TEST_F(FieldPerpTest, UnaryMinus) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 2.0;
   field = -field;
@@ -643,6 +712,7 @@ TEST_F(FieldPerpTest, UnaryMinus) {
 
 TEST_F(FieldPerpTest, AddEqualsBoutReal) {
   FieldPerp a;
+  a.setIndex(0);
 
   a = 1.0;
   a += 5.0;
@@ -659,6 +729,8 @@ TEST_F(FieldPerpTest, AddEqualsBoutReal) {
 
 TEST_F(FieldPerpTest, AddEqualsFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 2.0;
   b = 3.0;
@@ -720,6 +792,7 @@ TEST_F(FieldPerpTest, AddEqualsField3D) {
 
 TEST_F(FieldPerpTest, AddFieldPerpBoutReal) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 1.0;
   b = a + 2.0;
@@ -729,6 +802,7 @@ TEST_F(FieldPerpTest, AddFieldPerpBoutReal) {
 
 TEST_F(FieldPerpTest, AddBoutRealFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 1.0;
   b = 3.0 + a;
@@ -738,6 +812,8 @@ TEST_F(FieldPerpTest, AddBoutRealFieldPerp) {
 
 TEST_F(FieldPerpTest, AddFieldPerpFieldPerp) {
   FieldPerp a, b, c;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 1.0;
   b = 2.0;
@@ -772,6 +848,7 @@ TEST_F(FieldPerpTest, AddFieldPerpField3D) {
 
 TEST_F(FieldPerpTest, MultiplyEqualsBoutReal) {
   FieldPerp a;
+  a.setIndex(0);
 
   a = 2.0;
   a *= 1.5;
@@ -788,6 +865,8 @@ TEST_F(FieldPerpTest, MultiplyEqualsBoutReal) {
 
 TEST_F(FieldPerpTest, MultiplyEqualsFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 2.5;
   b = 4.0;
@@ -849,6 +928,7 @@ TEST_F(FieldPerpTest, MultiplyEqualsField3D) {
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpBoutReal) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 1.5;
   b = a * 2.0;
@@ -858,6 +938,7 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpBoutReal) {
 
 TEST_F(FieldPerpTest, MultiplyBoutRealFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 2.5;
   b = 3.0 * a;
@@ -867,6 +948,8 @@ TEST_F(FieldPerpTest, MultiplyBoutRealFieldPerp) {
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpFieldPerp) {
   FieldPerp a, b, c;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 4.0;
   b = 8.0;
@@ -901,6 +984,7 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpField3D) {
 
 TEST_F(FieldPerpTest, SubtractEqualsBoutReal) {
   FieldPerp a;
+  a.setIndex(0);
 
   a = 1.0;
   a -= 5.0;
@@ -917,6 +1001,8 @@ TEST_F(FieldPerpTest, SubtractEqualsBoutReal) {
 
 TEST_F(FieldPerpTest, SubtractEqualsFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 2.0;
   b = 7.0;
@@ -978,6 +1064,7 @@ TEST_F(FieldPerpTest, SubtractEqualsField3D) {
 
 TEST_F(FieldPerpTest, SubtractFieldPerpBoutReal) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 10.0;
   b = a - 2.0;
@@ -987,6 +1074,7 @@ TEST_F(FieldPerpTest, SubtractFieldPerpBoutReal) {
 
 TEST_F(FieldPerpTest, SubtractBoutRealFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 10.0;
   b = 3.0 - a;
@@ -996,6 +1084,8 @@ TEST_F(FieldPerpTest, SubtractBoutRealFieldPerp) {
 
 TEST_F(FieldPerpTest, SubtractFieldPerpFieldPerp) {
   FieldPerp a, b, c;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 10.0;
   b = 20.0;
@@ -1030,6 +1120,7 @@ TEST_F(FieldPerpTest, SubtractFieldPerpField3D) {
 
 TEST_F(FieldPerpTest, DivideEqualsBoutReal) {
   FieldPerp a;
+  a.setIndex(0);
 
   a = 2.5;
   a /= 5.0;
@@ -1046,6 +1137,8 @@ TEST_F(FieldPerpTest, DivideEqualsBoutReal) {
 
 TEST_F(FieldPerpTest, DivideEqualsFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 5.0;
   b = 2.5;
@@ -1107,6 +1200,7 @@ TEST_F(FieldPerpTest, DivideEqualsField3D) {
 
 TEST_F(FieldPerpTest, DivideFieldPerpBoutReal) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 3.0;
   b = a / 2.0;
@@ -1116,6 +1210,7 @@ TEST_F(FieldPerpTest, DivideFieldPerpBoutReal) {
 
 TEST_F(FieldPerpTest, DivideBoutRealFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
 
   a = 2.5;
   b = 10.0 / a;
@@ -1125,6 +1220,8 @@ TEST_F(FieldPerpTest, DivideBoutRealFieldPerp) {
 
 TEST_F(FieldPerpTest, DivideFieldPerpFieldPerp) {
   FieldPerp a, b, c;
+  a.setIndex(0);
+  b.setIndex(0);
 
   a = 32.0;
   b = 8.0;
@@ -1159,6 +1256,9 @@ TEST_F(FieldPerpTest, DivideFieldPerpField3D) {
 
 TEST_F(FieldPerpTest, PowBoutRealFieldPerp) {
   FieldPerp a, b;
+  a.setIndex(0);
+  b.setIndex(0);
+
   a = 5.0;
   b = pow(2.0, a);
 
@@ -1167,6 +1267,8 @@ TEST_F(FieldPerpTest, PowBoutRealFieldPerp) {
 
 TEST_F(FieldPerpTest, PowFieldPerpBoutReal) {
   FieldPerp a, b;
+  a.setIndex(0);
+
   a = 5.0;
   b = pow(a, 2.0);
 
@@ -1175,6 +1277,9 @@ TEST_F(FieldPerpTest, PowFieldPerpBoutReal) {
 
 TEST_F(FieldPerpTest, PowFieldPerpFieldPerp) {
   FieldPerp a, b, c;
+  a.setIndex(0);
+  b.setIndex(0);
+
   a = 2.0;
   b = 6.0;
   c = pow(a, b);
@@ -1184,6 +1289,7 @@ TEST_F(FieldPerpTest, PowFieldPerpFieldPerp) {
 
 TEST_F(FieldPerpTest, Sqrt) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 16.0;
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(sqrt(field), 4.0));
@@ -1191,6 +1297,7 @@ TEST_F(FieldPerpTest, Sqrt) {
 
 TEST_F(FieldPerpTest, Abs) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = -31.0;
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(abs(field), 31.0));
@@ -1198,6 +1305,7 @@ TEST_F(FieldPerpTest, Abs) {
 
 TEST_F(FieldPerpTest, Exp) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 2.5;
   const BoutReal expected = 12.182493960703473;
@@ -1206,6 +1314,7 @@ TEST_F(FieldPerpTest, Exp) {
 
 TEST_F(FieldPerpTest, Log) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 12.182493960703473;
   const BoutReal expected = 2.5;
@@ -1214,6 +1323,7 @@ TEST_F(FieldPerpTest, Log) {
 
 TEST_F(FieldPerpTest, LogExp) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 2.5;
   const BoutReal expected = 2.5;
@@ -1222,6 +1332,7 @@ TEST_F(FieldPerpTest, LogExp) {
 
 TEST_F(FieldPerpTest, Sin) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = PI / 2.0;
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(sin(field), 1.0));
@@ -1232,6 +1343,7 @@ TEST_F(FieldPerpTest, Sin) {
 
 TEST_F(FieldPerpTest, Cos) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = PI / 2.0;
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(cos(field), 0.0));
@@ -1242,6 +1354,7 @@ TEST_F(FieldPerpTest, Cos) {
 
 TEST_F(FieldPerpTest, Tan) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = PI / 4.0;
   EXPECT_TRUE(IsFieldPerpEqualBoutReal(tan(field), 1.0));
@@ -1252,6 +1365,7 @@ TEST_F(FieldPerpTest, Tan) {
 
 TEST_F(FieldPerpTest, Sinh) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 1.0;
   const BoutReal expected = 1.1752011936438014;
@@ -1263,6 +1377,7 @@ TEST_F(FieldPerpTest, Sinh) {
 
 TEST_F(FieldPerpTest, Cosh) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 1.0;
   const BoutReal expected = 1.5430806348152437;
@@ -1274,6 +1389,7 @@ TEST_F(FieldPerpTest, Cosh) {
 
 TEST_F(FieldPerpTest, Tanh) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 1.0;
   const BoutReal expected = 0.761594155955764;
@@ -1285,6 +1401,7 @@ TEST_F(FieldPerpTest, Tanh) {
 
 TEST_F(FieldPerpTest, Floor) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 50.0;
   field(1, 1) = 49.9;
@@ -1297,6 +1414,7 @@ TEST_F(FieldPerpTest, Floor) {
 
 TEST_F(FieldPerpTest, Min) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 50.0;
   field(0, 0) = -99.0;
@@ -1314,6 +1432,7 @@ TEST_F(FieldPerpTest, Min) {
 
 TEST_F(FieldPerpTest, Max) {
   FieldPerp field;
+  field.setIndex(0);
 
   field = 50.0;
   field(0, 0) = -99.0;

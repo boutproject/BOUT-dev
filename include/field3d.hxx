@@ -130,13 +130,13 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       Field3D f(0.0); // Allocate, set to zero
 
-      for( auto i : f ) {  // Loop over all points, with index i
+      for( const auto &i : f ) {  // Loop over all points, with index i
         f[i] = 1.0;
       }
 
   There is also more explicit looping over regions:
 
-      for( auto i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
+      for( const auto &i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
         f[i] = 1.0;
       }
 
@@ -187,7 +187,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Destructor
-  ~Field3D();
+  ~Field3D() override;
 
   /// Data type stored in this field
   using value_type = BoutReal;
@@ -290,7 +290,7 @@ class Field3D : public Field, public FieldData {
    *
    * Field3D objects f and g can be modified by 
    * 
-   * for(auto i : f) {
+   * for(const auto &i : f) {
    *   f[i] = 2.*f[i] + g[i];
    * }
    * 
@@ -310,7 +310,7 @@ class Field3D : public Field, public FieldData {
    * between the point one index up in x (i.xp()) and one index down
    * in x (i.xm()), putting the result into a different field 'g'
    * 
-   * for(auto i : f.region(RGN_NOBNDRY)) {
+   * for(const auto &i : f.region(RGN_NOBNDRY)) {
    *   g[i] = f[i.xp()] - f[i.xm()];
    * }
    * 
@@ -352,6 +352,12 @@ class Field3D : public Field, public FieldData {
     return data[d.ind];
   }
 
+  BoutReal& operator()(const IndPerp &d, int jy);
+  const BoutReal& operator()(const IndPerp &d, int jy) const;
+
+  BoutReal& operator()(const Ind2D &d, int jz);
+  const BoutReal& operator()(const Ind2D &d, int jz) const;
+  
   /*!
    * Direct access to the underlying data array
    *
@@ -591,7 +597,7 @@ BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
+FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
 Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn = RGN_ALL);
 Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 

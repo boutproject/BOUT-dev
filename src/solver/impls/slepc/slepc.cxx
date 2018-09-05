@@ -2,7 +2,7 @@
  * Interface to SLEPc solver
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2014 B.D.Dudson, D. Dickinson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -24,10 +24,9 @@
  **************************************************************************/
 
 
-#ifdef BOUT_HAS_SLEPC_3_4
-//Hacked together by <DD>
+#ifdef BOUT_HAS_SLEPC
 
-#include "slepc-3.4.hxx"
+#include "slepc.hxx"
 
 #include <globals.hxx>
 
@@ -37,8 +36,6 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <boutcomm.hxx>
-
-static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
 string formatEig(BoutReal reEig, BoutReal imEig);
 
@@ -69,9 +66,9 @@ PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br
 
 //The callback function for the monitor
 //A simple wrapper around the SlepcSolver compareEigs routine
-PetscErrorCode monitorWrapper(EPS eps, PetscInt its, PetscInt nconv,
-                                  PetscScalar *eigr, PetscScalar *eigi,
-                                  PetscReal* errest, PetscInt nest, void *mctx){
+PetscErrorCode monitorWrapper(EPS UNUSED(eps), PetscInt its, PetscInt nconv,
+                              PetscScalar *eigr, PetscScalar *eigi, PetscReal *errest,
+                              PetscInt nest, void *mctx) {
   PetscFunctionBegin;
   //Cast context as SlepcSolver and call the actual compare routine
   SlepcSolver* myCtx;
@@ -228,10 +225,10 @@ SlepcSolver::~SlepcSolver(){
 
 int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
-  TRACE("Initialising SLEPc-3.4 solver");
+  TRACE("Initialising SLEPc solver");
 
   //Report initialisation
-  output.write("Initialising SLEPc-3.4 solver\n");
+  output.write("Initialising SLEPc solver\n");
   if (selfSolve) {
     Solver::init(NOUT,TIMESTEP);
 
@@ -470,7 +467,11 @@ void SlepcSolver::createEPS(){
     Vec initVec, rightVec;
     bool ddtModeBackup=ddtMode;
 
+#if PETSC_VERSION_LT(3, 6, 0)    
     MatGetVecs(shellMat,&rightVec,&initVec);
+#else
+    MatCreateVecs(shellMat,&rightVec,&initVec);
+#endif    
     ddtMode=false; //Temporarily disable as initial ddt values not set
     fieldsToVec(initVec);
     ddtMode=ddtModeBackup; //Restore state
@@ -484,7 +485,7 @@ void SlepcSolver::createEPS(){
 //advances them with the attached solver and then returns the evolved fields in a slepc
 //structure.
 //Note: Hidden "this" argument prevents Slepc calling this routine directly
-int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
+int SlepcSolver::advanceStep(Mat &UNUSED(matOperator), Vec &inData, Vec &outData){
 
   //First unpack input into fields
   vecToFields(inData);
@@ -567,7 +568,8 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
 //get the eigenvectors at the correct time indices later would require resetting the time index. I'm
 //not sure if the Datafile object supports this.
 //Note must be wrapped by non-member function to be called by Slepc
-void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest){
+void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
+                          PetscScalar eigi[], PetscReal errest[], PetscInt UNUSED(nest)) {
   static int nConvPrev=0;
 
   //No output until after first iteration
@@ -680,7 +682,7 @@ void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
   if(ddtMode){
     slepcEig=-ci*boutEig;
   }else{
-    slepcEig=exp(-ci*boutEig* static_cast<BoutReal>(tstep*nout));
+    slepcEig = exp(-ci * boutEig * (tstep * nout));
   };
 
   //Set return values
@@ -705,7 +707,11 @@ void SlepcSolver::analyseResults(){
 
     //Declare and create vectors to store eigenfunctions
     Vec vecReal, vecImag;
+#if PETSC_VERSION_LT(3, 6, 0)        
     MatGetVecs(shellMat,&vecReal,&vecImag);
+#else
+    MatCreateVecs(shellMat,&vecReal,&vecImag);    
+#endif    
 
     //This allows us to set the simtime in bout++.cxx directly
     //rather than calling the monitors which are noisy |--> Not very nice way to do this
@@ -763,4 +769,4 @@ void SlepcSolver::analyseResults(){
   }
 }
 
-#endif // BOUT_HAS_SLEPC_3_4
+#endif // BOUT_HAS_SLEPC

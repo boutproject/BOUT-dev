@@ -44,6 +44,7 @@ class Options;
 
 #include <map>
 #include <string>
+#include <utility>
 using std::string;
 
 /// Class to represent hierarchy of options
@@ -110,8 +111,9 @@ public:
   ///
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
-  Options(Options *parent, string sectionName) : parent(parent), sectionName(sectionName) {};
-  
+  Options(Options *parent, string sectionName)
+      : parent(parent), sectionName(std::move(sectionName)){};
+
   /// Destructor
   ~Options();
 
@@ -144,8 +146,8 @@ public:
   }
 
   /*!
-   * Test if a key is set to a value
-   *
+   * Test if a key is set by the user.
+   * Values set via default values are ignored.
    */
   bool isSet(const string &key);
 

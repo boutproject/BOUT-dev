@@ -53,7 +53,7 @@ AC_ARG_WITH(lapack,       [AS_HELP_STRING([--with-lapack],
 AC_ARG_WITH(petsc,        [AS_HELP_STRING([--with-petsc],
         [Enable PETSc interface])],,[with_petsc=no])
 AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
-        [Enable SLEPc interface])],,[])
+        [Enable SLEPc interface])],,[with_slepc=no])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
@@ -65,6 +65,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
+AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
+        [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
@@ -85,7 +87,7 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
-AC_ARG_ENABLE(pvode_openmp,       [AS_HELP_STRING([--enable-pvode-openmp],
+AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
@@ -203,6 +205,35 @@ AC_SUBST([COVERAGE_FLAGS])
 # General Options
 #############################################################
 
+# Always pass -Werror=unknown-warning-option to get Clang to fail on bad
+# flags, otherwise they are always appended to the warn_cxxflags variable,
+# and Clang warns on them for every compilation unit.
+# If this is passed to GCC, it will explode, so the flag must be enabled
+# conditionally.
+# This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
+  extra_compiler_flags_test="-Werror=unknown-warning-option"
+],[
+  extra_compiler_flags_test=""
+])
+
+
+AS_IF([test "x$enable_warnings" != "xno"], [
+# Some hopefully sensible default compiler warning flags
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wall dnl
+     -Wextra dnl
+     -Wnull-dereference dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test])
+], [
+  AC_MSG_NOTICE([Compiler warnings disabled])
+])
+
 OPT_FLAGS=""
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
@@ -235,16 +266,10 @@ AS_IF([test "$enable_debug" != ""], [
   ], [OPT_FLAGS=""])
 ])
 
-for flag in $OPT_FLAGS
-do
-  CXXFLAGS_save=$CXXFLAGS
-  CXXFLAGS="$CXXFLAGS $flag"
-  AC_MSG_CHECKING([flag $flag is supported])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-    [AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)
-     CXXFLAGS=$CXXFLAGS_save])
-done
+# Append optimisation/debug flags if they work with this compiler
+AX_APPEND_COMPILE_FLAGS([ dnl
+    $OPT_FLAGS dnl
+], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
 AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
@@ -717,50 +742,118 @@ PETSC_ERROR_MESSAGE])
 #############################################################
 # SLEPc library
 #############################################################
-HAS_SLEPC="no"
-SLEPC_VARS=""
 
-AS_IF([test "$with_slepc" != "" && test "$with_slepc" != "no"], [
-  AC_MSG_NOTICE([Searching for SLEPc])
+AS_IF([test "x$with_slepc" != "x" && test "$with_slepc" != "no"], [
 
-  AS_IF([test "$SLEPC_DIR" = ""], [
-    AC_MSG_ERROR([*** --with-slepc specified but SLEPC_DIR not set])
+  AS_IF([test $HAS_PETSC = "no"], [
+    AC_MSG_ERROR([--with-slepc specified, but no PETSc detected. Please reconfigure and specify --with-petsc
+PETSC_ERROR_MESSAGE])
   ])
 
-  # Check that the config directory exists
-  AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
-    AC_MSG_ERROR([*** --with-slepc specified but could not find SLEPc distribution])
-    )
+# Supplying an argument to "--with-slepc" only works if SLEPC_ARCH
+# *should* be empty. If it should be non-empty, THIS WILL NOT WORK
+  AS_IF([test "$with_slepc" != "yes"], [
+    SLEPC_DIR="$with_slepc"
+    SLEPC_ARCH=
+  ])
 
-  AC_MSG_NOTICE([ -> using SLEPC_DIR=$SLEPC_DIR])
+  AC_MSG_NOTICE([Using SLEPC_DIR=$SLEPC_DIR, SLEPC_ARCH=$SLEPC_ARCH])
 
-  # Find version number
-  AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
-    AC_MSG_ERROR([*** --with-slepc specified but could not read include/slepcversion.h])
-    )
+# Define a macro for a nice error message that preserves the
+# formatting. Use like:
+#
+# SLEPC_ERROR_MESSAGE
+#
+# with no identation
+  m4_define(SLEPC_ERROR_MESSAGE,
+  [  You may need to specify SLEPC_DIR and SLEPC_ARCH like so:
+      --with-slepc SLEPC_DIR=\$SLEPC_DIR SLEPC_ARCH=\$SLEPC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#slepc
+  ])
 
-  SLEPC_VERSION_MAJOR="0"
-  SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
-  SLEPC_VERSION_MINOR="0"
-  SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
-
-  AS_IF([test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"], [
-    # Version 3.4
-    AC_MSG_NOTICE([ -> Using interface for SLEPc 3.4])
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
-    HAS_SLEPC="yes"
-
-    EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
-    EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
-    SLEPC_VARS="include $SLEPC_DIR/conf/slepc_variables"
+# Slepc changed the location of the conf directory in 3.5, so we
+# need to check both locations
+  AC_CHECK_FILE($SLEPC_DIR/$SLEPC_ARCH/conf, [
+    SLEPC_CONFDIR=${SLEPC_DIR}/conf
   ], [
-    AC_MSG_WARN([Error - Unknown SLEPc version])
-    AC_MSG_NOTICE([  -> No SLEPc support])
-    HAS_SLEPC="no"
+    AC_CHECK_FILE($SLEPC_DIR/$SLEPC_ARCH/lib/slepc/conf, [
+      SLEPC_CONFDIR=${SLEPC_DIR}/lib/slepc/conf
+    ], [
+      AC_MSG_ERROR([--with-slepc was specified but could not find Slepc distribution.
+SLEPC_ERROR_MESSAGE])
+    ])
   ])
-])
 
-AC_SUBST(SLEPC_VARS)
+# We've found an installation, need to check we can use it. First we
+# need to be able to check the version number, for which we need
+# slepcverion.h
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/include"
+  AC_CHECK_HEADER([slepcversion.h],
+    [FOUND_SLEPC_HEADER=yes],
+    [FOUND_SLEPC_HEADER=no]
+  )
+
+# This is a terrible hack for some Linux distributions (Fedora) that
+# install Slepc in a non-supported fashion. This is really the fault
+# of Slepc for their weird method of installation
+  AS_IF([test $FOUND_SLEPC_HEADER = no], [
+    AC_CHECK_FILE([${SLEPC_CONFDIR}/slepc_variables], [], [
+      AC_MSG_ERROR([Unable to find either slepcversion.h or slepc_variables
+SLEPC_ERROR_MESSAGE])
+    ])
+
+# This relies on the assumption that SLEPC_ARCH is empty
+    SLEPC_CC_INCLUDES=$(grep ^SLEPC_CC_INCLUDES ${SLEPC_CONFDIR}/slepc_variables | cut -d= -f 2-)
+
+    AC_MSG_NOTICE([Looking for slepcverion.h using $SLEPC_CC_INCLUDES from ${SLEPC_CONFDIR}/slepc_variables])
+
+    # This is the cache variable set by the previous call to
+    # AC_CHECK_HEADER. We need to unset it so we can call the macro
+    # again, but now with different CPPFLAGS
+    AS_UNSET([ac_cv_header_slepcversion_h])
+
+    CPPFLAGS="$CPPFLAGS $SLEPC_CC_INCLUDES"
+    AC_CHECK_HEADER([slepcversion.h], [], [
+      AC_MSG_ERROR([Couldn't find or include slepcversion.h.
+SLEPC_ERROR_MESSAGE])
+    ])
+  ], [])
+
+# Now we have the header we want, we can check the version number
+  AC_MSG_CHECKING([Slepc is at least 3.4.0])
+  AC_EGREP_CPP([yes], [
+    #include <slepcversion.h>
+    #if SLEPC_VERSION_GE(3, 4, 0)
+      yes
+    #endif
+  ], [SLEPC_VERSION_OK="yes"],
+     [SLEPC_VERSION_OK="no"])
+  AC_MSG_RESULT([$SLEPC_VERSION_OK])
+  CPPFLAGS="$save_CPPFLAGS"
+
+  AS_IF([test $SLEPC_VERSION_OK = no], [
+    AC_MSG_ERROR([Slepc version must be at least 3.4.0])
+  ])
+
+# Check if Slepc was compiled with SUNDIALS
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$SLEPC_DIR/$SLEPC_ARCH/include"
+
+  # Set the line to be included in the make.conf file
+  SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
+
+  HAS_SLEPC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC"
+  EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+
+], [
+  SLEPC_MAKE_INCLUDE=
+  HAS_SLEPC="no"
+])
 
 #############################################################
 # MUMPS library
@@ -1142,6 +1235,9 @@ AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
 AC_SUBST(PETSC_DIR)
 AC_SUBST(PETSC_ARCH)
+AC_SUBST(SLEPC_MAKE_INCLUDE)
+AC_SUBST(SLEPC_DIR)
+AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
 
 AC_CONFIG_FILES([bin/bout-config])

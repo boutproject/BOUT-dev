@@ -18,6 +18,9 @@ cdef extern from "field3d.hxx":
         bool isAllocated()
         void setLocation(benum.CELL_LOC)
         benum.CELL_LOC getLocation()
+        void applyBoundary(const string bndry)
+        void applyBoundary()
+        void applyBoundary(double t)
 EOF
 for f in sqrt exp log sin cos abs
 do
@@ -57,10 +60,19 @@ cdef extern from "invert_laplace.hxx":
         @staticmethod
         Laplacian * create(Options *)
         Field3D solve(Field3D,Field3D)
+        void setCoefA(Field3D)
+        void setCoefC(Field3D)
+        void setCoefC1(Field3D)
+        void setCoefC2(Field3D)
+        void setCoefD(Field3D)
+        void setCoefEx(Field3D)
+        void setCoefEy(Field3D)
+        void setCoefEz(Field3D)
 
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
+    Field3D Laplace(Field3D)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
     Field3D Delp2(Field3D,double)
@@ -76,6 +88,13 @@ cdef extern from "options.hxx":
         void get(string ,double& ,double)
         void get(string ,bool& ,bool)
         void cleanCache()
+
+cdef extern from "optionsreader.hxx":
+    cppclass OptionsReader:
+        @staticmethod
+        OptionsReader *getInstance()
+        void read(Options *options, const char *file);
+
 
 cdef extern from "derivs.hxx":
 EOF

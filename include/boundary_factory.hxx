@@ -55,7 +55,7 @@ using std::map;
  * Subsequent calls to create() or createFromOptions() can make use
  * of the boundary type "myboundary".
  *
- * BoundaryOpBase *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10));
+ * BoundaryOpBase *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
  * 
  * where the region is defined in boundary_region.hxx
  * 

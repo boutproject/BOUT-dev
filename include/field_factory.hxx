@@ -46,8 +46,8 @@ class FieldFactory;
 
 // Utility routines to create generators from values
 
-std::shared_ptr<FieldGenerator> generator(BoutReal value);
-std::shared_ptr<FieldGenerator> generator(BoutReal *ptr);
+FieldGeneratorPtr generator(BoutReal value);
+FieldGeneratorPtr generator(BoutReal *ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
@@ -55,7 +55,7 @@ std::shared_ptr<FieldGenerator> generator(BoutReal *ptr);
 class FieldFactory : public ExpressionParser {
 public:
   FieldFactory(Mesh *m, Options *opt = nullptr);
-  ~FieldFactory();
+  ~FieldFactory() override;
 
   const Field2D create2D(const std::string &value, Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
@@ -63,7 +63,7 @@ public:
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   // Parse a string into a tree of generators
-  std::shared_ptr<FieldGenerator> parse(const std::string &input, Options *opt = nullptr);
+  FieldGeneratorPtr parse(const std::string &input, Options *opt = nullptr);
 
   // Singleton object
   static FieldFactory *get();
@@ -72,8 +72,8 @@ public:
   void cleanCache();
 protected:
   // These functions called by the parser
-  std::shared_ptr<FieldGenerator> resolve(std::string &name);
-  
+  FieldGeneratorPtr resolve(std::string &name) override;
+
 private:
   Mesh *fieldmesh;  
   Options *options;
@@ -81,7 +81,7 @@ private:
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
-  std::map<std::string, std::shared_ptr<FieldGenerator> > cache;
+  std::map<std::string, FieldGeneratorPtr > cache;
   
   Options* findOption(Options *opt, const std::string &name, std::string &val);
 };
@@ -91,13 +91,12 @@ private:
 
 class FieldFunction : public FieldGenerator {
 public:
+  FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  double generate(double x, double y, double z, double t) {
+  double generate(double x, double y, double z, double t) override {
     return func(t, x, y, z);
   }
 private:
-  FieldFunction();
-  
   FuncPtr func;
 };
 
@@ -106,18 +105,19 @@ private:
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                  double UNUSED(t)) override {
     return 0.0;
   }
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return get();
   }
   /// Singeton
-  static std::shared_ptr<FieldGenerator> get() {
-    static std::shared_ptr<FieldGenerator> instance = nullptr;
+  static FieldGeneratorPtr get() {
+    static FieldGeneratorPtr instance = nullptr;
 
     if(!instance)
-      instance = std::shared_ptr<FieldGenerator>(new FieldNull());
+      instance = std::make_shared<FieldNull>();
     return instance;
   }
 private:
