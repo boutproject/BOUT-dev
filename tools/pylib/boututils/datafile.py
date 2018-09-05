@@ -254,6 +254,12 @@ class DataFile(object):
         """
         return self.impl.ndims(varname)
 
+    def sync(self):
+        """Write pending changes to disk.
+
+        """
+        self.impl.sync()
+
     def size(self, varname):
         """Return the size of each dimension of a variable
 
@@ -489,6 +495,9 @@ class DataFile_netCDF(DataFile):
         except KeyError:
             raise ValueError("No such variable")
         return len(var.dimensions)
+
+    def sync(self):
+        self.handle.sync()
 
     def size(self, varname):
         if self.handle is None:
@@ -886,6 +895,9 @@ class DataFile_HDF5(DataFile):
             return 0
         else:
             return len(var.shape)
+
+    def sync(self):
+        self.handle.flush()
 
     def size(self, varname):
         if self.handle is None:
