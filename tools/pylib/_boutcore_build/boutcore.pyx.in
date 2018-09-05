@@ -544,7 +544,7 @@ EOF
 fi
 cat <<EOF
         else:
-            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+            raise NotImplementedError("Unexpected lhs - got type '"+str(type(lhs))+"' - not supported (yet?).")
         return fu
 
     def __i${n}__(self,other):
@@ -561,7 +561,7 @@ EOF
 fi
 cat <<EOF
         else:
-            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+            raise NotImplementedError("Unexpected lhs - got type '"+str(type(lhs))+"'  - not supported (yet?).")
         return self
 
 EOF
@@ -1366,7 +1366,7 @@ do
     elif isinstance(a, Field2D):
         return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
     else:
-        raise NotImplemented(\"Unexpected argument type - not supported (yet?).\")
+        raise NotImplementedError(\"Unexpected argument type '"+str(type(a))+"' - not supported (yet?).\")
 
 "
 done
