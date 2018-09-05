@@ -272,18 +272,16 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   } else {
     // No yup/ydown fields, so transform to cell centred
     Field3D var_fa = mesh->toFieldAligned(var);
-    Field3D result_fa(mesh);
-    result_fa.allocate();
     
     for(int jx=0; jx<mesh->LocalNx;jx++) {
       for(int jy=1;jy<mesh->LocalNy;jy++) {
         for(int jz=0;jz<mesh->LocalNz;jz++) {
-          result_fa(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
+          result(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
         }
       }
     }
 
-    result = mesh->fromFieldAligned(result_fa);
+    result = mesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_YLOW);
@@ -347,8 +345,6 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
     // coordinates)
     Field3D v_fa = mesh->toFieldAligned(v);
     Field3D f_fa = mesh->toFieldAligned(f);
-    Field3D result_fa(mesh);
-    result_fa.allocate();
 
     for (const auto &i : result.region(region)) {
 
@@ -365,12 +361,12 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
       vval.pp = v_fa[i.offset(0,2,0)];
 
       // Left side
-      result_fa[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
       // Right side
-      result_fa[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
     }
 
-    result = mesh->fromFieldAligned(result_fa);
+    result = mesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
@@ -396,14 +392,12 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     // No yup/ydown field, so transform to field aligned
 
     Field3D var_fa = fieldmesh->toFieldAligned(var);
-    Field3D result_fa(fieldmesh);
-    result_fa.allocate();
 
     for(const auto &i : result.region(RGN_NOBNDRY)) {
-      result_fa[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
+      result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
 
-    result = fieldmesh->fromFieldAligned(result_fa);
+    result = fieldmesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
