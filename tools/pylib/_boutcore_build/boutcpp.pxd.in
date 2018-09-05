@@ -32,6 +32,31 @@ cat <<EOF
     Field3D pow(Field3D,double)
     Field3D & ddt(Field3D)
 
+cdef extern from "field2d.hxx":
+    cppclass Field2D:
+        Field2D(Mesh * mesh);
+        Field2D(const Field2D &)
+        double & operator()(int,int)
+        int getNx()
+        int getNy()
+        int getNz()
+        bool isAllocated()
+        void setLocation(benum.CELL_LOC)
+        benum.CELL_LOC getLocation()
+        void applyBoundary(const string bndry)
+        void applyBoundary()
+        void applyBoundary(double t)
+EOF
+for f in sqrt exp log sin cos abs
+do
+    echo "    Field2D $f(Field2D)"
+done
+cat <<EOF
+    double max(Field2D)
+    double min(Field2D)
+    Field2D pow(Field2D,double)
+    Field2D & ddt(Field2D)
+
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
         Mesh()

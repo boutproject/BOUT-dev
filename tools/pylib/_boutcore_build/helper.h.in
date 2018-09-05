@@ -11,19 +11,37 @@ void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int 
 void c_set_f3d_from_f3d(Field3D * lhs,const Field3D * rhs){
   *lhs=*rhs;
 }
+void c_get_f2d_all(const Field2D * f2d, double * data);
+void c_set_f2d_all(Field2D * f2d, const double * data);
+void c_set_f2d_all_(Field2D * f2d, double data);
+void c_get_f2d_part(const Field2D * f2d, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part(Field2D * f2d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part_(Field2D * f2d, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_from_f2d(Field2D * lhs,const Field2D * rhs){
+  *lhs=*rhs;
+}
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
     o=${f#*:}
     echo "Field3D * f$n( Field3D*,Field3D*);"
+    echo "Field3D * f$n( Field3D*,Field2D*);"
+    echo "Field3D * f$n( Field2D*,Field3D*);"
     echo "Field3D * f$n( Field3D*,double);"
     echo "Field3D * f$n( double,Field3D*);"
     echo "void fi$n( Field3D*,Field3D*);"
+    echo "void fi$n( Field3D*,Field2D*);"
     echo "void fi$n( Field3D*,double);"
+    echo "Field2D * f$n( Field2D*,Field2D*);"
+    echo "Field2D * f$n( Field2D*,double);"
+    echo "Field2D * f$n( double,Field2D*);"
+    echo "void fi$n( Field2D*,Field2D*);"
+    echo "void fi$n( Field2D*,double);"
 done
 cat <<EOF
     Field3D c_minus(Field3D a){return -a;};
+    Field2D c_minus(Field2D a){return -a;};
     
 
 Mesh * c_get_global_mesh();

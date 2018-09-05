@@ -52,30 +52,46 @@ cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 
 cdef extern from "helper.h":
-     void c_set_f3d_all(c.Field3D * f3d, double * data)
-     void c_get_f3d_all(c.Field3D * f3d, double * data)
-     void c_get_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
-     void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
-     void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
-     void c_set_f3d_all_(c.Field3D * f3d, double data)
-     void c_set_f3d_from_f3d(c.Field3D * f3d, c.Field3D * f3d)
+    void c_set_f3d_all(c.Field3D * f3d, double * data)
+    void c_get_f3d_all(c.Field3D * f3d, double * data)
+    void c_get_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+    void c_set_f3d_part(c.Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+    void c_set_f3d_part_(c.Field3D * f3d, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+    void c_set_f3d_all_(c.Field3D * f3d, double data)
+    void c_set_f3d_from_f3d(c.Field3D * f3d, c.Field3D * f3d)
+    void c_get_f2d_all(const c.Field2D * f2d, double * data)
+    void c_set_f2d_all(c.Field2D * f2d, const double * data)
+    void c_set_f2d_all_(c.Field2D * f2d, double data)
+    void c_get_f2d_part(const c.Field2D * f2d, double * data,int xs,int xe, int dx,int ys,int ye, int dy)
+    void c_set_f2d_part(c.Field2D * f2d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy)
+    void c_set_f2d_part_(c.Field2D * f2d, const double data,int xs,int xe, int dx,int ys,int ye, int dy)
+    void c_set_f2d_from_f2d(c.Field2D * lhs,const c.Field2D * rhs)
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
-    echo "     c.Field3D * f$n( c.Field3D*, c.Field3D*) except +"
-    echo "     c.Field3D * f$n( c.Field3D*, double) except +"
-    echo "     c.Field3D * f$n( double, c.Field3D*) except +"
-    echo "     void fi$n( c.Field3D*, c.Field3D*) except +"
-    echo "     void fi$n( c.Field3D*, double) except +"
+    echo "    c.Field3D * f$n( c.Field3D*, c.Field3D*) except +"
+    echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +"
+    echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +"
+    echo "    c.Field3D * f$n( c.Field3D*, double) except +"
+    echo "    c.Field3D * f$n( double, c.Field3D*) except +"
+    echo "    void fi$n( c.Field3D*, c.Field3D*) except +"
+    echo "    void fi$n( c.Field3D*, c.Field2D*) except +"
+    echo "    void fi$n( c.Field3D*, double) except +"
+    echo "    c.Field2D * f$n( c.Field2D*, c.Field2D*) except +"
+    echo "    c.Field2D * f$n( c.Field2D*, double) except +"
+    echo "    c.Field2D * f$n( double, c.Field2D*) except +"
+    echo "    void fi$n( c.Field2D*, c.Field2D*) except +"
+    echo "    void fi$n( c.Field2D*, double) except +"
 done
 cat <<EOF
-     c.Field3D c_minus( c.Field3D )
-     c.Mesh * c_get_global_mesh()
-     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
-     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
-     void c_mesh_normalise(c.Mesh* , double)
-     c.Datafile * c_get_global_datafile()
+    c.Field3D c_minus( c.Field3D )
+    c.Field2D c_minus( c.Field2D )
+    c.Mesh * c_get_global_mesh()
+    void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
+    c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
+    void c_mesh_normalise(c.Mesh* , double)
+    c.Datafile * c_get_global_datafile()
 
 cdef Field3D f3dFromObj(c.Field3D i):
     f3d=Field3D()
@@ -295,6 +311,7 @@ cdef class Field3D:
             negative of the Field
         """
         return f3dFromObj(c_minus(self.cobj[0]))
+
     def isAllocated(self):
         """
         Check if the Field3D has its own datablock allocated
@@ -305,6 +322,7 @@ cdef class Field3D:
             whether the Field is allocated
         """
         return self.cobj.isAllocated()
+
     def __getitem__(self,slices):
         """
         Get data from the Field3D
@@ -366,6 +384,7 @@ cdef class Field3D:
         dims_in=self._checkDims(dims,dims_in)
         cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
         c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
+
     def _checkDims(self,dims,dims_in):
         if len(dims_in) > 3:
             raise IndexError("This is a 3D object, but got %d dimensions"%len(dims_in))
@@ -398,6 +417,8 @@ do
         import numbers
         if isinstance(self,Field3D) and isinstance(other,Field3D):
             fu.cobj=f$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(self,Field3D) and isinstance(other,Field2D):
+            fu.cobj=f$n((<Field3D?>self).cobj , (<Field2D?>other).cobj)
         elif isinstance(self,Field3D) and isinstance(other, numbers.Number):
             fu.cobj=f$n((<Field3D?>self).cobj , (<double?>float(other)))
         elif isinstance(self,numbers.Number) and isinstance(other, Field3D):
@@ -409,7 +430,9 @@ do
 
     def __r${n}__(self,lhs):
         fu=Field3D()
-        if isinstance(lhs,float) or isinstance(lhs,int):
+        if isinstance(lhs,Field2D):
+            fu.cobj=f$n((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+        elif isinstance(lhs,float) or isinstance(lhs,int):
             fu.cobj=f$n(<double?>float(lhs),(<Field3D?>self).cobj)
         else:
             raise NotImplemented("Unexpected lhs - not supported (yet?).")
@@ -418,6 +441,8 @@ do
     def __i${n}__(self,other):
         if isinstance(other,Field3D):
             fi$n((<Field3D?>self).cobj , (<Field3D?>other).cobj)
+        elif isinstance(other,Field2D):
+            fi$n((<Field3D?>self).cobj , (<Field2D?>other).cobj)
         elif isinstance(other,float) or isinstance(other,int):
             fi$n((<Field3D?>self).cobj , (<double?>float(other)))
         else:
@@ -431,6 +456,390 @@ cat <<"EOF"
     def applyBoundary(self, boundary=None, time=None):
         """
         Set the boundaries of a Field3D. Only one of both arguments
+        can be provided. If no value is provided, the default boundary
+        is applied.
+
+        Parameters
+        ----------
+        boundary : string
+           The boundary to be set. Has to be a valid boundary type,
+           e.g. "neumann".
+        time : float
+            The time to be used by the boundary, if time dependent
+            boundary conditions are used.
+        """
+        cdef c.string bndry
+        cdef double _time
+        if boundary is not None and time is not None:
+            raise RuntimeError("Can only pass one option at a time")
+        if time is not None:
+            _time = time
+            self.cobj.applyBoundary(_time)
+        elif boundary is not None:
+            tmp=boundary.encode('ascii')
+            bndry=tmp
+            self.cobj.applyBoundary(bndry)
+        else:
+            self.cobj.applyBoundary()
+
+    def __dealloc__(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
+cdef Field2D f2dFromObj(c.Field2D i):
+    f2d=Field2D()
+    f2d.cobj=new c.Field2D(<const c.Field2D & ?>i)
+    return f2d
+cdef Field2D f2dFromPtr(c.Field2D * i):
+    f2d=Field2D()
+    f2d.cobj=i
+    f2d.isSelfOwned=False
+    return f2d
+cdef class Field2D:
+    """
+    The Field2D class
+    """
+    cdef c.Field2D * cobj
+    cdef c.bool isSelfOwned
+    @classmethod
+    def fromMesh(cls,mesh=None):
+        """
+        Create a Field2D.
+
+        Parameters
+        ----------
+        mesh : Mesh, optional
+             The mesh of the Field2D. If None, use global mesh
+        """
+        checkInit()
+        f2d=Field2D()
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f2d.cobj=new c.Field2D((<Mesh?>mesh).cobj)
+        return f2d
+    @classmethod
+    def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
+        """
+        Create a Field2D from reading in a datafile via collect.
+
+        Parameters
+        ----------
+        tind : int
+            time slice to read
+        mesh : Mesh
+            if not defined, use global mesh
+        ignoreDataType : bool
+            Do not fail if data is not float64
+        **kwargs
+            remaining arguments are passed to collect
+        """
+        checkInit()
+        from boutdata.collect import collect, dimensions
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f2d=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise "Error: Do not support xind slicing with MPI"
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise "Error: Do not support yind slicing with MPI"
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
+        data=collect(name,yguards=True,tind=tind,**kwargs)
+        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
+        if len(data.shape) != 2:
+            raise TypeError("expected 2d data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f2d.setLocation(loc)
+        f2d.setAll(data,ignoreDataType=ignoreDataType)
+        return f2d
+
+    def __cinit__(self,Field2D obj=None):
+        self.cobj=NULL
+        if obj:
+            self.cobj=obj.cobj
+        self.isSelfOwned=True
+        #self.cobj = (<c.Field2D * ?> cobj_)
+        #if self.cobj == NULL:
+        #    raise MemoryError('Not enough memory, allocation failed.')
+
+    def set(self,data,ignoreDataType=False):
+        """
+        Set all data of the Field2D
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool
+            Ignore if data is off different type to BoutReal
+        """
+        return self.setAll(data,ignoreDataType)
+
+    def setAll(self,data,ignoreDataType=False):
+        """
+        Set all data of the Field2D
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool
+            Ignore if data is off different type to BoutReal
+        """
+        dims=[self.cobj.getNx()
+              ,self.cobj.getNy()]
+        if isinstance(data, (int, float)):
+            data=np.zeros(dims)+data
+        if data.dtype != np.dtype('float64'):
+            if ignoreDataType:
+                data=data.astype('float64')
+            else:
+                raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
+        dims_in=self._checkDims(dims,data.shape)
+        cdef np.ndarray[double, mode="c", ndim=2] data_ = np.ascontiguousarray(data)
+        c_set_f2d_all(self.cobj,&data_[0,0]);
+
+    def get(self):
+        """
+        Get all data of the Field2D
+
+        Returns
+        -------
+        array
+             A 2d numpy array with the data of the Field2D
+        """
+        return self.getAll()
+
+    def getAll(self):
+        """
+        Get all data of the Field2D
+
+        Returns
+        -------
+        array
+            A 2d numpy array with the data of the Field2D
+        """
+        nx=self.cobj.getNx()
+        ny=self.cobj.getNy()
+        #print(nx,ny,nz)
+        cdef np.ndarray[double, mode="c", ndim=2] data_ = np.ascontiguousarray(np.zeros((nx,ny)))
+        c_get_f2d_all(self.cobj,&data_[0,0]);
+        return data_
+
+    def setLocation(self,location):
+        """
+        Set the location of the Field2D
+        This does not do any modification of the data.
+
+        Parameters
+        ----------
+        location : string
+             The location to be set, e.g. "YLOW" or "CELL_YLOW" are supported.
+        """
+        cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+        self.cobj[0].setLocation(location_)
+        return self
+
+    def getLocation(self):
+        """
+        Get the location of the Field2D
+
+        Returns
+        -------
+        string
+            Representation of the field's location.
+        """
+        cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
+        return _resolve_inv_cell_loc(loc)
+
+    def ddt(self,val=None):
+        """
+        Get or set the time derivative
+
+        Returns
+        -------
+        Field2D
+            the Field2D's time derivative
+
+        Parameters
+        ----------
+        val : Field2D, optional
+             If set, set the time derivative to val
+        """
+        if val:
+            c_set_f2d_from_f2d(&c.ddt(self.cobj[0]),(<Field2D?>val).cobj)
+        return f2dFromPtr(&c.ddt(self.cobj[0]))
+
+    def __neg__(self):
+        """
+
+        Returns
+        -------
+        Field2D
+            negative of the Field
+        """
+        return f2dFromObj(c_minus(self.cobj[0]))
+
+    def isAllocated(self):
+        """
+        Check if the Field2D has its own datablock allocated
+
+        Returns
+        -------
+        bool
+            whether the Field is allocated
+        """
+        return self.cobj.isAllocated()
+
+    def __getitem__(self,slices):
+        """
+        Get data from the Field2D
+        Supports full 2D slicing support.
+        Partially slicing is currently not supported.
+
+        Parameters
+        ----------
+        slices: tuple_like, slice
+            List of slice objects, which shall be returned. Must contain 2 slice objects
+
+        Returns
+        -------
+        array
+            Numpy array of the requested data
+        """
+        if len(slices)!=2:
+            raise IndexError("This is a 2D object, but got %d slics"%len(slices))
+        inds=_resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()])
+        dims=[]
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        cdef np.ndarray[double, mode="c", ndim=2] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_f2d_part(self.cobj,&data_[0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2]);
+        return data_
+
+    def __setitem__(self,slices,data_):
+        """
+        Parameters
+        ----------
+        slices: tuple_like, slice
+            slice objects of the data to be set. Must contain 2 slice objects
+        data : array_like
+            Values to be set. Must be 2D and match the size of the slicing object.
+        """
+        if len(slices)!=2:
+            raise IndexError("This is a 2D object!")
+        inds=_resolve_slices(slices,
+                            [self.cobj.getNx()
+                             ,self.cobj.getNy()])
+        dims=[]
+        import numbers
+        if isinstance(data_,Field2D):
+            # get all to get a numpy array
+            data_=data_[:,:]
+        elif isinstance(data_,numbers.Number):
+            c_set_f2d_part_(self.cobj,<double>data_,inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2])
+            return
+        try:
+            dims_in=data_.shape
+        except:
+            raise TypeError("Expected a Field2D or a numpy array")
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        dims_in=self._checkDims(dims,dims_in)
+        cdef np.ndarray[double, mode="c", ndim=2] data__ = np.ascontiguousarray(data_)
+        c_set_f2d_part(self.cobj,&data__[0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2]);
+
+    def _checkDims(self,dims,dims_in):
+        if len(dims_in) > 2:
+            raise IndexError("This is a 2D object, but got %d dimensions"%len(dims_in))
+        if len(dims_in) < 2:
+            len_dims=len([1 for d in dims if d>1])
+            if len(dims_in) != len_dims:
+                raise IndexError("This is a 2D object, but got %d dimensions"%len(dims_in))
+            dims_in_new=[]
+            k=0
+            for i in range(2):
+                if (dims[i]==1):
+                    dims_in_new.append(1)
+                else:
+                    dims_in_new.append(dims_in[k])
+                    k+=1
+            dims_in=dims_in_new
+        for i in range(2):
+            if dims[i] != dims_in[i]:
+                raise IndexError("Expected %s but got %s."%(dims,dims_in))
+
+EOF
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
+do
+    n=${f%:*}
+    #o=${f#*:}
+    cat <<EOF
+    def __${n}__(self,other):
+        #print("call __${n}__")
+        fu=Field2D()
+        import numbers
+        if isinstance(self,Field2D) and isinstance(other,Field2D):
+            fu.cobj=f$n((<Field2D?>self).cobj , (<Field2D?>other).cobj)
+        elif isinstance(self,Field2D) and isinstance(other, numbers.Number):
+            fu.cobj=f$n((<Field2D?>self).cobj , (<double?>float(other)))
+        elif isinstance(self,numbers.Number) and isinstance(other, Field2D):
+            fu.cobj=f$n(<double?>float(self),(<Field2D?>other).cobj)
+        else:
+            print("$n",type(self),type(other),isinstance(self,numbers.Number))
+            return NotImplemented
+        return fu
+
+    def __r${n}__(self,lhs):
+        fu=Field2D()
+        if isinstance(lhs,float) or isinstance(lhs,int):
+            fu.cobj=f$n(<double?>float(lhs),(<Field2D?>self).cobj)
+        else:
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+        return fu
+
+    def __i${n}__(self,other):
+        if isinstance(other,Field2D):
+            fi$n((<Field2D?>self).cobj , (<Field2D?>other).cobj)
+        elif isinstance(other,float) or isinstance(other,int):
+            fi$n((<Field2D?>self).cobj , (<double?>float(other)))
+        else:
+            raise NotImplemented("Unexpected lhs - not supported (yet?).")
+        return self
+
+EOF
+
+done
+cat <<"EOF"
+    def applyBoundary(self, boundary=None, time=None):
+        """
+        Set the boundaries of a Field2D. Only one of both arguments
         can be provided. If no value is provided, the default boundary
         is applied.
 
@@ -1137,21 +1546,26 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
 EOF
 for fun in sqrt exp sin cos log abs
 do
-    echo "def $fun(Field3D a):
+    echo "def $fun(a):
     \"\"\"
-    Calculate $fun of the Field3D
+    Calculate $fun of a
 
     Parameters
     ----------
-    a : Field3D
+    a : Field3D Field2D
          The field for which to calculate $fun
 
     Returns
     -------
-    Field3D
+    Field3D Field2D
         $fun of a
     \"\"\"
-    return f3dFromObj(c.$fun(a.cobj[0]))
+    if isinstance(a, Field3D):
+        return f3dFromObj(c.$fun((<Field3D?>a).cobj[0]))
+    elif isinstance(a, Field2D):
+        return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
+    else:
+        raise NotImplemented(\"Unexpected argument type - not supported (yet?).\")
 
 "
 done

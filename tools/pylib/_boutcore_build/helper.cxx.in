@@ -55,6 +55,50 @@ void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int 
   }
 }
 
+void c_set_f2d_all(Field2D * f2d, const double * data){
+  int j=0;
+  f2d->allocate();
+  for (auto i : (*f2d)){
+    (*f2d)[i]=data[j++];
+  }
+}
+void c_set_f2d_all_(Field2D * f2d, const double data){
+  (*f2d)=data;
+}
+void c_get_f2d_all(const Field2D * f2d, double * data){
+  int j=0;
+  for (auto i : (*f2d)){
+    data[j++]=(*f2d)[i];
+  }
+}
+
+void c_get_f2d_part(const Field2D * f2d, double * data,int xs,int xe, int dx,int ys,int ye, int dy){
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      data[j++]=(*f2d)(x,y);
+    }
+  }
+}
+
+void c_set_f2d_part(Field2D * f2d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy){
+  f2d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      (*f2d)(x,y)=data[j++];
+    }
+  }
+}
+void c_set_f2d_part_(Field2D * f2d, const double data,int xs,int xe, int dx,int ys,int ye, int dy){
+  f2d->allocate();
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      (*f2d)(x,y)=data;
+    }
+  }
+}
+
 EOF
 
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
@@ -66,6 +110,16 @@ Field3D * f$n( Field3D*a,Field3D*b){
   Field3D * r=new Field3D(*a);
   *r $o= *b;
   return r;
+}
+
+Field3D * f$n( Field3D*a,Field2D*b){
+  Field3D * r=new Field3D(*a);
+  *r $o= *b;
+  return r;
+}
+
+Field3D * f$n( Field2D*a,Field3D*b){
+  return new Field3D(*b $o *a);
 }
 
 Field3D * f$n( Field3D*a,double b){
@@ -81,7 +135,33 @@ Field3D * f$n( double b,Field3D*a){
 void fi$n( Field3D*a,Field3D*b){
   *a $o= *b;
 }
+void fi$n( Field3D*a,Field2D*b){
+  *a $o= *b;
+}
 void fi$n( Field3D*a,double b){
+  *a $o= b;
+}
+
+Field2D * f$n( Field2D*a,Field2D*b){
+  Field2D * r=new Field2D(*a);
+  *r $o= *b;
+  return r;
+}
+
+Field2D * f$n( Field2D*a,double b){
+  Field2D * r=new Field2D(*a);
+  *r $o= b;
+  return r;
+}
+
+Field2D * f$n( double b,Field2D*a){
+  return new Field2D(b $o *a);
+}
+
+void fi$n( Field2D*a,Field2D*b){
+  *a $o= *b;
+}
+void fi$n( Field2D*a,double b){
   *a $o= b;
 }
 EOF
