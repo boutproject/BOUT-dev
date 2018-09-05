@@ -169,6 +169,8 @@ class Mesh;  // #include "bout/mesh.hxx"
  */
 class Field3D : public Field, public FieldData {
  public:
+  using ind_type = Ind3D;
+  
   /*!
    * Constructor
    *
