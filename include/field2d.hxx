@@ -53,9 +53,8 @@ class Field3D; //#include "field3d.hxx"
  * as the Field3D class.
  */
 class Field2D : public Field, public FieldData {
-  using ind_type = Ind2D;
-  
-public:
+ public:
+  using ind_type = Ind2D;    
   /*!
    * Constructor, taking an optional mesh pointer
    * This mesh pointer is not used until the data is allocated,

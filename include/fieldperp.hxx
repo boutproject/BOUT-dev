@@ -47,9 +47,9 @@ class Field3D; // #include "field3d.hxx"
  * Primarily used inside field solvers
  */ 
 class FieldPerp : public Field {
+ public:
   using ind_type = IndPerp;
-  
-public:
+    
   /*!
    * Constructor
    */
