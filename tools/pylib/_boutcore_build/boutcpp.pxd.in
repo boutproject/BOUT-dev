@@ -6,11 +6,20 @@ from libcpp cimport bool
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
+EOF
+for ftype in "Field3D" "Field2D"
+do
+  if [ $ftype = "Field3D" ]; then fheader="field3d";
+  elif [ $ftype = "Field2D" ]; then fheader="field2d";
+  else
+    echo "Error, unimplemented ftype"; exit 1
+  fi
+cat <<EOF
 
-cdef extern from "field3d.hxx":
-    cppclass Field3D:
-        Field3D(Mesh * mesh);
-        Field3D(const Field3D &)
+cdef extern from "$fheader.hxx":
+    cppclass $ftype:
+        $ftype(Mesh * mesh);
+        $ftype(const $ftype &)
         double & operator()(int,int,int)
         int getNx()
         int getNy()
@@ -24,38 +33,16 @@ cdef extern from "field3d.hxx":
 EOF
 for f in sqrt exp log sin cos abs
 do
-    echo "    Field3D $f(Field3D)"
+    echo "    $ftype $f($ftype)"
 done
 cat <<EOF
-    double max(Field3D)
-    double min(Field3D)
-    Field3D pow(Field3D,double)
-    Field3D & ddt(Field3D)
-
-cdef extern from "field2d.hxx":
-    cppclass Field2D:
-        Field2D(Mesh * mesh);
-        Field2D(const Field2D &)
-        double & operator()(int,int)
-        int getNx()
-        int getNy()
-        int getNz()
-        bool isAllocated()
-        void setLocation(benum.CELL_LOC)
-        benum.CELL_LOC getLocation()
-        void applyBoundary(const string bndry)
-        void applyBoundary()
-        void applyBoundary(double t)
+    double max($ftype)
+    double min($ftype)
+    $ftype pow($ftype,double)
+    $ftype & ddt($ftype)
 EOF
-for f in sqrt exp log sin cos abs
-do
-    echo "    Field2D $f(Field2D)"
 done
 cat <<EOF
-    double max(Field2D)
-    double min(Field2D)
-    Field2D pow(Field2D,double)
-    Field2D & ddt(Field2D)
 
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
