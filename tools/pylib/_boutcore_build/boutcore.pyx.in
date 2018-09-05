@@ -193,8 +193,8 @@ cdef class $ftype:
         dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
         if dims[0] == 't':
             data=data.reshape(data.shape[1:])
-        if len(data.shape) != 3:
-            raise TypeError("expected 3d data")
+        if len(data.shape) != ${ndim}:
+            raise TypeError("Expected ${ndim}D data")
         try:
             loc=data.attributes['cell_location']
         except KeyError:
@@ -264,7 +264,7 @@ cat <<EOF
         Returns
         -------
         array
-             A 3d numpy array with the data of the $ftype
+             A ${ndim}D numpy array with the data of the $ftype
         """
         return self.getAll()
 
@@ -275,7 +275,7 @@ cat <<EOF
         Returns
         -------
         array
-            A 3d numpy array with the data of the $ftype
+            A ${ndim}D numpy array with the data of the $ftype
         """
         nx=self.cobj.getNx()
         ny=self.cobj.getNy()
@@ -353,13 +353,13 @@ cat <<EOF
     def __getitem__(self,slices):
         """
         Get data from the $ftype
-        Supports full 3D slicing support.
+        Supports full ${ndim}D slicing support.
         Partially slicing is currently not supported.
 
         Parameters
         ----------
         slices: tuple_like, slice
-            List of slice objects, which shall be returned. Must contain 3 slice objects
+            List of slice objects, which shall be returned. Must contain ${ndim} slice objects
 
         Returns
         -------
