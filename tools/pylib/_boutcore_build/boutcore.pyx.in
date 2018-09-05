@@ -173,7 +173,7 @@ cdef class $ftype:
         nype=mesh_.getNYPE()
         if (nxpe):
             if "xind" in kwargs.keys():
-                raise "Error: Do not support xind slicing with MPI"
+                raise RuntimeError("Do not support xind slicing with MPI")
             nxi=mesh_.getXProcIndex()
             nxg=mesh_.xstart
             nx=mesh_.LocalNx
@@ -182,7 +182,7 @@ cdef class $ftype:
             kwargs['xind']=[xstart,xstart+nx]
         if (nype):
             if "yind" in kwargs.keys():
-                raise "Error: Do not support yind slicing with MPI"
+                raise RuntimeError("Do not support yind slicing with MPI")
             nyi=mesh_.getYProcIndex()
             nyg=mesh_.ystart
             ny=mesh_.LocalNy
