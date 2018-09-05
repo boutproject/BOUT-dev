@@ -52,14 +52,31 @@ cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 EOF
 
+# make a list of the format "nx, ny, nz" or something similar
+# 'n$d' gets expaneded to "nx, ny, nz"
+# 'f[$i]' to "f[0], f[1], f[2]"
+# NB: use single ticks to prevent to early expansion
+makelist () {
+    format="$1"
+    test $# -gt 1 &&
+	spacing="$2" || spacing=", "
+    start="" ; i=0
+    for d in ${dims[@]} ; do
+	echo -n "$start" ;
+	eval echo -n "\"$format\""
+	start="$spacing" ; i=$(( i + 1 ))
+    done ; }
+
 for ftype in "Field3D" "Field2D"
 do
   if [ $ftype = "Field3D" ]; then
     fdd="f3d"
     ndim=3
+    dims=(x y z)
   elif [ $ftype = "Field2D" ]; then
     fdd="f2d"
     ndim=2
+    dims=(x y)
   else
     echo "Error, unimplemented ftype"
     exit 1
@@ -72,21 +89,12 @@ cdef extern from "helper.h":
     void c_set_${fdd}_all_(c.$ftype * f, double data)
     void c_set_${fdd}_from_${fdd}(c.$ftype * f, c.$ftype * f)
 EOF
-if [ $ftype = "Field3D" ]; then
+indices=$(makelist 'int ${d}s, int ${d}e, int d${d}')
 cat <<EOF
-    void c_get_f3d_part(c.Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
-    void c_set_f3d_part(c.Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
-    void c_set_f3d_part_(c.Field3D * f, double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz)
+    void c_get_${fdd}_part(c.${ftype} * f, double * data, $indices)
+    void c_set_${fdd}_part(c.${ftype} * f, double * data, $indices)
+    void c_set_${fdd}_part_(c.${ftype} * f, double data, $indices)
 EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-    void c_get_f2d_part(const c.Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy)
-    void c_set_f2d_part(c.Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy)
-    void c_set_f2d_part_(c.Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy)
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
@@ -108,11 +116,13 @@ cdef $ftype ${fdd}FromObj(c.$ftype i):
     f=$ftype()
     f.cobj=new c.$ftype(<const c.$ftype & ?>i)
     return f
+
 cdef $ftype ${fdd}FromPtr(c.$ftype * i):
     f=$ftype()
     f.cobj=i
     f.isSelfOwned=False
     return f
+
 cdef class $ftype:
     """
     The $ftype class
@@ -225,23 +235,16 @@ cdef class $ftype:
         data : array_like
             The data to be set
         ignoreDataType : bool
-            Ignore if data is off different type to BoutReal
+            Ignore if data is off different type to BoutRealxx
         """
 EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
-        dims=[self.cobj.getNx()
-              ,self.cobj.getNy()
-              ,self.cobj.getNz()]
-EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-        dims=[self.cobj.getNx()
-              ,self.cobj.getNy()]
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
+
+echo -n "        dims=["
+makelist 'self.cobj.getN$d()'
+echo "]"
+zeros=$(makelist "0")
+nxlist=$(makelist 'n$d')
+
 cat <<EOF
         if isinstance(data, (int, float)):
             data=np.zeros(dims)+data
@@ -252,19 +255,7 @@ cat <<EOF
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(data)
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
-        c_set_f3d_all(self.cobj,&data_[0,0,0]);
-EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-        c_set_f2d_all(self.cobj,&data_[0,0]);
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
-cat <<EOF
+        c_set_${fdd}_all(self.cobj,&data_[$zeros])
 
     def get(self):
         """
@@ -290,21 +281,8 @@ cat <<EOF
         ny=self.cobj.getNy()
         nz=self.cobj.getNz()
         #print(nx,ny,nz)
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
-        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros((nx,ny,nz)))
-        c_get_f3d_all(self.cobj,&data_[0,0,0]);
-EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-        cdef np.ndarray[double, mode="c", ndim=2] data_ = np.ascontiguousarray(np.zeros((nx,ny)))
-        c_get_f2d_all(self.cobj,&data_[0,0]);
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
-cat <<EOF
+        cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(($nxlist)))
+        c_get_${fdd}_all(self.cobj,&data_[$zeros]);
         return data_
 
     def setLocation(self,location):
@@ -390,34 +368,13 @@ cat <<EOF
         """
         if len(slices)!=$ndim:
             raise IndexError("This is a ${ndim}D object, but got %d slics"%len(slices))
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
         inds=_resolve_slices(slices,
-                            [self.cobj.getNx()
-                             ,self.cobj.getNy()
-                             ,self.cobj.getNz()])
+                            [$(makelist 'self.cobj.getN$d()')])
         dims=[]
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
-        cdef np.ndarray[double, mode="c", ndim=3] data_ = np.ascontiguousarray(np.zeros(dims))
-        c_get_f3d_part(self.cobj,&data_[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
-EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-        inds=_resolve_slices(slices,
-                            [self.cobj.getNx()
-                             ,self.cobj.getNy()])
-        dims=[]
-        for i in inds:
-            dims.append((i[1]-i[0])//i[2])
-        cdef np.ndarray[double, mode="c", ndim=2] data_ = np.ascontiguousarray(np.zeros(dims))
-        c_get_f2d_part(self.cobj,&data_[0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2]);
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
-cat <<EOF
+        cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_${fdd}_part(self.cobj,&data_[$zeros], $(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]' ));
         return data_
 
     def __setitem__(self,slices,data_):
@@ -433,54 +390,23 @@ cat <<EOF
             raise IndexError("This is a ${ndim}D object!")
         dims=[]
         import numbers
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
         inds=_resolve_slices(slices,
-                            [self.cobj.getNx()
-                             ,self.cobj.getNy()
-                             ,self.cobj.getNz()])
-        if isinstance(data_,Field3D):
+                            [$(makelist 'self.cobj.getN$d()')])
+        if isinstance(data_,${ftype}):
             # get all to get a numpy array
-            data_=data_[:,:,:]
+            data_=data_[$(makelist ':')]
         elif isinstance(data_,numbers.Number):
-            c_set_f3d_part_(self.cobj,<double>data_,inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2])
+            c_set_${fdd}_part_(self.cobj,<double>data_,$(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]'))
             return
         try:
             dims_in=data_.shape
         except:
-            raise TypeError("Expected a Field3D or a numpy array")
+            raise TypeError("Expected a $ftype or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
         dims_in=self._checkDims(dims,dims_in)
-        cdef np.ndarray[double, mode="c", ndim=3] data__ = np.ascontiguousarray(data_)
-        c_set_f3d_part(self.cobj,&data__[0,0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2],inds[2][0],inds[2][1],inds[2][2]);
-EOF
-elif [ $ftype = "Field2D" ]; then
-cat <<EOF
-        inds=_resolve_slices(slices,
-                            [self.cobj.getNx()
-                             ,self.cobj.getNy()])
-        if isinstance(data_,Field2D):
-            # get all to get a numpy array
-            data_=data_[:,:]
-        elif isinstance(data_,numbers.Number):
-            c_set_f2d_part_(self.cobj,<double>data_,inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2])
-            return
-        try:
-            dims_in=data_.shape
-        except:
-            raise TypeError("Expected a Field2D or a numpy array")
-        for i in inds:
-            dims.append((i[1]-i[0])//i[2])
-        dims_in=self._checkDims(dims,dims_in)
-        cdef np.ndarray[double, mode="c", ndim=2] data__ = np.ascontiguousarray(data_)
-        c_set_f2d_part(self.cobj,&data__[0,0],inds[0][0],inds[0][1],inds[0][2],inds[1][0],inds[1][1],inds[1][2]);
-EOF
-else
-    echo "Error, unimplemented ftype"; exit 1
-fi
-cat <<EOF
+        cdef np.ndarray[double, mode="c", ndim=$ndim] data__ = np.ascontiguousarray(data_)
+        c_set_${fdd}_part(self.cobj,&data__[$(makelist 0)],$(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]'));
 
     def _checkDims(self,dims,dims_in):
         if len(dims_in) > $ndim:
@@ -567,7 +493,7 @@ cat <<EOF
 EOF
 
 done
-cat <<"EOF"
+cat <<EOF
     def applyBoundary(self, boundary=None, time=None):
         """
         Set the boundaries of a $ftype. Only one of both arguments
@@ -775,15 +701,11 @@ cdef class Coordinates:
 EOF
 for f in "dx" "dy" "J" "Bxy" "g11" "g22" "g33" "g12" "g13" "g23" "g_11" "g_22" "g_33" "g_12" "g_13" "g_23" "G1_11" "G1_22" "G1_33" "G1_12" "G1_13" "G1_23" "G2_11" "G2_22" "G2_33" "G2_12" "G2_13" "G2_23" "G3_11" "G3_22" "G3_33" "G3_12" "G3_13" "G3_23" "G1" "G2" "G3" "ShiftTorsion" "IntShiftTorsion"
 do
-        cat <<EOF
-        self.${f} = f2dFromObj(self.cobj.${f})
-EOF
+    echo "        self.${f} = f2dFromObj(self.cobj.${f})"
 done
 for f in "dz"
 do
-        cat <<EOF
-        self.${f} = self.cobj.${f}
-EOF
+    echo "        self.${f} = self.cobj.${f}"
 done
 cat <<"EOF"
 
@@ -835,112 +757,33 @@ cdef class Laplacian:
         Set the coefficients for the Laplacian solver.
         The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
         """
-        try:
-            self.setCoefA(kwargs['A'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefC(kwargs['C'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefC1(kwargs['C1'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefC2(kwargs['C2'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefD(kwargs['D'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefEx(kwargs['Ex'])
-        except KeyError:
-            pass
-        try:
-            self.setCoefEz(kwargs['Ez'])
-        except KeyError:
-            pass
+EOF
+coeffs="A C C1 C2 D Ex Ez"
+for coeff in $coeffs
+do
+cat <<EOF
+        if '$coeff' in kwargs:
+            self.setCoef$coeff(kwargs['$coeff'])
+EOF
+done
+for coeff in $coeffs
+do
+    cat <<EOF
 
-    def setCoefA(self,Field3D A):
+    def setCoef$coeff(self,Field3D $coeff):
         """
-        Set the 'A' coefficient of the Laplacian solver
+        Set the '$coeff' coefficient of the Laplacian solver
 
         Parameters
         ----------
-        A : Field3D
+        $coeff : Field3D
             Field to set as coefficient
         """
-        self.cobj.setCoefA(A.cobj[0])
+        self.cobj.setCoef$coeff($coeff.cobj[0])
+EOF
+done
 
-    def setCoefC(self,Field3D C):
-        """
-        Set the 'C' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        C : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefC(C.cobj[0])
-
-    def setCoefC1(self,Field3D C1):
-        """
-        Set the 'C1' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        C1 : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefC1(C1.cobj[0])
-
-    def setCoefC2(self,Field3D C2):
-        """
-        Set the 'C2' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        C2 : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefC2(C2.cobj[0])
-
-    def setCoefD(self,Field3D D):
-        """
-        Set the 'D' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        D : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefD(D.cobj[0])
-
-    def setCoefEx(self,Field3D Ex):
-        """
-        Set the 'Ex' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        Ex : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefEx(Ex.cobj[0])
-
-    def setCoefEz(self,Field3D Ez):
-        """
-        Set the 'Ez' coefficient of the Laplacian solver
-
-        Parameters
-        ----------
-        Ez : Field3D
-            Field to set as coefficient
-        """
-        self.cobj.setCoefEz(Ez.cobj[0])
-
+cat <<"EOF"
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
@@ -1342,8 +1185,9 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
 EOF
 for fun in sqrt exp sin cos log abs
 do
-    echo "def $fun(a):
-    \"\"\"
+    cat <<EOF
+def $fun(a):
+    """
     Calculate $fun of a
 
     Parameters
@@ -1355,15 +1199,15 @@ do
     -------
     Field3D Field2D
         $fun of a
-    \"\"\"
+    """
     if isinstance(a, Field3D):
         return f3dFromObj(c.$fun((<Field3D?>a).cobj[0]))
     elif isinstance(a, Field2D):
         return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
     else:
-        raise NotImplementedError(\"In $fun: unexpected argument type '\"+str(type(a))+\"' - not supported (yet?).\")
+        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
 
-"
+EOF
 done
 cat <<"EOF"
 
