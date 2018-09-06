@@ -6,7 +6,6 @@ try:
     import argcomplete
 except ImportError:
     argcomplete=None
-from boutdata.restart import create
 
 parser = argparse.ArgumentParser("Create restart files from data (dmp) files.")
 parser.add_argument("path", type=str, default=...
@@ -25,6 +24,9 @@ parser.add_argument("--outformat", type=str, default=...
 
 if argcomplete:
     argcomplete.autocomplete(parser)
+
+# late import for faster auto-complete
+from boutdata.restart import create
 
 args = parser.parse_args()
 

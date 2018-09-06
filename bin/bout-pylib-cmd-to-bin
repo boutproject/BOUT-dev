@@ -62,9 +62,8 @@ import argparse
 try:
     import argcomplete
 except ImportError:
-    argcomplete=None""")
-print(" ".join(what))
-print()
+    argcomplete=None
+""")
 doc=True
 para=False
 ret=False
@@ -144,6 +143,9 @@ print("""
 if argcomplete:
     argcomplete.autocomplete(parser)
 
+# late import for faster auto-complete""")
+print(" ".join(what))
+print("""
 args = parser.parse_args()
 
 # remove non-set optional arguments
@@ -159,6 +161,8 @@ for k in dic:
 """%(cmd,cmd))
         
 EOF
+
+chmod +x $file
 
 echo "We are about to open a editor - which one would you like?"
 test $EDITOR || EDITOR="emacs -nw"
