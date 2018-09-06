@@ -2345,8 +2345,6 @@ TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
   auto index = region.cbegin();
-
-  EXPECT_THROW(index->zpp(), BoutException);
 }
 
 TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
@@ -2422,8 +2420,6 @@ TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
   auto index = region.cbegin();
-
-  EXPECT_THROW(index->zmm(), BoutException);
 }
 #endif
 
