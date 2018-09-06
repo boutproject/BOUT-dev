@@ -40,21 +40,6 @@ template<typename T> class InvertOperator;
 #include <options.hxx>
 #include <output.hxx>
 
-/// Non-member wrapper that gets a pointer to the parent InvertOperator instance
-/// from the Matrix m and uses this to get the actual function to call.
-/// Copies data from v1 into a field of type T, calls the function on this and then
-/// copies the result into the v2 argument.
-template<typename T>
-PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2){
-  InvertOperator<T> *ctx;
-  auto ierr = MatShellGetContext(m, &ctx);
-  T tmpField(ctx->localmesh); tmpField.allocate();
-  petscVecToField(v1, tmpField);
-  T tmpField2 = ctx->func(tmpField);
-  fieldToPetscVec(tmpField2, v2);
-  return ierr;
-}
-
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template<typename T>
 T identity(const T& in){return in;};
@@ -113,11 +98,21 @@ class InvertOperator {
     return true;
 #endif    
   };
-  
-  /// Currently has to be public to allow the non-member functionWrapper to
-  /// create fields on the correct mesh.
-  Mesh *localmesh;
 
+  /// Wrapper that gets a pointer to the parent InvertOperator instance
+  /// from the Matrix m and uses this to get the actual function to call.
+  /// Copies data from v1 into a field of type T, calls the function on this and then
+  /// copies the result into the v2 argument.
+  static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2){
+    InvertOperator<T> *ctx;
+    auto ierr = MatShellGetContext(m, &ctx);
+    T tmpField(ctx->localmesh); tmpField.allocate();
+    petscVecToField(v1, tmpField);
+    T tmpField2 = ctx->func(tmpField);
+    fieldToPetscVec(tmpField2, v2);
+    return ierr;
+  }
+  
   /// The function that represents the operator that we wish to invert
   function_signature func;
   
@@ -130,7 +125,7 @@ class InvertOperator {
 
   // Internal types
   Options *opt; //Do we need this?
-
+  Mesh *localmesh; //< To ensure we can create T on the right mesh
   bool doneSetup = false;
   
   // To ensure PETSc has been setup
@@ -169,7 +164,7 @@ PetscErrorCode InvertOperator<T>::setup(function_signature funcIn) {
   
   /// Now register Matrix_multiply operation
   //  ierr = MatShellSetOperation(matOperator, MATOP_MULT, (function_cast)(identityFunc));
-  ierr = MatShellSetOperation(matOperator, MATOP_MULT, (function_cast)(functionWrapper<T>));
+  ierr = MatShellSetOperation(matOperator, MATOP_MULT, (function_cast)(functionWrapper));
   CHKERRQ(ierr);
 
   /// Now create and setup the linear solver with the matrix
