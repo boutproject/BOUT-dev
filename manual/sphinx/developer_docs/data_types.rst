@@ -310,9 +310,11 @@ be calculated::
     g[i] = f[i.xp()] - f[i.xm()];
   }
 
-The ``xp()`` function produces an offset of ``+1`` in ``X``, ``xm()``
-an offset of ``-1`` in the ``X`` direction. ``xpp()``
-produces an offset of ``+2``, ``xmm()`` an offset of ``-2``, and
+The ``xp()`` function by default produces an offset of ``+1`` in ``X``, ``xm()``
+an offset of ``-1`` in the ``X`` direction. These functions can also
+be given an optional step size argument e.g. ``xp(2)`` produces an
+offset of ``+2`` in the ``X`` direction. There are also ``xpp()``,
+which produces an offset of ``+2``, ``xmm()`` an offset of ``-2``, and
 similar functions exist for ``Y`` and ``Z`` directions. For other
 offsets there is a function ``offset(x,y,z)`` so that
 ``i.offset(1,0,1)`` is the index at ``(x+1,y,z+1)``.
@@ -339,11 +341,17 @@ parallelised, and iterates over contiguous blocks::
 The inner loop iterates over a contiguous range of indices, which
 enables it to be vectorised by GCC and Intel compilers.
 
-In order to both OpenMP parallelise, there must be enough blocks to
+In order to OpenMP parallelise, there must be enough blocks to
 keep all threads busy. In order to vectorise, each of these blocks
 must be larger than the processor vector width, preferably several
-times larger. This can be tuned by setting the maximum block size, set
-in ``include/bout/region.hxx``::
+times larger. This can be tuned by setting the maximum block size,
+set at runtime using the `mesh:maxregionblocksize` option on the
+command line or in the `BOUT.inp` input file::
+
+  [mesh]
+  maxregionblocksize = 64
+
+The default value is set in ``include/bout/region.hxx``::
 
   #define MAXREGIONBLOCKSIZE 64
 
