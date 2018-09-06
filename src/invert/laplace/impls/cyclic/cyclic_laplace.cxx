@@ -242,6 +242,10 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 }
 
 const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
+  TRACE("LaplaceCyclic::solve(Field3D, Field3D)");
+
+  Timer timer("invert");
+  
   Mesh *mesh = rhs.getMesh();
   Field3D x(mesh); // Result
   x.allocate();
@@ -357,7 +361,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int iy = ys + ind % ny;
         
         for (int kz = 0; kz < nmode; kz++)
-          k1d[kz] = xcmplx((iy-ys)*nmode + kz, ix - xs);
+          k1d[kz] = xcmplx3D((iy-ys)*nmode + kz, ix - xs);
 
         for (int kz = nmode; kz < mesh->LocalNz; kz++)
           k1d[kz] = 0.0; // Filtering out all higher harmonics
@@ -397,7 +401,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
         // Copy into array, transposing so kz is first index
         for (int kz = 0; kz < nmode; kz++)
-          bcmplx((iy-ys)*nmode + kz, ix - xs) = k1d[kz];
+          bcmplx3D((iy-ys)*nmode + kz, ix - xs) = k1d[kz];
       }
 
       // Get elements of the tridiagonal matrix
@@ -409,7 +413,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int kz = ind % nmode;
         
         BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
-        tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), iy,
+        tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
@@ -419,8 +423,8 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
     }
 
     // Solve tridiagonal systems
-    cr->setCoefs(a, b, c);
-    cr->solve(bcmplx, xcmplx);
+    cr->setCoefs(a3D, b3D, c3D);
+    cr->solve(bcmplx3D, xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel)
@@ -436,7 +440,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int iy = ys + ind % ny;
         
         for (int kz = 0; kz < nmode; kz++)
-          k1d[kz] = xcmplx((iy-ys)*nmode + kz, ix - xs);
+          k1d[kz] = xcmplx3D((iy-ys)*nmode + kz, ix - xs);
 
         for (int kz = nmode; kz < mesh->LocalNz / 2 + 1; kz++)
           k1d[kz] = 0.0; // Filtering out all higher harmonics
