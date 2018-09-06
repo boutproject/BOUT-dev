@@ -1,0 +1,173 @@
+#!/bin/bash
+
+echo "What function do you want to warp"
+read -e -i create fun
+echo "What python library can this be found in?"
+read -e -i boutdata.restart lib
+echo "What do you want to call the generated script?"
+file=bin/bout-$lib-$fun
+file=${file//./-}
+read -e -i $file file
+
+doit () {
+    read -p "$@ [Y/n] " -n 1 -r rep
+    echo
+    if test -z $rep || [[ $rep =~ ^[Yy]$ ]]
+    then
+	return 0
+    else
+	return 1
+    fi
+}
+if test -f $file
+then
+    doit "$file already exists. Continue anyway?" || exit 0
+fi
+
+echo "creating $file ..."
+
+cat <<"EOF" | python3 - from $lib import $fun > $file
+import argparse
+import sys
+try:
+    import argcomplete
+except ImportError:
+    argcomplete=None
+
+
+def usage(fail=True):
+    print("bla")
+    if fail:
+        sys.exit(2)
+
+what=sys.argv[1:]
+if len(what) != 4:
+    usage()
+if what[0] != "from":
+    usage()
+if what[2] != "import":
+    usage()
+
+try:
+    exec(" ".join(what))
+except:
+    usage(False)
+    raise
+cmd=what[-1]
+
+print("""#!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
+
+import argparse
+try:
+    import argcomplete
+except ImportError:
+    argcomplete=None""")
+print(" ".join(what))
+print()
+doc=True
+para=False
+ret=False
+docs=""
+arg_info={}
+arg_type={}
+arg_opt={}
+def parse_type(typestr):
+    typearr=typestr.split(',')
+    opt=False
+    if "optional" in typearr[-1]:
+        opt=True
+        typearr=typearr[:-1]
+    if len(typearr) > 1:
+        raise ValueError("unknown type '%s'"%typestr)
+    typestr=typearr[0]
+    knowns=["str",
+            "int"]
+    if typestr not in knowns:
+        raise ValueError("unknown type '%s'"%typestr)
+    return typestr,opt
+
+def esc(astr):
+    return astr.translate(
+        str.maketrans({"\"":  "\\\"",
+                       "\\": "\\\\"}))
+
+paraopen=False
+for bla in create.__doc__.splitlines():
+    blas=bla.strip()
+    if doc:
+        if "Parameters" == blas:
+            doc=False
+            para=True
+            off=0
+            print("parser = argparse.ArgumentParser(\"%s\")"%(esc(docs)))
+            while bla[off] == " ":
+                off+=1
+    if doc:
+        docs+=bla
+    if para:
+        if blas == "Return":
+            ret = True
+            para = False
+            if paraopen:
+                print(")")
+                paraopen=False
+        elif blas == "":
+            pass
+        elif blas == "Parameters" or blas == "----------":
+            pass
+        elif len(bla) > off and bla[off] != " ":
+            if paraopen:
+                print(")")
+            arg=blas.split(" : ")
+            arg[0]
+            #arg_type[curarg], arg_opt[curarg]=parse_type(arg[1])
+            t, o = parse_type(arg[1])
+            print("parser.add_argument(\"--%s\", type=%s"%(arg[0],t),end="")
+            if o:
+                print(", default=...",end="")
+            paraopen=True
+            hashelp=False
+        else:
+            if not hashelp:
+                print("\n    ,help=",end="")
+            else:
+                print("\n     ",end="")
+            space = " " if hashelp else ""
+            print("\""+space+esc(blas)+"\"",end="")
+            hashelp=True
+
+if paraopen:
+    print(")")
+
+print("""
+if argcomplete:
+    argcomplete.autocomplete(parser)
+
+args = parser.parse_args()
+
+# remove non-set optional arguments
+dic=args.__dict__
+
+for k in dic:
+    if dic[k] == ...:
+        del dic[k]
+
+# Call the function %s, using command line arguments
+%s(**dic)
+
+"""%(cmd,cmd))
+        
+EOF
+
+echo "We are about to open a editor - which one would you like?"
+test $EDITOR || EDITOR="emacs -nw"
+
+read -e -i "$EDITOR" EDITOR
+
+$EDITOR $file
+
+if doit "Add created script to git?"
+then
+    git add $file
+fi
