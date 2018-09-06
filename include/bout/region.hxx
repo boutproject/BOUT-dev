@@ -242,17 +242,24 @@ public:
   /// The index one point -1 in y
   const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
+  /// An alternative, non-branching calculation is :
+  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
+  /// but this appears no faster (and perhaps slower).  
   const inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
+  /// An alternative, non-branching calculation is :
+  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
+  /// but this appears no faster (and perhaps slower).
   const inline SpecificInd zm(int dz = 1) const {
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
+
   // and for 2 cells
   const inline SpecificInd xpp() const { return xp(2); }
   const inline SpecificInd xmm() const { return xm(2); }
