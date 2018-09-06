@@ -9,7 +9,7 @@ Field3D delp(const Field3D &input) { return input + Delp2(input); };
 class HW : public PhysicsModel {
 private:
   Field3D n;
-  class InvertOperator<Field3D> *mySolver;
+  InvertOperator<Field3D> *mySolver;
 
 protected:
   int init(bool restart) {
@@ -31,6 +31,7 @@ protected:
     output_warn << "Has test passed ? " << pass << std::endl;
     output_warn << std::endl;
 
+    mySolver->reportTime();
     return 0;
   }
 

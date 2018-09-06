@@ -34,6 +34,7 @@ template<typename T> class InvertOperator;
 
 #include <bout/petsclib.hxx>
 
+#include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <globals.hxx>
@@ -116,6 +117,14 @@ class InvertOperator {
   /// The function that represents the operator that we wish to invert
   function_signature func;
   
+  static void reportTime(){
+    BoutReal time_setup = Timer::resetTime("invert_operator_setup");
+    BoutReal time_invert = Timer::resetTime("invert_operator_invert");
+    BoutReal time_packing = Timer::resetTime("invert_operator_packing");
+    output_info << "InvertOperator timing :: Setup "<< time_setup;
+    output_info << " , Invert(packing) "<< time_invert << "(";
+    output_info << time_packing << ")" << endl;
+  };
   
  private:
   // PETSc types
@@ -134,7 +143,8 @@ class InvertOperator {
 
 template<typename T>
 PetscErrorCode InvertOperator<T>::setup(function_signature funcIn) {
-  TRACE("InvertOperator<T>::setup");  
+  TRACE("InvertOperator<T>::setup");
+  Timer timer("invert_operator_setup");
   if (doneSetup) {
     throw BoutException("Trying to call setup on an InvertOperator instance that has already been setup.");
   }
@@ -189,6 +199,7 @@ PetscErrorCode InvertOperator<T>::setup(function_signature funcIn) {
 template<typename T>
 T InvertOperator<T>::invert(const T& rhsField){
   TRACE("InvertOperator<T>::invert");
+  Timer timer("invert_operator_invert");  
   
   if (!doneSetup) {
     throw BoutException("Trying to call invert on an InvertOperator instance that has not been setup.");
@@ -225,6 +236,7 @@ T InvertOperator<T>::invert(const T& rhsField){
 template<typename T>
 PetscErrorCode fieldToPetscVec(const T& in, Vec out){
   TRACE("fieldToPetscVec<T>");
+  Timer timer("invert_operator_packing");
   
   PetscScalar *vecData;
 
@@ -246,6 +258,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out){
 template<typename T>
 PetscErrorCode petscVecToField(Vec in, T& out){
   TRACE("petscVecToField<T>");
+  Timer timer("invert_operator_packing");
   
   const PetscScalar *vecData;
 
