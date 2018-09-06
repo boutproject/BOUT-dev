@@ -666,16 +666,6 @@ public:
     return result;
   }
 
-  // TODO: Should be able to add regions (would just require extending
-  // indices and recalculating blocks). This raises question of should
-  // we be able to subtract regions, and if so what does that mean.
-  // Addition could be simple and just extend or we could seek to
-  // remove duplicate points. Former probably mostly ok. Note we do
-  // want to allow duplicate points (one reason we use vector and
-  // not set) but what if we add a region that has some duplicates?
-  // We could retain them but common usage would probably not want
-  // the duplicates.
-
   // We could sort indices (either forcibly or on request) to try
   // to ensure most contiguous+ordered access. Probably ok in common
   // use but would cause problems if order is important, for example
@@ -809,6 +799,13 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce
 /// any sorting etc. but could be done if desired.
+/// -
+/// Addition is currently simple and just extends. Probably mostly ok 
+/// but we could seek to remove duplicate points. Note we do
+/// want to allow duplicate points (one reason we use vector and
+/// not set) but what if we add a region that has some duplicates?
+/// We could retain them but common usage would probably not want
+/// the duplicates.
 template<typename T>
 Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   auto indices = lhs.getIndices(); // Indices is a copy of the indices
