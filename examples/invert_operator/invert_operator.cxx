@@ -25,11 +25,11 @@ protected:
     output = mySolver->invert(n);
 
     output_warn << endl;
-    output_warn << "Max difference is " << max(abs(output - n), true) << endl;
-    output_warn << endl;
+    output_warn << "Max difference is " << max(abs(output - n), true) << std::endl;
+    output_warn << std::endl;
     auto pass = mySolver->verify(n) == 0 ? "False" : "True";
-    output_warn << "Has test passed ? " << pass << endl;
-    output_warn << endl;
+    output_warn << "Has test passed ? " << pass << std::endl;
+    output_warn << std::endl;
 
     return 0;
   }

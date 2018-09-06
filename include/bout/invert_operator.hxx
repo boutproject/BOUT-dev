@@ -31,16 +31,14 @@ template<typename T> class InvertOperator;
 #ifdef BOUT_HAS_PETSC
 
 #include <petscksp.h>
-#include <petscmat.h>
-#include <petscvec.h>
-#include <bout/petsclib.hxx>
 
+#include <bout/petsclib.hxx>
 
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <globals.hxx>
 #include <options.hxx>
-
+#include <output.hxx>
 
 /// Non-member wrapper that gets a pointer to the parent InvertOperator instance
 /// from the Matrix m and uses this to get the actual function to call.
@@ -251,7 +249,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out){
 }
 
 template<typename T>
-PetscErrorCode petscVecToField(const Vec in, T& out){
+PetscErrorCode petscVecToField(Vec in, T& out){
   TRACE("petscVecToField<T>");
   
   const PetscScalar *vecData;
