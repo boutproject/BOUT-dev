@@ -553,8 +553,8 @@ void checkData(const Field2D &f, REGION region) {
 }
 #endif
 
-void invalidateGuards(Field2D &var){
 #if CHECK > 2
+void invalidateGuards(Field2D &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all y and all z
@@ -583,6 +583,5 @@ void invalidateGuards(Field2D &var){
       var(ix, iy) = std::nan("");
     }
   }
-#endif  
-  return;
 }
+#endif

@@ -769,7 +769,11 @@ void shiftZ(Field3D &var, double zangle, REGION rgn=RGN_ALL);
 Field2D DC(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(Field3D &var);
+#else
+inline void invalidateGuards(Field3D &UNUSED(var)) {}
+#endif
 
 /// Returns a reference to the time-derivative of a field \p f
 ///

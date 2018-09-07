@@ -496,8 +496,8 @@ void checkData(const FieldPerp &f, REGION region) {
 }
 #endif
 
-void invalidateGuards(FieldPerp &var) {
 #if CHECK > 2
+void invalidateGuards(FieldPerp &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all z
@@ -513,6 +513,5 @@ void invalidateGuards(FieldPerp &var) {
       var(ix, iz) = std::nan("");
     }
   }
-#endif
-  return;
 }
+#endif

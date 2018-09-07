@@ -1140,8 +1140,8 @@ Field2D DC(const Field3D &f, REGION rgn) {
   return result;
 }
 
-void invalidateGuards(Field3D &var){
-#if CHECK > 2 // Strip out if not checking
+#if CHECK > 2
+void invalidateGuards(Field3D &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all y and all z
@@ -1177,6 +1177,5 @@ void invalidateGuards(Field3D &var){
       }
     }
   }
-#endif  
-  return;
 }
+#endif
