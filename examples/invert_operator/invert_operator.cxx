@@ -12,8 +12,8 @@ private:
   InvertOperator<Field3D> *mySolver;
   
   struct myOp : public OperatorWrapper {
-    BoutReal factor
-    Field3D operator()(const Field3D &input) override {return factor*input + Delp2(input); } ;
+    BoutReal factor=1.;
+    Field3D operator()(const Field3D &input) override {output<<"Factor is "<<factor<<endl; return factor*input + Delp2(input); } ;
   };
   myOp myDelp;
 
@@ -31,6 +31,11 @@ protected:
     // or even a Lambda
     // mySolver->setup([](const Field3D &input) { return input + Delp2(input); });
 
+    // Note mySolve takes a copy of the passed functor so updates to the local
+    // instance won't have any effect, but the function _can_ be changed (currently)
+    // as it is a public member, so the following should work.
+    myDelp.factor = 3.0;
+    mySolver->func = myDelp;
     Field3D output = 3.0;
     n = -2.0;
     for(int i=0; i<10000; i++){
