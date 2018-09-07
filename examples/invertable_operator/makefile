@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= invert_operator.cxx
+SOURCEC		= invertable_operator.cxx
 
 include $(BOUT_TOP)/make.config
