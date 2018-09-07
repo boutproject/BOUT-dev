@@ -180,7 +180,7 @@ public:
   /// representation
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
-  T invert(const T &rhs) {
+  T invert(const T &rhsField) {
     TRACE("InvertOperator<T>::invert");
     Timer timer("invert_operator_invert");
 
