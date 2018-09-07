@@ -85,7 +85,7 @@ public:
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertOperator() {
-
+    TRACE("InvertOperator<T>::destructor");
 #if CHECK > 3
     output_info << endl;
     output_info << "Destroying KSP object in InvertOperator with properties: " << endl;
@@ -104,6 +104,16 @@ public:
     TRACE("InvertOperator<T>::setOperatorFunction");    
     operatorFunction = func;
   }
+
+  /// Provide a way to apply the operator to a Field
+  T operator()(const T& input) {
+    TRACE("InvertOperator<T>::operator()");
+    return operatorFunction(input);
+  }
+
+  /// Provide a synonym for applying the operator to a Field
+  T apply(const T& input){ return operator()(input); }
+  
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
   /// represents. Not actually required by any of the setup so this should
@@ -214,7 +224,7 @@ public:
     TRACE("InvertOperator<T>::verify");
 #if CHECK > 1
     const T result = invert(rhs);
-    const T applied = func(result);
+    const T applied = operator()(result);
     const BoutReal maxDiff = max(abs(applied - rhs), true);
 #if CHECK > 3
     if (maxDiff >= tol) {
@@ -240,13 +250,10 @@ public:
     T tmpField(ctx->localmesh);
     tmpField.allocate();
     petscVecToField(v1, tmpField);
-    T tmpField2 = ctx->func(tmpField);
+    T tmpField2 = ctx->operator()(tmpField);
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
-
-  /// The function that represents the operator that we wish to invert
-  function_signature func;
 
   /// Reports the time spent in various parts of InvertOperator. Note
   /// that as the Timer "labels" are not unique to an instance the time
@@ -260,6 +267,9 @@ public:
     output_info << time_packing << ")" << endl;
   };
 
+  /// The function that represents the operator that we wish to invert
+  function_signature operatorFunction;
+  
 private:
   // PETSc objects
   Mat matOperator;
