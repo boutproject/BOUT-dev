@@ -33,6 +33,8 @@ class Output;
 #include <iostream>
 #include <fstream>
 #include <functional>
+
+#include "bout/assert.hxx"
 #include "boutexception.hxx"
 #include "unused.hxx"
 
@@ -160,6 +162,7 @@ public:
   void write(const char *str, ...) override;
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT0(base != nullptr);
       base->vwrite(str, va);
     }
   }
@@ -169,12 +172,14 @@ public:
   void print(const char *str, ...) override;
   void vprint(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT0(base != nullptr);
       base->vprint(str, va);
     }
   }
 
   /// Get the lowest-level Output object which is the base of this ConditionalOutput
   Output *getBase() override {
+    ASSERT0(base != nullptr);
     return base->getBase();
   };
 
@@ -191,12 +196,14 @@ public:
 
   /// Check if output is enabled
   bool isEnabled() override {
+    ASSERT0(base != nullptr);
     return enabled && base->isEnabled();
   };
 
-  Output *base;
-
 private:
+  /// The lower-level Output to send output to
+  Output *base;
+  /// Does this instance output anything?
   bool enabled;
 };
 
