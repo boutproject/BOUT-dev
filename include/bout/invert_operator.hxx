@@ -75,9 +75,13 @@ public:
   using function_signature = std::function<T(const T &)>;
 
   /// Almost empty constructor -- currently don't actually use Options for anything
-  InvertOperator(Options *opt = nullptr, Mesh *localmesh = nullptr)
-      : opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
-        localmesh(localmesh ? localmesh : mesh), doneSetup(false){};
+  InvertOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
+                 Mesh *localmesh = nullptr)
+      : operatorFunction(func),
+        opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
+        localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
+    TRACE("InvertOperator<T>::constructor");
+  };
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertOperator() {
@@ -95,20 +99,23 @@ public:
     VecDestroy(&lhs);
   };
 
+  /// Allow the user to override the existing function
+  void setOperatorFunction(const function_signature& func){
+    TRACE("InvertOperator<T>::setOperatorFunction");    
+    operatorFunction = func;
+  }
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
   /// represents. Not actually required by any of the setup so this should
   /// probably be moved to a separate place (maybe the constructor).
-  PetscErrorCode setup(function_signature funcIn = identity<T>) {
+  PetscErrorCode setup() {
     TRACE("InvertOperator<T>::setup");
+    
     Timer timer("invert_operator_setup");
     if (doneSetup) {
       throw BoutException("Trying to call setup on an InvertOperator instance that has "
                           "already been setup.");
     }
-
-    // Take a copy of the functor
-    func = funcIn;
 
     PetscInt ierr;
 
