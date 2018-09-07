@@ -23,23 +23,40 @@
  *
  **************************************************************************/
 
-template<typename T> class InvertOperator;
-
-#ifndef __INVERT_OPERATOR_H__
-#define __INVERT_OPERATOR_H__
-
-#ifdef BOUT_HAS_PETSC
-
-#include <petscksp.h>
-
-#include <bout/petsclib.hxx>
-
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <globals.hxx>
 #include <options.hxx>
 #include <output.hxx>
+
+template<typename T> class InvertOperator;
+
+#ifndef __INVERT_OPERATOR_H__
+#define __INVERT_OPERATOR_H__
+
+/// Provides a base struct representing a light wrapper
+/// around the operator function call `apply`. This is
+/// used so that users can derive from this struct to
+/// provide member data that can be used in the apply
+/// function call.
+struct OperatorWrapper {
+  virtual Field3D apply(const Field3D& input){
+    throw BoutException("Invalid Field type 'Field3D' in OperatorWrapper.");
+  };
+  virtual Field2D apply(const Field2D& input){
+    throw BoutException("Invalid Field type 'Field2D' in OperatorWrapper.");
+  };
+  virtual FieldPerp apply(const FieldPerp& input){
+    throw BoutException("Invalid Field type 'FieldPerp' in OperatorWrapper.");
+  };
+};
+
+#ifdef BOUT_HAS_PETSC
+
+#include <petscksp.h>
+
+#include <bout/petsclib.hxx>
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template<typename T>
