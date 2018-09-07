@@ -68,17 +68,22 @@ class InvertOperator {
                 "InvertOperator must be templated with one of FieldPerp, Field2D or Field3D"); 
  
  public:
+  
+  /// What type of field does the operator take?
+  using data_type = T;
 
-  using data_type = T; // What type of field
-  using function_signature = std::function<T(const T&)>; // The required signature of the callback function representing the operator
-  using function_cast = void(*)(void); // Signature that we have to cast the function to for PETSc
-    
-  InvertOperator(Options *opt = nullptr, Mesh *localmesh  = nullptr) : opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
-						  localmesh(localmesh ? localmesh : mesh), doneSetup(false) {};
+  /// The signature of the functor that applies the operator.
+  using function_signature = std::function<T(const T&)>; 
 
+  /// Almost empty constructor -- currently don't actually use Options for anything
+  InvertOperator(Options *opt = nullptr, Mesh *localmesh  = nullptr) :
+    opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
+    localmesh(localmesh ? localmesh : mesh), doneSetup(false) {};
+
+  /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertOperator(){
     
-#if CHECK > 1
+#if CHECK > 3
     output_info<<endl;
     output_info<<"Destroying KSP object in InvertOperator with properties: "<<endl;
     KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
@@ -90,9 +95,103 @@ class InvertOperator {
     VecDestroy(&rhs);
     VecDestroy(&lhs);
   };
+
+  /// Sets up the PETSc objects required for inverting the operator
+  /// Currently also takes the functor that applies the operator this class
+  /// represents. Not actually required by any of the setup so this should
+  /// probably be moved to a separate place (maybe the constructor).
+  PetscErrorCode setup(function_signature funcIn = identity<T>) {
+    TRACE("InvertOperator<T>::setup");
+    Timer timer("invert_operator_setup");
+    if (doneSetup) {
+      throw BoutException("Trying to call setup on an InvertOperator instance that has already been setup.");
+    }
+
+    // Take a copy of the functor
+    func = funcIn;
   
-  PetscErrorCode setup(function_signature funcIn = identity<T>);
-  T invert(const T &rhs);
+    PetscInt ierr;
+  
+    // Hacky way to determine the local size for now
+    PetscInt nlocal = 0;
+    {
+      T tmp(localmesh);
+      /// @TODO : Replace this with a BOUT_FOR type loop or alternative (T.size()?)
+      for(const auto &i: tmp){ nlocal++;}
+    }
+  
+    PetscInt nglobal = PETSC_DETERMINE; // Depends on type of T
+
+    /// Create the shell matrix representing the operator to invert
+    /// Note we currently pass "this" as the Matrix context
+    ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this, &matOperator);
+    CHKERRQ(ierr); // Can't call this in constructor as includes a return statement
+
+    /// Create vectors compatible with matrix
+    ierr = MatCreateVecs(matOperator, &rhs, &lhs); // Older versions may need to use MatGetVecs
+    CHKERRQ(ierr);
+  
+    /// Now register Matrix_multiply operation
+    ierr = MatShellSetOperation(matOperator, MATOP_MULT, (void(*)(void))(functionWrapper));
+    CHKERRQ(ierr);
+
+    /// Now create and setup the linear solver with the matrix
+    ierr = KSPCreate(BoutComm::get(), &ksp);
+    CHKERRQ(ierr);    
+    ierr = KSPSetOperators(ksp, matOperator, matOperator);
+    CHKERRQ(ierr);
+
+    /// Allow options to be set on command line using a --invert_ksp_* prefix.
+    ierr = KSPSetOptionsPrefix(ksp,"invert_");
+    CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(ksp);
+    CHKERRQ(ierr);
+
+    /// Do required setup so solve can proceed in invert
+    ierr = KSPSetUp(ksp);
+    CHKERRQ(ierr);
+
+    doneSetup = true;
+  };
+  
+  /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix representation
+  /// of the operator we represent. Should probably provide an overload or similar as a
+  /// way of setting the initial guess.
+  T invert(const T &rhs) {
+    TRACE("InvertOperator<T>::invert");
+    Timer timer("invert_operator_invert");  
+  
+    if (!doneSetup) {
+      throw BoutException("Trying to call invert on an InvertOperator instance that has not been setup.");
+    }
+
+    ASSERT2(localmesh == rhsField.getMesh());
+
+    // rhsField to rhs
+    fieldToPetscVec(rhsField, rhs);
+  
+    /// Do the solve with solution stored in lhs 
+    auto ierr = KSPSolve(ksp, rhs, lhs);
+    CHKERRQ(ierr);
+
+    KSPConvergedReason reason;
+    ierr = KSPGetConvergedReason( ksp, &reason );
+    if(reason <=0 ){
+      throw BoutException("KSPSolve failed with reason %d.",reason);
+    }
+  
+#if CHECK > 3
+    output_info << "KSPSolve finished with converged reason : "<<reason<<endl;
+#endif
+  
+    // lhs to lhsField -- first make the output field and ensure it has space allocated
+    T lhsField(localmesh);
+    lhsField.allocate();
+
+    petscVecToField(lhs, lhsField);
+
+    return lhsField;
+  };
 
   /// With checks enabled provides a convience routine to check that
   /// applying the registered function on the calculated inverse gives
@@ -103,7 +202,7 @@ class InvertOperator {
     const T result = invert(rhs);
     const T applied = func(result);
     const BoutReal maxDiff = max(abs(applied-rhs),true);
-#if CHECK > 2
+#if CHECK > 3
     if (maxDiff >= tol) {
       output_info << "Maximum difference in verify is "<<maxDiff<<endl;
       output_info << "Max rhs is "<<max(abs(rhs),true)<<endl;
@@ -133,7 +232,10 @@ class InvertOperator {
   
   /// The function that represents the operator that we wish to invert
   function_signature func;
-  
+
+  /// Reports the time spent in various parts of InvertOperator. Note
+  /// that as the Timer "labels" are not unique to an instance the time
+  /// reported is summed across all different instances.
   static void reportTime(){
     BoutReal time_setup = Timer::resetTime("invert_operator_setup");
     BoutReal time_invert = Timer::resetTime("invert_operator_invert");
@@ -144,7 +246,7 @@ class InvertOperator {
   };
   
  private:
-  // PETSc types
+  // PETSc objects
   Mat matOperator;
   Vec rhs, lhs;
   KSP ksp;
@@ -158,98 +260,7 @@ class InvertOperator {
   PetscLib lib; //Do we need this?
 };
 
-template<typename T>
-PetscErrorCode InvertOperator<T>::setup(function_signature funcIn) {
-  TRACE("InvertOperator<T>::setup");
-  Timer timer("invert_operator_setup");
-  if (doneSetup) {
-    throw BoutException("Trying to call setup on an InvertOperator instance that has already been setup.");
-  }
-
-  func = funcIn;
-  
-  PetscInt ierr;
-  
-  // Hacky way to determine the local size for now
-  PetscInt nlocal = 0;
-  {
-    T tmp(localmesh);
-    /// @TODO : Replace this with a BOUT_FOR type loop or alternative (T.size()?)
-    for(const auto &i: tmp){ nlocal++;}
-  }
-  
-  PetscInt nglobal = PETSC_DETERMINE; // Depends on type of T
-
-  /// Create the shell matrix representing the operator to invert
-  /// Note we currently pass "this" as the Matrix context
-  ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this, &matOperator);
-  CHKERRQ(ierr); // Can't call this in constructor as includes a return statement
-
-  /// Create vectors compatible with matrix
-  ierr = MatCreateVecs(matOperator, &rhs, &lhs); // Older versions may need to use MatGetVecs
-  CHKERRQ(ierr);
-  
-  /// Now register Matrix_multiply operation
-  //  ierr = MatShellSetOperation(matOperator, MATOP_MULT, (function_cast)(identityFunc));
-  ierr = MatShellSetOperation(matOperator, MATOP_MULT, (function_cast)(functionWrapper));
-  CHKERRQ(ierr);
-
-  /// Now create and setup the linear solver with the matrix
-  ierr = KSPCreate(BoutComm::get(), &ksp);
-  CHKERRQ(ierr);    
-  ierr = KSPSetOperators(ksp, matOperator, matOperator);
-  CHKERRQ(ierr);
-
-  /// Allow options to be set on command line using a --invert_ksp_* prefix.
-  ierr = KSPSetOptionsPrefix(ksp,"invert_");
-  CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(ksp);
-  CHKERRQ(ierr);
-
-  /// Do required setup so solve can proceed in invert
-  ierr = KSPSetUp(ksp);
-  CHKERRQ(ierr);
-
-  doneSetup = true;
-};
-
-template<typename T>
-T InvertOperator<T>::invert(const T& rhsField){
-  TRACE("InvertOperator<T>::invert");
-  Timer timer("invert_operator_invert");  
-  
-  if (!doneSetup) {
-    throw BoutException("Trying to call invert on an InvertOperator instance that has not been setup.");
-  }
-
-  ASSERT2(localmesh == rhsField.getMesh());
-
-  // rhsField to rhs
-  fieldToPetscVec(rhsField, rhs);
-  
-  /// Do the solve with solution stored in lhs 
-  auto ierr = KSPSolve(ksp, rhs, lhs);
-  CHKERRQ(ierr);
-
-  KSPConvergedReason reason;
-  ierr = KSPGetConvergedReason( ksp, &reason );
-  if(reason <=0 ){
-    throw BoutException("KSPSolve failed with reason %d.",reason);
-  }
-  
-#if CHECK > 3
-  output_info << "KSPSolve finished with converged reason : "<<reason<<endl;
-#endif
-  
-  // lhs to lhsField -- first make the output field and ensure it has space allocated
-  T lhsField(localmesh);
-  lhsField.allocate();
-
-  petscVecToField(lhs, lhsField);
-
-  return lhsField;
-}
-
+/// Pack a PetscVec from a Field<T>
 template<typename T>
 PetscErrorCode fieldToPetscVec(const T& in, Vec out){
   TRACE("fieldToPetscVec<T>");
@@ -272,6 +283,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out){
   CHKERRQ(ierr);  
 }
 
+/// Pack a Field<T> from a PetscVec
 template<typename T>
 PetscErrorCode petscVecToField(Vec in, T& out){
   TRACE("petscVecToField<T>");
