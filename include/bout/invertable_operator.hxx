@@ -1,5 +1,5 @@
 /**************************************************************************
- * Invert arbitrary global operatorn using PETSc. to invert
+ * Invert arbitrary linear global operation using PETSc. to invert
  *
  **************************************************************************
  * Copyright 2018 D. Dickinson
@@ -34,23 +34,6 @@ template <typename T> class InvertableOperator;
 
 #ifndef __INVERTABLE_OPERATOR_H__
 #define __INVERTABLE_OPERATOR_H__
-
-/// Provides a base struct representing a light wrapper
-/// around the operator function call `apply`. This is
-/// used so that users can derive from this struct to
-/// provide member data that can be used in the apply
-/// function call.
-struct OperatorWrapper {
-  virtual Field3D operator()(const Field3D &input) {
-    throw BoutException("Invalid Field type 'Field3D' in OperatorWrapper.");
-  };
-  virtual Field2D operator()(const Field2D &input) {
-    throw BoutException("Invalid Field type 'Field2D' in OperatorWrapper.");
-  };
-  virtual FieldPerp operator()(const FieldPerp &input) {
-    throw BoutException("Invalid Field type 'FieldPerp' in OperatorWrapper.");
-  };
-};
 
 #ifdef BOUT_HAS_PETSC
 

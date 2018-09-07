@@ -10,9 +10,9 @@ class HW : public PhysicsModel {
 private:
   Field3D n;
   
-  struct myOp : public OperatorWrapper {
+  struct myOp {
     BoutReal factor=1.;
-    Field3D operator()(const Field3D &input) override {output<<"Factor is "<<factor<<endl; return factor*input + Delp2(input); } ;
+    Field3D operator()(const Field3D &input) {return factor*input + Delp2(input); } ;
   };
   myOp myDelp;
 
