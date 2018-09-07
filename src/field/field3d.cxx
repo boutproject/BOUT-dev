@@ -1085,12 +1085,10 @@ bool finite(const Field3D &f, REGION rgn) {
   return true;
 }
 
-#if CHECK > 0
-void checkData(const Field3D &f, REGION region) {
-  if (!f.isAllocated())
-    throw BoutException("Field3D: Operation on empty data\n");
-
+// Internal routine to avoid ugliness with interactions between CHECK
+// levels and UNUSED parameters
 #if CHECK > 2
+void checkData_is_finite_on_region(const Field3D &f, REGION region) {
   // Do full checks
   for (const auto &d : f.region(region)) {
     if (!finite(f[d])) {
@@ -1098,7 +1096,17 @@ void checkData(const Field3D &f, REGION region) {
                           d.y, d.z);
     }
   }
+}
+#else
+void checkData_is_finite_on_region(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
+
+#if CHECK > 0
+void checkData(const Field3D &f, REGION region) {
+  if (!f.isAllocated())
+    throw BoutException("Field3D: Operation on empty data\n");
+
+  checkData_is_finite_on_region(f, region);
 }
 #endif
 
