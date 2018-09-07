@@ -245,6 +245,7 @@ public:
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
+    TRACE("InvertOperator<T>::functionWrapper");
     InvertOperator<T> *ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
@@ -259,6 +260,7 @@ public:
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
   static void reportTime() {
+    TRACE("InvertOperator<T>::reportTime");    
     BoutReal time_setup = Timer::resetTime("invert_operator_setup");
     BoutReal time_invert = Timer::resetTime("invert_operator_invert");
     BoutReal time_packing = Timer::resetTime("invert_operator_packing");
