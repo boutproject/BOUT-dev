@@ -10,6 +10,12 @@ class HW : public PhysicsModel {
 private:
   Field3D n;
   InvertOperator<Field3D> *mySolver;
+  
+  struct myOp : public OperatorWrapper {
+    BoutReal factor
+    Field3D operator()(const Field3D &input) override {return factor*input + Delp2(input); } ;
+  };
+  myOp myDelp;
 
 protected:
   int init(bool restart) {
@@ -18,12 +24,18 @@ protected:
 
     mySolver = new InvertOperator<Field3D>();
 
-    mySolver->setup(delp);
+    // mySolver->setup(delp);
+    mySolver->setup(myDelp);
+    // Above could also be:
+    // mySolver->setup(delp);
+    // or even a Lambda
+    // mySolver->setup([](const Field3D &input) { return input + Delp2(input); });
 
     Field3D output = 3.0;
     n = -2.0;
-    output = mySolver->invert(n);
-
+    for(int i=0; i<10000; i++){
+      output = mySolver->invert(n);
+    }
     output_warn << endl;
     output_warn << "Max difference is " << max(abs(output - n), true) << std::endl;
     output_warn << std::endl;

@@ -41,13 +41,13 @@ template<typename T> class InvertOperator;
 /// provide member data that can be used in the apply
 /// function call.
 struct OperatorWrapper {
-  virtual Field3D apply(const Field3D& input){
+  virtual Field3D operator()(const Field3D& input){
     throw BoutException("Invalid Field type 'Field3D' in OperatorWrapper.");
   };
-  virtual Field2D apply(const Field2D& input){
+  virtual Field2D operator()(const Field2D& input){
     throw BoutException("Invalid Field type 'Field2D' in OperatorWrapper.");
   };
-  virtual FieldPerp apply(const FieldPerp& input){
+  virtual FieldPerp operator()(const FieldPerp& input){
     throw BoutException("Invalid Field type 'FieldPerp' in OperatorWrapper.");
   };
 };
