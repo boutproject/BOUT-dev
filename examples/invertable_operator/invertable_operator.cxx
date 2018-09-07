@@ -1,5 +1,5 @@
 
-#include <bout/invert_operator.hxx>
+#include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 
@@ -21,7 +21,7 @@ protected:
 
     SOLVE_FOR(n);
 
-    InvertOperator<Field3D> mySolver(myDelp);
+    InvertableOperator<Field3D> mySolver(myDelp);
     // Above could also be:
     // mySolver(delp);
     // or even a Lambda
