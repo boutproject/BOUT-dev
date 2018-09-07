@@ -30,7 +30,7 @@
 #include <options.hxx>
 #include <output.hxx>
 
-template<typename T> class InvertOperator;
+template <typename T> class InvertOperator;
 
 #ifndef __INVERT_OPERATOR_H__
 #define __INVERT_OPERATOR_H__
@@ -41,13 +41,13 @@ template<typename T> class InvertOperator;
 /// provide member data that can be used in the apply
 /// function call.
 struct OperatorWrapper {
-  virtual Field3D operator()(const Field3D& input){
+  virtual Field3D operator()(const Field3D &input) {
     throw BoutException("Invalid Field type 'Field3D' in OperatorWrapper.");
   };
-  virtual Field2D operator()(const Field2D& input){
+  virtual Field2D operator()(const Field2D &input) {
     throw BoutException("Invalid Field type 'Field2D' in OperatorWrapper.");
   };
-  virtual FieldPerp operator()(const FieldPerp& input){
+  virtual FieldPerp operator()(const FieldPerp &input) {
     throw BoutException("Invalid Field type 'FieldPerp' in OperatorWrapper.");
   };
 };
@@ -59,37 +59,36 @@ struct OperatorWrapper {
 #include <bout/petsclib.hxx>
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
-template<typename T>
-T identity(const T& in){return in;};
+template <typename T> T identity(const T &in) { return in; };
 
-template<typename T>
-class InvertOperator {
-  static_assert(std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value || std::is_base_of<FieldPerp, T>::value,
-                "InvertOperator must be templated with one of FieldPerp, Field2D or Field3D"); 
- 
- public:
-  
+template <typename T> class InvertOperator {
+  static_assert(
+      std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value ||
+          std::is_base_of<FieldPerp, T>::value,
+      "InvertOperator must be templated with one of FieldPerp, Field2D or Field3D");
+
+public:
   /// What type of field does the operator take?
   using data_type = T;
 
   /// The signature of the functor that applies the operator.
-  using function_signature = std::function<T(const T&)>; 
+  using function_signature = std::function<T(const T &)>;
 
   /// Almost empty constructor -- currently don't actually use Options for anything
-  InvertOperator(Options *opt = nullptr, Mesh *localmesh  = nullptr) :
-    opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
-    localmesh(localmesh ? localmesh : mesh), doneSetup(false) {};
+  InvertOperator(Options *opt = nullptr, Mesh *localmesh = nullptr)
+      : opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
+        localmesh(localmesh ? localmesh : mesh), doneSetup(false){};
 
   /// Destructor just has to cleanup the PETSc owned objects.
-  ~InvertOperator(){
-    
+  ~InvertOperator() {
+
 #if CHECK > 3
-    output_info<<endl;
-    output_info<<"Destroying KSP object in InvertOperator with properties: "<<endl;
+    output_info << endl;
+    output_info << "Destroying KSP object in InvertOperator with properties: " << endl;
     KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
-    output_info<<endl;    
+    output_info << endl;
 #endif
-    
+
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
     VecDestroy(&rhs);
@@ -104,45 +103,51 @@ class InvertOperator {
     TRACE("InvertOperator<T>::setup");
     Timer timer("invert_operator_setup");
     if (doneSetup) {
-      throw BoutException("Trying to call setup on an InvertOperator instance that has already been setup.");
+      throw BoutException("Trying to call setup on an InvertOperator instance that has "
+                          "already been setup.");
     }
 
     // Take a copy of the functor
     func = funcIn;
-  
+
     PetscInt ierr;
-  
+
     // Hacky way to determine the local size for now
     PetscInt nlocal = 0;
     {
       T tmp(localmesh);
       /// @TODO : Replace this with a BOUT_FOR type loop or alternative (T.size()?)
-      for(const auto &i: tmp){ nlocal++;}
+      for (const auto &i : tmp) {
+        nlocal++;
+      }
     }
-  
+
     PetscInt nglobal = PETSC_DETERMINE; // Depends on type of T
 
     /// Create the shell matrix representing the operator to invert
     /// Note we currently pass "this" as the Matrix context
-    ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this, &matOperator);
+    ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this,
+                          &matOperator);
     CHKERRQ(ierr); // Can't call this in constructor as includes a return statement
 
     /// Create vectors compatible with matrix
-    ierr = MatCreateVecs(matOperator, &rhs, &lhs); // Older versions may need to use MatGetVecs
+    ierr = MatCreateVecs(matOperator, &rhs,
+                         &lhs); // Older versions may need to use MatGetVecs
     CHKERRQ(ierr);
-  
+
     /// Now register Matrix_multiply operation
-    ierr = MatShellSetOperation(matOperator, MATOP_MULT, (void(*)(void))(functionWrapper));
+    ierr =
+        MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix
     ierr = KSPCreate(BoutComm::get(), &ksp);
-    CHKERRQ(ierr);    
+    CHKERRQ(ierr);
     ierr = KSPSetOperators(ksp, matOperator, matOperator);
     CHKERRQ(ierr);
 
     /// Allow options to be set on command line using a --invert_ksp_* prefix.
-    ierr = KSPSetOptionsPrefix(ksp,"invert_");
+    ierr = KSPSetOptionsPrefix(ksp, "invert_");
     CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ksp);
     CHKERRQ(ierr);
@@ -153,37 +158,39 @@ class InvertOperator {
 
     doneSetup = true;
   };
-  
-  /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix representation
+
+  /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix
+  /// representation
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
   T invert(const T &rhs) {
     TRACE("InvertOperator<T>::invert");
-    Timer timer("invert_operator_invert");  
-  
+    Timer timer("invert_operator_invert");
+
     if (!doneSetup) {
-      throw BoutException("Trying to call invert on an InvertOperator instance that has not been setup.");
+      throw BoutException(
+          "Trying to call invert on an InvertOperator instance that has not been setup.");
     }
 
     ASSERT2(localmesh == rhsField.getMesh());
 
     // rhsField to rhs
     fieldToPetscVec(rhsField, rhs);
-  
-    /// Do the solve with solution stored in lhs 
+
+    /// Do the solve with solution stored in lhs
     auto ierr = KSPSolve(ksp, rhs, lhs);
     CHKERRQ(ierr);
 
     KSPConvergedReason reason;
-    ierr = KSPGetConvergedReason( ksp, &reason );
-    if(reason <=0 ){
-      throw BoutException("KSPSolve failed with reason %d.",reason);
+    ierr = KSPGetConvergedReason(ksp, &reason);
+    if (reason <= 0) {
+      throw BoutException("KSPSolve failed with reason %d.", reason);
     }
-  
+
 #if CHECK > 3
-    output_info << "KSPSolve finished with converged reason : "<<reason<<endl;
+    output_info << "KSPSolve finished with converged reason : " << reason << endl;
 #endif
-  
+
     // lhs to lhsField -- first make the output field and ensure it has space allocated
     T lhsField(localmesh);
     lhsField.allocate();
@@ -196,76 +203,76 @@ class InvertOperator {
   /// With checks enabled provides a convience routine to check that
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
-  bool verify(const T &rhs, BoutReal tol = 1.0e-5){
+  bool verify(const T &rhs, BoutReal tol = 1.0e-5) {
     TRACE("InvertOperator<T>::verify");
 #if CHECK > 1
     const T result = invert(rhs);
     const T applied = func(result);
-    const BoutReal maxDiff = max(abs(applied-rhs),true);
+    const BoutReal maxDiff = max(abs(applied - rhs), true);
 #if CHECK > 3
     if (maxDiff >= tol) {
-      output_info << "Maximum difference in verify is "<<maxDiff<<endl;
-      output_info << "Max rhs is "<<max(abs(rhs),true)<<endl;
-      output_info << "Max applied is "<<max(abs(applied),true)<<endl;
-      output_info << "Max result is "<<max(abs(result),true)<<endl;
+      output_info << "Maximum difference in verify is " << maxDiff << endl;
+      output_info << "Max rhs is " << max(abs(rhs), true) << endl;
+      output_info << "Max applied is " << max(abs(applied), true) << endl;
+      output_info << "Max result is " << max(abs(result), true) << endl;
     };
 #endif
     return maxDiff < tol;
 #else
     return true;
-#endif    
+#endif
   };
 
   /// Wrapper that gets a pointer to the parent InvertOperator instance
   /// from the Matrix m and uses this to get the actual function to call.
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
-  static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2){
+  static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
     InvertOperator<T> *ctx;
     auto ierr = MatShellGetContext(m, &ctx);
-    T tmpField(ctx->localmesh); tmpField.allocate();
+    T tmpField(ctx->localmesh);
+    tmpField.allocate();
     petscVecToField(v1, tmpField);
     T tmpField2 = ctx->func(tmpField);
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
-  
+
   /// The function that represents the operator that we wish to invert
   function_signature func;
 
   /// Reports the time spent in various parts of InvertOperator. Note
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
-  static void reportTime(){
+  static void reportTime() {
     BoutReal time_setup = Timer::resetTime("invert_operator_setup");
     BoutReal time_invert = Timer::resetTime("invert_operator_invert");
     BoutReal time_packing = Timer::resetTime("invert_operator_packing");
-    output_info << "InvertOperator timing :: Setup "<< time_setup;
-    output_info << " , Invert(packing) "<< time_invert << "(";
+    output_info << "InvertOperator timing :: Setup " << time_setup;
+    output_info << " , Invert(packing) " << time_invert << "(";
     output_info << time_packing << ")" << endl;
   };
-  
- private:
+
+private:
   // PETSc objects
   Mat matOperator;
   Vec rhs, lhs;
   KSP ksp;
 
   // Internal types
-  Options *opt; //Do we need this?
+  Options *opt;    // Do we need this?
   Mesh *localmesh; //< To ensure we can create T on the right mesh
   bool doneSetup = false;
-  
+
   // To ensure PETSc has been setup
-  PetscLib lib; //Do we need this?
+  PetscLib lib; // Do we need this?
 };
 
 /// Pack a PetscVec from a Field<T>
-template<typename T>
-PetscErrorCode fieldToPetscVec(const T& in, Vec out){
+template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
   TRACE("fieldToPetscVec<T>");
   Timer timer("invert_operator_packing");
-  
+
   PetscScalar *vecData;
 
   auto ierr = VecGetArray(out, &vecData);
@@ -274,21 +281,20 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out){
   int counter = 0;
 
   /// @TODO : Replace this with a BOUT_FOR type loop
-  for(const auto &i: in){
+  for (const auto &i : in) {
     vecData[counter] = in[i];
     counter++;
   }
-  
+
   ierr = VecRestoreArray(out, &vecData);
-  CHKERRQ(ierr);  
+  CHKERRQ(ierr);
 }
 
 /// Pack a Field<T> from a PetscVec
-template<typename T>
-PetscErrorCode petscVecToField(Vec in, T& out){
+template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
   TRACE("petscVecToField<T>");
   Timer timer("invert_operator_packing");
-  
+
   const PetscScalar *vecData;
 
   auto ierr = VecGetArrayRead(in, &vecData);
@@ -296,15 +302,25 @@ PetscErrorCode petscVecToField(Vec in, T& out){
 
   int counter = 0;
 
-  /// @TODO : Replace this with a BOUT_FOR type loop  
-  for(const auto &i: out){
+  /// @TODO : Replace this with a BOUT_FOR type loop
+  for (const auto &i : out) {
     out[i] = vecData[counter];
     counter++;
   }
-  
+
   ierr = VecRestoreArrayRead(in, &vecData);
-  CHKERRQ(ierr);  
+  CHKERRQ(ierr);
 }
+
+#else
+
+template <typename T> class InvertOperator {
+public:
+  // InvertOperator(){
+  //   static_assert(0==1, "Can't use InvertOperator when BOUT++ built without PETSc
+  //   support.");
+  // }
+};
 
 #endif // PETSC
 #endif // HEADER GUARD
