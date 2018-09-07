@@ -30,10 +30,10 @@
 #include <options.hxx>
 #include <output.hxx>
 
-template <typename T> class InvertOperator;
+template <typename T> class InvertableOperator;
 
-#ifndef __INVERT_OPERATOR_H__
-#define __INVERT_OPERATOR_H__
+#ifndef __INVERTABLE_OPERATOR_H__
+#define __INVERTABLE_OPERATOR_H__
 
 /// Provides a base struct representing a light wrapper
 /// around the operator function call `apply`. This is
@@ -61,11 +61,11 @@ struct OperatorWrapper {
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T> T identity(const T &in) { return in; };
 
-template <typename T> class InvertOperator {
+template <typename T> class InvertableOperator {
   static_assert(
       std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value ||
           std::is_base_of<FieldPerp, T>::value,
-      "InvertOperator must be templated with one of FieldPerp, Field2D or Field3D");
+      "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
   /// What type of field does the operator take?
@@ -75,20 +75,20 @@ public:
   using function_signature = std::function<T(const T &)>;
 
   /// Almost empty constructor -- currently don't actually use Options for anything
-  InvertOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
+  InvertableOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
                  Mesh *localmesh = nullptr)
       : operatorFunction(func),
-        opt(opt ? opt : Options::getRoot()->getSection("invertOperator")),
+        opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
         localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
-    TRACE("InvertOperator<T>::constructor");
+    TRACE("InvertableOperator<T>::constructor");
   };
 
   /// Destructor just has to cleanup the PETSc owned objects.
-  ~InvertOperator() {
-    TRACE("InvertOperator<T>::destructor");
+  ~InvertableOperator() {
+    TRACE("InvertableOperator<T>::destructor");
 #if CHECK > 3
     output_info << endl;
-    output_info << "Destroying KSP object in InvertOperator with properties: " << endl;
+    output_info << "Destroying KSP object in InvertableOperator with properties: " << endl;
     KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
     output_info << endl;
 #endif
@@ -101,13 +101,13 @@ public:
 
   /// Allow the user to override the existing function
   void setOperatorFunction(const function_signature& func){
-    TRACE("InvertOperator<T>::setOperatorFunction");    
+    TRACE("InvertableOperator<T>::setOperatorFunction");    
     operatorFunction = func;
   }
 
   /// Provide a way to apply the operator to a Field
   T operator()(const T& input) {
-    TRACE("InvertOperator<T>::operator()");
+    TRACE("InvertableOperator<T>::operator()");
     return operatorFunction(input);
   }
 
@@ -119,11 +119,11 @@ public:
   /// represents. Not actually required by any of the setup so this should
   /// probably be moved to a separate place (maybe the constructor).
   PetscErrorCode setup() {
-    TRACE("InvertOperator<T>::setup");
+    TRACE("InvertableOperator<T>::setup");
     
-    Timer timer("invert_operator_setup");
+    Timer timer("invertable_operator_setup");
     if (doneSetup) {
-      throw BoutException("Trying to call setup on an InvertOperator instance that has "
+      throw BoutException("Trying to call setup on an InvertableOperator instance that has "
                           "already been setup.");
     }
 
@@ -181,12 +181,12 @@ public:
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
   T invert(const T &rhsField) {
-    TRACE("InvertOperator<T>::invert");
-    Timer timer("invert_operator_invert");
+    TRACE("InvertableOperator<T>::invert");
+    Timer timer("invertable_operator_invert");
 
     if (!doneSetup) {
       throw BoutException(
-          "Trying to call invert on an InvertOperator instance that has not been setup.");
+          "Trying to call invert on an InvertableOperator instance that has not been setup.");
     }
 
     ASSERT2(localmesh == rhsField.getMesh());
@@ -221,7 +221,7 @@ public:
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
   bool verify(const T &rhs, BoutReal tol = 1.0e-5) {
-    TRACE("InvertOperator<T>::verify");
+    TRACE("InvertableOperator<T>::verify");
 #if CHECK > 1
     const T result = invert(rhs);
     const T applied = operator()(result);
@@ -240,13 +240,13 @@ public:
 #endif
   };
 
-  /// Wrapper that gets a pointer to the parent InvertOperator instance
+  /// Wrapper that gets a pointer to the parent InvertableOperator instance
   /// from the Matrix m and uses this to get the actual function to call.
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
-    TRACE("InvertOperator<T>::functionWrapper");
-    InvertOperator<T> *ctx;
+    TRACE("InvertableOperator<T>::functionWrapper");
+    InvertableOperator<T> *ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
     tmpField.allocate();
@@ -256,15 +256,15 @@ public:
     return ierr;
   }
 
-  /// Reports the time spent in various parts of InvertOperator. Note
+  /// Reports the time spent in various parts of InvertableOperator. Note
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
   static void reportTime() {
-    TRACE("InvertOperator<T>::reportTime");    
-    BoutReal time_setup = Timer::resetTime("invert_operator_setup");
-    BoutReal time_invert = Timer::resetTime("invert_operator_invert");
-    BoutReal time_packing = Timer::resetTime("invert_operator_packing");
-    output_info << "InvertOperator timing :: Setup " << time_setup;
+    TRACE("InvertableOperator<T>::reportTime");    
+    BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
+    BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
+    BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
+    output_info << "InvertableOperator timing :: Setup " << time_setup;
     output_info << " , Invert(packing) " << time_invert << "(";
     output_info << time_packing << ")" << endl;
   };
@@ -290,7 +290,7 @@ private:
 /// Pack a PetscVec from a Field<T>
 template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
   TRACE("fieldToPetscVec<T>");
-  Timer timer("invert_operator_packing");
+  Timer timer("invertable_operator_packing");
 
   PetscScalar *vecData;
 
@@ -312,7 +312,7 @@ template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
 /// Pack a Field<T> from a PetscVec
 template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
   TRACE("petscVecToField<T>");
-  Timer timer("invert_operator_packing");
+  Timer timer("invertable_operator_packing");
 
   const PetscScalar *vecData;
 
@@ -333,12 +333,8 @@ template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
 
 #else
 
-template <typename T> class InvertOperator {
+template <typename T> class InvertableOperator {
 public:
-  // InvertOperator(){
-  //   static_assert(0==1, "Can't use InvertOperator when BOUT++ built without PETSc
-  //   support.");
-  // }
 };
 
 #endif // PETSC
