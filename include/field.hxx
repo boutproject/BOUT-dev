@@ -72,11 +72,11 @@ class Field {
   }
 
 #ifdef TRACK
-  std::string getName() const { return name; }
-  void setName(std::string s) { name = s; }
+  DEPRECATED(std::string getName() const) { return name; }
+  DEPRECATED(void setName(std::string s)) { name = s; }
 #else
-  std::string getName() const { return ""; }
-  void setName(std::string UNUSED(s)) {}
+  DEPRECATED(std::string getName()) const { return ""; }
+  DEPRECATED(void setName(std::string UNUSED(s))) {}
 #endif
   std::string name;
 
