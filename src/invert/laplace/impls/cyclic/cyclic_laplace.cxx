@@ -240,3 +240,213 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   }
   return x;
 }
+
+const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
+  TRACE("LaplaceCyclic::solve(Field3D, Field3D)");
+
+  Timer timer("invert");
+
+  Mesh *mesh = rhs.getMesh();
+  Field3D x(mesh); // Result
+  x.allocate();
+
+  Coordinates *coord = mesh->coordinates();
+
+  // Get the width of the boundary
+
+  // If the flags to assign that only one guard cell should be used is set
+  int inbndry = mesh->xstart, outbndry = mesh->xstart;
+  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2)) {
+    inbndry = outbndry = 1;
+  }
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+    inbndry = 1;
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+    outbndry = 1;
+
+  int nx = xe - xs + 1; // Number of X points on this processor
+
+  // Get range of Y indices
+  int ys = mesh->ystart, ye = mesh->yend;
+
+  if (mesh->hasBndryLowerY()) {
+    if (include_yguards)
+      ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+
+    ys += extra_yguards_lower;
+  }
+  if (mesh->hasBndryUpperY()) {
+    if (include_yguards)
+      ye = mesh->LocalNy -
+           1; // Contains upper boundary and we are solving in the guard cells
+
+    ye -= extra_yguards_upper;
+  }
+
+  const int ny = (ye - ys + 1); // Number of Y points
+  const int nsys = nmode * ny;  // Number of systems of equations to solve
+  const int nxny = nx * ny;     // Number of points in X-Y
+
+  auto a3D = Matrix<dcomplex>(nsys, nx);
+  auto b3D = Matrix<dcomplex>(nsys, nx);
+  auto c3D = Matrix<dcomplex>(nsys, nx);
+
+  auto xcmplx3D = Matrix<dcomplex>(nsys, nx);
+  auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
+
+  if (dst) {
+    BOUT_OMP(parallel) {
+      /// Create a local thread-scope working array
+      auto k1d =
+          Array<dcomplex>(mesh->LocalNz); // ZFFT routine expects input of this length
+
+      // Loop over X and Y indices, including boundaries but not guard cells.
+      // (unless periodic in x)
+      BOUT_OMP(for)
+      for (int ind = 0; ind < nxny; ++ind) {
+        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
+        int ix = xs + ind / ny;
+        int iy = ys + ind % ny;
+
+        // Take DST in Z direction and put result in k1d
+
+        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+             mesh->lastX())) {
+          // Use the values in x0 in the boundary
+          DST(x0(ix, iy) + 1, mesh->LocalNz - 2, std::begin(k1d));
+        } else {
+          DST(rhs(ix, iy) + 1, mesh->LocalNz - 2, std::begin(k1d));
+        }
+
+        // Copy into array, transposing so kz is first index
+        for (int kz = 0; kz < nmode; kz++)
+          bcmplx((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
+      }
+
+      // Get elements of the tridiagonal matrix
+      // including boundary conditions
+      BOUT_OMP(for nowait)
+      for (int ind = 0; ind < nsys; ind++) {
+        // ind = (iy - ys) * nmode + kz
+        int iy = ys + ind / nmode;
+        int kz = ind % nmode;
+
+        BoutReal zlen = coord->dz * (mesh->LocalNz - 3);
+        BoutReal kwave =
+            kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
+
+        tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
+                     kz,    // wave number index
+                     kwave, // kwave (inverse wave length)
+                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
+                     &Ccoef, &Dcoef,
+                     false); // Don't include guard cells in arrays
+      }
+    }
+
+    // Solve tridiagonal systems
+    cr->setCoefs(a3D, b3D, c3D);
+    cr->solve(bcmplx3D, xcmplx3D);
+
+    // FFT back to real space
+    BOUT_OMP(parallel) {
+      /// Create a local thread-scope working array
+      auto k1d =
+          Array<dcomplex>(mesh->LocalNz); // ZFFT routine expects input of this length
+
+      BOUT_OMP(for nowait)
+      for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
+        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
+        int ix = xs + ind / ny;
+        int iy = ys + ind % ny;
+
+        for (int kz = 0; kz < nmode; kz++)
+          k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
+
+        for (int kz = nmode; kz < mesh->LocalNz; kz++)
+          k1d[kz] = 0.0; // Filtering out all higher harmonics
+
+        DST_rev(std::begin(k1d), mesh->LocalNz - 2, &x(ix, iy, 1));
+
+        x(ix, iy, 0) = -x(ix, iy, 2);
+        x(ix, iy, mesh->LocalNz - 1) = -x(ix, iy, mesh->LocalNz - 3);
+      }
+    }
+  } else {
+    BOUT_OMP(parallel) {
+      /// Create a local thread-scope working array
+      auto k1d = Array<dcomplex>(mesh->LocalNz / 2 +
+                                 1); // ZFFT routine expects input of this length
+
+      // Loop over X and Y indices, including boundaries but not guard cells
+      // (unless periodic in x)
+
+      BOUT_OMP(for)
+      for (int ind = 0; ind < nxny; ++ind) {
+        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
+        int ix = xs + ind / ny;
+        int iy = ys + ind % ny;
+
+        // Take FFT in Z direction, apply shift, and put result in k1d
+
+        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+             mesh->lastX())) {
+          // Use the values in x0 in the boundary
+          rfft(x0(ix, iy), mesh->LocalNz, std::begin(k1d));
+        } else {
+          rfft(rhs(ix, iy), mesh->LocalNz, std::begin(k1d));
+        }
+
+        // Copy into array, transposing so kz is first index
+        for (int kz = 0; kz < nmode; kz++)
+          bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
+      }
+
+      // Get elements of the tridiagonal matrix
+      // including boundary conditions
+      BOUT_OMP(for nowait)
+      for (int ind = 0; ind < nsys; ind++) {
+        // ind = (iy - ys) * nmode + kz
+        int iy = ys + ind / nmode;
+        int kz = ind % nmode;
+
+        BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
+        tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
+                     kz,    // True for the component constant (DC) in Z
+                     kwave, // Z wave number
+                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
+                     &Ccoef, &Dcoef,
+                     false); // Don't include guard cells in arrays
+      }
+    }
+
+    // Solve tridiagonal systems
+    cr->setCoefs(a3D, b3D, c3D);
+    cr->solve(bcmplx3D, xcmplx3D);
+
+    // FFT back to real space
+    BOUT_OMP(parallel) {
+      /// Create a local thread-scope working array
+      auto k1d = Array<dcomplex>((mesh->LocalNz) / 2 +
+                                 1); // ZFFT routine expects input of this length
+
+      BOUT_OMP(for nowait)
+      for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
+        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
+        int ix = xs + ind / ny;
+        int iy = ys + ind % ny;
+
+        for (int kz = 0; kz < nmode; kz++)
+          k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
+
+        for (int kz = nmode; kz < mesh->LocalNz / 2 + 1; kz++)
+          k1d[kz] = 0.0; // Filtering out all higher harmonics
+
+        irfft(std::begin(k1d), mesh->LocalNz, x(ix, iy));
+      }
+    }
+  }
+  return x;
+}

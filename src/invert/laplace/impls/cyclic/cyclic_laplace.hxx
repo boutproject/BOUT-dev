@@ -65,6 +65,9 @@ public:
   using Laplacian::solve;
   const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+
+  const Field3D solve(const Field3D &b) override {return solve(b,b);}
+  const Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
