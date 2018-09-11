@@ -208,7 +208,8 @@ public:
   bool verify(const T &rhsIn, BoutReal tol = 1.0e-5) {
     TRACE("InvertableOperator<T>::verify");
 #if CHECK > 1
-    const T result = invert(rhsIn);
+    T result = invert(rhsIn);
+    localmesh->communicate(result);    
     const T applied = operator()(result);
     const BoutReal maxDiff = max(abs(applied - rhsIn), true);
 #if CHECK > 3
@@ -233,9 +234,16 @@ public:
     TRACE("InvertableOperator<T>::functionWrapper");
     InvertableOperator<T> *ctx;
     auto ierr = MatShellGetContext(m, &ctx);
-    T tmpField(ctx->localmesh);
-    tmpField.allocate();
+    T tmpField(ctx->localmesh); tmpField.allocate();
     petscVecToField(v1, tmpField);
+    // Need following communicate if operator() uses guard cells, i.e. differential
+    // operator. Could delegate to the user function but then need to remove const
+    // from signature of the function (function_signature) likely involving a copy.
+    // @TODO : Consider removing the communicate and introduce requirement for user
+    // function to communicate if required. This would be neater as currently result
+    // of invert needs explicitly communicating if we want to apply the operator to
+    // it, for example (e.g. see verify). 
+    ctx->localmesh->communicate(tmpField); 
     T tmpField2 = ctx->operator()(tmpField);
     fieldToPetscVec(tmpField2, v2);
     return ierr;
