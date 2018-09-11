@@ -157,6 +157,8 @@ public:
     CHKERRQ(ierr);
 
     doneSetup = true;
+
+    return ierr;
   };
 
   /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix
@@ -203,16 +205,16 @@ public:
   /// With checks enabled provides a convience routine to check that
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
-  bool verify(const T &rhs, BoutReal tol = 1.0e-5) {
+  bool verify(const T &rhsIn, BoutReal tol = 1.0e-5) {
     TRACE("InvertableOperator<T>::verify");
 #if CHECK > 1
-    const T result = invert(rhs);
+    const T result = invert(rhsIn);
     const T applied = operator()(result);
-    const BoutReal maxDiff = max(abs(applied - rhs), true);
+    const BoutReal maxDiff = max(abs(applied - rhsIn), true);
 #if CHECK > 3
     if (maxDiff >= tol) {
       output_info << "Maximum difference in verify is " << maxDiff << endl;
-      output_info << "Max rhs is " << max(abs(rhs), true) << endl;
+      output_info << "Max rhs is " << max(abs(rhsIn), true) << endl;
       output_info << "Max applied is " << max(abs(applied), true) << endl;
       output_info << "Max result is " << max(abs(result), true) << endl;
     };
@@ -247,9 +249,9 @@ public:
     BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
     BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
     BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
-    output_info << "InvertableOperator timing :: Setup " << time_setup;
-    output_info << " , Invert(packing) " << time_invert << "(";
-    output_info << time_packing << ")" << endl;
+    output_warn << "InvertableOperator timing :: Setup " << time_setup;
+    output_warn << " , Invert(packing) " << time_invert << "(";
+    output_warn << time_packing << ")" << endl;
   };
 
   /// The function that represents the operator that we wish to invert
@@ -290,6 +292,8 @@ template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
 
   ierr = VecRestoreArray(out, &vecData);
   CHKERRQ(ierr);
+
+  return ierr;
 }
 
 /// Pack a Field<T> from a PetscVec
@@ -312,6 +316,8 @@ template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
 
   ierr = VecRestoreArrayRead(in, &vecData);
   CHKERRQ(ierr);
+
+  return ierr;
 }
 
 #else
