@@ -89,6 +89,8 @@ class FieldPerp : public Field {
 
   const IndexRange region(REGION rgn) const override;
 
+  const Region<IndPerp>& getRegion(const std::string &region_name) const;
+  
   /*!
    * Direct data access using DataIterator indexing
    */

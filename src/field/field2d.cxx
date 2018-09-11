@@ -174,6 +174,10 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
+const Region<Ind2D>& Field2D::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegion2D(region_name);
+}
+
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));

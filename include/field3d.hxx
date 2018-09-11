@@ -326,6 +326,8 @@ class Field3D : public Field, public FieldData {
    */
   const IndexRange region2D(REGION rgn) const;
 
+  const Region<Ind3D>& getRegion(const std::string &region_name) const;
+  
   /*!
    * Direct data access using DataIterator object.
    * This uses operator(x,y,z) so checks will only be

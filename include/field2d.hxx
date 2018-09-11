@@ -144,6 +144,8 @@ class Field2D : public Field, public FieldData {
    */
   const IndexRange region(REGION rgn) const override;
 
+  const Region<Ind2D>& getRegion(const std::string &region_name) const;
+  
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
   }

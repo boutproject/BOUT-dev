@@ -386,6 +386,21 @@ void Mesh::createDefaultRegions(){
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
 
+
+  // This avoids all guard cells and corners but includes boundaries
+  Region<Ind3D> nocorner3D = getRegion3D("RGN_NOBNDRY");
+  if (firstX()) nocorner3D += Region<Ind3D>(0,1,ystart, yend, 0, LocalNz -1,
+				     LocalNy, LocalNz, maxregionblocksize);
+  if (lastX()) nocorner3D += Region<Ind3D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, LocalNz -1,
+				     LocalNy, LocalNz, maxregionblocksize);
+  if (firstY()) nocorner3D += Region<Ind3D>(xstart,xend,0, 1, 0, LocalNz -1,
+				     LocalNy, LocalNz, maxregionblocksize);
+  if (lastY()) nocorner3D += Region<Ind3D>(xstart,xend,LocalNy-2, LocalNy-1, 0, LocalNz -1,
+				     LocalNy, LocalNz, maxregionblocksize);
+  
+  nocorner3D.unique();
+  addRegion3D("RGN_NOCORNERS", nocorner3D);
+
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
@@ -395,6 +410,21 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
+
+
+  // This avoids all guard cells and corners but includes boundaries
+  Region<Ind2D> nocorner2D = getRegion2D("RGN_NOBNDRY");
+  if (firstX()) nocorner2D += Region<Ind2D>(0,1,ystart, yend, 0, 0,
+				     LocalNy, 1, maxregionblocksize);
+  if (lastX()) nocorner2D += Region<Ind2D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, 0,
+				     LocalNy, 1, maxregionblocksize);
+  if (firstY()) nocorner2D += Region<Ind2D>(xstart,xend,0, 1, 0, 0,
+				     LocalNy, 1, maxregionblocksize);
+  if (lastY()) nocorner2D += Region<Ind2D>(xstart,xend,LocalNy-2, LocalNy-1, 0, 0,
+				     LocalNy, 1, maxregionblocksize);
+  
+  nocorner2D.unique();
+  addRegion2D("RGN_NOCORNERS", nocorner2D);
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
@@ -406,6 +436,17 @@ void Mesh::createDefaultRegions(){
   addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
                                            LocalNz, maxregionblocksize)); // Same as ALL
 
+  // This avoids all guard cells and corners but includes boundaries
+  Region<IndPerp> nocornerPerp = getRegionPerp("RGN_NOBNDRY");
+  if (firstX()) nocornerPerp += Region<IndPerp>(0,1,0, 0, 0, LocalNz -1,
+				     1, LocalNz, maxregionblocksize);
+  if (lastX()) nocornerPerp += Region<IndPerp>(LocalNx - 2,LocalNx - 1,0, 0, 0, LocalNz -1,
+				     1, LocalNz, maxregionblocksize);
+  
+  nocornerPerp.unique();
+  addRegionPerp("RGN_NOCORNERS", nocornerPerp);
+
+  
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   for (const auto &ind3D: getRegion3D("RGN_ALL")){
