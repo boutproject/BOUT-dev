@@ -116,10 +116,7 @@ public:
     PetscInt nlocal = 0;
     {
       T tmp(localmesh);
-      /// @TODO : Replace this with a BOUT_FOR type loop or alternative (T.size()?)
-      for (const auto &i : tmp) {
-        nlocal++;
-      }
+      nlocal = tmp.getRegion("RGN_NOCORNERS").size();
     }
 
     PetscInt nglobal = PETSC_DETERMINE; // Depends on type of T
@@ -297,8 +294,7 @@ template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
 
   int counter = 0;
 
-  /// @TODO : Replace this with a BOUT_FOR type loop
-  for (const auto &i : in) {
+  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS") ) {  
     vecData[counter] = in[i];
     counter++;
   }
@@ -321,8 +317,7 @@ template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
 
   int counter = 0;
 
-  /// @TODO : Replace this with a BOUT_FOR type loop
-  for (const auto &i : out) {
+  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS") ) {  
     out[i] = vecData[counter];
     counter++;
   }
