@@ -245,6 +245,11 @@ public:
     // it, for example (e.g. see verify). 
     ctx->localmesh->communicate(tmpField); 
     T tmpField2 = ctx->operator()(tmpField);
+    // This communicate is required in case operator() ends up not setting
+    // all periodic boundaries correctly (possibly -- need to check?)
+    // @TODO : Consider need for this communicate. Could communicate at the
+    // end of the user routine.
+    ctx->localmesh->communicate(tmpField2);  
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
