@@ -86,6 +86,8 @@ protected:
     }
     }catch(BoutException){
     };
+
+    mesh->communicate(solutionInv);
     
     output_warn << std::endl;
     auto pass = mySolver.verify(n) == 0 ? "False" : "True";
