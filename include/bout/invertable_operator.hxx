@@ -145,6 +145,12 @@ public:
                          &lhs); // Older versions may need to use MatGetVecs
     CHKERRQ(ierr);
 
+    /// Zero out the lhs vector as values used for initial guess
+    /// in solve step. Don't need to initialise rhs as this is
+    /// done in the callback function using the passed Field.
+    ierr = VecSet(lhs, 0.0);
+    CHKERRQ(ierr);
+    
     /// Now register Matrix_multiply operation
     ierr =
         MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
@@ -182,6 +188,15 @@ public:
     return ierr;
   };
 
+  // Pack values into lhs vec before solving.
+  // This may be the way to set the initial guess
+  // but suspect it's not as there are KSPGuess objects
+  // to deal with.
+  T invert(const T &rhsField, const T &guess) {
+    fieldToPetscVec(guess, lhs);
+    return invert(rhsField);
+  }
+  
   /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix
   /// representation
   /// of the operator we represent. Should probably provide an overload or similar as a
@@ -201,6 +216,12 @@ public:
     fieldToPetscVec(rhsField, rhs);
 
     /// Do the solve with solution stored in lhs
+    /// Note: the values in lhs on input are used as the initial guess
+    /// provided KSPSetInitialGuessNonzero has been called as true (if
+    /// not then lhs is zeroed on entry). As the results in lhs persist
+    /// between calls to invert (as a class member rather than local scope)
+    /// we automatically provide the previous solution as the initial guess
+    /// for subsequent solves.
     auto ierr = KSPSolve(ksp, rhs, lhs);
     CHKERRQ(ierr);
 
