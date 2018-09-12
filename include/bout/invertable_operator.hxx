@@ -83,9 +83,15 @@ public:
   };
 
   /// Allow the user to override the existing function
-  void setOperatorFunction(const function_signature& func){
-    TRACE("InvertableOperator<T>::setOperatorFunction");    
+  /// Note by default we set the preconditioner function to match this
+  /// as this is the usual mode of operation. If the user doesn't want to
+  /// do this they can set alsoSetPreconditioner to false.
+  void setOperatorFunction(const function_signature& func, bool alsoSetPreconditioner = true){
+    TRACE("InvertableOperator<T>::setOperatorFunction");
     operatorFunction = func;
+    if ( alsoSetPreconditioner ) {
+      preconditionerFunction = func;
+    }
   }
 
   /// Allow the user to override the existing preconditioner function
