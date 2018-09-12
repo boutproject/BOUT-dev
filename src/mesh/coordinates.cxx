@@ -247,13 +247,13 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   g23 = interpolateAndNeumann(coords_in->g23, location);
 
   // Check input metrics
-  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
   }
   if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
     throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
   }
-  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
   }
 
@@ -319,23 +319,23 @@ int Coordinates::geometry() {
     throw BoutException("dz magnitude less than 1e-8");
 
   // Check input metrics
-  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
     throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
-  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
-  if ((!finite(g_11)) || (!finite(g_22)) || (!finite(g_33))) {
+  if ((!finite(g_11, RGN_NOBNDRY)) || (!finite(g_22, RGN_NOBNDRY)) || (!finite(g_33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Diagonal g_ij metrics are not finite!\n");
   }
   if ((min(g_11) <= 0.0) || (min(g_22) <= 0.0) || (min(g_33) <= 0.0)) {
     throw BoutException("\tERROR: Diagonal g_ij metrics are negative!\n");
   }
-  if ((!finite(g_12)) || (!finite(g_13)) || (!finite(g_23))) {
+  if ((!finite(g_12, RGN_NOBNDRY)) || (!finite(g_13, RGN_NOBNDRY)) || (!finite(g_23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
@@ -596,7 +596,7 @@ int Coordinates::jacobian() {
   J = 1. / sqrt(g);
 
   // Check jacobian
-  if (!finite(J)) {
+  if (!finite(J, RGN_NOBNDRY)) {
     throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
   }
   if (min(abs(J)) < 1.0e-10) {
