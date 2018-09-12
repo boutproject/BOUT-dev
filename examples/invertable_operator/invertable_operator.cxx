@@ -27,6 +27,7 @@ private:
     // Drop C term for now
     Field3D operator()(const Field3D &input) {
       TRACE("myLaplacian::operator()");
+      Timer timer("invertable_operator_operate");      
       Field3D result = A*input + D*Delp2(input);
 
       // Ensure boundary points are set appropriately as given by the input field.

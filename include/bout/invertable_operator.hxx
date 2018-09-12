@@ -310,9 +310,12 @@ public:
     BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
     BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
     BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
+
+    BoutReal time_operate = Timer::resetTime("invertable_operator_operate");
     output_warn << "InvertableOperator timing :: Setup " << time_setup;
     output_warn << " , Invert(packing) " << time_invert << "(";
-    output_warn << time_packing << ")" << endl;
+    output_warn << time_packing << ")" ;
+    output_warn << " operate :"<<time_operate<< endl;
   };
 
   /// The function that represents the operator that we wish to invert
