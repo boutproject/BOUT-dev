@@ -112,7 +112,7 @@ protected:
         solutionInv = mySolver.invert(n, solutionInv);
         // mesh->communicate(solutionInv);
       }
-    } catch (&BoutException) {
+    } catch (BoutException &e) {
     };
 
     mesh->communicate(solutionInv);
@@ -128,7 +128,7 @@ protected:
         for (int i = 0; i < nits; i++) {
           solutionLap = phiSolverXZ->solve(n);
         }
-      } catch (&BoutException) {
+      } catch (BoutException &e) {
       };
     }
 
