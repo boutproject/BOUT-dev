@@ -78,6 +78,7 @@ public:
 
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
+    MatDestroy(&matPreconditioner);    
     VecDestroy(&rhs);
     VecDestroy(&lhs);
   };
