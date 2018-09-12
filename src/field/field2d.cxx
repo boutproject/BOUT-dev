@@ -179,7 +179,7 @@ void Field2D::setLocation(CELL_LOC new_location) {
   if (getMesh()->StaggerGrids) {
     if (new_location == CELL_VSHIFT) {
       throw BoutException(
-          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
+          "Field2D: CELL_VSHIFT cell location only makes sense for vectors");
     }
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
