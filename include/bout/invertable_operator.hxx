@@ -60,7 +60,7 @@ public:
   /// Almost empty constructor -- currently don't actually use Options for anything
   InvertableOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
                  Mesh *localmesh = nullptr)
-      : operatorFunction(func),
+    : operatorFunction(func), preconditionerFunction(func),
         opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
         localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
     TRACE("InvertableOperator<T>::constructor");
@@ -88,6 +88,12 @@ public:
     operatorFunction = func;
   }
 
+  /// Allow the user to override the existing preconditioner function
+  void setPreconditionerFunction(const function_signature& func){
+    TRACE("InvertableOperator<T>::setPreconditionerFunction");    
+    preconditionerFunction = func;
+  }
+  
   /// Provide a way to apply the operator to a Field
   T operator()(const T& input) {
     TRACE("InvertableOperator<T>::operator()");
@@ -125,7 +131,7 @@ public:
     /// Note we currently pass "this" as the Matrix context
     ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this,
                           &matOperator);
-    CHKERRQ(ierr); // Can't call this in constructor as includes a return statement
+    CHKERRQ(ierr);
 
     /// Create vectors compatible with matrix
     ierr = MatCreateVecs(matOperator, &rhs,
@@ -137,10 +143,21 @@ public:
         MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
     CHKERRQ(ierr);
 
+    /// Create the shell matrix representing the operator to invert
+    /// Note we currently pass "this" as the Matrix context
+    ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this,
+                          &matPreconditioner);
+    CHKERRQ(ierr);
+
+    /// Now register Matrix_multiply operation
+    ierr =
+        MatShellSetOperation(matPreconditioner, MATOP_MULT, (void (*)(void))(preconditionerWrapper));
+    CHKERRQ(ierr);
+
     /// Now create and setup the linear solver with the matrix
     ierr = KSPCreate(BoutComm::get(), &ksp);
     CHKERRQ(ierr);
-    ierr = KSPSetOperators(ksp, matOperator, matOperator);
+    ierr = KSPSetOperators(ksp, matOperator, matPreconditioner);
     CHKERRQ(ierr);
 
     /// Allow options to be set on command line using a --invert_ksp_* prefix.
@@ -251,6 +268,34 @@ public:
     return ierr;
   }
 
+  /// Wrapper that gets a pointer to the parent InvertableOperator instance
+  /// from the Matrix m and uses this to get the actual function to call.
+  /// Copies data from v1 into a field of type T, calls the function on this and then
+  /// copies the result into the v2 argument.
+  static PetscErrorCode preconditionerWrapper(Mat m, Vec v1, Vec v2) {
+    TRACE("InvertableOperator<T>::functionWrapper");
+    InvertableOperator<T> *ctx;
+    auto ierr = MatShellGetContext(m, &ctx);
+    T tmpField(ctx->localmesh); tmpField.allocate();
+    petscVecToField(v1, tmpField);
+    // Need following communicate if operator() uses guard cells, i.e. differential
+    // operator. Could delegate to the user function but then need to remove const
+    // from signature of the function (function_signature) likely involving a copy.
+    // @TODO : Consider removing the communicate and introduce requirement for user
+    // function to communicate if required. This would be neater as currently result
+    // of invert needs explicitly communicating if we want to apply the operator to
+    // it, for example (e.g. see verify). 
+    ctx->localmesh->communicate(tmpField); 
+    T tmpField2 = ctx->preconditionerFunction(tmpField);
+    // This communicate is required in case operator() ends up not setting
+    // all periodic boundaries correctly (possibly -- need to check?)
+    // @TODO : Consider need for this communicate. Could communicate at the
+    // end of the user routine.
+    ctx->localmesh->communicate(tmpField2);  
+    fieldToPetscVec(tmpField2, v2);
+    return ierr;
+  }
+
   /// Reports the time spent in various parts of InvertableOperator. Note
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
@@ -265,11 +310,14 @@ public:
   };
 
   /// The function that represents the operator that we wish to invert
-  function_signature operatorFunction;
+  function_signature operatorFunction = identity<T>;
+
+  /// The function that represents the preconditioner for the operator that we wish to invert
+  function_signature preconditionerFunction = identity<T>;
   
 private:
   // PETSc objects
-  Mat matOperator;
+  Mat matOperator, matPreconditioner;
   Vec rhs, lhs;
   KSP ksp;
 
