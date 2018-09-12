@@ -44,21 +44,6 @@ class PhysicsModel;
 #include "unused.hxx"
 
 /*!
- * Monitor class for PhysicsModel
- */
-class PhysicsModelMonitor : public Monitor {
-public:
-  PhysicsModelMonitor() = delete;
-
-  PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
-
-  int call(Solver* solver, BoutReal simtime, int iter, int nout);
-
-private:
-  PhysicsModel *model;
-};
-
-/*!
   Base class for physics models
  */
 class PhysicsModel {
@@ -270,8 +255,24 @@ protected:
    */ 
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 
+  /*!
+   * Monitor class for PhysicsModel
+   */
+  class PhysicsModelMonitor : public Monitor {
+  public:
+    PhysicsModelMonitor() = delete;
+    PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
+    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
+      // Save state to restart file
+      model->restart.write();
+      // Call user output monitor
+      return model->outputMonitor(simtime, iter, nout);
+    }
+  private:
+    PhysicsModel *model;
+  };
+
   /// write restarts and pass outputMonitor method inside a Monitor subclass
-  friend class PhysicsModelMonitor;
   PhysicsModelMonitor modelMonitor;
 private:
   bool splitop; ///< Split operator model?

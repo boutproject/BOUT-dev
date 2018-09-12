@@ -141,10 +141,3 @@ int PhysicsModel::postInit(bool restarting) {
 
   return 0;
 }
-
-int PhysicsModelMonitor::call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
-  // Save state to restart file
-  model->restart.write();
-  // Call user output monitor
-  return model->outputMonitor(simtime, iter, nout);
-}
