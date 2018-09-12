@@ -432,15 +432,15 @@ class Mesh {
   /// Coordinate system
   Coordinates *coordinates(const CELL_LOC location = CELL_DEFAULT) {
     if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location];
+      return coords_map[location].get();
     } else if (location == CELL_DEFAULT) {
       return coordinates(CELL_CENTRE);
     } else {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
-      coords_map.insert(std::pair<CELL_LOC, Coordinates*>(location, createDefaultCoordinates(location)));
-      return coords_map[location];
+      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+      return coords_map[location].get();
     }
   }
 
@@ -707,7 +707,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  std::map<CELL_LOC, Coordinates*> coords_map; ///< Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
@@ -746,7 +746,7 @@ class Mesh {
 
 private:
   /// Allocates default Coordinates objects
-  Coordinates *createDefaultCoordinates(const CELL_LOC location);
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;

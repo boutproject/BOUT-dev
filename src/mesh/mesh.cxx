@@ -39,10 +39,6 @@ Mesh::~Mesh() {
   if (source) {
     delete source;
   }
-
-  for (auto &it : coords_map) {
-    delete it.second;
-  }
 }
 
 /**************************************************************************
@@ -319,13 +315,13 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-Coordinates *Mesh::createDefaultCoordinates(const CELL_LOC location) {
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
   if (location == CELL_CENTRE || location == CELL_DEFAULT)
     // Initialize coordinates from input
-    return new Coordinates(this);
+    return std::make_shared<Coordinates>(this);
   else
     // Interpolate coordinates from CELL_CENTRE version
-    return new Coordinates(this, location, coordinates(CELL_CENTRE));
+    return std::make_shared<Coordinates>(this, location, coordinates(CELL_CENTRE));
 }
 
 
