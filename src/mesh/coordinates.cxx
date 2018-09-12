@@ -176,10 +176,8 @@ namespace {
   /// Communicates to set internal guard cells.
   /// Boundary guard cells are set equal to the nearest grid point (equivalent to
   /// 2nd order accurate Neumann boundary condition).
-  /// Corner guard cells are set to garbage values, because that is the simplest
-  /// way to allow error checking of the rest of the guard cells in a single loop,
-  /// without the corner points always failing.
-  Field2D interpolateAndNeumann(const Field2D &f, CELL_LOC location, bool diagonal) {
+  /// Corner guard cells are set to BoutNaN
+  Field2D interpolateAndNeumann(const Field2D &f, CELL_LOC location) {
     Mesh* localmesh = f.getMesh();
     Field2D result = interp_to(f, location, RGN_NOBNDRY);
     localmesh->communicate(result);
@@ -206,25 +204,13 @@ namespace {
       }
     }
 
-    // Set corner guard cells to avoid exceptions
-    // Set diagonal elements to a large value, and off-diagonal to zero
-    if (diagonal) {
-      for (int i=0; i<localmesh->xstart; i++) {
-        for (int j=0; j<localmesh->ystart; j++) {
-          result(i, j) = 1.e4;
-          result(i, localmesh->LocalNy-1-j) = 1.e4;
-          result(localmesh->LocalNx-1-i, j) = 1.e4;
-          result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = 1.e4;
-        }
-      }
-    } else {
-      for (int i=0; i<localmesh->xstart; i++) {
-        for (int j=0; j<localmesh->ystart; j++) {
-          result(i, j) = 0.;
-          result(i, localmesh->LocalNy-1-j) = 0.;
-          result(localmesh->LocalNx-1-i, j) = 0.;
-          result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = 0.;
-        }
+    // Set corner guard cells
+    for (int i=0; i<localmesh->xstart; i++) {
+      for (int j=0; j<localmesh->ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, localmesh->LocalNy-1-j) = BoutNaN;
+        result(localmesh->LocalNx-1-i, j) = BoutNaN;
+        result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = BoutNaN;
       }
     }
 
@@ -243,22 +229,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolateAndNeumann(coords_in->dx, location, true);
-  dy = interpolateAndNeumann(coords_in->dy, location, true);
+  dx = interpolateAndNeumann(coords_in->dx, location);
+  dy = interpolateAndNeumann(coords_in->dy, location);
 
   nz = mesh->LocalNz;
 
   dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndNeumann(coords_in->g11, location, true);
-  g22 = interpolateAndNeumann(coords_in->g22, location, true);
-  g33 = interpolateAndNeumann(coords_in->g33, location, true);
+  g11 = interpolateAndNeumann(coords_in->g11, location);
+  g22 = interpolateAndNeumann(coords_in->g22, location);
+  g33 = interpolateAndNeumann(coords_in->g33, location);
 
   // Off-diagonal elements.
-  g12 = interpolateAndNeumann(coords_in->g12, location, false);
-  g13 = interpolateAndNeumann(coords_in->g13, location, false);
-  g23 = interpolateAndNeumann(coords_in->g23, location, false);
+  g12 = interpolateAndNeumann(coords_in->g12, location);
+  g13 = interpolateAndNeumann(coords_in->g13, location);
+  g23 = interpolateAndNeumann(coords_in->g23, location);
 
   // Check input metrics
   if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -287,12 +273,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location, true);
+  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location, true);
+    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
   }
 }
 
