@@ -68,11 +68,11 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
     if (region != RGN_NOBNDRY) {
       // result is requested in some boundary region(s)
       result = var; // NOTE: This is just for boundaries. FIX!
-      result.allocate();
-    } else {
-      result.allocate();
-      invalidateGuards(result);
     }
+    // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
+    // block is not already allocated, so will be called here if
+    // region==RGN_NOBNDRY
+    result.allocate();
 
     // Cell location of the input field
     CELL_LOC location = var.getLocation();
@@ -274,11 +274,11 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
     if (region != RGN_NOBNDRY) {
       // result is requested in some boundary region(s)
       result = var; // NOTE: This is just for boundaries. FIX!
-      result.allocate();
-    } else {
-      result.allocate();
-      invalidateGuards(result);
     }
+    // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
+    // block is not already allocated, so will be called here if
+    // region==RGN_NOBNDRY
+    result.allocate();
 
     // Cell location of the input field
     CELL_LOC location = var.getLocation();
