@@ -162,7 +162,7 @@ public:
   void write(const char *str, ...) override;
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
-      ASSERT0(base != nullptr);
+      ASSERT1(base != nullptr);
       base->vwrite(str, va);
     }
   }
