@@ -1,6 +1,4 @@
 #include <bout.hxx>
-
-#include <bout/paralleltransform.hxx>
 #include <derivs.hxx>
 
 // Y derivative using yup() and ydown() fields
@@ -31,11 +29,6 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  Field2D zShift;
-  mesh->get(zShift, "zShift");
-
-  ShiftedMetric s(*mesh, CELL_CENTRE, zShift, mesh->getCoordinates()->zlength());
-
   // Read variable from mesh
   Field3D var;
   mesh->get(var, "var");
@@ -45,20 +38,19 @@ int main(int argc, char** argv) {
   // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
-  s.calcParallelSlices(var);
+  mesh->communicate(var);
 
-  // Calculate d/dy using yup() and ydown() fields
-  Field3D ddy = DDY(var);
-
-  // Calculate d/dy by transform to field-aligned coordinates
-  // (var2 has no yup/ydown fields)
-  Field3D ddy2 = DDY(var2);
+  // Calculate d/dy ysing yup() and ydown() fields
+  Field3D ddy = DDY_yud(var);
 
   // Change into field-aligned coordinates
-  Field3D var_aligned = toFieldAligned(var);
+  Field3D var_aligned = mesh->toFieldAligned(var);
+  var_aligned.applyBoundary("neumann");
+  mesh->communicate(var_aligned);
 
   // var now field aligned
-  Field3D ddy_check = DDY_aligned(var_aligned);
+  Field3D ddy2 = DDY_aligned(var_aligned);
+  mesh->communicate(ddy2);
 
   // Shift back to orthogonal X-Z coordinates
   ddy_check = fromFieldAligned(ddy_check);
