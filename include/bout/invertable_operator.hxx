@@ -141,8 +141,13 @@ public:
     CHKERRQ(ierr);
 
     /// Create vectors compatible with matrix
+#if PETSC_VERSION_LT(3,6,0)
+    ierr = MatGetVecs(matOperator, &rhs,
+                         &lhs);
+#else    
     ierr = MatCreateVecs(matOperator, &rhs,
-                         &lhs); // Older versions may need to use MatGetVecs
+                         &lhs);
+#endif    
     CHKERRQ(ierr);
 
     /// Zero out the lhs vector as values used for initial guess
@@ -170,7 +175,16 @@ public:
     /// Now create and setup the linear solver with the matrix
     ierr = KSPCreate(BoutComm::get(), &ksp);
     CHKERRQ(ierr);
+
+#if PETSC_VERSION_LT(3,5,0)
+    /// Need to provide a MatStructure flag in versions <3.5. This details if we expect
+    /// the preconditioner matrix structure to vary between calls to KSPSolve.
+    /// Safest but slowest option is DIFFERENT_NONZERO_PATTERN but can probably usually
+    /// use SAME_PRECONDITIONER.
+    ierr = KSPSetOperators(ksp, matOperator, matPreconditioner, DIFFERENT_NONZERO_PATTERN);
+#else
     ierr = KSPSetOperators(ksp, matOperator, matPreconditioner);
+#endif    
     CHKERRQ(ierr);
 
     /// By default allow a non-zero initial guess as this is probably the
