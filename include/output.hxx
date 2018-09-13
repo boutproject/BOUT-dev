@@ -172,14 +172,14 @@ public:
   void print(const char *str, ...) override;
   void vprint(const char *str, va_list va) override {
     if (enabled) {
-      ASSERT0(base != nullptr);
+      ASSERT1(base != nullptr);
       base->vprint(str, va);
     }
   }
 
   /// Get the lowest-level Output object which is the base of this ConditionalOutput
   Output *getBase() override {
-    ASSERT0(base != nullptr);
+    ASSERT1(base != nullptr);
     return base->getBase();
   };
 
@@ -196,7 +196,7 @@ public:
 
   /// Check if output is enabled
   bool isEnabled() override {
-    ASSERT0(base != nullptr);
+    ASSERT1(base != nullptr);
     return enabled && base->isEnabled();
   };
 
