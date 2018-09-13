@@ -173,6 +173,14 @@ public:
     ierr = KSPSetOperators(ksp, matOperator, matPreconditioner);
     CHKERRQ(ierr);
 
+    /// By default allow a non-zero initial guess as this is probably the
+    /// most helpful mode of operation. To disable this user can pass
+    /// `-invert_ksp_initial_guess_nonzero false` on the command line or simply
+    /// use `result = operator.invert(rhs, 0.0)` which will lead to an initial
+    /// guess of zero being used.
+    ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+    CHKERRQ(ierr);
+    
     /// Allow options to be set on command line using a --invert_ksp_* prefix.
     ierr = KSPSetOptionsPrefix(ksp, "invert_");
     CHKERRQ(ierr);
