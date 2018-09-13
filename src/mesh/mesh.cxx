@@ -388,15 +388,26 @@ void Mesh::createDefaultRegions(){
 
 
   // This avoids all guard cells and corners but includes boundaries
+  // Note we probably don't want to include periodic boundaries as these
+  // are essentially just duplicate points so should be careful here (particularly in y)
+  // to only include unique points
   Region<Ind3D> nocorner3D = getRegion3D("RGN_NOBNDRY");
-  if (firstX()) nocorner3D += Region<Ind3D>(0,1,ystart, yend, 0, LocalNz -1,
-				     LocalNy, LocalNz, maxregionblocksize);
-  if (lastX()) nocorner3D += Region<Ind3D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, LocalNz -1,
-				     LocalNy, LocalNz, maxregionblocksize);
-  if (firstY()) nocorner3D += Region<Ind3D>(xstart,xend,0, 1, 0, LocalNz -1,
-				     LocalNy, LocalNz, maxregionblocksize);
-  if (lastY()) nocorner3D += Region<Ind3D>(xstart,xend,LocalNy-2, LocalNy-1, 0, LocalNz -1,
-				     LocalNy, LocalNz, maxregionblocksize);
+  if(!periodicX) {
+    if (firstX()) nocorner3D += Region<Ind3D>(0,1,ystart, yend, 0, LocalNz -1,
+					      LocalNy, LocalNz, maxregionblocksize);
+    if (lastX()) nocorner3D += Region<Ind3D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, LocalNz -1,
+					     LocalNy, LocalNz, maxregionblocksize);
+  }
+  if(firstY() or lastY()) {
+    for(int ix = xstart; ix <= xend; ix++) {
+      if(not periodicY(ix)) {
+	if (firstY()) nocorner3D += Region<Ind3D>(ix,ix,0, 1, 0, LocalNz -1,
+						  LocalNy, LocalNz, maxregionblocksize);
+	if (lastY()) nocorner3D += Region<Ind3D>(ix,ix,LocalNy-2, LocalNy-1, 0, LocalNz -1,
+						 LocalNy, LocalNz, maxregionblocksize);
+      }
+    }
+  }
   
   nocorner3D.unique();
   addRegion3D("RGN_NOCORNERS", nocorner3D);
@@ -414,15 +425,22 @@ void Mesh::createDefaultRegions(){
 
   // This avoids all guard cells and corners but includes boundaries
   Region<Ind2D> nocorner2D = getRegion2D("RGN_NOBNDRY");
-  if (firstX()) nocorner2D += Region<Ind2D>(0,1,ystart, yend, 0, 0,
-				     LocalNy, 1, maxregionblocksize);
-  if (lastX()) nocorner2D += Region<Ind2D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, 0,
-				     LocalNy, 1, maxregionblocksize);
-  if (firstY()) nocorner2D += Region<Ind2D>(xstart,xend,0, 1, 0, 0,
-				     LocalNy, 1, maxregionblocksize);
-  if (lastY()) nocorner2D += Region<Ind2D>(xstart,xend,LocalNy-2, LocalNy-1, 0, 0,
-				     LocalNy, 1, maxregionblocksize);
-  
+  if(!periodicX) {  
+    if (firstX()) nocorner2D += Region<Ind2D>(0,1,ystart, yend, 0, 0,
+					      LocalNy, 1, maxregionblocksize);
+    if (lastX()) nocorner2D += Region<Ind2D>(LocalNx - 2,LocalNx - 1,ystart, yend, 0, 0,
+					     LocalNy, 1, maxregionblocksize);
+  }
+  if(firstY() or lastY()) {
+    for(int ix = xstart; ix <= xend; ix++) {
+      if(not periodicY(ix)) {
+	if (firstY()) nocorner2D += Region<Ind2D>(ix,ix,0, 1, 0, 0,
+						  LocalNy, 1, maxregionblocksize);
+	if (lastY()) nocorner2D += Region<Ind2D>(ix,ix,LocalNy-2, LocalNy-1, 0, 0,
+						 LocalNy, 1, maxregionblocksize);
+      }
+    }
+  }  
   nocorner2D.unique();
   addRegion2D("RGN_NOCORNERS", nocorner2D);
 
@@ -438,11 +456,12 @@ void Mesh::createDefaultRegions(){
 
   // This avoids all guard cells and corners but includes boundaries
   Region<IndPerp> nocornerPerp = getRegionPerp("RGN_NOBNDRY");
-  if (firstX()) nocornerPerp += Region<IndPerp>(0,1,0, 0, 0, LocalNz -1,
-				     1, LocalNz, maxregionblocksize);
-  if (lastX()) nocornerPerp += Region<IndPerp>(LocalNx - 2,LocalNx - 1,0, 0, 0, LocalNz -1,
-				     1, LocalNz, maxregionblocksize);
-  
+  if(!periodicX) {  
+    if (firstX()) nocornerPerp += Region<IndPerp>(0,1,0, 0, 0, LocalNz -1,
+						  1, LocalNz, maxregionblocksize);
+    if (lastX()) nocornerPerp += Region<IndPerp>(LocalNx - 2,LocalNx - 1,0, 0, 0, LocalNz -1,
+						 1, LocalNz, maxregionblocksize);
+  }
   nocornerPerp.unique();
   addRegionPerp("RGN_NOCORNERS", nocornerPerp);
 
