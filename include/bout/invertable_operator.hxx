@@ -61,8 +61,8 @@ public:
   InvertableOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
                  Mesh *localmesh = nullptr)
     : operatorFunction(func), preconditionerFunction(func),
-        opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
+      opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
+      localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
     TRACE("InvertableOperator<T>::constructor");
   };
 
@@ -290,6 +290,43 @@ public:
 #endif
   };
 
+  /// Reports the time spent in various parts of InvertableOperator. Note
+  /// that as the Timer "labels" are not unique to an instance the time
+  /// reported is summed across all different instances.
+  static void reportTime() {
+    TRACE("InvertableOperator<T>::reportTime");    
+    BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
+    BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
+    BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
+
+    BoutReal time_operate = Timer::resetTime("invertable_operator_operate");
+    output_warn << "InvertableOperator timing :: Setup " << time_setup;
+    output_warn << " , Invert(packing) " << time_invert << "(";
+    output_warn << time_packing << ")" ;
+    output_warn << " operate :"<<time_operate<< endl;
+  };
+  
+private:
+  // PETSc objects
+  Mat matOperator, matPreconditioner;
+  Vec rhs, lhs;
+  KSP ksp;
+
+  // Internal types
+  Options *opt;    // Do we need this?
+  Mesh *localmesh; //< To ensure we can create T on the right mesh
+  bool doneSetup = false;
+
+  /// The function that represents the operator that we wish to invert
+  function_signature operatorFunction = identity<T>;
+
+  /// The function that represents the preconditioner for the operator that we wish to invert
+  function_signature preconditionerFunction = identity<T>;
+
+  // To ensure PETSc has been setup -- a bit noisy if creating/destroying InvertableOperator,
+  // maybe this should be static to avoid this but then how do we initialise it?
+  PetscLib lib; // Do we need this?
+
   /// Wrapper that gets a pointer to the parent InvertableOperator instance
   /// from the Matrix m and uses this to get the actual function to call.
   /// Copies data from v1 into a field of type T, calls the function on this and then
@@ -345,42 +382,6 @@ public:
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
-
-  /// Reports the time spent in various parts of InvertableOperator. Note
-  /// that as the Timer "labels" are not unique to an instance the time
-  /// reported is summed across all different instances.
-  static void reportTime() {
-    TRACE("InvertableOperator<T>::reportTime");    
-    BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
-    BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
-    BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
-
-    BoutReal time_operate = Timer::resetTime("invertable_operator_operate");
-    output_warn << "InvertableOperator timing :: Setup " << time_setup;
-    output_warn << " , Invert(packing) " << time_invert << "(";
-    output_warn << time_packing << ")" ;
-    output_warn << " operate :"<<time_operate<< endl;
-  };
-
-  /// The function that represents the operator that we wish to invert
-  function_signature operatorFunction = identity<T>;
-
-  /// The function that represents the preconditioner for the operator that we wish to invert
-  function_signature preconditionerFunction = identity<T>;
-  
-private:
-  // PETSc objects
-  Mat matOperator, matPreconditioner;
-  Vec rhs, lhs;
-  KSP ksp;
-
-  // Internal types
-  Options *opt;    // Do we need this?
-  Mesh *localmesh; //< To ensure we can create T on the right mesh
-  bool doneSetup = false;
-
-  // To ensure PETSc has been setup
-  PetscLib lib; // Do we need this?
 };
 
 /// Pack a PetscVec from a Field<T>
