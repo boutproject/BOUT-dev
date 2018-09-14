@@ -45,9 +45,10 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
+  setLocation(CELL_CENTRE);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -67,7 +68,6 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), der
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
-                                     location(f.location),
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
@@ -78,6 +78,8 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
+
+  setLocation(f.location);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -93,8 +95,10 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
+
+  setLocation(CELL_CENTRE);
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -236,7 +240,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   data = rhs.data;
 
   // Copy location
-  location = rhs.location;
+  setLocation(rhs.location);
 
   return *this;
 }

@@ -271,7 +271,7 @@ class Field2D : public Field, public FieldData {
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
-  CELL_LOC location; ///< Location of the variable in the cell
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
 
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
