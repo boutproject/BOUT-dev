@@ -91,9 +91,15 @@ public:
     BoutReal weight;
   };
 
-  virtual std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k);
-  virtual std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k);
-  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
+  virtual std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i,j,k,1);
+  }
+  virtual std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i,j,k,-1);
+  }
+  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+    throw BoutException("Interpolation::getWeightsForYApproximation not implemented in this subclass");
+  }
 };
 
 class HermiteSpline : public Interpolation {
@@ -141,8 +147,6 @@ public:
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask);
-  std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k);
-  std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k);
   std::vector<positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
 };
 

@@ -121,14 +121,6 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
  *   (i, j+1, k+1)	h01_z + h10_z / 2
  *   (i, j+1, k+2)	h11_z / 2
  */
-std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYUpApproximation(int i, int j, int k) {
-  return getWeightsForYApproximation(i,j,k,1);
-}
-
-std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYDownApproximation(int i, int j, int k) {
-  return getWeightsForYApproximation(i,j,k,-1);
-}
-
 std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
   std::vector<Interpolation::positionsAndWeights> pw;
   positionsAndWeights p;
