@@ -64,8 +64,6 @@ Field3D::Field3D(Mesh *localmesh)
   }
 #endif
 
-  setLocation(CELL_CENTRE); // Cell centred variable by default
-
   boundaryIsSet = false;
 }
 
@@ -106,8 +104,6 @@ Field3D::Field3D(const Field2D &f)
 
   TRACE("Field3D: Copy constructor from Field2D");
 
-  setLocation(CELL_CENTRE); // Cell centred variable by default
-
   boundaryIsSet = false;
 
   fieldmesh = mesh;
@@ -123,8 +119,6 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
-
-  setLocation(CELL_CENTRE); // Cell centred variable by default
 
   boundaryIsSet = false;
 
@@ -254,6 +248,10 @@ void Field3D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  /// Would like to do something like the following but can lead to problems
+  /// at least in unit testing.
+  /// if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);
 }
 
 CELL_LOC Field3D::getLocation() const {

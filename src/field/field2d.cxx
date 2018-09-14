@@ -48,7 +48,6 @@
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
-  setLocation(CELL_CENTRE);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -97,8 +96,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 
 Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
-
-  setLocation(CELL_CENTRE);
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -201,6 +198,10 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  /// Would like to do something like the following but can lead to problems
+  /// at least in unit testing.
+  /// if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);  
 }
 
 CELL_LOC Field2D::getLocation() const {
