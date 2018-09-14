@@ -70,11 +70,20 @@ public:
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Acoef = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ccoef = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Dcoef = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceSPT does not have Ex coefficient");

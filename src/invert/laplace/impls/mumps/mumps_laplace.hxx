@@ -86,21 +86,77 @@ public:
     delete [] mumps_struc.isol_loc;
   }
   
-  void setCoefA(const Field2D &val) override { A = val; }
-  void setCoefC(const Field2D &val) override { C1 = val; C2 = val; issetC = true; }
-  void setCoefC1(const Field2D &val) override { C1 = val; issetC = true; }
-  void setCoefC2(const Field2D &val) override { C2 = val; issetC = true; }
-  void setCoefD(const Field2D &val) override { D = val; issetD = true; }
-  void setCoefEx(const Field2D &val) override { Ex = val; issetE = true; }
-  void setCoefEz(const Field2D &val) override { Ez = val; issetE = true; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+  }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefC1(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    issetC = true;
+  }
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+    issetD = true;
+  }
+  void setCoefEx(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ex = val;
+    issetE = true;
+  }
+  void setCoefEz(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ez = val;
+    issetE = true;
+  }
 
-  void setCoefA(const Field3D &val) override { A = val; }
-  void setCoefC(const Field3D &val) override { C1 = val; C2 = val; issetC = true; }
-  void setCoefC1(const Field3D &val) override { C1 = val; issetC = true; }
-  void setCoefC2(const Field3D &val) override { C2 = val; issetC = true; }
-  void setCoefD(const Field3D &val) override { D = val; issetD = true; }
-  void setCoefEx(const Field3D &val) override { Ex = val; issetE = true; }
-  void setCoefEz(const Field3D &val) override { Ez = val; issetE = true; }
+  void setCoefA(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+  }
+  void setCoefC(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefC1(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    issetC = true;
+  }
+  void setCoefC2(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefD(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+    issetD = true;
+  }
+  void setCoefEx(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ex = val;
+    issetE = true;
+  }
+  void setCoefEz(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ez = val;
+    issetE = true;
+  }
   
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   

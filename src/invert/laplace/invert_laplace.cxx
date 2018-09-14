@@ -60,6 +60,10 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
 
   output.write("Initialising Laplacian inversion routines\n");
 
+  if (location == CELL_DEFAULT) {
+    location = CELL_CENTRE;
+  }
+
   // Communication option. Controls if asyncronous sends are used
   options->get("async", async_send, true);
 
@@ -129,6 +133,9 @@ void Laplacian::cleanup() {
 
 const Field3D Laplacian::solve(const Field3D &b) {
   TRACE("Laplacian::solve(Field3D)");
+
+  ASSERT1(b.getLocation() == location);
+
   Mesh *mesh = b.getMesh();
 
   Timer timer("invert");
@@ -169,6 +176,9 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
 // NB: Really inefficient, but functional
 const Field2D Laplacian::solve(const Field2D &b) {
+
+  ASSERT1(b.getLocation() == location);
+
   Field3D f = b;
   f = solve(f);
   return DC(f);
@@ -185,6 +195,9 @@ const Field2D Laplacian::solve(const Field2D &b) {
  */
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   TRACE("Laplacian::solve(Field3D, Field3D)");
+
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   Timer timer("invert");
 
@@ -230,6 +243,9 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
 
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == location);
+  ASSERT1(d == nullptr || d->getLocation() == location);
+
   Coordinates *coord = mesh->coordinates(location);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
@@ -268,6 +284,10 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
+
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == location);
+  ASSERT1(d == nullptr || d->getLocation() == location);
+
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
   Coordinates *coord = mesh->coordinates(location);
@@ -331,6 +351,10 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
 
+  ASSERT1(a->getLocation() == location);
+  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(d->getLocation() == location);
+
   Coordinates *coord = mesh->coordinates(location);
 
   BOUT_OMP(parallel for)
@@ -388,6 +412,11 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
+
+  ASSERT1(a->getLocation() == location);
+  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(d->getLocation() == location);
+
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 

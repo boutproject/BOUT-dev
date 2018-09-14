@@ -135,19 +135,51 @@ public:
   LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
   ~LaplaceMultigrid() {};
   
-  void setCoefA(const Field2D &val) override { A = val; }
-  void setCoefC(const Field2D &val) override { C1 = val; C2 = val;  }
-  void setCoefC1(const Field2D &val) override { C1 = val; }
-  void setCoefC2(const Field2D &val) override { C2 = val; }
-  void setCoefD(const Field2D &val) override { D = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+  }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+  }
+  void setCoefC1(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+  }
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+  }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+  }
   void setCoefEx(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
   void setCoefEz(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
   
-  void setCoefA(const Field3D &val) override { A = val; }
-  void setCoefC(const Field3D &val) override { C1 = val; C2 = val; }
-  void setCoefC1(const Field3D &val) override { C1 = val; }
-  void setCoefC2(const Field3D &val) override { C2 = val; }
-  void setCoefD(const Field3D &val) override { D = val; }
+  void setCoefA(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+  }
+  void setCoefC(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+  }
+  void setCoefC1(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+  }
+  void setCoefC2(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+  }
+  void setCoefD(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+  }
 
   const FieldPerp solve(const FieldPerp &b) override {
     FieldPerp zero(b.getMesh());

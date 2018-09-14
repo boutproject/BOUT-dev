@@ -111,35 +111,63 @@ public:
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
-  virtual void setCoefA(BoutReal r) { Field2D f(r); setCoefA(f); }
+  virtual void setCoefA(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefA(f);
+  }
   
   virtual void setCoefC(const Field2D &val) = 0;
   virtual void setCoefC(const Field3D &val) { setCoefC(DC(val)); }
-  virtual void setCoefC(BoutReal r) { Field2D f(r); setCoefC(f); }
+  virtual void setCoefC(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefC(f);
+  }
   
   virtual void setCoefC1(const Field2D &UNUSED(val)) {
     throw BoutException("setCoefC1 is not implemented for this Laplacian solver");
   }
   virtual void setCoefC1(const Field3D &val) { setCoefC1(DC(val)); }
-  virtual void setCoefC1(BoutReal r) { Field2D f(r); setCoefC1(f); }
+  virtual void setCoefC1(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefC1(f);
+  }
   
   virtual void setCoefC2(const Field2D &UNUSED(val)) {
     throw BoutException("setCoefC2 is not implemented for this Laplacian solver");
   }
   virtual void setCoefC2(const Field3D &val) { setCoefC2(DC(val)); }
-  virtual void setCoefC2(BoutReal r) { Field2D f(r); setCoefC2(f); }
+  virtual void setCoefC2(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefC2(f);
+  }
   
   virtual void setCoefD(const Field2D &val) = 0;
   virtual void setCoefD(const Field3D &val) { setCoefD(DC(val)); }
-  virtual void setCoefD(BoutReal r) { Field2D f(r); setCoefD(f); }
+  virtual void setCoefD(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefD(f);
+  }
   
   virtual void setCoefEx(const Field2D &val) = 0;
   virtual void setCoefEx(const Field3D &val) { setCoefEx(DC(val)); }
-  virtual void setCoefEx(BoutReal r) { Field2D f(r); setCoefEx(f); }
+  virtual void setCoefEx(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefEx(f);
+  }
   
   virtual void setCoefEz(const Field2D &val) = 0;
   virtual void setCoefEz(const Field3D &val) { setCoefEz(DC(val)); }
-  virtual void setCoefEz(BoutReal r) { Field2D f(r); setCoefEz(f); }
+  virtual void setCoefEz(BoutReal r) {
+    Field2D f(r);
+    f.setLocation(location);
+    setCoefEz(f);
+  }
   
   virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }

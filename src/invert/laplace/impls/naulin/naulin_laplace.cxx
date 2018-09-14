@@ -159,12 +159,12 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
   Timer timer("invert"); ///< Start timer
 
-  CELL_LOC location = rhs.getLocation();
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
   ASSERT1(Dcoef.getLocation() == location);
   ASSERT1(C1coef.getLocation() == location);
   ASSERT1(C2coef.getLocation() == location);
   ASSERT1(Acoef.getLocation() == location);
-  ASSERT1(x0.getLocation() == location);
 
   Mesh *mesh = rhs.getMesh();
   Coordinates *coords = mesh->coordinates(location);

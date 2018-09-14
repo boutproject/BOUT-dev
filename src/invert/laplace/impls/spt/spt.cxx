@@ -115,6 +115,9 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  * in the config file uses less memory, and less communication overlap
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
+
+  ASSERT1(b.getLocation() == location);
+
   Timer timer("invert");
   Mesh *mesh = b.getMesh();
   Field3D x(mesh);

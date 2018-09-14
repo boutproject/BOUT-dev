@@ -244,6 +244,9 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
 const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
   TRACE("LaplaceCyclic::solve(Field3D, Field3D)");
 
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
   Timer timer("invert");
 
   Mesh *mesh = rhs.getMesh();

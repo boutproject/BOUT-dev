@@ -76,21 +76,89 @@ public:
     MatDestroy( &MatA );
   }
 
-  void setCoefA(const Field2D &val) override { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
-  void setCoefC(const Field2D &val) override { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val);  }
-  void setCoefC1(const Field2D &val) override { C1 = val; issetC = true;}
-  void setCoefC2(const Field2D &val) override { C2 = val; issetC = true;}
-  void setCoefD(const Field2D &val) override { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
-  void setCoefEx(const Field2D &val) override { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
-  void setCoefEz(const Field2D &val) override { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+    /*Acoefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefA(val);
+  }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+    issetC = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefC(val);
+  }
+  void setCoefC1(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    issetC = true;
+  }
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+    issetD = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefD(val);
+  }
+  void setCoefEx(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ex = val;
+    issetE = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefEx(val);
+  }
+  void setCoefEz(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ez = val;
+    issetE = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefEz(val);
+  }
 
-  void setCoefA(const Field3D &val) override { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val);}
-  void setCoefC(const Field3D &val) override { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val); }
-  void setCoefC1(const Field3D &val) override { C1 = val; issetC = true;}
-  void setCoefC2(const Field3D &val) override { C2 = val; issetC = true;}
-  void setCoefD(const Field3D &val) override { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
-  void setCoefEx(const Field3D &val) override { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
-  void setCoefEz(const Field3D &val) override { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
+  void setCoefA(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+    /*Acoefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefA(val);
+  }
+  void setCoefC(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    C2 = val;
+    issetC = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefC(val);
+  }
+  void setCoefC1(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C1 = val;
+    issetC = true;
+  }
+  void setCoefC2(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C2 = val;
+    issetC = true;
+  }
+  void setCoefD(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+    issetD = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefD(val);
+  }
+  void setCoefEx(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ex = val;
+    issetE = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefEx(val);
+  }
+  void setCoefEz(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ez = val;
+    issetE = true; /*coefchanged = true;*/
+    if(pcsolve) pcsolve->setCoefEz(val);
+  }
 
   const FieldPerp solve(const FieldPerp &b) override;
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
