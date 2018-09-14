@@ -61,7 +61,7 @@
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
   Field3D result =  f.getMesh()->indexDDX(f,outloc, method, region);
-  Coordinates* coords = f.getMesh()->coordinates(f.getLocation());
+  Coordinates* coords = f.getCoordinates();
   result /= coords->dx;
 
   if(f.getMesh()->IncIntShear) {

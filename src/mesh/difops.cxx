@@ -84,7 +84,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   
   int ncz = mesh->LocalNz;
 
-  Coordinates *metric = mesh->coordinates(f.getLocation());
+  Coordinates *metric = apar.getCoordinates();
 
   Field3D gys(mesh);
   gys.allocate();
@@ -207,7 +207,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
   Field3D result(mesh);
   result.allocate();
 
-  Coordinates *coord = mesh->coordinates(f.getLocation());
+  Coordinates *coord = f.getCoordinates();
   
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++) {

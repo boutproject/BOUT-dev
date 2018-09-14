@@ -402,6 +402,11 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
   int ncz = m->LocalNz;
 
+  /// we should be able to replace the following with
+  /// var.getCoordinates()->zlength();
+  /// but don't do it yet as we don't assert that m == var.getMesh()
+  /// Expect the assertion to be true, in which case we probably don't
+  /// need to pass m as can just use var.getMesh()
   BoutReal zlength = m->coordinates(var.getLocation())->zlength();
   
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
