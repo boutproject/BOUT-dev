@@ -110,7 +110,6 @@ Field3D::Field3D(const Field2D &f)
 
   boundaryIsSet = false;
 
-  fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
@@ -1045,8 +1044,9 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   TRACE("shiftZ");
   checkData(var);
   var.allocate(); // Ensure that var is unique
-  
-  int ncz = mesh->LocalNz;
+  Mesh *localmesh = var.getMesh();
+
+  int ncz = localmesh->LocalNz;
   if(ncz == 1)
     return; // Shifting doesn't do anything
   
@@ -1054,7 +1054,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = mesh->coordinates()->zlength();
+  BoutReal zlength = localmesh->coordinates()->zlength();
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
