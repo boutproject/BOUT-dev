@@ -122,7 +122,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
 
   settingSolver(diffpre);
   output <<"solvs"<<"N="<<yindex<<"(After set)"<<endl;
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   
   int ind,i2,i,k,k2;
   PetscScalar val,area;
@@ -167,7 +167,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   VecAssemblyBegin(xs);
   VecAssemblyEnd(xs);
   // For the boundary conditions 
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
   if (mesh->firstX()) {
     i2 = mxstart;
@@ -311,7 +311,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   }
   KSPSetUp(ksp);
   KSPSolve(ksp,bs,xs);
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   output <<"After solvs"<<yindex<<"(After set)"<<endl;
 
   if(fcheck) {
@@ -340,7 +340,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   //////////////////////////
   // Copy data into result
   
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   FieldPerp result(mesh);
   result.allocate();
   
@@ -407,7 +407,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     output<<"Put results last "<<reason<<endl;
   }
   result.setIndex(yindex);
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   output<<"Put results last de "<<yindex<<endl;
 
   MatDestroy( &MatA );
@@ -416,7 +416,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   KSPDestroy( &ksp );
   // Set the index of the FieldPerp to be returned
   output<<"Put results last Ends "<<yindex<<endl;
-  MPI_Barrier(MPI_COMM_WORLD);
+  //MPI_Barrier(MPI_COMM_WORLD);
   return result;
 }
 
