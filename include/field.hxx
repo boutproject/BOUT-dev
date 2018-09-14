@@ -99,7 +99,7 @@ class Field {
   // Status of the 4 boundaries
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
-  virtual Mesh * getMesh() const{
+  Mesh * getMesh() const{
     if (fieldmesh){
       return fieldmesh;
     } else {
@@ -109,11 +109,11 @@ class Field {
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
-  virtual Coordinates *getCoordinates() const;
+  Coordinates *getCoordinates() const;
 
   /// Returns a pointer to the coordinates object at the requested
   /// location from the mesh this field is on.
-  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
+  Coordinates *getCoordinates(CELL_LOC loc) const;
   
   /*!
    * Return the number of nx points
