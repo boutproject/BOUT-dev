@@ -43,6 +43,7 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
+class Coordinates;
 extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
@@ -105,6 +106,11 @@ class Field {
       return mesh;
     }
   }
+
+  /// Returns a pointer to the coordinates object at this field's
+  /// location from the mesh this field is on.
+  virtual Coordinates *getCoordinates();
+  
   /*!
    * Return the number of nx points
    */
@@ -122,6 +128,7 @@ class Field {
   virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
+  Coordinates * fieldCoordinates;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   DEPRECATED(void error(const char *s, ...) const);

@@ -34,19 +34,31 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr){
+Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
+Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }
+
+/// Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
+/// currently as this would lead to circular/recursive behaviour (getCoordinates would
+/// call fieldmesh->coordinates, which would create fields, which would then call
+/// getCoordinates again etc.).
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
+}
+
+Coordinates *Field::getCoordinates() {
+  if (!fieldCoordinates) {
+    fieldCoordinates = getMesh()->coordinates(getLocation());
+  }
+  return fieldCoordinates;
 }
 
 int Field::getNx() const{

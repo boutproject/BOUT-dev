@@ -185,6 +185,8 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+    if (new_location != location)
+      fieldCoordinates = getMesh()->coordinates(location);
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
