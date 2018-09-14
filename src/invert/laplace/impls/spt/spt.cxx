@@ -43,6 +43,9 @@
 
 LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc)
     : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  Acoef.setLocation(location);
+  Ccoef.setLocation(location);
+  Dcoef.setLocation(location);
 
   if(mesh->periodicX) {
       throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");

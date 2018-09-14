@@ -126,6 +126,11 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc)
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
 
+  Acoef.setLocation(location);
+  C1coef.setLocation(location);
+  C2coef.setLocation(location);
+  Dcoef.setLocation(location);
+
   // Get options
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
