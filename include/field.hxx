@@ -110,6 +110,10 @@ class Field {
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
   virtual Coordinates *getCoordinates() const;
+
+  /// Returns a pointer to the coordinates object at the requested
+  /// location from the mesh this field is on.
+  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
   
   /*!
    * Return the number of nx points

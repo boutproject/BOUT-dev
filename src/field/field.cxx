@@ -65,6 +65,10 @@ Coordinates *Field::getCoordinates() const {
   }
 }
 
+Coordinates *Field::getCoordinates(CELL_LOC loc) const {
+  return getMesh()->coordinates(loc);
+}
+
 int Field::getNx() const{
   return getMesh()->LocalNx;
 };
