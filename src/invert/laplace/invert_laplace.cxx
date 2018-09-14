@@ -241,23 +241,27 @@ const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
 
 void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d,
+                            CELL_LOC loc) {
 
-  ASSERT1(ccoef == nullptr || ccoef->getLocation() == location);
-  ASSERT1(d == nullptr || d->getLocation() == location);
+  if (loc == CELL_DEFAULT) loc = location;
 
-  Coordinates *coord = mesh->coordinates(location);
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(d == nullptr || d->getLocation() == loc);
+
+  Coordinates *coord = mesh->coordinates(loc);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
-              ccoef, d);
+              ccoef, d, loc);
 }
 
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d,
+                            CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -285,12 +289,14 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
 
-  ASSERT1(ccoef == nullptr || ccoef->getLocation() == location);
-  ASSERT1(d == nullptr || d->getLocation() == location);
+  if (loc == CELL_DEFAULT) loc = location;
+
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(d == nullptr || d->getLocation() == loc);
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->coordinates(loc);
 
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
@@ -739,8 +745,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
-                          const Field2D *ccoef, const Field2D *d) {
-  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
+                          const Field2D *ccoef, const Field2D *d, CELL_LOC loc) {
+  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, loc);
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
