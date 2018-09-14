@@ -701,11 +701,11 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 // second parallel derivative (b dot Grad)(b dot Grad)
 // Note: For parallel Laplacian use Laplace_par
 
-const Field2D Coordinates::Grad2_par2(const Field2D &f) {
+const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
 
   Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1. / sg) * DDY(f) / sg + D2DY2(f) / g_22;
+  Field2D result = DDY(1. / sg, outloc) * DDY(f, outloc) / sg + D2DY2(f, outloc) / g_22;
 
   return result;
 }
@@ -745,15 +745,15 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-const Field2D Coordinates::Delp2(const Field2D &f) {
+const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field2D )");
 
-  Field2D result = G1 * DDX(f) + g11 * D2DX2(f);
+  Field2D result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
 
   return result;
 }
 
-const Field3D Coordinates::Delp2(const Field3D &f) {
+const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
@@ -761,6 +761,9 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     return f*0;
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
+
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  ASSERT2(f.getLocation() == outloc);
 
   Field3D result(localmesh);
   result.allocate();
@@ -816,11 +819,16 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   return result;
 }
 
-const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
+const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( FieldPerp )");
+
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+
+  ASSERT2(f.getLocation() == outloc);
 
   FieldPerp result(localmesh);
   result.allocate();
+  result.setLocation(outloc);
 
   int jy = f.getIndex();
   result.setIndex(jy);
@@ -863,31 +871,31 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   return result;
 }
 
-const Field2D Coordinates::Laplace_par(const Field2D &f) {
-  return D2DY2(f) / g_22 + DDY(J / g_22) * DDY(f) / J;
+const Field2D Coordinates::Laplace_par(const Field2D &f, CELL_LOC outloc) {
+  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
 
-const Field3D Coordinates::Laplace_par(const Field3D &f) {
-  return D2DY2(f) / g_22 + DDY(J / g_22) * ::DDY(f) / J;
+const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
+  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
 
-const Field2D Coordinates::Laplace(const Field2D &f) {
+const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =
-      G1 * DDX(f) + G2 * DDY(f) + g11 * D2DX2(f) + g22 * D2DY2(f) + 2.0 * g12 * D2DXDY(f);
+      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
 
   return result;
 }
 
-const Field3D Coordinates::Laplace(const Field3D &f) {
+const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field3D )");
 
-  Field3D result = G1 * ::DDX(f) + G2 * ::DDY(f) + G3 * ::DDZ(f) + g11 * D2DX2(f) +
-                   g22 * D2DY2(f) + g33 * D2DZ2(f) +
-                   2.0 * (g12 * D2DXDY(f) + g13 * D2DXDZ(f) + g23 * D2DYDZ(f));
+  Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
+                   g22 * D2DY2(f, outloc) + g33 * D2DZ2(f, outloc) +
+                   2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
 
   ASSERT2(result.getLocation() == f.getLocation());
 

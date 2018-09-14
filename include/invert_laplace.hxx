@@ -105,7 +105,7 @@ const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr);
+  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_DEFAULT);
   virtual ~Laplacian() {}
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -163,7 +163,7 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr);
+  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
@@ -197,6 +197,7 @@ protected:
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,
                     bool includeguards=true);
+  CELL_LOC location;
 private:
   /// Singleton instance
   static Laplacian *instance;

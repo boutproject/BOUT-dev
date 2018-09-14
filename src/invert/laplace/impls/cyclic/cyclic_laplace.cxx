@@ -43,8 +43,8 @@
 
 #include "cyclic_laplace.hxx"
 
-LaplaceCyclic::LaplaceCyclic(Options *opt)
-    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc)
+    : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   // Get options
 
   OPTION(opt, dst, false);
@@ -90,7 +90,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   FieldPerp x(mesh); // Result
   x.allocate();
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);

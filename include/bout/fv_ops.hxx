@@ -179,12 +179,15 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
                         const Field3D &wave_speed, bool fixflux=true) {
+
+    ASSERT2(f_in.getLocation() == v_in.getLocation());
+
     CellEdges cellboundary;
     
     Field3D f = mesh->toFieldAligned(f_in);
     Field3D v = mesh->toFieldAligned(v_in);
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->coordinates(f_in.getLocation());
 
     Field3D result = 0.0;
     
@@ -336,9 +339,11 @@ namespace FV {
    */
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
+    ASSERT2(n_in.getLocation() == v.getLocation());
+
     CellEdges cellboundary;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->coordinates(n_in.getLocation());
     
     if(v.covariant) {
       // Got a covariant vector instead
