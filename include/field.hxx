@@ -109,7 +109,7 @@ class Field {
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
-  virtual Coordinates *getCoordinates();
+  virtual Coordinates *getCoordinates() const;
   
   /*!
    * Return the number of nx points

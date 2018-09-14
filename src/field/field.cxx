@@ -54,11 +54,15 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) 
 #endif
 }
 
-Coordinates *Field::getCoordinates() {
-  if (!fieldCoordinates) {
-    fieldCoordinates = getMesh()->coordinates(getLocation());
+Coordinates *Field::getCoordinates() const {
+  if (fieldCoordinates) {
+    return fieldCoordinates;    
+  } else {
+    /// Note we don't set fieldCoordinates here as the routine would become
+    /// non-const limiting our ability to call it in places like derivatives
+    /// where fields are passed as const.
+    return getMesh()->coordinates(getLocation());
   }
-  return fieldCoordinates;
 }
 
 int Field::getNx() const{
