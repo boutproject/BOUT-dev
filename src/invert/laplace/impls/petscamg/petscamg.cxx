@@ -51,7 +51,7 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
   opts->get("smtype",mgsm,1,true);
   opts->get("jacomega",omega,0.8,true);
   opts->get("checking",fcheck,1,true);
-  opts->get("multigridlevel",mglevel,3,true);
+  opts->get("multigridlevel",mglevel,6,true);
   opts->get("solvertype",soltype,"gmres");
 
   // Initialize, allocate memory, etc.
