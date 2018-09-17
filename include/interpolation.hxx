@@ -58,16 +58,10 @@ protected:
   Mesh *localmesh;
 
 public:
-  Interpolation(int y_offset = 0, Mesh *mesh = nullptr)
-      : localmesh(mesh), y_offset(y_offset) {
-    if (mesh == nullptr) {
-      localmesh = mesh;
-    }
-  }
-  Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Interpolation(y_offset, mesh) {
-    skip_mask = mask;
-  }
+  Interpolation(int y_offset = 0, Mesh *mesh_in = mesh)
+      : skip_mask(*mesh_in), localmesh(mesh_in), y_offset(y_offset) {}
+  Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh_in = mesh)
+      : skip_mask(mask), localmesh(mesh_in), y_offset(y_offset) {}
   virtual ~Interpolation() {}
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
@@ -111,10 +105,10 @@ protected:
   Field3D h11_z;
 
 public:
-  HermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
-  HermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
-  HermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(y_offset, mesh) {
+  HermiteSpline(Mesh *mesh_in = mesh) : HermiteSpline(0, mesh_in) {}
+  HermiteSpline(int y_offset = 0, Mesh *mesh_in = mesh);
+  HermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh_in = mesh)
+      : HermiteSpline(y_offset, mesh_in) {
     skip_mask = mask;
   }
 
@@ -147,11 +141,11 @@ public:
 /// problems most obviously occur.
 class MonotonicHermiteSpline : public HermiteSpline {
 public:
-  MonotonicHermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
-  MonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(y_offset, mesh) {}
-  MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(mask, y_offset, mesh) {}
+  MonotonicHermiteSpline(Mesh *mesh_in = mesh) : HermiteSpline(0, mesh_in) {}
+  MonotonicHermiteSpline(int y_offset = 0, Mesh *mesh_in = mesh)
+      : HermiteSpline(y_offset, mesh_in) {}
+  MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh_in = mesh)
+      : HermiteSpline(mask, y_offset, mesh_in) {}
 
   /// Callback function for InterpolationFactory
   static Interpolation *CreateMonotonicHermiteSpline(Mesh *mesh) {
@@ -171,10 +165,10 @@ class Lagrange4pt : public Interpolation {
   Field3D t_x, t_z;
 
 public:
-  Lagrange4pt(Mesh *mesh = nullptr) : Lagrange4pt(0, mesh) {}
-  Lagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
-  Lagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Lagrange4pt(y_offset, mesh) {
+  Lagrange4pt(Mesh *mesh_in = mesh) : Lagrange4pt(0, mesh_in) {}
+  Lagrange4pt(int y_offset = 0, Mesh *mesh_in = mesh);
+  Lagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh_in = mesh)
+      : Lagrange4pt(y_offset, mesh_in) {
     skip_mask = mask;
   }
 
@@ -204,10 +198,10 @@ class Bilinear : public Interpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  Bilinear(Mesh *mesh = nullptr) : Bilinear(0, mesh) {}
-  Bilinear(int y_offset = 0, Mesh *mesh = nullptr);
-  Bilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Bilinear(y_offset, mesh) {
+  Bilinear(Mesh *mesh_in = mesh) : Bilinear(0, mesh_in) {}
+  Bilinear(int y_offset = 0, Mesh *mesh_in = mesh);
+  Bilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh_in = mesh)
+      : Bilinear(y_offset, mesh_in) {
     skip_mask = mask;
   }
 
