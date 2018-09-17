@@ -513,19 +513,26 @@ void Field3D::applyBoundary(const string &condition) {
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
+  TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
-  
+
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
