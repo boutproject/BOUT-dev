@@ -12,6 +12,7 @@
 
 #include <output.hxx>
 
+#include "parallel/shiftedmetricinterp.hxx"
 #include "parallel/fci.hxx"
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
@@ -295,6 +296,10 @@ void Mesh::setParallelTransform() {
     // Shifted metric method
     transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
       
+  }else if(ptstr == "shiftedinterp") {
+    // Shifted metric method
+    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetricInterp(*this));
+      
   }else if(ptstr == "fci") {
 
     Options *fci_options = Options::getRoot()->getSection("fci");
@@ -305,7 +310,7 @@ void Mesh::setParallelTransform() {
       
   }else {
     throw BoutException("Unrecognised paralleltransform option.\n"
-                        "Valid choices are 'identity', 'shifted', 'fci'");
+                        "Valid choices are 'identity', 'shifted', 'shiftedinterp', 'fci'");
   }
 }
 

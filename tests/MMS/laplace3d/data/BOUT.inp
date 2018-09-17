@@ -61,7 +61,8 @@ type = petscamg
 flags = 0
 
 [petscamg]
-solvertype = gamgcla
+solvertype = hypre
+multigridlevel = 5
 checking = 1
 rtol=1.e-15
 atol=1.e-50
