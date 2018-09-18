@@ -28,7 +28,7 @@ public:
       : localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
       : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
-
+  
   virtual ~BoundaryRegionBase() {}
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
@@ -43,6 +43,8 @@ public:
                              ///  over every element from inside out (in
                              ///  X or Y first)
   virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
+protected:
+  Mesh * mesh;
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
@@ -75,7 +77,6 @@ public:
   void nextX() override;
   void nextY() override;
   bool isDone() override;
-
 private:
   int ys, ye;
 };
@@ -90,7 +91,6 @@ public:
   void nextX() override;
   void nextY() override;
   bool isDone() override;
-
 private:
   int ys, ye;
 };
@@ -105,7 +105,6 @@ public:
   void nextX() override;
   void nextY() override;
   bool isDone() override;
-
 private:
   int xs, xe;
 };
@@ -120,7 +119,6 @@ public:
   void nextX() override;
   void nextY() override;
   bool isDone() override;
-
 private:
   int xs, xe;
 };

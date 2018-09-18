@@ -3,8 +3,8 @@
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
-BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
-  : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)
+BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax, Mesh * mesh)
+  : BoundaryRegion(name, -1, 0, mesh), ys(ymin), ye(ymax)
 {
   location = BNDRY_XIN;
   width = localmesh->xstart;
