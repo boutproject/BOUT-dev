@@ -1,0 +1,13 @@
+
+[mesh]
+nx = 12
+ny = 12
+
+zShift = y
+
+var = sin(y - z)
+
+paralleltransform = shifted
+
+[interpolation]
+type = hermitespline
