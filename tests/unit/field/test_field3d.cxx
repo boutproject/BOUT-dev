@@ -161,39 +161,6 @@ TEST_F(Field3DTest, CreateOnNullMesh) {
 }
 #endif
 
-#if CHECK > 0 && CHECK <= 2
-// We only want to run this test in a certain range of CHECK as we're
-// checking some behaviour that is only enabled for CHECK above 0
-// but there are checks that will throw before reaching these lines if
-// check is greater than 2, so the test only makes sense in a certain range.
-TEST_F(Field3DTest, CreateCopyOnNullMesh) {
-  // Whilst the declaration of field below looks like it should create a Field2D
-  // without a mesh, it in fact will result in a Field2D associated with the
-  // global mesh as we end up calling the Field constructor that forces this.
-  // Hence, to test the case of copying a field without a mesh we have to
-  // temporarily hide the global mesh, before restoring it later.
-  auto old_mesh = mesh;
-  mesh = nullptr;
-
-  Field3D field;
-  // If CHECK > 2 then the following will throw due to the data
-  // block in field not being allocated. We can't allocate as that
-  // would force field to have a mesh associated with it.
-  Field3D field2(field);
-
-  EXPECT_EQ(field2.getNx(), -1);
-  EXPECT_EQ(field2.getNy(), -1);
-  EXPECT_EQ(field2.getNz(), -1);
-
-  mesh = old_mesh;
-  field2.allocate();
-
-  EXPECT_EQ(field2.getNx(), Field3DTest::nx);
-  EXPECT_EQ(field2.getNy(), Field3DTest::ny);
-  EXPECT_EQ(field2.getNz(), Field3DTest::nz);
-}
-#endif
-
 TEST_F(Field3DTest, TimeDeriv) {
   Field3D field;
 
