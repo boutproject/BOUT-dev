@@ -22,7 +22,7 @@ shell_safe("make > make.log")
 
 # List of NX values to use
 nxlist = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
-ny = 4
+ny = 8
 
 nout = 1
 timestep = 0.1

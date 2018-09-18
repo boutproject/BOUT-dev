@@ -6,8 +6,8 @@
  d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
  *
  **************************************************************************
- * Copyright 2015 K.S. Kang
- * Modified version Aeptember 2015
+ * Copyright 2018 K.S. Kang
+ * Modified version September 2018
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -49,7 +49,8 @@
 
 #else
 
-#include <petscksp.h>
+// #include <petscksp.h>
+#include <petscpc.h>
 #include <bout/petsclib.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
