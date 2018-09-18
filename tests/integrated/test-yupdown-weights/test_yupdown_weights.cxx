@@ -20,7 +20,7 @@ const Field3D DDY_yud(const Field3D &f) {
 // Y derivative constructed from interpolation weights
 const Field3D DDY_weights(const Field3D &f) {
 
-  ShiftedMetricInterp* sm = new ShiftedMetricInterp(*mesh);
+  ParallelTransform& pt = mesh->getParallelTransform();
   Field3D result;
   result.allocate();
 
@@ -29,8 +29,8 @@ const Field3D DDY_weights(const Field3D &f) {
   for(int i=0;i<mesh->LocalNx;i++){
     for(int j=mesh->ystart;j<=mesh->yend;j++){
       for(int k=0;k<mesh->LocalNz;k++){
-	std::vector<Interpolation::positionsAndWeights> pw_up = sm->interp_yup->getWeightsForYApproximation(i,j,k,1);
-	std::vector<Interpolation::positionsAndWeights> pw_down = sm->interp_ydown->getWeightsForYApproximation(i,j,k,-1);
+        std::vector<ParallelTransform::positionsAndWeights> pw_up = pt.getWeightsForYUpApproximation(i,j,k);
+        std::vector<ParallelTransform::positionsAndWeights> pw_down = pt.getWeightsForYDownApproximation(i,j,k);
 
 	for (const auto &p : pw_up){
 	  result(i,j,k) += 0.5*p.weight*f(p.i,p.j,p.k);
