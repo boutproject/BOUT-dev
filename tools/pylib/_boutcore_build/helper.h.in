@@ -2,29 +2,47 @@ cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
 
-void c_get_f3d_all(const Field3D * f3d, double * data);
-void c_set_f3d_all(Field3D * f3d, const double * data);
-void c_set_f3d_all_(Field3D * f3d, double data);
-void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_set_f3d_from_f3d(Field3D * lhs,const Field3D * rhs){
+EOF
+for ftype in "Field3D" "Field2D"
+do
+  if [ $ftype = "Field3D" ]; then fdd="f3d";
+  elif [ $ftype = "Field2D" ]; then fdd="f2d";
+  else
+    echo "Error, unimplemented ftype"; exit 1
+  fi
+cat <<EOF
+void c_get_${fdd}_all(const $ftype * f, double * data);
+void c_set_${fdd}_all($ftype * f, const double * data);
+void c_set_${fdd}_all_($ftype * f, double data);
+void c_set_${fdd}_from_${fdd}($ftype * lhs,const $ftype * rhs){
   *lhs=*rhs;
 }
 EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
-    o=${f#*:}
-    echo "Field3D * f$n( Field3D*,Field3D*);"
-    echo "Field3D * f$n( Field3D*,double);"
-    echo "Field3D * f$n( double,Field3D*);"
-    echo "void fi$n( Field3D*,Field3D*);"
-    echo "void fi$n( Field3D*,double);"
+    echo "$ftype * f$n( $ftype*,$ftype*);"
+    echo "$ftype * f$n( $ftype*,double);"
+    echo "$ftype * f$n( double,$ftype*);"
+    echo "void fi$n( $ftype*,$ftype*);"
+    echo "void fi$n( $ftype*,double);"
+    if [ $ftype = "Field3D" ]; then
+      echo "Field3D * f$n( Field3D*,Field2D*);"
+      echo "Field3D * f$n( Field2D*,Field3D*);"
+      echo "void fi$n( Field3D*,Field2D*);"
+    fi
+done
+    echo "$ftype c_minus($ftype a){return -a;};"
 done
 cat <<EOF
-    Field3D c_minus(Field3D a){return -a;};
-    
+void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part(Field3D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part_(Field3D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_get_f2d_part(const Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part(Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part_(Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
+EOF
+cat <<EOF
 
 Mesh * c_get_global_mesh();
 
