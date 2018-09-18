@@ -126,9 +126,10 @@ std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYApp
   positionsAndWeights p;
 
   int ncz = localmesh->LocalNz;
-  int k_mod_m1 = (k > 0) ? (k-1) : (ncz-1);
-  int k_mod_p1 = (k + 1) % ncz;
-  int k_mod_p2 = (k + 2) % ncz;
+  int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
+  int k_mod_m1 = (k_mod > 0) ? (k_mod-1) : (ncz-1);
+  int k_mod_p1 = (k_mod + 1) % ncz;
+  int k_mod_p2 = (k_mod + 2) % ncz;
 
   // Same x, y for all:
   p.i = i;
@@ -138,7 +139,7 @@ std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYApp
   p.weight = -0.5*h10_z(i,j,k);
   pw.push_back(p);
 
-  p.k = k;
+  p.k = k_mod;
   p.weight = h00_z(i,j,k) - 0.5*h11_z(i,j,k);
   pw.push_back(p);
 
