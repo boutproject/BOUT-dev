@@ -92,7 +92,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
       else if(soltype == "hypre") {
 	PCSetType(pc,PCHYPRE);
 	PCHYPRESetType(pc,"boomeramg");
-	char mclev[2];
+	char mclev[3];
 	if(mglevel > 9) sprintf(mclev,"%2d",mglevel);
 	else sprintf(mclev,"0%1d",mglevel);
 	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_levels",mclev);
