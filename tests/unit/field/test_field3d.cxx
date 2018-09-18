@@ -110,7 +110,7 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
-
+  fieldmesh->createDefaultRegions();
   Field3D field(fieldmesh);
 
   field.allocate();
@@ -128,7 +128,7 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
-
+  fieldmesh->createDefaultRegions();
   Field3D field(0.0, fieldmesh);
 
   Field3D field2{field};
@@ -139,27 +139,6 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
 
   delete fieldmesh;
 }
-
-#if CHECK > 0
-TEST_F(Field3DTest, CreateOnNullMesh) {
-  auto old_mesh = mesh;
-  mesh = nullptr;
-
-  Field3D field;
-
-  EXPECT_EQ(field.getNx(), -1);
-  EXPECT_EQ(field.getNy(), -1);
-  EXPECT_EQ(field.getNz(), -1);
-
-  mesh = old_mesh;
-
-  field.allocate();
-
-  EXPECT_EQ(field.getNx(), Field3DTest::nx);
-  EXPECT_EQ(field.getNy(), Field3DTest::ny);
-  EXPECT_EQ(field.getNz(), Field3DTest::nz);
-}
-#endif
 
 TEST_F(Field3DTest, TimeDeriv) {
   Field3D field;

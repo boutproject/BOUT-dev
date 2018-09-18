@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh, Coordinates *localCoord) : Field(localmesh, localCoord), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -65,7 +65,7 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
+Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh, f.fieldCoordinates), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
@@ -94,7 +94,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh, Coordinates *localCoord) : Field(localmesh, localCoord), deriv(nullptr) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -201,7 +201,7 @@ void Field2D::setLocation(CELL_LOC new_location) {
 
   /// Would like to do something like the following but can lead to problems
   /// at least in unit testing.
-  /// if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);  
+  if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);  
 }
 
 CELL_LOC Field2D::getLocation() const {

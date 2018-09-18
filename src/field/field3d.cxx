@@ -44,8 +44,8 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
+Field3D::Field3D(Mesh *localmesh, Coordinates *localCoord)
+    : Field(localmesh, localCoord), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
@@ -70,7 +70,7 @@ Field3D::Field3D(Mesh *localmesh)
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
 Field3D::Field3D(const Field3D &f)
-    : Field(f.fieldmesh),                // The mesh containing array sizes
+  : Field(f.fieldmesh, f.fieldCoordinates),                // The mesh containing array sizes
       background(nullptr), data(f.data), // This handles references to the data array
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
@@ -99,7 +99,7 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
+  : Field(f.getMesh(), f.getCoordinates()), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
@@ -110,11 +110,13 @@ Field3D::Field3D(const Field2D &f)
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
 
+  setLocation(f.getLocation());
+  
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
+Field3D::Field3D(const BoutReal val, Mesh *localmesh, Coordinates *localCoord)
+  : Field(localmesh, localCoord), background(nullptr), deriv(nullptr), yup_field(nullptr),
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
@@ -250,7 +252,7 @@ void Field3D::setLocation(CELL_LOC new_location) {
 
   /// Would like to do something like the following but can lead to problems
   /// at least in unit testing.
-  /// if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);
+  if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);
 }
 
 CELL_LOC Field3D::getLocation() const {

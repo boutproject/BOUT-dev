@@ -40,7 +40,7 @@ Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
 #endif
 }
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
+Field::Field(Mesh *localmesh, Coordinates *localCoord) : fieldmesh(localmesh), fieldCoordinates(localCoord) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }

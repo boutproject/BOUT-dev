@@ -58,7 +58,7 @@ extern Mesh * mesh; ///< Global mesh
 class Field {
  public:
   Field();
-  Field(Mesh * localmesh);
+  Field(Mesh * localmesh, Coordinates *localCoord = nullptr);
   virtual ~Field() { }
 
   // Data access

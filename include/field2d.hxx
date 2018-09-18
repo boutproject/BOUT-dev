@@ -64,7 +64,7 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Copy constructor. After this both fields
@@ -82,7 +82,7 @@ class Field2D : public Field, public FieldData {
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */ 
-  Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  Field2D(BoutReal val, Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Destructor

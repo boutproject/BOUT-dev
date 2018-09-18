@@ -175,7 +175,7 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *localmesh = nullptr);
+  Field3D(Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Copy constructor
@@ -185,7 +185,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  Field3D(BoutReal val, Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
   /// Destructor
   ~Field3D() override;
 
