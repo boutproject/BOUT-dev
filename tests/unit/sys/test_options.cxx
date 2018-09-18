@@ -27,6 +27,14 @@ TEST_F(OptionsTest, IsSet) {
   ASSERT_TRUE(options.isSet("int_key"));
 }
 
+TEST_F(OptionsTest, IsSetDefault) {
+  Options options;
+  int value;
+  ASSERT_FALSE(options.isSet("default_value"));
+  options.get("default_value", value, 42);
+  ASSERT_FALSE(options.isSet("default_value"));
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");

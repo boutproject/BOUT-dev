@@ -13,10 +13,10 @@ int physics_init(bool restarting) {
   Region<Ind3D> reg(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                     mesh->LocalNy, mesh->LocalNz);
 
-  BLOCK_REGION_LOOP(reg,i,
-			   a[i] = 3.0;
-			   b[i] = c[i];
-			   );
+  BOUT_FOR(i, reg) {
+    a[i] = 3.0;
+    b[i] = c[i];
+  }
 
   //Check expected results
   int nerr=0;
@@ -32,10 +32,10 @@ int physics_init(bool restarting) {
 
 
   Field3D d=1.0, e=1.0, f=2.0;
-  BLOCK_REGION_LOOP(mesh->getRegion3D("RGN_NOBNDRY"),i,
-			   d[i] = 3.0;
-			   e[i] = f[i];
-			   );
+  BOUT_FOR(i, mesh->getRegion3D("RGN_NOBNDRY")) {
+    d[i] = 3.0;
+    e[i] = f[i];
+  }
 
   //Check expected results
   nerr=0;

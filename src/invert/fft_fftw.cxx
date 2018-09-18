@@ -219,8 +219,9 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
       fft_init();
 
-      finall = (double*) fftw_malloc(sizeof(double) * length * n_th);
-      foutall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
+      finall = static_cast<double *>(fftw_malloc(sizeof(double) * length * n_th));
+      foutall = static_cast<fftw_complex *>(
+          fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
       p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
@@ -288,9 +289,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
 
       fft_init();
 
-      finall =
-          (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th);
-      foutall = (double *)fftw_malloc(sizeof(double) * length * n_th);
+      finall = static_cast<fftw_complex *>(
+          fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
+      foutall = static_cast<double *>(fftw_malloc(sizeof(double) * length * n_th));
 
       p = new fftw_plan[n_th]; // Never freed
 
@@ -345,9 +346,8 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
     //  fft_init();
 
     // Could be optimized better
-    fin = (double*) fftw_malloc(sizeof(double) * 2 * length);
-    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 2 * length);
-
+    fin = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * length));
+    fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
     unsigned int flags = FFTW_ESTIMATE;
     if(fft_measure)
@@ -399,8 +399,9 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     //fft_init();
 
     // Could be optimized better
-    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 2 * (length-1));
-    fout = (double*) fftw_malloc(sizeof(double)  * 2 * (length-1));
+    fin =
+        static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * (length - 1)));
+    fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
     unsigned int flags = FFTW_ESTIMATE;
     if(fft_measure)

@@ -151,8 +151,8 @@ const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
     BoutReal deltal = 0.05;
     BoutReal deltar = 0.05;
 
-    result[i] = (dampl * exp(-static_cast<BoutReal>(lx * lx) / (deltal * deltal)) +
-                 dampr * exp(-static_cast<BoutReal>(rlx * rlx) / (deltar * deltar))) *
+    result[i] = (dampl * exp(-(lx * lx) / (deltal * deltal)) +
+                 dampr * exp(-(rlx * rlx) / (deltar * deltar))) *
                 f[i];
   }
 

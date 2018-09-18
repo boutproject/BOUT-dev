@@ -775,6 +775,7 @@ with_pvode
 with_mumps
 with_arkode
 with_scorep
+enable_warnings
 enable_checks
 enable_signal
 enable_color
@@ -1427,6 +1428,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --disable-warnings      Disable compiler warnings
   --enable-checks=no/1/2/3
                           Set run-time checking level
   --disable-signal        Disable SEGFAULT handling
@@ -2592,6 +2594,11 @@ else
 fi
 
 
+
+# Check whether --enable-warnings was given.
+if test "${enable_warnings+set}" = set; then :
+  enableval=$enable_warnings;
+fi
 
 # Check whether --enable-checks was given.
 if test "${enable_checks+set}" = set; then :
@@ -5549,6 +5556,143 @@ fi
 # General Options
 #############################################################
 
+# Always pass -Werror=unknown-warning-option to get Clang to fail on bad
+# flags, otherwise they are always appended to the warn_cxxflags variable,
+# and Clang warns on them for every compilation unit.
+# If this is passed to GCC, it will explode, so the flag must be enabled
+# conditionally.
+# This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -Werror=unknown-warning-option" >&5
+$as_echo_n "checking whether C++ compiler accepts -Werror=unknown-warning-option... " >&6; }
+if ${ax_cv_check_cxxflags___Werror_unknown_warning_option+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  -Werror=unknown-warning-option"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ax_cv_check_cxxflags___Werror_unknown_warning_option=yes
+else
+  ax_cv_check_cxxflags___Werror_unknown_warning_option=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cxxflags___Werror_unknown_warning_option" >&5
+$as_echo "$ax_cv_check_cxxflags___Werror_unknown_warning_option" >&6; }
+if test "x$ax_cv_check_cxxflags___Werror_unknown_warning_option" = xyes; then :
+
+  extra_compiler_flags_test="-Werror=unknown-warning-option"
+
+else
+
+  extra_compiler_flags_test=""
+
+fi
+
+
+
+if test "x$enable_warnings" != "xno"; then :
+
+# Some hopefully sensible default compiler warning flags
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+
+
+
+
+for flag in       -Wall      -Wextra      -Wnull-dereference      -Wno-cast-function-type   ; do
+  as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags_$extra_compiler_flags_test_$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $flag" >&5
+$as_echo_n "checking whether C++ compiler accepts $flag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $extra_compiler_flags_test $flag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+
+if ${CXXFLAGS+:} false; then :
+
+  case " $CXXFLAGS " in #(
+  *" $flag "*) :
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS already contains \$flag"; } >&5
+  (: CXXFLAGS already contains $flag) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } ;; #(
+  *) :
+
+     as_fn_append CXXFLAGS " $flag"
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+     ;;
+esac
+
+else
+
+  CXXFLAGS=$flag
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+
+fi
+
+else
+  :
+fi
+
+done
+
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Compiler warnings disabled" >&5
+$as_echo "$as_me: Compiler warnings disabled" >&6;}
+
+fi
+
 OPT_FLAGS=""
 if test "$enable_debug" != ""; then :
 
@@ -5597,12 +5741,21 @@ fi
 
 fi
 
-for flag in $OPT_FLAGS
-do
-  CXXFLAGS_save=$CXXFLAGS
-  CXXFLAGS="$CXXFLAGS $flag"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flag $flag is supported" >&5
-$as_echo_n "checking flag $flag is supported... " >&6; }
+# Append optimisation/debug flags if they work with this compiler
+
+
+
+
+for flag in      $OPT_FLAGS ; do
+  as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags_$extra_compiler_flags_test_$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $flag" >&5
+$as_echo_n "checking whether C++ compiler accepts $flag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $extra_compiler_flags_test $flag"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5615,15 +5768,55 @@ main ()
 }
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+  eval "$as_CACHEVAR=yes"
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-     CXXFLAGS=$CXXFLAGS_save
+  eval "$as_CACHEVAR=no"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+
+if ${CXXFLAGS+:} false; then :
+
+  case " $CXXFLAGS " in #(
+  *" $flag "*) :
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS already contains \$flag"; } >&5
+  (: CXXFLAGS already contains $flag) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } ;; #(
+  *) :
+
+     as_fn_append CXXFLAGS " $flag"
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+     ;;
+esac
+
+else
+
+  CXXFLAGS=$flag
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+
+fi
+
+else
+  :
+fi
+
 done
+
 
 # Disable checks if optimization > 2 is used
 if test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"; then :
@@ -9973,7 +10166,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_ida -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_ida -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
@@ -10333,7 +10526,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_ida -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_ida -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS
@@ -10550,7 +10743,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
@@ -10910,7 +11103,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_cvode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS
@@ -11127,7 +11320,7 @@ else
 $as_echo "$as_me: WARNING: No sundials-config available, no path given, will try compiling with $module_upper anyway" >&2;}
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
 fi
     ac_ext=cpp
@@ -11487,7 +11680,7 @@ $as_echo "$as_me: Found $module_upper include path: $sundials_module_includes_pa
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_arkode -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS

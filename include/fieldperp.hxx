@@ -33,6 +33,7 @@ class FieldPerp;
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -71,7 +72,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() {}
+  ~FieldPerp() override {}
 
   /*!
    * Assignment operators
@@ -103,7 +104,23 @@ class FieldPerp : public Field {
   const BoutReal& operator[](const Indices &i) const override{
     return operator()(i.x, i.z);
   }
-  
+
+  inline BoutReal& operator[](const IndPerp &d) {
+    return data[d.ind];
+  }
+  inline const BoutReal& operator[](const IndPerp &d) const {
+    return data[d.ind];
+  }  
+
+  inline BoutReal& operator[](const Ind3D &d) {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z()); //Could use mesh->ind3DtoPerp if we had access to mesh here
+  }
+  inline const BoutReal& operator[](const Ind3D &d) const {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z());
+  }  
+
   /*!
    * Returns the y index at which this field is defined
    */ 
@@ -235,14 +252,14 @@ class FieldPerp : public Field {
   /*!
    * Return the number of ny points
    */
-  virtual int getNy() const override{ return 1;};
+  int getNy() const override { return 1; };
   /*!
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
   
  private:
-  int yindex; ///< The Y index at which this FieldPerp is defined
+  int yindex = -1; ///< The Y index at which this FieldPerp is defined
 
   /// The size of the data array
   int nx, nz;

@@ -314,6 +314,108 @@ bool Ncxx4::setRecord(int t) {
   return true;
 }
 
+// Add a variable to the file
+bool Ncxx4::addVarInt(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if (repeat)
+      var = dataFile->addVar(name, ncInt, getRecDimVec(1));
+    else
+      var = dataFile->addVar(name, ncInt, getDimVec(0));
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Ncxx4::addVarBoutReal(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if(lowPrecision) {
+      if (repeat)
+        var = dataFile->addVar(name, ncFloat, getRecDimVec(1));
+      else
+        var = dataFile->addVar(name, ncFloat, getDimVec(0));
+    } else {
+      if (repeat)
+        var = dataFile->addVar(name, ncDouble, getRecDimVec(1));
+      else
+        var = dataFile->addVar(name, ncDouble, getDimVec(0));
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Ncxx4::addVarField2D(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if(lowPrecision) {
+      if (repeat)
+        var = dataFile->addVar(name, ncFloat, getRecDimVec(3));
+      else
+        var = dataFile->addVar(name, ncFloat, getDimVec(2));
+    } else {
+      if (repeat)
+        var = dataFile->addVar(name, ncDouble, getRecDimVec(3));
+      else
+        var = dataFile->addVar(name, ncDouble, getDimVec(2));
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add Field2D '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Ncxx4::addVarField3D(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if(lowPrecision) {
+      if (repeat)
+        var = dataFile->addVar(name, ncFloat, getRecDimVec(4));
+      else
+        var = dataFile->addVar(name, ncFloat, getDimVec(3));
+    } else {
+      if (repeat)
+        var = dataFile->addVar(name, ncDouble, getRecDimVec(4));
+      else
+        var = dataFile->addVar(name, ncDouble, getDimVec(3));
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add Field3D '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   TRACE("Ncxx4::read(int)");
 
@@ -330,7 +432,7 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: NetCDF variable '%s' not found\n", name.c_str());
 #endif
     return false;
   }
@@ -393,24 +495,10 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
-#ifdef NCDF_VERBOSE
-    output.write("Ncxx4:: write { Adding Variable %d } \n", nd);
-#endif
-    // Variable not in file, so add it.
-
-    var = dataFile->addVar(name, ncInt, getDimVec(nd));
-
-    if(var.isNull()) {
-      output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
-      return false;
-    }
+    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }
 
 #ifdef NCDF_VERBOSE
@@ -447,24 +535,11 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
-    // Variable not in file, so add it.
-    if(lowPrecision) {
-      var = dataFile->addVar(name, ncFloat, getDimVec(nd));
-    }else
-      var = dataFile->addVar(name, ncDouble, getDimVec(nd));
-
-    if(var.isNull()) {
-      output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
-      return false;
-    }
-  }  
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
+  }
 
   vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
@@ -573,34 +648,12 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
   
   // Try to find variable
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
-    // Need to add to file
-
-#ifdef NCDF_VERBOSE
-    output.write("Ncxx4:: write_rec { Adding Variable %d } \n", nd); 
-#endif
-
-    if(nd == 1) {
-      var = dataFile->addVar(name, ncInt, tDim);
-    }else
-      var = dataFile->addVar(name, ncInt, getRecDimVec(nd));
-
-    rec_nr[name] = default_rec; // Starting record
-
-    if(var.isNull()) {
-#ifdef NCDF_VERBOSE
-      output_error.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-      return false;
-    }
+    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -642,30 +695,11 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
 
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-
   // Try to find variable
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
-    // Need to add to file
-    
-    if(lowPrecision) {
-      var = dataFile->addVar(name, ncFloat, getRecDimVec(nd));
-    }else {
-      var = dataFile->addVar(name, ncDouble, getRecDimVec(nd));
-    }
-    
-    rec_nr[name] = default_rec; // Starting record
-
-    if(var.isNull()) {
-#ifdef NCDF_VERBOSE
-      output_error.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-      return false;
-    }
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -729,6 +763,15 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   if (var.isNull()) {
     throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
   }
+
+  std::string existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (text != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%s', was previously '%s'",
+          attrname.c_str(), varname.c_str(), text.c_str(), existing_att.c_str());
+    }
+  }
+  // else: attribute does not exist, so just write it
   
   var.putAtt(attrname, text);
 }
@@ -742,7 +785,56 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
   }
   
+  int existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (value != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%i', was previously '%i'",
+          attrname.c_str(), varname.c_str(), value, existing_att);
+    }
+  }
+  // else: attribute does not exist, so just write it
+
   var.putAtt(attrname, NcType::nc_INT, value);
+}
+
+bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
+  TRACE("Ncxx4::getStringAttribute(string)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+  // Check if attribute exists without throwing exception when it doesn't
+  map<string, NcVarAtt> varAtts_list = var.getAtts();
+  if (varAtts_list.find(attrname) == varAtts_list.end()) {
+    return false;
+  } else {
+    NcVarAtt varAtt = var.getAtt(attrname);
+    varAtt.getValues(text);
+
+    return true;
+  }
+}
+
+bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
+  TRACE("Ncxx4::getIntAttribute(string)");
+
+  NcVar var = dataFile->getVar(varname);
+  if (var.isNull()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+  // Check if attribute exists without throwing exception when it doesn't
+  map<string, NcVarAtt> varAtts_list = var.getAtts();
+  if (varAtts_list.find(attrname) == varAtts_list.end()) {
+    return false;
+  } else {
+    NcVarAtt varAtt = var.getAtt(attrname);
+    varAtt.getValues(&value);
+
+    return true;
+  }
 }
 
 

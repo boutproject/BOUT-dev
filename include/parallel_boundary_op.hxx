@@ -7,16 +7,16 @@
 #include "utils.hxx"
 #include "unused.hxx"
 
+#include <utility>
+
 //////////////////////////////////////////////////
 // Base class
 
 class BoundaryOpPar : public BoundaryOpBase {
 public:
   BoundaryOpPar() : bndry(nullptr), real_value(0.), value_type(REAL) {}
-  BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
-    bndry(region),
-    gen_values(value),
-    value_type(GEN) {}
+  BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator> value)
+      : bndry(region), gen_values(std::move(value)), value_type(GEN) {}
   BoundaryOpPar(BoundaryRegionPar *region, Field3D* value) :
     bndry(region),
     field_values(value),
@@ -25,7 +25,7 @@ public:
     bndry(region),
     real_value(value),
     value_type(REAL) {}
-  virtual ~BoundaryOpPar() {}
+  ~BoundaryOpPar() override {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return nullptr; }

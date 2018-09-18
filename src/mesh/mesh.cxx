@@ -54,9 +54,9 @@ Mesh::~Mesh() {
 
 /// Get an integer
 int Mesh::get(int &ival, const string &name) {
-  TRACE("Mesh::get(ival)");
+  TRACE("Mesh::get(ival, %s)", name.c_str());
 
-  if(!source->get(this, ival, name))
+  if (source == nullptr or !source->get(this, ival, name))
     return 1;
 
   return 0;
@@ -64,21 +64,21 @@ int Mesh::get(int &ival, const string &name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const string &name) {
-  TRACE("Mesh::get(rval)");
+  TRACE("Mesh::get(rval, %s)", name.c_str());
 
-  if(!source->get(this, rval, name))
+  if (source == nullptr or !source->get(this, rval, name))
     return 1;
 
   return 0;
 }
 
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
-  TRACE("Loading 2D field: Mesh::get(Field2D)");
+  TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
   var.allocate();
 
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -91,12 +91,12 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
-  TRACE("Loading 3D field: Mesh::get(Field3D)");
+  TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
   // Ensure data allocated
   var.allocate();
 
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -157,6 +157,9 @@ int Mesh::get(Vector3D &var, const string &name) {
 }
 
 bool Mesh::sourceHasVar(const string &name) {
+  TRACE("Mesh::sourceHasVar(%s)", name.c_str());
+  if (source == nullptr)
+    return false;
   return source->hasVar(name);
 }
 
@@ -264,6 +267,13 @@ bool Mesh::hasBndryUpperY() {
 }
 
 const vector<int> Mesh::readInts(const string &name, int n) {
+  TRACE("Mesh::readInts(%s)", name.c_str());
+
+  if (source == nullptr) {
+    throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
+                        name.c_str());
+  }
+
   vector<int> result;
 
   if(source->hasVar(name)) {
@@ -340,11 +350,21 @@ Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
    return found->second;
 }
 
+Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) {
+  auto found = regionMapPerp.find(region_name);
+  if (found == end(regionMapPerp)) {
+    throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
+  }
+  return found->second;
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException("Trying to add an already existing region %s to regionMap3D");
   }
   regionMap3D[region_name] = region;
+  output_info << "Registered region 3D " << region_name << ": \n";
+  output_info << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
@@ -352,6 +372,17 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
     throw BoutException("Trying to add an already existing region %s to regionMap2D");
   }
   regionMap2D[region_name] = region;
+  output_info << "Registered region 2D " << region_name << ": \n";
+  output_info << "\t" << region.getStats() << "\n";
+}
+
+void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
+  if (regionMapPerp.count(region_name)) {
+    throw BoutException("Trying to add an already existing region %s to regionMapPerp");
+  }
+  regionMapPerp[region_name] = region;
+  output_info << "Registered region Perp " << region_name << ": \n";
+  output_info << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){
@@ -374,6 +405,16 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
+
+  // Perp regions
+  addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1,
+                                               LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                           maxregionblocksize)); // Same as NOBNDRY
+  addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize)); // Same as ALL
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);

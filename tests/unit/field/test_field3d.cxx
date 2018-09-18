@@ -4,6 +4,7 @@
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field3d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
@@ -25,7 +26,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -126,10 +129,9 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
 
   FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
 
-  Field3D field(fieldmesh);
-  field.allocate();
+  Field3D field(0.0, fieldmesh);
 
-  Field3D field2(field);
+  Field3D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
@@ -466,6 +468,39 @@ TEST_F(Field3DTest, IterateOverRGN_ALL) {
   EXPECT_TRUE(test_indices == result_indices);
 }
 
+TEST_F(Field3DTest, IterateOverRegionInd3D_RGN_ALL) {
+  Field3D field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0},
+                                          {0, 1, 1}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}};
+  const int num_sentinels = test_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1], index[2]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getMesh()->getRegion("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * ny * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
 TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   Field3D field = 1.0;
 
@@ -706,6 +741,68 @@ TEST_F(Field3DTest, Indexing) {
   }
 
   EXPECT_DOUBLE_EQ(field(2, 2, 2), 6);
+}
+
+TEST_F(Field3DTest, IndexingInd3D) {
+  Field3D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field[ind], 6);
+}
+
+TEST_F(Field3DTest, ConstIndexingInd3D) {
+  Field3D field1;
+
+  field1.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field1(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  const Field3D field2{field1};
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field2[ind], 6);
+}
+
+TEST_F(Field3DTest, IndexingInd2D) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  Ind2D ind{iy + ny * ix, ny, 1};
+  EXPECT_DOUBLE_EQ(field(ind, iz), sentinel);
+  field(ind, iz) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
+}
+
+TEST_F(Field3DTest, IndexingIndPerp) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  IndPerp ind{iz + nz * ix, 1, nz};
+  EXPECT_DOUBLE_EQ(field(ind, iy), sentinel);
+  field(ind, iy) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
 }
 
 TEST_F(Field3DTest, IndexingToZPointer) {
@@ -1651,8 +1748,8 @@ TEST_F(Field3DTest, PowField3DBoutReal) {
 }
 
 TEST_F(Field3DTest, PowField3DFieldPerp) {
-  Field3D a, c;
-  FieldPerp b(mesh);
+  Field3D a{mesh};
+  FieldPerp b{mesh}, c{mesh};
   const int yindex = 2;
   b.setIndex(yindex);
 
@@ -1660,7 +1757,7 @@ TEST_F(Field3DTest, PowField3DFieldPerp) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 64.0));
 }
 
 TEST_F(Field3DTest, PowField3DField2D) {

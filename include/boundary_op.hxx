@@ -50,7 +50,7 @@ public:
     apply_to_ddt = false;
   }
   BoundaryOp(BoundaryRegion *region) {bndry = region; apply_to_ddt=false;}
-  virtual ~BoundaryOp() {}
+  ~BoundaryOp() override {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {

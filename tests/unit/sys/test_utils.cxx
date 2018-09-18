@@ -3,6 +3,9 @@
 
 #include <string>
 
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(OldMatrixTest, CreateAndFree) {
   BoutReal **test_matrix = matrix<BoutReal>(5, 10);
 
@@ -10,6 +13,7 @@ TEST(OldMatrixTest, CreateAndFree) {
 
   free_matrix(test_matrix);
 }
+#pragma GCC diagnostic pop
 
 TEST(MatrixTest, DefaultShape) {
   Matrix<int> matrix;

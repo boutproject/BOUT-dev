@@ -4,6 +4,7 @@
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field2d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
@@ -25,7 +26,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -300,6 +303,71 @@ TEST_F(Field2DTest, IterateOverRGN_ALL) {
   EXPECT_TRUE(test_indices == result_indices);
 }
 
+TEST_F(Field2DTest, IterateOverRegionInd2D_RGN_ALL) {
+  Field2D field{1.0};
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  const int num_sentinels = test_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (auto &i : field.getMesh()->getRegion2D("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
+TEST_F(Field2DTest, IterateOverRegionInd3D_RGN_ALL) {
+  Field2D field{1.0};
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  // nz more sentinels than expected, as we're looping over a 3D region
+  const int num_sentinels = test_indices.size() * nz;
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (auto &i : field.getMesh()->getRegion3D("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nz * nx * ny) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
 TEST_F(Field2DTest, IterateOverRGN_NOBNDRY) {
   Field2D field = 1.0;
 
@@ -451,7 +519,7 @@ TEST_F(Field2DTest, IndexingAs3D) {
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
       for (int k = 0; k < nz; ++k) {
-	field(i, j, k) = i + j + k;
+        field(i, j, k) = i + j + k;
       }
     }
   }
@@ -473,6 +541,44 @@ TEST_F(Field2DTest, ConstIndexingAs3D) {
   }
 
   EXPECT_DOUBLE_EQ(field2(2, 2), 3 + 4 + nz - 1);
+}
+
+TEST_F(Field2DTest, IndexingInd3D) {
+  Field2D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field[ind], 10);
+}
+
+TEST_F(Field2DTest, ConstIndexingInd3D) {
+  Field2D field1;
+
+  field1.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field1(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  const Field2D field2{field1};
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
 #if CHECK > 2

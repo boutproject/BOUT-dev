@@ -206,10 +206,19 @@ BoutReal DDX_CWENO3(stencil &f) {
   if (a > ma)
     ma = a;
 
-  stencil sp, vp, sm, vm;
+  stencil sp, sm;
 
-  sp = f + ma;
-  sm = ma - f;
+  sp.mm = f.mm + ma;
+  sp.m = f.m + ma;
+  sp.c = f.c + ma;
+  sp.p = f.p + ma;
+  sp.pp = f.pp + ma;
+
+  sm.mm = ma - f.mm;
+  sm.m = ma - f.m;
+  sm.c = ma - f.c;
+  sm.p = ma - f.p;
+  sm.pp = ma - f.pp;
 
   return VDDX_WENO3(0.5, sp) + VDDX_WENO3(-0.5, sm);
 }
@@ -311,18 +320,16 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
 }
 
 BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
-  BoutReal result;
+  // Calculate d(v*f)/dx = (v*f)[i+1/2] - (v*f)[i-1/2]
 
-  if (v.p > 0 && v.m > 0) {
-    // Extrapolate v to centre from below, use 2nd order backward difference on f
-    result = (1.5 * v.m - .5 * v.mm) * (.5 * f.mm - 2. * f.m + 1.5 * f.c);
-  } else if (v.p < 0 && v.m < 0) {
-    // Extrapolate v to centre from above, use 2nd order forward difference on f
-    result = (1.5 * v.p - .5 * v.pp) * (-1.5 * f.c + 2. * f.p - .5 * f.pp);
-  } else {
-    // Velocity changes sign, hence is almost zero: use centred interpolation/differencing
-    result = .25 * (v.p + v.m) * (f.p - f.m);
-  }
+  // Upper cell boundary
+  BoutReal result = (v.p >= 0.) ? v.p * (1.5*f.c - 0.5*f.m) : v.p * (1.5*f.p - 0.5*f.pp);
+
+  // Lower cell boundary
+  result -= (v.m >= 0.) ? v.m * (1.5*f.m - 0.5*f.mm) : v.m * (1.5*f.c - 0.5*f.p);
+
+  // result is now d/dx(v*f), but want v*d/dx(f) so subtract f*d/dx(v)
+  result -= f.c * (v.p - v.m);
 
   return result;
 }
@@ -366,6 +373,15 @@ struct DiffLookup {
   Mesh::deriv_func func;     // Single-argument differencing function
   Mesh::upwind_func up_func; // Upwinding function
   Mesh::flux_func fl_func;   // Flux function
+  operator Mesh::deriv_func (){
+    return func;
+  }
+  operator Mesh::upwind_func (){
+    return up_func;
+  }
+  operator Mesh::flux_func (){
+    return fl_func;
+  }
 };
 
 /// Translate between short names, long names and DIFF_METHOD codes
@@ -442,41 +458,6 @@ static DiffLookup FluxStagTable[] = {{DIFF_SPLIT, nullptr, nullptr, nullptr},
  * and pointers
  *******************************************************************************/
 
-Mesh::deriv_func lookupFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].func;
-}
-
-Mesh::upwind_func lookupUpwindFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].up_func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].up_func;
-}
-
-Mesh::flux_func lookupFluxFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].fl_func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].fl_func;
-}
 
 /// Test if a given DIFF_METHOD exists in a table
 bool isImplemented(DiffLookup *table, DIFF_METHOD method) {
@@ -490,31 +471,49 @@ bool isImplemented(DiffLookup *table, DIFF_METHOD method) {
   return false;
 }
 
+
+DiffLookup lookupFunc(DiffLookup * table, DIFF_METHOD method) {
+  for (int i=0; ; ++i){
+    if (table[i].method == method) {
+      return table[i];
+    }
+    if (table[i].method == DIFF_DEFAULT){
+      return table[i];
+    }
+  }
+}
+
+void printFuncName(DIFF_METHOD method) {
+  // Find this entry
+  int i = 0;
+  do {
+    if (DiffNameTable[i].method == method) {
+      output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
+      return;
+    }
+    i++;
+  } while (DiffNameTable[i].method != DIFF_DEFAULT);
+
+  // None
+  output_error.write(" == INVALID DIFFERENTIAL METHOD ==\n");
+}
+
 /// This function is used during initialisation only (i.e. doesn't need to be particularly
 /// fast) Returns DIFF_METHOD, rather than function so can be applied to central and
 /// upwind tables
-DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
-
-  if (label.empty())
-    return table[0].method;
+DiffLookup lookupFunc(DiffLookup *table, const std::string & label){
 
   // Loop through the name lookup table
   for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
     if (strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) { // Whole match
-      if (isImplemented(table, DiffNameTable[i].method)) {
-        return DiffNameTable[i].method;
-      } else {
-        std::string avail{};
-
-        for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
-          if (isImplemented(table, DiffNameTable[i].method)) {
-            avail += DiffNameTable[i].label;
-            avail += "\n";
+      auto method=DiffNameTable[i].method;
+      if (isImplemented(table, method)) {
+        printFuncName(method);
+        for (int j=0;;++j){
+          if (table[j].method == method){
+            return table[j];
           }
         }
-        throw BoutException("Option %s is known but not valid for this differencing "
-                            "type.\nAvailable options are:\n%s",
-                            label.c_str(), avail.c_str());
       }
     }
   }
@@ -529,21 +528,6 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
                       avail.c_str());
 }
 
-void printFuncName(DIFF_METHOD method) {
-  // Find this entry
-
-  int i = 0;
-  do {
-    if (DiffNameTable[i].method == method) {
-      output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
-      return;
-    }
-    i++;
-  } while (DiffNameTable[i].method != DIFF_DEFAULT);
-
-  // None
-  output_error.write(" == INVALID DIFFERENTIAL METHOD ==\n");
-}
 
 /*******************************************************************************
  * Default functions
@@ -568,68 +552,56 @@ Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
  *******************************************************************************/
 
 /// Set the derivative method, given a table and option name
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::deriv_func &f) {
-  TRACE("derivs_set( deriv_func )");
-  string label;
-  options->get(name, label, "C2");
+template <typename T, typename Ts>
+void derivs_set(std::vector<Options *> options, DiffLookup *table, DiffLookup *stable,
+                const std::string &name, const std::string &def, T &f, Ts &sf,
+                bool staggerGrids) {
+  TRACE("derivs_set()");
+  output_info.write("\t%-12s: ", name.c_str());
+  string label = def;
+  for (auto &opts : options) {
+    if (opts->isSet(name)) {
+      opts->get(name, label, "");
+      break;
+    }
+  }
 
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupFunc(table, method);                 // Find the function pointer
-}
+  f = lookupFunc(table, label); // Find the function
 
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::upwind_func &f) {
-  TRACE("derivs_set( upwind_func )");
-  string label;
-  options->get(name, label, "U1");
-
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupUpwindFunc(table, method);
-}
-
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::flux_func &f) {
-  TRACE("derivs_set( flux_func )");
-  string label;
-  options->get(name, label, "U1");
-
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupFluxFunc(table, method);
+  label = def;
+  if (staggerGrids) {
+    output_info.write("\tStag. %-6s: ", name.c_str());
+    for (auto &_name : {name + "stag", name}) {
+      for (auto &opts : options) {
+        if (opts->isSet(_name)) {
+          opts->get(_name, label, "");
+          sf = lookupFunc(stable, label); // Find the function
+          return;
+        }
+      }
+    }
+  }
+  sf = lookupFunc(stable, label); // Find the function
 }
 
 /// Initialise derivatives from options
-void derivs_initialise(Options *options, bool StaggerGrids, Mesh::deriv_func &fdd,
-                       Mesh::deriv_func &sfdd, Mesh::deriv_func &fd2d,
-                       Mesh::deriv_func &sfd2d, Mesh::upwind_func &fu,
-                       Mesh::flux_func &sfu, Mesh::flux_func &ff, Mesh::flux_func &sff) {
-  output_info.write("\tFirst       : ");
-  derivs_set(options, FirstDerivTable, "first", fdd);
-  if (StaggerGrids) {
-    output_info.write("\tStag. First : ");
-    derivs_set(options, FirstStagDerivTable, "first", sfdd);
-  }
-  output_info.write("\tSecond      : ");
-  derivs_set(options, SecondDerivTable, "second", fd2d);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Second: ");
-    derivs_set(options, SecondStagDerivTable, "second", sfd2d);
-  }
-  output_info.write("\tUpwind      : ");
-  derivs_set(options, UpwindTable, "upwind", fu);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Upwind: ");
-    derivs_set(options, UpwindStagTable, "upwind", sfu);
-  }
-  output_info.write("\tFlux        : ");
-  derivs_set(options, FluxTable, "flux", ff);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Flux  : ");
-    derivs_set(options, FluxStagTable, "flux", sff);
-  }
+void derivs_initialise(Options *optionbase, std::string sec, bool staggerGrids,
+                       Mesh::deriv_func &fdd, Mesh::deriv_func &sfdd,
+                       Mesh::deriv_func &fd2d, Mesh::deriv_func &sfd2d,
+                       Mesh::upwind_func &fu, Mesh::flux_func &sfu, Mesh::flux_func &ff,
+                       Mesh::flux_func &sff) {
+  std::vector<Options *> options = {optionbase->getSection(sec),
+                                    optionbase->getSection("diff")};
+  derivs_set(options, FirstDerivTable, FirstStagDerivTable, "First", "C2", fdd, sfdd,
+             staggerGrids);
+
+  derivs_set(options, SecondDerivTable, SecondStagDerivTable, "Second", "C2", fd2d, sfd2d,
+             staggerGrids);
+
+  derivs_set(options, UpwindTable, UpwindStagTable, "Upwind", "U1", fu, sfu,
+             staggerGrids);
+
+  derivs_set(options, FluxTable, FluxStagTable, "Flux", "U1", ff, sff, staggerGrids);
 }
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
@@ -637,22 +609,22 @@ void Mesh::derivs_init(Options *options) {
   TRACE("Initialising derivatives");
 
   output_info.write("Setting X differencing methods\n");
-  derivs_initialise(options->getSection("ddx"), StaggerGrids, fDDX, sfDDX, fD2DX2,
-                    sfD2DX2, fVDDX, sfVDDX, fFDDX, sfFDDX);
+  derivs_initialise(options, "ddx", StaggerGrids, fDDX, sfDDX, fD2DX2, sfD2DX2, fVDDX,
+                    sfVDDX, fFDDX, sfFDDX);
 
   if ((fDDX == nullptr) || (fD2DX2 == nullptr))
     throw BoutException("FFT cannot be used in X\n");
 
   output_info.write("Setting Y differencing methods\n");
-  derivs_initialise(options->getSection("ddy"), StaggerGrids, fDDY, sfDDY, fD2DY2,
-                    sfD2DY2, fVDDY, sfVDDY, fFDDY, sfFDDY);
+  derivs_initialise(options, "ddy", StaggerGrids, fDDY, sfDDY, fD2DY2, sfD2DY2, fVDDY,
+                    sfVDDY, fFDDY, sfFDDY);
 
   if ((fDDY == nullptr) || (fD2DY2 == nullptr))
     throw BoutException("FFT cannot be used in Y\n");
 
   output_info.write("Setting Z differencing methods\n");
-  derivs_initialise(options->getSection("ddz"), StaggerGrids, fDDZ, sfDDZ, fD2DZ2,
-                    sfD2DZ2, fVDDZ, sfVDDZ, fFDDZ, sfFDDZ);
+  derivs_initialise(options, "ddz", StaggerGrids, fDDZ, sfDDZ, fD2DZ2, sfD2DZ2, fVDDZ,
+                    sfVDDZ, fFDDZ, sfFDDZ);
 
   // Get the fraction of modes filtered out in FFT derivatives
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
@@ -1752,7 +1724,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(UpwindTable, method);
+    func = lookupFunc(UpwindTable, method);
   }
 
   ASSERT1(this == f.getMesh());
@@ -1851,7 +1823,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // Note: The velocity stencil contains only (mm, m, p, pp)
@@ -1956,7 +1928,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (this->xstart > 1) {
@@ -2052,7 +2024,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // Note: vs.c not used for staggered differencing
@@ -2153,7 +2125,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (this->ystart > 1) {
@@ -2249,7 +2221,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // There are four cases, corresponding to whether or not f and v
@@ -2404,7 +2376,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
@@ -2518,7 +2490,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     stencil vval, fval;
@@ -2560,7 +2532,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     stencil fval;
@@ -2602,7 +2574,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Mesh::flux_func func = fFDDX;
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(FluxTable, method);
+    func = lookupFunc(FluxTable, method);
   }
 
   Field2D result(this);
@@ -2716,7 +2688,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
   ASSERT1(this == f.getMesh());
@@ -2890,7 +2862,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Mesh::flux_func func = fFDDY;
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(FluxTable, method);
+    func = lookupFunc(FluxTable, method);
   }
 
   Field2D result(this);
@@ -3001,7 +2973,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
   if (func == nullptr) {
@@ -3230,7 +3202,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
   ASSERT1(this == v.getMesh());

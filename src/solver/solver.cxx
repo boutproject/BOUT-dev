@@ -503,12 +503,12 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       freqDefault = 1;
       // update old monitors
       int fac=timestep/TIMESTEP+.5;
-      for (auto i: monitors){
+      for (const auto &i: monitors){
         i->freq=i->freq*fac;
       }
     }
   }
-  for (auto i: monitors){
+  for (const auto &i: monitors){
     if (i->timestep < 0){
       i->timestep=timestep*freqDefault;
       i->freq=freqDefault;
@@ -530,7 +530,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   /// Run the solver
   output_info.write("Running simulation\n\n");
 
-  time_t start_time = time((time_t *)nullptr);
+  time_t start_time = time(nullptr);
   output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
   
   Timer timer("run"); // Start timer
@@ -559,7 +559,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   try {
     status = run();
 
-    time_t end_time = time((time_t *)nullptr);
+    time_t end_time = time(nullptr);
     output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
     output_progress.write("Run time : ");
 
@@ -650,14 +650,19 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
                             ,timestep,mon->timestep);
       int multi = timestep/mon->timestep+.5;
       timestep=mon->timestep;
-      for (auto i: monitors){
+      for (const auto &i: monitors){
         i->freq=i->freq*multi;
       }
+      // update freqDefault so that monitors with no timestep are called at the
+      // output frequency
+      freqDefault *= multi;
+
       mon->freq=1;
     }
   } else {
     mon->freq = freqDefault;
   }
+  mon->is_added = true; // Records that monitor has been added to solver so timestep should not be updated
   if(pos == Solver::FRONT) {
     monitors.push_front(mon);
   }else
@@ -682,14 +687,8 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   
   ++iter;
   try {
-    // Call physics model monitor
-    if(model) {
-      if(model->runOutputMonitor(simtime, iter-1, NOUT))
-        throw BoutException("Monitor signalled to quit");
-    }
-    
     // Call monitors
-    for (auto it: monitors){
+    for (const auto &it : monitors){
       if ((iter % it->freq)==0){
         // Call each monitor one by one
         int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
@@ -698,7 +697,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       }
     }
   } catch (BoutException &e) {
-    for (auto it: monitors){
+    for (const auto &it : monitors){
       it->cleanup();
     }
     output_error.write("Monitor signalled to quit\n");
@@ -706,7 +705,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   }
 
   if ( iter == NOUT ){
-    for (auto it: monitors){
+    for (const auto &it : monitors){
       it->cleanup();
     }
   }
@@ -966,12 +965,12 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   int p = 0; // Counter for location in udata array
   
   // All boundaries
-  for(auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+  for(const auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
     loop_vars_op(i2d, udata, p, op, true);
   }
   
   // Bulk of points
-  for(auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+  for(const auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_vars_op(i2d, udata, p, op, false);
   }
 }
@@ -1100,7 +1099,7 @@ const Field3D Solver::globalIndex(int localStart) {
   if (n2dbndry + n3dbndry > 0) {
     // Some boundary points evolving
 
-    for (auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+    for (const auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
       // Zero index contains 2D and 3D variables
       index[mesh->ind2Dto3D(i2d, 0)] = ind;
       ind += n2dbndry + n3dbndry;
@@ -1113,7 +1112,7 @@ const Field3D Solver::globalIndex(int localStart) {
   }
 
   // Bulk of points
-  for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+  for (const auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Zero index contains 2D and 3D variables
     index[mesh->ind2Dto3D(i2d, 0)] = ind;
     ind += n2d + n3d;

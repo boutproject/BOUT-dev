@@ -412,9 +412,12 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Global locator functions
-  virtual int XGLOBAL(int xloc) const = 0; ///< Continuous global X index
-  virtual int YGLOBAL(int yloc) const = 0; ///< Continuous global Y index
+  /// Returns the global X index given a local indexs
+  /// If the local index includes the boundary cells, then so does the global.
+  virtual int XGLOBAL(int xloc) const = 0;
+  /// Returns the global Y index given a local index
+  /// The local index must include the boundary, the global index does not.
+  virtual int YGLOBAL(int yloc) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
@@ -649,6 +652,7 @@ class Mesh {
   }
   Region<Ind3D> &getRegion3D(const std::string &region_name);
   Region<Ind2D> &getRegion2D(const std::string &region_name);
+  Region<IndPerp> &getRegionPerp(const std::string &region_name);
 
   /// Add a new region to the region_map for the data iterator
   ///
@@ -659,22 +663,31 @@ class Mesh {
   void addRegion(const std::string &region_name, const Region<Ind2D> &region) {
     return addRegion2D(region_name, region);
   }
+  void addRegion(const std::string &region_name, const Region<IndPerp> &region) {
+    return addRegionPerp(region_name, region);
+  }
   void addRegion3D(const std::string &region_name, const Region<Ind3D> &region);
   void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
+  void addRegionPerp(const std::string &region_name, const Region<IndPerp> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0){
-    return Ind3D(ind2D.ind * LocalNz + jz);
-  }
+  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0) { return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz}; }
 
   /// Converts an Ind3D to an Ind2D using calculation
-  Ind2D ind3Dto2D(const Ind3D &ind3D){
-    return Ind2D(ind3D.ind / LocalNz);
-  }
+  Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
 
-  /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
-  int map3Dto2D(const Ind3D &ind3D){
-    return indexLookup3Dto2D[ind3D.ind];
+  /// Converts an Ind3D to an IndPerp using calculation
+  IndPerp ind3DtoPerp(const Ind3D &ind3D) { return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz}; }
+
+  /// Converts an IndPerp to an Ind3D using calculation
+  Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
+    int jz = indPerp.z();
+    return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
+  }
+  
+  /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
+  Ind2D map3Dto2D(const Ind3D &ind3D){
+    return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
   
   /// Create the default regions for the data iterator
@@ -735,6 +748,7 @@ private:
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
+  std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
 };
 

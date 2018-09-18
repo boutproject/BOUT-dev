@@ -174,12 +174,13 @@ const IndexRange Field2D::region(REGION rgn) const {
   };
 }
 
+// Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
-  return data[fieldmesh->map3Dto2D(d)];
+  return operator[](fieldmesh->map3Dto2D(d));
 }
 
 const BoutReal& Field2D::operator[](const Ind3D &d) const {
-  return data[fieldmesh->map3Dto2D(d)];
+  return operator[](fieldmesh->map3Dto2D(d));
 }
 
 ///////////// OPERATORS ////////////////
@@ -239,7 +240,7 @@ void Field2D::applyBoundary(bool init) {
   }
 #endif
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
@@ -249,7 +250,7 @@ void Field2D::applyBoundary(bool init) {
 void Field2D::applyBoundary(const string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -281,19 +282,26 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
-  ASSERT1(isAllocated());
+  TRACE("Field2D::applyBoundary(string, string)");
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   // Set the corners to zero
@@ -318,9 +326,9 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 void Field2D::applyTDerivBoundary() {
   TRACE("Field2D::applyTDerivBoundary()");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
   ASSERT1(deriv != nullptr);
-  ASSERT1(deriv->isAllocated());
+  checkData(*deriv);
 
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
@@ -328,9 +336,10 @@ void Field2D::applyTDerivBoundary() {
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
   TRACE("Field2D::setBoundary(const Field2D&)");
-  allocate(); // Make sure data allocated
 
-  ASSERT0(f2d.isAllocated());
+  checkData(f2d);
+
+  allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
@@ -354,7 +363,7 @@ Field2D operator-(const Field2D &f) { return -1.0 * f; }
 BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
   BoutReal result = f[f.region(rgn).begin()];
 
@@ -374,7 +383,7 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
   BoutReal result = f[f.region(rgn).begin()];
 
@@ -430,7 +439,7 @@ bool finite(const Field2D &f, REGION rgn) {
   const Field2D name(const Field2D &f, REGION rgn) {                                     \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
-    ASSERT1(f.isAllocated());                                                            \
+    checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
@@ -464,6 +473,8 @@ const Field2D copy(const Field2D &f) {
 }
 
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
+  checkData(var);
+
   Field2D result = copy(var);
 
   for(const auto& d : result.region(rgn))
@@ -476,8 +487,8 @@ const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
 Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
@@ -485,7 +496,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   result.allocate();
 
   // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  for (const auto &i : result.region(rgn)) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
 
@@ -496,7 +507,8 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
 Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(lhs.getMesh());
@@ -514,7 +526,8 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
 Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(rhs.getMesh());

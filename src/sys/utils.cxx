@@ -38,13 +38,13 @@ BoutReal ***r3tensor(int nrow, int ncol, int ndep) {
   BoutReal ***t;
 
   /* allocate pointers to pointers to rows */
-  t=(BoutReal ***) malloc((size_t)(nrow*sizeof(BoutReal**)));
+  t = static_cast<BoutReal ***>(malloc(nrow * sizeof(BoutReal **)));
 
   /* allocate pointers to rows and set pointers to them */
-  t[0]=(BoutReal **) malloc((size_t)(nrow*ncol*sizeof(BoutReal*)));
+  t[0] = static_cast<BoutReal **>(malloc(nrow * ncol * sizeof(BoutReal *)));
 
   /* allocate rows and set pointers to them */
-  t[0][0]=(BoutReal *) malloc((size_t)(nrow*ncol*ndep*sizeof(BoutReal)));
+  t[0][0] = static_cast<BoutReal *>(malloc(nrow * ncol * ndep * sizeof(BoutReal)));
 
   for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
   for(i=1;i!=nrow;i++) {
@@ -68,13 +68,13 @@ int ***i3tensor(int nrow, int ncol, int ndep) {
   int ***t;
 
   /* allocate pointers to pointers to rows */
-  t=(int ***) malloc((size_t)(nrow*sizeof(int**)));
+  t = static_cast<int ***>(malloc(nrow * sizeof(int **)));
 
   /* allocate pointers to rows and set pointers to them */
-  t[0]=(int **) malloc((size_t)(nrow*ncol*sizeof(int*)));
+  t[0] = static_cast<int **>(malloc(nrow * ncol * sizeof(int *)));
 
   /* allocate rows and set pointers to them */
-  t[0][0]=(int *) malloc((size_t)(nrow*ncol*ndep*sizeof(int)));
+  t[0][0] = static_cast<int *>(malloc(nrow * ncol * ndep * sizeof(int)));
 
   for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
   for(i=1;i!=nrow;i++) {
@@ -106,7 +106,7 @@ char* copy_string(const char* s) {
     return nullptr;
 
   n = strlen(s);
-  s2 = (char*) malloc(n+1);
+  s2 = static_cast<char *>(malloc(n + 1));
   strcpy(s2, s);
   return s2;
 }
@@ -124,13 +124,13 @@ const string lowercasequote(const string &str) {
   string strlow(str);
 
   bool quote = false, dquote = false;
-  for(string::size_type i=0;i<strlow.length(); i++) {
-    if(strlow[i] == '\'') {
+  for (char &i : strlow) {
+    if (i == '\'') {
       quote ^= true;
-    }else if(strlow[i] == '"') {
+    } else if (i == '"') {
       dquote ^= true;
-    }else if( (!quote) && (!dquote) ){
-      strlow[i] = static_cast<char>(tolower(strlow[i]));
+    } else if ((!quote) && (!dquote)) {
+      i = static_cast<char>(tolower(i));
     }
   }
   return strlow;

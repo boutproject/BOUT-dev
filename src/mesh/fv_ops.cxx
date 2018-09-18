@@ -143,11 +143,11 @@ namespace FV {
     
     Coordinates *coord = mesh->coordinates();
     
-    for( auto &i: result ) {
+    for( const auto &i: result ) {
       // Calculate flux at upper surface
       
-      auto iyp = i.yp();
-      auto iym = i.ym();
+      const auto iyp = i.yp();
+      const auto iym = i.ym();
 
       if(bndry_flux || !mesh->lastY() || (i.y != mesh->yend)) {
         

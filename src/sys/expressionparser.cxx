@@ -42,46 +42,50 @@ namespace { // These classes only visible in this file
   
   class FieldX : public FieldGenerator {
   public:
-    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
       return std::make_shared<FieldX>();
     }
-    double generate(double x, double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
+    double generate(double x, double UNUSED(y), double UNUSED(z),
+                    double UNUSED(t)) override {
       return x;
     }
-    const std::string str() {return std::string("x");}
+    const std::string str() override { return std::string("x"); }
   };
   
   class FieldY : public FieldGenerator {
   public:
-    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
       return std::make_shared<FieldY>();
     }
-    double generate(double UNUSED(x), double y, double UNUSED(z), double UNUSED(t)) {
+    double generate(double UNUSED(x), double y, double UNUSED(z),
+                    double UNUSED(t)) override {
       return y;
     }
-    const std::string str() {return std::string("y");}
+    const std::string str() override { return std::string("y"); }
   };
 
   class FieldZ : public FieldGenerator {
   public:
-    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
       return std::make_shared<FieldZ>();
     }
-    double generate(double UNUSED(x), double UNUSED(y), double z, double UNUSED(t)) {
+    double generate(double UNUSED(x), double UNUSED(y), double z,
+                    double UNUSED(t)) override {
       return z;
     }
-    const std::string str() {return std::string("z");}
+    const std::string str() override { return std::string("z"); }
   };
   
   class FieldT : public FieldGenerator {
   public:
-    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) {
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
       return std::make_shared<FieldT>();
     }
-    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double t) {
+    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                    double t) override {
       return t;
     }
-    const std::string str() {return std::string("t");}
+    const std::string str() override { return std::string("t"); }
   };
 }
 
@@ -347,13 +351,13 @@ char ExpressionParser::LexInfo::nextToken() {
       LastChar = static_cast<signed char>(ss.get());
     }
     
-    curval = strtod(NumStr.c_str(), 0);
+    curval = std::stod(NumStr);
     curtok = -1;
     return curtok;
   }
 
   // LastChar is unsigned, explicitly cast
-  curtok = static_cast<signed char>(LastChar);
+  curtok = LastChar;
   LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }

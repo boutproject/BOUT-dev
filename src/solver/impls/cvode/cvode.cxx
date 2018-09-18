@@ -581,11 +581,11 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   int p = 0; // Counter for location in abstolvec_data array
 
   // All boundaries
-  for (auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+  for (const auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
   }
   // Bulk of points
-  for (auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+  for (const auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
   }
 }

@@ -17,7 +17,7 @@ nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
 for nz in nzs:
     boutcore.setOption("meshz:nz","%d"%nz,force=True)
     boutcore.setOption("meshz:dz","2*Pi/%d"%nz,force=True)#%.30g"%(2*np.pi/nz))# better pass calculation to bout ...
-    mesh=boutcore.Mesh(OptionSection="meshz")
+    mesh=boutcore.Mesh(section="meshz")
     f=boutcore.create3D("sin(z)",mesh)
     sim=boutcore.DDZ(f)
     ana=boutcore.create3D("cos(z)",mesh)
