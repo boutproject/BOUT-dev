@@ -74,6 +74,9 @@ public:
     return false;
   }
 
+  /// Interpolation objects for yup and ydown transformations
+  Interpolation *interp_yup, *interp_ydown;
+
 private:
   Mesh &localmesh; ///< The mesh this paralleltransform is part of
 
@@ -82,7 +85,7 @@ private:
   Field2D zShift;
 
   /// Interpolation objects for yup and ydown transformations
-  Interpolation *interp_yup, *interp_ydown;
+  //Interpolation *interp_yup, *interp_ydown;
 
   /// Interpolation objects for shifting to and from field-aligned coordinates
   Interpolation *interp_to_aligned, *interp_from_aligned;
