@@ -121,9 +121,9 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
  *   (i, j+1, k+1)	h01_z + h10_z / 2
  *   (i, j+1, k+2)	h11_z / 2
  */
-std::vector<Interpolation::positionsAndWeights> HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
-  std::vector<Interpolation::positionsAndWeights> pw;
-  positionsAndWeights p;
+std::vector<ParallelTransform::positionsAndWeights> HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+  std::vector<ParallelTransform::positionsAndWeights> pw;
+  ParallelTransform::positionsAndWeights p;
 
   int ncz = localmesh->LocalNz;
   int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;

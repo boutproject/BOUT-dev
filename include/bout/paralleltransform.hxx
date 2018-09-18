@@ -45,6 +45,21 @@ public:
   virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
+
+  struct positionsAndWeights {
+    int i, j, k;
+    BoutReal weight;
+  };
+
+  virtual std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i,j,k,1);
+  }
+  virtual std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i,j,k,-1);
+  }
+  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented in this subclass");
+  }
 };
 
 
