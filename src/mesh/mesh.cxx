@@ -20,7 +20,7 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -38,10 +38,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
 Mesh::~Mesh() {
   if (source) {
     delete source;
-  }
-
-  if (coords) {
-    delete coords;
   }
 }
 
@@ -329,8 +325,13 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-Coordinates *Mesh::createDefaultCoordinates() {
-  return new Coordinates(this);
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
+  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+    // Initialize coordinates from input
+    return std::make_shared<Coordinates>(this);
+  else
+    // Interpolate coordinates from CELL_CENTRE version
+    return std::make_shared<Coordinates>(this, location, coordinates(CELL_CENTRE));
 }
 
 

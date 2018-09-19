@@ -38,7 +38,7 @@
 
 //#define SECONDORDER // Define to use 2nd order differencing
 
-LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc) : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   if(!mesh->firstX() || !mesh->lastX())
     throw BoutException("LaplaceSerialBand only works for mesh->NXPE = 1");
   if(mesh->periodicX) {
@@ -82,7 +82,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
   
   int ncz = mesh->LocalNz;
   int ncx = mesh->LocalNx-1;

@@ -16,7 +16,7 @@ class LaplaceXZpetsc;
 #include <boutexception.hxx>
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {
+  LaplaceXZpetsc(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
     throw BoutException("No PETSc LaplaceXZ solver available");
   }
 
@@ -39,7 +39,7 @@ public:
   /*!
    * Constructor
    */
-  LaplaceXZpetsc(Mesh *m, Options *options);
+  LaplaceXZpetsc(Mesh *m, Options *options, const CELL_LOC loc);
 
   /*!
    * Destructor

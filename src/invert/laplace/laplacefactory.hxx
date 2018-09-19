@@ -11,7 +11,7 @@ class LaplaceFactory {
   /// Return a pointer to the only instance
   static LaplaceFactory* getInstance();
 
-  Laplacian *createLaplacian(Options *options = nullptr);
+  Laplacian *createLaplacian(Options *options = nullptr, const CELL_LOC loc = CELL_DEFAULT);
 
 private:
   LaplaceFactory() {} // Prevent instantiation of this class

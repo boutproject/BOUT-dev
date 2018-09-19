@@ -36,8 +36,8 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-LaplaceShoot::LaplaceShoot(Options *opt)
-    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc)
+    : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
 
   if(mesh->periodicX) {
@@ -72,7 +72,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
   
   // Get the width of the boundary
   
