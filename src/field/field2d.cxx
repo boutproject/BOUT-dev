@@ -77,9 +77,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
-
-  location = f.location;
-
+                                       
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
