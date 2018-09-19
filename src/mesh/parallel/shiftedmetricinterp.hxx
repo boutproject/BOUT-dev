@@ -74,12 +74,22 @@ public:
     return false;
   }
 
+  std::vector<ParallelTransform::positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) {
+    return interp_yup->getWeightsForYApproximation(i,j,k,1);
+  }
+  std::vector<ParallelTransform::positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) {
+    return interp_ydown->getWeightsForYApproximation(i,j,k,-1);
+  }
+
 private:
   Mesh &localmesh; ///< The mesh this paralleltransform is part of
 
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
+
+  /// Interpolation objects for yup and ydown transformations
+  //Interpolation *interp_yup, *interp_ydown;
 
   /// Interpolation objects for yup and ydown transformations
   Interpolation *interp_yup, *interp_ydown;

@@ -93,6 +93,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
       else if(solt == "hy") {
 	PCSetType(pc,PCHYPRE);
 	PCHYPRESetType(pc,"boomeramg");
+<<<<<<< HEAD
         if(soltype == "hypre0") {
   	  char mclev[3];
 	  if(mglevel > 9) sprintf(mclev,"%2d",mglevel);
@@ -101,6 +102,14 @@ void LaplacePetscAmg::settingSolver(int kflag){
 	  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_down","2");
 	  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_up","2");
         }
+=======
+	char mclev[3];
+	if(mglevel > 9) sprintf(mclev,"%2d",mglevel);
+	else sprintf(mclev,"0%1d",mglevel);
+	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_levels",mclev);
+	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_down","2");
+	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_up","2");
+>>>>>>> 38834ac9c198553605fa5f7911557908d30d13ce
       }
       else { // For gamg 
         PCSetType(pc,PCGAMG);
