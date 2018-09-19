@@ -34,19 +34,39 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr){
+Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
+Field::Field(Mesh *localmesh, Coordinates *localCoord) : fieldmesh(localmesh), fieldCoordinates(localCoord) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }
+
+/// Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
+/// currently as this would lead to circular/recursive behaviour (getCoordinates would
+/// call fieldmesh->coordinates, which would create fields, which would then call
+/// getCoordinates again etc.).
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
+}
+
+Coordinates *Field::getCoordinates() const {
+  if (fieldCoordinates) {
+    return fieldCoordinates;    
+  } else {
+    /// Note we don't set fieldCoordinates here as the routine would become
+    /// non-const limiting our ability to call it in places like derivatives
+    /// where fields are passed as const.
+    return getMesh()->coordinates(getLocation());
+  }
+}
+
+Coordinates *Field::getCoordinates(CELL_LOC loc) const {
+  return getMesh()->coordinates(loc);
 }
 
 int Field::getNx() const{

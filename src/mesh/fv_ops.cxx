@@ -17,7 +17,7 @@ namespace FV {
     Field3D result(mesh);
     result = 0.0;
 
-    Coordinates *coord = mesh->coordinates(f.getLocation());
+    Coordinates *coord = f.getCoordinates();
     
     // Flux in x
   
@@ -145,7 +145,7 @@ namespace FV {
       Kup = Kdown = K;
     }
     
-    Coordinates *coord = mesh->coordinates(fin.getLocation());
+    Coordinates *coord = fin.getCoordinates();
     
     for( const auto &i: result ) {
       // Calculate flux at upper surface
@@ -195,7 +195,7 @@ namespace FV {
     Field3D result = 0.0;
     result.setLocation(f_in.getLocation());
     
-    Coordinates *coord = mesh->coordinates(f_in.getLocation());
+    Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
     Field3D d = mesh->toFieldAligned(d_in);
@@ -248,7 +248,7 @@ namespace FV {
     // Convert to field aligned coordinates
     Field3D f = mesh->toFieldAligned(f_in);
 
-    Coordinates *coord = mesh->coordinates(f_in.getLocation());
+    Coordinates *coord = f_in.getCoordinates();
     
     for(int i=mesh->xstart;i<=mesh->xend;i++) {
       bool yperiodic = mesh->periodicY(i);

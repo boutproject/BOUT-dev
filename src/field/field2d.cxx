@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh, Coordinates *localCoord) : Field(localmesh, localCoord), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -65,9 +65,8 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), der
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
+Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh, f.fieldCoordinates), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
-                                     location(f.location),
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
@@ -78,6 +77,8 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
+
+  copyLocation(f);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -93,7 +94,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh, Coordinates *localCoord) : Field(localmesh, localCoord), deriv(nullptr) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -185,6 +186,8 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+    if (new_location != location)
+      fieldCoordinates = getMesh()->coordinates(location);
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -195,10 +198,20 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  /// Would like to do something like the following but can lead to problems
+  /// at least in unit testing.
+  if (fieldCoordinates == nullptr) fieldCoordinates = getMesh()->coordinates(location);  
 }
 
 CELL_LOC Field2D::getLocation() const {
   return location;
+}
+
+void Field2D::copyLocation(const Field2D &f) {
+  ASSERT1(f.getMesh() == getMesh());
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
 }
 
 // Not in header because we need to access fieldmesh
@@ -234,7 +247,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   data = rhs.data;
 
   // Copy location
-  location = rhs.location;
+  copyLocation(rhs);
 
   return *this;
 }
@@ -312,19 +325,26 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
+  TRACE("Field2D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   // Set the corners to zero
@@ -470,7 +490,7 @@ bool finite(const Field2D &f, REGION rgn) {
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
-    result.setLocation(f.getLocation());                                                 \
+    result.copyLocation(f);                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }

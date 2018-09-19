@@ -64,7 +64,7 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Copy constructor. After this both fields
@@ -82,7 +82,7 @@ class Field2D : public Field, public FieldData {
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */ 
-  Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  Field2D(BoutReal val, Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Destructor
@@ -137,6 +137,8 @@ class Field2D : public Field, public FieldData {
   void setLocation(CELL_LOC new_location) override;
   /// Get variable location
   CELL_LOC getLocation() const override;
+  /// Copy the location and coordinates pointer
+  void copyLocation(const Field2D &f);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -271,7 +273,7 @@ class Field2D : public Field, public FieldData {
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
-  CELL_LOC location; ///< Location of the variable in the cell
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
 
   Field2D *deriv; ///< Time-derivative, can be NULL
 };

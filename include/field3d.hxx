@@ -175,7 +175,7 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *localmesh = nullptr);
+  Field3D(Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
 
   /*!
    * Copy constructor
@@ -185,7 +185,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  Field3D(BoutReal val, Mesh *localmesh = nullptr, Coordinates *localCoord = nullptr);
   /// Destructor
   ~Field3D() override;
 
@@ -274,6 +274,8 @@ class Field3D : public Field, public FieldData {
   void setLocation(CELL_LOC new_location) override;
   /// Get variable location
   CELL_LOC getLocation() const override;
+  /// Copy the location and coordinates pointer
+  void copyLocation(const Field3D &f);
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -513,7 +515,7 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location; ///< Location of the variable in the cell
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 

@@ -187,7 +187,7 @@ namespace FV {
     Field3D f = mesh->toFieldAligned(f_in);
     Field3D v = mesh->toFieldAligned(v_in);
 
-    Coordinates *coord = mesh->coordinates(f_in.getLocation());
+    Coordinates *coord = f_in.getCoordinates();
 
     Field3D result = 0.0;
     
@@ -343,7 +343,7 @@ namespace FV {
 
     CellEdges cellboundary;
     
-    Coordinates *coord = mesh->coordinates(n_in.getLocation());
+    Coordinates *coord = n_in.getCoordinates();
     
     if(v.covariant) {
       // Got a covariant vector instead
