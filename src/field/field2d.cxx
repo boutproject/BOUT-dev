@@ -48,7 +48,6 @@
 Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
-  setLocation(CELL_CENTRE);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -79,7 +78,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   checkData(f);
 #endif
 
-  setLocation(f.location);
+  location = f.location;
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -92,13 +91,14 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   }
 #endif
 
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+  
   boundaryIsSet = false;
 }
 
 Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
-
-  setLocation(CELL_CENTRE);
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -189,8 +189,11 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+
+    // Invalidate the coordinates pointer
     if (new_location != location)
-      fieldCoordinates = getMesh()->coordinates(location);
+      fieldCoordinates = nullptr;
+
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -201,6 +204,8 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+
 }
 
 CELL_LOC Field2D::getLocation() const {

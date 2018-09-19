@@ -64,8 +64,6 @@ Field3D::Field3D(Mesh *localmesh)
   }
 #endif
 
-  setLocation(CELL_CENTRE); // Cell centred variable by default
-
   boundaryIsSet = false;
 }
 
@@ -95,8 +93,9 @@ Field3D::Field3D(const Field3D &f)
   }
 #endif
 
-  setLocation(f.location);
-
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+    
   boundaryIsSet = false;
 }
 
@@ -106,14 +105,15 @@ Field3D::Field3D(const Field2D &f)
 
   TRACE("Field3D: Copy constructor from Field2D");
 
-  setLocation(CELL_CENTRE); // Cell centred variable by default
-
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
 
+  location = f.getLocation();
+  fieldCoordinates = nullptr;
+    
   *this = f;
 }
 
@@ -122,8 +122,6 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
-
-  setLocation(CELL_CENTRE); // Cell centred variable by default
 
   boundaryIsSet = false;
 
@@ -241,8 +239,10 @@ void Field3D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+
+    // Invalidate the coordinates pointer
     if (new_location != location)
-      fieldCoordinates = getMesh()->coordinates(location);
+      fieldCoordinates = nullptr;
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
