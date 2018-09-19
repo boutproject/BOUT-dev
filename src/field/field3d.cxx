@@ -110,7 +110,6 @@ Field3D::Field3D(const Field2D &f)
 
   boundaryIsSet = false;
 
-  fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
@@ -516,19 +515,26 @@ void Field3D::applyBoundary(const string &condition) {
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
+  TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
-  
+
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -1047,8 +1053,9 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   TRACE("shiftZ");
   checkData(var);
   var.allocate(); // Ensure that var is unique
-  
-  int ncz = mesh->LocalNz;
+  Mesh *localmesh = var.getMesh();
+
+  int ncz = localmesh->LocalNz;
   if(ncz == 1)
     return; // Shifting doesn't do anything
   
@@ -1057,6 +1064,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
   BoutReal zlength = var.getCoordinates()->zlength();
+
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]

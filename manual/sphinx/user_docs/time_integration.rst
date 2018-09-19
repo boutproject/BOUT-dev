@@ -708,22 +708,46 @@ written to file, whereas timestep monitoring is every timestep and so
 ``examples/monitor`` and ``examples/monitor-newapi``.
 
 **Output monitoring**: At every output timestep the solver calls a
-monitor function, which writes the output dump file, calculates and
-prints timing information and estimated time remaining. If you want to
-run additional code or write data to a different file, you can add
-monitor function(s).
+monitor method of the BoutMonitor class, which writes the output dump file,
+calculates and prints timing information and estimated time remaining. If you
+want to run additional code or write data to a different file, you can
+implement the outputMonitor method of PhysicsModel::
 
-You can call your output monitor function whatever you like, but it must
-have 4 inputs and return an int::
+    int outputMonitor(BoutReal simtime, int iter, int nout)
 
-    int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-      ...
-    }
+The first input is the current simulation time, the second is the output
+number, and the last is the total number of outputs requested.
+This method is called by a monitor object PhysicsModel::modelMonitor, which
+writes the restart files at the same time. You can change the frequency at which
+the monitor is called by calling, in PhysicsModel::init::
+
+    modelMonitor.setTimestep(new_timestep)
+
+where ``new_timestep`` is a BoutReal which is either ``timestep*n`` or
+``timestep/n`` for an integer ``n``. Note that this will change the frequency
+of writing restarts as well as of calling ``outputMonitor()``.
+
+You can also add custom monitor object(s) for more flexibility.
+
+You can call your output monitor class whatever you like, but it must be a
+subclass of Monitor and provide the method ``call`` which takes 4 inputs and
+returns an int::
+
+    class MyOutputMonitor : public Monitor {
+      int call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+        ...
+      }
+    };
 
 The first input is the solver object, the second is the current
 simulation time, the third is the output number, and the last is the
 total number of outputs requested. To get the solver to call this
-function every output time, put in your `PhysicsModel::init` code::
+function every output time, define a `MyOutputMonitor` object as a member of your
+PhysicsModel::
+
+      MyOutputMonitor my_output_monitor;
+
+and put in your `PhysicsModel::init` code::
 
       solver->addMonitor(my_output_monitor);
 
@@ -733,10 +757,19 @@ If you want to later remove a monitor, you can do so with::
 
 A simple example using this monitor is::
 
-    int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-      output.write("My monitor, time = %e, dt = %e\n",
-          simtime, solver->getCurrentTimestep());
+    class MyOutputMonitor: public Monitor{
+    public:
+      MyOutputMonitor(BoutReal timestep=-1):Monitor(timestep){};
+      int call(Solver *solver, BoutReal simtime, int iter, int NOUT) override;
+    };
+
+    int MyOutputMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+      output.write("Output monitor, time = %e, step %d of %d\n",
+                   simtime, iter, NOUT);
+      return 0;
     }
+
+    MyOutputMonitor my_monitor;
 
     int init(bool restarting) {
       solver->addMonitor(my_monitor);
@@ -744,8 +777,8 @@ A simple example using this monitor is::
 
 See the monitor example (``examples/monitor``) for full code.
 
-**Timestep monitoring**: This works in the same way as output
-monitoring. First define a monitor function::
+**Timestep monitoring**: This uses functions instead of objects. First define a
+monitor function::
 
     int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
       ...
