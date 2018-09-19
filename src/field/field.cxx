@@ -17,7 +17,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- *
+ *civil
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -45,10 +45,12 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) 
     fieldmesh = mesh;
   }
 
-/// Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
-/// currently as this would lead to circular/recursive behaviour (getCoordinates would
-/// call fieldmesh->coordinates, which would create fields, which would then call
-/// getCoordinates again etc.).
+// Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
+// currently as this would lead to circular/recursive behaviour (getCoordinates would
+// call fieldmesh->coordinates, which would create fields, which would then call
+// getCoordinates again etc.). This also requires care in the derived class
+// constructors.
+  
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
@@ -58,9 +60,6 @@ Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates;    
   } else {
-    /// Note we don't set fieldCoordinates here as the routine would become
-    /// non-const limiting our ability to call it in places like derivatives
-    /// where fields are passed as const.
     fieldCoordinates = getMesh()->coordinates(getLocation());
     return fieldCoordinates;
   }
