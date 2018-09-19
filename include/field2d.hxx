@@ -137,6 +137,8 @@ class Field2D : public Field, public FieldData {
   void setLocation(CELL_LOC new_location) override;
   /// Get variable location
   CELL_LOC getLocation() const override;
+  /// Copy the location and coordinates pointer
+  void copyLocation(const Field2D &f);
 
   /////////////////////////////////////////////////////////
   // Data access

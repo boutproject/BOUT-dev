@@ -78,7 +78,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh, f.fieldCoordinates), // 
   checkData(f);
 #endif
 
-  setLocation(f.location);
+  copyLocation(f);
 
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -208,6 +208,12 @@ CELL_LOC Field2D::getLocation() const {
   return location;
 }
 
+void Field2D::copyLocation(const Field2D &f) {
+  ASSERT1(f.getMesh() == getMesh());
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+}
+
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));
@@ -241,7 +247,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   data = rhs.data;
 
   // Copy location
-  setLocation(rhs.location);
+  copyLocation(rhs);
 
   return *this;
 }
@@ -484,7 +490,7 @@ bool finite(const Field2D &f, REGION rgn) {
     for (const auto &d : result.region(rgn)) {                                           \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
-    result.setLocation(f.getLocation());                                                 \
+    result.copyLocation(f);                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }

@@ -259,6 +259,12 @@ CELL_LOC Field3D::getLocation() const {
   return location;
 }
 
+void Field3D::copyLocation(const Field3D &f) {
+  ASSERT1(f.getMesh() == getMesh());
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+}
+
 // Not in header because we need to access fieldmesh
 BoutReal &Field3D::operator()(const IndPerp &d, int jy) {
   return operator[](fieldmesh->indPerpto3D(d, jy));
