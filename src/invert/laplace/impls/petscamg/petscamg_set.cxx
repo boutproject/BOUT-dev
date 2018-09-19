@@ -51,8 +51,9 @@ void LaplacePetscAmg::settingSolver(int kflag){
   else KSPSetOperators( ksp, MatA, MatP );
    // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  
-  if((soltype == "direct") || (soltype == "direct1")) {
+  string solt;
+  solt.assign(soltype,0,2);
+  if(solt == "di") {
     if(xNP*zNP == 1) {
       KSPSetType(ksp,KSPPREONLY);
       PCSetType(pc,PCLU);
@@ -83,46 +84,41 @@ void LaplacePetscAmg::settingSolver(int kflag){
       delete [] blks;
     }
     else {
-      if(soltype == "mlamg") {
+      if(solt == "ml") {
 	PCSetType(pc,PCML);
         PCMGSetLevels(pc,mglevel,NULL);
 	PCMGSetCycleType(pc,PC_MG_CYCLE_V);
 	PCMGSetNumberSmooth(pc,2);
       }
-      else if(soltype == "hypre") {
+      else if(solt == "hy") {
 	PCSetType(pc,PCHYPRE);
 	PCHYPRESetType(pc,"boomeramg");
-	char mclev[2];
-	if(mglevel > 9) sprintf(mclev,"%2d",mglevel);
-	else sprintf(mclev,"0%1d",mglevel);
-	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_levels",mclev);
-	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_down","2");
-	PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_up","2");
+        if(soltype == "hypre0") {
+  	  char mclev[3];
+	  if(mglevel > 9) sprintf(mclev,"%2d",mglevel);
+	  else sprintf(mclev,"0%1d",mglevel);
+	  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_max_levels",mclev);
+	  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_down","2");
+	  PetscOptionsSetValue(NULL,"-pc_hypre_boomeramg_grid_sweeps_up","2");
+        }
       }
       else { // For gamg 
-        if(soltype == "gamg" ) {
-	  PCSetType(pc,PCGAMG);
-        }
+        PCSetType(pc,PCGAMG);
+        PCGAMGSetType(pc,PCGAMGAGG);
       /*
         else if(soltype == "gamggeo" ) {
 	  PCSetType(pc,PCGAMG);
           PCGAMGSetType(pc,PCGAMGGEO);
         }
       */
-        else if(soltype == "gamgag") {
-          PCSetType(pc,PCGAMG);
-          PCGAMGSetType(pc,PCGAMGAGG);
+        if(soltype == "gamgag") {
 	  PCGAMGSetNSmooths(pc,2);
         }
-        else if(soltype == "gamgag1") {
-          PCSetType(pc,PCGAMG);
-          PCGAMGSetType(pc,PCGAMGAGG);
-	  PCGAMGSetNSmooths(pc,4);
+        else if(soltype == "gamgag0") {
+  	  PCGAMGSetNSmooths(pc,3);
         }
-        else {
-          PCSetType(pc,PCGAMG);
-          PCGAMGSetType(pc,PCGAMGAGG);
-	  PCGAMGSetNSmooths(pc,3);
+        else if(soltype == "gamgag1") {
+  	  PCGAMGSetNSmooths(pc,4);
         }
       /*
         else if(soltype == "gamgcla") {
@@ -139,7 +135,6 @@ void LaplacePetscAmg::settingSolver(int kflag){
     }
     if(rightpre) KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
     else         KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
-
   }
   KSPSetTolerances(ksp,rtol,atol,dtol,maxits);  
   KSPSetFromOptions(ksp);
@@ -214,7 +209,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   VecAssemblyBegin(xs);
   VecAssemblyEnd(xs);
   // For the boundary conditions 
-  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Barrier(MPI_COMM_WORLD);
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
   if (mesh->firstX()) {
     i2 = mxstart;
@@ -390,7 +385,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   //////////////////////////
   // Copy data into result
   
-  MPI_Barrier(MPI_COMM_WORLD);
+  //  MPI_Barrier(MPI_COMM_WORLD);
   FieldPerp result(mesh);
   result.allocate();
   
@@ -452,13 +447,13 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
     }
   }
   result.setIndex(yindex);
-  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Barrier(MPI_COMM_WORLD);
 
   MatDestroy( &MatA );
   if(diffpre > 0) MatDestroy( &MatP );
   KSPDestroy( &ksp );
   // Set the index of the FieldPerp to be returned
-  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Barrier(MPI_COMM_WORLD);
   return result;
 }
 
