@@ -132,7 +132,7 @@ class Field {
   virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
-  Coordinates * fieldCoordinates;
+  mutable Coordinates * fieldCoordinates = nullptr;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   DEPRECATED(void error(const char *s, ...) const);

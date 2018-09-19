@@ -61,7 +61,8 @@ Coordinates *Field::getCoordinates() const {
     /// Note we don't set fieldCoordinates here as the routine would become
     /// non-const limiting our ability to call it in places like derivatives
     /// where fields are passed as const.
-    return getMesh()->coordinates(getLocation());
+    fieldCoordinates = getMesh()->coordinates(getLocation());
+    return fieldCoordinates;
   }
 }
 
