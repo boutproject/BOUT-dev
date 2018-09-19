@@ -468,7 +468,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = x.getMesh()->coordinates(location);
+    Coordinates *metric = x.getCoordinates(location);
     if(covariant) {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;

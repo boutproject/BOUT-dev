@@ -146,12 +146,6 @@ public:
    */ 
   int runJacobian(BoutReal t);
 
-  int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {
-    /// Save state to restart file
-    restart.write();
-    // Call user output monitor
-    return outputMonitor(simtime, iter, NOUT);
-  }
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
   
 protected:
@@ -260,6 +254,26 @@ protected:
    * 
    */ 
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
+
+  /*!
+   * Monitor class for PhysicsModel
+   */
+  class PhysicsModelMonitor : public Monitor {
+  public:
+    PhysicsModelMonitor() = delete;
+    PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
+    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
+      // Save state to restart file
+      model->restart.write();
+      // Call user output monitor
+      return model->outputMonitor(simtime, iter, nout);
+    }
+  private:
+    PhysicsModel *model;
+  };
+
+  /// write restarts and pass outputMonitor method inside a Monitor subclass
+  PhysicsModelMonitor modelMonitor;
 private:
   bool splitop; ///< Split operator model?
   preconfunc   userprecon; ///< Pointer to user-supplied preconditioner function

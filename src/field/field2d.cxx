@@ -45,7 +45,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -67,7 +67,6 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), der
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
                                      data(f.data), // This handles references to the data array
-                                     location(f.location),
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
 
@@ -78,7 +77,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
-
+                                       
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -90,10 +89,13 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   }
 #endif
 
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+  
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), location(CELL_CENTRE), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -185,6 +187,11 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+
+    // Invalidate the coordinates pointer
+    if (new_location != location)
+      fieldCoordinates = nullptr;
+
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -195,6 +202,8 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+
 }
 
 CELL_LOC Field2D::getLocation() const {
@@ -234,7 +243,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   data = rhs.data;
 
   // Copy location
-  location = rhs.location;
+  setLocation(rhs.location);
 
   return *this;
 }
@@ -312,19 +321,26 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
+  TRACE("Field2D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   // Set the corners to zero
