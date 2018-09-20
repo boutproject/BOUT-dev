@@ -1,9 +1,9 @@
 #include "rkschemefactory.hxx"
-#include <bout/rkscheme.hxx>
-#include <output.hxx>
-#include <cmath>
-#include <boutcomm.hxx>
 #include "unused.hxx"
+#include <bout/rkscheme.hxx>
+#include <boutcomm.hxx>
+#include <cmath>
+#include <output.hxx>
 
 ////////////////////
 // PUBLIC
@@ -61,6 +61,7 @@ void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
                            const int curStage, const BoutReal dt) {
 
   //Set the initial stage
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     out[i] = start[i];
   }
@@ -73,6 +74,8 @@ void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
     if (abs(stageCoeffs(curStage, j)) < atol)
       continue;
     BoutReal fac = stageCoeffs(curStage, j) * dt;
+
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
       out[i] = out[i] + fac * steps(j, i);
     }
@@ -134,8 +137,15 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
 
   //Get local part of relative error
   BoutReal local_err = 0.;
+
+  // Note because the order of operation is not deterministic
+  // we expect slightly different round-off error each time this
+  // is called and hence the nrhs may no longer be exactly
+  // repeatable with this parallelisation.
+  BOUT_OMP(parallel for reduction(+:local_err))
   for(int i=0;i<nlocal;i++) {
-    local_err += fabs(solA[i] - solB[i]) / ( fabs(solA[i]) + fabs(solB[i]) + atol );
+    local_err +=
+        std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
   if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
@@ -150,6 +160,7 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
 void RKScheme::constructOutput(const Array<BoutReal> &start, const BoutReal dt,
                                const int index, Array<BoutReal> &sol) {
   //Initialise the return data
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     sol[i]=start[i];
   }
@@ -159,6 +170,7 @@ void RKScheme::constructOutput(const Array<BoutReal> &start, const BoutReal dt,
     if (resultCoeffs(curStage, index) == 0.)
       continue; // Real comparison not great
     BoutReal fac = dt * resultCoeffs(curStage, index);
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
       sol[i] = sol[i] + fac * steps(curStage, i);
     }
@@ -170,6 +182,7 @@ void RKScheme::constructOutputs(const Array<BoutReal> &start, const BoutReal dt,
                                 const int indexFollow, const int indexAlt,
                                 Array<BoutReal> &solFollow, Array<BoutReal> &solAlt) {
   //Initialise the return data
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     solFollow[i]=start[i];
     solAlt[i]=start[i];
@@ -179,7 +192,7 @@ void RKScheme::constructOutputs(const Array<BoutReal> &start, const BoutReal dt,
   for(int curStage=0;curStage<getStageCount();curStage++){
     BoutReal facFol = dt * resultCoeffs(curStage, indexFollow);
     BoutReal facAlt = dt * resultCoeffs(curStage, indexAlt);
-
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
       solFollow[i] = solFollow[i] + facFol * steps(curStage, i);
       solAlt[i] = solAlt[i] + facAlt * steps(curStage, i);
