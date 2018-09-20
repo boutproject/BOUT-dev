@@ -22,6 +22,9 @@ public:
 
 TEST_F(OptionsTest, IsSet) {
   Options options;
+
+  ASSERT_FALSE(options.isSet("int_key"));
+  
   options.set("int_key", 42, "code");
 
   ASSERT_TRUE(options.isSet("int_key"));
@@ -45,6 +48,43 @@ TEST_F(OptionsTest, SetGetInt) {
   options.get("int_key", value, 99, false);
 
   EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, OperatorBracket) {
+  Options options;
+  
+  options["sub-section"].set("int_key", 42, "code");
+
+  ASSERT_FALSE(options.isSet("int_key"));
+  ASSERT_TRUE(options["sub-section"].isSet("int_key"));
+
+  int value;
+  options["sub-section"].get("int_key", value, 99, false);
+
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, OperatorParen) {
+  Options options;
+  options.set("int_key", 42, "code");
+
+  EXPECT_EQ(options.get("int_key", 99), 42);
+
+  options.set("bool_key", true, "code");
+
+  EXPECT_EQ(options.get("bool_key", false), true);
+  
+  options.set("real_key", 0.7853981633974483, "code");
+
+  // This infers type to be int from the default value
+  // so throws an exception because 0.78... is not an integer
+  EXPECT_THROW(options.get("real_key", 0), BoutException);
+
+  /// Pass a float as the default value
+  EXPECT_DOUBLE_EQ(options.get("real_key", 0.0), 0.7853981633974483);
+  
+  // Return type can be also specified
+  EXPECT_DOUBLE_EQ(options.get<BoutReal>("real_key", 0), 0.7853981633974483);
 }
 
 TEST_F(OptionsTest, SetGetIntFromReal) {
