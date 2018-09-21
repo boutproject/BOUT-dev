@@ -310,13 +310,12 @@ public:
   Options *parent_instance;
   string full_name; // full path name for logging only
 
-  /// An Option object can be a section (node), a value (leaf), or empty (undecided)
-  enum class OptionType { empty, section, value };
+  /// An Option object can be a section and/or a value, or neither (empty)
 
-  OptionType type = OptionType::empty; ///< The type of this Option object
-  
-  std::string name; ///< If a section then this is the section name
+  bool is_section = false; ///< Is this Options object a section?
   std::map<string, Options*> children; ///< If a section then has children
+
+  bool is_value = false; ///< Is this Options object a value?
   OptionValue value; ///< If a value
   
   void _set(const string &val, const string &source, bool force);

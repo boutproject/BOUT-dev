@@ -37,16 +37,8 @@ void Options::cleanup() {
 }
 
 Options& Options::operator[](const string &name) {
-  // Check if this object is empty
-  if (type == OptionType::empty) {
-    // Mark as a section
-    type = OptionType::section;
-  }
-
-  // Must be a section
-  if (type != OptionType::section) {
-    throw BoutException("Option %s is not a section", full_name.c_str());
-  }
+  // Mark this object as being a section
+  is_section = true;
 
   if (name.empty()) {
     return *this;
@@ -90,7 +82,6 @@ void Options::setTo(BoutReal val, const string &source, bool force) {
 }
 
 void Options::_set(const string &val, const string &source, bool force) {
-
   if (isSet()) {
     // Check if current value the same as new value
     if (value.value != val) {
@@ -108,29 +99,16 @@ void Options::_set(const string &val, const string &source, bool force) {
     }
   }
   
-  if (type == OptionType::empty) {
-    // Becomes a value
-    type = OptionType::value;
-  }
-
-  // Must be a value, not a section
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value (probably a section)", full_name.c_str());
-  }
-  
   value.value = val;
   value.source = source;
   value.used = false;
+  is_value = true;
 }
 
 bool Options::isSet() {
-  if (type == OptionType::empty) {
+  // Check if no value
+  if (!is_value) {
     return false;
-  }
-
-  // Behaviour when a section not well defined so throw
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value (probably a section)", full_name.c_str());
   }
 
   // Ignore if set from default
@@ -142,7 +120,7 @@ bool Options::isSet() {
 }
 
 int Options::get(int def) {  
-  if (type == OptionType::empty) {
+  if (!is_value) {
     // Option not found
     // Set the option, with source "default". This is to ensure that:
     //   a) the same option has a consistent default value
@@ -153,10 +131,6 @@ int Options::get(int def) {
     output_info << "\tOption " << full_name << " = " << def
                 << " (default)" << endl;
     return def;
-  }
-
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value. Probably a section", full_name.c_str());
   }
   
   // Use FieldFactory to evaluate expression
@@ -198,17 +172,13 @@ int Options::get(int def) {
 }
 
 BoutReal Options::get(BoutReal def) {
-  if (type == OptionType::empty) {
+  if (!is_value) {
     setTo(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
     output_info << "\tOption " << full_name << " = " << def
                 << " (" << DEFAULT_SOURCE << ")" << endl;
     return def;
-  }
-  
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value. Probably a section", full_name.c_str());
   }
   
   // Use FieldFactory to evaluate expression
@@ -243,7 +213,7 @@ BoutReal Options::get(BoutReal def) {
 }
 
 bool Options::get(bool def) {
-  if (type == OptionType::empty) {
+  if (!is_value) {
     setTo(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
@@ -254,10 +224,6 @@ bool Options::get(bool def) {
     }
     output_info << "   (" << DEFAULT_SOURCE << ")" << endl;
     return def;
-  }
-  
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value. Probably a section", full_name.c_str());
   }
   
   value.used = true;
@@ -284,17 +250,13 @@ bool Options::get(bool def) {
 }
 
 std::string Options::get(const std::string &def) {
-  if (type == OptionType::empty) {
+  if (!is_value) {
     _set(def, DEFAULT_SOURCE, false);
     value.used = true; // Mark the option as used
     
     output_info << "\tOption " << full_name << " = " << def
                 << " (" << DEFAULT_SOURCE << ")" << endl;
     return def;
-  }
-  
-  if (type != OptionType::value) {
-    throw BoutException("Option %s is not a value. Probably a section", full_name.c_str());
   }
   
   // Check if this was previously set as a default option
@@ -343,7 +305,7 @@ void Options::printUnused() {
   bool allused = true;
   // Check if any options are unused
   for (const auto &it : children) {
-    if ( (it.second->type == OptionType::value) &&
+    if ( it.second->is_value &&
          !it.second->value.used) {
       allused = false;
       break;
@@ -354,7 +316,7 @@ void Options::printUnused() {
   } else {
     output_info << "Unused options:\n";
     for (const auto &it : children) {
-      if ((it.second->type == OptionType::value) &&
+      if (it.second->is_value &&
           !it.second->value.used) {
         output_info << "\t" << full_name << " = " << it.second->value.value;
         if (!it.second->value.source.empty())
@@ -364,7 +326,7 @@ void Options::printUnused() {
     }
   }
   for (const auto &it : children) {
-    if (it.second->type == OptionType::section) {
+    if (it.second->is_section) {
       it.second->printUnused();
     }
   }
@@ -377,7 +339,7 @@ void Options::cleanCache() {
 std::map<string, Options::OptionValue> Options::values() const {
   std::map<string, OptionValue> options;
   for (const auto &it : children) {
-    if (it.second->type == OptionType::value) {
+    if (it.second->is_value) {
       options[it.first] = it.second->value;
     }
   }
@@ -387,7 +349,7 @@ std::map<string, Options::OptionValue> Options::values() const {
 std::map<string, Options*> Options::subsections() const {
   std::map<string, Options*> sections;
   for (const auto &it : children) {
-    if (it.second->type == OptionType::section) {
+    if (it.second->is_section) {
       sections[it.first] = it.second;
     }
   }
