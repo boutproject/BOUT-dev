@@ -41,9 +41,12 @@ class Options;
 
 #include "bout_types.hxx"
 #include "unused.hxx"
+#include "output.hxx"
 
 #include <map>
 #include <string>
+#include <sstream>
+#include <iomanip>
 #include <utility>
 using std::string;
 
@@ -58,6 +61,16 @@ using std::string;
  * which can be used as a map.
  *
  *     Options options;
+ *     options["key"] = 1.0;
+ *
+ *     int val = options["key"]; // Sets val to 1 
+ *
+ * It can be useful to record where values came from by adding a source label:
+ * 
+ *     options["key"].setTo(1.0, "code"); // Sets a value with source "code"
+ *
+ * Equivalent interfaces are:
+ * 
  *     options.set("key", 1.0, "code"); // Sets a key
  *
  *     int val;
@@ -82,12 +95,19 @@ using std::string;
  *
  * Each Options object can also contain any number of sections, which are
  * themselves Options objects.
- *
+ * 
+ *     Options &section = options["section"];
+ * 
+ * or
  *     Options *section = options.getSection("section");
  *
  * This always succeeds; if the section does not exist then it is created.
  * Options also know about their parents:
  *
+ *     Options &parent = section.parent();
+ *     
+ * or
+ * 
  *     section->getParent() == &options // Pointer to options object
  *
  * Root options object
@@ -96,7 +116,11 @@ using std::string;
  * For convenience, to avoid having to pass Options objects around everywhere,
  * there is a global singleton Options object which can be accessed with a static function
  *
- * Options *root = Options::getRoot();
+ *    Options &root = Options::root();
+ * 
+ * or 
+ *
+ *    Options *root = Options::getRoot();
  *
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
@@ -111,45 +135,130 @@ public:
   ///
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
-  Options(Options *parent, string sectionName)
-      : parent(parent), sectionName(std::move(sectionName)){};
+  Options(Options *parent_instance, string full_name)
+      : parent_instance(parent_instance), full_name(std::move(full_name)){};
 
   /// Destructor
   ~Options();
 
-  /// Get a pointer to the only root instance (singleton)
-  static Options* getRoot();
-
-  /*!
-   * Free all memory
-   */
+  /// Get a reference to the only root instance
+  static Options &root();
+  
+  /// Free all memory
   static void cleanup();
+
+  /// Get a sub-section or value
+  /// Note: Using this makes this object a section
+  Options& operator[](const string &name);
+
+  /// Assignment from any type T
+  /// Note: Using this makes this object a value.
+  ///
+  /// Tries to stream the input to a std::stringstream
+  /// and then saves the resulting string.
+  template <typename T>
+  const T & operator=(const T &inputvalue) {
+    // Convert to string
+    std::stringstream ss;
+    ss << inputvalue;
+
+    // Set the internal value. This will perform
+    // checks to ensure that this Options object
+    // is a value and not a section.
+    _set(ss.str(), "", false);
+    return inputvalue;
+  }
 
   // Setting options
   template<typename T> void forceSet(const string &key, T t, const string &source=""){
     set(key,t,source,true);
   }
-  void set(const string &key, const int &val, const string &source="", bool force=false);
-  void set(const string &key, BoutReal val, const string &source="", bool force=false);
-  void set(const string &key, const bool &val, const string &source="", bool force=false);
-  void set(const string &key, const char * &val, const string &source="", bool force=false) {
-    _set(key,val,source,force);
+  
+  void setTo(const int &val, const string &source="", bool force=false);
+  void setTo(BoutReal val, const string &source="", bool force=false);
+  void setTo(bool val, const string &source="", bool force=false);
+
+
+  void setTo(const char *val, const string &source="", bool force=false) {
+    _set(val,source,force);
   }
-  void set(const string &key, const string &val, const string &source = "", bool force=false) {
-    _set(key,val,source,force);
+  void setTo(const string &val, const string &source = "", bool force=false) {
+    _set(val,source,force);
   };
+  
+  /// Test if a key is set by the user.
+  /// Values set via default values are ignored.
+  bool isSet();
 
-  /// Set a string with a char* array. This converts to std::string
-  /// rather than allow an implicit conversion to bool
-  void set(const string &key, const char *val, const string &source = "") {
-    set(key, string(val), source);
+  // Getting options
+
+  /// Cast operator, which allows this class to be
+  /// assigned to type T
+  ///
+  template <typename T> operator T() { return get<T>(); }
+
+  /// Get the value as a specified type
+  /// If there is no value then an exception is thrown
+  template <typename T> T get() {
+    if (!isSet()) {
+      throw BoutException("Option %s has no value", full_name.c_str());
+    }
+    
+    T val;
+    std::stringstream ss(value.value);
+    ss >> val;
+    
+    // Check if the parse failed
+    if (ss.fail()) {
+      throw BoutException("Option %s could not be parsed", full_name.c_str());
+    }
+
+    // Check if there are characters remaining
+    std::string remainder;
+    std::getline(ss, remainder);
+    for (const char &ch : remainder) {
+      if (!std::isspace(static_cast<unsigned char>(ch))) {
+        // Meaningful character not parsed
+        throw BoutException("Option %s could not be parsed", full_name.c_str());
+      }
+    }
+    
+    // Mark this option as used
+    value.used = true;
+
+    output_info << "\tOption " << full_name  << " = " << val;
+    if (!value.source.empty()) {
+      // Specify the source of the setting
+      output_info << " (" << value.source << ")";
+    }
+    output_info << endl;
+
+    return val;
   }
 
+  int get(int def);
+  BoutReal get(BoutReal def);
+  bool get(bool def);
+  std::string get(const std::string &def);
+
+  Options &parent() { return *parent_instance; }
+
+  //////////////////////////////////////
+  // Backward-compatible interface
+  
+  /// Get a pointer to the only root instance (singleton)
+  static Options* getRoot() { return &root(); }
+
+  template<typename T>
+  void set(const string &key, T val, const string &source = "", bool force = false) {
+    (*this)[key].setTo(val, source, force);
+  }
+  
   /*!
    * Test if a key is set by the user.
    * Values set via default values are ignored.
    */
-  bool isSet(const string &key);
+  bool isSet(const string &key) { return (*this)[key].isSet(); }
 
   // Getting options
   void get(const string &key, int &val, int def);
@@ -165,8 +274,8 @@ public:
   }
 
   /// Creates new section if doesn't exist
-  Options* getSection(const string &name);
-  Options* getParent() {return parent;}
+  Options* getSection(const string &name) { return &(*this)[name]; }
+  Options* getParent() {return parent_instance;}
 
   /*!
    * Print string representation of this object and all sections in a tree structure
@@ -191,20 +300,57 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  const std::map<string, OptionValue>& values() const {return options;}
-  const std::map<string, Options*>& subsections() const {return sections;}
+  std::map<string, OptionValue> values() const;
+  std::map<string, Options*> subsections() const;
 
  private:
-  static Options *root; ///< Only instance of the root section
+  
+  static Options *root_instance; ///< Only instance of the root section
 
-  Options *parent;
-  string sectionName; // section name (if any), for logging only
+  Options *parent_instance;
+  string full_name; // full path name for logging only
 
-  std::map<string, OptionValue> options;
-  std::map<string, Options*> sections;
+  /// An Option object can be a section (node), a value (leaf), or empty (undecided)
+  enum class OptionType { empty, section, value };
 
-  void _set(const string &key, const string &val, const string &source, bool force);
+  OptionType type = OptionType::empty; ///< The type of this Option object
+  
+  std::string name; ///< If a section then this is the section name
+  std::map<string, Options*> children; ///< If a section then has children
+  OptionValue value; ///< If a value
+  
+  void _set(const string &val, const string &source, bool force);
 };
+
+/// Specialised assignment operator
+template <>
+inline const BoutReal & Options::operator=<BoutReal>(const BoutReal &inputvalue) {
+  std::stringstream ss;
+  // Make sure the precision is large enough to hold a BoutReal
+  ss << std::scientific << std::setprecision(17) << inputvalue;
+  _set(ss.str(), "", false);
+  return inputvalue;
+}
+
+/// Specialised get routines
+template <>
+inline std::string Options::get<std::string>() {
+  if (!isSet()) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+    
+  // Mark this option as used
+  value.used = true;
+  
+  output_info << "\tOption " << full_name  << " = " << value.value;
+  if (!value.source.empty()) {
+    // Specify the source of the setting
+    output_info << " (" << value.source << ")";
+  }
+  output_info << endl;
+  
+  return value.value;
+}
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
