@@ -60,25 +60,25 @@ Options& Options::operator[](const string &name) {
   return *opt;
 }
 
-void Options::setTo(const int &val, const string &source, bool force) {
+void Options::assign(int val, const string &source) {
   std::stringstream ss;
   ss << val;
-  _set(ss.str(), source, force);
+  _set(ss.str(), source, false);
 }
 
-void Options::setTo(bool val, const string &source, bool force) {
+void Options::assign(bool val, const string &source) {
   if (val) {
-    _set("true", source, force);
+    _set("true", source, false);
   } else {
-    _set("false", source, force);
+    _set("false", source, false);
   }
 }
 
-void Options::setTo(BoutReal val, const string &source, bool force) {
+void Options::assign(BoutReal val, const string &source) {
   std::stringstream ss;
   // Make sure the precision is large enough to hold a BoutReal
   ss << std::scientific << std::setprecision(17) << val;
-  _set(ss.str(), source, force);
+  _set(ss.str(), source, false);
 }
 
 void Options::_set(const string &val, const string &source, bool force) {
@@ -119,13 +119,13 @@ bool Options::isSet() {
   return true;
 }
 
-int Options::get(int def) {  
+int Options::withDefault(int def) {  
   if (!is_value) {
     // Option not found
     // Set the option, with source "default". This is to ensure that:
     //   a) the same option has a consistent default value
     //   b) the value used can be recorded in the output settings file
-    setTo(def, DEFAULT_SOURCE);
+    assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
     output_info << "\tOption " << full_name << " = " << def
@@ -171,9 +171,9 @@ int Options::get(int def) {
   return val;
 }
 
-BoutReal Options::get(BoutReal def) {
+BoutReal Options::withDefault(BoutReal def) {
   if (!is_value) {
-    setTo(def, DEFAULT_SOURCE);
+    assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
     output_info << "\tOption " << full_name << " = " << def
@@ -212,9 +212,9 @@ BoutReal Options::get(BoutReal def) {
   return val;
 }
 
-bool Options::get(bool def) {
+bool Options::withDefault(bool def) {
   if (!is_value) {
-    setTo(def, DEFAULT_SOURCE);
+    assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
     if (def) {
@@ -249,7 +249,7 @@ bool Options::get(bool def) {
   return val;
 }
 
-std::string Options::get(const std::string &def) {
+std::string Options::withDefault(const std::string &def) {
   if (!is_value) {
     _set(def, DEFAULT_SOURCE, false);
     value.used = true; // Mark the option as used
@@ -281,19 +281,19 @@ std::string Options::get(const std::string &def) {
 }
 
 void Options::get(const string &key, int &val, int def) {
-  val = (*this)[key].get(def);
+  val = (*this)[key].withDefault(def);
 }
 
 void Options::get(const string &key, BoutReal &val, BoutReal def) {
-  val = (*this)[key].get(def);
+  val = (*this)[key].withDefault(def);
 }
 
 void Options::get(const string &key, bool &val, bool def) {
-  val = (*this)[key].get(def);
+  val = (*this)[key].withDefault(def);
 }
 
 void Options::get(const string &key, string &val, const string &def) {
-  val = (*this)[key].get(def);
+  val = (*this)[key].withDefault(def);
 }
 
 string Options::str() {
@@ -318,7 +318,7 @@ void Options::printUnused() {
     for (const auto &it : children) {
       if (it.second->is_value &&
           !it.second->value.used) {
-        output_info << "\t" << full_name << " = " << it.second->value.value;
+        output_info << "\t" << full_name << ":" << it.first << " = " << it.second->value.value;
         if (!it.second->value.source.empty())
           output_info << " (" << it.second->value.source << ")";
         output_info << endl;

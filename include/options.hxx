@@ -61,25 +61,36 @@ using std::string;
  * which can be used as a map.
  *
  *     Options options;
+ *     
+ *     // Set values
  *     options["key"] = 1.0;
  *
+ *     // Get values. Throws BoutException if not found
  *     int val = options["key"]; // Sets val to 1 
  *
- * It can be useful to record where values came from by adding a source label:
- * 
- *     options["key"].setTo(1.0, "code"); // Sets a value with source "code"
+ *     // Return as specified type. Throws BoutException if not found
+ *     BoutReal var = options["key"].as<BoutReal>();
  *
- * Equivalent interfaces are:
+ *     // A default value can be used if key is not found
+ *     BoutReal value = options["pi"].withDefault(3.14);
+ *    
+ *     // Assign value with source label. Throws if already has a value from same source
+ *     options["newkey"].assign(1.0, "some source");
+ *
+ *     // Force assign a new value
+ *     options["newkey"].force(2.0, "some source");
+ *
+ * A legacy interface is also supported:
  * 
- *     options.set("key", 1.0, "code"); // Sets a key
+ *     options.set("key", 1.0, "code"); // Sets a key from source "code"
  *
  *     int val;
- *     options.get("key", val, 0.0); // Sets val to 1.0
+ *     options.get("key", val, 0); // Sets val to 1, default to 0 if not found
  *
  * If a variable has not been set then the default value is used
  *
  *     int other;
- *     options.get("otherkey", other, 2.0); // Sets other to 2.0 because "otherkey" not found
+ *     options.get("otherkey", other, 2.0); // Sets other to 2 because "otherkey" not found
  *
  * Internally, all values are stored as strings, so conversion is performed silently:
  *
@@ -98,17 +109,26 @@ using std::string;
  * 
  *     Options &section = options["section"];
  * 
- * or
- *     Options *section = options.getSection("section");
+ * which can be nested:
+ *
+ *     options["section"]["subsection"]["value"] = 3;
  *
  * This always succeeds; if the section does not exist then it is created.
+ *
+ * The legacy interface uses pointers:
+ *
+ *     Options *section = options.getSection("section");
+ *
+ * e.g.
+ *     options->getSection("section")->getSection("subsection")->set("value", 3);
+ * 
  * Options also know about their parents:
  *
  *     Options &parent = section.parent();
  *     
  * or
  * 
- *     section->getParent() == &options // Pointer to options object
+ *     Options *parent = section->getParent();
  *
  * Root options object
  * -------------------
@@ -148,7 +168,13 @@ public:
   static void cleanup();
 
   /// Get a sub-section or value
-  /// Note: Using this makes this object a section
+  ///
+  /// Example:
+  ///
+  /// Options parent;
+  /// auto child  = parent["child"];
+  ///
+  /// parent is now a section.
   Options& operator[](const string &name);
 
   /// Assignment from any type T
@@ -169,22 +195,32 @@ public:
     return inputvalue;
   }
 
-  // Setting options
-  template<typename T> void forceSet(const string &key, T t, const string &source=""){
-    set(key,t,source,true);
-  }
+  /// Assign a value to the option.
+  /// This will throw an exception if already has a value
+  ///
+  /// Example:
+  ///
+  /// Options option;
+  /// option["test"].assign(42, "some source");
+  /// 
+  void assign(int val, const string &source="");
+  void assign(BoutReal val, const string &source="");
+  void assign(bool val, const string &source="");
   
-  void setTo(const int &val, const string &source="", bool force=false);
-  void setTo(BoutReal val, const string &source="", bool force=false);
-  void setTo(bool val, const string &source="", bool force=false);
-
-
-  void setTo(const char *val, const string &source="", bool force=false) {
-    _set(val,source,force);
+  void assign(const char *val, const string &source="") {
+    _set(val,source,false);
   }
-  void setTo(const string &val, const string &source = "", bool force=false) {
-    _set(val,source,force);
+  void assign(const string &val, const string &source = "") {
+    _set(val,source,false);
   };
+
+  /// Force to a value
+  /// Overwrites any existing setting
+  template<typename T>
+  void force(T val, const string &source = "") {
+    is_value = false; // Invalidates any existing setting
+    assign(val, source);
+  }
   
   /// Test if a key is set by the user.
   /// Values set via default values are ignored.
@@ -195,11 +231,26 @@ public:
   /// Cast operator, which allows this class to be
   /// assigned to type T
   ///
-  template <typename T> operator T() { return get<T>(); }
+  /// Example:
+  ///
+  /// Options option;
+  /// option["test"] = 2.0;
+  /// int value = option["test"];
+  ///
+  template <typename T> operator T() { return as<T>(); }
 
   /// Get the value as a specified type
   /// If there is no value then an exception is thrown
-  template <typename T> T get() {
+  /// Note there are specialised versions of this template
+  /// for some types.
+  ///
+  /// Example:
+  ///
+  /// Options option;
+  /// option["test"] = 2.0;
+  /// int value = option["test"].as<int>();
+  ///
+  template <typename T> T as() {
     if (!isSet()) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -236,13 +287,21 @@ public:
     return val;
   }
 
-  int get(int def);
-  BoutReal get(BoutReal def);
-  bool get(bool def);
-  std::string get(const std::string &def);
+  /// Get the value of this option. If not found,
+  /// set to the default value
+  int withDefault(int def);
+  BoutReal withDefault(BoutReal def);
+  bool withDefault(bool def);
+  std::string withDefault(const std::string &def);
 
-  Options &parent() { return *parent_instance; }
-
+  /// Get the parent Options object
+  Options &parent() {
+    if (parent_instance == nullptr) {
+      throw BoutException("Option %s has no parent", full_name.c_str());
+    }
+    return *parent_instance;
+  }
+  
   //////////////////////////////////////
   // Backward-compatible interface
   
@@ -251,7 +310,16 @@ public:
 
   template<typename T>
   void set(const string &key, T val, const string &source = "", bool force = false) {
-    (*this)[key].setTo(val, source, force);
+    if (force) {
+      (*this)[key].force(val, source);
+    } else {
+      (*this)[key].assign(val, source);
+    }
+  }
+  
+  // Setting options
+  template<typename T> void forceSet(const string &key, T t, const string &source=""){
+    (*this)[key].force(t,source);
   }
   
   /*!
@@ -276,7 +344,9 @@ public:
   /// Creates new section if doesn't exist
   Options* getSection(const string &name) { return &(*this)[name]; }
   Options* getParent() {return parent_instance;}
-
+  
+  //////////////////////////////////////
+  
   /*!
    * Print string representation of this object and all sections in a tree structure
    */
@@ -331,9 +401,9 @@ inline const BoutReal & Options::operator=<BoutReal>(const BoutReal &inputvalue)
   return inputvalue;
 }
 
-/// Specialised get routines
+/// Specialised as routines
 template <>
-inline std::string Options::get<std::string>() {
+inline std::string Options::as<std::string>() {
   if (!isSet()) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
