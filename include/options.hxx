@@ -288,15 +288,26 @@ public:
 
   /// Get the value of this option. If not found,
   /// set to the default value
-  template<typename T>
-  T withDefault(T def) {
+  template <typename T> T withDefault(T def) {
     if (!is_value) {
       // Option not found
       assign(def, "default");
       value.used = true; // Mark the option as used
-      
-      output_info << "\tOption " << full_name << " = " << def
-                  << " (default)" << std::endl;
+
+      output_info << "\tOption " << full_name << " = " << def << " (default)"
+                  << std::endl;
+      return def;
+    }
+    return as<T>();
+  }
+
+  /// Get the value of this option. If not found,
+  /// return the default value but do not set
+  template <typename T> T withDefault(T def) const {
+    if (!is_value) {
+      // Option not found
+      output_info << "\tOption " << full_name << " = " << def << " (default)"
+                  << std::endl;
       return def;
     }
     return as<T>();
@@ -442,6 +453,11 @@ template<> int Options::withDefault<int>(int def);
 template<> BoutReal Options::withDefault<BoutReal>(BoutReal def);
 template<> bool Options::withDefault<bool>(bool def);
 template<> std::string Options::withDefault<std::string>(std::string def);
+
+template<> int Options::withDefault<int>(int def) const;
+template<> BoutReal Options::withDefault<BoutReal>(BoutReal def) const;
+template<> bool Options::withDefault<bool>(bool def) const;
+template<> std::string Options::withDefault<std::string>(std::string def) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

@@ -130,7 +130,7 @@ bool Options::isSet() const {
 }
 
 template<>
-int Options::withDefault<int>(int def) {  
+int Options::withDefault<int>(int def) {
   if (!is_value) {
     // Option not found
     // Set the option, with source "default". This is to ensure that:
@@ -139,6 +139,17 @@ int Options::withDefault<int>(int def) {
     assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
     
+    output_info << "\tOption " << full_name << " = " << def
+                << " (default)" << endl;
+    return def;
+  }
+  // Now call const version
+  return const_cast<const Options&>(*this).withDefault(def);
+}
+
+template<>
+int Options::withDefault<int>(int def) const {  
+  if (!is_value) {
     output_info << "\tOption " << full_name << " = " << def
                 << " (default)" << endl;
     return def;
@@ -192,6 +203,17 @@ BoutReal Options::withDefault<BoutReal>(BoutReal def) {
                 << " (" << DEFAULT_SOURCE << ")" << endl;
     return def;
   }
+
+  return const_cast<const Options&>(*this).withDefault(def);
+}
+
+template<>
+BoutReal Options::withDefault<BoutReal>(BoutReal def) const {
+  if (!is_value) {
+    output_info << "\tOption " << full_name << " = " << def
+                << " (" << DEFAULT_SOURCE << ")" << endl;
+    return def;
+  }
   
   // Use FieldFactory to evaluate expression
   // Parse the string, giving this Option pointer for the context
@@ -238,6 +260,21 @@ bool Options::withDefault<bool>(bool def) {
     output_info << "   (" << DEFAULT_SOURCE << ")" << endl;
     return def;
   }
+  // Now call const version
+  return const_cast<const Options&>(*this).withDefault(def);
+}
+
+template<> 
+bool Options::withDefault<bool>(bool def) const {
+  if (!is_value) {
+    if (def) {
+      output_info << "\tOption " << full_name << " = true";
+    } else {
+      output_info << "\tOption " << full_name << " = false";
+    }
+    output_info << "   (" << DEFAULT_SOURCE << ")" << endl;
+    return def;
+  }
   
   value.used = true;
 
@@ -268,6 +305,16 @@ std::string Options::withDefault<std::string>(std::string def) {
     _set(def, DEFAULT_SOURCE, false);
     value.used = true; // Mark the option as used
     
+    output_info << "\tOption " << full_name << " = " << def
+                << " (" << DEFAULT_SOURCE << ")" << endl;
+    return def;
+  }
+  return const_cast<const Options&>(*this).withDefault(def);
+}
+
+template<> 
+std::string Options::withDefault<std::string>(std::string def) const {
+  if (!is_value) {
     output_info << "\tOption " << full_name << " = " << def
                 << " (" << DEFAULT_SOURCE << ")" << endl;
     return def;
