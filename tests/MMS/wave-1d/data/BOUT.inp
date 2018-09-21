@@ -12,7 +12,6 @@ zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi: 
 
 #number of guard cells
 MYG = 1  #noy comm for now
-MXG = 1
 
 [output]
 floats = false #false -> output in doubles
@@ -24,7 +23,7 @@ ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
-nx = 4
+nx = 8
 
 #ny = internal gridpoints
 ny = 1

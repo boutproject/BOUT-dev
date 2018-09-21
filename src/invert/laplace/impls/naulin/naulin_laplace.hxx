@@ -37,7 +37,7 @@ class LaplaceNaulin;
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL);
+  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_DEFAULT);
   ~LaplaceNaulin();
   
   // ACoef is not implemented because the delp2solver that we use can probably

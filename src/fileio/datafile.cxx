@@ -412,6 +412,8 @@ void Datafile::setLowPrecision() {
 
 void Datafile::add(int &i, const char *name, bool save_repeat) {
   TRACE("DataFile::add(int)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&i == varPtr(string(name))) {
@@ -460,6 +462,8 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
 
 void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   TRACE("DataFile::add(BoutReal)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&r == varPtr(string(name))) {
@@ -510,6 +514,8 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
 
 void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Field2D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -560,6 +566,8 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Field3D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -610,6 +618,8 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Vector2D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -666,6 +676,8 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Vector3D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {

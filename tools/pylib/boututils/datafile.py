@@ -254,6 +254,12 @@ class DataFile(object):
         """
         return self.impl.ndims(varname)
 
+    def sync(self):
+        """Write pending changes to disk.
+
+        """
+        self.impl.sync()
+
     def size(self, varname):
         """Return the size of each dimension of a variable
 
@@ -489,6 +495,9 @@ class DataFile_netCDF(DataFile):
         except KeyError:
             raise ValueError("No such variable")
         return len(var.dimensions)
+
+    def sync(self):
+        self.handle.sync()
 
     def size(self, varname):
         if self.handle is None:
@@ -773,8 +782,8 @@ class DataFile_HDF5(DataFile):
                     raise ValueError("Incorrect number of elements in ranges argument "
                                      "(got {}, expected {} or {})"
                                      .format(len(ranges), ndims, 2 * ndims))
-
-                data = var[ranges[:ndims]]
+                # Probably a bug in h5py, work around by passing tuple
+                data = var[tuple(ranges[:ndims])]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
@@ -886,6 +895,9 @@ class DataFile_HDF5(DataFile):
             return 0
         else:
             return len(var.shape)
+
+    def sync(self):
+        self.handle.flush()
 
     def size(self, varname):
         if self.handle is None:

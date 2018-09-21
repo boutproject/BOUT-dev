@@ -10,12 +10,14 @@ namespace FV {
 
   // Div ( a Laplace_perp(f) )  -- Vorticity
   const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
+    ASSERT2(a.getLocation() == f.getLocation());
+
     Mesh *mesh = a.getMesh();
 
     Field3D result(mesh);
     result = 0.0;
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f.getCoordinates();
     
     // Flux in x
   
@@ -115,6 +117,8 @@ namespace FV {
   const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
     TRACE("FV::Div_par_K_Grad_par");
 
+    ASSERT2(Kin.getLocation() == fin.getLocation());
+
     Mesh *mesh = Kin.getMesh();
     Field3D result(0.0, mesh);
 
@@ -141,8 +145,8 @@ namespace FV {
       Kup = Kdown = K;
     }
     
-    Coordinates *coord = mesh->coordinates();
-
+    Coordinates *coord = fin.getCoordinates();
+    
     BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
       // Calculate flux at upper surface
       
@@ -186,9 +190,12 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
+    ASSERT2(d_in.getLocation() == f_in.getLocation());
+
     Field3D result = 0.0;
+    result.setLocation(f_in.getLocation());
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
     Field3D d = mesh->toFieldAligned(d_in);
@@ -236,11 +243,12 @@ namespace FV {
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
     Field3D result = 0.0;
+    result.setLocation(f_in.getLocation());
     
     // Convert to field aligned coordinates
     Field3D f = mesh->toFieldAligned(f_in);
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f_in.getCoordinates();
     
     for(int i=mesh->xstart;i<=mesh->xend;i++) {
       bool yperiodic = mesh->periodicY(i);

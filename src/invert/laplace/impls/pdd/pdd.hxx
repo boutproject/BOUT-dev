@@ -40,7 +40,7 @@ class LaplacePDD;
 
 class LaplacePDD : public Laplacian {
 public:
-  LaplacePDD(Options *opt = nullptr)
+  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT)
       : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
         PDD_COMM_Y(456) {}
   ~LaplacePDD() {}

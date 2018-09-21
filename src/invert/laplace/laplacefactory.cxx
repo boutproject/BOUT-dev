@@ -37,7 +37,7 @@ LaplaceFactory* LaplaceFactory::getInstance() {
   return instance;
 }
 
-Laplacian* LaplaceFactory::createLaplacian(Options *options) {
+Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
@@ -49,23 +49,23 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     options->get("type", type, LAPLACE_CYCLIC);
 
     if(strcasecmp(type.c_str(), LAPLACE_TRI) == 0) {
-      return new LaplaceSerialTri(options);
+      return new LaplaceSerialTri(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_BAND) == 0) {
-      return new LaplaceSerialBand(options);
+      return new LaplaceSerialBand(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-      return new LaplaceSPT(options);
+      return new LaplaceSPT(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-      return new LaplacePetsc(options);
+      return new LaplacePetsc(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-      return new LaplaceMumps(options);
+      return new LaplaceMumps(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-      return new LaplaceCyclic(options);
+      return new LaplaceCyclic(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-      return new LaplaceShoot(options);
+      return new LaplaceShoot(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
-      return new LaplaceNaulin(options);
+      return new LaplaceNaulin(options, loc);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -75,21 +75,21 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
 
   // Parallel algorithm
   if(strcasecmp(type.c_str(), LAPLACE_PDD) == 0) {
-    return new LaplacePDD(options);
+    return new LaplacePDD(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-    return new LaplaceSPT(options);
+    return new LaplaceSPT(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-    return new LaplacePetsc(options);
+    return new LaplacePetsc(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-    return new LaplaceMumps(options);
+    return new LaplaceMumps(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-    return new LaplaceCyclic(options);
+    return new LaplaceCyclic(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-    return new LaplaceShoot(options);
+    return new LaplaceShoot(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
-    return new LaplaceNaulin(options);
+    return new LaplaceNaulin(options, loc);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }
