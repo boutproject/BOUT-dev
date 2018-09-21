@@ -12,13 +12,6 @@ const string DEFAULT_SOURCE{"default"};
 
 Options::Options() : parent_instance(nullptr) {}
 
-Options::~Options() {
-  // Delete children
-  for (const auto &it : children) {
-    delete it.second;
-  }
-}
-
 Options *Options::root_instance = nullptr;
 
 Options &Options::root() {
@@ -47,7 +40,7 @@ Options& Options::operator[](const string &name) {
   // Find and return if already exists
   auto it = children.find(lowercase(name));
   if (it != children.end()) {
-    return *it->second;
+    return it->second;
   }
 
   // Doesn't exist yet, so add
@@ -55,18 +48,34 @@ Options& Options::operator[](const string &name) {
   if (!full_name.empty()) { // prepend the section name
     secname = full_name + ":" + secname;
   }
-  Options *opt = new Options(this, secname);
-  children[lowercase(name)] = opt;
-  return *opt;
+
+  // emplace returns a pair with iterator first, boolean (insert yes/no) second
+  auto pair_it = children.emplace(lowercase(name), Options{this, secname});
+  
+  return pair_it.first->second;
 }
 
-void Options::assign(int val, const string &source) {
-  std::stringstream ss;
-  ss << val;
-  _set(ss.str(), source, false);
+const Options &Options::operator[](const string &name) const {
+  if (!is_section) {
+    throw BoutException("Option %s is not a section", full_name.c_str());
+  }
+
+  if (name.empty()) {
+    return *this;
+  }
+
+  // Find and return if already exists
+  auto it = children.find(lowercase(name));
+  if (it == children.end()) {
+    // Doesn't exist
+    throw BoutException("Option %s:%s does not exist", full_name.c_str(), name.c_str());
+  }
+
+  return it->second;
 }
 
-void Options::assign(bool val, const string &source) {
+template<>
+void Options::assign<bool>(bool val, const string &source) {
   if (val) {
     _set("true", source, false);
   } else {
@@ -74,14 +83,15 @@ void Options::assign(bool val, const string &source) {
   }
 }
 
-void Options::assign(BoutReal val, const string &source) {
+template<>
+void Options::assign<BoutReal>(BoutReal val, const string &source) {
   std::stringstream ss;
   // Make sure the precision is large enough to hold a BoutReal
   ss << std::scientific << std::setprecision(17) << val;
   _set(ss.str(), source, false);
 }
 
-void Options::_set(const string &val, const string &source, bool force) {
+void Options::_set(string val, string source, bool force) {
   if (isSet()) {
     // Check if current value the same as new value
     if (value.value != val) {
@@ -99,13 +109,13 @@ void Options::_set(const string &val, const string &source, bool force) {
     }
   }
   
-  value.value = val;
-  value.source = source;
+  value.value = std::move(val);
+  value.source = std::move(source);
   value.used = false;
   is_value = true;
 }
 
-bool Options::isSet() {
+bool Options::isSet() const {
   // Check if no value
   if (!is_value) {
     return false;
@@ -119,7 +129,8 @@ bool Options::isSet() {
   return true;
 }
 
-int Options::withDefault(int def) {  
+template<>
+int Options::withDefault<int>(int def) {  
   if (!is_value) {
     // Option not found
     // Set the option, with source "default". This is to ensure that:
@@ -171,7 +182,8 @@ int Options::withDefault(int def) {
   return val;
 }
 
-BoutReal Options::withDefault(BoutReal def) {
+template<>
+BoutReal Options::withDefault<BoutReal>(BoutReal def) {
   if (!is_value) {
     assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
@@ -212,7 +224,8 @@ BoutReal Options::withDefault(BoutReal def) {
   return val;
 }
 
-bool Options::withDefault(bool def) {
+template<> 
+bool Options::withDefault<bool>(bool def) {
   if (!is_value) {
     assign(def, DEFAULT_SOURCE);
     value.used = true; // Mark the option as used
@@ -249,7 +262,8 @@ bool Options::withDefault(bool def) {
   return val;
 }
 
-std::string Options::withDefault(const std::string &def) {
+template<> 
+std::string Options::withDefault<std::string>(std::string def) {
   if (!is_value) {
     _set(def, DEFAULT_SOURCE, false);
     value.used = true; // Mark the option as used
@@ -280,33 +294,12 @@ std::string Options::withDefault(const std::string &def) {
   return value.value;
 }
 
-void Options::get(const string &key, int &val, int def) {
-  val = (*this)[key].withDefault(def);
-}
-
-void Options::get(const string &key, BoutReal &val, BoutReal def) {
-  val = (*this)[key].withDefault(def);
-}
-
-void Options::get(const string &key, bool &val, bool def) {
-  val = (*this)[key].withDefault(def);
-}
-
-void Options::get(const string &key, string &val, const string &def) {
-  val = (*this)[key].withDefault(def);
-}
-
-string Options::str() {
-  // Note: name of parent already prepended in getSection
-  return full_name;
-}
-
-void Options::printUnused() {
+void Options::printUnused() const {
   bool allused = true;
   // Check if any options are unused
   for (const auto &it : children) {
-    if ( it.second->is_value &&
-         !it.second->value.used) {
+    if ( it.second.is_value &&
+         !it.second.value.used) {
       allused = false;
       break;
     }
@@ -316,18 +309,18 @@ void Options::printUnused() {
   } else {
     output_info << "Unused options:\n";
     for (const auto &it : children) {
-      if (it.second->is_value &&
-          !it.second->value.used) {
-        output_info << "\t" << full_name << ":" << it.first << " = " << it.second->value.value;
-        if (!it.second->value.source.empty())
-          output_info << " (" << it.second->value.source << ")";
+      if (it.second.is_value &&
+          !it.second.value.used) {
+        output_info << "\t" << full_name << ":" << it.first << " = " << it.second.value.value;
+        if (!it.second.value.source.empty())
+          output_info << " (" << it.second.value.source << ")";
         output_info << endl;
       }
     }
   }
   for (const auto &it : children) {
-    if (it.second->is_section) {
-      it.second->printUnused();
+    if (it.second.is_section) {
+      it.second.printUnused();
     }
   }
 }
@@ -339,18 +332,18 @@ void Options::cleanCache() {
 std::map<string, Options::OptionValue> Options::values() const {
   std::map<string, OptionValue> options;
   for (const auto &it : children) {
-    if (it.second->is_value) {
-      options[it.first] = it.second->value;
+    if (it.second.is_value) {
+      options[it.first] = it.second.value;
     }
   }
   return options;
 }
 
-std::map<string, Options*> Options::subsections() const {
-  std::map<string, Options*> sections;
+std::map<string, const Options*> Options::subsections() const {
+  std::map<string, const Options*> sections;
   for (const auto &it : children) {
-    if (it.second->is_section) {
-      sections[it.first] = it.second;
+    if (it.second.is_section) {
+      sections[it.first] = &it.second;
     }
   }
   return sections;
