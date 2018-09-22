@@ -42,13 +42,14 @@ class Options;
 #include "bout_types.hxx"
 #include "unused.hxx"
 #include "output.hxx"
+#include "utils.hxx"
 
 #include <map>
 #include <string>
 #include <sstream>
 #include <iomanip>
 #include <utility>
-using std::string;
+#include <cmath>
 
 /// Class to represent hierarchy of options
 /*!
@@ -149,13 +150,13 @@ using std::string;
 class Options {
 public:
   /// Constructor. This is called to create the root object
-  Options();
+  Options() : parent_instance(nullptr) {}
   
   /// Constructor used to create non-root objects
   ///
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
-  Options(Options *parent_instance, string full_name)
+  Options(Options *parent_instance, std::string full_name)
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
   
   /// Get a reference to the only root instance
@@ -172,14 +173,14 @@ public:
   /// auto child  = parent["child"];
   ///
   /// parent is now a section.
-  Options& operator[](const string &name);
+  Options& operator[](const std::string &name);
   // Prevent ambiguous overload resolution due to operator T() below
   Options& operator[](const char *name) { return (*this)[std::string(name)]; }
 
   /// Get a sub-section or value
   /// If this object is not a section, or if name
   /// is not a child, then a BoutException will be thrown
-  const Options& operator[](const string &name) const;
+  const Options& operator[](const std::string &name) const;
   const Options& operator[](const char *name) const { return (*this)[std::string(name)]; }
 
   /// Assignment from any type T
@@ -207,7 +208,7 @@ public:
   /// option["test"].assign(42, "some source");
   ///
   template<typename T>
-  void assign(T val, const string &source="") {
+  void assign(T val, const std::string &source="") {
     std::stringstream ss;
     ss << val;
     _set(ss.str(), source, false);
@@ -250,7 +251,7 @@ public:
   /// int value = option["test"].as<int>();
   ///
   template <typename T> T as() const {
-    if (!isSet()) {
+    if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
     
@@ -260,7 +261,7 @@ public:
     
     // Check if the parse failed
     if (ss.fail()) {
-      throw BoutException("Option %s could not be parsed", full_name.c_str());
+      throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(), value.value.c_str());
     }
 
     // Check if there are characters remaining
@@ -291,14 +292,23 @@ public:
   template <typename T> T withDefault(T def) {
     if (!is_value) {
       // Option not found
-      assign(def, "default");
+      assign(def, DEFAULT_SOURCE);
       value.used = true; // Mark the option as used
 
-      output_info << "\tOption " << full_name << " = " << def << " (default)"
-                  << std::endl;
+      output_info << "\tOption " << full_name << " = " << def << " (" << DEFAULT_SOURCE
+                  << ")" << std::endl;
       return def;
     }
-    return as<T>();
+    T val = as<T>();
+    // Check if this was previously set as a default option
+    if (value.source == DEFAULT_SOURCE) {
+      // Check that the default values are the same
+      if (!similar(val, def)) {
+        throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
+                            full_name.c_str(), value.value.c_str(), toString(def).c_str());
+      }
+    }
+    return val;
   }
 
   /// Get the value of this option. If not found,
@@ -306,11 +316,20 @@ public:
   template <typename T> T withDefault(T def) const {
     if (!is_value) {
       // Option not found
-      output_info << "\tOption " << full_name << " = " << def << " (default)"
-                  << std::endl;
+      output_info << "\tOption " << full_name << " = " << def << " (" << DEFAULT_SOURCE
+                  << ")" << std::endl;
       return def;
     }
-    return as<T>();
+    T val = as<T>();
+    // Check if this was previously set as a default option
+    if (value.source == DEFAULT_SOURCE) {
+      // Check that the default values are the same
+      if (!similar(val, def)) {
+        throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
+                            full_name.c_str(), value.value.c_str(), toString(def).c_str());
+      }
+    }
+    return val;
   }
 
   /// Get the parent Options object
@@ -320,7 +339,7 @@ public:
     }
     return *parent_instance;
   }
-  
+
   //////////////////////////////////////
   // Backward-compatible interface
   
@@ -328,7 +347,7 @@ public:
   static Options* getRoot() { return &root(); }
 
   template<typename T>
-  void set(const string &key, T val, const string &source = "", bool force = false) {
+  void set(const std::string &key, T val, const std::string &source = "", bool force = false) {
     if (force) {
       (*this)[key].force(val, source);
     } else {
@@ -337,7 +356,7 @@ public:
   }
   
   // Setting options
-  template<typename T> void forceSet(const string &key, T t, const string &source=""){
+  template<typename T> void forceSet(const std::string &key, T t, const std::string &source=""){
     (*this)[key].force(t,source);
   }
   
@@ -345,25 +364,38 @@ public:
    * Test if a key is set by the user.
    * Values set via default values are ignored.
    */
-  bool isSet(const string &key) { return (*this)[key].isSet(); }
+  bool isSet(const std::string &key) const {
+    // Note using operator[] here would result in exception if key does not exist
+    if (!is_section)
+      return false;
+    auto it = children.find(lowercase(key));
+    if (it == children.end())
+      return false;
+    return it->second.isSet();
+  }
 
   /// Get options, passing in a reference to a variable
   /// which will be set to the requested value.
   template<typename T, typename U>
-  void get(const string &key, T &val, U def, bool UNUSED(log)=false) {
+  void get(const std::string &key, T &val, U def, bool UNUSED(log)=false) {
+    val = (*this)[key].withDefault<T>(def);
+  }
+  template<typename T, typename U>
+  void get(const std::string &key, T &val, U def, bool UNUSED(log)=false) const {
     val = (*this)[key].withDefault<T>(def);
   }
 
   /// Creates new section if doesn't exist
-  Options* getSection(const string &name) { return &(*this)[name]; }
-  Options* getParent() {return parent_instance;}
+  Options* getSection(const std::string &name) { return &(*this)[name]; }
+  const Options* getSection(const std::string &name) const { return &(*this)[name]; }
+  Options* getParent() const {return parent_instance;}
   
   //////////////////////////////////////
   
   /*!
    * Print string representation of this object and all sections in a tree structure
    */
-  string str() const {return full_name;}
+  std::string str() const {return full_name;}
 
   /// Print the options which haven't been used
   void printUnused() const;
@@ -376,33 +408,42 @@ public:
    * information about their origin and usage
    */
   struct OptionValue {
-    string value;
-    string source;     // Source of the setting
+    std::string value;
+    std::string source;     // Source of the setting
     mutable bool used = false;  // Set to true when used
   };
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  std::map<string, OptionValue> values() const;
-  std::map<string, const Options*> subsections() const;
+  std::map<std::string, OptionValue> values() const;
+  std::map<std::string, const Options*> subsections() const;
 
  private:
   
+  /// The source label given to default values
+  static const std::string DEFAULT_SOURCE;
+  
   static Options *root_instance; ///< Only instance of the root section
 
-  Options *parent_instance;
-  string full_name; // full path name for logging only
+  Options *parent_instance {nullptr};
+  std::string full_name; // full path name for logging only
 
   /// An Option object can be a section and/or a value, or neither (empty)
 
   bool is_section = false; ///< Is this Options object a section?
-  std::map<string, Options> children; ///< If a section then has children
+  std::map<std::string, Options> children; ///< If a section then has children
 
   bool is_value = false; ///< Is this Options object a value?
   OptionValue value{}; ///< If a value
   
-  void _set(string val, string source, bool force);
+  void _set(std::string val, std::string source, bool force);
+
+  /// Tests if two values are similar. 
+  template <typename T> bool similar(T a, T b) const { return a == b; }
 };
+
+/// Specialised similar comparison methods
+template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
 
 /// Specialised assignment operator
 template <>
@@ -415,49 +456,24 @@ inline BoutReal Options::operator=<BoutReal>(BoutReal inputvalue) {
 }
 
 /// Specialised as routines
-template <>
-inline std::string Options::as<std::string>() const {
-  if (!isSet()) {
-    throw BoutException("Option %s has no value", full_name.c_str());
-  }
-    
-  // Mark this option as used
-  value.used = true;
-  
-  output_info << "\tOption " << full_name  << " = " << value.value;
-  if (!value.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << value.source << ")";
-  }
-  output_info << endl;
-  
-  return value.value;
-}
+template <> std::string Options::as<std::string>() const;
+template <> int Options::as<int>() const;
+template <> BoutReal Options::as<BoutReal>() const;
+template <> bool Options::as<bool>() const;
 
 // Specialised assign methods
-template<> void Options::assign<bool>(bool val, const string &source);
-template<> void Options::assign<BoutReal>(BoutReal val, const string &source);
+template<> void Options::assign<bool>(bool val, const std::string &source);
+template<> void Options::assign<BoutReal>(BoutReal val, const std::string &source);
 
 // Note: const char* version needed to avoid conversion to bool
 template<>
-inline void Options::assign<const char *>(const char *val, const string &source) {
+inline void Options::assign<const char *>(const char *val, const std::string &source) {
   _set(val,source,false);
 }
 template<>
-inline void Options::assign<std::string>(std::string val, const string &source) {
+inline void Options::assign<std::string>(std::string val, const std::string &source) {
   _set(val,source,false);
 };
-
-// Specialised withDefault methods
-template<> int Options::withDefault<int>(int def);
-template<> BoutReal Options::withDefault<BoutReal>(BoutReal def);
-template<> bool Options::withDefault<bool>(bool def);
-template<> std::string Options::withDefault<std::string>(std::string def);
-
-template<> int Options::withDefault<int>(int def) const;
-template<> BoutReal Options::withDefault<BoutReal>(BoutReal def) const;
-template<> bool Options::withDefault<bool>(bool def) const;
-template<> std::string Options::withDefault<std::string>(std::string def) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
