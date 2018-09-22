@@ -436,3 +436,43 @@ TEST_F(OptionsTest, NewDefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
+TEST_F(OptionsTest, OptionsMacroPointer) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(&options, val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroConstPointer) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(const_cast<const Options*>(&options), val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroReference) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(options, val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroConstReference) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(const_cast<const Options&>(options), val, 3);
+  EXPECT_EQ(val, 42);
+}
+

@@ -477,41 +477,41 @@ inline void Options::assign<std::string>(std::string val, const std::string &sou
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
-  options->get(#var, var, def)
+  pointer(options)->get(#var, var, def)
 
 #define OPTION2(options, var1, var2, def){ \
-    options->get(#var1, var1, def);  \
-    options->get(#var2, var2, def);}
+    pointer(options)->get(#var1, var1, def);  \
+    pointer(options)->get(#var2, var2, def);}
 
 #define OPTION3(options, var1, var2, var3, def){  \
-    options->get(#var1, var1, def);               \
-    options->get(#var2, var2, def);               \
-    options->get(#var3, var3, def);}
+    pointer(options)->get(#var1, var1, def);               \
+    pointer(options)->get(#var2, var2, def);               \
+    pointer(options)->get(#var3, var3, def);}
 
 #define OPTION4(options, var1, var2, var3, var4, def){ \
-    options->get(#var1, var1, def);               \
-    options->get(#var2, var2, def);               \
-    options->get(#var3, var3, def);               \
-    options->get(#var4, var4, def);}
+    pointer(options)->get(#var1, var1, def);               \
+    pointer(options)->get(#var2, var2, def);               \
+    pointer(options)->get(#var3, var3, def);               \
+    pointer(options)->get(#var4, var4, def);}
 
 #define OPTION5(options, var1, var2, var3, var4, var5, def){ \
-    options->get(#var1, var1, def);                      \
-    options->get(#var2, var2, def);                      \
-    options->get(#var3, var3, def);                      \
-    options->get(#var4, var4, def);                      \
-    options->get(#var5, var5, def);}
+    pointer(options)->get(#var1, var1, def);                      \
+    pointer(options)->get(#var2, var2, def);                      \
+    pointer(options)->get(#var3, var3, def);                      \
+    pointer(options)->get(#var4, var4, def);                      \
+    pointer(options)->get(#var5, var5, def);}
 
 #define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
-    options->get(#var1, var1, def);                               \
-    options->get(#var2, var2, def);                               \
-    options->get(#var3, var3, def);                               \
-    options->get(#var4, var4, def);                               \
-    options->get(#var5, var5, def);                               \
-    options->get(#var6, var6, def);}
+    pointer(options)->get(#var1, var1, def);                               \
+    pointer(options)->get(#var2, var2, def);                               \
+    pointer(options)->get(#var3, var3, def);                               \
+    pointer(options)->get(#var4, var4, def);                               \
+    pointer(options)->get(#var5, var5, def);                               \
+    pointer(options)->get(#var6, var6, def);}
 
 #define VAROPTION(options, var, def) {					\
-    if (options->isSet(#var)){						\
-      options->get(#var, var, def);					\
+    if (pointer(options)->isSet(#var)){						\
+      pointer(options)->get(#var, var, def);					\
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
