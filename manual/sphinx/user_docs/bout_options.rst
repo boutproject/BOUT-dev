@@ -386,25 +386,98 @@ Implementation
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the `Options` class defined in
-``bout++/include/options.hxx``::
-
-    class Options {
-     public:
-      // Setting options
-      void set(const string &key, int value, const string &source="");
-      ...
-      // Testing if set
-      bool isSet(const string &key);
-      // Getting options
-      void get(const string &key,int &val,const int default);
-      ...
-      // Get a subsection. Creates if doesn't exist
-      Options* getSection(const string &name);
-    };
+``bout++/include/options.hxx``. 
 
 To access the options, there is a static function (singleton)::
 
-      Options *options = Options::getRoot();
+    auto options = Options::root();
+
+which returns a reference (type ``Options&``). Options can be set by
+assigning, treating options as a map or dictionary::
+
+    options["nout"] = 10;    // Integer
+    options["restart"] = true;  // bool
+    
+Internally these values are converted to strings. Any type can be
+assigned, so long as it can be streamed to a string (using ``<<``
+operator and a ``std::stringstream``).
+
+Often it’s useful to see where an option setting has come from e.g. the
+name of the options file or “command line”. To specify a source, use
+the ``assign`` function to assign values::
+
+    options["nout"].assign(10, "manual");
+
+A value cannot be assigned more than once with different values and
+the same source ("manual" in this example). This is to catch a common
+error in which a setting is inconsistently specified in an input
+file. To force a value to change, overwriting the existing value (if
+any)::
+
+    options["nout"].force(20, "manual");
+
+Sub-sections are created as they are accessed, so a value in a
+sub-section could be set using::
+
+    auto section = options["mysection"];
+    section["myswitch"] = true;
+
+or just::
+
+    options["mysection"]["myswitch"] = true;
+
+To get options, they can be assigned to a variable::
+
+    int nout = options["nout"];
+
+If the option is not found then a ``BoutException`` will be thrown. A
+default value can be given, which will be used if the option has not
+been set::
+
+    int nout = options["nout"].withDefault(1);
+
+It is common for BOUT++ models to read in many settings which have the
+same variable name as option setting (e.g. "nout" here). A convenient
+macro reads options into an already-defined variable::
+
+    int nout;
+    OPTION(options, nout, 1);
+
+where the first argument is a section, second argument is the variable
+whose name will also be used as the option string.
+
+Every time an option is accessed, a message is written
+to ``output_info``. This message includes the value used and the
+source of that value. By default this message is printed to the
+terminal and saved in the log files, but this can be disabled by
+changing the logging level: Add ``-q`` to the command line to reduce
+logging level. See section :ref:`sec-logging` for more details about
+logging.
+
+The type to be returned can also be specified as a template argument::
+
+    BoutReal nout = options["nout"].as<BoutReal>();
+
+Any type can be used which can be streamed (operator ``>>``) from a
+``stringstream``. There are special implementations for ``bool``,
+``int`` and ``BoutReal`` which enable use of expressions in the input
+file. The type can also be specified to ``withDefault``, or will be
+inferred from the argument::
+
+    BoutReal nout = options["nout"].withDefault<BoutReal>(1);
+
+
+Older interface
+~~~~~~~~~~~~~~~
+
+Most code in BOUT++ currently uses an older interface to ``Options``
+which uses pointers rather than references. Both interfaces are
+currently supported, but use of the newer interface above is
+encouraged.
+
+To access the options, there is a static function (singleton)::
+  
+    Options *options = Options::getRoot();
 
 which gives the top-level (root) options class. Setting options is done
 using the ``set()`` methods which are currently defined for ``int``,
@@ -441,26 +514,6 @@ conversion when needed, so the following code would work::
 
 This is because often the type of the option is not known at the time
 when it’s set, but only when it’s requested.
-
-
-If the verbose flag is set (``-v`` on command line) , then ``get`` methods output a
-message to the log files giving the value used and the source of that value.
-This is controlled by the ``log`` member of Options and can be turned on and off
-by calling ``setLogging`` e.g.::
-
-   options->getRoot()->setLogging(false); // Turn off logging of options
-
-Changes to logging propagate to all sub-sections, so setting the logging
-of the root options object sets it for all sections. To see logs from
-a particular subset of the options tree set the logging for that section::
-
-   options->getRoot()->getSection("mesh")->setLogging(true); // Turn on some logging
-
-so the above code turns on logging of options for the "mesh" section and all subsections of mesh.
-
-Note: This logging only affects messages printed to screen and to ``BOUT.log`` files.
-It does not affect the ``BOUT.settings`` file, which should always contain a full list
-of options used and their values.
 
 
 Reading options
