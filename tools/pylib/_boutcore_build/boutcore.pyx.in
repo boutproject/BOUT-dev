@@ -44,7 +44,12 @@ cat <<EOF
 # distutils: library_dirs = $lib_dirs
 # distutils: sources = helper.cxx
 # distutils: extra_compile_args = $flags
-# distutils: extra_link_args = $ldflags
+EOF
+if test ".${ldflags}" != "."
+then
+    echo "# distutils: extra_link_args = $ldflags"
+fi
+cat <<EOF
 
 # cython: binding=True
 
