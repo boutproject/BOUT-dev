@@ -119,7 +119,11 @@ public:
 
   /// Get a pointer to the only root instance (singleton)
   static Options* getRoot();
-
+  
+  /// Alternative to getRoot.
+  /// Gets a reference to the only root instance
+  static Options& root() { return *getRoot(); }
+  
   /*!
    * Free all memory
    */
@@ -157,6 +161,13 @@ public:
   void get(const string &key, bool &val, bool def);
   void get(const string &key, string &val, const string &def);
 
+  template<typename T>
+  T get(const string &key, T def) {
+    T value;
+    get(key, value, def);
+    return value;
+  }
+  
   // This is a temporary replacement for 4-argument get
   // and will be removed in the next major release
   template<typename T, typename U>
@@ -168,6 +179,9 @@ public:
   Options* getSection(const string &name);
   Options* getParent() {return parent;}
 
+  /// Create new section if it doesn't exist
+  Options& operator[](const string &name) { return *getSection(name); }
+  
   /*!
    * Print string representation of this object and all sections in a tree structure
    */
@@ -195,7 +209,7 @@ public:
   const std::map<string, Options*>& subsections() const {return sections;}
 
  private:
-  static Options *root; ///< Only instance of the root section
+  static Options *root_instance; ///< Only instance of the root section
 
   Options *parent;
   string sectionName; // section name (if any), for logging only

@@ -19,21 +19,21 @@ Options::~Options() {
   }
 }
 
-Options *Options::root = nullptr;
+Options *Options::root_instance = nullptr;
 
 Options *Options::getRoot() {
-  if (root == nullptr) {
+  if (root_instance == nullptr) {
     // Create the singleton
-    root = new Options();
+    root_instance = new Options();
   }
-  return root;
+  return root_instance;
 }
 
 void Options::cleanup() {
-  if (root == nullptr)
+  if (root_instance == nullptr)
     return;
-  delete root;
-  root = nullptr;
+  delete root_instance;
+  root_instance = nullptr;
 }
 
 void Options::set(const string &key, const int &val, const string &source, bool force) {
