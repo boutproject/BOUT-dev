@@ -474,6 +474,13 @@ int Coordinates::calcCovariant() {
   g_13.allocate();
   g_23.allocate();
 
+  g_11.setLocation(location);
+  g_22.setLocation(location);
+  g_33.setLocation(location);
+  g_12.setLocation(location);
+  g_13.setLocation(location);
+  g_23.setLocation(location);
+
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
