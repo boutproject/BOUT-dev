@@ -311,7 +311,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
       case CELL_XLOW: {
         ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
 
-        for (const auto &i : result.region(RGN_NOBNDRY)) {
+        BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
 
           // Set stencils
           s.c = var[i];
@@ -341,7 +341,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
 
           // More than one guard cell, so set pp and mm values
           // This allows higher-order methods to be used
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
+          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];
@@ -366,9 +366,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
           // Note: at the moment we cannot reach this case because of the
           // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
           // stencil for interp, then this will be useful
-          s.pp = nan("");
-          s.mm = nan("");
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
+          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];
