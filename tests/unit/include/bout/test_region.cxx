@@ -2340,13 +2340,15 @@ TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
 TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
   auto index = region.cbegin();
+
+  EXPECT_EQ(index->zpp(), *index);
 }
 
+#if CHECK > 2
 TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
@@ -2415,13 +2417,12 @@ TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
 TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
   auto index = region.cbegin();
+  EXPECT_EQ(index->zmm(), *index);
 }
-#endif
 
 TEST_F(IndexOffsetTest, Offset111Ind2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
