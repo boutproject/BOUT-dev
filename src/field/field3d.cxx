@@ -1085,28 +1085,30 @@ bool finite(const Field3D &f, REGION rgn) {
   return true;
 }
 
-// Internal routine to avoid ugliness with interactions between CHECK
-// levels and UNUSED parameters
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
 #if CHECK > 2
-void checkData_is_finite_on_region(const Field3D &f, REGION region) {
-  // Do full checks
-  for (const auto &d : f.region(region)) {
-    if (!finite(f[d])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
-                          d.y, d.z);
+  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
+    // Do full checks
+    for (const auto &d : f.region(region)) {
+      if (!finite(f[d])) {
+        throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
+                            d.y, d.z);
+      }
     }
   }
-}
 #else
-void checkData_is_finite_on_region(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
+}
 
 #if CHECK > 0
 void checkData(const Field3D &f, REGION region) {
   if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
 
-  checkData_is_finite_on_region(f, region);
+  checkDataIsFiniteOnRegion(f, region);
 }
 #endif
 

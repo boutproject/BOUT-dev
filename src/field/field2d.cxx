@@ -535,21 +535,22 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   return result;
 }
 
-// Internal routine to avoid ugliness with interactions between CHECK
-// levels and UNUSED parameters
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
 #if CHECK > 2
-void checkData_is_finite_on_region(const Field2D &f, REGION region) {
-  // Do full checks
-  for(const auto& i : f.region(region)){
-    if(!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
+  void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
+    // Do full checks
+    for(const auto& i : f.region(region)){
+      if(!::finite(f[i])) {
+        throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
+      }
     }
   }
-}
 #else
-void checkData_is_finite_on_region(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+  void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
-
+}
 
 #if CHECK > 0
 /// Check if the data is valid
@@ -558,7 +559,7 @@ void checkData(const Field2D &f, REGION region) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
-  checkData_is_finite_on_region(f, region);
+  checkDataIsFiniteOnRegion(f, region);
 
 }
 #endif
