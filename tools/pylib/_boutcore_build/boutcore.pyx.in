@@ -59,6 +59,7 @@ cimport numpy as np
 #import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
+import copy
 EOF
 
 # make a list of the format "nx, ny, nz" or something similar
@@ -200,6 +201,74 @@ cdef class $ftype:
             kwargs['yind']=[ystart,ystart+ny]
         data=collect(name,yguards=True,tind=tind,**kwargs)
         dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
+        if len(data.shape) != ${ndim}:
+            raise TypeError("Expected ${ndim}D data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f.setLocation(loc)
+        f.setAll(data,ignoreDataType=ignoreDataType)
+        return f
+
+    @classmethod
+    def fromBoutOutputs(cls,outputs,name,tind=-1,mesh=None,ignoreDataType=False):
+        """
+        Create a $ftype from reading in a datafile via collect.
+
+        Parameters
+        ----------
+        outputs : BoutOutputs
+            object to read from
+        tind : int
+            time slice to read
+        mesh : Mesh
+            if not defined, use global mesh
+        ignoreDataType : bool
+            Do not fail if data is not float64
+        **kwargs
+            remaining arguments are passed to collect
+        """
+        checkInit()
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        # save original _kwargs from outputs so we can restore them later
+        orig_kwargs = copy.copy(outputs._kwargs)
+        kwargs = outputs._kwargs
+        kwargs['xguards']=True
+        kwargs['yguards']=True
+        kwargs['tind']=tind
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise RuntimeError("Do not support xind slicing with MPI")
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise RuntimeError("Do not support yind slicing with MPI")
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
+        data=outputs[name]
+        dims=outputs.dimensions[name]
+        # restore original _kwargs
+        outputs._kwargs=orig_kwargs
         if dims[0] == 't':
             data=data.reshape(data.shape[1:])
         if len(data.shape) != ${ndim}:
