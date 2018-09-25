@@ -35,7 +35,7 @@ class LaplaceSerialTri;
 
 class LaplaceSerialTri : public Laplacian {
 public:
-  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
+  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   ~LaplaceSerialTri(){};
 
   using Laplacian::setCoefA;
