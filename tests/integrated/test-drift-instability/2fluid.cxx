@@ -402,8 +402,9 @@ int physics_run(BoutReal t) {
 
   ddt(rho) = 0.0;
   if(evolve_rho) {
-
-    ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
+    auto divPar_jpar_ylow = Div_par(jpar);
+    mesh->communicate(divPar_jpar_ylow);
+    ddt(rho) += SQ(coord->Bxy)*interp_to(divPar_jpar_ylow, CELL_CENTRE);
   }
   
 
