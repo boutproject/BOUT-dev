@@ -634,7 +634,9 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
 const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
                                DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(f.getMesh() == localmesh);
-  return Field2D(0.0, localmesh);
+  auto result = Field2D(0.0, localmesh);
+  result.setLocation(location);
+  return result;
 }
 
 #include <derivs.hxx>
