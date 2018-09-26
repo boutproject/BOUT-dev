@@ -787,6 +787,7 @@ enable_backtrace
 enable_shared
 enable_openmp
 enable_pvode_openmp
+with_openmp_schedule
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1443,6 +1444,8 @@ Optional Features:
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
+  --with-openmp-schedule=static/dynamic/guided/auto
+                          set OpenMP schedule
   --enable-code-coverage  Whether to enable code coverage support
 
 Optional Packages:
@@ -2661,6 +2664,13 @@ if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
+fi
+
+# Check whether --openmp-schedule was given.
+if test "${with_openmp_schedule+set}" = set; then :
+  enableval=$with_openmp_schedule;
+else
+  with_openmp_schedule=static
 fi
 
 
@@ -5105,12 +5115,13 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
       "none needed" | unsupported)
 	;; #(
       *)
-	OPENMP_CXXFLAGS=$ac_cv_prog_cxx_openmp ;;
+	OPENMP_CXXFLAGS="$ac_cv_prog_cxx_openmp -DOPENMP_SCHEDULE=$with_openmp_schedule" ;;
     esac
   fi
 
 
 HAS_OPENMP=$enable_openmp
+OPENMP_SCHEDULE=$with_openmp_schedule
 
 #############################################################
 # Code coverage using gcov
@@ -14578,6 +14589,8 @@ $as_echo "$as_me:   MUMPS support           : $HAS_MUMPS" >&6;}
 $as_echo "$as_me:   Lapack support          : $HAS_LAPACK" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Scorep support          : $HAS_SCOREP" >&5
 $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&5
+$as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}
