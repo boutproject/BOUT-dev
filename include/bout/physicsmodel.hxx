@@ -354,8 +354,8 @@ private:
 
 /// Add fields to the solver.
 /// This should accept up to ten arguments
-#define SOLVE_FOR(...) \
-  MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__)
+#define SOLVE_FOR(...)                  \
+  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
 
 #endif // __PHYSICS_MODEL_H__
 

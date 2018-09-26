@@ -55,7 +55,13 @@
 ///
 ///    test(a) test(b) test(c)
 ///
-/// Note that no ; is inserted after each expansion
+/// Notes:
+///
+///   - No semicolon is inserted after each expansion
+///   - No braces are put around the expansion. These
+///     should usually be added in the top-level macro
+///     to avoid surprising results.
+/// 
 #define MACRO_FOR_EACH(mac, ...)                                        \
   _GET_FOR_EACH_EXPANSION(__VA_ARGS__,                                  \
                           _me_10, _me_9, _me_8, _me_7, _me_6, _me_5,    \
@@ -74,7 +80,13 @@
 ///
 ///    test(a); test(b); test(c);
 ///
-/// Note that a ; is inserted after each expansion
+/// Notes:
+///
+///   - A ; is inserted after each expansion
+///   - No braces are put around the expansion. These
+///     should usually be added in the top-level macro
+///     to avoid surprising results.
+///
 #define MACRO_FOR_EACH_FN(fn, ...)                                      \
   _GET_FOR_EACH_EXPANSION(__VA_ARGS__,                                  \
                           _fe_10, _fe_9, _fe_8, _fe_7, _fe_6, _fe_5,    \

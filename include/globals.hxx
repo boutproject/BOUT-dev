@@ -74,7 +74,7 @@ SETTING(Mesh *mesh, nullptr); ///< The mesh object
 /// in the input.
 /// This should accept up to 10 arguments
 #define GRID_LOAD(...) \
-  MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__)
+  { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
 
 ///////////////////////////////////////////////////////////////
 
