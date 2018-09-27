@@ -6,13 +6,13 @@
 #ifndef __PARALLELTRANSFORM_H__
 #define __PARALLELTRANSFORM_H__
 
-#include <datafile.hxx>
 #include <field3d.hxx>
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
 #include <unused.hxx>
 
 class Mesh;
+class Datafile;
 
 #include <vector>
 
