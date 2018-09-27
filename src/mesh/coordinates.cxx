@@ -685,6 +685,11 @@ const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc),
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field3D )");
+  
+  // Perversely the relevant coordinates object might not be `this` if
+  // f isn't at the same location.
+  if (f.getLocation() != location)
+    return f.getCoordinates()->Div_par(f, outloc, method);
 
   if (f.hasYupYdown()) {
     // Need to modify yup and ydown fields
