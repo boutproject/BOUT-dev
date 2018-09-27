@@ -541,7 +541,7 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
 }
 
 #if CHECK > 2
-void checkData_is_finite_on_region(const FieldPerp &f, REGION region) {
+void checkDataIsFiniteOnRegion(const FieldPerp &f, REGION region) {
   const Region<IndPerp> &new_region = f.getMesh()->getRegionPerp(REGION_STRING(region));
   
   // Do full checks
@@ -553,7 +553,7 @@ void checkData_is_finite_on_region(const FieldPerp &f, REGION region) {
   }
 }
 #else
-void checkData_is_finite_on_region(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 
@@ -566,7 +566,7 @@ void checkData(const FieldPerp &f, REGION region) {
 
   ASSERT3(f.getIndex() >= 0 && f.getIndex() < f.getMesh()->LocalNy);
 
-  checkData_is_finite_on_region(f, region);
+  checkDataIsFiniteOnRegion(f, region);
 }
 #endif
 
