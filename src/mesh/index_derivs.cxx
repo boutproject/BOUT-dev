@@ -651,11 +651,11 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(loc);
 
   if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
 
+    result.setLocation(loc);
     CELL_LOC location = var.getLocation();
 
     if (this->xstart > 1) {
@@ -707,6 +707,8 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
 
   } else {
     // Non-staggered differencing
+
+    result.setLocation(var.getLocation());
 
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
@@ -757,12 +759,12 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(loc);
 
   if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
     // Staggered differencing
 
     CELL_LOC location = var.getLocation();
+    result.setLocation(loc);
 
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
@@ -813,6 +815,8 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
 
   } else {
     // Non-staggered differencing
+
+    result.setLocation(var.getLocation());
 
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
@@ -918,7 +922,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(loc);
 
   if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
     // Field "var" has distinct yup and ydown fields which
@@ -930,6 +933,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
+      result.setLocation(loc);
 
       stencil s;
       s.pp = nan("");
@@ -954,6 +958,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       }
     } else {
       // Non-staggered
+
+      result.setLocation(var.getLocation());
+
       stencil s;
       s.pp = nan("");
       s.mm = nan("");
@@ -976,6 +983,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
+      result.setLocation(loc);
 
       if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
@@ -1028,6 +1036,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
     } else {
       // Non-staggered differencing
+
+      result.setLocation(var.getLocation());
 
       if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
@@ -1091,7 +1101,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(loc);
+  result.setLocation(var.getLocation());
 
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
