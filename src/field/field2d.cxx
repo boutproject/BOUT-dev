@@ -589,6 +589,23 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   return result;
 }
 
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
+#if CHECK > 2
+  void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
+    // Do full checks
+    for(const auto& i : f.region(region)){
+      if(!::finite(f[i])) {
+        throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
+      }
+    }
+  }
+#else
+  void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+}
+
 #if CHECK > 0
 /// Check if the data is valid
 void checkData(const Field2D &f, REGION region) {
@@ -596,19 +613,13 @@ void checkData(const Field2D &f, REGION region) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
-#if CHECK > 2
-  // Do full checks
-  for(const auto& i : f.region(region)){
-    if(!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
-    }
-  }
-#endif
+  checkDataIsFiniteOnRegion(f, region);
+
 }
 #endif
 
-void invalidateGuards(Field2D &var){
 #if CHECK > 2
+void invalidateGuards(Field2D &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all y and all z
@@ -637,6 +648,5 @@ void invalidateGuards(Field2D &var){
       var(ix, iy) = std::nan("");
     }
   }
-#endif  
-  return;
 }
+#endif

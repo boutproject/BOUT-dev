@@ -1933,19 +1933,21 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
     if (var->is3D()) {
       // 3D variable
       ASSERT2(static_cast<Field3D *>(var)->isAllocated());
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*static_cast<Field3D *>(var))(jx, jy, jz);
+            buffer[len] = var3d_ref(jx, jy, jz);
           }
         }
       }
     } else {
       // 2D variable
       ASSERT2(static_cast<Field2D *>(var)->isAllocated());
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*static_cast<Field2D *>(var))(jx, jy);
+          buffer[len] = var2d_ref(jx, jy);
         }
       }
     }
@@ -1963,18 +1965,20 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*static_cast<Field3D *>(var))(jx, jy, jz) = buffer[len];
+            var3d_ref(jx, jy, jz) = buffer[len];
           }
         }
       }
     } else {
       // 2D variable
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          (*static_cast<Field2D *>(var))(jx, jy) = buffer[len];
+          var2d_ref(jx, jy) = buffer[len];
         }
       }
     }

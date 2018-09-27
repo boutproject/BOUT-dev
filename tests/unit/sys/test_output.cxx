@@ -242,6 +242,8 @@ TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
   ConditionalOutput local_output_first(&local_output_base);
   ConditionalOutput local_output_second(&local_output_first);
 
+  EXPECT_EQ(local_output_first.getBase(), &local_output_base);
+  EXPECT_NE(local_output_second.getBase(), &local_output_first);
   EXPECT_EQ(local_output_second.getBase(), &local_output_base);
 }
 

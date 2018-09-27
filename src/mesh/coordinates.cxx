@@ -810,7 +810,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
         // Perform x derivative
 
-        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+        laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
 
         delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
       }

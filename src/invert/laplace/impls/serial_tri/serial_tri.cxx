@@ -38,6 +38,9 @@
 #include <output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc) : Laplacian(opt, loc), A(0.0), C(1.0), D(1.0) {
+  A.setLocation(location);
+  C.setLocation(location);
+  D.setLocation(location);
 
   if(!mesh->firstX() || !mesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");

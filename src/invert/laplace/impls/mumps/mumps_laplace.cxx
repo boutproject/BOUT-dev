@@ -39,6 +39,13 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc) :
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+  Ex.setLocation(location);
+  Ez.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
