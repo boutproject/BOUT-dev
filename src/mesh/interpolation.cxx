@@ -236,7 +236,9 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
       }
       };
 
-      invalidateGuards(result); // Fill guard cells with NaN so we can check they are not used when unset.
+      if (region == RGN_NOBNDRY) {
+        invalidateGuards(result); // Fill guard cells with NaN so we can check they are not used when unset.
+      }
 
       if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
         fieldmesh->communicate(result);
@@ -388,6 +390,10 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
                             " - don't know how to interpolate to %s",strLocation(loc));
       }
       };
+
+      if (region == RGN_NOBNDRY) {
+        invalidateGuards(result); // Fill guard cells with NaN so we can check they are not used when unset.
+      }
 
       if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
         fieldmesh->communicate(result);
