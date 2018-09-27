@@ -46,7 +46,7 @@ public:
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
-  static LaplaceXZ *create(Mesh *m, Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
+  static LaplaceXZ *create(Mesh *m, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
 
 protected:
   static const int INVERT_DC_GRAD  = 1;

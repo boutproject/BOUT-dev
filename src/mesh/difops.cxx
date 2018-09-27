@@ -646,7 +646,6 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
 
   ASSERT1(phi.getMesh() == A.getMesh());
 
-  Mesh * mesh = phi.getMesh();
   Coordinates *metric = phi.getCoordinates(outloc);
 
   // Calculate phi derivatives
