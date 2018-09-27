@@ -684,7 +684,7 @@ const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
   if (f.getLocation() != location)
     return f.getCoordinates()->Div_par(f, outloc, method);
 
-  return Bxy * Grad_par(f / Bxy);
+  return Bxy * Grad_par(f / Bxy, outloc, method);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
