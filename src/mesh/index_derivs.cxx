@@ -1711,7 +1711,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
+  result.setLocation(diffloc);
 
   if (this->xstart > 1) {
     // Two or more guard cells
@@ -1765,7 +1765,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1775,6 +1774,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  result.setLocation(outloc);
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -1960,7 +1961,6 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1970,6 +1970,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  result.setLocation(outloc);
 
   if (this->LocalNy == 1){
     result=0;
@@ -2153,7 +2155,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2163,6 +2164,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  result.setLocation(outloc);
 
   if (this->LocalNy == 1){
     result=0;
@@ -2344,8 +2347,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(diffloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2366,7 +2367,6 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2376,6 +2376,8 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  result.setLocation(outloc);
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
