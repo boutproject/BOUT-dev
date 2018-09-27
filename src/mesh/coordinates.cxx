@@ -676,9 +676,14 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 /////////////////////////////////////////////////////////
 // Parallel divergence
 
-const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc),
-                                   DIFF_METHOD UNUSED(method)) {
+const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
+                                   DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field2D )");
+  // Perversely the relevant coordinates object might not be `this` if
+  // f isn't at the same location.
+  if (f.getLocation() != location)
+    return f.getCoordinates()->Div_par(f, outloc, method);
+
   return Bxy * Grad_par(f / Bxy);
 }
 
