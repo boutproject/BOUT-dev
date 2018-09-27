@@ -147,7 +147,7 @@ Field3D::~Field3D() {
     delete deriv;
   }
 
-  clearYupYdown();
+  deleteYupYdown();
 }
 
 void Field3D::allocate() {
@@ -191,13 +191,13 @@ void Field3D::mergeYupYdown() {
   if(yup_field == this && ydown_field == this)
     return;
 
-  clearYupYdown();
+  deleteYupYdown();
 
   yup_field = this;
   ydown_field = this;
 }
 
-void Field3D::clearYupYdown() {
+void Field3D::deleteYupYdown() {
   // Delete auxiliary fields if they have been set
   if (yup_field == this && ydown_field == this) {
     return;
@@ -378,7 +378,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   setLocation(rhs.location);
 
-  clearYupYdown();
+  deleteYupYdown();
   return *this;
 }
 
@@ -398,7 +398,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
 
-  clearYupYdown();
+  deleteYupYdown();
 
   return *this;
 }
@@ -432,7 +432,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
   //location = CELL_CENTRE;
   // DON'T RE-SET LOCATION
 
-  clearYupYdown();
+  deleteYupYdown();
 
   return *this;
 }
