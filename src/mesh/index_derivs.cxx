@@ -1157,8 +1157,6 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   Field3D result = applyXdiff(f, func, diffloc, region);
 
-  result.setLocation(diffloc); // Set the result location
-
   return result;
 }
 
@@ -1210,8 +1208,6 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
   }
 
   Field3D result = applyYdiff(f, func, diffloc, region);
-
-  result.setLocation(diffloc); // Set the result location
 
   return result;
 }
@@ -1281,6 +1277,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     }
 
     result.allocate(); // Make sure data allocated
+    result.setLocation(diffloc);
 
     auto region_index = f.region(region);
     int xs = region_index.xstart;
@@ -1338,8 +1335,6 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     // All other (non-FFT) functions
     result = applyZdiff(f, func, diffloc, region);
   }
-
-  result.setLocation(diffloc);
 
   return result;
 }
@@ -1412,8 +1407,6 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
   }
 
   Field3D result = applyXdiff(f, func, diffloc, region);
-
-  result.setLocation(diffloc);
 
   return result;
 }
@@ -1489,8 +1482,6 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   }
 
   Field3D result = applyYdiff(f, func, diffloc, region);
-
-  result.setLocation(diffloc);
 
   return result;
 }
@@ -1583,6 +1574,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     }
 
     result.allocate(); // Make sure data allocated
+    result.setLocation(diffloc);
 
     auto region_index = f.region(region);
     int xs = region_index.xstart;
@@ -1625,8 +1617,6 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     // All other (non-FFT) functions
     result = applyZdiff(f, func, diffloc, region);
   }
-
-  result.setLocation(diffloc);
 
   return result;
 }
