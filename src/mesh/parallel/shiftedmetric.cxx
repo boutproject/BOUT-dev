@@ -178,7 +178,6 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
 
   Field3D result(&mesh);
   result.allocate();
-  invalidateGuards(result); // Won't set x-guard cells, so allow checking to throw exception if they are used.
 
   // We only use methods in ShiftedMetric to get fields for parallel operations
   // like interp_to or DDY.
