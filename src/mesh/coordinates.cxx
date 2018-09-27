@@ -680,15 +680,9 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
   if (f.hasYupYdown()) {
     // Need to modify yup and ydown fields
     Field3D f_B = f / Bxy;
-    if (&f.yup() == &f) {
-      // Identity, yup and ydown point to same field
-      f_B.mergeYupYdown();
-    } else {
-      // Distinct fields
-      f_B.splitYupYdown();
-      f_B.yup() = f.yup() / Bxy;
-      f_B.ydown() = f.ydown() / Bxy;
-    }
+    f_B.createYupYdown();
+    f_B.yup() = f.yup() / Bxy;
+    f_B.ydown() = f.ydown() / Bxy;
     return Bxy * Grad_par(f_B, outloc, method);
   }
 

@@ -56,10 +56,9 @@ public:
 class ParallelTransformIdentity : public ParallelTransform {
 public:
   /*!
-   * Merges the yup and ydown() fields of f, so that
-   * f.yup() = f.ydown() = f
+   * Does nothing, so field-aligned derivatives, etc. are used
    */ 
-  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &UNUSED(f)) override {}
   
   /*!
    * The field is already aligned in Y, so this

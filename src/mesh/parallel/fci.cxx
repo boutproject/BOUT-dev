@@ -296,8 +296,8 @@ const Field3D FCIMap::integrate(Field3D &f) const {
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
-  // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  // Ensure that yup and ydown are not null
+  f.createYupYdown();
 
   // Interpolate f onto yup and ydown fields
   f.ynext(forward_map.dir) = forward_map.interpolate(f);
@@ -307,8 +307,8 @@ void FCITransform::calcYUpDown(Field3D &f) {
 void FCITransform::integrateYUpDown(Field3D &f) {
   TRACE("FCITransform::integrateYUpDown");
   
-  // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  // Ensure that yup and ydown are not null
+  f.createYupYdown();
 
   // Integrate f onto yup and ydown fields
   f.ynext(forward_map.dir) = forward_map.integrate(f);

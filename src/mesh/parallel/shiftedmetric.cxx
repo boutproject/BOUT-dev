@@ -95,7 +95,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
-  f.splitYupYdown();
+  // Ensure that yup and ydown are not null
+  f.createYupYdown();
   
   Field3D& yup = f.yup();
   yup.allocate();
