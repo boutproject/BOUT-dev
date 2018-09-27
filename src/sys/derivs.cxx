@@ -61,7 +61,7 @@
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
   Field3D result =  f.getMesh()->indexDDX(f,outloc, method, region);
-  Coordinates* coords = f.getCoordinates();
+  Coordinates *coords = f.getCoordinates(outloc);
   result /= coords->dx;
 
   if(f.getMesh()->IncIntShear) {
@@ -97,7 +97,9 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION 
 
 const Field2D DDZ(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
                   REGION UNUSED(region)) {
-  return Field2D(0.0, f.getMesh());
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
@@ -218,7 +220,9 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
 
 const Field2D D2DZ2(const Field2D &f, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
                     REGION UNUSED(region)) {
-  return Field2D(0.0, f.getMesh());
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 /*******************************************************************************
@@ -285,10 +289,11 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   return DDX(dfdy, outloc, method, region);
 }
 
-const Field2D D2DXDZ(const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+const Field2D D2DXDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
-  // TODO: mesh & loc
-  return Field2D(0.0);
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 /// X-Z mixed derivative
@@ -315,10 +320,11 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
 }
 
-const Field2D D2DYDZ(const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
-  // TODO: mesh & loc
-  return Field2D(0.0);
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION UNUSED(region)) {
@@ -387,19 +393,21 @@ const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_MET
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f),
-                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
-                   REGION UNUSED(region)) {
-  // TODO: loc, mesh
-  return Field2D(0.0);
+const Field2D VDDZ(const Field2D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+                   DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+  // Should we take location from v or f?
+  auto tmp = Field2D(0., v.getMesh());
+  tmp.setLocation(v.getLocation());
+  return tmp;
 }
 
 // Note that this is zero because no compression is included
-const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &UNUSED(f),
-                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
-                   REGION UNUSED(region)) {
-  // TODO: loc, mesh
-  return Field2D(0.0);
+const Field2D VDDZ(const Field3D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+                   DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+  // Should we take location from v or f?
+  auto tmp = Field2D(0., v.getMesh());
+  tmp.setLocation(v.getLocation());
+  return tmp;
 }
 
 // general case
@@ -435,11 +443,12 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_MET
 
 /////////////////////////////////////////////////////////////////////////
 
-const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &UNUSED(f),
-                   CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSED(method),
-                   REGION UNUSED(region)) {
-  // TODO: mesh & loc
-  return Field2D(0.0);
+const Field2D FDDZ(const Field2D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+                   DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+  // Should we take location from v or f?
+  auto tmp = Field2D(0., v.getMesh());
+  tmp.setLocation(v.getLocation());
+  return tmp;
 }
 
 const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {

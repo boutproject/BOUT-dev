@@ -474,6 +474,13 @@ int Coordinates::calcCovariant() {
   g_13.allocate();
   g_23.allocate();
 
+  g_11.setLocation(location);
+  g_22.setLocation(location);
+  g_33.setLocation(location);
+  g_12.setLocation(location);
+  g_13.setLocation(location);
+  g_23.setLocation(location);
+
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
@@ -627,7 +634,9 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD metho
 const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
                                DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(f.getMesh() == localmesh);
-  return Field2D(0.0, localmesh);
+  auto result = Field2D(0.0, localmesh);
+  result.setLocation(location);
+  return result;
 }
 
 #include <derivs.hxx>
@@ -667,15 +676,25 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 /////////////////////////////////////////////////////////
 // Parallel divergence
 
-const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC UNUSED(outloc),
-                                   DIFF_METHOD UNUSED(method)) {
+const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
+                                   DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field2D )");
-  return Bxy * Grad_par(f / Bxy);
+  // Perversely the relevant coordinates object might not be `this` if
+  // f isn't at the same location.
+  if (f.getLocation() != location)
+    return f.getCoordinates()->Div_par(f, outloc, method);
+
+  return Bxy * Grad_par(f / Bxy, outloc, method);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field3D )");
+  
+  // Perversely the relevant coordinates object might not be `this` if
+  // f isn't at the same location.
+  if (f.getLocation() != location)
+    return f.getCoordinates()->Div_par(f, outloc, method);
 
   if (f.hasYupYdown()) {
     // Need to modify yup and ydown fields
