@@ -37,7 +37,7 @@ class LaplacePetsc;
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_DEFAULT) {
+  LaplacePetsc(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
     throw BoutException("No PETSc solver available");
   }
 
@@ -68,7 +68,7 @@ public:
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT);
+  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );

@@ -40,7 +40,7 @@ class LaplacePDD;
 
 class LaplacePDD : public Laplacian {
 public:
-  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_DEFAULT)
+  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE)
       : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
         PDD_COMM_Y(456) {
     Acoef.setLocation(location);
