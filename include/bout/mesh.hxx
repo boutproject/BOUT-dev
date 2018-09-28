@@ -526,9 +526,9 @@ class Mesh {
   ///                    The default is the same as \p f
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated
-  template<typename T>
-  const T indexVDDX(const T &v, const T &f, CELL_LOC outloc,
-                    DIFF_METHOD method, REGION region = RGN_NOBNDRY);
+  template<typename Tv, typename Tf>
+  const promoteField<Tv,Tf> indexVDDX(const Tv &v, const Tf &f, CELL_LOC outloc,
+                                      DIFF_METHOD method, REGION region = RGN_NOBNDRY);
 
   /// Advection operator in index space in Y direction
   ///
@@ -541,8 +541,8 @@ class Mesh {
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated.
-  template<typename T>
-  const T indexVDDY(const T &v, const T &f, CELL_LOC outloc,
+  template<typename Tv, typename Tf>
+  const promoteField<Tv,Tf> indexVDDY(const Tv &v, const Tf &f, CELL_LOC outloc,
                     DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
   /// Advection operator in index space in Z direction
@@ -559,11 +559,11 @@ class Mesh {
   const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
-  template<typename T>
-  const T indexFDDX(const T &v, const T &f, CELL_LOC outloc,
+  template<typename Tv, typename Tf>
+  const promoteField<Tv,Tf> indexFDDX(const Tv &v, const Tf &f, CELL_LOC outloc,
                     DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  template<typename T>
-  const T indexFDDY(const T &v, const T &f, CELL_LOC outloc,
+  template<typename Tv, typename Tf>
+  const promoteField<Tv,Tf> indexFDDY(const Tv &v, const Tf &f, CELL_LOC outloc,
                     DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region=RGN_NOBNDRY);

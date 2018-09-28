@@ -43,6 +43,11 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+/// promoteField can be used to give the return type for a function with mixed argument types.
+/// Gives Field2D if both arguments are Field2D and Field3D otherwise
+template<typename T1, typename T2>
+using promoteField = typename std::conditional<(std::is_same<T1, Field2D>::value && std::is_same<T2, Field2D>::value), Field2D, Field3D>::type;
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.

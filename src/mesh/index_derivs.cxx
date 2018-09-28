@@ -1501,15 +1501,15 @@ const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
 
 ////////////// X DERIVATIVE /////////////////
 
-template<typename T>
-const T Mesh::indexVDDX(const T &v, const T &f, CELL_LOC outloc,
+template<typename Tv, typename Tf>
+const promoteField<Tv,Tf> Mesh::indexVDDX(const Tv &v, const Tf &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDX(Tv, Tf)");
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  T result(this);
+  promoteField<Tv,Tf> result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -1693,23 +1693,27 @@ const T Mesh::indexVDDX(const T &v, const T &f, CELL_LOC outloc,
 
   return result;
 }
-// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// Explicitly instantiate templates for Field2D and Field3D, otherwise get
 // linker errors
 template const Field2D Mesh::indexVDDX(const Field2D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexVDDX(const Field2D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexVDDX(const Field3D&, const Field2D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
 template const Field3D Mesh::indexVDDX(const Field3D&, const Field3D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
 
 ////////////// Y DERIVATIVE /////////////////
-template<typename T>
-const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
-                              DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::indexVDDY(T, T)");
+template<typename Tv, typename Tf>
+const promoteField<Tv,Tf> Mesh::indexVDDY(const Tv &v, const Tf &f, CELL_LOC outloc,
+                                          DIFF_METHOD method, REGION region) {
+  TRACE("Mesh::indexVDDY(Tv, Tf)");
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  T result(this);
+  promoteField<Tv,Tf> result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -1799,8 +1803,8 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
       // (even if one of v and f has yup/ydown fields, it doesn't make sense to
       // multiply them with one in field-aligned and one in non-field-aligned
       // coordinates)
-      T v_fa = this->toFieldAligned(v);
-      T f_fa = this->toFieldAligned(f);
+      promoteField<Tv,Tf> v_fa = this->toFieldAligned(v);
+      promoteField<Tv,Tf> f_fa = this->toFieldAligned(f);
 
       stencil vval, fval;
       for (const auto &i : result.region(region)) {
@@ -1852,8 +1856,8 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
       fs.pp = nan("");
       fs.mm = nan("");
 
-      T f_yup = f.yup();
-      T f_ydown = f.ydown();
+      promoteField<Tv,Tf> f_yup = f.yup();
+      promoteField<Tv,Tf> f_ydown = f.ydown();
 
       for (const auto &i : result.region(region)) {
 
@@ -1870,8 +1874,8 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
       // multiply them with one in field-aligned and one in non-field-aligned
       // coordinates)
 
-      T f_fa = this->toFieldAligned(f);
-      T v_fa = this->toFieldAligned(v);
+      promoteField<Tv,Tf> f_fa = this->toFieldAligned(f);
+      promoteField<Tv,Tf> v_fa = this->toFieldAligned(v);
 
       if (this->ystart > 1) {
         stencil fs;
@@ -1913,6 +1917,10 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
 // Explicitly instantiate template for Field2D and Field3D, otherwise get
 // linker errors
 template const Field2D Mesh::indexVDDY(const Field2D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexVDDY(const Field2D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexVDDY(const Field3D&, const Field2D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
 template const Field3D Mesh::indexVDDY(const Field3D&, const Field3D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
@@ -2034,10 +2042,10 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
  * Flux conserving schemes
  *******************************************************************************/
 
-template<typename T>
-const T Mesh::indexFDDX(const T &v, const T &f, CELL_LOC outloc,
+template<typename Tv, typename Tf>
+const promoteField<Tv,Tf> Mesh::indexFDDX(const Tv &v, const Tf &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::indexFDDX(T, T)");
+  TRACE("Mesh::indexFDDX(Tv, Tf)");
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2082,7 +2090,7 @@ const T Mesh::indexFDDX(const T &v, const T &f, CELL_LOC outloc,
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
 
-  T result(this);
+  promoteField<Tv,Tf> result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
@@ -2232,13 +2240,17 @@ const T Mesh::indexFDDX(const T &v, const T &f, CELL_LOC outloc,
 // linker errors
 template const Field2D Mesh::indexFDDX(const Field2D&, const Field2D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexFDDX(const Field2D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexFDDX(const Field3D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
 template const Field3D Mesh::indexFDDX(const Field3D&, const Field3D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
 
 /////////////////////////////////////////////////////////////////////////
 
-template<typename T>
-const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
+template<typename Tv, typename Tf>
+const promoteField<Tv,Tf> Mesh::indexFDDY(const Tv &v, const Tf &f, CELL_LOC outloc,
                         DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDY");
 
@@ -2289,7 +2301,7 @@ const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  T result(this);
+  promoteField<Tv,Tf> result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
@@ -2337,8 +2349,8 @@ const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
     // (even if one of v and f has yup/ydown fields, it doesn't make sense to
     // multiply them with one in field-aligned and one in non-field-aligned
     // coordinates)
-    T v_fa = this->toFieldAligned(v);
-    T f_fa = this->toFieldAligned(f);
+    promoteField<Tv,Tf> v_fa = this->toFieldAligned(v);
+    promoteField<Tv,Tf> f_fa = this->toFieldAligned(f);
 
     stencil vval, fval;
 
@@ -2386,6 +2398,10 @@ const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
 // Explicitly instantiate template for Field2D and Field3D, otherwise get
 // linker errors
 template const Field2D Mesh::indexFDDY(const Field2D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexFDDY(const Field2D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexFDDY(const Field3D&, const Field2D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
 template const Field3D Mesh::indexFDDY(const Field3D&, const Field3D&,
                                        CELL_LOC, DIFF_METHOD, REGION);
