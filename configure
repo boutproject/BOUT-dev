@@ -786,8 +786,8 @@ enable_sigfpe
 enable_backtrace
 enable_shared
 enable_openmp
-enable_pvode_openmp
 with_openmp_schedule
+enable_pvode_openmp
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1444,8 +1444,6 @@ Optional Features:
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
-  --with-openmp-schedule=static/dynamic/guided/auto/runtime
-                          set OpenMP schedule (default: static)
   --enable-code-coverage  Whether to enable code coverage support
 
 Optional Packages:
@@ -1464,6 +1462,8 @@ Optional Packages:
   --with-mumps            Link with MUMPS library for direct matrix inversions
   --with-arkode           Use the SUNDIALS ARKODE solver
   --with-scorep           Enable support for scorep based instrumentation
+  --with-openmp-schedule=static
+                          Set OpenMP schedule (default: static)
   --with-gcov=GCOV        use given GCOV for coverage (GCOV=gcov).
   --with-hdf5=yes/no/PATH location of h5cc for serial HDF5 configuration
   --with-parallelhdf5=yes/no/PATH
@@ -2659,18 +2659,19 @@ else
   enable_openmp=no
 fi
 
+
+# Check whether --with-openmp_schedule was given.
+if test "${with_openmp_schedule+set}" = set; then :
+  withval=$with_openmp_schedule;
+else
+  with_openmp_schedule=static
+fi
+
 # Check whether --enable-pvode_openmp was given.
 if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
-fi
-
-# Check whether --openmp-schedule was given.
-if test "${with_openmp_schedule+set}" = set; then :
-  enableval=$with_openmp_schedule;
-else
-  with_openmp_schedule=static
 fi
 
 
@@ -5115,13 +5116,19 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
       "none needed" | unsupported)
 	;; #(
       *)
-	OPENMP_CXXFLAGS="$ac_cv_prog_cxx_openmp -DOPENMP_SCHEDULE=$with_openmp_schedule" ;;
+	OPENMP_CXXFLAGS=$ac_cv_prog_cxx_openmp ;;
     esac
   fi
 
 
 HAS_OPENMP=$enable_openmp
-OPENMP_SCHEDULE=$with_openmp_schedule
+
+if test "x$enable_openmp" = "xyes"; then :
+
+  OPENMP_SCHEDULE=$with_openmp_schedule
+  OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
+
+fi
 
 #############################################################
 # Code coverage using gcov
