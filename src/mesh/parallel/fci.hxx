@@ -97,6 +97,10 @@ public:
   bool canToFromFieldAligned() override{
     return false;
   }
+
+  bool canCalcYupYdown() override {
+    return true;
+  }
 private:
   FCITransform();
 

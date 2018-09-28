@@ -589,6 +589,10 @@ class Mesh {
     return getParallelTransform().canToFromFieldAligned();
   }
 
+  bool canCalcYupYdown() {
+    return getParallelTransform().canCalcYupYdown();
+  }
+
   /*!
    * Unique pointer to ParallelTransform object
    */

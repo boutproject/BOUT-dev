@@ -48,6 +48,7 @@ public:
   virtual const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_NOX) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
+  virtual bool canCalcYupYdown() = 0;
 
   /// Write out ParallelTransform variables to file
   virtual void outputVars(Datafile &UNUSED(file)) {};
@@ -90,6 +91,10 @@ public:
 
   bool canToFromFieldAligned() override{
     return true;
+  }
+
+  bool canCalcYupYdown() override {
+    return false;
   }
 };
 
@@ -137,6 +142,10 @@ public:
   }
 
   bool canToFromFieldAligned() override{
+    return true;
+  }
+
+  bool canCalcYupYdown() override {
     return true;
   }
 

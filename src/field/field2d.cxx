@@ -131,6 +131,13 @@ Field2D* Field2D::timeDeriv() {
   return deriv;
 }
 
+bool Field2D::hasYupYdown() const {
+  // Only use yup/ydown branches if fieldmesh's ParallelTransform supports
+  // them. Otherwise might not be able to use e.g. 5 point stencils even
+  // though these are fine if using the to/fromFieldAligned branch
+  return fieldmesh->canCalcYupYdown();
+}
+
 ////////////// Indexing ///////////////////
 
 const DataIterator Field2D::iterator() const {
