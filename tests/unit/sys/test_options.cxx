@@ -401,6 +401,7 @@ TEST_F(OptionsTest, NewIsSetDefault) {
   Options options;
   ASSERT_FALSE(options.isSet());
   int value = options.withDefault(42);
+  ASSERT_EQ(value, 42);
   ASSERT_FALSE(options.isSet());
 }
 

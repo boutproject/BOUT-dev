@@ -150,7 +150,7 @@ class Options;
 class Options {
 public:
   /// Constructor. This is called to create the root object
-  Options() : parent_instance(nullptr) {}
+  Options() {}
   
   /// Constructor used to create non-root objects
   ///
@@ -208,7 +208,7 @@ public:
   /// option["test"].assign(42, "some source");
   ///
   template<typename T>
-  void assign(T val, const std::string &source="") {
+  void assign(T val, const std::string source="") {
     std::stringstream ss;
     ss << val;
     _set(ss.str(), source, false);
@@ -217,7 +217,7 @@ public:
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
-  void force(T val, const string &source = "") {
+  void force(T val, const string source = "") {
     is_value = false; // Invalidates any existing setting
     assign(val, source);
   }

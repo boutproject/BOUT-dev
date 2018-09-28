@@ -436,6 +436,11 @@ been set::
 
     int nout = options["nout"].withDefault(1);
 
+If ``options`` is not ``const``, then the given default value will be
+cached. If a default value has already been cached for this option,
+then the default values must be consistent: A ``BoutException`` is
+thrown if inconsistent default values are detected.
+
 It is common for BOUT++ models to read in many settings which have the
 same variable name as option setting (e.g. "nout" here). A convenient
 macro reads options into an already-defined variable::
@@ -444,7 +449,8 @@ macro reads options into an already-defined variable::
     OPTION(options, nout, 1);
 
 where the first argument is a section, second argument is the variable
-whose name will also be used as the option string.
+whose name will also be used as the option string, and third argument
+is the default value.
 
 Every time an option is accessed, a message is written
 to ``output_info``. This message includes the value used and the
