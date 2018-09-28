@@ -82,7 +82,15 @@ public:
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
+  const Field2D toFieldAligned(const Field2D &UNUSED(f), const REGION UNUSED(region)) override {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
+
   const Field3D fromFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
+
+  const Field2D fromFieldAligned(const Field2D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 

@@ -37,13 +37,15 @@ public:
     return calcYUpDown(f);
   }
   
-  /// Convert a 3D field into field-aligned coordinates
-  /// so that the y index is along the magnetic field
+  /// Convert a field into field-aligned coordinates / so that the y index is
+  /// along the magnetic field
   virtual const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
+  virtual const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_NOX) = 0;
   
   /// Convert back from field-aligned coordinates
   /// into standard form
   virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
+  virtual const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_NOX) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
 
@@ -72,12 +74,18 @@ public:
   const Field3D toFieldAligned(const Field3D &f, const REGION UNUSED(region)) override {
     return f;
   }
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region)) override {
+    return f;
+  }
   
   /*!
    * The field is already aligned in Y, so this
    * does nothing
    */
   const Field3D fromFieldAligned(const Field3D &f, const REGION UNUSED(region)) override {
+    return f;
+  }
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region)) override {
     return f;
   }
 
@@ -114,12 +122,20 @@ public:
    * if X derivatives are used.
    */
   const Field3D toFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region)=RGN_NOX) override {
+    // Field2D is axisymmetric, so already field-aligned: no shift needed
+    return f;
+  }
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
   const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region)=RGN_NOX) override {
+    // Field2D is axisymmetric, so already field-aligned: no shift needed
+    return f;
+  }
 
   bool canToFromFieldAligned() override{
     return true;

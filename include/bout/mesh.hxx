@@ -589,11 +589,13 @@ class Mesh {
   typedef BoutReal (*flux_func)(stencil&, stencil &);
 
   /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+  template<typename T>
+  const T toFieldAligned(const T &f, const REGION region = RGN_NOX) {
     return getParallelTransform().toFieldAligned(f, region);
   }
   /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+  template<typename T>
+  const T fromFieldAligned(const T &f, const REGION region = RGN_NOX) {
     return getParallelTransform().fromFieldAligned(f, region);
   }
 
