@@ -73,7 +73,7 @@ const Options &Options::operator[](const std::string &name) const {
   return it->second;
 }
 
-template <> void Options::assign<bool>(bool val, const std::string &source) {
+template <> void Options::assign<bool>(bool val, const std::string source) {
   if (val) {
     _set("true", source, false);
   } else {
@@ -81,7 +81,7 @@ template <> void Options::assign<bool>(bool val, const std::string &source) {
   }
 }
 
-template <> void Options::assign<BoutReal>(BoutReal val, const std::string &source) {
+template <> void Options::assign<BoutReal>(BoutReal val, const std::string source) {
   std::stringstream ss;
   // Make sure the precision is large enough to hold a BoutReal
   ss << std::scientific << std::setprecision(17) << val;

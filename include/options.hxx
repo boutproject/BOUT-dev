@@ -462,16 +462,16 @@ template <> BoutReal Options::as<BoutReal>() const;
 template <> bool Options::as<bool>() const;
 
 // Specialised assign methods
-template<> void Options::assign<bool>(bool val, const std::string &source);
-template<> void Options::assign<BoutReal>(BoutReal val, const std::string &source);
+template<> void Options::assign<bool>(bool val, const std::string source);
+template<> void Options::assign<BoutReal>(BoutReal val, const std::string source);
 
 // Note: const char* version needed to avoid conversion to bool
 template<>
-inline void Options::assign<const char *>(const char *val, const std::string &source) {
+inline void Options::assign<const char *>(const char *val, const std::string source) {
   _set(val,source,false);
 }
 template<>
-inline void Options::assign<std::string>(std::string val, const std::string &source) {
+inline void Options::assign<std::string>(std::string val, const std::string source) {
   _set(val,source,false);
 };
 
