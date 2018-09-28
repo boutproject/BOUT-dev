@@ -197,7 +197,7 @@ void Solver::add(Field3D &v, const std::string &name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
+    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), strLocation(v.getLocation()));
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
