@@ -150,17 +150,11 @@ Coordinates::Coordinates(Mesh *mesh)
   }
 
   //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
-
-  //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
     if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {

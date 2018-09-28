@@ -430,19 +430,7 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates(const CELL_LOC location = CELL_DEFAULT) {
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else if (location == CELL_DEFAULT) {
-      return coordinates(CELL_CENTRE);
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
-      return coords_map[location].get();
-    }
-  }
+  Coordinates *coordinates(const CELL_LOC location = CELL_DEFAULT);
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx

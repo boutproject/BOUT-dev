@@ -2252,7 +2252,6 @@ const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
-  CELL_LOC diffloc = inloc;         // Location of differential result
 
   if (StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case

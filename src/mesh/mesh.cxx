@@ -325,6 +325,39 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
+Coordinates* Mesh::coordinates(const CELL_LOC location) {
+  if (coords_map.count(location)) { // True branch most common, returns immediately
+    return coords_map[location].get();
+  } else if (location == CELL_DEFAULT) {
+    return coordinates(CELL_CENTRE);
+  } else {
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+
+    // Could add a location argument here if ParallelTransform becomes location-aware
+    setParallelTransform(); // Make sure parallel transform is initialized before taking gradients
+
+    // Finish initialization of Coordinates: requires derivatives so
+    // 'ParallelTransform transform' must have been created.
+    // ParallelTransform may require coords_map[CELL_CENTRE] to exist, but
+    // does not need its geometry() method to have been called. Calling
+    // setParallelTransform() may cause this method, coordinates(), to be
+    // called again for location==CELL_CENTRE but that is OK, because in the
+    // location==CELL_CENTRE call, enough of the Coordinates object has been
+    // initialized to create the ParallelTransform.
+    //
+    // Also BoutComm must have been initialized. This will have happend in
+    // BoutInitialise.
+    if (coords_map[location]->geometry()) { /// Calculate Christoffel symbols. Needs communication
+      throw BoutException("Differential geometry failed\n");
+    }
+
+    return coords_map[location].get();
+  }
+}
+
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
   if (location == CELL_CENTRE || location == CELL_DEFAULT)
     // Initialize coordinates from input
