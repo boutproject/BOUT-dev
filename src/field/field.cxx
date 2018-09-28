@@ -66,6 +66,7 @@ Coordinates *Field::getCoordinates() const {
 }
 
 Coordinates *Field::getCoordinates(CELL_LOC loc) const {
+  if (loc == CELL_DEFAULT) return getCoordinates();  
   return getMesh()->coordinates(loc);
 }
 

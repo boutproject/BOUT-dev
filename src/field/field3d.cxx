@@ -1170,22 +1170,32 @@ bool finite(const Field3D &f, REGION rgn) {
   return true;
 }
 
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
+#if CHECK > 2
+  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
+    // Do full checks
+    const Region<Ind3D> &new_region = f.getMesh()->getRegion3D(REGION_STRING(region));
+    
+    BOUT_FOR_SERIAL(i, new_region) {
+      if (!finite(f[i])) {
+	throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+			    i.x(), i.y(), i.z());
+      }
+    }
+  }
+#else
+  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+}
+
 #if CHECK > 0
 void checkData(const Field3D &f, REGION region) {
   if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
 
-#if CHECK > 2
-  // Do full checks
-  const Region<Ind3D> &new_region = f.getMesh()->getRegion3D(REGION_STRING(region));
-
-  BOUT_FOR_SERIAL(i, new_region) {
-    if (!finite(f[i])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
-                          i.x(), i.y(), i.z());
-    }
-  }
-#endif
+  checkDataIsFiniteOnRegion(f, region);
 }
 #endif
 
@@ -1232,8 +1242,8 @@ Field2D DC(const Field3D &f, REGION rgn) {
   return result;
 }
 
-void invalidateGuards(Field3D &var){
-#if CHECK > 2 // Strip out if not checking
+#if CHECK > 2
+void invalidateGuards(Field3D &var) {
   Mesh *localmesh = var.getMesh();
 
   const Region<Ind3D> &region_guards = localmesh->getRegion3D("RGN_GUARDS");
@@ -1241,5 +1251,5 @@ void invalidateGuards(Field3D &var){
   BOUT_FOR(i, region_guards) {
     var[i] = BoutNaN;
   }
-#endif  
 }
+#endif
