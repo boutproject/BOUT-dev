@@ -1444,8 +1444,8 @@ Optional Features:
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
-  --with-openmp-schedule=static/dynamic/guided/auto
-                          set OpenMP schedule
+  --with-openmp-schedule=static/dynamic/guided/auto/runtime
+                          set OpenMP schedule (default: static)
   --enable-code-coverage  Whether to enable code coverage support
 
 Optional Packages:
