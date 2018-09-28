@@ -43,6 +43,11 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc) :
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;

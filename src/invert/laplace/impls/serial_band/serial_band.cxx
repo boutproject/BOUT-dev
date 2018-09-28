@@ -39,6 +39,10 @@
 //#define SECONDORDER // Define to use 2nd order differencing
 
 LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc) : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  Acoef.setLocation(location);
+  Ccoef.setLocation(location);
+  Dcoef.setLocation(location);
+
   if(!mesh->firstX() || !mesh->lastX())
     throw BoutException("LaplaceSerialBand only works for mesh->NXPE = 1");
   if(mesh->periodicX) {

@@ -110,9 +110,10 @@ class Field {
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
   virtual Coordinates *getCoordinates() const;
-
+  
   /// Returns a pointer to the coordinates object at the requested
-  /// location from the mesh this field is on.
+  /// location from the mesh this field is on. If location is CELL_DEFAULT
+  /// then return coordinates at field location
   virtual Coordinates *getCoordinates(CELL_LOC loc) const;
   
   /*!

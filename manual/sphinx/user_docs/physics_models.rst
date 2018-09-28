@@ -367,9 +367,10 @@ this shorthand for ``v`` and ``B``::
     SOLVE_FOR(v);
     SOLVE_FOR(B);
 
-To make this even shorter, we can use macros `SOLVE_FOR2`,
-`SOLVE_FOR3`, ..., `SOLVE_FOR6` to shorten our initialisation code
-to::
+To make this even shorter, multiple fields can be passed to
+``SOLVE_FOR`` (up to 10 at the time of writing). We can also use
+macros `SOLVE_FOR2`, `SOLVE_FOR3`, ..., `SOLVE_FOR6` which are used in
+many models. Our initialisation code becomes::
 
     int init(bool restarting) override {
       ...
@@ -377,7 +378,7 @@ to::
       bout_solve(p,   "pressure");
       v.covariant = true; // evolve covariant components
       B.covariant = false; // evolve contravariant components
-      SOLVE_FOR2(v, B);
+      SOLVE_FOR(v, B);
       ...
       return 0;
     }
@@ -906,7 +907,7 @@ they’re communicated::
 
       int init(bool restarting) override {
 
-        SOLVE_FOR2(U, Apar);
+        SOLVE_FOR(U, Apar);
       }
 
       int rhs(BoutReal t) override {
@@ -925,8 +926,8 @@ getting :math:`\phi` from :math:`U` means inverting a Laplacian.
     Field3D phi, jpar; // Auxilliary variables
 
     int init(bool restarting) override {
-      SOLVE_FOR2(U, Apar);
-      SAVE_REPEAT2(phi, jpar); // Save variables in output file
+      SOLVE_FOR(U, Apar);
+      SAVE_REPEAT(phi, jpar); // Save variables in output file
       return 0;
     }
 

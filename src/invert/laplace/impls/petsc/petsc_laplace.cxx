@@ -62,6 +62,12 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc) :
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+  Ex.setLocation(location);
+  Ez.setLocation(location);
 
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
@@ -273,8 +279,15 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc) :
   opts->get("ksptype", ksptype, KSP_GMRES);
   
   // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
+  // WARNING: only a few of these options actually make sense: see the
+  // PETSc documentation to work out which they are (possibly
+  // pbjacobi, sor might be useful choices?)
   opts->get("pctype", pctype, "none", true);
+
+  // Let "user" be a synonym for "shell"
+  if (pctype == "user") {
+    pctype = PCSHELL;
+  }
   
   // Get Options specific to particular solver types
   opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);

@@ -475,6 +475,21 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   return result;
 }
 
+#if CHECK > 2
+void checkData_is_finite_on_region(const FieldPerp &f, REGION region) {
+  // Do full checks
+  for (const auto &i : f.region(region)) {
+    if (!::finite(f[i])) {
+      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x,
+                          i.z);
+    }
+  }
+}
+#else
+void checkData_is_finite_on_region(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+
+
 #if CHECK > 0
 /// Check if the data is valid
 void checkData(const FieldPerp &f, REGION region) {
@@ -484,20 +499,12 @@ void checkData(const FieldPerp &f, REGION region) {
 
   ASSERT3(f.getIndex() >= 0 && f.getIndex() < f.getMesh()->LocalNy);
 
-#if CHECK > 2
-  // Do full checks
-  for (const auto &i : f.region(region)) {
-    if (!::finite(f[i])) {
-      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x,
-                          i.z);
-    }
-  }
-#endif
+  checkData_is_finite_on_region(f, region);
 }
 #endif
 
-void invalidateGuards(FieldPerp &var) {
 #if CHECK > 2
+void invalidateGuards(FieldPerp &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all z
@@ -513,6 +520,5 @@ void invalidateGuards(FieldPerp &var) {
       var(ix, iz) = std::nan("");
     }
   }
-#endif
-  return;
 }
+#endif

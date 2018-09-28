@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
+
+import argparse
+try:
+    import argcomplete
+except ImportError:
+    argcomplete=None
+
+
+parser = argparse.ArgumentParser("Create restart files from data (dmp) files.")
+parser.add_argument("--averagelast", type=int, default=1
+    ,help= "Number of time points (counting from `final`, inclusive) to"
+     " average over (default is 1 i.e. just take last time-point)")
+parser.add_argument("--final", type=int, default=-1
+    ,help= "The last time point to use (default is last, -1)")
+parser.add_argument("path", type=str, default="data"
+    ,help= 'Path to original restart files (default: "data")')
+parser.add_argument("--output", type=str, default="./"
+    ,help= "Path to write new restart files (default: current directory)")
+parser.add_argument("--informat", type=str, default="nc"
+    ,help= 'File extension of original files (default: "nc")')
+parser.add_argument("--outformat", type=str, default=None
+    ,help= "File extension of new files (default: use the same as `informat`)")
+
+if argcomplete:
+    argcomplete.autocomplete(parser)
+
+# late import for faster auto-complete
+from boutdata.restart import create
+
+args = parser.parse_args()
+
+# Call the function create, using command line arguments
+create(**args.__dict__)
+
+

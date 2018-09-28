@@ -162,7 +162,7 @@ public:
    * Returns true if the Array is empty
    */
   bool empty() const {
-    return !ptr;
+    return ptr == nullptr;
   }
 
   /*!

@@ -646,7 +646,9 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
-    return Field2D(0., this);
+    auto tmp = Field2D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
   CELL_LOC diffloc = var.getLocation();
@@ -755,7 +757,9 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
   CELL_LOC diffloc = var.getLocation();
@@ -865,7 +869,9 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
-    return Field2D(0., this);
+    auto tmp = Field2D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
   CELL_LOC diffloc = var.getLocation();
@@ -920,7 +926,9 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
   CELL_LOC diffloc = var.getLocation();
@@ -1091,7 +1099,9 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNz() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
 
@@ -1365,7 +1375,9 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
 const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                              DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(this == f.getMesh());
-  return Field2D(0., this);
+  auto tmp = Field2D(0., this);
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 /*******************************************************************************
@@ -1697,7 +1709,9 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
 const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
                                DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  return Field2D(0., this);
+  auto tmp = Field2D(0., this);
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 /*******************************************************************************

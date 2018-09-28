@@ -42,7 +42,7 @@ class PhysicsModel;
 #include <msg_stack.hxx>
 #include "solver.hxx"
 #include "unused.hxx"
-
+#include "bout/macro_for_each.hxx"
 /*!
   Base class for physics models
  */
@@ -325,7 +325,7 @@ private:
   }
 
 /// Macro to replace solver->add, passing variable name
-#define SOLVE_FOR(var) solver->add(var, #var)
+#define SOLVE_FOR1(var) solver->add(var, #var);
 #define SOLVE_FOR2(var1, var2) { \
   solver->add(var1, #var1);       \
   solver->add(var2, #var2);}
@@ -351,6 +351,11 @@ private:
   solver->add(var4, #var4);             \
   solver->add(var5, #var5);             \
   solver->add(var6, #var6);}
+
+/// Add fields to the solver.
+/// This should accept up to ten arguments
+#define SOLVE_FOR(...)                  \
+  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
 
 #endif // __PHYSICS_MODEL_H__
 
