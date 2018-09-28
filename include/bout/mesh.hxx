@@ -553,10 +553,9 @@ class Mesh {
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexVDDY(const T &v, const T &f, CELL_LOC outloc,
+                    DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
   /// Advection operator in index space in Z direction
   ///
@@ -575,10 +574,9 @@ class Mesh {
   template<typename T>
   const T indexFDDX(const T &v, const T &f, CELL_LOC outloc,
                     DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexFDDY(const T &v, const T &f, CELL_LOC outloc,
+                    DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   /// Derivative functions of a single field stencil
@@ -711,13 +709,10 @@ class Mesh {
                      CELL_LOC loc = CELL_DEFAULT,
                      REGION region = RGN_NOBNDRY);
 
-  const Field2D applyYdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyYdiff(const Field3D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
+  template<typename T>
+  const T applyYdiff(const T &var, deriv_func func,
+                     CELL_LOC loc = CELL_DEFAULT,
+                     REGION region = RGN_NOBNDRY);
 
   const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
