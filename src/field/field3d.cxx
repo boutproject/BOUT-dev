@@ -64,8 +64,6 @@ Field3D::Field3D(Mesh *localmesh)
   }
 #endif
 
-  location = CELL_CENTRE; // Cell centred variable by default
-
   boundaryIsSet = false;
 }
 
@@ -96,7 +94,8 @@ Field3D::Field3D(const Field3D &f)
 #endif
 
   location = f.location;
-
+  fieldCoordinates = f.fieldCoordinates;
+    
   boundaryIsSet = false;
 }
 
@@ -106,15 +105,15 @@ Field3D::Field3D(const Field2D &f)
 
   TRACE("Field3D: Copy constructor from Field2D");
 
-  location = CELL_CENTRE; // Cell centred variable by default
-
   boundaryIsSet = false;
 
-  fieldmesh = mesh;
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
 
+  location = f.getLocation();
+  fieldCoordinates = nullptr;
+    
   *this = f;
 }
 
@@ -123,8 +122,6 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
       ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
-
-  location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
 
@@ -242,6 +239,10 @@ void Field3D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
     location = new_location;
+
+    // Invalidate the coordinates pointer
+    if (new_location != location)
+      fieldCoordinates = nullptr;
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -374,9 +375,9 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
   data = rhs.data;
-  
-  location = rhs.location;
-  
+
+  setLocation(rhs.location);
+
   return *this;
 }
 
@@ -517,19 +518,26 @@ void Field3D::applyBoundary(const string &condition) {
 }
 
 void Field3D::applyBoundary(const string &region, const string &condition) {
+  TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
-  
+
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -1048,8 +1056,9 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   TRACE("shiftZ");
   checkData(var);
   var.allocate(); // Ensure that var is unique
-  
-  int ncz = mesh->LocalNz;
+  Mesh *localmesh = var.getMesh();
+
+  int ncz = localmesh->LocalNz;
   if(ncz == 1)
     return; // Shifting doesn't do anything
   
@@ -1057,7 +1066,8 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = mesh->coordinates()->zlength();
+  BoutReal zlength = var.getCoordinates()->zlength();
+
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -1088,20 +1098,30 @@ bool finite(const Field3D &f, REGION rgn) {
   return true;
 }
 
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
+#if CHECK > 2
+  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
+    // Do full checks
+    for (const auto &d : f.region(region)) {
+      if (!finite(f[d])) {
+        throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
+                            d.y, d.z);
+      }
+    }
+  }
+#else
+  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+}
+
 #if CHECK > 0
 void checkData(const Field3D &f, REGION region) {
   if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
 
-#if CHECK > 2
-  // Do full checks
-  for (const auto &d : f.region(region)) {
-    if (!finite(f[d])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x,
-                          d.y, d.z);
-    }
-  }
-#endif
+  checkDataIsFiniteOnRegion(f, region);
 }
 #endif
 
@@ -1143,8 +1163,8 @@ Field2D DC(const Field3D &f, REGION rgn) {
   return result;
 }
 
-void invalidateGuards(Field3D &var){
-#if CHECK > 2 // Strip out if not checking
+#if CHECK > 2
+void invalidateGuards(Field3D &var) {
   Mesh *localmesh = var.getMesh();
 
   // Inner x -- all y and all z
@@ -1180,6 +1200,5 @@ void invalidateGuards(Field3D &var){
       }
     }
   }
-#endif  
-  return;
 }
+#endif

@@ -81,6 +81,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 
 void RKGenericSolver::resetInternalFields(){
   //Zero out history
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     tmpState[i]=0; f2[i]=0;
   }

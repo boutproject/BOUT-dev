@@ -31,8 +31,8 @@
 #include <bout/physicsmodel.hxx>
 
 PhysicsModel::PhysicsModel()
-    : solver(nullptr), splitop(false), userprecon(nullptr), userjacobian(nullptr),
-      initialised(false) {
+    : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
+      userjacobian(nullptr), initialised(false) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
@@ -134,6 +134,10 @@ int PhysicsModel::postInit(bool restarting) {
   /// Open the restart file for writing
   if (!restart.openw(filename.c_str()))
     throw BoutException("Error: Could not open restart file for writing\n");
+
+  // Add monitor to the solver which calls restart.write() and
+  // PhysicsModel::outputMonitor()
+  solver->addMonitor(&modelMonitor);
 
   return 0;
 }

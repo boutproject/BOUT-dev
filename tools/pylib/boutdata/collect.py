@@ -85,6 +85,8 @@ def _convert_to_nice_slice(r, N, name="range"):
         "Sensible" slice with no Nones for start, stop or step
     """
 
+    if N == 0:
+        raise ValueError("No data available in %s"%name)
     if r is None:
         temp_slice = slice(N)
     elif isinstance(r, slice):

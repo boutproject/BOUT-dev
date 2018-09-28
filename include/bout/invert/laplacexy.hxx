@@ -49,7 +49,7 @@
  */
 class LaplaceXY {
  public:
-  LaplaceXY(Mesh *m, Options *opt = nullptr) {
+  LaplaceXY(Mesh *m, Options *opt = nullptr, const CELL_LOC = CELL_CENTRE) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
   void setCoefs(const Field2D &A, const Field2D &B) {}
@@ -68,7 +68,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m, Options *opt = nullptr);
+  LaplaceXY(Mesh *m, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   /*!
    * Destructor
    */
@@ -128,6 +128,9 @@ private:
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
   bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
+
+  // Location of the rhs and solution
+  CELL_LOC location;
   
   /*!
    * Number of grid points on this processor

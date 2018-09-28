@@ -20,7 +20,7 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -39,10 +39,6 @@ Mesh::~Mesh() {
   if (source) {
     delete source;
   }
-
-  if (coords) {
-    delete coords;
-  }
 }
 
 /**************************************************************************
@@ -54,9 +50,9 @@ Mesh::~Mesh() {
 
 /// Get an integer
 int Mesh::get(int &ival, const string &name) {
-  TRACE("Mesh::get(ival)");
+  TRACE("Mesh::get(ival, %s)", name.c_str());
 
-  if(!source->get(this, ival, name))
+  if (source == nullptr or !source->get(this, ival, name))
     return 1;
 
   return 0;
@@ -64,21 +60,21 @@ int Mesh::get(int &ival, const string &name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const string &name) {
-  TRACE("Mesh::get(rval)");
+  TRACE("Mesh::get(rval, %s)", name.c_str());
 
-  if(!source->get(this, rval, name))
+  if (source == nullptr or !source->get(this, rval, name))
     return 1;
 
   return 0;
 }
 
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
-  TRACE("Loading 2D field: Mesh::get(Field2D)");
+  TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
   var.allocate();
 
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -91,12 +87,12 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
-  TRACE("Loading 3D field: Mesh::get(Field3D)");
+  TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
   // Ensure data allocated
   var.allocate();
 
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -157,6 +153,9 @@ int Mesh::get(Vector3D &var, const string &name) {
 }
 
 bool Mesh::sourceHasVar(const string &name) {
+  TRACE("Mesh::sourceHasVar(%s)", name.c_str());
+  if (source == nullptr)
+    return false;
   return source->hasVar(name);
 }
 
@@ -264,6 +263,13 @@ bool Mesh::hasBndryUpperY() {
 }
 
 const vector<int> Mesh::readInts(const string &name, int n) {
+  TRACE("Mesh::readInts(%s)", name.c_str());
+
+  if (source == nullptr) {
+    throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
+                        name.c_str());
+  }
+
   vector<int> result;
 
   if(source->hasVar(name)) {
@@ -319,8 +325,13 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-Coordinates *Mesh::createDefaultCoordinates() {
-  return new Coordinates(this);
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
+  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+    // Initialize coordinates from input
+    return std::make_shared<Coordinates>(this);
+  else
+    // Interpolate coordinates from CELL_CENTRE version
+    return std::make_shared<Coordinates>(this, location, coordinates(CELL_CENTRE));
 }
 
 

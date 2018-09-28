@@ -26,13 +26,11 @@ def query_yes_no(question, default="yes"):
     Returns
     -------
     bool
-        1 if the answer was "yes" or "y", -1 if "no" or "n"
+        True if the answer was "yes" or "y", False if "no" or "n"
     """
 
     valid = {"yes":True,   "y":True,  "ye":True,
              "no":False,     "n":False,   "No":False,  "N":False }
-    valid = {"yes":1,   "y":1,  "ye":1,
-             "no":-1,     "n":-1,  "No":-1, "N":-1}
 
     if default is None:
         prompt = " [y/n] "

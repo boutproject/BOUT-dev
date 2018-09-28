@@ -653,6 +653,10 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
       for (const auto &i: monitors){
         i->freq=i->freq*multi;
       }
+      // update freqDefault so that monitors with no timestep are called at the
+      // output frequency
+      freqDefault *= multi;
+
       mon->freq=1;
     }
   } else {
@@ -683,12 +687,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   
   ++iter;
   try {
-    // Call physics model monitor
-    if(model) {
-      if(model->runOutputMonitor(simtime, iter-1, NOUT))
-        throw BoutException("Monitor signalled to quit");
-    }
-    
     // Call monitors
     for (const auto &it : monitors){
       if ((iter % it->freq)==0){

@@ -429,6 +429,10 @@ inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region) = RGN_NO
 #endif
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(FieldPerp &var);
+#else
+inline void invalidateGuards(FieldPerp &UNUSED(var)) {}
+#endif
 
 #endif

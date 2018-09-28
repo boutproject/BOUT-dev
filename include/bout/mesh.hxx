@@ -81,7 +81,7 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -430,15 +430,18 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates() {
-    if (coords) { // True branch most common, returns immediately
-      return coords;
+  Coordinates *coordinates(const CELL_LOC location = CELL_CENTRE) {
+    if (coords_map.count(location)) { // True branch most common, returns immediately
+      return coords_map[location].get();
+    } else if (location == CELL_DEFAULT) {
+      throw BoutException("Ambiguous location 'CELL_DEFAULT' passed to mesh::coordinates");
+    } else {
+      // No coordinate system set. Create default
+      // Note that this can't be allocated here due to incomplete type
+      // (circular dependency between Mesh and Coordinates)
+      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+      return coords_map[location].get();
     }
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    coords = createDefaultCoordinates();
-    return coords;
   }
 
   // First derivatives in index space
@@ -704,7 +707,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  Coordinates *coords;    ///< Coordinate system. Initialised to Null
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
@@ -742,8 +745,8 @@ class Mesh {
                            REGION region = RGN_NOBNDRY);
 
 private:
-  /// Allocates a default Coordinates object
-  Coordinates *createDefaultCoordinates();
+  /// Allocates default Coordinates objects
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;

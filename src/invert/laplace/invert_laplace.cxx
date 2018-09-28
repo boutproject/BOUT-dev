@@ -51,7 +51,7 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options *options) {
+Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
 
   if (options == nullptr) {
     // Use the default options
@@ -59,6 +59,10 @@ Laplacian::Laplacian(Options *options) {
   }
 
   output.write("Initialising Laplacian inversion routines\n");
+
+  if (location == CELL_DEFAULT) {
+    location = CELL_CENTRE;
+  }
 
   // Communication option. Controls if asyncronous sends are used
   options->get("async", async_send, true);
@@ -76,7 +80,7 @@ Laplacian::Laplacian(Options *options) {
   OPTION(options, low_mem, false);
 
   OPTION(options, nonuniform,
-         mesh->coordinates()->non_uniform); // Default is the mesh setting
+         mesh->coordinates(location)->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
@@ -99,13 +103,13 @@ Laplacian::Laplacian(Options *options) {
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
-Laplacian* Laplacian::create(Options *opts) {
+Laplacian* Laplacian::create(Options *opts, const CELL_LOC location) {
   // Factory pattern:
   // 1. getInstance() is making an instance of LaplacianFactory
   // 2. createLaplacian() is accessing this instance and returning a Laplacian
   //    form one of the child classes of the Laplacian (the laplace solver
   //    implementations)
-  return LaplaceFactory::getInstance()->createLaplacian(opts);
+  return LaplaceFactory::getInstance()->createLaplacian(opts, location);
 }
 
 Laplacian *Laplacian::instance = nullptr;
@@ -129,6 +133,9 @@ void Laplacian::cleanup() {
 
 const Field3D Laplacian::solve(const Field3D &b) {
   TRACE("Laplacian::solve(Field3D)");
+
+  ASSERT1(b.getLocation() == location);
+
   Mesh *mesh = b.getMesh();
 
   Timer timer("invert");
@@ -169,6 +176,9 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
 // NB: Really inefficient, but functional
 const Field2D Laplacian::solve(const Field2D &b) {
+
+  ASSERT1(b.getLocation() == location);
+
   Field3D f = b;
   f = solve(f);
   return DC(f);
@@ -185,6 +195,9 @@ const Field2D Laplacian::solve(const Field2D &b) {
  */
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   TRACE("Laplacian::solve(Field3D, Field3D)");
+
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   Timer timer("invert");
 
@@ -228,20 +241,27 @@ const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
 
 void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d,
+                            CELL_LOC loc) {
 
-  Coordinates *coord = mesh->coordinates();
+  if (loc == CELL_DEFAULT) loc = location;
+
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(d == nullptr || d->getLocation() == loc);
+
+  Coordinates *coord = mesh->coordinates(loc);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
-              ccoef, d);
+              ccoef, d, loc);
 }
 
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d) {
+                            const Field2D *ccoef, const Field2D *d,
+                            CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -268,9 +288,15 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
+
+  if (loc == CELL_DEFAULT) loc = location;
+
+  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(d == nullptr || d->getLocation() == loc);
+
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(loc);
 
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
@@ -331,7 +357,11 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
 
-  Coordinates *coord = mesh->coordinates();
+  ASSERT1(a->getLocation() == location);
+  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(d->getLocation() == location);
+
+  Coordinates *coord = mesh->coordinates(location);
 
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -388,10 +418,15 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
+
+  ASSERT1(a->getLocation() == location);
+  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(d->getLocation() == location);
+
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
   // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.
@@ -710,8 +745,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
-                          const Field2D *ccoef, const Field2D *d) {
-  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
+                          const Field2D *ccoef, const Field2D *d, CELL_LOC loc) {
+  Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, loc);
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {

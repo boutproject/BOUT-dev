@@ -37,12 +37,17 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
-  Laplacian(opt),
+LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc) :
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -206,7 +211,7 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->coordinates(location);
 
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
@@ -551,7 +556,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->coordinates(location);
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];

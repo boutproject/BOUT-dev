@@ -37,7 +37,10 @@
 
 #include <output.hxx>
 
-LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc) : Laplacian(opt, loc), A(0.0), C(1.0), D(1.0) {
+  A.setLocation(location);
+  C.setLocation(location);
+  D.setLocation(location);
 
   if(!mesh->firstX() || !mesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");
@@ -79,7 +82,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int ncz = mesh->LocalNz; // No of z pnts
   int ncx = mesh->LocalNx; // No of x pnts
 
-  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates()->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates(location)->zlength();
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells

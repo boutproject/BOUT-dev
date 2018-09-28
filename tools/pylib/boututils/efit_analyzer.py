@@ -211,7 +211,7 @@ def View2D(g, option=0):
     # plot Bp field
     if option == 0 :
         sm = query_yes_no("Overplot vector field")
-        if sm == 1 :
+        if sm :
             lw = 50*Bprz/Bprz.max()
             streamplot(g.r.T,g.z.T, Br.T,Bz.T, color=Bprz, linewidth=2, cmap=cm.bone)#density =[.5, 1], color='k')#, linewidth=lw)
             draw()
