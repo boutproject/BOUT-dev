@@ -639,114 +639,8 @@ void Mesh::derivs_init(Options *options) {
  *******************************************************************************/
 
 // X derivative
-
-const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
-                               CELL_LOC loc, REGION region) {
-  ASSERT1(this == var.getMesh());
-  ASSERT1(var.isAllocated());
-
-  if (var.getNx() == 1) {
-    return Field2D(0., this);
-  }
-
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-
-  if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
-    // Staggered differencing
-
-    result.setLocation(loc);
-    CELL_LOC location = var.getLocation();
-
-    if (this->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
-      stencil s;
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
-
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
-        }
-
-        result[i] = func(s);
-      }
-    } else {
-      // Only one guard cell, so no pp or mm values
-      for (const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
-
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
-        }
-
-        result[i] = func(s);
-      }
-    }
-
-  } else {
-    // Non-staggered differencing
-
-    result.setLocation(var.getLocation());
-
-    if (this->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
-      for (const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
-
-        result[i] = func(s);
-      }
-    } else {
-      // Only one guard cell, so no pp or mm values
-      for (const auto &i : result.region(region)) {
-        stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
-
-        result[i] = func(s);
-      }
-    }
-  }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
-#endif
-
-  return result;
-}
-
-const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
+template<typename T>
+const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
                                CELL_LOC loc, REGION region) {
   // Check that the mesh is correct
   ASSERT1(this == var.getMesh());
@@ -754,10 +648,10 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
-    return Field3D(0., this);
+    return T(0., this);
   }
 
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
 
   if (this->StaggerGrids && (loc != CELL_DEFAULT) && (loc != var.getLocation())) {
@@ -1183,8 +1077,8 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
  *******************************************************************************/
 
 ////////////// X DERIVATIVE /////////////////
-
-const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+template<typename T>
+const T Mesh::indexDDX(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
 
   Mesh::deriv_func func = fDDX; // Set to default function
   DiffLookup *table = FirstDerivTable;
@@ -1212,7 +1106,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       // Derivative of interpolated field or interpolation of derivative field
       // cannot be taken without communicating and applying boundary
       // conditions, so throw an exception instead
-      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDX(Field3D).", strLocation(inloc), strLocation(outloc));
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDX(T).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1225,17 +1119,16 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   return applyXdiff(f, func, diffloc, region);
 }
-
-const Field2D Mesh::indexDDX(const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyXdiff(f, fDDX, f.getLocation(), region);
-}
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexDDX(const Field2D&, CELL_LOC, DIFF_METHOD,
+                                      REGION);
+template const Field3D Mesh::indexDDX(const Field3D&, CELL_LOC, DIFF_METHOD,
+                                      REGION);
 
 ////////////// Y DERIVATIVE /////////////////
-
-const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
+template<typename T>
+const T Mesh::indexDDY(const T &f, CELL_LOC outloc,
                              DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fDDY; // Set to default function
   DiffLookup *table = FirstDerivTable;
@@ -1262,7 +1155,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
       // Derivative of interpolated field or interpolation of derivative field
       // cannot be taken without communicating and applying boundary
       // conditions, so throw an exception instead
-      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDY(Field3D).", strLocation(inloc), strLocation(outloc));
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexDDY(T).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1275,13 +1168,12 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
 
   return applyYdiff(f, func, diffloc, region);
 }
-
-const Field2D Mesh::indexDDY(const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyYdiff(f, fDDY, f.getLocation(), region);
-}
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexDDY(const Field2D&, CELL_LOC, DIFF_METHOD,
+                                      REGION);
+template const Field3D Mesh::indexDDY(const Field3D&, CELL_LOC, DIFF_METHOD,
+                                      REGION);
 
 ////////////// Z DERIVATIVE /////////////////
 
@@ -1418,18 +1310,19 @@ const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
 /*!
  * @brief Calculates second X derivative on Mesh in index space
  *
- * @param[in] f        3D scalar field to be differentiated.
+ * @param[in] f        Scalar field to be differentiated.
  *                     Must be allocated and finite
  *
  * @param[in] outloc   The cell location of the result
  *
  * @param[in] method   The numerical method to use
  *
- * @return  A 3D scalar field with invalid data in the
+ * @return  A scalar field with invalid data in the
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
+template<typename T>
+const T Mesh::indexD2DX2(const T &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fD2DX2; // Set to default function
   DiffLookup *table = SecondDerivTable;
@@ -1459,7 +1352,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
       // Derivative of interpolated field or interpolation of derivative field
       // cannot be taken without communicating and applying boundary
       // conditions, so throw an exception instead
-      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DX2(Field3D).", strLocation(inloc), strLocation(outloc));
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DX2(T).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1472,37 +1365,27 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
 
   return applyXdiff(f, func, diffloc, region);
 }
-
-/*!
- * @brief Calculates second X derivative on Mesh in index space
- *
- * @param[in] f        2D scalar field to be differentiated.
- *                     Must be allocated and finite
- *
- * @return  A 2D scalar field with invalid data in the
- *          guard cells
- *
- */
-const Field2D Mesh::indexD2DX2(const Field2D &f,  CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyXdiff(f, fD2DX2, f.getLocation(), region);
-}
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexD2DX2(const Field2D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
+template const Field3D Mesh::indexD2DX2(const Field3D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
 
 ////////////// Y DERIVATIVE /////////////////
 
 /*!
  * @brief Calculates second Y derivative on Mesh in index space
  *
- * @param[in] f        3D scalar field to be differentiated.
+ * @param[in] f        Scalar field to be differentiated.
  *                     Must be allocated and finite
  *
- * @return  A 3D scalar field with invalid data in the
+ * @return  A scalar field with invalid data in the
  *          guard cells
  *
  */
-const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
+template<typename T>
+const T Mesh::indexD2DY2(const T &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
   Mesh::deriv_func func = fD2DY2; // Set to default function
   DiffLookup *table = SecondDerivTable;
@@ -1532,7 +1415,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
       // Derivative of interpolated field or interpolation of derivative field
       // cannot be taken without communicating and applying boundary
       // conditions, so throw an exception instead
-      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DY2(Field3D).", strLocation(inloc), strLocation(outloc));
+      throw BoutException("Unsupported combination of {inloc =%s} and {outloc =%s} in Mesh:indexD2DY2(T).", strLocation(inloc), strLocation(outloc));
     }
   }
 
@@ -1545,23 +1428,12 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
 
   return applyYdiff(f, func, diffloc, region);
 }
-
-/*!
- * @brief Calculates second Y derivative on Mesh in index space
- *
- * @param[in] f        2D scalar field to be differentiated.
- *                     Must be allocated and finite
- *
- * @return  A 2D scalar field with invalid data in the
- *          guard cells
- *
- */
-const Field2D Mesh::indexD2DY2(const Field2D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyYdiff(f, fD2DY2, f.getLocation(), region);
-}
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexD2DY2(const Field2D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
+template const Field3D Mesh::indexD2DY2(const Field3D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
 
 ////////////// Z DERIVATIVE /////////////////
 
@@ -1687,33 +1559,33 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 
 BoutReal D4DX4_C2(stencil &f) { return (f.pp - 4. * f.p + 6. * f.c - 4. * f.m + f.mm); }
 
-const Field3D Mesh::indexD4DX4(const Field3D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
+template<typename T>
+const T Mesh::indexD4DX4(const T &f, CELL_LOC outloc,
+                         DIFF_METHOD method, REGION region) {
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
 }
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexD4DX4(const Field2D &, CELL_LOC, DIFF_METHOD,
+                                        REGION);
+template const Field3D Mesh::indexD4DX4(const Field3D &, CELL_LOC, DIFF_METHOD,
+                                        REGION);
 
-const Field2D Mesh::indexD4DX4(const Field2D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
-}
-
-const Field3D Mesh::indexD4DY4(const Field3D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
-}
-
-const Field2D Mesh::indexD4DY4(const Field2D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region) {
+template<typename T>
+const T Mesh::indexD4DY4(const T &f, CELL_LOC outloc,
+                         DIFF_METHOD method, REGION region) {
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
 }
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexD4DY4(const Field2D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
+template const Field3D Mesh::indexD4DY4(const Field3D&, CELL_LOC, DIFF_METHOD,
+                                        REGION);
 
 const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region){
@@ -1741,79 +1613,15 @@ const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
 
 ////////////// X DERIVATIVE /////////////////
 
-/// Special case where both arguments are 2D. Output location ignored for now
-const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+template<typename T>
+const T Mesh::indexVDDX(const T &v, const T &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::indexVDDX(Field2D, Field2D)");
-
-  CELL_LOC diffloc = f.getLocation();
-
-  Mesh::upwind_func func = fVDDX;
-
-  if (method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupFunc(UpwindTable, method);
-  }
-
-  ASSERT1(this == f.getMesh());
-  ASSERT1(this == v.getMesh());
-  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
-
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(diffloc);
-
-  if (this->xstart > 1) {
-    // Two or more guard cells
-
-    stencil s;
-    for (const auto &i : result.region(region)) {
-      s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
-      s.pp = f[i.offset(2, 0, 0)];
-      s.mm = f[i.offset(-2, 0, 0)];
-
-      result[i] = func(v[i], s);
-    }
-
-  } else if (this->xstart == 1) {
-    // Only one guard cell
-
-    stencil s;
-    s.pp = nan("");
-    s.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
-      s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
-
-      result[i] = func(v[i], s);
-    }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in X requires at least one guard cell");
-  }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = false;
-#endif
-
-  return result;
-}
-
-/// General version for 3D objects.
-/// 2D objects passed as input will result in copying
-const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                              DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::indexVDDX(Field3D, Field3D)");
+  TRACE("Mesh::indexVDDX(Tv, Tf)");
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
 
   CELL_LOC vloc = v.getLocation();
@@ -1997,6 +1805,12 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   return result;
 }
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexVDDX(const Field2D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexVDDX(const Field3D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
 
 ////////////// Y DERIVATIVE /////////////////
 
@@ -2522,96 +2336,10 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
  * Flux conserving schemes
  *******************************************************************************/
 
-const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+template<typename T>
+const T Mesh::indexFDDX(const T &v, const T &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
-
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
-    // Split into an upwind and a central differencing part
-    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDX(v, f, outloc, DIFF_DEFAULT) + f * indexDDX(v);
-  }
-
-  Mesh::flux_func func = fFDDX;
-  if (method != DIFF_DEFAULT) {
-    // Lookup function
-    func = lookupFunc(FluxTable, method);
-  }
-
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-
-  if ( StaggerGrids &&
-       ((v.getLocation() != CELL_CENTRE) || (f.getLocation() != CELL_CENTRE))
-       || ((outloc != CELL_CENTRE) && (outloc != CELL_DEFAULT))
-     ) {
-    // Staggered differencing
-    throw BoutException("Unhandled staggering");
-  }
-  else {
-    result.setLocation(CELL_CENTRE);
-  }
-
-  ASSERT1(this == v.getMesh());
-  ASSERT1(this == f.getMesh());
-
-  if (this->xstart > 1) {
-    // Two or more guard cells
-
-    stencil fs;
-    stencil vs;
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-      fs.pp = f[i.offset(2, 0, 0)];
-      fs.mm = f[i.offset(-2, 0, 0)];
-
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-      vs.pp = v[i.offset(2, 0, 0)];
-      vs.mm = v[i.offset(-2, 0, 0)];
-
-      result[i] = func(vs, fs);
-    }
-  } else if (this->xstart == 1) {
-    // Only one guard cell
-
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-
-      result[i] = func(vs, fs);
-    }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in X requires at least one guard cell");
-  }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = false;
-#endif
-
-  return result;
-}
-
-const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                              DIFF_METHOD method, REGION region) {
-  TRACE("Mesh::indexFDDX(Field3D, Field3D)");
+  TRACE("Mesh::indexFDDX(T, T)");
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2656,7 +2384,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
 
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
@@ -2802,6 +2530,12 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   return result;
 }
+// Explicitly instantiate template for Field2D and Field3D, otherwise get
+// linker errors
+template const Field2D Mesh::indexFDDX(const Field2D&, const Field2D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
+template const Field3D Mesh::indexFDDX(const Field3D&, const Field3D&,
+                                       CELL_LOC, DIFF_METHOD, REGION);
 
 /////////////////////////////////////////////////////////////////////////
 

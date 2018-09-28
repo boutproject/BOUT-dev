@@ -449,22 +449,16 @@ class Mesh {
 
   BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
   /// First derivative in X direction, in index space
-  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
-  /// First derivative in X direction, in index space
-  const Field2D indexDDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                         DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region= RGN_NOBNDRY);
+  template<typename T>
+  const T indexDDX(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD
+                   method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
   /// First derivative in Y direction in index space
-  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
-  /// First derivative in Y direction in index space
-  const Field2D indexDDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                         DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexDDY(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD
+                   method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
   /// First derivative in Z direction in index space
-  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
+  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                         DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
   const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                          bool inc_xbndry) {
     return indexDDZ(f, outloc, method, inc_xbndry? RGN_NOY : RGN_NOBNDRY);
@@ -483,12 +477,9 @@ class Mesh {
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
   /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region=RGN_NOBNDRY);
-  /// Second derivative in X direction in index space
-  const Field2D indexD2DX2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexD2DX2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD
+                     method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
 
   /// Second derivative in Y direction in index space
   ///
@@ -496,12 +487,9 @@ class Mesh {
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
   /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region=RGN_NOBNDRY);
-  /// Second derivative in Y direction in index space
-  const Field2D indexD2DY2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexD2DY2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD
+                     method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
 
   /// Second derivative in Z direction in index space
   ///
@@ -518,21 +506,15 @@ class Mesh {
 
   // Fourth derivatives in index space
   /// Fourth derivative in X direction in index space
-  const Field3D indexD4DX4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in X direction in index space
-  const Field2D indexD4DX4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexD4DX4(const T &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT,
+                     REGION region=RGN_NOBNDRY);
   /// Fourth derivative in Y direction in index space
-  const Field3D indexD4DY4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in Y direction in index space
-  const Field2D indexD4DY4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexD4DY4(const T &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT,
+                     REGION region=RGN_NOBNDRY);
   /// Fourth derivative in Z direction in index space
   const Field3D indexD4DZ4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                            DIFF_METHOD method = DIFF_DEFAULT,
@@ -556,10 +538,9 @@ class Mesh {
   ///                    The default is the same as \p f
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated
-  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
-  const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
+  template<typename T>
+  const T indexVDDX(const T &v, const T &f, CELL_LOC outloc,
+                    DIFF_METHOD method, REGION region = RGN_NOBNDRY);
 
   /// Advection operator in index space in Y direction
   ///
@@ -591,10 +572,9 @@ class Mesh {
   const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
-  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  template<typename T>
+  const T indexFDDX(const T &v, const T &f, CELL_LOC outloc,
+                    DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                           DIFF_METHOD method, REGION region=RGN_NOBNDRY);
   const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
@@ -724,13 +704,10 @@ class Mesh {
   void derivs_init(Options* options);
   
   /// Loop over mesh, applying a stencil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyXdiff(const Field3D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
+  template<typename T>
+  const T applyXdiff(const T &var, deriv_func func,
+                     CELL_LOC loc = CELL_DEFAULT,
+                     REGION region = RGN_NOBNDRY);
 
   const Field2D applyYdiff(const Field2D &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
