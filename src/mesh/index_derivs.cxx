@@ -763,7 +763,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC loc,
   T result(this);
   result.allocate(); // Make sure data allocated
 
-  if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
+  if (var.hasYupYdown()) {
     // Field "var" has distinct yup and ydown fields which
     // will be used to calculate a derivative along
     // the magnetic field
@@ -1759,8 +1759,8 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
 
     // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
     // will be used to calculate a derivative along the magnetic field
-    bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
-    bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+    bool vUseUpDown = v.hasYupYdown();
+    bool fUseUpDown = f.hasYupYdown();
 
     if (vUseUpDown && fUseUpDown) {
       // Both v and f have up/down fields
@@ -1845,7 +1845,7 @@ const T Mesh::indexVDDY(const T &v, const T &f, CELL_LOC outloc,
       func = lookupFunc(table, method);
     }
 
-    if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
+    if (f.hasYupYdown()) {
       // f has yup and ydown fields which are distinct
 
       stencil fs;
@@ -2295,8 +2295,8 @@ const T Mesh::indexFDDY(const T &v, const T &f, CELL_LOC outloc,
 
   // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
   // will be used to calculate a derivative along the magnetic field
-  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
-  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+  bool vUseUpDown = v.hasYupYdown();
+  bool fUseUpDown = f.hasYupYdown();
 
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields

@@ -74,6 +74,7 @@ const Field3D smooth_y(const Field3D &f) {
   Mesh *mesh = f.getMesh();
   Field3D result(mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
   
   // Copy boundary region
   for(int jx=0;jx<mesh->LocalNx;jx++)
@@ -84,11 +85,21 @@ const Field3D smooth_y(const Field3D &f) {
   
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=0;jx<mesh->LocalNx;jx++)
-    for(int jy=1;jy<mesh->LocalNy-1;jy++)
-      for(int jz=0;jz<mesh->LocalNz;jz++) {
-	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f.ydown()(jx,jy-1,jz) + f.yup()(jx,jy+1,jz) );
-      }
+  if (f.hasYupYdown()) {
+    for(int jx=0;jx<mesh->LocalNx;jx++)
+      for(int jy=1;jy<mesh->LocalNy-1;jy++)
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f.ydown()(jx,jy-1,jz) + f.yup()(jx,jy+1,jz) );
+        }
+  } else {
+    Field3D f_fa = mesh->toFieldAligned(f);
+    for(int jx=0;jx<mesh->LocalNx;jx++)
+      for(int jy=1;jy<mesh->LocalNy-1;jy++)
+        for(int jz=0;jz<mesh->LocalNz;jz++) {
+          result(jx,jy,jz) = 0.5*f_fa(jx,jy,jz) + 0.25*( f_fa(jx,jy-1,jz) + f_fa(jx,jy+1,jz) );
+        }
+    result = mesh->fromFieldAligned(result);
+  }
 
   // Need to communicate boundaries
   mesh->communicate(result);

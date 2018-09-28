@@ -213,7 +213,7 @@ TEST_F(Field3DTest, SplitYupYDown) {
 
   EXPECT_FALSE(field.hasYupYdown());
 
-  field.splitYupYdown();
+  field.createYupYdown();
 
   EXPECT_TRUE(field.hasYupYdown());
 
@@ -223,7 +223,7 @@ TEST_F(Field3DTest, SplitYupYDown) {
   EXPECT_NE(&field, &ydown);
 
   // Should be able to split again without any problems
-  field.splitYupYdown();
+  field.createYupYdown();
 
   // Would be nice to check yup2 != yup, but not sure this is possible
   // to do in general
@@ -233,55 +233,11 @@ TEST_F(Field3DTest, SplitYupYDown) {
   EXPECT_NE(&field, &ydown2);
 }
 
-TEST_F(Field3DTest, MergeYupYDown) {
-  Field3D field;
-
-  field = 0.;
-
-  EXPECT_FALSE(field.hasYupYdown());
-
-  field.mergeYupYdown();
-
-  EXPECT_TRUE(field.hasYupYdown());
-
-  auto& yup = field.yup();
-  EXPECT_EQ(&field, &yup);
-  auto& ydown = field.ydown();
-  EXPECT_EQ(&field, &ydown);
-
-  // Should be able to merge again without any problems
-  field.mergeYupYdown();
-
-  auto& yup2 = field.yup();
-  EXPECT_EQ(&field, &yup2);
-  auto& ydown2 = field.ydown();
-  EXPECT_EQ(&field, &ydown2);
-}
-
-TEST_F(Field3DTest, SplitThenMergeYupYDown) {
-  Field3D field;
-
-  field = 0.;
-  field.splitYupYdown();
-
-  auto& yup = field.yup();
-  EXPECT_NE(&field, &yup);
-  auto& ydown = field.ydown();
-  EXPECT_NE(&field, &ydown);
-
-  field.mergeYupYdown();
-
-  auto& yup2 = field.yup();
-  EXPECT_EQ(&field, &yup2);
-  auto& ydown2 = field.ydown();
-  EXPECT_EQ(&field, &ydown2);
-}
-
 TEST_F(Field3DTest, Ynext) {
   Field3D field;
 
   field = 0.;
-  field.splitYupYdown();
+  field.createYupYdown();
 
   auto& yup = field.ynext(1);
   EXPECT_NE(&field, &yup);
@@ -295,7 +251,7 @@ TEST_F(Field3DTest, Ynext) {
 TEST_F(Field3DTest, ConstYnext) {
   Field3D field(0.);
 
-  field.splitYupYdown();
+  field.createYupYdown();
 
   const Field3D& field2 = field;
 

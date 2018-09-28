@@ -174,8 +174,8 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
-  TRACE("Field3D::splitYupYdown");
+void Field3D::createYupYdown() {
+  TRACE("Field3D::createYupYdown");
   
   if((yup_field != this) && (yup_field != nullptr))
     return;
@@ -183,18 +183,6 @@ void Field3D::splitYupYdown() {
   // yup_field and ydown_field null
   yup_field = new Field3D(fieldmesh);
   ydown_field = new Field3D(fieldmesh);
-}
-
-void Field3D::mergeYupYdown() {
-  TRACE("Field3D::mergeYupYdown");
-  
-  if(yup_field == this && ydown_field == this)
-    return;
-
-  deleteYupYdown();
-
-  yup_field = this;
-  ydown_field = this;
 }
 
 void Field3D::deleteYupYdown() {

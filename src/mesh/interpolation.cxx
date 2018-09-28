@@ -116,7 +116,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
       case CELL_YLOW: {
         ASSERT0(fieldmesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
 
-        if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
+        if (var.hasYupYdown()) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
           // the magnetic field

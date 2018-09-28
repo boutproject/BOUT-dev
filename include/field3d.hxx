@@ -152,12 +152,9 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       f.yup() // error; f.yup not allocated
 
-      f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
-      f.yup()(0,1,0)  // ok, gives value of f at (0,1,0)
-
       To have separate fields for yup and ydown, first call
 
-      f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.createYupYdown(); // create f.yup() and f.ydown() fields
 
       f.yup(); // ok
       f.yup()(0,1,0) // error; f.yup not allocated
@@ -227,12 +224,7 @@ class Field3D : public Field, public FieldData {
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitYupYdown();
-
-  /*!
-   * Ensure that yup and ydown refer to this field
-   */
-  void mergeYupYdown();
+  void createYupYdown();
 
   /*!
    * Delete all yup/ydown fields and field_fa
