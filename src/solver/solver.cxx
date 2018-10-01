@@ -122,7 +122,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const std::string &name) {
+void Solver::add(Field2D &v, const std::string name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -181,7 +181,7 @@ void Solver::add(Field2D &v, const std::string &name) {
   f2d.push_back(d);
 }
 
-void Solver::add(Field3D &v, const std::string &name) {
+void Solver::add(Field3D &v, const std::string name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0  
@@ -243,7 +243,7 @@ void Solver::add(Field3D &v, const std::string &name) {
   f3d.push_back(d);
 }
 
-void Solver::add(Vector2D &v, const std::string &name) {
+void Solver::add(Vector2D &v, const std::string name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
   
   if (varAdded(name))
@@ -287,7 +287,7 @@ void Solver::add(Vector2D &v, const std::string &name) {
   v.applyBoundary(true);
 }
 
-void Solver::add(Vector3D &v, const std::string &name) {
+void Solver::add(Vector3D &v, const std::string name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
   
   if (varAdded(name))
@@ -331,7 +331,7 @@ void Solver::add(Vector3D &v, const std::string &name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, const std::string &name) {
+void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
@@ -360,7 +360,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string &name) {
   f2d.push_back(d);
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, const std::string &name) {
+void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
@@ -390,7 +390,7 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string &name) {
   f3d.push_back(d);
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string &name) {
+void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
@@ -431,7 +431,7 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string &name) {
   }
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string &name) {
+void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
