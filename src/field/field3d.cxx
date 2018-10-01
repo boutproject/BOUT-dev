@@ -823,6 +823,11 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(rhs);
   ASSERT1(lhs.getMesh() == rhs.getMesh());
 
+  // Assume FieldPerp is always on the default coordinate system of its Mesh,
+  // since at the moment FieldPerp cannot switch between orthogonal and field
+  // aligned coordinates
+  ASSERT2(lhs.getCoordinateSystem() == rhs.getMesh()->getCoordinateSystem());
+
   FieldPerp result{rhs.getMesh()};
   result.allocate();
   result.setIndex(rhs.getIndex());
@@ -833,7 +838,6 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   }
 
   result.setLocation( lhs.getLocation() );
-  result.setCoordinateSystem( lhs.getCoordinateSystem() );
 
   checkData(result);
   return result;
