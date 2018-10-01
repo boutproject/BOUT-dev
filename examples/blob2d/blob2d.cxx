@@ -50,22 +50,23 @@ protected:
 
     /******************Reading options *****************/
 
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("model");
+    auto globalOptions = Options::root();
+    auto options = globalOptions["model"];
 
     // Load system parameters
-    options->get("Te0", Te0, 30); // Temp in eV
-    options->get("e", e, 1.602e-19);
-    options->get("m_i", m_i, 2 * 1.667e-27);
-    options->get("m_e", m_e, 9.11e-31);
+    Te0 = options["Te0"].withDefault(30); // Temp in eV
+    e = options["e"].withDefault(1.602e-19);
+    m_i = options["m_i"].withDefault(2 * 1.667e-27);
+    m_e = options["m_e"].withDefault(9.11e-31);
 
-    options->get("n0", n0, 1e19);      // Background density in cubic m
-    options->get("D_vort", D_vort, 0); // Viscous diffusion coefficient
-    options->get("D_n", D_n, 0);       // Density diffusion coefficient
+    n0 = options["n0"].withDefault(1e19);      // Background density in cubic m
+    D_vort = options["D_vort"].withDefault(0); // Viscous diffusion coefficient
+    D_n = options["D_n"].withDefault(0);       // Density diffusion coefficient
 
-    options->get("R_c", R_c, 1.5);    // Radius of curvature
-    options->get("L_par", L_par, 10); // Parallel connection length
-    OPTION(options, B0, 0.35);        // Value of magnetic field strength
+    R_c = options["R_c"].withDefault(1.5);    // Radius of curvature
+    L_par = options["L_par"].withDefault(10); // Parallel connection length
+    
+    OPTION(options, B0, 0.35);             // Value of magnetic field strength
 
     // System option switches
 

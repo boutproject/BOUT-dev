@@ -97,7 +97,7 @@ During initialisation (the ``init`` function), the conduction example
 first reads an option (lines 21 and 24) from the input settings file
 (``data/BOUT.inp`` by default)::
 
-    Options *options = Options::getRoot()->getSection("conduction");
+    auto options = Options::root()["conduction"];
 
     OPTION(options, chi, 1.0);
 
@@ -429,14 +429,14 @@ object in the initialisation function::
       BoutReal gamma;
 
       int init(bool restarting) override {
-        Options *globalOptions = Options::getRoot();
-        Options *options = globalOptions->getSection("mhd");
+        auto globalOptions = Options::root();
+        auto options = globalOptions["mhd"];
 
-        options->get("g", g, 5.0/3.0);
+        OPTION(options, g, 5.0 / 3.0);
         ...
 
 This specifies that an option called “g” in a section called “mhd”
-should be put into the variable ``gamma``. If the option could not be
+should be put into the variable ``g``. If the option could not be
 found, or was of the wrong type, the variable should be set to a
 default value of :math:`5/3`. The value used will be printed to the
 output file, so if ``g`` is not set in the input file the following
@@ -457,8 +457,8 @@ is the macro::
     OPTION(options, g, 5.0/3.0);
 
 which is equivalent to::
-
-    options->get("g", g, 5.0/3.0);
+  
+    g = options["g"].withDefault( 5.0/3.0 );
 
 See :ref:`sec-options` for more details of how to use the input
 options.

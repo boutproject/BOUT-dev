@@ -173,7 +173,7 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
   if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
 }
 
-void OptionINI::writeSection(Options *options, std::ofstream &fout) {
+void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
   string section_name = options->str();
 
   if (section_name.length() > 0) {

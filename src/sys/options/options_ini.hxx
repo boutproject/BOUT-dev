@@ -62,7 +62,7 @@ private:
   string getNextLine(std::ifstream &fin);
 
   // Helper functions for writing
-  void writeSection(Options *options, std::ofstream &fout);
+  void writeSection(const Options *options, std::ofstream &fout);
 };
 
 #endif // __OPTIONS_INI_H__
