@@ -170,7 +170,7 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
   key = trim(buffer.substr(0, startpos), " \t\r\n\"");
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
 
-  if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
+  if(key.empty()) throw BoutException("\tEmpty key\n\tLine: %s", buffer.c_str());
 }
 
 void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
@@ -183,6 +183,10 @@ void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
   // Iterate over all values
   for(const auto& it : options->values()) {
     fout << it.first << " = " << it.second.value;
+    if (it.second.value.empty()) {
+      // Print an empty string as ""
+      fout << "\"\""; 
+    }
     if (! it.second.used ) {
       fout << "  # not used , from: "
 	   << it.second.source;
