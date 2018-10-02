@@ -10,6 +10,7 @@
 #include <iostream>
 #include "unused.hxx"
 #include "assert.hxx"
+#include "bout/deprecated.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -74,8 +75,8 @@ public:
    * between threads using the omp_init method.
    */ 
   DataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze) : 
+               int ys, int ye,
+               int zs, int ze) :
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
     // start / end : start and end point of the iterator

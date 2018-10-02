@@ -1,3 +1,7 @@
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -109,17 +113,13 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   int test_ny = Field3DTest::ny + 2;
   int test_nz = Field3DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
-  Field3D field(fieldmesh);
-
-  field.allocate();
+  Field3D field{&fieldmesh};
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), test_ny);
   EXPECT_EQ(field.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 TEST_F(Field3DTest, CopyCheckFieldmesh) {
@@ -127,17 +127,18 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   int test_ny = Field3DTest::ny + 2;
   int test_nz = Field3DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
 
-  Field3D field(0.0, fieldmesh);
+  Field3D field{0.0, &fieldmesh};
 
   Field3D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 #if CHECK > 0
@@ -1993,3 +1994,6 @@ TEST_F(Field3DTest, OpenMPIterator) {
   delete[] d3;
 }
 #endif
+
+// Restore compiler warnings
+#pragma GCC diagnostic pop

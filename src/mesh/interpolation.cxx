@@ -79,8 +79,6 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
     if ((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
-
-      stencil s;
       CELL_LOC dir;
 
       // Get the non-centre location for interpolation direction
@@ -88,33 +86,37 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
       switch (dir) {
       case CELL_XLOW: {
-        ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
+        // At least 2 boundary cells needed for interpolation in x-direction
+        ASSERT0(fieldmesh->xstart >= 2);
 
-        for (const auto &i : result.region(RGN_NOBNDRY)) {
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+            // Set stencils
+            s.mm = var[i.xmm()];
+            s.m = var[i.xm()];
+            s.c = var[i];
+            s.p = var[i.xp()];
+            s.pp = var[i.xpp()];
 
-          // Set stencils
-          s.c = var[i];
-          s.p = var[i.xp()];
-          s.m = var[i.xm()];
-          s.pp = var[i.offset(2, 0, 0)];
-          s.mm = var[i.offset(-2, 0, 0)];
+            if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+              // Producing a stencil centred around a lower X value
+              s.pp = s.p;
+              s.p = s.c;
+            } else if (location == CELL_XLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
 
-          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-            // Producing a stencil centred around a lower X value
-            s.pp = s.p;
-            s.p = s.c;
-          } else if (location == CELL_XLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
+            result[i] = interp(s);
           }
-
-          result[i] = interp(s);
         }
         break;
       }
       case CELL_YLOW: {
-        ASSERT0(fieldmesh->ystart >= 2); // At least 2 boundary cells needed for interpolation in y-direction
+        // At least 2 boundary cells needed for interpolation in y-direction
+        ASSERT0(fieldmesh->ystart >= 2);
 
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
@@ -123,26 +125,26 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           throw BoutException("At the moment, fields with yup/ydown cannot use interp_to.\n"
                               "If we implement a 3-point stencil for interpolate or double-up\n"
                               "/double-down fields, then we can use this case.");
-          s.pp = nan("");
-          s.mm = nan("");
+          BOUT_OMP(parallel) {
+            stencil s;
+            BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+              // Set stencils
+              s.m = var.ydown()[i.ym()];
+              s.c = var[i];
+              s.p = var.yup()[i.yp()];
 
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
-            // Set stencils
-            s.c = var[i];
-            s.p = var.yup()[i.yp()];
-            s.m = var.ydown()[i.ym()];
+              if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+                // Producing a stencil centred around a lower Y value
+                s.pp = s.p;
+                s.p = s.c;
+              } else if (location == CELL_YLOW) {
+                // Stencil centred around a cell centre
+                s.mm = s.m;
+                s.m = s.c;
+              }
 
-            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-              // Producing a stencil centred around a lower Y value
-              s.pp = s.p;
-              s.p = s.c;
-            } else if (location == CELL_YLOW) {
-              // Stencil centred around a cell centre
-              s.mm = s.m;
-              s.m = s.c;
+              result[i] = interp(s);
             }
-
-            result[i] = interp(s);
           }
         } else {
           // var has no yup/ydown fields, so we need to shift into field-aligned
@@ -158,50 +160,54 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
             // More than one guard cell, so set pp and mm values
             // This allows higher-order methods to be used
-            for (const auto &i : result.region(RGN_NOBNDRY)) {
-              // Set stencils
-              s.c = var_fa[i];
-              s.p = var_fa[i.yp()];
-              s.m = var_fa[i.ym()];
-              s.pp = var_fa[i.offset(0, 2, 0)];
-              s.mm = var_fa[i.offset(0, -2, 0)];
+            BOUT_OMP(parallel) {
+              stencil s;
+              BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+                // Set stencils
+                s.mm = var_fa[i.ymm()];
+                s.m = var_fa[i.ym()];
+                s.c = var_fa[i];
+                s.p = var_fa[i.yp()];
+                s.pp = var_fa[i.ypp()];
 
-              if (location == CELL_CENTRE) {
-                // Producing a stencil centred around a lower Y value
-                s.pp = s.p;
-                s.p  = s.c;
+                if (location == CELL_CENTRE) {
+                  // Producing a stencil centred around a lower Y value
+                  s.pp = s.p;
+                  s.p = s.c;
                 } else {
                   // Stencil centred around a cell centre
                   s.mm = s.m;
                   s.m = s.c;
                 }
 
-              result_fa[i] = interp(s);
+                result_fa[i] = interp(s);
+              }
             }
           } else {
             // Only one guard cell, so no pp or mm values
             // Note: at the moment we cannot reach this case because of the
             // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
             // stencil for interp, then this will be useful
-            s.pp = nan("");
-            s.mm = nan("");
-            for (const auto &i : result.region(RGN_NOBNDRY)) {
-              // Set stencils
-              s.c = var_fa[i];
-              s.p = var_fa[i.yp()];
-              s.m = var_fa[i.ym()];
+            BOUT_OMP(parallel) {
+              stencil s;
+              BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+                // Set stencils
+                s.m = var_fa[i.ym()];
+                s.c = var_fa[i];
+                s.p = var_fa[i.yp()];
 
-              if (location == CELL_CENTRE) {
-                // Producing a stencil centred around a lower Y value
-                s.pp = s.p;
-                s.p = s.c;
-              } else {
-                // Stencil centred around a cell centre
-                s.mm = s.m;
-                s.m = s.c;
+                if (location == CELL_CENTRE) {
+                  // Producing a stencil centred around a lower Y value
+                  s.pp = s.p;
+                  s.p = s.c;
+                } else {
+                  // Stencil centred around a cell centre
+                  s.mm = s.m;
+                  s.m = s.c;
+                }
+
+                result_fa[i] = interp(s);
               }
-
-              result_fa[i] = interp(s);
             }
           }
           
@@ -210,24 +216,30 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         break;
       }
       case CELL_ZLOW: {
-        for (const auto &i : result.region(region)) {
-          s.c = var[i];
-          s.p = var[i.zp()];
-          s.m = var[i.zm()];
-          s.pp = var[i.offset(0, 0, 2)];
-          s.mm = var[i.offset(0, 0, -2)];
+        /// Convert REGION enum to a Region string identifier
+        const auto region_str = REGION_STRING(region);
 
-          if (location == CELL_CENTRE) {
-            // Producing a stencil centred around a lower Z value
-            s.pp = s.p;
-            s.p = s.c;
-          } else {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, fieldmesh->getRegion3D(region_str)) {
+            s.mm = var[i.zmm()];
+            s.m = var[i.zm()];
+            s.c = var[i];
+            s.p = var[i.zp()];
+            s.pp = var[i.zpp()];
+
+            if (location == CELL_CENTRE) {
+              // Producing a stencil centred around a lower Z value
+              s.pp = s.p;
+              s.p = s.c;
+            } else {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
+
+            result[i] = interp(s);
           }
-
-          result[i] = interp(s);
         }
         break;
       }
@@ -299,7 +311,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
       case CELL_XLOW: {
         ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
 
-        for (const auto &i : result.region(RGN_NOBNDRY)) {
+        BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
 
           // Set stencils
           s.c = var[i];
@@ -329,7 +341,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
 
           // More than one guard cell, so set pp and mm values
           // This allows higher-order methods to be used
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
+          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];
@@ -354,9 +366,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
           // Note: at the moment we cannot reach this case because of the
           // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
           // stencil for interp, then this will be useful
-          s.pp = nan("");
-          s.mm = nan("");
-          for (const auto &i : result.region(RGN_NOBNDRY)) {
+          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];

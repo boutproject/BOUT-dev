@@ -124,10 +124,10 @@
 #endif
 
 #define BOUT_FOR(index, region)                                                          \
-  BOUT_FOR_OMP(index, region, parallel for schedule(guided))
+  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
 
 #define BOUT_FOR_INNER(index, region)                                                    \
-  BOUT_FOR_OMP(index, region, for schedule(guided) nowait)
+  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
 
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
@@ -242,17 +242,24 @@ public:
   /// The index one point -1 in y
   const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
+  /// An alternative, non-branching calculation is :
+  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
+  /// but this appears no faster (and perhaps slower).  
   const inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
+  /// An alternative, non-branching calculation is :
+  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
+  /// but this appears no faster (and perhaps slower).
   const inline SpecificInd zm(int dz = 1) const {
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
+
   // and for 2 cells
   const inline SpecificInd xpp() const { return xp(2); }
   const inline SpecificInd xmm() const { return xm(2); }
@@ -262,7 +269,7 @@ public:
   const inline SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  const inline SpecificInd offset(int dx, int dy, int dz) {
+  const inline SpecificInd offset(int dx, int dy, int dz) const {
     auto temp = (dz > 0) ? zp(dz) : zm(-dz);
     return temp.yp(dy).xp(dx);
   }
@@ -659,16 +666,6 @@ public:
     return result;
   }
 
-  // TODO: Should be able to add regions (would just require extending
-  // indices and recalculating blocks). This raises question of should
-  // we be able to subtract regions, and if so what does that mean.
-  // Addition could be simple and just extend or we could seek to
-  // remove duplicate points. Former probably mostly ok. Note we do
-  // want to allow duplicate points (one reason we use vector and
-  // not set) but what if we add a region that has some duplicates?
-  // We could retain them but common usage would probably not want
-  // the duplicates.
-
   // We could sort indices (either forcibly or on request) to try
   // to ensure most contiguous+ordered access. Probably ok in common
   // use but would cause problems if order is important, for example
@@ -802,6 +799,13 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce
 /// any sorting etc. but could be done if desired.
+/// -
+/// Addition is currently simple and just extends. Probably mostly ok 
+/// but we could seek to remove duplicate points. Note we do
+/// want to allow duplicate points (one reason we use vector and
+/// not set) but what if we add a region that has some duplicates?
+/// We could retain them but common usage would probably not want
+/// the duplicates.
 template<typename T>
 Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   auto indices = lhs.getIndices(); // Indices is a copy of the indices

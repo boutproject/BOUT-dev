@@ -205,21 +205,30 @@ TEST_F(RegionTest, defaultRegions) {
 }
 
 TEST_F(RegionTest, regionLoopAll) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BOUT_FOR(i, region) { a[i] = 1.0; }
+  // Need to use a Field3D as a jig as OpenMP complicates things here
+  Field3D a{0.};
+  BOUT_FOR(i, region) {
+    a[i] = 1.0;
+  }
 
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
   }
 }
 
 TEST_F(RegionTest, regionLoopNoBndry) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BOUT_FOR(i, region) { a[i] = 1.0; }
+  Field3D a{0.};
+  BOUT_FOR(i, region) {
+    a[i] = 1.0;
+  }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -228,11 +237,15 @@ TEST_F(RegionTest, regionLoopNoBndry) {
 
   int numNotMatching = 0;
   int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
     }
   }
   EXPECT_EQ(numNotMatching, numExpectNotMatching);
@@ -240,102 +253,86 @@ TEST_F(RegionTest, regionLoopNoBndry) {
 }
 
 TEST_F(RegionTest, regionLoopAllSerial) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
-
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
   }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndrySerial) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BOUT_FOR_SERIAL(i, region) { a[i] = 1.0; }
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
+  }
 
-  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
       (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
-    }
-  }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllSection) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
+  int count = 0;
   BOUT_OMP(parallel) {
-    BOUT_FOR_OMP(i, region, for) {
-      a[i] = 1.0;
-    }
-  }
-
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
-  }
-}
-
-TEST_F(RegionTest, regionLoopNoBndrySection) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
-
-  Field3D a = 0.0;
-  BOUT_OMP(parallel) {
-    BOUT_FOR_OMP(i, region, for) {
-      a[i] = 1.0;
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
+      ++count;
     }
   }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
-  const int ninner =
-      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
-  int numExpectNotMatching = nmesh - ninner;
 
-  int numNotMatching = 0;
-  int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
+  EXPECT_EQ(count, nmesh);
+}
+
+TEST_F(RegionTest, regionLoopNoBndrySection) {
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
+
+  int count = 0;
+  BOUT_OMP(parallel) {
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
+      ++count;
     }
   }
-  EXPECT_EQ(numNotMatching, numExpectNotMatching);
-  EXPECT_EQ(numMatching, ninner);
+
+  const int ninner =
+      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+
+  EXPECT_EQ(count, ninner);
 }
 
 TEST_F(RegionTest, regionLoopAllInner) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
+  Field3D a{0.};
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
       a[i] = 1.0;
     }
   }
 
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
   }
 }
 
 TEST_F(RegionTest, regionLoopNoBndryInner) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
+  Field3D a{0.};
   BOUT_OMP(parallel) {
     BOUT_FOR_INNER(i, region) {
       a[i] = 1.0;
@@ -349,11 +346,15 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
 
   int numNotMatching = 0;
   int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
     }
   }
   EXPECT_EQ(numNotMatching, numExpectNotMatching);
@@ -1711,9 +1712,9 @@ const int IndexOffsetTest::ny = 5;
 const int IndexOffsetTest::nz = 7;
 
 TEST_F(IndexOffsetTest, X) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1726,9 +1727,9 @@ TEST_F(IndexOffsetTest, X) {
 }
 
 TEST_F(IndexOffsetTest, Y) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1741,9 +1742,9 @@ TEST_F(IndexOffsetTest, Y) {
 }
 
 TEST_F(IndexOffsetTest, Z) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1756,9 +1757,9 @@ TEST_F(IndexOffsetTest, Z) {
 }
 
 TEST_F(IndexOffsetTest, XPlusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1781,9 +1782,9 @@ TEST_F(IndexOffsetTest, XPlusOne) {
 }
 
 TEST_F(IndexOffsetTest, YPlusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1808,9 +1809,9 @@ TEST_F(IndexOffsetTest, YPlusOne) {
 }
 
 TEST_F(IndexOffsetTest, ZPlusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1829,9 +1830,9 @@ TEST_F(IndexOffsetTest, ZPlusOne) {
 }
 
 TEST_F(IndexOffsetTest, XMinusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1854,9 +1855,9 @@ TEST_F(IndexOffsetTest, XMinusOne) {
 }
 
 TEST_F(IndexOffsetTest, YMinusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1881,9 +1882,9 @@ TEST_F(IndexOffsetTest, YMinusOne) {
 }
 
 TEST_F(IndexOffsetTest, ZMinusOne) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1902,9 +1903,9 @@ TEST_F(IndexOffsetTest, ZMinusOne) {
 }
 
 TEST_F(IndexOffsetTest, XPlusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1927,9 +1928,9 @@ TEST_F(IndexOffsetTest, XPlusTwo) {
 }
 
 TEST_F(IndexOffsetTest, YPlusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1954,9 +1955,9 @@ TEST_F(IndexOffsetTest, YPlusTwo) {
 }
 
 TEST_F(IndexOffsetTest, ZPlusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -1975,9 +1976,9 @@ TEST_F(IndexOffsetTest, ZPlusTwo) {
 }
 
 TEST_F(IndexOffsetTest, XMinusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int j = 0; j < ny; ++j) {
     for (int k = 0; k < nz; ++k) {
@@ -2002,9 +2003,9 @@ TEST_F(IndexOffsetTest, XMinusTwo) {
 }
 
 TEST_F(IndexOffsetTest, YMinusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int k = 0; k < nz; ++k) {
@@ -2027,9 +2028,9 @@ TEST_F(IndexOffsetTest, YMinusTwo) {
 }
 
 TEST_F(IndexOffsetTest, ZMinusTwo) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2048,9 +2049,9 @@ TEST_F(IndexOffsetTest, ZMinusTwo) {
 }
 
 TEST_F(IndexOffsetTest, Offset111) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2073,9 +2074,9 @@ TEST_F(IndexOffsetTest, Offset111) {
 }
 
 TEST_F(IndexOffsetTest, Offsetm1m1m1) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2099,9 +2100,9 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1) {
 
 #if CHECK > 2
 TEST_F(IndexOffsetTest, ZNegativeOffsetInd3D) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   EXPECT_THROW(index->zp(-1), BoutException);
   EXPECT_THROW(index->zm(-1), BoutException);
@@ -2109,9 +2110,9 @@ TEST_F(IndexOffsetTest, ZNegativeOffsetInd3D) {
 #endif
 
 TEST_F(IndexOffsetTest, ZOffsetZeroInd3D) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   EXPECT_EQ(index->zp(0), *index);
   EXPECT_EQ(index->zm(0), *index);
@@ -2119,9 +2120,9 @@ TEST_F(IndexOffsetTest, ZOffsetZeroInd3D) {
 }
 
 TEST_F(IndexOffsetTest, XInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2132,9 +2133,9 @@ TEST_F(IndexOffsetTest, XInd2D) {
 }
 
 TEST_F(IndexOffsetTest, YInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2145,9 +2146,9 @@ TEST_F(IndexOffsetTest, YInd2D) {
 }
 
 TEST_F(IndexOffsetTest, ZInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2158,9 +2159,9 @@ TEST_F(IndexOffsetTest, ZInd2D) {
 }
 
 TEST_F(IndexOffsetTest, XPlusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2181,9 +2182,9 @@ TEST_F(IndexOffsetTest, XPlusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, YPlusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2206,9 +2207,9 @@ TEST_F(IndexOffsetTest, YPlusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, ZPlusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2225,9 +2226,9 @@ TEST_F(IndexOffsetTest, ZPlusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, XMinusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2248,9 +2249,9 @@ TEST_F(IndexOffsetTest, XMinusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, YMinusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2273,9 +2274,9 @@ TEST_F(IndexOffsetTest, YMinusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, ZMinusOneInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2292,9 +2293,9 @@ TEST_F(IndexOffsetTest, ZMinusOneInd2D) {
 }
 
 TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2315,9 +2316,9 @@ TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
 }
 
 TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2339,19 +2340,19 @@ TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
 TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
-  EXPECT_THROW(index->zpp(), BoutException);
+  EXPECT_EQ(index->zpp(), *index);
 }
 
+#if CHECK > 2
 TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   EXPECT_THROW(index->zp(-1), BoutException);
   EXPECT_THROW(index->zm(-1), BoutException);
@@ -2359,9 +2360,9 @@ TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
 #endif
 
 TEST_F(IndexOffsetTest, ZOffsetZeroInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   EXPECT_EQ(index->zp(0), *index);
   EXPECT_EQ(index->zm(0), *index);
@@ -2369,9 +2370,9 @@ TEST_F(IndexOffsetTest, ZOffsetZeroInd2D) {
 }
 
 TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2392,9 +2393,9 @@ TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
 }
 
 TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2416,20 +2417,17 @@ TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
   }
 }
 
-#if CHECK > 2
 TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
-
-  EXPECT_THROW(index->zmm(), BoutException);
+  auto index = region.cbegin();
+  EXPECT_EQ(index->zmm(), *index);
 }
-#endif
 
 TEST_F(IndexOffsetTest, Offset111Ind2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
@@ -2450,9 +2448,9 @@ TEST_F(IndexOffsetTest, Offset111Ind2D) {
 }
 
 TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
-  auto region = mesh->getRegion2D("RGN_ALL");
+  const auto &region = mesh->getRegion2D("RGN_ALL");
 
-  auto index = std::begin(region);
+  auto index = region.cbegin();
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
