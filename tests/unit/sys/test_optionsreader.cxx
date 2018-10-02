@@ -381,3 +381,22 @@ TEST_F(OptionsReaderTest, WriteBadFile) {
 
   std::remove(filename.c_str());
 }
+
+TEST_F(OptionsReaderTest, ReadEmptyString) {
+const std::string text = R"(
+value =
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+  
+  Options opt;
+  OptionsReader reader;
+
+  reader.read(&opt, filename);
+
+  std::string val = opt["value"];
+  EXPECT_TRUE(val.empty());
+}
