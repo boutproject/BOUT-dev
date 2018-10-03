@@ -367,7 +367,6 @@ bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
   return true;
 }
 
-
 /////////////////////////////////////////////////////////////
 // Private routines
 
