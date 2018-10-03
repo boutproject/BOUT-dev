@@ -68,7 +68,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
   return 0;
 }
 
-int Mesh::get(Field2D &var, const string &name, BoutReal def) {
+int Mesh::get(Field2D &var, const string &name, BoutReal def, bool communicate) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -78,7 +78,9 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
     return 1;
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if(communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
