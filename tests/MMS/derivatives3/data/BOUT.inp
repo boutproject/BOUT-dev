@@ -9,12 +9,10 @@ ny=32
 nz=n
 mxg=0
 myg=2
-dy=1/ny
 
 [solver]
 rtol = 1e-14
 atol = 1e-18
-
 
 [meshz]
 staggergrids=true
@@ -22,7 +20,6 @@ nx=1
 ny=1
 nz=n
 n=2
-dz=2*Pi/nz
 MXG=0
 MYG=0
 
@@ -32,10 +29,8 @@ nx=1
 ny=n
 nz=1
 n=6
-dy=2*Pi/ny
 MXG=0
 MYG=2
-
 
 [meshx]
 staggergrids=true
@@ -43,7 +38,6 @@ nx=n+2*mxg
 ny=1
 nz=1
 n=2
-dx=2*Pi/ny
 MXG=2
 MYG=0
 
