@@ -151,10 +151,10 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
+  /// @param[in] allow_communicate  Allow the field to be communicated if
+  ///                               necessary to fill guard cells
   /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const string &name, BoutReal def=0.0, bool communicate=true);
+  int get(Field3D &var, const string &name, BoutReal def=0.0, bool allow_communicate=true);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
