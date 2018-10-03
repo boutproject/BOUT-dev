@@ -123,8 +123,8 @@ public:
   const Field3D Div_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
   
   // Second derivative along magnetic field
-  const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code

@@ -776,36 +776,31 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 // second parallel derivative (b dot Grad)(b dot Grad)
 // Note: For parallel Laplacian use Laplace_par
 
-const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
+const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
 
   Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1. / sg, outloc) * DDY(f, outloc) / sg + D2DY2(f, outloc) / g_22;
+  Field2D result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
 
-const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
 
   sg = sqrt(g_22);
-  sg = DDY(1. / sg) / sg;
+  sg = DDY(1. / sg, outloc, method) / sg;
 
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
 
-  if (sg.getLocation() != outloc) {
-    localmesh->communicate(sg);
-    sg = interp_to(sg, outloc);
-  }
+  result = ::DDY(f, outloc, method);
 
-  result = ::DDY(f, outloc);
-
-  r2 = D2DY2(f, outloc) / interp_to(g_22, outloc);
+  r2 = D2DY2(f, outloc, method) / interp_to(g_22, outloc);
 
   result = sg * result + r2;
 
