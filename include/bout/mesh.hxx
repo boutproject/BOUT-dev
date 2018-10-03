@@ -142,9 +142,10 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const string &name, BoutReal def=0.0);
+  int get(Field2D &var, const string &name, BoutReal def=0.0, bool communicate=true);
 
   /// Get a Field3D from the input source
   ///
