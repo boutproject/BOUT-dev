@@ -699,11 +699,11 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
-                                    DIFF_METHOD UNUSED(method)) {
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
+                                    DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
@@ -718,13 +718,15 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
-                                         CELL_LOC UNUSED(outloc),
-                                         DIFF_METHOD UNUSED(method)) {
-  return VDDY(v, f) / sqrt(g_22);
+                                         CELL_LOC outloc,
+                                         DIFF_METHOD method) {
+
+  return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
+
   return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
@@ -734,41 +736,40 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field2D )");
-  // Perversely the relevant coordinates object might not be `this` if
-  // f isn't at the same location.
-  if (f.getLocation() != location)
-    return f.getCoordinates()->Div_par(f, outloc, method);
 
-  return Bxy * Grad_par(f / Bxy, outloc, method);
+  // Need Bxy at location of f, which might be different from location of this
+  // Coordinates object
+  Field2D Bxy_floc = f.getCoordinates()->Bxy;
+
+  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field3D )");
   
-  // Perversely the relevant coordinates object might not be `this` if
-  // f isn't at the same location.
-  if (f.getLocation() != location)
-    return f.getCoordinates()->Div_par(f, outloc, method);
+  // Need Bxy at location of f, which might be different from location of this
+  // Coordinates object
+  Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
   if (f.hasYupYdown()) {
     // Need to modify yup and ydown fields
-    Field3D f_B = f / Bxy;
+    Field3D f_B = f / Bxy_floc;
     if (&f.yup() == &f) {
       // Identity, yup and ydown point to same field
       f_B.mergeYupYdown();
     } else {
       // Distinct fields
       f_B.splitYupYdown();
-      f_B.yup() = f.yup() / Bxy;
-      f_B.ydown() = f.ydown() / Bxy;
+      f_B.yup() = f.yup() / Bxy_floc;
+      f_B.ydown() = f.ydown() / Bxy_floc;
     }
     return Bxy * Grad_par(f_B, outloc, method);
   }
 
   // No yup/ydown fields. The Grad_par operator will
   // shift to field aligned coordinates
-  return Bxy * Grad_par(f / Bxy, outloc, method);
+  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
