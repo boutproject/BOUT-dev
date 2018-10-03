@@ -36,7 +36,7 @@ def runtests(functions,derivatives,directions,stag,msg):
             boutcore.setOption("meshD:nD".replace("D",direction)
                                ,"%d"% (nz+ (2*guards if direction == "x" else 0)),force=True)
             boutcore.setOption("meshD:dD".replace("D",direction,)
-                               ,"2*pi/(%d)"%(nz),force=True)
+                               ,"2*pi/(%d)"%(nz) if direction == "z" else "2*pi*(1+sin(x)+sin(y))/(%d)"%(nz),force=True)
             mesh=boutcore.Mesh(section="mesh"+direction)
             f=boutcore.create3D(this_infunc,mesh
                                 ,outloc=inloc)
@@ -194,8 +194,8 @@ nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
 
 # functions contains list of triples of (function, derivative_operator(function), first_derivative(function)
 functions=[
-    ["sin(%s+1.)", "cos(%s+1.)", "cos(%s+1.)"] ,
-    ["cos(%s+1.)", "-sin(%s+1.)", "-sin(%s+1.)"]
+    ["sin(%s+1.)", "cos(%s+1.)/(1+sin(x+1.)+sin(y+1.))", "cos(%s+1.)/(1+sin(x+1.)+sin(y+1.))"] ,
+    ["cos(%s+1.)", "-sin(%s+1.)/(1+sin(x+1.)+sin(y+1.))", "-sin(%s+1.)/(1+sin(x+1.)+sin(y+1.))"]
 ]
 
 derivatives=[
@@ -223,8 +223,8 @@ runtests(functions,derivatives,directions,stag=True,msg="DD")
 
 
 functions=[
-    ["sin(%s+1.)","-sin(%s+1.)", "cos(%s+1.)"],
-    ["cos(%s+1.)" , "-cos(%s+1.)", "-sin(%s+1.)"]
+    ["sin(%s+1.)","-sin(%s+1.)/(1+sin(x+1.)+sin(y+1.))^2", "cos(%s+1.)/(1+sin(x+1.)+sin(y+1.))"],
+    ["cos(%s)" , "-cos(%s+1.)/(1+sin(x+1.)+sin(y+1.))^2", "-sin(%s+1.)/(1+sin(x+1.)+sin(y+1.))"]
 ]
 
 derivatives=[
