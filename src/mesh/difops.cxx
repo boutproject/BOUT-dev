@@ -489,12 +489,12 @@ const Field3D Div_par_CtoL(const Field3D &var) {
 * Note: For parallel Laplacian use LaplacePar
 *******************************************************************************/
 
-const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Grad2_par2(f, outloc);
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
 }
 
-const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Grad2_par2(f, outloc);
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
 }
 
 /*******************************************************************************
