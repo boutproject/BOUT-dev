@@ -53,7 +53,7 @@ control over how BOUT++ is built:
 
 - ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
   to SUNDIALS, which are put at the end of the link command.
-  
+
 It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
@@ -258,11 +258,26 @@ appropriately.
 OpenMP
 ------
 
-BOUT++ can make use of Single-Instruction Multiple-Data (SIMD)
-parallelism through OpenMP. To enable OpenMP, use the
+BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
 ``--enable-openmp`` flag to configure::
 
     ./configure --enable-openmp
+
+OpenMP can be used to parallelise in more directions than can be
+achieved with MPI alone. For example, it is currently difficult to
+parallelise over the X, Z plane using pure MPI if FCI is used.
+
+OpenMP is in a large number of places now, such that a decent speed-up
+can be achieved with OpenMP alone. Hybrid parallelisation with both
+MPI and OpenMP can lead to more significant speed-ups, but it
+sometimes requires some fine tuning of numerical parameters in order
+to achieve this. This greatly depends on the details not just of your
+system, but also your particular problem. We have tried to choose
+"sensible" defaults that will work well for the most common cases, but
+this is not always possible. You may need to perform some testing
+yourself to find e.g. the optimum split of OpenMP threads and MPI
+ranks.
+
 
 .. note::
     If you want to use OpenMP with Clang, you will need Clang 3.7+,
@@ -276,6 +291,14 @@ parallelism through OpenMP. To enable OpenMP, use the
 .. note::
     By default PVODE is built without OpenMP support. To enable this
     add ``--enable-pvode-openmp`` to the configure command.
+
+
+.. note::
+    OpenMP will attempt to use all available threads by default. This
+    can cause oversubscription problems on certain systems. You can
+    limit the number of threads OpenMP uses with the
+    ``OMP_NUM_THREADS`` environment variable. See your system
+    documentation for more details.
 
 .. _sec-sundials:
 
