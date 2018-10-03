@@ -185,6 +185,9 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const string &name);
+
+  /// Wrapper for GridDataSource::hasYGuards
+  bool sourceHasYGuards();
   
   // Communications
   /*!
