@@ -367,6 +367,33 @@ bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
   return true;
 }
 
+bool GridFile::hasYGuards(Mesh* m) {
+
+  ///Global (x,y) dimensions of field
+  // try checking dimenions of "dy", "g22", "g_22" and "hthe",
+  // if none are found assume grid does not contain y-guard cells
+  vector<int> field_dimensions = file->getSize("dy");
+  if (field_dimensions.empty()) {
+    field_dimensions = file->getSize("g22");
+  }
+  if (field_dimensions.empty()) {
+    field_dimensions = file->getSize("g_22");
+  }
+  if (field_dimensions.empty()) {
+    field_dimensions = file->getSize("hthe");
+  }
+  if (field_dimensions.empty()) {
+    // have not found any 2d field, assume we don't have guard cells
+    return false;
+  }
+
+  ///Check field dimensions
+  if (field_dimensions[1] == m->GlobalNy) { ///including ghostpoints
+    return true;
+  } else { ///excluding ghostpoints
+    return false;
+  }
+}
 
 /////////////////////////////////////////////////////////////
 // Private routines

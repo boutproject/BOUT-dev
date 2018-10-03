@@ -63,6 +63,10 @@ public:
                    Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
+
+  /// Test if grid data source includes y-boundary guard cells.
+  /// Older grid files may not: this then requires some special handling.
+  virtual bool hasYGuards(Mesh* UNUSED(m)) { return true; }
 };
 
 /// Interface to grid data in a file
@@ -88,6 +92,8 @@ public:
            GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
+
+  bool hasYGuards(Mesh* m);
 
 private:
   std::unique_ptr<DataFormat> file;

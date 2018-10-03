@@ -161,6 +161,13 @@ bool Mesh::sourceHasVar(const string &name) {
   return source->hasVar(name);
 }
 
+bool Mesh::sourceHasYGuards() {
+  TRACE("Mesh::sourceHasYGuards()");
+  if (source == nullptr)
+    return false;
+  return source->hasYGuards(this);
+}
+
 /**************************************************************************
  * Communications
  **************************************************************************/
