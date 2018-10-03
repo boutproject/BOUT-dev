@@ -106,10 +106,10 @@ cdef extern from "invert_laplace.hxx":
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
-    Field3D Laplace(Field3D)
+    Field3D Laplace(Field3D, benum.CELL_LOC)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D,double)
+    Field3D Delp2(Field3D, double, benum.CELL_LOC)
 
 cdef extern from "options.hxx":
     cppclass Options:
