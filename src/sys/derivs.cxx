@@ -340,9 +340,9 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
       for(int k=0;k<f.getMesh()->LocalNz;k++) {
         int kp = (k+1) % (f.getMesh()->LocalNz);
         int km = (k-1+f.getMesh()->LocalNz) % (f.getMesh()->LocalNz);
-        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))/(coords->dy(i,j+1))
-                               -(f(i,j+1,km) - f(i,j-1,km))/(coords->dy(i,j-1)) )
-                    / coords->dz;
+        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))
+                               -(f(i,j+1,km) - f(i,j-1,km)) )
+                    / coords->dy(i,j) / coords->dz;
       }
   // TODO: use region aware implementation
   // BOUT_FOR(i, f.getMesh()->getRegion3D(REGION_STRING(region))) {
