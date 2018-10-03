@@ -1189,7 +1189,7 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
 EOF
 }
 
-for DD in Div_par Grad_par
+for DD in Div_par Grad_par Grad2_par2
 do
     in1="Field3D field"
     in2="field.cobj[0]"
@@ -1197,33 +1197,40 @@ do
     funbad
 done
 
-for DD in Vpar_Grad_par
+for DD in Vpar_Grad_par Div_par_K_Grad_par Div_par_flux
 do
     in1="Field3D velocity, Field3D field"
     in2="velocity.cobj[0], field.cobj[0]"
     f_desc="$f_desc_vf"
     funbad
 done
-cat <<EOF
 
-def Laplace(Field3D a, outloc="CELL_DEFAULT"):
+for DD in Laplace Laplace_par Laplace_perp
+do
+    cat <<EOF
+def $DD(Field3D a, outloc="CELL_DEFAULT"):
     """
-    Compute the full Laplacian \\nabla^2(a)
+    Compute $DD
 
     Parameters
     ----------
     a : Field3D
         The Field3D object of which to calculate the derivative
+    outloc : str
+        The location where the result should be calculated
 
     Returns
     -------
     Field3D
-        The computed Laplacian
+        The computed $DD
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    return f3dFromObj(c.Laplace(a.cobj[0],outloc_))
+    return f3dFromObj(c.$DD(a.cobj[0],outloc_))
+EOF
+done
 
+cat <<EOF
 def Delp2(Field3D a, zsmooth=-1, outloc="CELL_DEFAULT"):
 #    """Delp2(Field3D a, zsmooth=-1)"""
     checkInit()
