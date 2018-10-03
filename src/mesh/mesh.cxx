@@ -77,8 +77,14 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
-  // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if(!source->hasYGuards()) {
+    // If the source does not include y-boundary guard cells then communications
+    // are needed to fill them. This provides backwards compatibility even though
+    // the communicated guard cell values may not be correct, because the
+    // integrated shear is not necessarily continuous when poloidal angle goes
+    // from 2pi->0
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -86,7 +92,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
+int Mesh::get(Field3D &var, const string &name, BoutReal def, bool allow_communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -95,8 +101,12 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
-  // Communicate to get guard cell data
-  if(communicate) {
+  if(!source->hasYGuards() && allow_communicate) {
+    // If the source does not include y-boundary guard cells then communications
+    // are needed to fill them. This provides backwards compatibility even though
+    // the communicated guard cell values may not be correct, because the
+    // integrated shear is not necessarily continuous when poloidal angle goes
+    // from 2pi->0
     Mesh::communicate(var);
   }
 

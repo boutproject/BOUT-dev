@@ -28,23 +28,23 @@ Coordinates::Coordinates(Mesh *mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
-  if (mesh->get(dx, "dx")) {
+  if (localmesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
 
-  if (mesh->periodicX) {
-    mesh->communicate(dx);
+  if (localmesh->periodicX) {
+    localmesh->communicate(dx);
   }
 
-  if (mesh->get(dy, "dy")) {
+  if (localmesh->get(dy, "dy")) {
     output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
 
-  nz = mesh->LocalNz;
+  nz = localmesh->LocalNz;
 
-  if (mesh->get(dz, "dz")) {
+  if (localmesh->get(dz, "dz")) {
     // Couldn't read dz from input
     int zperiod;
     BoutReal ZMIN, ZMAX;
@@ -64,14 +64,14 @@ Coordinates::Coordinates(Mesh *mesh)
   }
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  mesh->get(g11, "g11", 1.0);
-  mesh->get(g22, "g22", 1.0);
-  mesh->get(g33, "g33", 1.0);
+  localmesh->get(g11, "g11", 1.0);
+  localmesh->get(g22, "g22", 1.0);
+  localmesh->get(g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  mesh->get(g12, "g12", 0.0);
-  mesh->get(g13, "g13", 0.0);
-  mesh->get(g23, "g23", 0.0);
+  localmesh->get(g12, "g12", 0.0);
+  localmesh->get(g13, "g13", 0.0);
+  localmesh->get(g23, "g23", 0.0);
 
   // Check input metrics
   if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -86,19 +86,19 @@ Coordinates::Coordinates(Mesh *mesh)
 
   /// Find covariant metric components
   // Check if any of the components are present
-  if (mesh->sourceHasVar("g_11") or mesh->sourceHasVar("g_22") or
-      mesh->sourceHasVar("g_33") or mesh->sourceHasVar("g_12") or
-      mesh->sourceHasVar("g_13") or mesh->sourceHasVar("g_23")) {
+  if (localmesh->sourceHasVar("g_11") or localmesh->sourceHasVar("g_22") or
+      localmesh->sourceHasVar("g_33") or localmesh->sourceHasVar("g_12") or
+      localmesh->sourceHasVar("g_13") or localmesh->sourceHasVar("g_23")) {
     // Check that all components are present
-    if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22") and
-        mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
-        mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
-      mesh->get(g_11, "g_11");
-      mesh->get(g_22, "g_22");
-      mesh->get(g_33, "g_33");
-      mesh->get(g_12, "g_12");
-      mesh->get(g_13, "g_13");
-      mesh->get(g_23, "g_23");
+    if (localmesh->sourceHasVar("g_11") and localmesh->sourceHasVar("g_22") and
+        localmesh->sourceHasVar("g_33") and localmesh->sourceHasVar("g_12") and
+        localmesh->sourceHasVar("g_13") and localmesh->sourceHasVar("g_23")) {
+      localmesh->get(g_11, "g_11");
+      localmesh->get(g_22, "g_22");
+      localmesh->get(g_33, "g_33");
+      localmesh->get(g_12, "g_12");
+      localmesh->get(g_13, "g_13");
+      localmesh->get(g_23, "g_23");
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -124,7 +124,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read J from the grid file
   Field2D Jcalc = J;
-  if (mesh->get(J, "J")) {
+  if (localmesh->get(J, "J")) {
     output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
@@ -137,7 +137,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read Bxy from the grid file
   Field2D Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy")) {
+  if (localmesh->get(Bxy, "Bxy")) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
     Bxy = Bcalc;
@@ -155,15 +155,15 @@ Coordinates::Coordinates(Mesh *mesh)
     throw BoutException("Differential geometry failed\n");
   }
 
-  if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
+  if (localmesh->get(ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
 
   //////////////////////////////////////////////////////
 
-  if (mesh->IncIntShear) {
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+  if (localmesh->IncIntShear) {
+    if (localmesh->get(IntShiftTorsion, "IntShiftTorsion")) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
@@ -232,7 +232,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   dx = interpolateAndNeumann(coords_in->dx, location);
   dy = interpolateAndNeumann(coords_in->dy, location);
 
-  nz = mesh->LocalNz;
+  nz = localmesh->LocalNz;
 
   dz = coords_in->dz;
 
@@ -277,7 +277,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   //////////////////////////////////////////////////////
 
-  if (mesh->IncIntShear) {
+  if (localmesh->IncIntShear) {
     IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
   }
 }
