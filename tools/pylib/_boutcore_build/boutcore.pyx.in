@@ -1282,7 +1282,7 @@ do
     funbad
 done
 cat <<EOF
-def Laplace(Field3D a):
+def Laplace(Field3D a, outloc="CELL_DEFAULT"):
     """
     Compute the full Laplacian \\nabla^2(a)
 
@@ -1297,12 +1297,14 @@ def Laplace(Field3D a):
         The computed Laplacian
     """
     checkInit()
-    return f3dFromObj(c.Laplace(a.cobj[0]))
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    return f3dFromObj(c.Laplace(a.cobj[0],outloc_))
 
-def Delp2(Field3D a):
-#    """Delp2(Field3D a)"""
+def Delp2(Field3D a, outloc="CELL_DEFAULT", useFFT=True):
+    """Delp2(Field3D a, outloc="CELL_DEFAULT", useFFT=True)"""
     checkInit()
-    return f3dFromObj(c.Delp2(a.cobj[0]))
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    return f3dFromObj(c.Delp2(a.cobj[0],outloc_,bool(useFFT)))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     """
