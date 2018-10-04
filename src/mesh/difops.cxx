@@ -829,7 +829,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / f.getCoordinates(result_loc)->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(result_loc)->Bxy;
   }
   result.setLocation(result_loc);
   return result;
@@ -1009,7 +1009,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
   result.setLocation(result_loc);
@@ -1044,7 +1044,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
   default: {
     // Use full expression with all terms
     Coordinates *metric = f.getCoordinates(result_loc);
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
   result.setLocation(result_loc) ;
@@ -1321,7 +1321,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
   
