@@ -121,9 +121,12 @@ const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD meth
  * \f]
  * 
  * @param[in] f  The component of a vector along the magnetic field 
+ * @param[in] outloc  The cell location for the result. By default the same as \p f
+ * @param[in] method  The numerical method to use
  * 
  */
-const Field2D Div_par(const Field2D &f);
+const Field2D Div_par(const Field2D &f,
+    CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * parallel divergence operator
