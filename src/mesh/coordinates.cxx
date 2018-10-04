@@ -194,33 +194,46 @@ Coordinates::Coordinates(Mesh *mesh)
 namespace {
   /// Interpolate a Field2D to a new CELL_LOC with interp_to.
   /// Communicates to set internal guard cells.
-  /// Boundary guard cells are set equal to the nearest grid point (equivalent to
-  /// 2nd order accurate Neumann boundary condition).
+  /// Boundary guard cells are set by extrapolating from the grid, like
+  /// 'free_o3' boundary conditions
   /// Corner guard cells are set to BoutNaN
-  Field2D interpolateAndNeumann(const Field2D &f, CELL_LOC location) {
+  Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
     Mesh* localmesh = f.getMesh();
     Field2D result = interp_to(f, location, RGN_NOBNDRY);
     localmesh->communicate(result);
 
-    // Copy nearest value into boundaries so that differential geometry terms can
-    // be interpolated if necessary
-    // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+    // Extrapolate into boundaries so that differential geometry terms can be
+    // interpolated if necessary
+    // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
     // would try to create a new Coordinates object since we have not finished
-    // initializing yet, leading to an infinite recursion
+    // initializing yet, leading to an infinite recursion.
+    // Also, here we interpolate for the boundary points at xstart/ystart and
+    // (xend+1)/(yend+1) instead of extrapolating.
     for (auto bndry : localmesh->getBoundaries()) {
-      if (bndry->bx != 0) {
-        // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
-        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-          for (int i=0; i<localmesh->xstart; i++)
-            result(bndry->x+i*bndry->bx,bndry->y) = result(bndry->x+(i-1)*bndry->bx, bndry->y-bndry->by);
+      int extrap_start = 0;
+      if ( (location == CELL_XLOW) && (bndry->bx>0) )
+        extrap_start = 1;
+      else if ( (location == CELL_YLOW) && (bndry->by>0) )
+        extrap_start = 1;
+      for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        // interpolate extra boundary point that is missed by interp_to, if
+        // necessary
+        if (extrap_start>0) {
+          // note that either bx or by is >0 here
+          result(bndry->x, bndry->y) =
+            ( 9.*(f(bndry->x-bndry->bx, bndry->y-bndry->by)
+                  + f(bndry->x, bndry->y))
+              - f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)
+              - f(bndry->x+bndry->bx, bndry->y+bndry->by)
+            )/16.;
         }
-      }
-      if (bndry->by != 0) {
-        // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
-        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-          for (int i=0; i<localmesh->ystart; i++)
-            result(bndry->x,bndry->y+i*bndry->by) = result(bndry->x-bndry->bx, bndry->y+(i-1)*bndry->by);
-        }
+
+        // extrapolate into boundary guard cells
+        for(int i=extrap_start;i<bndry->width;i++) {
+          int xi = bndry->x + i*bndry->bx;
+          int yi = bndry->y + i*bndry->by;
+          result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
+        }	
       }
     }
 
@@ -249,22 +262,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolateAndNeumann(coords_in->dx, location);
-  dy = interpolateAndNeumann(coords_in->dy, location);
+  dx = interpolateAndExtrapolate(coords_in->dx, location);
+  dy = interpolateAndExtrapolate(coords_in->dy, location);
 
   nz = mesh->LocalNz;
 
   dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndNeumann(coords_in->g11, location);
-  g22 = interpolateAndNeumann(coords_in->g22, location);
-  g33 = interpolateAndNeumann(coords_in->g33, location);
+  g11 = interpolateAndExtrapolate(coords_in->g11, location);
+  g22 = interpolateAndExtrapolate(coords_in->g22, location);
+  g33 = interpolateAndExtrapolate(coords_in->g33, location);
 
   // Off-diagonal elements.
-  g12 = interpolateAndNeumann(coords_in->g12, location);
-  g13 = interpolateAndNeumann(coords_in->g13, location);
-  g23 = interpolateAndNeumann(coords_in->g23, location);
+  g12 = interpolateAndExtrapolate(coords_in->g12, location);
+  g13 = interpolateAndExtrapolate(coords_in->g13, location);
+  g23 = interpolateAndExtrapolate(coords_in->g23, location);
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
@@ -293,12 +306,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
+  ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+    IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location);
   }
 }
 
