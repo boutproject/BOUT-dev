@@ -527,20 +527,20 @@ const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc)
   return kY*Grad2_par2(f, outloc);
 }
 
-const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc) {
-  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc, method) + Div_par(kY, outloc, method)*Grad_par(f, outloc, method);
 }
 
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
-  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc, method) + Div_par(kY, outloc, method)*Grad_par(f, outloc, method);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
-  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc, method) + Div_par(kY, outloc, method)*Grad_par(f, outloc, method);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
-  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc, method) + Div_par(kY, outloc, method)*Grad_par(f, outloc, method);
 }
 
 /*******************************************************************************
