@@ -184,8 +184,8 @@ const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD meth
 * parallel divergence operator B \partial_{||} (F/B)
 *******************************************************************************/
 
-const Field2D Div_par(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc);
+const Field2D Div_par(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
 const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
