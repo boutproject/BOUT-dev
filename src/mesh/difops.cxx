@@ -239,7 +239,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = v.getCoordinates(outloc);
-  return metric->Bxy*FDDY(v, f/metric->Bxy, outloc, method)/sqrt(metric->g_22);
+  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
 }
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
