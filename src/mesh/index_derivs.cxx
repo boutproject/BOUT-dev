@@ -2635,7 +2635,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDX(v, f, outloc, DIFF_DEFAULT) + f * indexDDX(v);
+    return indexVDDX(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDX(v, outloc);
   }
 
   Mesh::flux_func func = fFDDX;
@@ -2718,7 +2718,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDX(v, f, outloc, DIFF_DEFAULT) + indexDDX(v, outloc, DIFF_DEFAULT) * f;
+    return indexVDDX(v, f, outloc, DIFF_DEFAULT) + indexDDX(v, outloc, DIFF_DEFAULT) * interp_to(f, outloc);
   }
 
   Mesh::flux_func func = fFDDX;
@@ -2924,7 +2924,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + f * indexDDY(v);
+    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDY(v);
   }
 
   Mesh::flux_func func = fFDDY;
@@ -3007,7 +3007,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
+    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * interp_to(f, outloc);
   }
   Mesh::flux_func func = fFDDY;
   DiffLookup *table = FluxTable;
@@ -3046,7 +3046,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (func == nullptr) {
     // To catch when no function
-    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
+    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * interp_to(f, outloc);
   }
 
   ASSERT1(this == v.getMesh());
@@ -3225,7 +3225,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDZ(v, f, outloc, DIFF_DEFAULT) +
-           indexDDZ(v, outloc, DIFF_DEFAULT, true) * f;
+           indexDDZ(v, outloc, DIFF_DEFAULT, true) * interp_to(f, outloc);
   }
 
   Mesh::flux_func func = fFDDZ;
