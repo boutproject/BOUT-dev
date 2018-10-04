@@ -121,13 +121,13 @@ cdef extern from "invert_laplace.hxx":
         void setCoefEz(Field3D)
 
 cdef extern from "difops.hxx":
-    Field3D Div_par(Field3D, benum.CELL_LOC, string)
-    Field3D Grad_par(Field3D, benum.CELL_LOC, string)
-    Vector3D Grad_perp(Field3D, benum.CELL_LOC, string)
-    Field3D Laplace(Field3D)
-    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
-    Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D)
+    Field3D Div_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D Grad_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Vector3D Grad_perp(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D Laplace(Field3D) except +raise_bout_py_error
+    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC) except +raise_bout_py_error
+    Field3D Delp2(Field3D) except +raise_bout_py_error
 
 cdef extern from "options.hxx":
     cppclass Options:
