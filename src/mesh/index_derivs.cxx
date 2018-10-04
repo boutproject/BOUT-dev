@@ -1881,7 +1881,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Mesh::flux_func func = sfVDDX;
     DiffLookup *table = UpwindTable;
 
-    if (vloc == CELL_XLOW) {
+    if ((vloc == CELL_XLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfVDDX;
       table = UpwindStagTable;
@@ -2269,7 +2269,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Mesh::flux_func func = sfVDDY;
     DiffLookup *table = UpwindTable;
 
-    if (vloc == CELL_YLOW) {
+    if ((vloc == CELL_YLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfVDDY;
       table = UpwindStagTable;
@@ -2535,7 +2535,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Mesh::flux_func func = sfVDDZ;
     DiffLookup *table = UpwindTable;
 
-    if (vloc == CELL_ZLOW) {
+    if ((vloc == CELL_ZLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfVDDZ;
       table = UpwindStagTable;
@@ -2735,7 +2735,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
-    if (vloc == CELL_XLOW) {
+    if ((vloc == CELL_XLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfFDDX;
       table = FluxStagTable;
@@ -3023,7 +3023,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
-    if (vloc == CELL_YLOW) {
+    if ((vloc == CELL_YLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfFDDY;
       table = FluxStagTable;
@@ -3242,7 +3242,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
-    if (vloc == CELL_ZLOW) {
+    if ((vloc == CELL_ZLOW) && (inloc == CELL_CENTRE)) {
       // V staggered w.r.t. variable
       func = sfFDDZ;
       table = FluxStagTable;
