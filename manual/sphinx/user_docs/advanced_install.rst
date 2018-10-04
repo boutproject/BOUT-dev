@@ -168,7 +168,10 @@ to enable AVX512 vectorization.
 .. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4 modules
           means that you will need to remove ``-lnetcdf`` from ``EXTRA_LIBS`` in
           ``make.config`` after running ``./configure`` and before running
-          ``make``.
+          ``make``. ``-lnetcdf`` needs also to be removed from ``bin/bout-config``
+	  to allow a successful build of the python interface. Recreateion of
+	  ``boutcore.pyx`` needs to be manually trigered, if
+	  ``boutcore.pyx`` has already been created.
 
 Ubgl
 ~~~~
