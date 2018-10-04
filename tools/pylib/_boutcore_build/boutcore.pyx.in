@@ -740,14 +740,19 @@ cdef class Mesh:
         del fg
         return self
 
-    @property
-    def coordinates(self):
+    def coordinates(self, loc=None):
         """
         Get the Coordinates object of this mesh
         """
-        if self._coords is None:
-            self._coords = coordsFromObj(self.cobj.coordinates())
-        return self._coords
+        cdef benum.CELL_LOC loc_
+        if loc is None:
+            loc_= benum.resolve_cell_loc('CENTRE')
+            if self._coords is None:
+                self._coords = coordsFromObj(self.cobj.coordinates(loc_))
+            return self._coords
+        else:
+            loc_= benum.resolve_cell_loc(loc)
+            return coordsFromObj(self.cobj.coordinates(loc_))
 
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
     coords = Coordinates()
