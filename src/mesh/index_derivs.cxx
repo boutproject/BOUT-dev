@@ -1872,6 +1872,9 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
+  // result will be calculated at diffloc. outloc was requested so:
+  ASSERT0(diffloc == outloc);
+
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
 
@@ -2252,6 +2255,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
+  // result will be calculated at diffloc. outloc was requested so:
+  ASSERT0(diffloc == outloc);
+
   if (this->LocalNy == 1){
     result=0;
     result.setLocation(outloc);
@@ -2529,6 +2535,9 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  // result will be calculated at diffloc. outloc was requested so:
+  ASSERT0(diffloc == outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
