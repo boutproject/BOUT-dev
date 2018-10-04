@@ -2437,6 +2437,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   } else {
     // Non-staggered case
 
+    // here inloc==vloc==diffloc and the location of the result will be the
+    // same. Therefore outloc must also be the same.
+    ASSERT0(outloc==inloc);
+
     Mesh::upwind_func func = fVDDY;
     DiffLookup *table = UpwindTable;
 
@@ -2751,6 +2755,9 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
+  // result will be calculated at diffloc, so this must be the same as outloc
+  ASSERT0(diffloc==outloc);
+
   if (method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
@@ -2921,6 +2928,9 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   CELL_LOC diffloc = f.getLocation();
 
+  // result will be calculated at diffloc, so this must be the same as outloc
+  ASSERT0(diffloc==outloc);
+
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -3020,6 +3030,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
+
+  // result will be calculated at diffloc, so this must be the same as outloc
+  ASSERT0(diffloc==outloc);
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
