@@ -2767,7 +2767,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (this->xstart > 1) {
     // Two or more guard cells
-    if (StaggerGrids) {
+    if (StaggerGrids && vloc != diffloc) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
         BOUT_OMP(parallel) {
@@ -2837,7 +2837,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   } else if (this->xstart == 1) {
     // One guard cell
-    if (StaggerGrids) {
+    if (StaggerGrids && vloc != diffloc) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
 
