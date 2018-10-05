@@ -2661,12 +2661,12 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
 
   if (StaggerGrids &&
-      ((v.getLocation() != CELL_CENTRE) || (f.getLocation() != CELL_CENTRE))) {
+      (v.getLocation() != f.getLocation())) {
     // Staggered differencing
     throw BoutException("Unhandled staggering");
   }
   else {
-    result.setLocation(CELL_CENTRE);
+    result.setLocation(f.getLocation());
   }
 
   ASSERT1(this == v.getMesh());
@@ -2955,13 +2955,12 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
-  if (StaggerGrids &&
-      ((v.getLocation() != CELL_CENTRE) || (f.getLocation() != CELL_CENTRE))) {
+  if (StaggerGrids && (v.getLocation() != f.getLocation())) {
     // Staggered differencing
     throw BoutException("Unhandled staggering");
   }
   else {
-    result.setLocation(CELL_CENTRE);
+    result.setLocation(f.getLocation());
   }
 
   /// Convert REGION enum to a Region string identifier
