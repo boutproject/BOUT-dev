@@ -1229,7 +1229,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
 const Field2D Mesh::indexDDX(const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyXdiff(f, fDDX, f.getLocation(), region);
 }
@@ -1285,7 +1285,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
 
 const Field2D Mesh::indexDDY(const Field2D &f, CELL_LOC outloc,
                              DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyYdiff(f, fDDY, f.getLocation(), region);
 }
@@ -1731,42 +1731,42 @@ BoutReal D4DX4_C2(stencil &f) { return (f.pp - 4. * f.p + 6. * f.c - 4. * f.m + 
 
 const Field3D Mesh::indexD4DX4(const Field3D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
 }
 
 const Field2D Mesh::indexD4DX4(const Field2D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyXdiff(f, D4DX4_C2, f.getLocation(), region);
 }
 
 const Field3D Mesh::indexD4DY4(const Field3D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
 }
 
 const Field2D Mesh::indexD4DY4(const Field2D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyYdiff(f, D4DX4_C2, f.getLocation(), region);
 }
 
 const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
                                DIFF_METHOD method, REGION region){
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
   return applyZdiff(f, D4DX4_C2, f.getLocation(), region);
 }
 
 const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
                                DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   auto tmp = Field2D(0., this);
   tmp.setLocation(f.getLocation());
   return tmp;
@@ -1801,7 +1801,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
-  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
+  ASSERT0((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -2055,7 +2055,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
-  ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
+  ASSERT0((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -2644,6 +2644,9 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
+
+  // result will be calculated at f.getLocation(), so this must be the same as outloc
+  ASSERT0(f.getLocation()==outloc);
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -3278,6 +3281,9 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       throw BoutException("Unhandled shift in indexFDDZ");
     }
   }
+
+  // result will be calculated at diffloc, so this must be the same as outloc
+  ASSERT0(diffloc == outloc);
 
   if (method != DIFF_DEFAULT) {
     // Lookup function

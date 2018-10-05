@@ -331,7 +331,7 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field3D result(f.getMesh());
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  ASSERT0(outloc == CELL_DEFAULT || outloc == f.getLocation());
   result.allocate();
   result.setLocation(f.getLocation());
   ASSERT1(method == DIFF_DEFAULT);
