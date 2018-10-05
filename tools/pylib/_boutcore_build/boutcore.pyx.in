@@ -1140,13 +1140,50 @@ def checkInit():
 
 EOF
 
+# note extra arguments to be passed to the function can be given as the third
+# argument, but must start with a comma
+dispatch_field_type1 () {
+cat <<EOF
+    if isinstance(${2}, Field3D):
+        return f3dFromObj(c.${1}((<Field3D?>${2}).cobj[0]${3}))
+    elif isinstance(${2}, Field2D):
+        return f2dFromObj(c.${1}((<Field2D?>${2}).cobj[0]${3}))
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument type '"+str(type(${2}))+"' - not supported (yet?).")
+EOF
+}
+
+dispatch_field_type_to_BoutReal () {
+cat <<EOF
+    if isinstance(${2}, Field3D):
+        return c.${1}((<Field3D?>${2}).cobj[0]${3})
+    elif isinstance(${2}, Field2D):
+        return c.${1}((<Field2D?>${2}).cobj[0]${3})
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument type '"+str(type(${2}))+"' - not supported (yet?).")
+EOF
+}
+
+# note extra arguments to be passed to the function can be given as the fourth
+# argument, but must start with a comma
+dispatch_field_type2 () {
+cat <<EOF
+    if isinstance(${2}, Field3D) and isinstance(${3}, Field3D):
+        return f3dFromObj(c.${1}((<Field3D?>${2}).cobj[0], (<Field3D?>${3}).cobj[0]${4}))
+    elif isinstance(${2}, Field2D) and isinstance(${3}, Field2D):
+        return f2dFromObj(c.${1}((<Field2D?>${2}).cobj[0], (<Field2D?>${3}).cobj[0]${4}))
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument types '"+str(type(${2}))+" and "+str(type(${3}))+"' - not supported (yet?).")
+EOF
+}
+
 f_desc_f="field : Field3D Field2D
         The Field3D/Field2D object of which to calculate the derivative"
 f_desc_vf="field: Field3D Field2D
         The Field3D/Field2D object of which to calculate the derivative
     velocity : Field3D Field2D
         The Field3D/Field2D object by which the field is advected"
-fun () {
+fun1 () {
     cat <<EOF
 def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
     """
@@ -1171,45 +1208,12 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
     cdef benum.REGION region_=benum.resolve_region(region)
-    if $test3d:
-        return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
-    elif $test2d:
-        return f2dFromObj(c.$DD($in3,outloc_,method_,region_))
-    else:
-        raise NotImplementedError("In $DD: unexpected argument type '"+str(type(field))+"' - not supported (yet?).")
+$(dispatch_field_type1 $DD $in1 "$args")
 EOF
 }
-for d in X Y Z
-do
-    for f in DDd D2Dd2 # VDDd FDDd
-    do
-        in1="field"
-        in2="(<Field3D?>field).cobj[0]"
-        in3="(<Field2D?>field).cobj[0]"
-        test3d="isinstance(field, Field3D)"
-        test2d="isinstance(field, Field2D)"
-        DD=${f/d/$d}
-        f_desc="$f_desc_f"
-        fun
-    done
-    for f in VDDd FDDd
-    do
-        in1="velocity, field"
-        in2="(<Field3D?>velocity).cobj[0], (<Field3D?>field).cobj[0]"
-        in3="(<Field2D?>velocity).cobj[0], (<Field2D?>field).cobj[0]"
-        test3d="isinstance(velocity, Field3D) and isinstance(field, Field3D)"
-        test2d="isinstance(velocity, Field2D) and isinstance(field, Field2D)"
-        DD=${f/d/$d}
-        f_desc="$f_desc_vf"
-        fun
-    done
-done
-
-# This version just ignoes the region argument, unlike fun ().
-# The region argument shouldn't do anything for derivatives though...
-funbad () {
+fun2 () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+def $DD($in1, $in2, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
     """
     Compute the derivative $DD
 
@@ -1231,36 +1235,47 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    if $test3d:
-        return f3dFromObj(c.$DD($in2,outloc_,method_))
-    elif $test2d:
-        return f2dFromObj(c.$DD($in3,outloc_,method_))
-    else:
-        raise NotImplementedError("In $DD: unexpected argument type '"+str(type(field))+"' - not supported (yet?).")
-
+    cdef benum.REGION region_=benum.resolve_region(region)
+$(dispatch_field_type2 $DD $in1 $in2 "$args")
 EOF
 }
+
+for d in X Y Z
+do
+    for f in DDd D2Dd2
+    do
+        in1="field"
+        args=", outloc_, method_, region_"
+        DD=${f/d/$d}
+        f_desc="$f_desc_f"
+        fun1
+    done
+    for f in VDDd FDDd
+    do
+        in1="velocity"
+        in2="field"
+        args=", outloc_, method_, region_"
+        DD=${f/d/$d}
+        f_desc="$f_desc_vf"
+        fun2
+    done
+done
 
 for DD in Div_par Grad_par Grad2_par2
 do
     in1="field"
-    in2="(<Field3D?>field).cobj[0]"
-    in3="(<Field2D?>field).cobj[0]"
-    test3d="isinstance(field, Field3D)"
-    test2d="isinstance(field, Field2D)"
+    args=", outloc_, method_" # region argument is not implemented
     f_desc="$f_desc_f"
-    funbad
+    fun1
 done
 
 for DD in Vpar_Grad_par Div_par_K_Grad_par Div_par_flux
 do
-    in1="velocity, field"
-    in2="(<Field3D?>velocity).cobj[0], (<Field3D?>field).cobj[0]"
-    in3="(<Field2D?>velocity).cobj[0], (<Field2D?>field).cobj[0]"
-    test3d="isinstance(velocity, Field3D) and isinstance(field, Field3D)"
-    test2d="isinstance(velocity, Field2D) and isinstance(field, Field2D)"
+    in1="velocity"
+    in2="field"
+    args=", outloc_, method_" # region argument is not implemented
     f_desc="$f_desc_vf"
-    funbad
+    fun2
 done
 
 for DD in Laplace Laplace_par Laplace_perp
@@ -1284,12 +1299,8 @@ def $DD(a, outloc="CELL_DEFAULT"):
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    if isinstance(a, Field3D):
-        return f3dFromObj(c.$DD((<Field3D?>a).cobj[0],outloc_))
-    elif isinstance(a, Field2D):
-        return f2dFromObj(c.$DD((<Field2D?>a).cobj[0],outloc_))
-    else:
-        raise NotImplementedError("In $DD: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type1 $DD a ", outloc_")
+
 EOF
 done
 
@@ -1340,12 +1351,7 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
-    if isinstance(a, Field3D) and isinstance(b, Field3D):
-        return f3dFromObj(c.bracket((<Field3D?>a).cobj[0],(<Field3D?>b).cobj[0],method_,outloc_))
-    elif isinstance(a, Field2D) and isinstance(b, Field2D):
-        return f2dFromObj(c.bracket((<Field2D?>a).cobj[0],(<Field2D?>b).cobj[0],method_,outloc_))
-    else:
-        raise NotImplementedError("In $DD: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type2 bracket a b ", method_, outloc_")
 
 EOF
 for fun in sqrt exp sin cos log abs
@@ -1365,12 +1371,7 @@ def $fun(a):
     Field3D Field2D
         $fun of a
     """
-    if isinstance(a, Field3D):
-        return f3dFromObj(c.$fun((<Field3D?>a).cobj[0]))
-    elif isinstance(a, Field2D):
-        return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
-    else:
-        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type1 $fun a)
 
 EOF
 done
@@ -1392,12 +1393,7 @@ def $fun(a):
     float
         the $fun value of a
     """
-    if isinstance(a, Field3D):
-        return c.$fun((<Field3D?>a).cobj[0])
-    elif isinstance(a, Field2D):
-        return c.$fun((<Field2D?>a).cobj[0])
-    else:
-        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type_to_BoutReal $fun a)
 
 EOF
 done
@@ -1419,12 +1415,7 @@ def pow(a, exponent):
     Field3D Field2D
         The a**exponent
     """
-    if isinstance(a, Field3D):
-        return f3dFromObj(c.pow((<Field3D?>a).cobj[0],float(exponent)))
-    elif isinstance(a, Field2D):
-        return f2dFromObj(c.pow((<Field2D?>a).cobj[0],float(exponent)))
-    else:
-        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type1 pow a ", float(exponent)")
 
 def interp_to(f,location):
     """
@@ -1444,12 +1435,7 @@ def interp_to(f,location):
     """
     checkInit()
     cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
-    if isinstance(f, Field3D):
-        return f3dFromObj(c.interp_to((<Field3D?>f).cobj[0],location_))
-    elif isinstance(f, Field2D):
-        return f2dFromObj(c.interp_to((<Field2D?>f).cobj[0],location_))
-    else:
-        raise NotImplementedError("In interp_to: unexpected argument type '"+str(type(f))+"' - not supported (yet?).")
+$(dispatch_field_type1 interp_to f ", location_")
 
 def setOption(name, value, source="PyInterface", force=False):
     """
