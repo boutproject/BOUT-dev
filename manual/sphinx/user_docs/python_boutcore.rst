@@ -110,7 +110,7 @@ A simple MMS test:
    boutcore.init("-d data -f BOUT.settings -o BOUT.post")
    for nz in [64,128,256]:
        boutcore.setOption("meshz:nz","%d"%nz)
-       mesh=boutcore.Mesh(OptionSection="meshz")
+       mesh=boutcore.Mesh(section="meshz")
        f=boutcore.create3D("sin(z)",mesh)
        sim=boutcore.DDZ(f)
        ana=boutcore.create3D("cos(z)",mesh)
