@@ -264,6 +264,11 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD metho
   return Div_par_flux(v,f, outloc, method);
 }
 
+const Field2D Div_par_flux(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  Coordinates *metric = v.getCoordinates(outloc);
+  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
+}
+
 /*******************************************************************************
 * Parallel derivatives converting between left and cell centred
 * NOTE: These are a quick hack to test if this works. The whole staggered grid
