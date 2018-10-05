@@ -1338,7 +1338,7 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     checkInit()
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
-def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+def bracket(a, b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     """
     Calculate the poison bracket for Field3D a and Field3D b.
 
