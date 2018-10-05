@@ -167,7 +167,7 @@ for ftype in Field2D Field3D
 do
     for d in X Y Z
     do
-        for f in DDd D2Dd2 #VDDd FDDd
+        for f in DDd D2Dd2 D4Dd4
         do
             DD=${f/d/$d}
             echo "    $ftype $DD($ftype, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
@@ -177,6 +177,12 @@ do
             DD=${f/d/$d}
             echo "    $ftype $DD($ftype, $ftype, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
         done
+    done
+
+    for f in D2DXDY D2DXDZ D2DYDZ
+    do
+        DD=${f/d/$d}
+        echo "    $ftype $DD($ftype, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
     done
 done
 cat <<EOF
