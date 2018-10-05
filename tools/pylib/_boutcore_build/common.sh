@@ -39,12 +39,14 @@ setvars() {
 	    ndim=3
 	    dims=(x y z)
 	    fheader="field3d"
+            ftypeFromObj="f3dFromObj"
 	    ;;
 	Field2D)
 	    fdd="f2d"
 	    ndim=2
 	    dims=(x y)
 	    fheader="field2d"
+            ftypeFromObj="f2dFromObj"
 	    ;;
 	*)
 	    echo "$1 - not implemented"

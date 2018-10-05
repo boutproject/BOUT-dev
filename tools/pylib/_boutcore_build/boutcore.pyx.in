@@ -605,6 +605,37 @@ cat <<EOF
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
+
+def create${ndim}D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
+    """
+    Returns a $ftype from the fieldfactory
+    Parameters
+    ----------
+    string : string
+        Expression to create. This can contain references to the options
+    msh : Mesh
+        the Mesh to use, defaults to the global mesh.
+    outloc : string
+        the cell location of the returned field
+    time : float
+         is the time
+
+    Returns
+    -------
+    $ftype $ftypeFromObj $testthis $fdd
+        the $ftype from the expression
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    if msh is None:
+        msh=Mesh.getGlobal()
+    cdef FieldFactory fact=msh.getFactory()
+    cdef c.string str_=string.encode('ascii')
+    return $ftypeFromObj(
+        (<FieldFactory>fact).cobj.create${ndim}D(str_,<c.Options*>0,<c.Mesh*>0
+                                           ,outloc_,time))
+
+
 EOF
 done
 
@@ -1166,13 +1197,50 @@ def checkInit():
 
 EOF
 
-f_desc_f="field : Field3D
-        The Field3D object of which to calculate the derivative"
-f_desc_vf="field: Field3D
-        The Field3D object of which to calculate the derivative
-    velocity : Field3D
-        The Field3D object of which the field is advected"
-fun () {
+# note extra arguments to be passed to the function can be given as the third
+# argument, but must start with a comma
+dispatch_field_type1 () {
+cat <<EOF
+    if isinstance(${2}, Field3D):
+        return f3dFromObj(c.${1}((<Field3D?>${2}).cobj[0]${3}))
+    elif isinstance(${2}, Field2D):
+        return f2dFromObj(c.${1}((<Field2D?>${2}).cobj[0]${3}))
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument type '"+str(type(${2}))+"' - not supported (yet?).")
+EOF
+}
+
+dispatch_field_type_to_BoutReal () {
+cat <<EOF
+    if isinstance(${2}, Field3D):
+        return c.${1}((<Field3D?>${2}).cobj[0]${3})
+    elif isinstance(${2}, Field2D):
+        return c.${1}((<Field2D?>${2}).cobj[0]${3})
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument type '"+str(type(${2}))+"' - not supported (yet?).")
+EOF
+}
+
+# note extra arguments to be passed to the function can be given as the fourth
+# argument, but must start with a comma
+dispatch_field_type2 () {
+cat <<EOF
+    if isinstance(${2}, Field3D) and isinstance(${3}, Field3D):
+        return f3dFromObj(c.${1}((<Field3D?>${2}).cobj[0], (<Field3D?>${3}).cobj[0]${4}))
+    elif isinstance(${2}, Field2D) and isinstance(${3}, Field2D):
+        return f2dFromObj(c.${1}((<Field2D?>${2}).cobj[0], (<Field2D?>${3}).cobj[0]${4}))
+    else:
+        raise NotImplementedError("In ${1}: unexpected argument types '"+str(type(${2}))+" and "+str(type(${3}))+"' - not supported (yet?).")
+EOF
+}
+
+f_desc_f="field : Field3D Field2D
+        The Field3D/Field2D object of which to calculate the derivative"
+f_desc_vf="field: Field3D Field2D
+        The Field3D/Field2D object of which to calculate the derivative
+    velocity : Field3D Field2D
+        The Field3D/Field2D object by which the field is advected"
+fun1 () {
     cat <<EOF
 def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
     """
@@ -1190,7 +1258,7 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
 
     Returns
     -------
-    Field3D
+    Field3D Field2D
         The computed $DD derivative
     """
     checkInit()
@@ -1199,32 +1267,12 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
         method=method[5:]
     cdef c.string method_ = method.encode('ascii')
     cdef benum.REGION region_=benum.resolve_region(region)
-    return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
+$(dispatch_field_type1 $DD $in1 "$args")
 EOF
 }
-for d in X Y Z
-do
-    for f in DDd D2Dd2 # VDDd FDDd
-    do
-        in1="Field3D field"
-        in2="field.cobj[0]"
-        DD=${f/d/$d}
-        f_desc="$f_desc_f"
-        fun
-    done
-    for f in VDDd FDDd
-    do
-        in1="Field3D velocity, Field3D field"
-        in2="velocity.cobj[0], field.cobj[0]"
-        DD=${f/d/$d}
-        f_desc="$f_desc_vf"
-        fun
-    done
-done
-
-funbad () {
+fun2 () {
     cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+def $DD($in1, $in2, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
     """
     Compute the derivative $DD
 
@@ -1240,7 +1288,7 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
 
     Returns
     -------
-    $ret
+    Field3D Field2D
         The computed $DD derivative
     """
     checkInit()
@@ -1248,31 +1296,83 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     if method.startswith("DIFF_"):
         method=method[5:]
     cdef c.string method_=method.encode('ascii')
-    return ${rdd}FromObj(c.$DD($in2,outloc_,method_))
+    cdef benum.REGION region_=benum.resolve_region(region)
+$(dispatch_field_type2 $DD $in1 $in2 "$args")
+
 EOF
 }
 
+for d in X Y Z
+do
+    for f in DDd D2Dd2
+    do
+        in1="field"
+        args=", outloc_, method_, region_"
+        DD=${f/d/$d}
+        f_desc="$f_desc_f"
+        fun1
+    done
+    for f in VDDd FDDd
+    do
+        in1="velocity"
+        in2="field"
+        args=", outloc_, method_, region_"
+        DD=${f/d/$d}
+        f_desc="$f_desc_vf"
+        fun2
+    done
+done
+
 for DD in Div_par Grad_par Grad2_par2
 do
-    in1="Field3D field"
-    in2="field.cobj[0]"
+    in1="field"
+    args=", outloc_, method_" # region argument is not implemented
     ret=Field3D
     rdd=f3d
     f_desc="$f_desc_f"
-    funbad
+    fun1
 done
 
-for DD in Vpar_Grad_par Div_par_flux
+for DD in Vpar_Grad_par
 do
-    in1="Field3D velocity, Field3D field"
-    in2="velocity.cobj[0], field.cobj[0]"
+    in1="velocity"
+    in2="field"
+    args=", outloc_, method_" # region argument is not implemented
     f_desc="$f_desc_vf"
-    ret=Field3D
-    rdd=f3d
-    funbad
+    fun2
 done
 
 cat<<EOF
+def Div_par_flux(velocity, field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+    """
+    Compute the derivative Div_par_flux
+
+    Parameters
+    ---------
+    field: Field3D
+        The Field3D object of which to calculate the derivative
+    velocity : Field3D
+        The Field3D object by which the field is advected
+    outloc : string
+        The location where the derivative is expected. Defaults to the same as field.
+    method : string
+        The method to calculate the derivative.
+    region : string
+        The region for which to calculate the derivative
+
+    Returns
+    -------
+    Field3D Field2D
+        The computed Div_par_flux derivative
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_=method.encode('ascii')
+    cdef benum.REGION region_=benum.resolve_region(region)
+    return f3dFromObj(c.Div_par_flux((<Field3D?>velocity).cobj[0], (<Field3D?>field).cobj[0], outloc_, method_))
+
 def Div_par_K_Grad_par(Field3D velocity, Field3D field, outloc="CELL_DEFAULT"):
     """
     Compute the derivative Div_par_K_Grad_par
@@ -1309,25 +1409,25 @@ done
 for DD in Laplace Laplace_par Laplace_perp
 do
 cat <<EOF
-def $DD(Field3D a, outloc="CELL_DEFAULT"):
+def $DD(a, outloc="CELL_DEFAULT"):
     """
     Compute $DD
 
     Parameters
     ----------
-    a : Field3D
-        The Field3D object of which to calculate the derivative
+    a : Field3D Field2D
+        The Field3D/Field2D object of which to calculate the derivative
     outloc : str
         The location where the result should be calculated
 
     Returns
     -------
-    Field3D
+    Field3D Field2D
         The computed $DD
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    return f3dFromObj(c.$DD(a.cobj[0],outloc_))
+$(dispatch_field_type1 $DD a ", outloc_")
 
 EOF
 done
@@ -1356,7 +1456,7 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     checkInit()
     return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
 
-def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+def bracket(a, b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     """
     Calculate the poison bracket for Field3D a and Field3D b.
 
@@ -1379,7 +1479,7 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
-    return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
+$(dispatch_field_type2 bracket a b ", method_, outloc_")
 
 EOF
 for fun in sqrt exp sin cos log abs
@@ -1399,116 +1499,71 @@ def $fun(a):
     Field3D Field2D
         $fun of a
     """
-    if isinstance(a, Field3D):
-        return f3dFromObj(c.$fun((<Field3D?>a).cobj[0]))
-    elif isinstance(a, Field2D):
-        return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
-    else:
-        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+$(dispatch_field_type1 $fun a)
 
 EOF
 done
-cat <<"EOF"
 
-def pow(Field3D a, exponent):
+for fun in min max
+do
+cat <<EOF
+def $fun(a):
+    """
+    Get the $fun
+
+    Parameters
+    ----------
+    a : Field3D
+        The field
+
+    Returns
+    -------
+    float
+        the $fun value of a
+    """
+$(dispatch_field_type_to_BoutReal $fun a)
+
+EOF
+done
+
+cat <<EOF
+def pow(a, exponent):
     """
     Returns a**e where a is a Field3D and e is a number
 
     Parameters
     ----------
-    a : Field3D
+    a : Field3D Field2D
         The field for which to calculate the power
     exponent : float
         The exponent
 
     Returns
     -------
-    Field3D
+    Field3D Field2D
         The a**exponent
     """
-    return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
+$(dispatch_field_type1 pow a ", float(exponent)")
 
-def min(Field3D a):
+def interp_to(f,location):
     """
-    Get the minimum
+    Interpolate a Field3D/Field2D to a given location
 
     Parameters
     ----------
-    a : Field3D
-        The field
-
-    Returns
-    -------
-    float
-        the minimum value of a
-    """
-    return c.min(a.cobj[0])
-
-def max(Field3D a):
-    """
-    Get the maximum
-
-    Parameters
-    ----------
-    a : Field3D
-        The field
-
-    Returns
-    -------
-    float
-        the maximum value of a
-    """
-    return c.max(a.cobj[0])
-
-def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
-    """
-    Returns a Field3D from the fieldfactory
-    Parameters
-    ----------
-    string : string
-        Expression to create. This can contain references to the options
-    msh : Mesh
-        the Mesh to use, defaults to the global mesh.
-    outloc : string
-        the cell location of the returned field
-    time : float
-         is the time
-
-    Returns
-    -------
-    Field3D
-        the Field from the expression
-    """
-    checkInit()
-    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
-    if msh is None:
-        msh=Mesh.getGlobal()
-    cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode('ascii')
-    return f3dFromObj(
-        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
-                                           ,outloc_,time))
-
-def interp_to(Field3D f3d,location):
-    """
-    Interpolate a Field3D to a given location
-
-    Parameters
-    ----------
-    f3d : Field3D
+    f3d : Field3D Field2D
         The field to interpolate
     location : string
         The location to which to interploate
 
     Returns
     -------
-    Field3D
+    Field3D Field2D
         the interpolated field
     """
     checkInit()
     cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
-    return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
-
+$(dispatch_field_type1 interp_to f ", location_")
 
 def setOption(name, value, source="PyInterface", force=False):
     """
