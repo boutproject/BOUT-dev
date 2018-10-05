@@ -103,16 +103,23 @@ cdef extern from "invert_laplace.hxx":
         void setCoefEz(Field3D)
 
 cdef extern from "difops.hxx":
-    Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D Grad2_par2(const Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D Laplace(Field3D, benum.CELL_LOC) except +
-    Field3D Laplace_par(Field3D, benum.CELL_LOC) except +
-    Field3D Laplace_perp(Field3D, benum.CELL_LOC) except +
-    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D Div_par_K_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D Div_par_flux(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD) except +
-    Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC) except +
+EOF
+for ftype in Field3D Field2D
+do
+    cat <<EOF
+    $ftype Div_par($ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype Grad_par($ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype Grad2_par2(const $ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype Laplace($ftype, benum.CELL_LOC) except +
+    $ftype Laplace_par($ftype, benum.CELL_LOC) except +
+    $ftype Laplace_perp($ftype, benum.CELL_LOC) except +
+    $ftype Vpar_Grad_par($ftype, $ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype Div_par_K_Grad_par($ftype, $ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype Div_par_flux($ftype, $ftype, benum.CELL_LOC, benum.DIFF_METHOD) except +
+    $ftype bracket($ftype,$ftype, benum.BRACKET_METHOD, benum.CELL_LOC) except +
+EOF
+done
+cat <<EOF
     Field3D Delp2(Field3D, double, benum.CELL_LOC) except +
 
 cdef extern from "options.hxx":
@@ -136,28 +143,33 @@ cdef extern from "optionsreader.hxx":
 
 cdef extern from "derivs.hxx":
 EOF
-for d in X Y Z
+for ftype in Field2D Field3D
 do
-    for f in DDd D2Dd2 #VDDd FDDd
+    for d in X Y Z
     do
-        DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
-    done
-    for f in VDDd FDDd
-    do
-        DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        for f in DDd D2Dd2 #VDDd FDDd
+        do
+            DD=${f/d/$d}
+            echo "    $ftype $DD($ftype, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        done
+        for f in VDDd FDDd
+        do
+            DD=${f/d/$d}
+            echo "    $ftype $DD($ftype, $ftype, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        done
     done
 done
 cat <<EOF
 
 cdef extern from "interpolation.hxx":
     Field3D interp_to(Field3D, benum.CELL_LOC)
+    Field2D interp_to(Field2D, benum.CELL_LOC)
 
 cdef extern from "field_factory.hxx":
     cppclass FieldFactory:
         FieldFactory(Mesh*,Options*)
         Field3D create3D(string bla, Options * o, Mesh * m,benum.CELL_LOC loc, double t)
+        Field2D create2D(string bla, Options * o, Mesh * m,benum.CELL_LOC loc, double t)
 
 cdef extern from "bout/solver.hxx":
     cppclass Solver:
