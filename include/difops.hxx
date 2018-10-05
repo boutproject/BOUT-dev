@@ -162,6 +162,8 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CE
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, 
 		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Field2D Div_par_flux(const Field2D &v, const Field2D &f,
+		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 // Divergence of a parallel flow: Div(f*v)
 // Both f and v are interpolated onto cell boundaries
