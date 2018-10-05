@@ -1242,7 +1242,7 @@ EOF
 
 for d in X Y Z
 do
-    for f in DDd D2Dd2
+    for f in DDd D2Dd2 D4Dd4
     do
         in1="field"
         args=", outloc_, method_, region_"
@@ -1259,6 +1259,15 @@ do
         f_desc="$f_desc_vf"
         fun2
     done
+done
+
+for f in D2DXDY D2DXDZ D2DYDZ
+do
+    in1="field"
+    args=", outloc_, method_, region_"
+    DD=${f/d/$d}
+    f_desc="$f_desc_f"
+    fun1
 done
 
 for DD in Div_par Grad_par Grad2_par2
