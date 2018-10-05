@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+#include <sstream>
+#include <type_traits>
 
 /// Global mesh
 extern Mesh *mesh;
@@ -25,7 +27,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -56,24 +60,26 @@ TEST_F(RegionTest, regionFromRange) {
   EXPECT_EQ(regionIndices.size(), nmesh);
 
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(regionIndices[i], i);
+    EXPECT_EQ(regionIndices[i].ind, i);
   }
 
   // Single point
   Region<Ind3D> region2(0, 0, 0, 0, 0, 0, 1, 1);
   EXPECT_EQ(region2.getIndices().size(), 1);
 
-// Invalid range/size
+  // Invalid range results in empty region
+  { Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+  { Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+  { Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1);
+    EXPECT_EQ(region3.size(), 0);}
+
+  // Invalid size throws if CHECK >= 1
 #if CHECK >= 1
-  EXPECT_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1), BoutException);
-  EXPECT_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1), BoutException);
-  EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1), BoutException);
   EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1), BoutException);
   EXPECT_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0), BoutException);
 #else
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, -1, 0, 0, 0, 0, 1, 1));
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 1, 0, 0, 0, 1, 1));
-  EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 20, 10, 1, 1));
   EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 0, 1));
   EXPECT_NO_THROW(Region<Ind3D> region3(0, 0, 0, 0, 0, 0, 1, 0));
 #endif
@@ -89,7 +95,7 @@ TEST_F(RegionTest, regionFromIndices) {
     maxContiguousSizeUsed =
         currBlockSize > maxContiguousSizeUsed ? currBlockSize : maxContiguousSizeUsed;
     for (int i = block.first; i <= block.second; i++) {
-      indicesIn.push_back(i);
+      indicesIn.push_back(Ind3D{i});
     }
   }
 
@@ -115,9 +121,9 @@ TEST_F(RegionTest, regionFromIndices) {
   EXPECT_EQ(regionBlocks.size(), blocksIn.size());
 
   for (unsigned int i = 0; i < blocksIn.size(); i++) {
-    EXPECT_EQ(regionBlocks[i].first, blocksIn[i].first);
+    EXPECT_EQ(regionBlocks[i].first.ind, blocksIn[i].first);
     // The actual block second is exclusive, blocksIn.second is inclusive
-    EXPECT_EQ(regionBlocks[i].second - 1, blocksIn[i].second);
+    EXPECT_EQ((regionBlocks[i].second - 1).ind, blocksIn[i].second);
   }
 }
 
@@ -134,7 +140,7 @@ TEST_F(RegionTest, regionFromBlocks) {
 
   EXPECT_EQ(regionIndices.size(), nmesh);
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(regionIndices[i], i);
+    EXPECT_EQ(regionIndices[i].ind, i);
   }
 }
 
@@ -173,13 +179,13 @@ TEST_F(RegionTest, contiguousBlockSize) {
   // contiguous, as is the case here.
   const int expectedFirstBlockSize =
       nmesh >= MAXREGIONBLOCKSIZE ? MAXREGIONBLOCKSIZE : nmesh;
-  EXPECT_EQ(firstBlock.second - firstBlock.first, expectedFirstBlockSize);
+  EXPECT_EQ(firstBlock.second.ind - firstBlock.first.ind, expectedFirstBlockSize);
   const int expectedLastBlockSize = nmesh % MAXREGIONBLOCKSIZE;
   if (expectedLastBlockSize != 0) {
-    EXPECT_EQ(lastBlock.second - lastBlock.first, expectedLastBlockSize);
+    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedLastBlockSize);
   } else {
     // If no remainder then expect same block size as in first block
-    EXPECT_EQ(lastBlock.second - lastBlock.first, expectedFirstBlockSize);
+    EXPECT_EQ(lastBlock.second.ind - lastBlock.first.ind, expectedFirstBlockSize);
   }
 }
 
@@ -199,21 +205,30 @@ TEST_F(RegionTest, defaultRegions) {
 }
 
 TEST_F(RegionTest, regionLoopAll) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BLOCK_REGION_LOOP(region, i, a[i] = 1.0;);
+  // Need to use a Field3D as a jig as OpenMP complicates things here
+  Field3D a{0.};
+  BOUT_FOR(i, region) {
+    a[i] = 1.0;
+  }
 
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
   }
 }
 
 TEST_F(RegionTest, regionLoopNoBndry) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BLOCK_REGION_LOOP(region, i, a[i] = 1.0;);
+  Field3D a{0.};
+  BOUT_FOR(i, region) {
+    a[i] = 1.0;
+  }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -222,11 +237,15 @@ TEST_F(RegionTest, regionLoopNoBndry) {
 
   int numNotMatching = 0;
   int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
     }
   }
   EXPECT_EQ(numNotMatching, numExpectNotMatching);
@@ -234,21 +253,91 @@ TEST_F(RegionTest, regionLoopNoBndry) {
 }
 
 TEST_F(RegionTest, regionLoopAllSerial) {
-  auto region = mesh->getRegion3D("RGN_ALL");
+  const auto &region = mesh->getRegion3D("RGN_ALL");
 
-  Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(region, i, a[i] = 1.0;);
-
-  for (const auto &i : a.region(RGN_ALL)) {
-    EXPECT_EQ(a[i], 1.0);
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
   }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndrySerial) {
-  auto region = mesh->getRegion3D("RGN_NOBNDRY");
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
 
-  Field3D a = 0.0;
-  BLOCK_REGION_LOOP_SERIAL(region, i, a[i] = 1.0;);
+  int count = 0;
+  BOUT_FOR_SERIAL(i, region) {
+    ++count;
+  }
+
+  const int ninner =
+      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+
+  EXPECT_EQ(count, ninner);
+}
+
+TEST_F(RegionTest, regionLoopAllSection) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  int count = 0;
+  BOUT_OMP(parallel) {
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
+      ++count;
+    }
+  }
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(count, nmesh);
+}
+
+TEST_F(RegionTest, regionLoopNoBndrySection) {
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
+
+  int count = 0;
+  BOUT_OMP(parallel) {
+    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
+      ++count;
+    }
+  }
+
+  const int ninner =
+      (mesh->LocalNz * (1 + mesh->xend - mesh->xstart) * (1 + mesh->yend - mesh->ystart));
+
+  EXPECT_EQ(count, ninner);
+}
+
+TEST_F(RegionTest, regionLoopAllInner) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  Field3D a{0.};
+  BOUT_OMP(parallel) {
+    BOUT_FOR_INNER(i, region) {
+      a[i] = 1.0;
+    }
+  }
+
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        EXPECT_DOUBLE_EQ(a(i, j, k), 1.0);
+      }
+    }
+  }
+}
+
+TEST_F(RegionTest, regionLoopNoBndryInner) {
+  const auto &region = mesh->getRegion3D("RGN_NOBNDRY");
+
+  Field3D a{0.};
+  BOUT_OMP(parallel) {
+    BOUT_FOR_INNER(i, region) {
+      a[i] = 1.0;
+    }
+  }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -257,11 +346,15 @@ TEST_F(RegionTest, regionLoopNoBndrySerial) {
 
   int numNotMatching = 0;
   int numMatching = 0;
-  for (const auto &i : a.region(RGN_ALL)) {
-    if (a[i] != 1.0) {
-      numNotMatching++;
-    } else {
-      numMatching++;
+  for (int i = 0; i < mesh->LocalNx; ++i) {
+    for (int j = 0; j < mesh->LocalNy; ++j) {
+      for (int k = 0; k < mesh->LocalNz; ++k) {
+        if (a(i, j, k) != 1.0) {
+          numNotMatching++;
+        } else {
+          numMatching++;
+        }
+      }
     }
   }
   EXPECT_EQ(numNotMatching, numExpectNotMatching);
@@ -276,7 +369,7 @@ TEST_F(RegionTest, regionAsSorted) {
 
   for (auto &block : blocksIn) {
     for (int i = block.first; i <= block.second; i++) {
-      indicesIn.push_back(i);
+      indicesIn.push_back(Ind3D{i});
     }
   }
 
@@ -310,7 +403,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -323,14 +416,14 @@ TEST_F(RegionTest, regionAsUnique) {
 
   EXPECT_EQ(regionIndicesUnique1.size(), 10);
   for (unsigned int i = 0; i < regionIndicesUnique1.size(); i++) {
-    EXPECT_EQ(regionIndicesUnique1[i], i);
+    EXPECT_EQ(regionIndicesUnique1[i].ind, i);
   }
 
   std::vector<int> rawIndicesIn2 = {0, 0, 0, 2, 2, 2, 5, 4, 4, 5, 10, 12, 11, 9};
 
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -347,7 +440,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn3;
   for (auto i : rawIndicesIn3) {
-    indicesIn3.push_back(i);
+    indicesIn3.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -360,7 +453,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   EXPECT_EQ(regionIndicesUnique3.size(), 10);
   for (unsigned int i = 0; i < regionIndicesUnique3.size(); i++) {
-    EXPECT_EQ(regionIndicesUnique3[i], i);
+    EXPECT_EQ(regionIndicesUnique3[i].ind, i);
   }
 }
 
@@ -372,12 +465,12 @@ TEST_F(RegionTest, regionSetIndices) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // This is the sorted region and indices
@@ -419,7 +512,7 @@ TEST_F(RegionTest, regionSetBlocks) {
 
   EXPECT_EQ(indices3.size(), nmesh);
   for (int i = 0; i < nmesh; i++) {
-    EXPECT_EQ(indices3[i], i);
+    EXPECT_EQ(indices3[i].ind, i);
   }
 }
 
@@ -430,7 +523,7 @@ TEST_F(RegionTest, regionSortInPlace) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesBwd) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -438,7 +531,7 @@ TEST_F(RegionTest, regionSortInPlace) {
   // Check initial order
   auto regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesBwd[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
   }
 
   // Sort in place
@@ -447,7 +540,7 @@ TEST_F(RegionTest, regionSortInPlace) {
   // Check new order
   regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesFwd[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
   }
 }
 
@@ -458,7 +551,7 @@ TEST_F(RegionTest, regionFriendSort) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesBwd) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -466,7 +559,7 @@ TEST_F(RegionTest, regionFriendSort) {
   // Check initial order
   auto regionIndices = region.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesBwd[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesBwd[i]);
   }
 
   // Sort with friend
@@ -475,7 +568,7 @@ TEST_F(RegionTest, regionFriendSort) {
   // Check new order
   regionIndices = region2.getIndices();
   for (unsigned int i = 0; i < indicesIn1.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesFwd[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesFwd[i]);
   }
 }
 
@@ -486,7 +579,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -494,7 +587,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
   EXPECT_EQ(regionIndices.size(), 19);
 
   for (unsigned int i = 0; i < regionIndices.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesIn1[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
   }
 
   // Make unique in place
@@ -504,7 +597,7 @@ TEST_F(RegionTest, regionUniqueInPlace) {
   EXPECT_EQ(regionIndices2.size(), 10);
 
   for (unsigned int i = 0; i < regionIndices2.size(); i++) {
-    EXPECT_EQ(regionIndices2[i], i);
+    EXPECT_EQ(regionIndices2[i].ind, i);
   }
 }
 
@@ -515,7 +608,7 @@ TEST_F(RegionTest, regionFriendUnique) {
 
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   Region<Ind3D> region(indicesIn1);
@@ -523,7 +616,7 @@ TEST_F(RegionTest, regionFriendUnique) {
   EXPECT_EQ(regionIndices.size(), 19);
 
   for (unsigned int i = 0; i < regionIndices.size(); i++) {
-    EXPECT_EQ(regionIndices[i], rawIndicesIn1[i]);
+    EXPECT_EQ(regionIndices[i].ind, rawIndicesIn1[i]);
   }
 
   // Make unique in place
@@ -533,7 +626,7 @@ TEST_F(RegionTest, regionFriendUnique) {
   EXPECT_EQ(regionIndices2.size(), 10);
 
   for (unsigned int i = 0; i < regionIndices2.size(); i++) {
-    EXPECT_EQ(regionIndices2[i], i);
+    EXPECT_EQ(regionIndices2[i].ind, i);
   }
 }
 
@@ -542,19 +635,19 @@ TEST_F(RegionTest, regionMask) {
   std::vector<int> rawIndicesIn = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn;
   for (auto i : rawIndicesIn) {
-    indicesIn.push_back(i);
+    indicesIn.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask1 = {1, 3, 5, 7, 9};
   Region<Ind3D>::RegionIndices indicesMask1;
   for (auto i : rawIndicesMask1) {
-    indicesMask1.push_back(i);
+    indicesMask1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask2 = {11, 13, 15, 17, 19};
   Region<Ind3D>::RegionIndices indicesMask2;
   for (auto i : rawIndicesMask2) {
-    indicesMask2.push_back(i);
+    indicesMask2.push_back(Ind3D{i});
   }
 
   // Create base region and two masks
@@ -570,7 +663,7 @@ TEST_F(RegionTest, regionMask) {
 
   // Check values
   for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ(masked1Indices[i] % 2, 0);
+    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
   }
 
   // Check size of other regions not changed
@@ -601,19 +694,19 @@ TEST_F(RegionTest, regionFriendMask) {
   std::vector<int> rawIndicesIn = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn;
   for (auto i : rawIndicesIn) {
-    indicesIn.push_back(i);
+    indicesIn.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask1 = {1, 3, 5, 7, 9};
   Region<Ind3D>::RegionIndices indicesMask1;
   for (auto i : rawIndicesMask1) {
-    indicesMask1.push_back(i);
+    indicesMask1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesMask2 = {11, 13, 15, 17, 19};
   Region<Ind3D>::RegionIndices indicesMask2;
   for (auto i : rawIndicesMask2) {
-    indicesMask2.push_back(i);
+    indicesMask2.push_back(Ind3D{i});
   }
 
   // Create base region and two masks
@@ -630,7 +723,7 @@ TEST_F(RegionTest, regionFriendMask) {
 
   // Check values
   for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ(masked1Indices[i] % 2, 0);
+    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
   }
 
   // Check size of other regions not changed
@@ -661,13 +754,13 @@ TEST_F(RegionTest, regionOperatorAdd) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesIn2 = {5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -684,7 +777,7 @@ TEST_F(RegionTest, regionOperatorAdd) {
 
   // Check values
   for (unsigned int i = 0; i < indices3.size(); i++) {
-    EXPECT_EQ(indices3[i], i);
+    EXPECT_EQ(indices3[i].ind, i);
   }
 
   auto region4 = region1 + region2 + region2;
@@ -699,13 +792,13 @@ TEST_F(RegionTest, regionOperatorAccumulate) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   std::vector<int> rawIndicesIn2 = {5, 6, 7, 8, 9};
   Region<Ind3D>::RegionIndices indicesIn2;
   for (auto i : rawIndicesIn2) {
-    indicesIn2.push_back(i);
+    indicesIn2.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -723,7 +816,7 @@ TEST_F(RegionTest, regionOperatorAccumulate) {
 
   // Check values
   for (unsigned int i = 0; i < indices3.size(); i++) {
-    EXPECT_EQ(indices3[i], i);
+    EXPECT_EQ(indices3[i].ind, i);
   }
 
   auto region4 = region1;
@@ -739,7 +832,7 @@ TEST_F(RegionTest, regionOffset) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -751,7 +844,7 @@ TEST_F(RegionTest, regionOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i]);
   }
 
   // Now offset
@@ -763,7 +856,7 @@ TEST_F(RegionTest, regionOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] + 2);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i] + 2);
   }
 
   region1.offset(-5);
@@ -774,7 +867,7 @@ TEST_F(RegionTest, regionOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] - 3);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i] - 3);
   }
 
   // Reset
@@ -787,7 +880,7 @@ TEST_F(RegionTest, regionOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i]);
   }
 }
 
@@ -796,7 +889,7 @@ TEST_F(RegionTest, regionFriendOffset) {
   std::vector<int> rawIndicesIn1 = {0, 1, 2, 3, 4};
   Region<Ind3D>::RegionIndices indicesIn1;
   for (auto i : rawIndicesIn1) {
-    indicesIn1.push_back(i);
+    indicesIn1.push_back(Ind3D{i});
   }
 
   // Create base regions
@@ -808,7 +901,7 @@ TEST_F(RegionTest, regionFriendOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i]);
   }
 
   // Now offset
@@ -820,7 +913,7 @@ TEST_F(RegionTest, regionFriendOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] + 2);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i] + 2);
   }
 
   auto region3 = offset(region1, -5);
@@ -831,7 +924,7 @@ TEST_F(RegionTest, regionFriendOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i] - 5);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i] - 5);
   }
 
   // Reset
@@ -843,7 +936,7 @@ TEST_F(RegionTest, regionFriendOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i]);
   }
 
   inputInd = region1.getIndices();
@@ -853,7 +946,7 @@ TEST_F(RegionTest, regionFriendOffset) {
 
   // Check values
   for (unsigned int i = 0; i < inputInd.size(); i++) {
-    EXPECT_EQ(inputInd[i], rawIndicesIn1[i]);
+    EXPECT_EQ(inputInd[i].ind, rawIndicesIn1[i]);
   }
 }
 
@@ -885,34 +978,214 @@ TEST_F(RegionTest, regionPeriodicShift) {
   EXPECT_EQ(shiftXReg.size(), nmesh);
 
   // Specific values -- first point
-  EXPECT_EQ(indicesReg[0], 0);
-  EXPECT_EQ(shiftZReg[0], 1);
-  EXPECT_EQ(shiftZRegNeg[0], RegionTest::nz - 1);
-  EXPECT_EQ(shiftYReg[0], RegionTest::nz);
-  EXPECT_EQ(shiftXReg[0], RegionTest::nz * RegionTest::ny);
+  EXPECT_EQ(indicesReg[0].ind, 0);
+  EXPECT_EQ(shiftZReg[0].ind, 1);
+  EXPECT_EQ(shiftZRegNeg[0].ind, RegionTest::nz - 1);
+  EXPECT_EQ(shiftYReg[0].ind, RegionTest::nz);
+  EXPECT_EQ(shiftXReg[0].ind, RegionTest::nz * RegionTest::ny);
 
   // Specific values -- last point (nmesh -1 - period) + shift
   // Note this test could probably be made more robust
-  EXPECT_EQ(indicesReg[nmesh - 1], nmesh - 1);
-  EXPECT_EQ(shiftZReg[nmesh - 1], (nmesh - RegionTest::nz));
-  EXPECT_EQ(shiftZRegNeg[nmesh - 1], (nmesh - 1 - 1));
-  EXPECT_EQ(shiftYReg[nmesh - 1],
+  EXPECT_EQ(indicesReg[nmesh - 1].ind, nmesh - 1);
+  EXPECT_EQ(shiftZReg[nmesh - 1].ind, (nmesh - RegionTest::nz));
+  EXPECT_EQ(shiftZRegNeg[nmesh - 1].ind, (nmesh - 1 - 1));
+  EXPECT_EQ(shiftYReg[nmesh - 1].ind,
             (nmesh - RegionTest::nz * RegionTest::ny) + RegionTest::nz - 1);
-  EXPECT_EQ(shiftXReg[nmesh - 1], RegionTest::nz * RegionTest::ny - 1);
+  EXPECT_EQ(shiftXReg[nmesh - 1].ind, RegionTest::nz * RegionTest::ny - 1);
 
   // Value range
   for (unsigned int i = 0; i < nmesh; i++) {
-    EXPECT_TRUE(indicesReg[i] < nmesh);
-    EXPECT_TRUE(indicesReg[i] >= 0);
-    EXPECT_TRUE(shiftZReg[i] < nmesh);
-    EXPECT_TRUE(shiftZReg[i] >= 0);
-    EXPECT_TRUE(shiftZRegNeg[i] < nmesh);
-    EXPECT_TRUE(shiftZRegNeg[i] >= 0);
-    EXPECT_TRUE(shiftYReg[i] < nmesh);
-    EXPECT_TRUE(shiftYReg[i] >= 0);
-    EXPECT_TRUE(shiftXReg[i] < nmesh);
-    EXPECT_TRUE(shiftXReg[i] >= 0);
+    EXPECT_TRUE(indicesReg[i].ind < nmesh);
+    EXPECT_TRUE(indicesReg[i].ind >= 0);
+    EXPECT_TRUE(shiftZReg[i].ind < nmesh);
+    EXPECT_TRUE(shiftZReg[i].ind >= 0);
+    EXPECT_TRUE(shiftZRegNeg[i].ind < nmesh);
+    EXPECT_TRUE(shiftZRegNeg[i].ind >= 0);
+    EXPECT_TRUE(shiftYReg[i].ind < nmesh);
+    EXPECT_TRUE(shiftYReg[i].ind >= 0);
+    EXPECT_TRUE(shiftXReg[i].ind < nmesh);
+    EXPECT_TRUE(shiftXReg[i].ind >= 0);
   }
+}
+
+TEST_F(RegionTest, regionGetStatsHomogenous) {
+  int numBlocks = 10;
+  int maxBlockSize = 64;
+  int minBlockSize = 64;
+  int smallBlockSize = static_cast<int>(maxBlockSize * 0.5) - 1;
+  smallBlockSize = smallBlockSize < 1 ? 1 : smallBlockSize;
+  int numMaxBlocks = numBlocks;
+  int numMinBlocks = 0;
+  int numSmallBlocks = 0;
+  BoutReal maxImbalance =
+      static_cast<BoutReal>(maxBlockSize) / static_cast<BoutReal>(minBlockSize);
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  for (int i = 0; i < numMaxBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{maxBlockSize}));
+  }
+  for (int i = 0; i < numMinBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{minBlockSize}));
+  }
+  for (int i = 0; i < numSmallBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{smallBlockSize}));
+  }
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMaxBlocks); // As maxBlockSize == minBlockSize
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numSmallBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  std::ostringstream expectedStrRepresentation;
+  expectedStrRepresentation << "Total blocks : "<< numBlocks;
+  expectedStrRepresentation << ", " << "min(count)/max(count) :";
+  expectedStrRepresentation << " " << minBlockSize << " (" << numMaxBlocks << ")/";
+  expectedStrRepresentation << " " << maxBlockSize << " (" << numMaxBlocks << ")";
+  expectedStrRepresentation << ", " << "Max imbalance : " << maxImbalance;
+  expectedStrRepresentation << ", " << "Small block count : " << numSmallBlocks;
+  EXPECT_EQ(strRepresentation.str(), expectedStrRepresentation.str());
+
+}
+
+TEST_F(RegionTest, regionGetStatsHeterogenous) {
+  int numBlocks = 20;
+  int maxBlockSize = 64;
+  int minBlockSize = 4;
+  int smallBlockSize = static_cast<int>(maxBlockSize * 0.5) - 1;
+  smallBlockSize = smallBlockSize < 1 ? 1 : smallBlockSize;
+  int numMaxBlocks = 10;
+  int numMinBlocks = 6;
+  int numExtraSmallBlocks = 4;
+  BoutReal maxImbalance =
+      static_cast<BoutReal>(maxBlockSize) / static_cast<BoutReal>(minBlockSize);
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  for (int i = 0; i < numMaxBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{maxBlockSize}));
+  }
+  for (int i = 0; i < numMinBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{minBlockSize}));
+  }
+  for (int i = 0; i < numExtraSmallBlocks; i++) {
+    blocks.push_back(Region<Ind3D>::ContiguousBlock(Ind3D{0}, Ind3D{smallBlockSize}));
+  }
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMinBlocks);
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+}
+
+TEST_F(RegionTest, regionGetStatsEmpty) {
+  int numBlocks = 0;
+  int maxBlockSize = 0;
+  int minBlockSize = 0;
+  int numMaxBlocks = 0;
+  int numMinBlocks = 0;
+  int numExtraSmallBlocks = 0;
+  BoutReal maxImbalance = 0.0;
+
+  Region<Ind3D>::ContiguousBlocks blocks;
+
+  Region<Ind3D> region(blocks);
+  auto stats = region.getStats();
+
+  EXPECT_EQ(stats.numBlocks, numBlocks);
+  EXPECT_EQ(stats.minBlockSize, minBlockSize);
+  EXPECT_EQ(stats.numMinBlocks, numMinBlocks);
+  EXPECT_EQ(stats.maxBlockSize, maxBlockSize);
+  EXPECT_EQ(stats.numMaxBlocks, numMaxBlocks);
+  EXPECT_EQ(stats.numSmallBlocks, numExtraSmallBlocks + numMinBlocks);
+  EXPECT_EQ(stats.maxImbalance, maxImbalance);
+
+  std::ostringstream strRepresentation;
+  strRepresentation << stats;
+  EXPECT_EQ(strRepresentation.str(), "Empty");
+}
+
+TEST(RegionIndexConversionTest, Ind3DtoInd2D) {
+  // This could just be:
+  //     EXPECT_FALSE(std::is_convertible<Ind3D, Ind2D>::value());
+  // but requires C++14
+  bool convert = std::is_convertible<Ind3D, Ind2D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, Ind2DtoInd3D) {
+  bool convert = std::is_convertible<Ind2D, Ind3D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, Ind2Dtoint) {
+  bool convert = std::is_convertible<Ind2D, int>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, Ind3Dtoint) {
+  bool convert = std::is_convertible<Ind3D, int>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, inttoInd2D) {
+  bool convert = std::is_convertible<int, Ind2D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndexConversionTest, inttoInd3D) {
+  bool convert = std::is_convertible<int, Ind3D>::value;
+  EXPECT_FALSE(convert);
+}
+
+TEST(RegionIndex2DTest, MemberSize) {
+  const int nx = 2, ny = 3, nz = 1;
+  Region<Ind2D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TEST(RegionIndex2DTest, NonMemberSize) {
+  const int nx = 2, ny = 3, nz = 1;
+  Region<Ind2D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(size(region), nmesh);
+}
+
+TEST(RegionIndex3DTest, MemberSize) {
+  const int nx = 2, ny = 3, nz = 5;
+  Region<Ind3D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(region.size(), nmesh);
+}
+
+TEST(RegionIndex3DTest, NonMemberSize) {
+  const int nx = 2, ny = 3, nz = 5;
+  Region<Ind3D> region(0, nx - 1, 0, ny - 1, 0, nz - 1, ny, nz);
+
+  int nmesh = nx * ny * nz;
+
+  EXPECT_EQ(size(region), nmesh);
 }
 
 template <typename T> class RegionIndexTest : public ::testing::Test {
@@ -922,69 +1195,81 @@ public:
   T value_;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> RegionIndexTypes;
+typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
 TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
-  EXPECT_EQ(*iter, 0);
+  EXPECT_EQ(iter->ind, 0);
 }
 
 // Dereferencing an end() iterator is an error, so we need to test
 // end() works a little indirectly. If the addition and less-than
 // tests fail, this one is suspect!
 TYPED_TEST(RegionIndexTest, End) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin() + 8;
   auto iter_end = range.end();
   EXPECT_EQ(*iter, region[8]);
-  EXPECT_EQ(*iter, 16);
+  EXPECT_EQ(iter->ind, 16);
   // iter_end is one-past the last element of region
   EXPECT_TRUE(iter < iter_end);
 }
 
 TYPED_TEST(RegionIndexTest, PrefixIncrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
   ++iter;
 
   EXPECT_EQ(*iter, region[1]);
-  EXPECT_EQ(*iter, 2);
+  EXPECT_EQ(iter->ind, 2);
 }
 
 TYPED_TEST(RegionIndexTest, PostfixIncrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
   auto iter2 = iter++;
 
   EXPECT_EQ(*iter, region[1]);
-  EXPECT_EQ(*iter, 2);
+  EXPECT_EQ(iter->ind, 2);
   EXPECT_EQ(*iter2, region[0]);
-  EXPECT_EQ(*iter2, 0);
+  EXPECT_EQ(iter2->ind, 0);
 }
 
 TYPED_TEST(RegionIndexTest, PrefixDecrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
   --iter;
 
   EXPECT_EQ(*iter, region[8]);
-  EXPECT_EQ(*iter, 16);
+  EXPECT_EQ(iter->ind, 16);
 }
 
 TYPED_TEST(RegionIndexTest, PostfixDecrement) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   // end() is one-past-the-last element, so we need to decrement it in
@@ -993,13 +1278,15 @@ TYPED_TEST(RegionIndexTest, PostfixDecrement) {
   auto iter2 = iter--;
 
   EXPECT_EQ(*iter, region[7]);
-  EXPECT_EQ(*iter, 14);
+  EXPECT_EQ(iter->ind, 14);
   EXPECT_EQ(*iter2, region[8]);
-  EXPECT_EQ(*iter2, 16);
+  EXPECT_EQ(iter2->ind, 16);
 }
 
 TYPED_TEST(RegionIndexTest, NotEquals) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1012,7 +1299,9 @@ TYPED_TEST(RegionIndexTest, NotEquals) {
 }
 
 TYPED_TEST(RegionIndexTest, Equals) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1026,7 +1315,9 @@ TYPED_TEST(RegionIndexTest, Equals) {
 }
 
 TYPED_TEST(RegionIndexTest, LessThan) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1041,7 +1332,9 @@ TYPED_TEST(RegionIndexTest, LessThan) {
 }
 
 TYPED_TEST(RegionIndexTest, MoreThan) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1056,7 +1349,9 @@ TYPED_TEST(RegionIndexTest, MoreThan) {
 }
 
 TYPED_TEST(RegionIndexTest, LessThanOrEqualTo) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1071,7 +1366,9 @@ TYPED_TEST(RegionIndexTest, LessThanOrEqualTo) {
 }
 
 TYPED_TEST(RegionIndexTest, MoreThanOrEqualTo) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
@@ -1086,62 +1383,74 @@ TYPED_TEST(RegionIndexTest, MoreThanOrEqualTo) {
 }
 
 TYPED_TEST(RegionIndexTest, PlusEqualsInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
   iter += 2;
   EXPECT_EQ(*iter, region[2]);
-  EXPECT_EQ(*iter, 4);
+  EXPECT_EQ(iter->ind, 4);
 }
 
 TYPED_TEST(RegionIndexTest, PlusInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
   auto iter2 = iter + 3;
   EXPECT_EQ(*iter2, region[3]);
-  EXPECT_EQ(*iter2, 6);
+  EXPECT_EQ(iter2->ind, 6);
 }
 
 TYPED_TEST(RegionIndexTest, IntPlus) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
   auto iter2 = 5 + iter;
   EXPECT_EQ(*iter2, region[5]);
-  EXPECT_EQ(*iter2, 10);
+  EXPECT_EQ(iter2->ind, 10);
 }
 
 TYPED_TEST(RegionIndexTest, MinusEqualsInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
 
   iter -= 2;
   EXPECT_EQ(*iter, region[7]);
-  EXPECT_EQ(*iter, 14);
+  EXPECT_EQ(iter->ind, 14);
 }
 
 TYPED_TEST(RegionIndexTest, MinusInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.end();
 
   auto iter2 = iter - 3;
   EXPECT_EQ(*iter2, region[6]);
-  EXPECT_EQ(*iter2, 12);
+  EXPECT_EQ(iter2->ind, 12);
 }
 
 TYPED_TEST(RegionIndexTest, MinusIterator) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto start = range.begin();
@@ -1151,17 +1460,21 @@ TYPED_TEST(RegionIndexTest, MinusIterator) {
 }
 
 TYPED_TEST(RegionIndexTest, IndexInt) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12, 14, 16};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0},  TypeParam{2},  TypeParam{4},  TypeParam{6}, TypeParam{8},
+      TypeParam{10}, TypeParam{12}, TypeParam{14}, TypeParam{16}};
   Region<TypeParam> range(region);
 
   auto iter = range.begin();
 
   EXPECT_EQ(iter[4], region[4]);
-  EXPECT_EQ(iter[4], 8);
+  EXPECT_EQ(iter[4].ind, 8);
 }
 
 TYPED_TEST(RegionIndexTest, Iteration) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0}, TypeParam{2},  TypeParam{4}, TypeParam{6},
+      TypeParam{8}, TypeParam{10}, TypeParam{12}};
   Region<TypeParam> range(region);
   typename Region<TypeParam>::RegionIndices region2;
 
@@ -1176,7 +1489,9 @@ TYPED_TEST(RegionIndexTest, Iteration) {
 }
 
 TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
-  typename Region<TypeParam>::RegionIndices region{0, 2, 4, 6, 8, 10, 12};
+  typename Region<TypeParam>::RegionIndices region{
+      TypeParam{0}, TypeParam{2},  TypeParam{4}, TypeParam{6},
+      TypeParam{8}, TypeParam{10}, TypeParam{12}};
   Region<TypeParam> range(region);
   typename Region<TypeParam>::RegionIndices region2;
 
@@ -1206,58 +1521,58 @@ TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
   TypeParam index(1);
-  EXPECT_EQ(index, 1);
+  EXPECT_EQ(index.ind, 1);
 }
 
 TYPED_TEST(FieldIndexTest, CopyConstructor) {
   TypeParam index(2);
   TypeParam index2(index);
-  EXPECT_EQ(index2, 2);
+  EXPECT_EQ(index2.ind, 2);
 }
 
 TYPED_TEST(FieldIndexTest, Assignment) {
   TypeParam index;
-  index = 3;
-  EXPECT_EQ(index, 3);
+  index = TypeParam{3};
+  EXPECT_EQ(index.ind, 3);
 }
 
 TYPED_TEST(FieldIndexTest, CopyAssignment) {
   TypeParam index(4);
   TypeParam index2;
   index2 = index;
-  EXPECT_EQ(index2, 4);
+  EXPECT_EQ(index2.ind, 4);
 }
 
 TYPED_TEST(FieldIndexTest, PreIncrement) {
   TypeParam index(5);
   TypeParam index2;
   index2 = ++index;
-  EXPECT_EQ(index2, 6);
-  EXPECT_EQ(index, 6);
+  EXPECT_EQ(index2.ind, 6);
+  EXPECT_EQ(index.ind, 6);
 }
 
 TYPED_TEST(FieldIndexTest, PostIncrement) {
   TypeParam index(7);
   TypeParam index2;
   index2 = index++;
-  EXPECT_EQ(index2, 7);
-  EXPECT_EQ(index, 8);
+  EXPECT_EQ(index2.ind, 7);
+  EXPECT_EQ(index.ind, 8);
 }
 
 TYPED_TEST(FieldIndexTest, PreDecrement) {
   TypeParam index(9);
   TypeParam index2;
   index2 = --index;
-  EXPECT_EQ(index2, 8);
-  EXPECT_EQ(index, 8);
+  EXPECT_EQ(index2.ind, 8);
+  EXPECT_EQ(index.ind, 8);
 }
 
 TYPED_TEST(FieldIndexTest, PostDecrement) {
   TypeParam index(10);
   TypeParam index2;
   index2 = index--;
-  EXPECT_EQ(index2, 10);
-  EXPECT_EQ(index, 9);
+  EXPECT_EQ(index2.ind, 10);
+  EXPECT_EQ(index.ind, 9);
 }
 
 TYPED_TEST(FieldIndexTest, Equality) {
@@ -1268,7 +1583,7 @@ TYPED_TEST(FieldIndexTest, Equality) {
 
 TYPED_TEST(FieldIndexTest, EqualityInt) {
   TypeParam index(11);
-  EXPECT_EQ(index, 11);
+  EXPECT_EQ(index.ind, 11);
 }
 
 TYPED_TEST(FieldIndexTest, Inequality) {
@@ -1279,7 +1594,7 @@ TYPED_TEST(FieldIndexTest, Inequality) {
 
 TYPED_TEST(FieldIndexTest, InequalityInt) {
   TypeParam index(12);
-  EXPECT_NE(index, 13);
+  EXPECT_NE(index.ind, 13);
 }
 
 TYPED_TEST(FieldIndexTest, LessThan) {
@@ -1315,9 +1630,9 @@ TYPED_TEST(FieldIndexTest, Addition) {
   TypeParam index2(3);
   TypeParam index3;
   index3 = index + index2;
-  EXPECT_EQ(index, 22);
-  EXPECT_EQ(index2, 3);
-  EXPECT_EQ(index3, 25);
+  EXPECT_EQ(index.ind, 22);
+  EXPECT_EQ(index2.ind, 3);
+  EXPECT_EQ(index3.ind, 25);
 }
 
 TYPED_TEST(FieldIndexTest, AdditionInt) {
@@ -1325,8 +1640,8 @@ TYPED_TEST(FieldIndexTest, AdditionInt) {
   TypeParam index2, index3;
   index2 = index + 1;
   index3 = 1 + index;
-  EXPECT_EQ(index2, 23);
-  EXPECT_EQ(index3, 23);
+  EXPECT_EQ(index2.ind, 23);
+  EXPECT_EQ(index3.ind, 23);
 }
 
 TYPED_TEST(FieldIndexTest, Subtraction) {
@@ -1334,34 +1649,823 @@ TYPED_TEST(FieldIndexTest, Subtraction) {
   TypeParam index2(3);
   TypeParam index3;
   index3 = index - index2;
-  EXPECT_EQ(index, 23);
-  EXPECT_EQ(index2, 3);
-  EXPECT_EQ(index3, 20);
+  EXPECT_EQ(index.ind, 23);
+  EXPECT_EQ(index2.ind, 3);
+  EXPECT_EQ(index3.ind, 20);
 }
 
 TYPED_TEST(FieldIndexTest, SubtractionInt) {
   TypeParam index(24);
   TypeParam index2;
   index2 = index - 1;
-  EXPECT_EQ(index2, 23);
+  EXPECT_EQ(index2.ind, 23);
 }
 
 TYPED_TEST(FieldIndexTest, InPlaceAddition) {
   TypeParam index(25);
   index += 1;
-  EXPECT_EQ(index, 26);
+  EXPECT_EQ(index.ind, 26);
 }
 
 TYPED_TEST(FieldIndexTest, InPlaceSubtraction) {
   TypeParam index(27);
   index -= 1;
-  EXPECT_EQ(index, 26);
+  EXPECT_EQ(index.ind, 26);
 }
 
 TYPED_TEST(FieldIndexTest, Modulus) {
   TypeParam index(28);
   TypeParam index2;
   index2 = index % 27;
-  EXPECT_EQ(index, 28);
-  EXPECT_EQ(index2, 1);
+  EXPECT_EQ(index.ind, 28);
+  EXPECT_EQ(index2.ind, 1);
+}
+
+/// Test fixture to make sure the global mesh is our fake one
+class IndexOffsetTest : public ::testing::Test {
+protected:
+  static void SetUpTestCase() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+  }
+
+  static void TearDownTestCase() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+public:
+  static const int nx;
+  static const int ny;
+  static const int nz;
+};
+
+const int IndexOffsetTest::nx = 3;
+const int IndexOffsetTest::ny = 5;
+const int IndexOffsetTest::nz = 7;
+
+TEST_F(IndexOffsetTest, X) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Y) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->y(), j);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Z) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 1)) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->xp().x(), i + 1);
+          EXPECT_EQ(index->xp().y(), j);
+          EXPECT_EQ(index->xp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(index->yp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->yp().x(), i);
+          EXPECT_EQ(index->yp().y(), j + 1);
+          EXPECT_EQ(index->yp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zp().x(), i);
+        EXPECT_EQ(index->zp().y(), j);
+        EXPECT_EQ(index->zp().z(), (k + 1) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i < 1) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->xm().x(), i - 1);
+          EXPECT_EQ(index->xm().y(), j);
+          EXPECT_EQ(index->xm().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(index->ym(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->ym().x(), i);
+          EXPECT_EQ(index->ym().y(), j - 1);
+          EXPECT_EQ(index->ym().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOne) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zm().x(), i);
+        EXPECT_EQ(index->zm().y(), j);
+        EXPECT_EQ(index->zm().z(), (k - 1 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 2)) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->xpp().x(), i + 2);
+          EXPECT_EQ(index->xpp().y(), j);
+          EXPECT_EQ(index->xpp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j >= (ny - 2)) {
+#if CHECK > 3
+          EXPECT_THROW(index->ypp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ(index->ypp().x(), i);
+          EXPECT_EQ(index->ypp().y(), j + 2);
+          EXPECT_EQ(index->ypp().z(), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zpp().x(), i);
+        EXPECT_EQ(index->zpp().y(), j);
+        EXPECT_EQ(index->zpp().z(), (k + 2 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int j = 0; j < ny; ++j) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+      ++index;
+    }
+  }
+  for (int i = 2; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->xmm().x(), i - 2);
+        EXPECT_EQ(index->xmm().y(), j);
+        EXPECT_EQ(index->xmm().z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int k = 0; k < nz; ++k) {
+      ++index;
+      ++index;
+    }
+    for (int j = 2; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->ymm().x(), i);
+        EXPECT_EQ(index->ymm().y(), j - 2);
+        EXPECT_EQ(index->ymm().z(), k);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusTwo) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ(index->zmm().x(), i);
+        EXPECT_EQ(index->zmm().y(), j);
+        EXPECT_EQ(index->zmm().z(), (k - 2 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offset111) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 1) or j >= (ny - 1)) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
+          EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
+          EXPECT_EQ(index->offset(1, 1, 1).z(), (k + 1 + nz) % nz);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i < 1 or j < 1) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
+          EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
+          EXPECT_EQ(index->offset(-1, -1, -1).z(), (k - 1 + nz) % nz);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+#if CHECK > 2
+TEST_F(IndexOffsetTest, ZNegativeOffsetInd3D) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  EXPECT_THROW(index->zp(-1), BoutException);
+  EXPECT_THROW(index->zm(-1), BoutException);
+}
+#endif
+
+TEST_F(IndexOffsetTest, ZOffsetZeroInd3D) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  EXPECT_EQ(index->zp(0), *index);
+  EXPECT_EQ(index->zm(0), *index);
+  EXPECT_EQ(index->offset(0, 0, 0), *index);
+}
+
+TEST_F(IndexOffsetTest, XInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->y(), j);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 1)) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->xp().x(), i + 1);
+        EXPECT_EQ(index->xp().y(), j);
+        EXPECT_EQ(index->xp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(index->yp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->yp().x(), i);
+        EXPECT_EQ(index->yp().y(), j + 1);
+        EXPECT_EQ(index->yp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ(index->zp().x(), i);
+      EXPECT_EQ(index->zp().y(), j);
+      EXPECT_EQ(index->zp().z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 1) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->xm().x(), i - 1);
+        EXPECT_EQ(index->xm().y(), j);
+        EXPECT_EQ(index->xm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(index->ym(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ym().x(), i);
+        EXPECT_EQ(index->ym().y(), j - 1);
+        EXPECT_EQ(index->ym().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOneInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ(index->zm().x(), i);
+      EXPECT_EQ(index->zm().y(), j);
+      EXPECT_EQ(index->zm().z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XPlusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 2)) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->xpp().x(), i + 2);
+        EXPECT_EQ(index->xpp().y(), j);
+        EXPECT_EQ(index->xpp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j >= (ny - 2)) {
+#if CHECK > 3
+        EXPECT_THROW(index->ypp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ypp().x(), i);
+        EXPECT_EQ(index->ypp().y(), j + 2);
+        EXPECT_EQ(index->ypp().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  EXPECT_EQ(index->zpp(), *index);
+}
+
+#if CHECK > 2
+TEST_F(IndexOffsetTest, ZNegativeOffsetInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  EXPECT_THROW(index->zp(-1), BoutException);
+  EXPECT_THROW(index->zm(-1), BoutException);
+}
+#endif
+
+TEST_F(IndexOffsetTest, ZOffsetZeroInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  EXPECT_EQ(index->zp(0), *index);
+  EXPECT_EQ(index->zm(0), *index);
+  EXPECT_EQ(index->offset(0, 0, 0), *index);
+}
+
+TEST_F(IndexOffsetTest, XMinusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 2) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->xmm().x(), i - 2);
+        EXPECT_EQ(index->xmm().y(), j);
+        EXPECT_EQ(index->xmm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j < 2) {
+#if CHECK > 3
+        EXPECT_THROW(index->ymm(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ(index->ymm().x(), i);
+        EXPECT_EQ(index->ymm().y(), j - 2);
+        EXPECT_EQ(index->ymm().z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusTwoInd2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+  EXPECT_EQ(index->zmm(), *index);
+}
+
+TEST_F(IndexOffsetTest, Offset111Ind2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 1) or j >= (ny - 1)) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
+        EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
+        EXPECT_EQ(index->offset(1, 1, 1).z(), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, Offsetm1m1m1Ind2D) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 1 or j < 1) {
+        // skip this point
+      } else {
+        EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
+        EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
+        EXPECT_EQ(index->offset(-1, -1, -1).z(), 0);
+      }
+      ++index;
+    }
+  }
 }

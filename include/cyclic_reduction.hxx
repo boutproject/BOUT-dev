@@ -102,6 +102,7 @@ public:
     Matrix<T> cMatrix(nsys, N);
 
     // Copy data into matrices
+    BOUT_OMP(parallel for)
     for (int j = 0; j < nsys; ++j) {
       for (int i = 0; i < N; ++i) {
         aMatrix(j, i) = a[j][i];
@@ -125,6 +126,7 @@ public:
     Matrix<T> cMatrix(1, N);
 
     // Copy data into matrices
+    BOUT_OMP(parallel for)    
     for (int i = 0; i < N; ++i) {
       aMatrix(0, i) = a[i];
       bMatrix(0, i) = b[i];
@@ -151,6 +153,7 @@ public:
     allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
+    BOUT_OMP(parallel for)
     for (int j = 0; j < Nsys; j++)
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i) = a(j, i);
@@ -174,6 +177,7 @@ public:
     Matrix<T> xMatrix(nrhs, N);
 
     // Copy input data into matrix
+    BOUT_OMP(parallel for)    
     for (int j = 0; j < nrhs; ++j) {
       for (int i = 0; i < N; ++i) {
         rhsMatrix(j, i) = rhs[j][i];
@@ -184,6 +188,7 @@ public:
     solve(rhsMatrix, xMatrix);
 
     // Copy result back into argument
+    BOUT_OMP(parallel for)    
     for (int j = 0; j < nrhs; ++j) {
       for (int i = 0; i < N; ++i) {
         x[j][i] = xMatrix(j, i);
@@ -204,6 +209,7 @@ public:
     Matrix<T> xMatrix(1, N);
 
     // Copy input data into matrix
+    BOUT_OMP(parallel for)    
     for (int j = 0; j < nrhs; ++j) {
       for (int i = 0; i < N; ++i) {
         rhsMatrix(j, i) = rhs[j][i];
@@ -214,6 +220,7 @@ public:
     solve(rhsMatrix, xMatrix);
 
     // Copy result back into argument
+    BOUT_OMP(parallel for)    
     for (int j = 0; j < nrhs; ++j) {
       for (int i = 0; i < N; ++i) {
         x[j][i] = xMatrix(j, i);
@@ -227,10 +234,10 @@ public:
   /// @param[out] x  Matrix storing the result for each system
   void solve(Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
-    ASSERT2(std::get<0>(rhs.shape()) == Nsys);
-    ASSERT2(std::get<0>(x.shape()) == Nsys);
-    ASSERT2(std::get<1>(rhs.shape()) == N);
-    ASSERT2(std::get<1>(x.shape()) == N);
+    ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
+    ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
+    ASSERT2(static_cast<int>(std::get<1>(rhs.shape())) == N);
+    ASSERT2(static_cast<int>(std::get<1>(x.shape())) == N);
 
     // Multiple RHS
     int nrhs = std::get<0>(rhs.shape());
@@ -240,6 +247,7 @@ public:
 
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
+    BOUT_OMP(parallel for)    
     for (int j = 0; j < Nsys; j++)
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i + 3) = rhs(j, i);
@@ -284,6 +292,7 @@ public:
 
         if (p == myproc) {
           // Just copy the data
+	  BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++)
               ifcs(i, 8 * p + j) = myif(sys0 + i, j);
@@ -334,6 +343,7 @@ public:
 #ifdef DIAGNOSE
           output << "Copying received data from " << p << endl;
 #endif
+	  BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
@@ -410,6 +420,7 @@ public:
 
         if (p == myproc) {
           // Just copy the data
+	  BOUT_OMP(parallel for)	  
           for (int i = 0; i < myns; i++) {
             x1[sys0 + i] = ifx(i, 2 * p);
             xn[sys0 + i] = ifx(i, 2 * p + 1);
@@ -433,6 +444,7 @@ public:
         // Send data
         for (int p = 0; p < nprocs; p++) { // Loop over processor
           if (p != myproc) {
+	    BOUT_OMP(parallel for)	    
             for (int i = 0; i < myns; i++) {
               ifp[2 * i] = ifx(i, 2 * p);
               ifp[2 * i + 1] = ifx(i, 2 * p + 1);
@@ -454,6 +466,7 @@ public:
       do {
         MPI_Status stat;
         MPI_Waitany(nprocs, req, &fromproc, &stat);
+
         if (fromproc != MPI_UNDEFINED) {
           // fromproc is the processor number. Copy data
 
@@ -466,7 +479,8 @@ public:
           nsp = ns;
           if (fromproc < nsextra)
             nsp++;
-
+	  
+	  BOUT_OMP(parallel for)
           for (int i = 0; i < nsp; i++) {
             x1[s0 + i] = recvbuffer(fromproc, 2 * i);
             xn[s0 + i] = recvbuffer(fromproc, 2 * i + 1);

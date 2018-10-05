@@ -57,11 +57,17 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplacePetsc::LaplacePetsc(Options *opt) :
-  Laplacian(opt),
+LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc) :
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+  Ex.setLocation(location);
+  Ez.setLocation(location);
 
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
@@ -273,8 +279,15 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   opts->get("ksptype", ksptype, KSP_GMRES);
   
   // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
+  // WARNING: only a few of these options actually make sense: see the
+  // PETSc documentation to work out which they are (possibly
+  // pbjacobi, sor might be useful choices?)
   opts->get("pctype", pctype, "none", true);
+
+  // Let "user" be a synonym for "shell"
+  if (pctype == "user") {
+    pctype = PCSHELL;
+  }
   
   // Get Options specific to particular solver types
   opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);
@@ -294,7 +307,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  pcsolve = NULL;
+  pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
     OPTION(opts, rightprec, true); // Right preconditioning by default
@@ -348,12 +361,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   #endif
 
   // Get the metric tensor
-  Coordinates* coord = mesh->coordinates();
+  Coordinates* coord = mesh->coordinates(location);
 
   int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
-  int ierr;             // Error flag for PETSc
 
   // Determine which row/columns of the matrix are locally owned
   MatGetOwnershipRange( MatA, &Istart, &Iend );
@@ -923,7 +935,7 @@ void LaplacePetsc::Element(int i, int x, int z,
  */
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 ) {
 
-  Coordinates *coord = mesh->coordinates(); // Get metric tensor
+  Coordinates *coord = mesh->coordinates(location); // Get metric tensor
 
   coef1 = coord->g11(x,y);     // X 2nd derivative coefficient
   coef2 = coord->g33(x,y);     // Z 2nd derivative coefficient

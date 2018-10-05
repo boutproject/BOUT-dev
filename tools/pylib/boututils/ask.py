@@ -1,20 +1,36 @@
+"""Ask a yes/no question and return the answer.
+
+"""
+
 from builtins import input
 import sys
 
-def query_yes_no(question, default="yes"):
-    """Ask a yes/no question via raw_input() and return their answer.
 
-    "question" is a string that is presented to the user.
-    "default" is the presumed answer if the user just hits <Enter>.
+def query_yes_no(question, default="yes"):
+    """Ask a yes/no question via input() and return their answer.
+
+    Answers are case-insensitive.
+
+    Probably originally from http://code.activestate.com/recipes/577058/
+    via https://stackoverflow.com/a/3041990/2043465
+
+    Parameters
+    ----------
+    question : str
+        Question to be presented to the user
+    default : {"yes", "no", None}
+        The presumed answer if the user just hits <Enter>.
         It must be "yes" (the default), "no" or None (meaning
         an answer is required of the user).
 
-    The "answer" return value is one of "yes" or "no".
+    Returns
+    -------
+    bool
+        True if the answer was "yes" or "y", False if "no" or "n"
     """
+
     valid = {"yes":True,   "y":True,  "ye":True,
              "no":False,     "n":False,   "No":False,  "N":False }
-    valid = {"yes":1,   "y":1,  "ye":1,
-             "no":-1,     "n":-1,  "No":-1, "N":-1}
 
     if default is None:
         prompt = " [y/n] "

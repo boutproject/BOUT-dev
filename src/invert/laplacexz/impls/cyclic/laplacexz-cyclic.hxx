@@ -6,7 +6,7 @@
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXZcyclic(Mesh *m, Options *options);
+  LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc);
   ~LaplaceXZcyclic();
   
   using LaplaceXZ::setCoefs;

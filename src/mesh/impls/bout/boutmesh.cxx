@@ -116,7 +116,9 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
+      output_warn.write("WARNING: Number of toroidal points should be 2^n for efficient "
+                        "FFT performance -- consider changing MZ if using FFTs\n",
+                        MZ);
     }
   } else {
     output_info.write("\tRead nz from input grid file\n");
@@ -794,15 +796,15 @@ int BoutMesh::load() {
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
         // Core
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
       } else {
         // PF region
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
     if (PE_XIND == (NXPE - 1)) {
       // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
     }
   }
 
@@ -810,15 +812,15 @@ int BoutMesh::load() {
     // Need boundaries in Y
 
     if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
     if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
 
     if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1));
+          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
     if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
   }
 
   if (!boundary.empty()) {
@@ -833,6 +835,10 @@ int BoutMesh::load() {
   
   output_info << "Constructing default regions" << endl;
   createDefaultRegions();
+
+  // Add boundary regions
+  addBoundaryRegions();
+
   output_info.write("\tdone\n");
 
   return 0;
@@ -1017,7 +1023,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 int BoutMesh::wait(comm_handle handle) {
   TRACE("BoutMesh::wait(comm_handle)");
 
-  if (handle == NULL)
+  if (handle == nullptr)
     return 1;
 
   CommHandle *ch = static_cast<CommHandle *>(handle);
@@ -1219,7 +1225,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1236,7 +1242,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1354,7 +1360,7 @@ int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1374,7 +1380,7 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1394,7 +1400,7 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1414,7 +1420,7 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1845,9 +1851,9 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
-    CommHandle *ch = new CommHandle;
-    for (int i = 0; i < 6; i++)
-      ch->request[i] = MPI_REQUEST_NULL;
+    auto *ch = new CommHandle;
+    for (auto &i : ch->request)
+      i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
       ch->umsg_sendbuff = Array<BoutReal>(ylen);
@@ -1929,19 +1935,21 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
     if (var->is3D()) {
       // 3D variable
       ASSERT2(static_cast<Field3D *>(var)->isAllocated());
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*static_cast<Field3D *>(var))(jx, jy, jz);
+            buffer[len] = var3d_ref(jx, jy, jz);
           }
         }
       }
     } else {
       // 2D variable
       ASSERT2(static_cast<Field2D *>(var)->isAllocated());
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*static_cast<Field2D *>(var))(jx, jy);
+          buffer[len] = var2d_ref(jx, jy);
         }
       }
     }
@@ -1959,18 +1967,20 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*static_cast<Field3D *>(var))(jx, jy, jz) = buffer[len];
+            var3d_ref(jx, jy, jz) = buffer[len];
           }
         }
       }
     } else {
       // 2D variable
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          (*static_cast<Field2D *>(var))(jx, jy) = buffer[len];
+          var2d_ref(jx, jy) = buffer[len];
         }
       }
     }
@@ -2050,6 +2060,207 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 /****************************************************************
  *                 Range iteration
  ****************************************************************/
+
+void BoutMesh::addBoundaryRegions() {
+  std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
+  
+  // Lower Inner Y
+  int xs = 0;
+  int xe = LocalNx - 1;
+
+  if (!firstY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+  
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+
+  all_boundaries.emplace_back("RGN_LOWER_INNER_Y");
+
+  // Lower Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+  if (!firstY()) {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_LOWER_OUTER_Y");
+  
+  // Lower Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+    xs = DDATA_XSPLIT;
+  if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+    xe = DDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_LOWER_Y");
+  
+  // Upper Inner Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+  
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
+
+  // Upper Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
+
+  // Upper Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+    xs = UDATA_XSPLIT;
+  if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+    xe = UDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_Y");
+  
+  // Inner X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    all_boundaries.emplace_back("RGN_INNER_X");
+    
+    output_info.write("\tBoundary region inner X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+
+  // Outer X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    all_boundaries.emplace_back("RGN_OUTER_X");
+    
+    output_info.write("\tBoundary region outer X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+
+  // Join boundary regions together
+  
+  Region<Ind3D> bndry3d; // Empty
+  for (const auto &region_name : all_boundaries) {
+    bndry3d += getRegion3D(region_name);
+  }
+  bndry3d.unique(); // Ensure that the points are unique
+
+  // Create a region which is all boundaries
+  addRegion3D("RGN_BNDRY", bndry3d);
+
+  Region<Ind2D> bndry2d; // Empty
+  for (const auto &region_name : all_boundaries) {
+    bndry2d += getRegion2D(region_name);
+  }
+  bndry2d.unique(); // Ensure that the points are unique
+
+  // Create a region which is all boundaries
+  addRegion2D("RGN_BNDRY", bndry2d);
+}
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
@@ -2219,7 +2430,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + XGLOBAL(jx) - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
 }
@@ -2232,7 +2443,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + xglo - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + xglo - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return xglo / static_cast<BoutReal>(MX);
 }
@@ -2323,24 +2534,24 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", 0);
-  file.add(MXSUB, "MXSUB", 0);
-  file.add(MYSUB, "MYSUB", 0);
-  file.add(MXG, "MXG", 0);
-  file.add(MYG, "MYG", 0);
-  file.add(nx, "nx", 0);
-  file.add(ny, "ny", 0);
-  file.add(LocalNz, "MZ", 0);
-  file.add(NXPE, "NXPE", 0);
-  file.add(NYPE, "NYPE", 0);
-  file.add(ZMAX, "ZMAX", 0);
-  file.add(ZMIN, "ZMIN", 0);
-  file.add(ixseps1, "ixseps1", 0);
-  file.add(ixseps2, "ixseps2", 0);
-  file.add(jyseps1_1, "jyseps1_1", 0);
-  file.add(jyseps1_2, "jyseps1_2", 0);
-  file.add(jyseps2_1, "jyseps2_1", 0);
-  file.add(jyseps2_2, "jyseps2_2", 0);
+  file.add(zperiod, "zperiod", false);
+  file.add(MXSUB, "MXSUB", false);
+  file.add(MYSUB, "MYSUB", false);
+  file.add(MXG, "MXG", false);
+  file.add(MYG, "MYG", false);
+  file.add(nx, "nx", false);
+  file.add(ny, "ny", false);
+  file.add(LocalNz, "MZ", false);
+  file.add(NXPE, "NXPE", false);
+  file.add(NYPE, "NYPE", false);
+  file.add(ZMAX, "ZMAX", false);
+  file.add(ZMIN, "ZMIN", false);
+  file.add(ixseps1, "ixseps1", false);
+  file.add(ixseps2, "ixseps2", false);
+  file.add(jyseps1_1, "jyseps1_1", false);
+  file.add(jyseps1_2, "jyseps1_2", false);
+  file.add(jyseps2_1, "jyseps2_1", false);
+  file.add(jyseps2_2, "jyseps2_2", false);
 
   coordinates()->outputVars(file);
 }

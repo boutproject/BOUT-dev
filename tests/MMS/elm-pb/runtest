@@ -5,6 +5,8 @@
 # Tests a range of different schemes
 #
 
+#requires: all_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import zip
@@ -146,11 +148,11 @@ for var,mark,label in zip(varlist, markers, labels):
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
     
-    if order < 1.5: # Should be second order accurate
-        print("............ FAIL")
-        success = False 
-    else:
+    if 1.8 < order < 2.2: # Should be second order accurate
         print("............ PASS")
+    else:
+        success = False
+        print("............ FAIL")
 
 
 plt.legend(loc="upper left")

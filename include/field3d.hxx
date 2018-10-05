@@ -130,13 +130,13 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       Field3D f(0.0); // Allocate, set to zero
 
-      for( auto i : f ) {  // Loop over all points, with index i
+      for( const auto &i : f ) {  // Loop over all points, with index i
         f[i] = 1.0;
       }
 
   There is also more explicit looping over regions:
 
-      for( auto i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
+      for( const auto &i : f.region(RGN_ALL) ) {  // Loop over all points, with index i
         f[i] = 1.0;
       }
 
@@ -169,6 +169,8 @@ class Mesh;  // #include "bout/mesh.hxx"
  */
 class Field3D : public Field, public FieldData {
  public:
+  using ind_type = Ind3D;
+  
   /*!
    * Constructor
    *
@@ -187,7 +189,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Destructor
-  ~Field3D();
+  ~Field3D() override;
 
   /// Data type stored in this field
   using value_type = BoutReal;
@@ -278,7 +280,7 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
   
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
   /*!
    * These begin and end functions are used to iterate over
@@ -290,13 +292,13 @@ class Field3D : public Field, public FieldData {
    *
    * Field3D objects f and g can be modified by 
    * 
-   * for(auto i : f) {
+   * for(const auto &i : f) {
    *   f[i] = 2.*f[i] + g[i];
    * }
    * 
    */
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
   
   /*!
    * Returns a range of indices which can be iterated over
@@ -310,12 +312,12 @@ class Field3D : public Field, public FieldData {
    * between the point one index up in x (i.xp()) and one index down
    * in x (i.xm()), putting the result into a different field 'g'
    * 
-   * for(auto i : f.region(RGN_NOBNDRY)) {
+   * for(const auto &i : f.region(RGN_NOBNDRY)) {
    *   g[i] = f[i.xp()] - f[i.xm()];
    * }
    * 
    */
-  const IndexRange region(REGION rgn) const override;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   /*!
    * Like Field3D::region(REGION rgn), but returns range
@@ -324,23 +326,23 @@ class Field3D : public Field, public FieldData {
    * which need an explicit loop in z.
    *
    */
-  const IndexRange region2D(REGION rgn) const;
+  const IndexRange DEPRECATED(region2D(REGION rgn)) const;
 
   /*!
    * Direct data access using DataIterator object.
    * This uses operator(x,y,z) so checks will only be
    * performed if CHECK > 2.
    */
-  BoutReal& operator[](const DataIterator &d) {
+  BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](const DataIterator &d) const {
+  const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.y, d.z);
   }
-  BoutReal& operator[](const Indices &i) {
+  BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.y, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override {
+  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
     return operator()(i.x, i.y, i.z);
   }
   
@@ -352,6 +354,12 @@ class Field3D : public Field, public FieldData {
     return data[d.ind];
   }
 
+  BoutReal& operator()(const IndPerp &d, int jy);
+  const BoutReal& operator()(const IndPerp &d, int jy) const;
+
+  BoutReal& operator()(const Ind2D &d, int jz);
+  const BoutReal& operator()(const Ind2D &d, int jz) const;
+  
   /*!
    * Direct access to the underlying data array
    *
@@ -507,7 +515,7 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location; ///< Location of the variable in the cell
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
@@ -573,6 +581,17 @@ BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /// @param[in] rgn    The region to calculate the result over
 BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
+/// Calculates the mean of a field, excluding the boundary/guard
+/// cells by default (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe to true does a collective Allreduce over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Mean over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
+
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
@@ -580,7 +599,7 @@ BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
+FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
 Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn = RGN_ALL);
 Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 
@@ -752,7 +771,11 @@ void shiftZ(Field3D &var, double zangle, REGION rgn=RGN_ALL);
 Field2D DC(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(Field3D &var);
+#else
+inline void invalidateGuards(Field3D &UNUSED(var)) {}
+#endif
 
 /// Returns a reference to the time-derivative of a field \p f
 ///

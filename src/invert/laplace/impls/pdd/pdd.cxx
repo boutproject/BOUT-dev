@@ -71,10 +71,10 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
     }
   }else {
     // Overlap multiple inversions
-    
-    static PDD_data *data = NULL;
-    
-    if(data == NULL) {
+
+    static PDD_data *data = nullptr;
+
+    if (data == nullptr) {
       data = new PDD_data[ye - ys + 1];
       data -= ys; // Re-number indices to start at jstart
     }
@@ -160,7 +160,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   /// Create the matrices to be inverted (one for each z point)
 
-  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates()->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates(location)->zlength();
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {

@@ -1,6 +1,6 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
-  {% if lhs == rhs == "Field3D" %}
+  {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
 #if CHECK > 0
   if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
     throw BoutException(
@@ -22,7 +22,7 @@
   checkData({{rhs.name}});
 
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
-    {{region_loop}}(localmesh->getRegion2D({{region_name}}),{{index_var}},
+    {{region_loop}}({{index_var}}, localmesh->getRegion2D({{region_name}})) {
 	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
@@ -33,15 +33,15 @@
 	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
         {% endif %}
 	}
-	);
+	}
   {% else %}
-    {{region_loop}}(localmesh->getRegion{{out.region_type}}({{region_name}}),{{index_var}},
-	{{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
-	);
+    {{region_loop}}({{index_var}}, localmesh->getRegion{{out.region_type}}({{region_name}})) {
+	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
+	}
   {% endif %}
 
-  {% if out == 'Field3D' %}
-    {{out.name}}.setLocation({{rhs.name if rhs == "Field3D" else lhs.name}}.getLocation());
+  {% if out in ['Field3D','Field2D'] %}
+    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
   {% endif %}
 
   checkData({{out.name}});
@@ -54,7 +54,7 @@
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    {% if lhs == rhs == "Field3D" %}
+    {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}    
 #if CHECK > 0
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
@@ -72,7 +72,7 @@
     checkData({{rhs.name}});
 
   {% if (out == "Field3D") and (rhs =="Field2D") %}  
-    {{region_loop}}(fieldmesh->getRegion2D({{region_name}}),{{index_var}},
+    {{region_loop}}({{index_var}}, fieldmesh->getRegion2D({{region_name}})) {
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
@@ -83,11 +83,11 @@
 	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
         {% endif %}
 	}
-	);
+	}
   {% else %}
-    {{region_loop}}(fieldmesh->getRegion{{lhs.region_type}}({{region_name}}),{{index_var}},
+    {{region_loop}}({{index_var}}, fieldmesh->getRegion{{lhs.region_type}}({{region_name}})) {
       (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
-	);			 
+    }
   {% endif %}
 
     checkData(*this);

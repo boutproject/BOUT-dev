@@ -37,12 +37,17 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
-  Laplacian(opt),
+LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc) :
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -157,8 +162,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = new Multigrid1DP(aclevel,Nx_local,Nz_local,Nx_global,adlevel,mgmpi,
-            commX,pcheck);
+  kMG = std::unique_ptr<Multigrid1DP>(new Multigrid1DP(
+      aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi, commX, pcheck));
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
@@ -195,26 +200,18 @@ BOUT_OMP(master)
   }  
 }
 
-LaplaceMultigrid::~LaplaceMultigrid() {
-  // Finalize, deallocate memory, etc.
-  kMG->cleanMem();
-  kMG->cleanS();
-  kMG = NULL;
-}
-
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
-#if CHECK > 2
   checkData(b_in);
   checkData(x0);
-#endif
+  ASSERT3(b_in.getIndex() == x0.getIndex());
 
   Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->coordinates(location);
 
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
@@ -431,10 +428,13 @@ BOUT_OMP(for)
 
   FieldPerp result(mesh);
   result.allocate();
+  result.setIndex(yindex);
+
   #if CHECK>2
-    // Make any unused elements NaN so that user does not try to do calculations with them
-  for (const auto &i : result) {
-    result[i] = std::nan("");
+  // Make any unused elements NaN so that user does not try to do calculations with them
+  const auto &region = mesh->getRegionPerp("RGN_ALL");
+  BOUT_FOR(i, region) {
+    result[i] = BoutNaN;
   }
   #endif
   // Copy solution into a FieldPerp to return
@@ -543,7 +543,6 @@ BOUT_OMP(for)
       }
     }
   }
-  result.setIndex(yindex); // Set the index of the FieldPerp to be returned
 
 #if CHECK > 2
   checkData(result);
@@ -552,14 +551,13 @@ BOUT_OMP(for)
   return result;
 }
 
-
 void LaplaceMultigrid::generateMatrixF(int level) {
 
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->coordinates(location);
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];

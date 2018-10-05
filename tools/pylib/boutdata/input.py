@@ -1,6 +1,4 @@
-"""
-
-Transform data for input to BOUT++
+"""Fourier transform data for input to BOUT++
 
 """
 from builtins import range
@@ -8,27 +6,27 @@ from builtins import range
 from numpy.fft import rfft
 from numpy import ndarray
 
+
 def transform3D(arr):
-    """
-    Transforms a 3D array. BOUT++ expects 3D inputs
-    to be Fourier transformed in the Z direction.
+    """Fourier transforms a 3D array in the Z dimension
 
-    Inputs
-    ======
-    
-    arr   - 3D array [x,y,z]
+    BOUT++ can take 3D inputs to be Fourier transformed in the Z
+    direction.
 
+    Parameters
+    ----------
+    arr : array_like
+        Input 3-D array
 
     Returns
-    =======
+    -------
+    array_like
+        A 3D array [x,y,kz] where kz is organised in the standard FFT
+        order, with constant (DC, kz=0) component first, followed by
+        real/imaginary pairs.
 
-    A 3D array [x,y,kz]
+        kz = [0, (real, imag), (real, imag), ...]
 
-    where kz is organised in the standard FFT order,
-    with constant (DC, kz=0) component first, followed by
-    real/imaginary pairs.
-
-    kz = [0, (real, imag), (real, imag), ...]
     """
     
     if len(arr.shape) != 3:

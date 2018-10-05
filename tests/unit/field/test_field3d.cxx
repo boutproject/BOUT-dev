@@ -1,9 +1,14 @@
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field3d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
@@ -25,7 +30,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -106,17 +113,13 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   int test_ny = Field3DTest::ny + 2;
   int test_nz = Field3DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
-  Field3D field(fieldmesh);
-
-  field.allocate();
+  Field3D field{&fieldmesh};
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), test_ny);
   EXPECT_EQ(field.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 TEST_F(Field3DTest, CopyCheckFieldmesh) {
@@ -124,18 +127,18 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   int test_ny = Field3DTest::ny + 2;
   int test_nz = Field3DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
 
-  Field3D field(fieldmesh);
-  field.allocate();
+  Field3D field{0.0, &fieldmesh};
 
-  Field3D field2(field);
+  Field3D field2{field};
 
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), test_nz);
-
-  delete fieldmesh;
 }
 
 #if CHECK > 0
@@ -306,6 +309,23 @@ TEST_F(Field3DTest, ConstYnext) {
   EXPECT_THROW(field2.ynext(99), BoutException);
 }
 
+TEST_F(Field3DTest, GetGlobalMesh) {
+  Field3D field;
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, mesh);
+}
+
+TEST_F(Field3DTest, GetLocalMesh) {
+  FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  Field3D field(&myMesh);
+
+  auto localmesh = field.getMesh();
+
+  EXPECT_EQ(localmesh, &myMesh);
+}
+
 TEST_F(Field3DTest, SetGetLocation) {
   Field3D field;
 
@@ -440,6 +460,39 @@ TEST_F(Field3DTest, IterateOverRGN_ALL) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x, i.y, i.z});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * ny * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
+TEST_F(Field3DTest, IterateOverRegionInd3D_RGN_ALL) {
+  Field3D field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0},
+                                          {0, 1, 1}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}};
+  const int num_sentinels = test_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1], index[2]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getMesh()->getRegion("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y(), i.z()});
       ++found_sentinels;
     }
   }
@@ -692,6 +745,68 @@ TEST_F(Field3DTest, Indexing) {
   EXPECT_DOUBLE_EQ(field(2, 2, 2), 6);
 }
 
+TEST_F(Field3DTest, IndexingInd3D) {
+  Field3D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field[ind], 6);
+}
+
+TEST_F(Field3DTest, ConstIndexingInd3D) {
+  Field3D field1;
+
+  field1.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field1(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  const Field3D field2{field1};
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field2[ind], 6);
+}
+
+TEST_F(Field3DTest, IndexingInd2D) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  Ind2D ind{iy + ny * ix, ny, 1};
+  EXPECT_DOUBLE_EQ(field(ind, iz), sentinel);
+  field(ind, iz) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
+}
+
+TEST_F(Field3DTest, IndexingIndPerp) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  IndPerp ind{iz + nz * ix, 1, nz};
+  EXPECT_DOUBLE_EQ(field(ind, iy), sentinel);
+  field(ind, iy) = -sentinel;
+  EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
+}
+
 TEST_F(Field3DTest, IndexingToZPointer) {
   Field3D field;
 
@@ -724,6 +839,9 @@ TEST_F(Field3DTest, IndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
 #endif
 }
 
@@ -750,6 +868,10 @@ TEST_F(Field3DTest, ConstIndexingToZPointer) {
   EXPECT_THROW(field(0, -1), BoutException);
   EXPECT_THROW(field(nx, 0), BoutException);
   EXPECT_THROW(field(0, ny), BoutException);
+
+  const Field3D fieldUnassigned;
+  EXPECT_THROW(fieldUnassigned(0, 0), BoutException);
+
 #endif
 }
 
@@ -812,6 +934,45 @@ TEST_F(Field3DTest, CheckData) {
   EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
   
 }
+
+#if CHECK > 0
+TEST_F(Field3DTest, BndryValid) {
+  Field3D field = 1.0;
+  field.bndry_xin = true;
+  field.bndry_xout = true;
+  field.bndry_yup = true;
+  field.bndry_ydown = true;
+  EXPECT_EQ(field.bndryValid(), true);
+
+  field.bndry_xin = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xin = true;
+
+  field.bndry_xout = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_xout = true;
+
+  field.bndry_yup = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_yup = true;
+
+  field.bndry_ydown = false;
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.bndry_ydown = true;
+}
+
+TEST_F(Field3DTest, DoneComms) {
+  Field3D field = 1.0;
+  field.bndry_xin = false;
+  field.bndry_xout = false;
+  field.bndry_yup = false;
+  field.bndry_ydown = false;
+
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.doneComms();
+  EXPECT_EQ(field.bndryValid(), true);
+}
+#endif
 
 TEST_F(Field3DTest, InvalidateGuards) {
   Field3D field;
@@ -1589,8 +1750,8 @@ TEST_F(Field3DTest, PowField3DBoutReal) {
 }
 
 TEST_F(Field3DTest, PowField3DFieldPerp) {
-  Field3D a, c;
-  FieldPerp b(mesh);
+  Field3D a{mesh};
+  FieldPerp b{mesh}, c{mesh};
   const int yindex = 2;
   b.setIndex(yindex);
 
@@ -1598,7 +1759,7 @@ TEST_F(Field3DTest, PowField3DFieldPerp) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 64.0));
 }
 
 TEST_F(Field3DTest, PowField3DField2D) {
@@ -1768,6 +1929,25 @@ TEST_F(Field3DTest, Max) {
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
 
+TEST_F(Field3DTest, Mean) {
+  Field3D field;
+
+  field = 50.0;
+  field(0, 0, 0) = 1.0;
+  field(1, 1, 1) = 40.0;
+  field(1, 2, 2) = 60.0;
+  field(2, 4, 3) = 109.0;
+
+  // mean doesn't include guard cells by default
+  const int npoints_all = nx*ny*nz;
+  const BoutReal mean_value_nobndry = 50.0;
+  const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
+
+  EXPECT_EQ(mean(field, false), mean_value_nobndry);
+  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
+}
+
 TEST_F(Field3DTest, DC) {
   Field3D field;
 
@@ -1815,3 +1995,6 @@ TEST_F(Field3DTest, OpenMPIterator) {
   delete[] d3;
 }
 #endif
+
+// Restore compiler warnings
+#pragma GCC diagnostic pop

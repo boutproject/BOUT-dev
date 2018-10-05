@@ -17,8 +17,12 @@
 
 # PETSc config variables need to be first, else they may clobber other
 # options (e.g. CXX, CXXFLAGS)
-@PETSC@
-@SLEPC_VARS@
+PETSC_DIR ?= @PETSC_DIR@
+PETSC_ARCH ?= @PETSC_ARCH@
+@PETSC_MAKE_INCLUDE@
+SLEPC_DIR ?= @SLEPC_DIR@
+SLEPC_ARCH ?= @SLEPC_ARCH@
+@SLEPC_MAKE_INCLUDE@
 
 # These lines can be replaced in "make install" to point to install directories
 # They are used in the CXXFLAGS variable below rather than hard-coding the directories
@@ -150,22 +154,24 @@ install: libfast
 	$(PRE_INSTALL)     # Pre-install commands follow.
 
 	$(NORMAL_INSTALL)  # Normal commands follow.
-
-	$(INSTALL_DATA) -D include/*.hxx -t $(INSTALL_INCLUDE_PATH)
-	$(INSTALL_DATA) -D include/pvode/*.h -t $(INSTALL_INCLUDE_PATH)/pvode/
-	$(INSTALL_DATA) -D include/bout/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/
-	$(INSTALL_DATA) -D include/bout/sys/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/sys/
-	$(INSTALL_DATA) -D include/bout/invert/*.hxx -t $(INSTALL_INCLUDE_PATH)/bout/invert/
-	$(INSTALL_DATA) -D lib/libbout++.a -t $(DESTDIR)@libdir@
-	$(INSTALL_DATA) -D lib/libpvode.a -t $(DESTDIR)@libdir@
-	$(INSTALL_DATA) -D lib/libpvpre.a -t $(DESTDIR)@libdir@
-	$(INSTALL_PROGRAM) -D bin/bout-config -t $(DESTDIR)@bindir@
-	$(INSTALL_PROGRAM) -D bin/bout-log-color -t $(DESTDIR)@bindir@
-	$(INSTALL_DATA) -D tools/idllib/*.pro -t $(DESTDIR)@datadir@/bout++/idllib/
-	$(INSTALL_DATA) -D tools/idllib/README -t $(DESTDIR)@datadir@/bout++/idllib/
-	$(INSTALL_DATA) -D tools/pylib/boutdata/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boutdata/
-	$(INSTALL_DATA) -D tools/pylib/boututils/*.py -t $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA) -D make.config -t $(DESTDIR)@datadir@/bout++/
+	$(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert}
+	$(MKDIR) $(DESTDIR)/{@libdir@,@bindir@,@datadir@/bout++/idllib}
+	$(MKDIR) $(DESTDIR)/@datadir@/bout++/pylib/{boutdata,boututils}
+	$(INSTALL_DATA) include/*.hxx $(INSTALL_INCLUDE_PATH)
+	$(INSTALL_DATA) include/pvode/*.h $(INSTALL_INCLUDE_PATH)/pvode/
+	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
+	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
+	$(INSTALL_DATA) include/bout/invert/*.hxx $(INSTALL_INCLUDE_PATH)/bout/invert/
+	$(INSTALL_DATA) lib/libbout++.a $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvode.a $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvpre.a $(DESTDIR)@libdir@
+	$(INSTALL_PROGRAM)  bin/bout-config $(DESTDIR)@bindir@
+	$(INSTALL_PROGRAM)  bin/bout-log-color $(DESTDIR)@bindir@
+	$(INSTALL_DATA)  tools/idllib/*.pro $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA)  tools/idllib/README $(DESTDIR)@datadir@/bout++/idllib/
+	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
+	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
+	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
 
 	$(POST_INSTALL)    # Post-install commands follow.
 
@@ -260,7 +266,7 @@ $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS) $(SUB_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")

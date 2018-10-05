@@ -49,7 +49,7 @@ class Vector2D : public FieldData {
  public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
-  ~Vector2D();
+  ~Vector2D() override;
 
   Field2D x, y, z; ///< components
 
@@ -136,6 +136,14 @@ class Vector2D : public FieldData {
   /// Deprecated: use cross(a,b) instead
   DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
 
+   /*!
+   * Set variable cell location
+   */ 
+  void setLocation(CELL_LOC loc); 
+
+  // Get variable cell location
+  CELL_LOC getLocation() const;
+
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;
   
@@ -158,6 +166,7 @@ class Vector2D : public FieldData {
  private:
   
   Vector2D *deriv; ///< Time-derivative, can be NULL
+  CELL_LOC location; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators

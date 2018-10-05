@@ -54,6 +54,7 @@ class Field3D; //#include "field3d.hxx"
  */
 class Field2D : public Field, public FieldData {
  public:
+  using ind_type = Ind2D;    
   /*!
    * Constructor, taking an optional mesh pointer
    * This mesh pointer is not used until the data is allocated,
@@ -86,8 +87,8 @@ class Field2D : public Field, public FieldData {
 
   /*!
    * Destructor
-   */ 
-  ~Field2D();
+   */
+  ~Field2D() override;
 
   /// Data type
   using value_type = BoutReal;
@@ -129,20 +130,29 @@ class Field2D : public Field, public FieldData {
    */ 
   Field2D & operator=(BoutReal rhs);
 
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
+
   /////////////////////////////////////////////////////////
   // Data access
 
   /// Iterator over the Field2D indices
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
   
   /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
    */
-  const IndexRange region(REGION rgn) const override;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
@@ -150,29 +160,29 @@ class Field2D : public Field, public FieldData {
   const BoutReal& operator[](const Ind2D &d) const {
     return data[d.ind];
   }
-  BoutReal& operator[](const Ind3D &d); 
+  BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
 
   /*!
    * Direct access to the data array. Since operator() is used
    * to implement this, no checks are performed if CHECK <= 2
    */
-  inline BoutReal& operator[](const DataIterator &d) {
+  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.y);
   }
 
   /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.y);
   }
 
   /// Indices are also used as a lightweight way to specify indexing
   /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
+  inline BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
+  inline const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
     return operator()(i.x, i.y);
   }
 
@@ -262,6 +272,8 @@ class Field2D : public Field, public FieldData {
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
@@ -430,7 +442,11 @@ inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBN
 #endif
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(Field2D &var);
+#else
+inline void invalidateGuards(Field2D &UNUSED(var)) {}
+#endif
 
 /// Returns a reference to the time-derivative of a field \p f
 ///

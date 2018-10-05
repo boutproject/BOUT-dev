@@ -41,8 +41,11 @@
 
 #include "spt.hxx"
 
-LaplaceSPT::LaplaceSPT(Options *opt)
-    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc)
+    : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  Acoef.setLocation(location);
+  Ccoef.setLocation(location);
+  Dcoef.setLocation(location);
 
   if(mesh->periodicX) {
       throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
@@ -84,8 +87,9 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
@@ -114,6 +118,9 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  * in the config file uses less memory, and less communication overlap
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
+
+  ASSERT1(b.getLocation() == location);
+
   Timer timer("invert");
   Mesh *mesh = b.getMesh();
   Field3D x(mesh);
@@ -154,8 +161,9 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
        ((outer_boundary_flags & INVERT_SET) && mesh->lastX()) ) {
     Field3D bs = copy(b);
     
-    int xbndry = 2;
-    if(global_flags & INVERT_BOTH_BNDRY_ONE)
+    int xbndry = mesh->xstart;
+    // If the flags to assign that only one guard cell should be used is set
+    if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
       xbndry = 1;
     
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
@@ -280,12 +288,12 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
       data.bk(kz, ix) = dc1d[kz];
   }
 
-  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates()->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / mesh->coordinates(location)->zlength();
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {
     tridagMatrix(&data.avec(kz, 0), &data.bvec(kz, 0), &data.cvec(kz, 0), &data.bk(kz, 0),
-                 kz, kz * kwaveFactor, data.jy, global_flags, inner_boundary_flags,
+                 data.jy, kz, kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &Acoef, &Ccoef, &Dcoef);
   }
 

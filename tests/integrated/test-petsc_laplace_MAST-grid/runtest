@@ -4,7 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
-#Requires: petsc
+#requires: all_tests
+#requires: petsc
 
 # Variables to compare
 from __future__ import print_function
@@ -21,7 +22,6 @@ vars = [['max_error1',2.e-4],
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
-#import numpy as np
 from sys import stdout, exit
 
 MPIRUN=getmpirun()

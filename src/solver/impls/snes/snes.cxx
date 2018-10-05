@@ -20,8 +20,8 @@
  *
  * This function assumes the context void pointer is a pointer
  * to an SNESSolver object.
- */ 
-static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
+ */
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 
@@ -116,8 +116,8 @@ int SNESSolver::run() {
   SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
   MatView(Jmf, 	PETSC_VIEWER_STDOUT_SELF);
   */
-  SNESSolve(snes,NULL,snes_x);
-  
+  SNESSolve(snes, nullptr, snes_x);
+
   // Find out if converged
   SNESConvergedReason reason;
   SNESGetConvergedReason(snes,&reason);

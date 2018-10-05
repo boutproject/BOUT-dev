@@ -23,13 +23,18 @@
  *
  **************************************************************************/
 
+#include <bout/mesh.hxx>
 #include <where.hxx>
 
+//////////////////////////////////////////////////////////////////////////////////
+// Versions taking Field2D and returning Field3D
+
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -40,10 +45,11 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -54,10 +60,11 @@ const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
 }
 
 const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0;
     }else {
@@ -69,10 +76,11 @@ const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -84,10 +92,11 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -99,13 +108,14 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
 }
 
 //////////////////////////////////////////////////////////////////////////////////
-// Versions returning Field2D
+// Versions taking Field2D and returning Field2D
 
 const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0) {
-  Field2D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field2D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion2D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -117,10 +127,11 @@ const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0)
 }
 
 const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
-  Field2D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field2D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion2D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0[i];
     }else {
@@ -132,10 +143,11 @@ const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
-  Field2D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field2D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion2D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0;
     }else {
@@ -147,10 +159,11 @@ const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
+  const auto testMesh = test.getMesh();
   Field2D result(test.getMesh());
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion2D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0;
     }else {
@@ -161,11 +174,15 @@ const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
   return result;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Versions taking Field3D and returning Field3D
+
 const Field3D where(const Field3D &test, BoutReal gt0, const Field3D &le0) {
-  Field3D result(test.getMesh());
+  const auto testMesh = test.getMesh();
+  Field3D result(testMesh);
   result.allocate();
-  
-  for(auto i : result) {
+
+  BOUT_FOR(i, testMesh->getRegion3D("RGN_ALL")) {
     if(test[i] > 0.0) {
       result[i] = gt0;
     }else {

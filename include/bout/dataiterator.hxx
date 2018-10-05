@@ -10,6 +10,7 @@
 #include <iostream>
 #include "unused.hxx"
 #include "assert.hxx"
+#include "bout/deprecated.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -50,7 +51,7 @@ struct Indices {
  * and Field3D::end() return DataIterator objects:
  * 
  *     Field3D f(0.0); // Initialise field
- *     for(auto i : f) { // Loop over all indices, including guard cells
+ *     for(const auto &i : f) { // Loop over all indices, including guard cells
  *       f[i] = i.x; // Indexing using DataIterator
  *     }
  * 
@@ -66,14 +67,16 @@ private:
   inline void omp_init(bool end);
 #endif
 public:
+  /// Disable null constructor
+  DataIterator() = delete;
   /*!
    * Constructor. This sets index ranges.
    * If OpenMP is enabled, the index range is divided
    * between threads using the omp_init method.
    */ 
   DataIterator(int xs, int xe,
-	       int ys, int ye,
-	       int zs, int ze) : 
+               int ys, int ye,
+               int zs, int ze) :
 #ifndef _OPENMP
     x(xs), y(ys), z(zs),
     // start / end : start and end point of the iterator
@@ -249,7 +252,6 @@ public:
   }
   
 private:
-  DataIterator(); // Disable null constructor
 
   /// start / end : start and end point of THIS iterator
 #ifndef _OPENMP
@@ -312,7 +314,7 @@ private:
  *
  * or the more convenient range for loop:
  *
- *     for( auto i : r ) {
+ *     for( const auto &i : r ) {
  *       output.write("%d,%d,%d\n", i.x, i.y, i.z);
  *     }
  *
@@ -320,7 +322,7 @@ private:
  * regions of a field:
  *
  *     Field3D f(0.0);
- *     for( auto i : f.region(RGN_NOBNDRY) ) {
+ *     for( const auto &i : f.region(RGN_NOBNDRY) ) {
  *       f[i] = 1.0;
  *     }
  * 

@@ -53,9 +53,11 @@ using std::swap;
 template <typename T>
 class Matrix {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using size_type = int;
+  
   Matrix() : n1(0), n2(0){};
-  Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
+  Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
@@ -72,31 +74,31 @@ public:
     return *this;
   }
   
-  T& operator()(unsigned int i1, unsigned int i2) {
+  inline T& operator()(size_type i1, size_type i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
-  const T& operator()(unsigned int i1, unsigned int i2) const {
+  inline const T& operator()(size_type i1, size_type i2) const {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
 
   Matrix& operator=(const T&val){
-    for(auto &i: data){
+    for (auto &i: data) {
       i = val;
     };
     return *this;
   };
   
   // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(T* operator[](unsigned int i1)) {
+  DEPRECATED(T* operator[](size_type i1)) {
     ASSERT2(0<=i1 && i1<n1);
     return &(data[i1*n2]);
   }
   // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(const T* operator[](unsigned int i1) const) {
+  DEPRECATED(const T* operator[](size_type i1) const) {
     ASSERT2(0<=i1 && i1<n1);
     return &(data[i1*n2]);
   }
@@ -106,7 +108,7 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
 
   bool empty(){
     return n1*n2 == 0;
@@ -122,7 +124,7 @@ public:
   }
   
 private:
-  unsigned int n1, n2;
+  size_type n1, n2;
   Array<T> data;
 };
 
@@ -138,9 +140,11 @@ void free_matrix(Matrix<T> UNUSED(m)) {};
 template <typename T>
 class Tensor {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using size_type = int;
+
   Tensor() : n1(0), n2(0), n3(0) {};
-  Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
+  Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     data = Array<T>(n1*n2*n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
@@ -158,13 +162,13 @@ public:
     return *this;
   }
 
-  T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
+  T& operator()(size_type i1, size_type i2, size_type i3) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
     return data[(i1*n2+i2)*n3 + i3];
   }
-  const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
+  const T& operator()(size_type i1, size_type i2, size_type i3) const {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
@@ -183,7 +187,7 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
   
-  std::tuple<unsigned int, unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2, n3);};
+  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
   
   bool empty(){
     return n1*n2*n3 == 0;
@@ -199,7 +203,7 @@ public:
   }
  
 private:
-  unsigned int n1, n2, n3;
+  size_type n1, n2, n3;
   Array<T> data;
 };
 
@@ -285,10 +289,10 @@ T **matrix(int xsize, int ysize) {
   if(ysize == 0)
      ysize = 1;
 
-  if((m = new T*[xsize]) == NULL)
+  if((m = new T*[xsize]) == nullptr)
     throw BoutException("Error: could not allocate memory:%d\n", xsize);
   
-  if((m[0] = new T[xsize*ysize]) == NULL)
+  if((m[0] = new T[xsize*ysize]) == nullptr)
     throw BoutException("Error: could not allocate memory\n");
 
   for(i=1;i<xsize;i++) {
@@ -351,7 +355,7 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-T SQ(T t){
+T SQ(const T &t){
   return t*t;
 }
 
@@ -536,5 +540,10 @@ std::string trimComments(const std::string &s, const std::string &c="#;");
       va_end(va);                                       \
     }                                                   \
   }
+
+/// Convert pointer or reference to pointer
+/// This allows consistent handling of both in macros, templates
+template <typename T> T *pointer(T *val) { return val; }
+template <typename T> T *pointer(T &val) { return &val; }
 
 #endif // __UTILS_H__

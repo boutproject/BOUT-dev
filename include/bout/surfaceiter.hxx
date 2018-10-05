@@ -16,7 +16,7 @@ class SurfaceIter;
 ///
 /// SurfaceIter si(mesh);
 ///
-/// for( si.first(); si.next(); !si.isDone() ) {
+/// for( si.first(); !si.isDone(); si.next() ) {
 ///   // Perform operation at x = si.xpos
 ///   if(si.closed()) {
 ///     // A closed flux surface (no boundaries in Y)

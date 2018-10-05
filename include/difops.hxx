@@ -173,7 +173,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v);
  *
  * Note: For parallel Laplacian use LaplacePar
  */
-const Field2D Grad2_par2(const Field2D &f);
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * second parallel derivative
@@ -212,12 +212,12 @@ const Field2D Div_par_CtoL(const Field2D &var);
  * @param[in] kY  The diffusion coefficient
  * @param[in] f   The field whose gradient drives a flux
  */
-const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f);
-const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f);
-const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f);
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f);
+const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Perpendicular Laplacian operator
@@ -228,36 +228,36 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f);
  *
  * For the full perpendicular Laplacian, use Laplace_perp
  */
-const Field2D Delp2(const Field2D &f);
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth=-1.0);
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth=-1.0);
+const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Delp2(const Field3D &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
+const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Perpendicular Laplacian, keeping y derivatives
  *
  * 
  */
-const Field2D Laplace_perp(const Field2D &f);
-const Field3D Laplace_perp(const Field3D &f);
+const Field2D Laplace_perp(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Parallel Laplacian operator
  *
  */
-const Field2D Laplace_par(const Field2D &f);
-const Field3D Laplace_par(const Field3D &f);
+const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Full Laplacian operator (par + perp)
  */
-const Field2D Laplace(const Field2D &f);
-const Field3D Laplace(const Field3D &f);
+const Field2D Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
  * 
  */
-const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A);
+const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * Terms of form 
@@ -271,7 +271,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A);
  * @param[in] outloc  The cell location where the result is defined. By default the same as A.
  */
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field2D &A, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A);
+const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
@@ -303,9 +303,17 @@ enum BRACKET_METHOD {
  * @param[in] solver   Pointer to the time integration solver
  * 
  */
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
-const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
+const Field2D bracket(const Field2D &f, const Field2D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field2D &f, const Field3D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field3D &f, const Field2D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
+const Field3D bracket(const Field3D &f, const Field3D &g,
+                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
+                      Solver *solver = nullptr);
 
 #endif /* __DIFOPS_H__ */

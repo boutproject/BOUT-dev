@@ -26,7 +26,7 @@ void FieldData::setBoundary(const string &name) {
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
-    if(op != NULL)
+    if (op != nullptr)
       bndry_op.push_back(op);
     output_info << endl;
   }
@@ -36,7 +36,7 @@ void FieldData::setBoundary(const string &name) {
   /// Loop over the mesh parallel boundary regions
   for(const auto& reg : mesh->getBoundariesPar()) {
     BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
-    if(op != NULL)
+    if (op != nullptr)
       bndry_op_par.push_back(op);
     output_info << endl;
   }
@@ -71,11 +71,10 @@ void FieldData::copyBoundary(const FieldData &f) {
 //JMAD
 void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
   /// NOTE: This will allocate memory, which may never be free'd
-  addBndryGenerator( std::shared_ptr<FieldGenerator>(new FieldFunction(userfunc)), location );
+  addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
-
-void FieldData::addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc location){
+void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
   if(location == BNDRY_ALL){
     for(const auto& reg : mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
@@ -85,10 +84,10 @@ void FieldData::addBndryGenerator(std::shared_ptr<FieldGenerator> gen, BndryLoc 
   }
 }
 
-std::shared_ptr<FieldGenerator> FieldData::getBndryGenerator(BndryLoc location) {
-  std::map<BndryLoc,std::shared_ptr<FieldGenerator> >::iterator it = bndry_generator.find(location);
+FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
+  std::map<BndryLoc, FieldGeneratorPtr>::iterator it = bndry_generator.find(location);
   if(it == bndry_generator.end())
-    return 0;
-  
+    return nullptr;
+
   return it->second;
 }

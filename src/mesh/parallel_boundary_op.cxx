@@ -69,7 +69,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const l
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet(region, real_value);
     } catch (BoutException& e) {
-      std::shared_ptr<FieldGenerator>  newgen = 0;
+      std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet(region, newgen);
@@ -86,7 +86,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
   Field3D& f_next = f.ynext(bndry->dir);
 
-  Coordinates& coord = *(mesh->coordinates());
+  Coordinates& coord = *(f.getCoordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
@@ -114,7 +114,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, cons
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, real_value);
     } catch (BoutException& e) {
-      std::shared_ptr<FieldGenerator>  newgen = 0;
+      std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, newgen);
@@ -132,7 +132,7 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
   Field3D& f_next = f.ynext(bndry->dir);
   Field3D& f_prev = f.ynext(-bndry->dir);
 
-  Coordinates& coord = *(mesh->coordinates());
+  Coordinates& coord = *(f.getCoordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
@@ -166,7 +166,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, 
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, real_value);
     } catch (BoutException& e) {
-      std::shared_ptr<FieldGenerator>  newgen = 0;
+      std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, newgen);
@@ -184,7 +184,7 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
   Field3D& f_next = f.ynext(bndry->dir);
   Field3D& f_prev = f.ynext(-bndry->dir);
 
-  Coordinates& coord = *(mesh->coordinates());
+  Coordinates& coord = *(f.getCoordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
@@ -215,7 +215,7 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const lis
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_neumann(region, real_value);
     } catch (BoutException& e) {
-      std::shared_ptr<FieldGenerator>  newgen = 0;
+      std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
       return new BoundaryOpPar_neumann(region, newgen);
@@ -229,10 +229,12 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, Field3D *
 }
 
 void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
-
+  TRACE("BoundaryOpPar_neumann::apply");
+  
   Field3D& f_next = f.ynext(bndry->dir);
-
-  Coordinates& coord = *(mesh->coordinates());
+  f_next.allocate(); // Ensure unique before modifying
+  
+  Coordinates& coord = *(f.getCoordinates());
 
   // If point is in boundary, then fill in f_next such that the derivative
   // would be VALUE on the boundary

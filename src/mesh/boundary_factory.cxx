@@ -10,7 +10,7 @@ using std::string;
 
 #include <output.hxx>
 
-BoundaryFactory* BoundaryFactory::instance = NULL;
+BoundaryFactory *BoundaryFactory::instance = nullptr;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
@@ -62,7 +62,7 @@ BoundaryFactory::~BoundaryFactory() {
 }
 
 BoundaryFactory* BoundaryFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new BoundaryFactory();
   }
@@ -70,12 +70,12 @@ BoundaryFactory* BoundaryFactory::getInstance() {
 }
 
 void BoundaryFactory::cleanup() {
-  if(instance == NULL)
+  if (instance == nullptr)
     return;
 
   // Just delete the instance
   delete instance;
-  instance = NULL;
+  instance = nullptr;
 }
 
 BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *region) {
@@ -87,12 +87,12 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     // Need to strip whitespace
 
     if( (name == "null") || (name == "none") )
-      return NULL;
+      return nullptr;
 
     if(region->isParallel) {
       // Parallel boundary
       BoundaryOpPar *pop = findBoundaryOpPar(trim(name));
-      if(pop == NULL)
+      if (pop == nullptr)
         throw BoutException("Could not find parallel boundary condition '%s'",  name.c_str());
 
       // Clone the boundary operation, passing the region to operate over and an empty args list
@@ -101,7 +101,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     } else {
       // Perpendicular boundary
       BoundaryOp *op = findBoundaryOp(trim(name));
-      if(op == NULL)
+      if (op == nullptr)
         throw BoutException("Could not find boundary condition '%s'",  name.c_str());
 
       // Clone the boundary operation, passing the region to operate over and an empty args list
@@ -160,11 +160,11 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
 
   // Test if func is a modifier
   BoundaryModifier *mod = findBoundaryMod(func);
-  if(mod != NULL) {
+  if (mod != nullptr) {
     // The first argument should be an operation
     BoundaryOp *op = static_cast<BoundaryOp*>(create(arglist.front(), region));
-    if(op == NULL)
-      return NULL;
+    if (op == nullptr)
+      return nullptr;
 
     // Remove the first element (name of operation)
     arglist.pop_front();
@@ -176,14 +176,14 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   if(region->isParallel) {
     // Parallel boundary
     BoundaryOpPar *pop = findBoundaryOpPar(trim(func));
-    if(pop != NULL) {
+    if (pop != nullptr) {
       // An operation with arguments
       return pop->clone(static_cast<BoundaryRegionPar*>(region), arglist);
     }
   } else {
     // Perpendicular boundary
     BoundaryOp *op = findBoundaryOp(trim(func));
-    if(op != NULL) {
+    if (op != nullptr) {
       // An operation with arguments
       return op->clone(static_cast<BoundaryRegion*>(region), arglist);
     }
@@ -191,8 +191,8 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
 
   // Otherwise nothing matches
   throw BoutException("  Boundary setting is neither an operation nor modifier: %s\n",func.c_str());
-   
-  return NULL;
+
+  return nullptr;
 }
 
 BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase *region) {
@@ -303,7 +303,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname, Boundary
 }
 
 void BoundaryFactory::add(BoundaryOp* bop, const string &name) {
-  if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
+  if ((findBoundaryMod(name) != nullptr) || (findBoundaryOp(name) != nullptr)) {
     // error - already exists
     output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
@@ -316,7 +316,7 @@ void BoundaryFactory::add(BoundaryOp* bop, const char *name) {
 }
 
 void BoundaryFactory::add(BoundaryOpPar* bop, const string &name) {
-  if(findBoundaryOpPar(name) != NULL) {
+  if (findBoundaryOpPar(name) != nullptr) {
     // error - already exists
     output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
@@ -329,7 +329,7 @@ void BoundaryFactory::add(BoundaryOpPar* bop, const char *name) {
 }
 
 void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name) {
-  if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
+  if ((findBoundaryMod(name) != nullptr) || (findBoundaryOp(name) != nullptr)) {
     // error - already exists
     output_error << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
     return;
@@ -345,7 +345,7 @@ BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s) {
   map<string,BoundaryOp*>::iterator it;
   it = opmap.find(lowercase(s));
   if(it == opmap.end())
-    return NULL;
+    return nullptr;
   return it->second;
 }
 
@@ -353,7 +353,7 @@ BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s) {
   map<string,BoundaryModifier*>::iterator it;
   it = modmap.find(lowercase(s));
   if(it == modmap.end())
-    return NULL;
+    return nullptr;
   return it->second;
 }
 
@@ -361,6 +361,6 @@ BoundaryOpPar* BoundaryFactory::findBoundaryOpPar(const string &s) {
   map<string,BoundaryOpPar*>::iterator it;
   it = par_opmap.find(lowercase(s));
   if(it == par_opmap.end())
-    return NULL;
+    return nullptr;
   return it->second;
 }

@@ -33,6 +33,7 @@ class FieldPerp;
 #include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -47,6 +48,8 @@ class Field3D; // #include "field3d.hxx"
  */ 
 class FieldPerp : public Field {
  public:
+  using ind_type = IndPerp;
+    
   /*!
    * Constructor
    */
@@ -71,7 +74,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() {}
+  ~FieldPerp() override {}
 
   /*!
    * Assignment operators
@@ -83,27 +86,43 @@ class FieldPerp : public Field {
   /*!
    * Iterators and data access
    */
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
 
-  const IndexRange region(REGION rgn) const override;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   /*!
    * Direct data access using DataIterator indexing
    */
-  inline BoutReal& operator[](const DataIterator &d) {
+  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.z);
   }
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.z);
   }
-  BoutReal& operator[](const Indices &i) {
+  BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override{
+  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override{
     return operator()(i.x, i.z);
   }
-  
+
+  inline BoutReal& operator[](const IndPerp &d) {
+    return data[d.ind];
+  }
+  inline const BoutReal& operator[](const IndPerp &d) const {
+    return data[d.ind];
+  }  
+
+  inline BoutReal& operator[](const Ind3D &d) {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z()); //Could use mesh->ind3DtoPerp if we had access to mesh here
+  }
+  inline const BoutReal& operator[](const Ind3D &d) const {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z());
+  }  
+
   /*!
    * Returns the y index at which this field is defined
    */ 
@@ -235,14 +254,14 @@ class FieldPerp : public Field {
   /*!
    * Return the number of ny points
    */
-  virtual int getNy() const override{ return 1;};
+  int getNy() const override { return 1; };
   /*!
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
   
  private:
-  int yindex; ///< The Y index at which this FieldPerp is defined
+  int yindex = -1; ///< The Y index at which this FieldPerp is defined
 
   /// The size of the data array
   int nx, nz;
@@ -410,6 +429,10 @@ inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region) = RGN_NO
 #endif
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(FieldPerp &var);
+#else
+inline void invalidateGuards(FieldPerp &UNUSED(var)) {}
+#endif
 
 #endif

@@ -88,6 +88,10 @@ public:
 };
 
 class HermiteSpline : public Interpolation {
+protected:
+  /// This is protected rather than private so that it can be
+  /// extended and used by HermiteSplineMonotonic
+  
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
 
@@ -119,15 +123,45 @@ public:
     return new HermiteSpline(mesh);
   }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask) override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const;
+  Field3D interpolate(const Field3D &f) const override;
   // Calculate weights and interpolate
-  Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
+  Field3D interpolate(const Field3D &f, const Field3D &delta_x,
+                      const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask);
+                      const BoutMask &mask) override;
+};
+
+
+/// Monotonic Hermite spline interpolator
+///
+/// Similar to HermiteSpline, so uses most of the same code.
+/// Forces the interpolated result to be in the range of the
+/// neighbouring cell values. This prevents unphysical overshoots,
+/// but also degrades accuracy near maxima and minima.
+/// Perhaps should only impose near boundaries, since that is where
+/// problems most obviously occur.
+class MonotonicHermiteSpline : public HermiteSpline {
+public:
+  MonotonicHermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
+  MonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
+      : HermiteSpline(y_offset, mesh) {}
+  MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : HermiteSpline(mask, y_offset, mesh) {}
+
+  /// Callback function for InterpolationFactory
+  static Interpolation *CreateMonotonicHermiteSpline(Mesh *mesh) {
+    return new MonotonicHermiteSpline(mesh);
+  }
+  
+  /// Interpolate using precalculated weights.
+  /// This function is called by the other interpolate functions
+  /// in the base class HermiteSpline.
+  Field3D interpolate(const Field3D &f) const override;
 };
 
 class Lagrange4pt : public Interpolation {
@@ -147,15 +181,17 @@ public:
   /// Callback function for InterpolationFactory
   static Interpolation *CreateLagrange4pt(Mesh *mesh) { return new Lagrange4pt(mesh); }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask) override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const;
+  Field3D interpolate(const Field3D &f) const override;
   // Calculate weights and interpolate
-  Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
+  Field3D interpolate(const Field3D &f, const Field3D &delta_x,
+                      const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask);
+                      const BoutMask &mask) override;
   BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
                         BoutReal offset) const;
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
@@ -178,15 +214,17 @@ public:
   /// Callback function for InterpolationFactory
   static Interpolation *CreateBilinear(Mesh *mesh) { return new Bilinear(mesh); }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask) override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const;
+  Field3D interpolate(const Field3D &f) const override;
   // Calculate weights and interpolate
-  Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z);
+  Field3D interpolate(const Field3D &f, const Field3D &delta_x,
+                      const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask);
+                      const BoutMask &mask) override;
 };
 
 #endif // __INTERP_H__

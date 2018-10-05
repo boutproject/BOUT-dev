@@ -51,6 +51,9 @@ control over how BOUT++ is built:
 
 - ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
 
+- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
+  to SUNDIALS, which are put at the end of the link command.
+  
 It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
@@ -154,10 +157,21 @@ Marconi
    module load netcdf-cxx4
    module load python
 
+To compile for the SKL partition, configure with
+
+.. code-block:: bash
+
+   ./configure --enable-checks=0 CPPFLAGS="-Ofast -funroll-loops -xCORE-AVX512 -mtune=skylake" --host skl
+
+to enable AVX512 vectorization.
+
 .. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4 modules
           means that you will need to remove ``-lnetcdf`` from ``EXTRA_LIBS`` in
           ``make.config`` after running ``./configure`` and before running
-          ``make``.
+          ``make``. ``-lnetcdf`` needs also to be removed from ``bin/bout-config``
+	  to allow a successful build of the python interface. Recreation of
+	  ``boutcore.pyx`` needs to be manually triggered, if
+	  ``boutcore.pyx`` has already been created.
 
 Ubgl
 ~~~~
@@ -336,7 +350,7 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.4 - 3.8. To install PETSc
+Currently, BOUT++ supports PETSc versions 3.4 - 3.9. To install PETSc
 version 3.4.5, use the following steps::
 
     $ cd ~
@@ -403,15 +417,38 @@ type::
     $ ./configure --with-petsc
 
 You can configure BOUT++ against different PETSc installations either
-through the ``PETSC_DIR/ARCH`` variables as above, or by giving
-``--with-petsc`` a path::
+through the ``PETSC_DIR/ARCH`` variables as above, or by specifying
+them on the command line::
 
-  $ ./configure --with-petsc=/path/to/other/petsc
+  $ ./configure --with-petsc PETSC_DIR=/path/to/other/petsc PETSC_ARCH=other-arch
 
-To configure BOUT++ with PETSc and SUNDIALS, type instead::
+.. note:: Unfortunately, there are a variety of ways PETSc can be
+          installed on a system, and it is hard to automatically work
+          out how to compile against a particular installation. In
+          particular, there are two PETSc-supported ways of installing
+          PETSc that are subtly different.
 
-    $ ./configure --with-petsc --with-sundials
+          The first way is as above, using ``PETSC_DIR`` and
+          ``PETSC_ARCH``. A second way is to use the ``--prefix``
+          argument to ``configure`` (much like the traditional GNU
+          ``configure`` scripts) when building PETSc. In this case,
+          ``PETSC_DIR`` will be the path passed to ``--prefix`` and
+          ``PETSC_ARCH`` will be empty. When configuring BOUT++, one
+          can use ``--with-petsc=$PETSC_DIR`` as a shortcut in this
+          case. This will NOT work if PETSc was installed with a
+          ``PETSC_ARCH``.
 
+          However, there are at least some Linux distributions that
+          install PETSc in yet another way and you may need to set
+          ``PETSC_DIR/ARCH`` differently. For example, for Fedora, as
+          of May 2018, you will need to configure and build BOUT++
+          like so::
+
+            $ ./configure --with-petsc=/usr/lib64/openmpi
+            $ PETSC_DIR=/usr make
+
+          Replace `openmpi` with the correct MPI implementation that
+          you have installed.
 
 .. _sec-lapack:
 

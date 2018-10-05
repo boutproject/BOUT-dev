@@ -1,46 +1,73 @@
-#pragma once
+#ifndef __MONITOR_H__
+#define __MONITOR_H__
 
 #include "bout_types.hxx"
+#include "bout/assert.hxx"
+#include "utils.hxx"
+
+#include <cmath>
 
 class Solver;
 
-template <typename t>
-t bout_abs(t a){
-  return a>0? a:-1;
+/// Return true if either \p a is a multiple of \p b or vice-versa
+///
+/// Assumes both arguments are greater than zero
+inline bool isMultiple(BoutReal a, BoutReal b) {
+  ASSERT2(a > 0);
+  ASSERT2(b > 0);
+
+  auto min = a>b?b:a;
+  auto max = a>b?a:b;
+  auto ratio = std::round(max/min);
+  auto error = ratio*min - max;
+  return (std::abs(error/max) < 1e-12);
 }
 
-template <typename t>
-bool isMultiple(t a, t b){
-  t min = a>b?b:a;
-  t max = a>b?a:b;
-  int ratio = (max/min)+.5;
-  t error = ratio*min - max;
-  if (bout_abs(error/max) > 1e-5)
-    return false;
-  return true;
-}
-
-
+/// Monitor baseclass for the Solver
+///
+/// Can be called ether with a specified frequency, or with the
+/// frequency of the BOUT++ output monitor.
 class Monitor{
-  friend class Solver; // needs access to timestep and freq
+  friend class Solver; ///< needs access to timestep and freq
 public:
-  Monitor(BoutReal timestep_=-1):timestep(timestep_){};
+  /// A \p timestep_ of -1 defaults to the the frequency of the BOUT++
+  /// output monitor
+  Monitor(BoutReal timestep_ = -1) : timestep(timestep_){};
+
   virtual ~Monitor(){};
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout)=0;
+
+  /// Callback function for the solver, called after timestep_ has passed
+  ///
+  /// @param[in] solver The solver calling this monitor
+  /// @param[in] time   The current simulation time
+  /// @param[in] iter   The current simulation iteration
+  /// @param[in] nout   The total number of iterations for this simulation
+  ///
+  /// @returns non-zero if simulation should be stopped
+  virtual int call(Solver *solver, BoutReal time, int iter, int nout) = 0;
+
+  /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
-  bool operator==(const Monitor& rhs) const;
+
+protected:
+  /// Get the currently set timestep for this monitor
+  BoutReal getTimestep() const { return timestep; }
+
+  /// Set the timestep for this Monitor
+  ///
+  /// Can only be called before the Monitor is added to a Solver
+  void setTimestep(BoutReal new_timestep) {
+    if (is_added) {
+      throw BoutException("Monitor::set_timestep - Error: Monitor has already"
+          "been added to a Solver, so timestep cannot be changed.");
+    }
+    timestep = new_timestep;
+  }
+
 private:
+  bool is_added = false; ///< Set to true when Monitor is added to a Solver
   BoutReal timestep;
   int freq;
 };
 
-typedef int (* MonitorFuncPointer )(Solver *solver, BoutReal simtime, int iter, int NOUT);
-
-class MonitorFunc: public Monitor{
-public:
-  MonitorFunc(MonitorFuncPointer pntr);
-  virtual ~MonitorFunc(){};
-  virtual int call(Solver * solver, BoutReal time, int iter, int nout);
-private:
-  MonitorFuncPointer callFunc;
-};
+#endif // __MONITOR_H__

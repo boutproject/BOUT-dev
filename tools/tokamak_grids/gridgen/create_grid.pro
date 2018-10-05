@@ -1324,8 +1324,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         ENDELSE
       ENDIF ELSE BEGIN
         ; Gridding in multiple regions. Ensure equal spacing around separatrix
-        dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])
-        pf_psi_out = xpt_psi[xind] - 0.5*dpsi
+        dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
+        pf_psi_out = (pf_psi_vals[xind,0,npf] - dpsi) < xpt_psi[xind]
         
         pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                     pf_psi_out, $

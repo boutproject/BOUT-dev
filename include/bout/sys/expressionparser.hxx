@@ -41,6 +41,8 @@ class ParseException;
 #include <memory>
 #include <exception>
 
+using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
+
 //////////////////////////////////////////////////////////
 
 /*!
@@ -56,7 +58,9 @@ public:
   /// to test whether the correct number of arguments is passed.
   ///
   /// @param[in] args   A (possibly empty) list of arguments to the generator function
-  virtual std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) {return NULL;}
+  virtual FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) {
+    return nullptr;
+  }
 
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
@@ -87,7 +91,7 @@ public:
   /// @param[in] g     The class inheriting from FieldGenerator. When recognised
   ///                  in an expression, the clone() function will be called
   ///                  to build a tree of generators
-  void addGenerator(std::string name, std::shared_ptr<FieldGenerator> g);
+  void addGenerator(const std::string &name, FieldGeneratorPtr g);
 
   /// Add a binary operator such as +,-,*,/,^
   ///
@@ -102,27 +106,24 @@ public:
   ///  *, /  precedence = 20
   ///  ^     precedence = 30
   ///                        
-  void addBinaryOp(char sym, std::shared_ptr<FieldGenerator> b, int precedence);
+  void addBinaryOp(char sym, FieldGeneratorPtr b, int precedence);
   
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual std::shared_ptr<FieldGenerator> resolve(std::string &UNUSED(name)) {return NULL;}
+  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
-  std::shared_ptr<FieldGenerator> parseString(const std::string &input);
+  FieldGeneratorPtr parseString(const std::string &input);
   
 private:
   
-  std::map<std::string, std::shared_ptr<FieldGenerator> > gen;  ///< Generators, addressed by name
-  std::map<char, std::pair<std::shared_ptr<FieldGenerator> , int> > bin_op; ///< Binary operations
+  std::map<std::string, FieldGeneratorPtr> gen;  ///< Generators, addressed by name
+  std::map<char, std::pair<FieldGeneratorPtr, int>> bin_op; ///< Binary operations
   
-  /// List of allocated generators
-  std::list<std::shared_ptr<FieldGenerator> > genheap;
-
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
-    LexInfo(std::string input);
+    LexInfo(const std::string &input);
     
     signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number
@@ -130,21 +131,21 @@ private:
     signed char LastChar;   ///< The last character read from the string
     std::stringstream ss; ///< Used to read values from the input string
     char nextToken(); ///< Get the next token in the string
-    
-    int getPos(); ///< Return position in the input
   };
   
-  std::shared_ptr<FieldGenerator> parseIdentifierExpr(LexInfo &lex);
-  std::shared_ptr<FieldGenerator> parseParenExpr(LexInfo &lex);
-  std::shared_ptr<FieldGenerator> parsePrimary(LexInfo &lex);
-  std::shared_ptr<FieldGenerator> parseBinOpRHS(LexInfo &lex, int prec, std::shared_ptr<FieldGenerator> lhs);
-  std::shared_ptr<FieldGenerator> parseExpression(LexInfo &lex);
-  
-  /// Record generator in list, and return it
-  std::shared_ptr<FieldGenerator> record( std::shared_ptr<FieldGenerator> g) {
-    genheap.push_back(g);
-    return g;
-  }
+  FieldGeneratorPtr parseIdentifierExpr(LexInfo &lex);
+  FieldGeneratorPtr parseParenExpr(LexInfo &lex);
+
+  /// Parse a primary expression, one of:
+  ///   - number
+  ///   - identifier
+  ///   - ( ... )
+  ///   - [ ... ]
+  ///   - a unary '-', which is converted to '0 -'
+  ///   A ParseException is thrown if none of these is found
+  FieldGeneratorPtr parsePrimary(LexInfo &lex);
+  FieldGeneratorPtr parseBinOpRHS(LexInfo &lex, int prec, FieldGeneratorPtr lhs);
+  FieldGeneratorPtr parseExpression(LexInfo &lex);
 };
 
 //////////////////////////////////////////////////////
@@ -152,13 +153,18 @@ private:
 /// Binary operators
 class FieldBinary : public FieldGenerator {
 public:
-  FieldBinary(std::shared_ptr<FieldGenerator> l, std::shared_ptr<FieldGenerator> r, char o) : lhs(l), rhs(r), op(o) {}
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > args);
-  double generate(double x, double y, double z, double t);
+  FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
+      : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
+  double generate(double x, double y, double z, double t) override;
 
-  const std::string str() {return std::string("(")+lhs->str()+std::string(1,op)+rhs->str()+std::string(")");}
+  const std::string str() override {
+    return std::string("(") + lhs->str() + std::string(1, op) + rhs->str() +
+           std::string(")");
+  }
+
 private:
-  std::shared_ptr<FieldGenerator> lhs, rhs;
+  FieldGeneratorPtr lhs, rhs;
   char op;
 };
 
@@ -166,9 +172,16 @@ private:
 class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
-  std::shared_ptr<FieldGenerator> clone(const std::list<std::shared_ptr<FieldGenerator> > UNUSED(args)) { return std::shared_ptr<FieldGenerator>(std::shared_ptr<FieldGenerator>( new FieldValue(value))); }
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return value; }
-  const std::string str() {
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
+    return std::make_shared<FieldValue>(value);
+  }
+
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                  double UNUSED(t)) override {
+    return value;
+  }
+  const std::string str() override {
     std::stringstream ss;
     ss << value;
     return ss.str();
@@ -182,10 +195,10 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  virtual ~ParseException() {}
-  
-  const char* what() const noexcept;
-  
+  ~ParseException() override {}
+
+  const char *what() const noexcept override;
+
 protected:
   std::string message;
 };

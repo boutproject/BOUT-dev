@@ -4,6 +4,8 @@
 # Run the test, check it completed successfully
 #
 
+#requires: all_tests
+
 from __future__ import print_function
 try:
     from builtins import str

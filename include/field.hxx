@@ -43,6 +43,7 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
+class Coordinates;
 extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
@@ -72,11 +73,11 @@ class Field {
   }
 
 #ifdef TRACK
-  std::string getName() const { return name; }
-  void setName(std::string s) { name = s; }
+  DEPRECATED(std::string getName() const) { return name; }
+  DEPRECATED(void setName(std::string s)) { name = s; }
 #else
-  std::string getName() const { return ""; }
-  void setName(std::string UNUSED(s)) {}
+  DEPRECATED(std::string getName()) const { return ""; }
+  DEPRECATED(void setName(std::string UNUSED(s))) {}
 #endif
   std::string name;
 
@@ -105,6 +106,16 @@ class Field {
       return mesh;
     }
   }
+
+  /// Returns a pointer to the coordinates object at this field's
+  /// location from the mesh this field is on.
+  virtual Coordinates *getCoordinates() const;
+  
+  /// Returns a pointer to the coordinates object at the requested
+  /// location from the mesh this field is on. If location is CELL_DEFAULT
+  /// then return coordinates at field location
+  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
+  
   /*!
    * Return the number of nx points
    */
@@ -122,6 +133,7 @@ class Field {
   virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
+  mutable Coordinates * fieldCoordinates = nullptr;
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   DEPRECATED(void error(const char *s, ...) const);

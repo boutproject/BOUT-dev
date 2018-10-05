@@ -206,10 +206,19 @@ BoutReal DDX_CWENO3(stencil &f) {
   if (a > ma)
     ma = a;
 
-  stencil sp, vp, sm, vm;
+  stencil sp, sm;
 
-  sp = f + ma;
-  sm = ma - f;
+  sp.mm = f.mm + ma;
+  sp.m = f.m + ma;
+  sp.c = f.c + ma;
+  sp.p = f.p + ma;
+  sp.pp = f.pp + ma;
+
+  sm.mm = ma - f.mm;
+  sm.m = ma - f.m;
+  sm.c = ma - f.c;
+  sm.p = ma - f.p;
+  sm.pp = ma - f.pp;
 
   return VDDX_WENO3(0.5, sp) + VDDX_WENO3(-0.5, sm);
 }
@@ -311,18 +320,16 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
 }
 
 BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
-  BoutReal result;
+  // Calculate d(v*f)/dx = (v*f)[i+1/2] - (v*f)[i-1/2]
 
-  if (v.p > 0 && v.m > 0) {
-    // Extrapolate v to centre from below, use 2nd order backward difference on f
-    result = (1.5 * v.m - .5 * v.mm) * (.5 * f.mm - 2. * f.m + 1.5 * f.c);
-  } else if (v.p < 0 && v.m < 0) {
-    // Extrapolate v to centre from above, use 2nd order forward difference on f
-    result = (1.5 * v.p - .5 * v.pp) * (-1.5 * f.c + 2. * f.p - .5 * f.pp);
-  } else {
-    // Velocity changes sign, hence is almost zero: use centred interpolation/differencing
-    result = .25 * (v.p + v.m) * (f.p - f.m);
-  }
+  // Upper cell boundary
+  BoutReal result = (v.p >= 0.) ? v.p * (1.5*f.c - 0.5*f.m) : v.p * (1.5*f.p - 0.5*f.pp);
+
+  // Lower cell boundary
+  result -= (v.m >= 0.) ? v.m * (1.5*f.m - 0.5*f.mm) : v.m * (1.5*f.c - 0.5*f.p);
+
+  // result is now d/dx(v*f), but want v*d/dx(f) so subtract f*d/dx(v)
+  result -= f.c * (v.p - v.m);
 
   return result;
 }
@@ -366,6 +373,15 @@ struct DiffLookup {
   Mesh::deriv_func func;     // Single-argument differencing function
   Mesh::upwind_func up_func; // Upwinding function
   Mesh::flux_func fl_func;   // Flux function
+  operator Mesh::deriv_func (){
+    return func;
+  }
+  operator Mesh::upwind_func (){
+    return up_func;
+  }
+  operator Mesh::flux_func (){
+    return fl_func;
+  }
 };
 
 /// Translate between short names, long names and DIFF_METHOD codes
@@ -388,95 +404,60 @@ static DiffNameLookup DiffNameTable[] = {
     {DIFF_S2, "S2", "Smoothing 2nd order"},
     {DIFF_FFT, "FFT", "FFT"},
     {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
-    {DIFF_DEFAULT, NULL, NULL}}; // Use to terminate the list
+    {DIFF_DEFAULT, nullptr, nullptr}}; // Use to terminate the list
 
 /// First derivative lookup table
 static DiffLookup FirstDerivTable[] = {
-    {DIFF_C2, DDX_C2, NULL, NULL},     {DIFF_W2, DDX_CWENO2, NULL, NULL},
-    {DIFF_W3, DDX_CWENO3, NULL, NULL}, {DIFF_C4, DDX_C4, NULL, NULL},
-    {DIFF_S2, DDX_S2, NULL, NULL},     {DIFF_FFT, NULL, NULL, NULL},
-    {DIFF_DEFAULT, NULL, NULL, NULL}};
+    {DIFF_C2, DDX_C2, nullptr, nullptr},     {DIFF_W2, DDX_CWENO2, nullptr, nullptr},
+    {DIFF_W3, DDX_CWENO3, nullptr, nullptr}, {DIFF_C4, DDX_C4, nullptr, nullptr},
+    {DIFF_S2, DDX_S2, nullptr, nullptr},     {DIFF_FFT, nullptr, nullptr, nullptr},
+    {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Second derivative lookup table
-static DiffLookup SecondDerivTable[] = {{DIFF_C2, D2DX2_C2, NULL, NULL},
-                                        {DIFF_C4, D2DX2_C4, NULL, NULL},
-                                        {DIFF_FFT, NULL, NULL, NULL},
-                                        {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup SecondDerivTable[] = {{DIFF_C2, D2DX2_C2, nullptr, nullptr},
+                                        {DIFF_C4, D2DX2_C4, nullptr, nullptr},
+                                        {DIFF_FFT, nullptr, nullptr, nullptr},
+                                        {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Upwinding functions lookup table
 static DiffLookup UpwindTable[] = {
-    {DIFF_U1, NULL, VDDX_U1, NULL},    {DIFF_U2, NULL, VDDX_U2, NULL},
-    {DIFF_C2, NULL, VDDX_C2, NULL},    {DIFF_U3, NULL, VDDX_U3, NULL},
-    {DIFF_W3, NULL, VDDX_WENO3, NULL}, {DIFF_C4, NULL, VDDX_C4, NULL},
-    {DIFF_DEFAULT, NULL, NULL, NULL}};
+    {DIFF_U1, nullptr, VDDX_U1, nullptr},    {DIFF_U2, nullptr, VDDX_U2, nullptr},
+    {DIFF_C2, nullptr, VDDX_C2, nullptr},    {DIFF_U3, nullptr, VDDX_U3, nullptr},
+    {DIFF_W3, nullptr, VDDX_WENO3, nullptr}, {DIFF_C4, nullptr, VDDX_C4, nullptr},
+    {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Flux functions lookup table
 static DiffLookup FluxTable[] = {
-    {DIFF_SPLIT, NULL, NULL, NULL},   {DIFF_U1, NULL, NULL, FDDX_U1},
-    {DIFF_C2, NULL, NULL, FDDX_C2},   {DIFF_C4, NULL, NULL, FDDX_C4},
-    {DIFF_DEFAULT, NULL, NULL, NULL}};
+    {DIFF_SPLIT, nullptr, nullptr, nullptr},   {DIFF_U1, nullptr, nullptr, FDDX_U1},
+    {DIFF_C2, nullptr, nullptr, FDDX_C2},   {DIFF_C4, nullptr, nullptr, FDDX_C4},
+    {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// First staggered derivative lookup
-static DiffLookup FirstStagDerivTable[] = {{DIFF_C2, DDX_C2_stag, NULL, NULL},
-                                           {DIFF_C4, DDX_C4_stag, NULL, NULL},
-                                           {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup FirstStagDerivTable[] = {{DIFF_C2, DDX_C2_stag, nullptr, nullptr},
+                                           {DIFF_C4, DDX_C4_stag, nullptr, nullptr},
+                                           {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Second staggered derivative lookup
-static DiffLookup SecondStagDerivTable[] = {{DIFF_C2, D2DX2_C2_stag, NULL, NULL},
-                                            {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup SecondStagDerivTable[] = {{DIFF_C2, D2DX2_C2_stag, nullptr, nullptr},
+                                            {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Upwinding staggered lookup
-static DiffLookup UpwindStagTable[] = {{DIFF_U1, NULL, NULL, VDDX_U1_stag},
-                                       {DIFF_U2, NULL, NULL, VDDX_U2_stag},
-                                       {DIFF_C2, NULL, NULL, VDDX_C2_stag},
-                                       {DIFF_C4, NULL, NULL, VDDX_C4_stag},
-                                       {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup UpwindStagTable[] = {{DIFF_U1, nullptr, nullptr, VDDX_U1_stag},
+                                       {DIFF_U2, nullptr, nullptr, VDDX_U2_stag},
+                                       {DIFF_C2, nullptr, nullptr, VDDX_C2_stag},
+                                       {DIFF_C4, nullptr, nullptr, VDDX_C4_stag},
+                                       {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /// Flux staggered lookup
-static DiffLookup FluxStagTable[] = {{DIFF_SPLIT, NULL, NULL, NULL},
-                                     {DIFF_U1, NULL, NULL, FDDX_U1_stag},
-                                     {DIFF_DEFAULT, NULL, NULL, NULL}};
+static DiffLookup FluxStagTable[] = {{DIFF_SPLIT, nullptr, nullptr, nullptr},
+                                     {DIFF_U1, nullptr, nullptr, FDDX_U1_stag},
+                                     {DIFF_DEFAULT, nullptr, nullptr, nullptr}};
 
 /*******************************************************************************
  * Routines to use the above tables to map between function codes, names
  * and pointers
  *******************************************************************************/
 
-Mesh::deriv_func lookupFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].func;
-}
-
-Mesh::upwind_func lookupUpwindFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].up_func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].up_func;
-}
-
-Mesh::flux_func lookupFluxFunc(DiffLookup *table, DIFF_METHOD method) {
-  int i = 0;
-  do {
-    if (table[i].method == method)
-      return table[i].fl_func;
-    i++;
-  } while (table[i].method != DIFF_DEFAULT);
-  // Not found in list. Return the first
-
-  return table[0].fl_func;
-}
 
 /// Test if a given DIFF_METHOD exists in a table
 bool isImplemented(DiffLookup *table, DIFF_METHOD method) {
@@ -490,31 +471,49 @@ bool isImplemented(DiffLookup *table, DIFF_METHOD method) {
   return false;
 }
 
+
+DiffLookup lookupFunc(DiffLookup * table, DIFF_METHOD method) {
+  for (int i=0; ; ++i){
+    if (table[i].method == method) {
+      return table[i];
+    }
+    if (table[i].method == DIFF_DEFAULT){
+      return table[i];
+    }
+  }
+}
+
+void printFuncName(DIFF_METHOD method) {
+  // Find this entry
+  int i = 0;
+  do {
+    if (DiffNameTable[i].method == method) {
+      output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
+      return;
+    }
+    i++;
+  } while (DiffNameTable[i].method != DIFF_DEFAULT);
+
+  // None
+  output_error.write(" == INVALID DIFFERENTIAL METHOD ==\n");
+}
+
 /// This function is used during initialisation only (i.e. doesn't need to be particularly
 /// fast) Returns DIFF_METHOD, rather than function so can be applied to central and
 /// upwind tables
-DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
-
-  if (label.empty())
-    return table[0].method;
+DiffLookup lookupFunc(DiffLookup *table, const std::string & label){
 
   // Loop through the name lookup table
   for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
     if (strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) { // Whole match
-      if (isImplemented(table, DiffNameTable[i].method)) {
-        return DiffNameTable[i].method;
-      } else {
-        std::string avail{};
-
-        for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
-          if (isImplemented(table, DiffNameTable[i].method)) {
-            avail += DiffNameTable[i].label;
-            avail += "\n";
+      auto method=DiffNameTable[i].method;
+      if (isImplemented(table, method)) {
+        printFuncName(method);
+        for (int j=0;;++j){
+          if (table[j].method == method){
+            return table[j];
           }
         }
-        throw BoutException("Option %s is known but not valid for this differencing "
-                            "type.\nAvailable options are:\n%s",
-                            label.c_str(), avail.c_str());
       }
     }
   }
@@ -529,21 +528,6 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
                       avail.c_str());
 }
 
-void printFuncName(DIFF_METHOD method) {
-  // Find this entry
-
-  int i = 0;
-  do {
-    if (DiffNameTable[i].method == method) {
-      output_info.write(" %s (%s)\n", DiffNameTable[i].name, DiffNameTable[i].label);
-      return;
-    }
-    i++;
-  } while (DiffNameTable[i].method != DIFF_DEFAULT);
-
-  // None
-  output_error.write(" == INVALID DIFFERENTIAL METHOD ==\n");
-}
 
 /*******************************************************************************
  * Default functions
@@ -568,68 +552,56 @@ Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
  *******************************************************************************/
 
 /// Set the derivative method, given a table and option name
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::deriv_func &f) {
-  TRACE("derivs_set( deriv_func )");
-  string label;
-  options->get(name, label, "C2");
+template <typename T, typename Ts>
+void derivs_set(std::vector<Options *> options, DiffLookup *table, DiffLookup *stable,
+                const std::string &name, const std::string &def, T &f, Ts &sf,
+                bool staggerGrids) {
+  TRACE("derivs_set()");
+  output_info.write("\t%-12s: ", name.c_str());
+  string label = def;
+  for (auto &opts : options) {
+    if (opts->isSet(name)) {
+      opts->get(name, label, "");
+      break;
+    }
+  }
 
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupFunc(table, method);                 // Find the function pointer
-}
+  f = lookupFunc(table, label); // Find the function
 
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::upwind_func &f) {
-  TRACE("derivs_set( upwind_func )");
-  string label;
-  options->get(name, label, "U1");
-
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupUpwindFunc(table, method);
-}
-
-void derivs_set(Options *options, DiffLookup *table, const char *name,
-                Mesh::flux_func &f) {
-  TRACE("derivs_set( flux_func )");
-  string label;
-  options->get(name, label, "U1");
-
-  DIFF_METHOD method = lookupFunc(table, label); // Find the function
-  printFuncName(method);                         // Print differential function name
-  f = lookupFluxFunc(table, method);
+  label = def;
+  if (staggerGrids) {
+    output_info.write("\tStag. %-6s: ", name.c_str());
+    for (auto &_name : {name + "stag", name}) {
+      for (auto &opts : options) {
+        if (opts->isSet(_name)) {
+          opts->get(_name, label, "");
+          sf = lookupFunc(stable, label); // Find the function
+          return;
+        }
+      }
+    }
+  }
+  sf = lookupFunc(stable, label); // Find the function
 }
 
 /// Initialise derivatives from options
-void derivs_initialise(Options *options, bool StaggerGrids, Mesh::deriv_func &fdd,
-                       Mesh::deriv_func &sfdd, Mesh::deriv_func &fd2d,
-                       Mesh::deriv_func &sfd2d, Mesh::upwind_func &fu,
-                       Mesh::flux_func &sfu, Mesh::flux_func &ff, Mesh::flux_func &sff) {
-  output_info.write("\tFirst       : ");
-  derivs_set(options, FirstDerivTable, "first", fdd);
-  if (StaggerGrids) {
-    output_info.write("\tStag. First : ");
-    derivs_set(options, FirstStagDerivTable, "first", sfdd);
-  }
-  output_info.write("\tSecond      : ");
-  derivs_set(options, SecondDerivTable, "second", fd2d);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Second: ");
-    derivs_set(options, SecondStagDerivTable, "second", sfd2d);
-  }
-  output_info.write("\tUpwind      : ");
-  derivs_set(options, UpwindTable, "upwind", fu);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Upwind: ");
-    derivs_set(options, UpwindStagTable, "upwind", sfu);
-  }
-  output_info.write("\tFlux        : ");
-  derivs_set(options, FluxTable, "flux", ff);
-  if (StaggerGrids) {
-    output_info.write("\tStag. Flux  : ");
-    derivs_set(options, FluxStagTable, "flux", sff);
-  }
+void derivs_initialise(Options *optionbase, std::string sec, bool staggerGrids,
+                       Mesh::deriv_func &fdd, Mesh::deriv_func &sfdd,
+                       Mesh::deriv_func &fd2d, Mesh::deriv_func &sfd2d,
+                       Mesh::upwind_func &fu, Mesh::flux_func &sfu, Mesh::flux_func &ff,
+                       Mesh::flux_func &sff) {
+  std::vector<Options *> options = {optionbase->getSection(sec),
+                                    optionbase->getSection("diff")};
+  derivs_set(options, FirstDerivTable, FirstStagDerivTable, "First", "C2", fdd, sfdd,
+             staggerGrids);
+
+  derivs_set(options, SecondDerivTable, SecondStagDerivTable, "Second", "C2", fd2d, sfd2d,
+             staggerGrids);
+
+  derivs_set(options, UpwindTable, UpwindStagTable, "Upwind", "U1", fu, sfu,
+             staggerGrids);
+
+  derivs_set(options, FluxTable, FluxStagTable, "Flux", "U1", ff, sff, staggerGrids);
 }
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
@@ -637,22 +609,22 @@ void Mesh::derivs_init(Options *options) {
   TRACE("Initialising derivatives");
 
   output_info.write("Setting X differencing methods\n");
-  derivs_initialise(options->getSection("ddx"), StaggerGrids, fDDX, sfDDX, fD2DX2,
-                    sfD2DX2, fVDDX, sfVDDX, fFDDX, sfFDDX);
+  derivs_initialise(options, "ddx", StaggerGrids, fDDX, sfDDX, fD2DX2, sfD2DX2, fVDDX,
+                    sfVDDX, fFDDX, sfFDDX);
 
-  if ((fDDX == NULL) || (fD2DX2 == NULL))
+  if ((fDDX == nullptr) || (fD2DX2 == nullptr))
     throw BoutException("FFT cannot be used in X\n");
 
   output_info.write("Setting Y differencing methods\n");
-  derivs_initialise(options->getSection("ddy"), StaggerGrids, fDDY, sfDDY, fD2DY2,
-                    sfD2DY2, fVDDY, sfVDDY, fFDDY, sfFDDY);
+  derivs_initialise(options, "ddy", StaggerGrids, fDDY, sfDDY, fD2DY2, sfD2DY2, fVDDY,
+                    sfVDDY, fFDDY, sfFDDY);
 
-  if ((fDDY == NULL) || (fD2DY2 == NULL))
+  if ((fDDY == nullptr) || (fD2DY2 == nullptr))
     throw BoutException("FFT cannot be used in Y\n");
 
   output_info.write("Setting Z differencing methods\n");
-  derivs_initialise(options->getSection("ddz"), StaggerGrids, fDDZ, sfDDZ, fD2DZ2,
-                    sfD2DZ2, fVDDZ, sfVDDZ, fFDDZ, sfFDDZ);
+  derivs_initialise(options, "ddz", StaggerGrids, fDDZ, sfDDZ, fD2DZ2, sfD2DZ2, fVDDZ,
+                    sfVDDZ, fFDDZ, sfFDDZ);
 
   // Get the fraction of modes filtered out in FFT derivatives
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
@@ -674,9 +646,14 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
-    return Field2D(0., this);
+    auto tmp = Field2D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+  
   CELL_LOC diffloc = var.getLocation();
 
   Field2D result(this);
@@ -690,47 +667,51 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      stencil s;
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          s.mm = var[i.xmm()];
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.pp = var[i.xpp()];
 
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
-
-        result[i] = func(s);
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for (const auto &i : result.region(region)) {
+      BOUT_OMP(parallel)
+      {
         stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
 
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
-
-        result[i] = func(s);
       }
     }
 
@@ -740,27 +721,31 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      for (const auto &i : result.region(region)) {
+      BOUT_OMP(parallel)
+      {
         stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          s.mm = var[i.xmm()];
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.pp = var[i.xpp()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      for (const auto &i : result.region(region)) {
+      BOUT_OMP(parallel)
+      {
         stencil s;
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = nan("");
-        s.mm = nan("");
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
       }
     }
   }
@@ -783,8 +768,13 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   if (var.getNx() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
+
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -799,47 +789,51 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      stencil s;
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          s.mm = var[i.xmm()];
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.pp = var[i.xpp()];
 
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
-
-        result[i] = func(s);
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
 
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
-          // Producing a stencil centred around a lower X value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_XLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+            // Producing a stencil centred around a lower X value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_XLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
-
-        result[i] = func(s);
       }
     }
 
@@ -849,27 +843,31 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      stencil s;
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
-        s.pp = var[i.offset(2, 0, 0)];
-        s.mm = var[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          s.mm = var[i.xmm()];
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
+          s.pp = var[i.xpp()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        s.c = var[i];
-        s.p = var[i.xp()];
-        s.m = var[i.xm()];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          s.m = var[i.xm()];
+          s.c = var[i];
+          s.p = var[i.xp()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
       }
     }
   }
@@ -893,9 +891,14 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
-    return Field2D(0., this);
+    auto tmp = Field2D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+  
   CELL_LOC diffloc = var.getLocation();
 
   Field2D result(this);
@@ -904,30 +907,30 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   if (this->ystart > 1) {
     // More than one guard cell, so set pp and mm values
     // This allows higher-order methods to be used
-
-    for (const auto &i : result.region(region)) {
-      // Set stencils
+    BOUT_OMP(parallel)
+    {
       stencil s;
-      s.c = var[i];
-      s.p = var[i.yp()];
-      s.m = var[i.ym()];
-      s.pp = var[i.offset(0, 2, 0)];
-      s.mm = var[i.offset(0, -2, 0)];
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        s.mm = var[i.ymm()];
+        s.m = var[i.ym()];
+        s.c = var[i];
+        s.p = var[i.yp()];
+        s.pp = var[i.ypp()];
 
-      result[i] = func(s);
+        result[i] = func(s);
+      }
     }
   } else {
-    // Only one guard cell, so no pp or mm values
-    for (const auto &i : result.region(region)) {
-      // Set stencils
+    BOUT_OMP(parallel)
+    {
       stencil s;
-      s.c = var[i];
-      s.p = var[i.yp()];
-      s.m = var[i.ym()];
-      s.pp = nan("");
-      s.mm = nan("");
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        s.m = var[i.ym()];
+        s.c = var[i];
+        s.p = var[i.yp()];
 
-      result[i] = func(s);
+        result[i] = func(s);
+      }
     }
   }
 
@@ -948,9 +951,14 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNy() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+  
   CELL_LOC diffloc = var.getLocation();
 
   Field3D result(this);
@@ -967,39 +975,42 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       // Cell location of the input field
       CELL_LOC location = var.getLocation();
 
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
-        s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
 
-        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          s.pp = s.p;
-          s.p = s.c;
-        } else if (location == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          s.mm = s.m;
-          s.m = s.c;
+          // Set stencils
+          s.m = var.ydown()[i.ym()];
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
+
+          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            s.pp = s.p;
+            s.p = s.c;
+          } else if (location == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            s.mm = s.m;
+            s.m = s.c;
+          }
+
+          result[i] = func(s);
         }
-
-        result[i] = func(s);
       }
     } else {
       // Non-staggered
-      stencil s;
-      s.pp = nan("");
-      s.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        // Set stencils
-        s.c = var[i];
-        s.p = var.yup()[i.yp()];
-        s.m = var.ydown()[i.ym()];
+      BOUT_OMP(parallel)
+      {
+        stencil s;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          // Set stencils
+          s.m = var.ydown()[i.ym()];
+          s.c = var[i];
+          s.p = var.yup()[i.yp()];
 
-        result[i] = func(s);
+          result[i] = func(s);
+        }
       }
     }
   } else {
@@ -1016,81 +1027,84 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        stencil s;
-        for (const auto &i : result.region(region)) {
-          // Set stencils
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = var_fa[i.offset(0, 2, 0)];
-          s.mm = var_fa[i.offset(0, -2, 0)];
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Set stencils
+            s.mm = var_fa[i.ymm()];
+            s.m = var_fa[i.ym()];
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
+            s.pp = var_fa[i.ypp()];
 
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p = s.c;
-          } else if (location == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p = s.c;
+            } else if (location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
+
+            result[i] = func(s);
           }
-
-          result[i] = func(s);
         }
       } else {
         // Only one guard cell, so no pp or mm values
-        stencil s;
-        s.pp = nan("");
-        s.mm = nan("");
-        for (const auto &i : result.region(region)) {
-          // Set stencils
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Set stencils
+            s.m = var_fa[i.ym()];
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
 
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            s.pp = s.p;
-            s.p = s.c;
-          } else if (location == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
+            if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              s.pp = s.p;
+              s.p = s.c;
+            } else if (location == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              s.mm = s.m;
+              s.m = s.c;
+            }
+
+            result[i] = func(s);
           }
-
-          result[i] = func(s);
         }
       }
-
     } else {
       // Non-staggered differencing
 
       if (this->ystart > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        stencil s;
-        for (const auto &i : result.region(region)) {
-          // Set stencils
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
-          s.pp = var_fa[i.offset(0, 2, 0)];
-          s.mm = var_fa[i.offset(0, -2, 0)];
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Set stencils
+            s.mm = var_fa[i.ymm()];
+            s.m = var_fa[i.ym()];
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
+            s.pp = var_fa[i.ypp()];
 
-          result[i] = func(s);
+            result[i] = func(s);
+          }
         }
       } else {
         // Only one guard cell, so no pp or mm values
-        stencil s;
-        s.pp = nan("");
-        s.mm = nan("");
-        for (const auto &i : result.region(region)) {
-          // Set stencils
-          s.c = var_fa[i];
-          s.p = var_fa[i.yp()];
-          s.m = var_fa[i.ym()];
+        BOUT_OMP(parallel) {
+          stencil s;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Set stencils
+            s.m = var_fa[i.ym()];
+            s.c = var_fa[i];
+            s.p = var_fa[i.yp()];
 
-          result[i] = func(s);
+            result[i] = func(s);
+          }
         }
       }
     }
@@ -1119,9 +1133,13 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   if (var.getNz() == 1) {
-    return Field3D(0., this);
+    auto tmp = Field3D(0., this);
+    tmp.setLocation(var.getLocation());
+    return tmp;
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
 
   CELL_LOC diffloc = var.getLocation();
 
@@ -1136,15 +1154,18 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-  stencil s;
-  for (const auto &i : result.region(region)) {
-    s.c = var[i];
-    s.p = var[i.zp()];
-    s.m = var[i.zm()];
-    s.pp = var[i.offset(0, 0, 2)];
-    s.mm = var[i.offset(0, 0, -2)];
+  BOUT_OMP(parallel)
+  {
+    stencil s;
+    BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      s.mm = var[i.zmm()];
+      s.m = var[i.zm()];
+      s.c = var[i];
+      s.p = var[i.zp()];
+      s.pp = var[i.zpp()];
 
-    result[i] = func(s);
+      result[i] = func(s);
+    }
   }
 
   result.setLocation(diffloc);
@@ -1195,7 +1216,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   if (method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
-    if (func == NULL)
+    if (func == nullptr)
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
@@ -1251,7 +1272,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
   if (method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
-    if (func == NULL)
+    if (func == nullptr)
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
@@ -1310,7 +1331,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     func = lookupFunc(table, method);
   }
 
-  if (func == NULL) {
+  if (func == nullptr) {
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
@@ -1328,49 +1349,54 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-    auto region_index = f.region(region);
-    int xs = region_index.xstart;
-    int xe = region_index.xend;
-    int ys = region_index.ystart;
-    int ye = region_index.yend;
-    ASSERT2(region_index.zstart == 0);
-    int ncz = region_index.zend + 1;
+    // Calculate how many Z wavenumbers will be removed
+    const int ncz = this->LocalNz;
+    int kfilter =
+        static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
+    if (kfilter < 0)
+      kfilter = 0;
+    if (kfilter > (ncz / 2))
+      kfilter = ncz / 2;
+    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+
+    const auto region_str = REGION_STRING(region);
+
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
     BOUT_OMP(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
 
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
+        auto i3D = mesh->ind2Dto3D(i, 0);
+        rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
-      // Calculate how many Z wavenumbers will be removed
-      int kfilter =
-          static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
-      if (kfilter < 0)
-        kfilter = 0;
-      if (kfilter > (ncz / 2))
-        kfilter = ncz / 2;
-      int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
 
-      BOUT_OMP(for)
-      for (int jx = xs; jx <= xe; jx++) {
-        for (int jy = ys; jy <= ye; jy++) {
-          rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
-
-          for (int jz = 0; jz <= kmax; jz++) {
-            BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
-
-            cv[jz] *= dcomplex(0.0, kwave);
-            if (shift)
-              cv[jz] *= exp(Im * (shift * kwave));
-          }
-          for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
-            cv[jz] = 0.0;
-          }
-
-          irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
+          cv[jz] *= dcomplex(0, kwave);
+          if (shift)
+            cv[jz] *= exp(Im * (shift * kwave));
         }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
+
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
-      // End of parallel section
 
 #if CHECK > 0
     // Mark boundaries as invalid
@@ -1390,10 +1416,12 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
   return result;
 }
 
-const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC outloc,
-                             DIFF_METHOD method, REGION region) {
+const Field2D Mesh::indexDDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
+                             DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(this == f.getMesh());
-  return Field2D(0., this);
+  auto tmp = Field2D(0., this);
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
 
 /*******************************************************************************
@@ -1455,7 +1483,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
   if (method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
-    if (func == NULL)
+    if (func == nullptr)
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
@@ -1534,7 +1562,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   if (method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
-    if (func == NULL)
+    if (func == nullptr)
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
@@ -1615,16 +1643,16 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     func = lookupFunc(table, method);
   }
 
-  if (func == NULL) {
+  if (func == nullptr) {
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
     if (StaggerGrids) {
       if ((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-	      // Shifting down - multiply by exp(-0.5*i*k*dz) 
+        // Shifting down - multiply by exp(-0.5*i*k*dz)
         throw BoutException("Not tested - probably broken");
       } else if((inloc == CELL_ZLOW) && (diffloc == CELL_CENTRE)) {
-	      // Shifting up
+        // Shifting up
         throw BoutException("Not tested - probably broken");
 
       } else if (diffloc != CELL_DEFAULT && diffloc != inloc){
@@ -1634,32 +1662,46 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 
     result.allocate(); // Make sure data allocated
 
-    auto region_index = f.region(region);
-    int xs = region_index.xstart;
-    int xe = region_index.xend;
-    int ys = region_index.ystart;
-    int ye = region_index.yend;
-    ASSERT2(region_index.zstart == 0);
-    int ncz = region_index.zend + 1;
+    // No filtering in 2nd derivative method
+    const int ncz = this->LocalNz;
+    const int kmax = ncz / 2; // Up to and including this wavenumber index
 
-    // TODO: The comment does not match the check
-    ASSERT1(ncz % 2 == 0); // Must be a power of 2
-    Array<dcomplex> cv(ncz / 2 + 1);
-    
-    for (int jx = xs; jx <= xe; jx++) {
-      for (int jy = ys; jy <= ye; jy++) {
+    const auto region_str = REGION_STRING(region);
 
-        rfft(f(jx, jy), ncz, cv.begin()); // Forward FFT
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-        for (int jz = 0; jz <= ncz / 2; jz++) {
-          BoutReal kwave = jz * 2.0 * PI / ncz; // wave number is 1/[rad]
+    BOUT_OMP(parallel) {
+      Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
 
-          cv[jz] *= -SQ(kwave);
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
+        auto i3D = mesh->ind2Dto3D(i, 0);
+
+        rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
+
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
+
+          cv[jz] *= -kwave * kwave;
           if (shift)
             cv[jz] *= exp(0.5 * Im * (shift * kwave));
         }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
 
-        irfft(cv.begin(), ncz, result(jx, jy)); // Reverse FFT
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
 
@@ -1723,11 +1765,12 @@ const Field3D Mesh::indexD4DZ4(const Field3D &f, CELL_LOC outloc,
 }
 
 const Field2D Mesh::indexD4DZ4(const Field2D &f, CELL_LOC outloc,
-                               DIFF_METHOD method, REGION region){
+                               DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  return Field2D(0.,this);
+  auto tmp = Field2D(0., this);
+  tmp.setLocation(f.getLocation());
+  return tmp;
 }
-
 
 /*******************************************************************************
  * Mixed derivatives
@@ -1753,43 +1796,45 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupUpwindFunc(UpwindTable, method);
+    func = lookupFunc(UpwindTable, method);
   }
 
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
   ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
   if (this->xstart > 1) {
     // Two or more guard cells
+    BOUT_OMP(parallel) {
+      stencil s;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        s.mm = f[i.xmm()];
+        s.m = f[i.xm()];
+        s.c = f[i];
+        s.p = f[i.xp()];
+        s.pp = f[i.xpp()];
 
-    stencil s;
-    for (const auto &i : result.region(region)) {
-      s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
-      s.pp = f[i.offset(2, 0, 0)];
-      s.mm = f[i.offset(-2, 0, 0)];
-
-      result[i] = func(v[i], s);
+        result[i] = func(v[i], s);
+      }
     }
 
   } else if (this->xstart == 1) {
     // Only one guard cell
+    BOUT_OMP(parallel) {
+      stencil s;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        s.m = f[i.xm()];
+        s.c = f[i];
+        s.p = f[i.xp()];
 
-    stencil s;
-    s.pp = nan("");
-    s.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
-      s.c = f[i];
-      s.p = f[i.xp()];
-      s.m = f[i.xm()];
-
-      result[i] = func(v[i], s);
+        result[i] = func(v[i], s);
+      }
     }
   } else {
     // No guard cells
@@ -1827,6 +1872,9 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -1852,7 +1900,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // Note: The velocity stencil contains only (mm, m, p, pp)
@@ -1862,41 +1910,41 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Two or more guard cells
 
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
-        stencil fs, vs;
-        vs.c = nan("");
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.mm = f[i.xmm()];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.xpp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
+            vs.pp = v[i.xpp()];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
-          vs.pp = v[i.offset(2, 0, 0)];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
 
       } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
-        stencil fs, vs;
-        vs.c = nan("");
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.mm = f[i.xmm()];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.xpp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+            vs.mm = v[i.xmm()];
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-          vs.mm = v[i.offset(-2, 0, 0)];
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
@@ -1905,42 +1953,35 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // One guard cell
 
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
-        stencil fs, vs;
-        vs.c = nan("");
-        vs.pp = nan("");
-        fs.pp = nan("");
-        fs.mm = nan("");
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
 
       } else if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
-        stencil fs, vs;
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-        fs.pp = nan("");
-        fs.mm = nan("");
-        vs.c = nan("");
-        vs.mm = nan("");
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
@@ -1957,32 +1998,34 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (this->xstart > 1) {
       // Two or more guard cells
-      stencil fs;
-      for (const auto &i : result.region(region)) {
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
-        fs.pp = f[i.offset(2, 0, 0)];
-        fs.mm = f[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel) {
+        stencil fs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          fs.mm = f[i.xmm()];
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.pp = f[i.xpp()];
 
-        result[i] = func(v[i], fs);
+          result[i] = func(v[i], fs);
+        }
       }
     } else if (this->xstart == 1) {
       // Only one guard cell
-      stencil fs;
-      fs.pp = nan("");
-      fs.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
+      BOUT_OMP(parallel) {
+        stencil fs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
 
-        result[i] = func(v[i], fs);
+          result[i] = func(v[i], fs);
+        }
       }
     } else {
       // No guard cells
@@ -2031,6 +2074,9 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this->ystart > 0); // Must have at least one guard cell
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2053,7 +2099,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // Note: vs.c not used for staggered differencing
@@ -2061,85 +2107,75 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     if ((vloc == CELL_YLOW) && (diffloc == CELL_CENTRE)) {
       if (this->ystart > 1) {
         // Two or more guard cells
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+            fs.mm = f[i.ymm()];
+            fs.m = f[i.ym()];
+            fs.c = f[i];
+            fs.p = f[i.yp()];
+            fs.pp = f[i.ypp()];
 
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-          fs.pp = f[i.offset(0, 2, 0)];
-          fs.mm = f[i.offset(0, -2, 0)];
+            vs.mm = v[i.ym()];
+            vs.m = v[i];
+            vs.p = v[i.yp()];
+            vs.pp = v[i.ypp()];
 
-          vs.pp = v[i.offset(0, 2, 0)];
-          vs.p = v[i.yp()];
-          vs.m = v[i];
-          vs.mm = v[i.ym()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
-
       } else {
         // Only one guard cell
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+            fs.m = f[i.ym()];
+            fs.c = f[i];
+            fs.p = f[i.yp()];
 
-        stencil fs, vs;
-        fs.pp = nan("");
-        fs.mm = nan("");
-        vs.c = nan("");
-        vs.pp = nan("");
+            vs.mm = v[i.ym()];
+            vs.m = v[i];
+            vs.p = v[i.yp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-
-          vs.p = v[i.yp()];
-          vs.m = v[i];
-          vs.mm = v[i.ym()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       }
     } else if ((vloc == CELL_CENTRE) && (inloc == CELL_YLOW)) {
       if (this->ystart > 1) {
         // Two or more guard cells
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+            fs.mm = f[i.ymm()];
+            fs.m = f[i.ym()];
+            fs.c = f[i];
+            fs.p = f[i.yp()];
+            fs.pp = f[i.ypp()];
 
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-          fs.pp = f[i.offset(0, 2, 0)];
-          fs.mm = f[i.offset(0, -2, 0)];
+            vs.mm = v[i.ymm()];
+            vs.m = v[i.ym()];
+            vs.p = v[i];
+            vs.pp = v[i.yp()];
 
-          vs.pp = v[i.yp()];
-          vs.p = v[i];
-          vs.m = v[i.ym()];
-          vs.mm = v[i.offset(0, -2, 0)];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
-
       } else {
         // Only one guard cell
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+            fs.m = f[i.ym()];
+            fs.c = f[i];
+            fs.p = f[i.yp()];
 
-        stencil fs, vs;
-        fs.pp = nan("");
-        fs.mm = nan("");
-        vs.c = nan("");
-        vs.mm = nan("");
+            vs.m = v[i.ym()];
+            vs.p = v[i];
+            vs.pp = v[i.yp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.m = f[i.ym()];
-
-          vs.pp = v[i.yp()];
-          vs.p = v[i];
-          vs.m = v[i.ym()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       }
     } else {
@@ -2154,36 +2190,34 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (this->ystart > 1) {
       // Two or more guard cells
-      stencil fs;
-      for (const auto &i : result.region(region)) {
+      BOUT_OMP(parallel) {
+        stencil fs;
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          fs.mm = f[i.ymm()];
+          fs.m = f[i.ym()];
+          fs.c = f[i];
+          fs.p = f[i.yp()];
+          fs.pp = f[i.ypp()];
 
-        fs.c = f[i];
-        fs.p = f[i.yp()];
-        fs.m = f[i.ym()];
-        fs.pp = f[i.offset(0, 2, 0)];
-        fs.mm = f[i.offset(0, -2, 0)];
-
-        result[i] = func(v[i], fs);
+          result[i] = func(v[i], fs);
+        }
       }
-
     } else {
       // Only one guard cell
+      BOUT_OMP(parallel) {
+        stencil fs;
+        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          fs.m = f[i.ym()];
+          fs.c = f[i];
+          fs.p = f[i.yp()];
 
-      stencil fs;
-      fs.pp = nan("");
-      fs.mm = nan("");
-
-      for (const auto &i : result.region(region)) {
-        fs.c = f[i];
-        fs.p = f[i.yp()];
-        fs.m = f[i.ym()];
-
-        result[i] = func(v[i], fs);
+          result[i] = func(v[i], fs);
+        }
       }
     }
   }
@@ -2226,6 +2260,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   ASSERT1(this->ystart > 0); // Need at least one guard cell
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2250,7 +2287,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     // There are four cases, corresponding to whether or not f and v
@@ -2264,137 +2301,137 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (vUseUpDown && fUseUpDown) {
       // Both v and f have up/down fields
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          vval.m = v.ydown()[i.ym()];
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
 
-      stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+          fval.m = f.ydown()[i.ym()];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
       }
     } else if (vUseUpDown) {
       // Only v has up/down fields
       // f must shift to field aligned coordinates
       Field3D f_fa = this->toFieldAligned(f);
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          vval.m = v.ydown()[i.ym()];
+          vval.c = v[i];
+          vval.p = v.yup()[i.yp()];
 
-      stencil vval, fval;
-      vval.pp = nan("");
-      vval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-        vval.m = v.ydown()[i.ym()];
-        fval.c = f_fa[i];
-        fval.p = f_fa[i.yp()];
-        fval.m = f_fa[i.ym()];
-        fval.pp = f_fa[i.offset(0, 2, 0)];
-        fval.mm = f_fa[i.offset(0, -2, 0)];
+          fval.mm = f_fa[i.ymm()];
+          fval.m = f_fa[i.ym()];
+          fval.c = f_fa[i];
+          fval.p = f_fa[i.yp()];
+          fval.pp = f_fa[i.ypp()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
       }
     } else if (fUseUpDown) {
       // Only f has up/down fields
       // v must shift to field aligned coordinates
       Field3D v_fa = this->toFieldAligned(v);
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          vval.mm = v_fa[i.ymm()];
+          vval.m = v_fa[i.ym()];
+          vval.c = v_fa[i];
+          vval.p = v_fa[i.yp()];
+          vval.pp = v_fa[i.ypp()];
 
-      stencil vval, fval;
-      fval.pp = nan("");
-      fval.mm = nan("");
-      for (const auto &i : result.region(region)) {
-        vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.m = v_fa[i.ym()];
-        vval.pp = v_fa[i.offset(0, 2, 0)];
-        vval.mm = v_fa[i.offset(0, -2, 0)];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-        fval.m = f.ydown()[i.ym()];
+          fval.m = f.ydown()[i.ym()];
+          fval.c = f[i];
+          fval.p = f.yup()[i.yp()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
       }
     } else {
       // Both must shift to field aligned
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          vval.mm = v_fa[i.ymm()];
+          vval.m = v_fa[i.ym()];
+          vval.c = v_fa[i];
+          vval.p = v_fa[i.yp()];
+          vval.pp = v_fa[i.ypp()];
 
-      stencil vval, fval;
-      for (const auto &i : result.region(region)) {
-        vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.m = v_fa[i.ym()];
-        vval.pp = v_fa[i.offset(0, 2, 0)];
-        vval.mm = v_fa[i.offset(0, -2, 0)];
-        fval.c = f[i];
-        fval.p = f_fa[i.yp()];
-        fval.m = f_fa[i.ym()];
-        fval.pp = f_fa[i.offset(0, 2, 0)];
-        fval.mm = f_fa[i.offset(0, -2, 0)];
+          fval.mm = f_fa[i.ymm()];
+          fval.m = f_fa[i.ym()];
+          fval.c = f[i];
+          fval.p = f_fa[i.yp()];
+          fval.pp = f_fa[i.ypp()];
 
-        if (diffloc != CELL_DEFAULT) {
-          // Non-centred stencil
-          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else if (vloc == CELL_YLOW) {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+          if (diffloc != CELL_DEFAULT) {
+            // Non-centred stencil
+            if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+              // Producing a stencil centred around a lower Y value
+              vval.pp = vval.p;
+              vval.p = vval.c;
+            } else if (vloc == CELL_YLOW) {
+              // Stencil centred around a cell centre
+              vval.mm = vval.m;
+              vval.m = vval.c;
+            }
+            // Shifted in one direction -> shift in another
+            // Could produce warning
           }
-          // Shifted in one direction -> shift in another
-          // Could produce warning
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
       }
     }
   } else {
@@ -2405,57 +2442,51 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
     if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
       // f has yup and ydown fields which are distinct
+      const Field3D f_yup = f.yup();
+      const Field3D f_ydown = f.ydown();
+      BOUT_OMP(parallel) {
+        stencil fs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          fs.m = f_ydown[i.ym()];
+          fs.c = f[i];
+          fs.p = f_yup[i.yp()];
 
-      stencil fs;
-      fs.pp = nan("");
-      fs.mm = nan("");
-
-      Field3D f_yup = f.yup();
-      Field3D f_ydown = f.ydown();
-
-      for (const auto &i : result.region(region)) {
-
-        fs.c = f[i];
-        fs.p = f_yup[i.yp()];
-        fs.m = f_ydown[i.ym()];
-
-        result[i] = func(v[i], fs);
+          result[i] = func(v[i], fs);
+        }
       }
-
     } else {
       // Not using yup/ydown fields, so first transform to field-aligned coordinates
-
       Field3D f_fa = this->toFieldAligned(f);
       Field3D v_fa = this->toFieldAligned(v);
 
       if (this->ystart > 1) {
-        stencil fs;
+        BOUT_OMP(parallel) {
+          stencil fs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.mm = f_fa[i.ymm()];
+            fs.m = f_fa[i.ym()];
+            fs.c = f_fa[i];
+            fs.p = f_fa[i.yp()];
+            fs.pp = f_fa[i.ypp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f_fa[i];
-          fs.p = f_fa[i.yp()];
-          fs.m = f_fa[i.ym()];
-          fs.pp = f_fa[i.offset(0, 2, 0)];
-          fs.mm = f_fa[i.offset(0, -2, 0)];
-
-          result[i] = func(v_fa[i], fs);
+            result[i] = func(v_fa[i], fs);
+          }
         }
       } else {
-        stencil fs;
-        fs.pp = nan("");
-        fs.mm = nan("");
+        BOUT_OMP(parallel) {
+          stencil fs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            fs.m = f_fa[i.ym()];
+            fs.c = f_fa[i];
+            fs.p = f_fa[i.yp()];
 
-        for (const auto &i : result.region(region)) {
-          fs.c = f_fa[i];
-          fs.p = f_fa[i.yp()];
-          fs.m = f_fa[i.ym()];
-
-          result[i] = func(v_fa[i], fs);
+            result[i] = func(v_fa[i], fs);
+          }
         }
       }
       // Shift result back
@@ -2495,6 +2526,9 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2519,41 +2553,43 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupFluxFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
-    stencil vval, fval;
-    for (const auto &i : result.region(region)) {
-      fval.mm = f[i.offset(0,0,-2)];
-      fval.m = f[i.zm()];
-      fval.c = f[i];
-      fval.p = f[i.zp()];
-      fval.pp = f[i.offset(0,0,2)];
+    BOUT_OMP(parallel) {
+      stencil vval, fval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f[i.zmm()];
+        fval.m = f[i.zm()];
+        fval.c = f[i];
+        fval.p = f[i.zp()];
+        fval.pp = f[i.zpp()];
 
-      vval.mm = v[i.offset(0,0,-2)];
-      vval.m = v[i.zm()];
-      vval.c = v[i];
-      vval.p = v[i.zp()];
-      vval.pp = v[i.offset(0,0,2)];
+        vval.mm = v[i.zmm()];
+        vval.m = v[i.zm()];
+        vval.c = v[i];
+        vval.p = v[i.zp()];
+        vval.pp = v[i.zpp()];
 
-      if((diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
+        if ((diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
 
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-          // Producing a stencil centred around a lower Z value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+            // Producing a stencil centred around a lower Z value
+            vval.pp = vval.p;
+            vval.p = vval.c;
 
-        }else if(vloc == CELL_ZLOW) {
-          // Stencil centred around a cell centre
+          } else if (vloc == CELL_ZLOW) {
+            // Stencil centred around a cell centre
 
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   } else {
     Mesh::upwind_func func = fVDDZ;
@@ -2561,18 +2597,20 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (method != DIFF_DEFAULT) {
       // Lookup function
-      func = lookupUpwindFunc(table, method);
+      func = lookupFunc(table, method);
     }
 
-    stencil fval;
-    for (const auto &i : result.region(region)) {
-      fval.mm = f[i.offset(0,0,-2)];
-      fval.m = f[i.zm()];
-      fval.c = f[i];
-      fval.p = f[i.zp()];
-      fval.pp = f[i.offset(0,0,2)];
+    BOUT_OMP(parallel) {
+      stencil fval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f[i.zmm()];
+        fval.m = f[i.zm()];
+        fval.c = f[i];
+        fval.p = f[i.zp()];
+        fval.pp = f[i.zpp()];
 
-      result[i] = func(v[i], fval);
+        result[i] = func(v[i], fval);
+      }
     }
   }
 
@@ -2594,9 +2632,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
 
-  CELL_LOC diffloc = f.getLocation();
-
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL))) {
+  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDX(v, f, outloc, DIFF_DEFAULT) + f * indexDDX(v);
@@ -2605,7 +2641,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Mesh::flux_func func = fFDDX;
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(FluxTable, method);
+    func = lookupFunc(FluxTable, method);
   }
 
   Field2D result(this);
@@ -2623,46 +2659,44 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->xstart > 1) {
     // Two or more guard cells
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.mm = f[i.xmm()];
+        fs.m = f[i.xm()];
+        fs.c = f[i];
+        fs.p = f[i.xp()];
+        fs.pp = f[i.xpp()];
 
-    stencil fs;
-    stencil vs;
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-      fs.pp = f[i.offset(2, 0, 0)];
-      fs.mm = f[i.offset(-2, 0, 0)];
+        vs.mm = v[i.xmm()];
+        vs.m = v[i.xm()];
+        vs.c = v[i];
+        vs.p = v[i.xp()];
+        vs.pp = v[i.xpp()];
 
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-      vs.pp = v[i.offset(2, 0, 0)];
-      vs.mm = v[i.offset(-2, 0, 0)];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else if (this->xstart == 1) {
     // Only one guard cell
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.m = f[i.xm()];
+        fs.c = f[i];
+        fs.p = f[i.xp()];
 
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
+        vs.m = v[i.xm()];
+        vs.c = v[i];
+        vs.p = v[i.xp()];
 
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.xp()];
-      fs.m = f[i.xm()];
-
-      vs.c = v[i];
-      vs.p = v[i.xp()];
-      vs.m = v[i.xm()];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else {
     // No guard cells
@@ -2681,7 +2715,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDX(Field3D, Field3D)");
 
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL))) {
+  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDX(v, f, outloc, DIFF_DEFAULT) + indexDDX(v, outloc, DIFF_DEFAULT) * f;
@@ -2719,7 +2753,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
   ASSERT1(this == f.getMesh());
@@ -2728,134 +2762,137 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->xstart > 1) {
     // Two or more guard cells
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.mm = f[i.xmm()];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.xpp()];
 
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+            // Note: Location in diffloc
+            vs.mm = v[i.xmm()];
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-          // Note: Location in diffloc
-
-          vs.mm = v[i.offset(-2, 0, 0)];
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
-
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         // Stencil centred around a cell centre
-        stencil fs, vs;
-        vs.c = nan("");
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
-          fs.pp = f[i.offset(2, 0, 0)];
-          fs.mm = f[i.offset(-2, 0, 0)];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.mm = f[i.xmm()];
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
+            fs.pp = f[i.xpp()];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
-          vs.pp = v[i.offset(2, 0, 0)];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
+            vs.pp = v[i.xpp()];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled staggering");
       }
     } else {
       // Non-staggered, two or more guard cells
-      stencil fs;
-      stencil vs;
-      for (const auto &i : result.region(region)) {
-        // Location of f always the same as the output
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
-        fs.pp = f[i.offset(2, 0, 0)];
-        fs.mm = f[i.offset(-2, 0, 0)];
+      BOUT_OMP(parallel) {
+        stencil fs, vs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          // Location of f always the same as the output
+          fs.mm = f[i.xmm()];
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
+          fs.pp = f[i.xpp()];
 
-        // Note: Location in diffloc
-        vs.c = v[i];
-        vs.p = v[i.xp()];
-        vs.m = v[i.xm()];
-        vs.pp = v[i.offset(2, 0, 0)];
-        vs.mm = v[i.offset(-2, 0, 0)];
+          // Note: Location in diffloc
+          vs.mm = v[i.xmm()];
+          vs.m = v[i.xm()];
+          vs.c = v[i];
+          vs.p = v[i.xp()];
+          vs.pp = v[i.xpp()];
 
-        result[i] = func(vs, fs);
+          result[i] = func(vs, fs);
+        }
       }
     }
   } else if (this->xstart == 1) {
     // One guard cell
-
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
-    vs.c = nan("");
-
     if (StaggerGrids) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
         // Producing a stencil centred around a lower X value
 
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-          // Note: Location in diffloc
-          vs.m = v[i.xm()];
-          vs.p = v[i];
-          vs.pp = v[i.xp()];
+            // Note: Location in diffloc
+            vs.m = v[i.xm()];
+            vs.p = v[i];
+            vs.pp = v[i.xp()];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
         // Stencil centred around a cell centre
-        for (const auto &i : result.region(region)) {
-          // Location of f always the same as the output
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.m = f[i.xm()];
+        BOUT_OMP(parallel) {
+          stencil fs, vs;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            // Location of f always the same as the output
+            fs.m = f[i.xm()];
+            fs.c = f[i];
+            fs.p = f[i.xp()];
 
-          vs.mm = v[i.xm()];
-          vs.m = v[i];
-          vs.p = v[i.xp()];
+            vs.mm = v[i.xm()];
+            vs.m = v[i];
+            vs.p = v[i.xp()];
 
-          result[i] = func(vs, fs);
+            result[i] = func(vs, fs);
+          }
         }
       } else {
         throw BoutException("Unhandled staggering");
       }
     } else {
       // Non-staggered, one guard cell
-      for (const auto &i : result.region(region)) {
-        // Location of f always the same as the output
-        fs.c = f[i];
-        fs.p = f[i.xp()];
-        fs.m = f[i.xm()];
+      BOUT_OMP(parallel) {
+        stencil fs, vs;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          // Location of f always the same as the output
+          fs.m = f[i.xm()];
+          fs.c = f[i];
+          fs.p = f[i.xp()];
 
-        vs.c = v[i];
-        vs.p = v[i.xp()];
-        vs.m = v[i.xm()];
+          vs.m = v[i.xm()];
+          vs.c = v[i];
+          vs.p = v[i.xp()];
 
-        result[i] = func(vs, fs);
+          result[i] = func(vs, fs);
+        }
       }
     }
   } else {
@@ -2884,7 +2921,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   CELL_LOC diffloc = f.getLocation();
 
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL))) {
+  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + f * indexDDY(v);
@@ -2893,7 +2930,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   Mesh::flux_func func = fFDDY;
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(FluxTable, method);
+    func = lookupFunc(FluxTable, method);
   }
 
   Field2D result(this);
@@ -2908,45 +2945,45 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     result.setLocation(CELL_CENTRE);
   }
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (this->ystart > 1) {
     // Two or more guard cells
-    stencil fs, vs;
-    for (const auto &i : result.region(region)) {
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.mm = f[i.ymm()];
+        fs.m = f[i.ym()];
+        fs.c = f[i];
+        fs.p = f[i.yp()];
+        fs.pp = f[i.ypp()];
 
-      fs.c = f[i];
-      fs.p = f[i.yp()];
-      fs.m = f[i.ym()];
-      fs.pp = f[i.offset(0, 2, 0)];
-      fs.mm = f[i.offset(0, -2, 0)];
+        vs.mm = v[i.ymm()];
+        vs.m = v[i.ym()];
+        vs.c = v[i];
+        vs.p = v[i.yp()];
+        vs.pp = v[i.ypp()];
 
-      vs.c = v[i];
-      vs.p = v[i.yp()];
-      vs.m = v[i.ym()];
-      vs.pp = v[i.offset(0, 2, 0)];
-      vs.mm = v[i.offset(0, -2, 0)];
-
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
 
   } else if (this->ystart == 1) {
     // Only one guard cell
+    BOUT_OMP(parallel) {
+      stencil fs, vs;
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        fs.m = f[i.ym()];
+        fs.c = f[i];
+        fs.p = f[i.yp()];
 
-    stencil fs;
-    fs.pp = nan("");
-    fs.mm = nan("");
-    stencil vs;
-    vs.pp = nan("");
-    vs.mm = nan("");
+        vs.m = v[i.ym()];
+        vs.c = v[i];
+        vs.p = v[i.yp()];
 
-    for (const auto &i : result.region(region)) {
-      fs.c = f[i];
-      fs.p = f[i.yp()];
-      fs.m = f[i.ym()];
-
-      vs.c = v[i];
-      vs.p = v[i.yp()];
-      vs.m = v[i.ym()];
-      result[i] = func(vs, fs);
+        result[i] = func(vs, fs);
+      }
     }
   } else {
     // No guard cells
@@ -2967,7 +3004,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDY");
 
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL))) {
+  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
@@ -3004,10 +3041,10 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
-  if (func == NULL) {
+  if (func == nullptr) {
     // To catch when no function
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + indexDDY(v, outloc, DIFF_DEFAULT) * f;
   }
@@ -3027,155 +3064,145 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
-    stencil vval, fval;
-    vval.mm = nan("");
-    vval.pp = nan("");
-    fval.mm = nan("");
-    fval.pp = nan("");
-    for (const auto &i : result.region(region)) {
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else if (vUseUpDown) {
     // Only v has up/down fields
     // f must shift to field aligned coordinates
     Field3D f_fa = this->toFieldAligned(f);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f_fa[i.ymm()];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.ypp()];
 
-    stencil vval;
-    vval.mm = nan("");
-    vval.pp = nan("");
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-    stencil fval;
-    for (const auto &i : result.region(region)) {
-
-      fval.mm = f_fa[i.offset(0, -2, 0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0, 2, 0)];
-
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else if (fUseUpDown) {
     // Only f has up/down fields
     // v must shift to field aligned coordinates
     Field3D v_fa = this->toFieldAligned(v);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-    stencil vval;
+        vval.mm = v_fa[i.ymm()];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.ypp()];
 
-    stencil fval;
-    fval.pp = nan("");
-    fval.mm = nan("");
-
-    for (const auto &i : result.region(region)) {
-
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
   else {
     // Both must shift to field aligned
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        fval.mm = f_fa[i.ymm()];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.ypp()];
 
-    stencil vval, fval;
+        vval.mm = v_fa[i.ymm()];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.ypp()];
 
-    for (const auto &i : result.region(region)) {
-
-      fval.mm = f_fa[i.offset(0,-2,0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0,2,0)];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-        // Non-centred stencil
-        if((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
-          // Producing a stencil centred around a lower Y value
-          vval.pp = vval.p;
-          vval.p  = vval.c;
-        }else if(vloc == CELL_YLOW) {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m  = vval.c;
+        if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+          // Non-centred stencil
+          if ((vloc == CELL_CENTRE) && (diffloc == CELL_YLOW)) {
+            // Producing a stencil centred around a lower Y value
+            vval.pp = vval.p;
+            vval.p = vval.c;
+          } else if (vloc == CELL_YLOW) {
+            // Stencil centred around a cell centre
+            vval.mm = vval.m;
+            vval.m = vval.c;
+          }
+          // Shifted in one direction -> shift in another
+          // Could produce warning
         }
-        // Shifted in one direction -> shift in another
-        // Could produce warning
+        result[i] = func(vval, fval);
       }
-      result[i] = func(vval, fval);
     }
   }
 
@@ -3194,7 +3221,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDZ(Field3D, Field3D)");
-  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL))) {
+  if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     return indexVDDZ(v, f, outloc, DIFF_DEFAULT) +
@@ -3233,7 +3260,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   if (method != DIFF_DEFAULT) {
     // Lookup function
-    func = lookupFluxFunc(table, method);
+    func = lookupFunc(table, method);
   }
 
   ASSERT1(this == v.getMesh());
@@ -3242,41 +3269,44 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  stencil vval, fval;
-  for (const auto &i : result.region(region)) {
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
 
-    fval.mm = f[i.offset(0,0,-2)];
-    fval.m = f[i.zm()];
-    fval.c = f[i];
-    fval.p = f[i.zp()];
-    fval.pp = f[i.offset(0,0,2)];
+  BOUT_OMP(parallel) {
+    stencil vval, fval;
+    BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      fval.mm = f[i.zmm()];
+      fval.m = f[i.zm()];
+      fval.c = f[i];
+      fval.p = f[i.zp()];
+      fval.pp = f[i.zpp()];
 
-    vval.mm = v[i.offset(0,0,-2)];
-    vval.m = v[i.zm()];
-    vval.c = v[i];
-    vval.p = v[i.zp()];
-    vval.pp = v[i.offset(0,0,2)];
+      vval.mm = v[i.zmm()];
+      vval.m = v[i.zm()];
+      vval.c = v[i];
+      vval.p = v[i.zp()];
+      vval.pp = v[i.zpp()];
 
-    if(StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
-      // Non-centred stencil
+      if (StaggerGrids && (diffloc != CELL_DEFAULT) && (diffloc != vloc)) {
+        // Non-centred stencil
 
-      if((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
-      // Producing a stencil centred around a lower Z value
-        vval.pp = vval.p;
-        vval.p  = vval.c;
+        if ((vloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
+          // Producing a stencil centred around a lower Z value
+          vval.pp = vval.p;
+          vval.p = vval.c;
 
-      }else if(vloc == CELL_ZLOW) {
-        // Stencil centred around a cell centre
+        } else if (vloc == CELL_ZLOW) {
+          // Stencil centred around a cell centre
 
-        vval.mm = vval.m;
-        vval.m  = vval.c;
+          vval.mm = vval.m;
+          vval.m = vval.c;
+        }
+        // Shifted in one direction -> shift in another
+        // Could produce warning
       }
-      // Shifted in one direction -> shift in another
-      // Could produce warning
+      result[i] = func(vval, fval);
     }
-    result[i] = func(vval, fval);
   }
-
   result.setLocation(diffloc);
 
 #if CHECK > 0

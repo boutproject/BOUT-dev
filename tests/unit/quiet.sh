@@ -1,5 +1,9 @@
-#!/usr/bin/env sh
-exec awk '{
+#!/usr/bin/env bash
+
+set -o pipefail
+for cmd in $@
+do
+    $cmd | awk '{
     if (match($0,"^$")) {
         empty=1
         #print "empty", $0
@@ -39,4 +43,5 @@ exec awk '{
     }
     if (out)
         print $0
-}'
+}' || exit
+done

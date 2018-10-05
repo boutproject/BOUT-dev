@@ -14,11 +14,12 @@
 
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
                                                   BoutReal tolerance) {
-  for (const auto &i : field) {
+  const auto &region = field.getMesh()->getRegion3D("RGN_ALL");
+  BOUT_FOR_SERIAL(i, region) {
     if (fabs(field[i] - number) > tolerance) {
-      return ::testing::AssertionFailure() << "Field3D(" << i.x << ", " << i.y << ", "
-                                           << i.z << ") == " << field[i]
-                                           << "; Expected: " << number;
+      return ::testing::AssertionFailure()
+             << "Field3D(" << i.x() << ", " << i.y() << ", " << i.z()
+             << ") == " << field[i] << "; Expected: " << number;
     }
   }
 
@@ -27,11 +28,12 @@
 
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance) {
-  for (const auto &i : field) {
+  const auto &region = field.getMesh()->getRegion2D("RGN_ALL");
+  BOUT_FOR_SERIAL(i, region) {
     if (fabs(field[i] - number) > tolerance) {
-      return ::testing::AssertionFailure() << "Field2D(" << i.x << ", " << i.y
-                                           << ") == " << field[i]
-                                           << "; Expected: " << number;
+      return ::testing::AssertionFailure()
+             << "Field2D(" << i.x() << ", " << i.y() << ") == " << field[i]
+             << "; Expected: " << number;
     }
   }
 
@@ -40,11 +42,12 @@
 
 ::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field,
                                                     BoutReal number, BoutReal tolerance) {
-  for (const auto &i : field) {
+  const auto &region = field.getMesh()->getRegionPerp("RGN_ALL");
+  BOUT_FOR_SERIAL(i, region) {
     if (fabs(field[i] - number) > tolerance) {
-      return ::testing::AssertionFailure() << "FieldPerp(" << i.x << ", " << i.z
-                                           << ") == " << field[i]
-                                           << "; Expected: " << number;
+      return ::testing::AssertionFailure()
+             << "FieldPerp(" << i.x() << ", " << i.z() << ") == " << field[i]
+             << "; Expected: " << number;
     }
   }
 

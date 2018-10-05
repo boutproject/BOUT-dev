@@ -34,9 +34,9 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-        t) ### Set target to build
-            MAIN_TARGET="$OPTARG"
-            ;;
+    t) ### Set target to build
+        MAIN_TARGET+=("$OPTARG")
+        ;;
 	*) ### Show usage message
 	    usage
 	    ;;
@@ -70,7 +70,23 @@ then
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
-time make $MAIN_TARGET|| exit
+for target in ${MAIN_TARGET[@]}
+do
+    time make $target
+    make_exit=$?
+    if [[ $make_exit -gt 0 ]]; then
+	make clean > /dev/null
+	echo -e $RED_FG
+	echo "**************************************************"
+	echo "Printing make commands:"
+	echo "**************************************************"
+	echo -e $RESET_FG
+	echo
+	make -n $target
+	exit $make_exit
+    fi
+done
+
 if [[ ${TESTS} == 1 ]]
 then
     time make build-check || exit
@@ -93,9 +109,15 @@ fi
 
 if [[ ${COVERAGE} == 1 ]]
 then
-   # Ensure that there is a corresponding .gcda file for every .gcno file
-   # This is to try and make the coverage report slightly more accurate
-   # It still won't include, e.g. any solvers we don't build with though
-   find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-   bash <(curl -s https://codecov.io/bash)
+    # Ensure that there is a corresponding .gcda file for every .gcno file
+    # This is to try and make the coverage report slightly more accurate
+    # It still won't include, e.g. any solvers we don't build with though
+    find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+
+    #Upload for codecov
+    bash <(curl -s https://codecov.io/bash)
+
+    #For codacy
+    bash ./.codacy_coverage.sh
+    
 fi

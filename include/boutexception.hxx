@@ -16,9 +16,9 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
-  BoutException(const std::string);
-  virtual ~BoutException();
-  
+  BoutException(const std::string&);
+  ~BoutException() override;
+
   const char* what() const noexcept override;
   void Backtrace();
 protected:
