@@ -1464,14 +1464,14 @@ def interp_to(f,location):
 def setOption(name, value, source="PyInterface", force=False):
     """
     Set an option in the global Options tree. Prefer
-    `Options.set` to avoid unexpected results if several Option
+    'Options.set' to avoid unexpected results if several Option
     roots are avalaible.
 
     Parameters
     ----------
     name : string
         the name of the value to be set. Can be relative,
-        e.g. `mesh:ddx:first`.
+        e.g. 'mesh:ddx:first'.
     value : string
         the value to be set
     source : string
@@ -1479,7 +1479,7 @@ def setOption(name, value, source="PyInterface", force=False):
         track of where what was set.
     force : bool
         If a value is overwritten, an exception is
-        thrown. setting this to `True` avoids the exception.
+        thrown. setting this to 'True' avoids the exception.
     """
     checkInit()
     root=Options('')
@@ -1535,7 +1535,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to be set. Can be relative,
-             e.g. `mesh:ddx:first`.
+             e.g. 'mesh:ddx:first'.
         value : string
             the value to be set
         source : string
@@ -1543,7 +1543,7 @@ cdef class Options:
             track of where what was set.
         force : bool
             If a value is overwritten, an exception is
-            thrown. setting this to `True` avoids the exception.
+            thrown. setting this to 'True' avoids the exception.
         """
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
@@ -1565,7 +1565,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to get. Can be relative,
-             e.g. `mesh:ddx:first`.
+             e.g. 'mesh:ddx:first'.
         default : bool, string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float
