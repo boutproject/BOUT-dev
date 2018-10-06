@@ -800,7 +800,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_ME
 
   result = ::DDY(f, outloc, method);
 
-  r2 = D2DY2(f, outloc, method) / interp_to(g_22, outloc);
+  r2 = D2DY2(f, outloc, method) / g_22;
 
   result = sg * result + r2;
 
