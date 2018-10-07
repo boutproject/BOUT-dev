@@ -228,12 +228,32 @@ namespace {
             )/16.;
         }
 
-        // extrapolate into boundary guard cells
-        for(int i=extrap_start;i<bndry->width;i++) {
-          int xi = bndry->x + i*bndry->bx;
-          int yi = bndry->y + i*bndry->by;
-          result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
-        }	
+        // set boundary guard cells
+        if ((bndry->bx != 0 && localmesh->GlobalNx-2*bndry->width >= 3) || (bndry->by != 0 && localmesh->GlobalNy-2*bndry->width >= 3)) {
+          if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
+            throw BoutException("Not enough points in the x-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of x-guard cells MXG or decrease number of "
+                "processors in the x-direction NXPE.");
+          }
+          if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
+            throw BoutException("Not enough points in the y-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of y-guard cells MYG or decrease number of "
+                "processors in the y-direction NYPE.");
+          }
+          // extrapolate into boundary guard cells if there are enough grid points
+          for(int i=extrap_start;i<bndry->width;i++) {
+            int xi = bndry->x + i*bndry->bx;
+            int yi = bndry->y + i*bndry->by;
+            result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
+          }
+        } else {
+          // not enough grid points to extrapolate, set equal to last grid point
+          for(int i=extrap_start;i<bndry->width;i++) {
+            result(bndry->x + i*bndry->bx, bndry->y + i*bndry->by) = result(bndry->x - bndry->bx, bndry->y - bndry->by);
+          }
+        }
       }
     }
 
