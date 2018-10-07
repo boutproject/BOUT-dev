@@ -1,0 +1,17 @@
+# partial input file, further options are set using boutcore
+# interface in runtest
+non_uniform = true
+
+[mesh]
+nx = 6
+ny = 2
+nz = 1
+
+[testmesh:ddx]
+upwind = U2
+
+[testmesh:ddy]
+upwind = U2
+
+[testmesh:ddz]
+upwind = U2
