@@ -180,6 +180,14 @@ namespace {
   Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
     Mesh* localmesh = f.getMesh();
     Field2D result = interp_to(f, location, RGN_NOBNDRY);
+    // Ensure result's data is unique. Otherwise result might be a duplicate of
+    // f (if no interpolation is needed, e.g. if interpolation is in the
+    // z-direction); then f would be communicated. Since this function is used
+    // on geometrical quantities that might not be periodic in y even on closed
+    // field lines (due to dependence on integrated shear), we don't want to
+    // communicate f. We will sort out result's boundary guard cells below, but
+    // not f's so we don't want to change f.
+    result.allocate();
     localmesh->communicate(result);
 
     // Extrapolate into boundaries so that differential geometry terms can be
