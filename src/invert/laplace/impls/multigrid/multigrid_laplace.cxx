@@ -83,9 +83,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc) :
   if ( outer_boundary_flags & ~implemented_boundary_flags ) {
     throw BoutException("Attempted to set Laplacian outer boundary inversion flag that is not implemented in LaplaceMultigrid.");
   }
-  if (nonuniform) {
-    throw BoutException("nonuniform option is not implemented in LaplaceMultigrid.");
-  }
   
   commX = mesh->getXcomm();
   
@@ -589,6 +586,10 @@ BOUT_OMP(for collapse(2))
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
+      if (nonuniform) {
+        // add correction for non-uniform dx
+        dxd += D(i2, yindex, k2)*coords->d1_dx(i2, yindex);
+      }
       
       BoutReal dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex)
         + coords->g33(i2, yindex)*ddz_C
