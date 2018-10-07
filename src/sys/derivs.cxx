@@ -385,7 +385,7 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
 // general case
 const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
   return f.getMesh()->indexVDDY(v, f, outloc, method, region) /
-         f.getCoordinates(outloc)->dy;
+         f.getCoordinates(CELL_YLOW)->dy;
 }
 
 ////////////// Z DERIVATIVE /////////////////

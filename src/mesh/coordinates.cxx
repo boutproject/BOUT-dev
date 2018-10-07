@@ -703,14 +703,15 @@ const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return DDY(var, outloc, method) / sqrt(g_22);
+  return DDY(var, outloc, method) / sqrt(var.getCoordinates(CELL_CENTRE)->g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field3D )");
 
-  return ::DDY(var, outloc, method) / sqrt(g_22);
+  return ::DDY(var, outloc, method) / sqrt(var.getCoordinates(CELL_YLOW)->g_22);
+  //return ::DDY(var, outloc, method) / sqrt(g_22);
 }
 
 /////////////////////////////////////////////////////////
@@ -721,7 +722,7 @@ const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          CELL_LOC outloc,
                                          DIFF_METHOD method) {
 
-  return VDDY(v, f, outloc, method) / sqrt(g_22);
+  return VDDY(v, f, outloc, method) / sqrt(f.getCoordinates(CELL_YLOW)->g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
@@ -739,9 +740,9 @@ const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  Field2D Bxy_floc = f.getCoordinates()->Bxy;
+  Field2D Bxy_floc = f.getCoordinates(CELL_CENTRE)->Bxy;
 
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return Bxy * Grad_par(f / Bxy_floc, CELL_CENTRE, method);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
@@ -769,7 +770,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 
   // No yup/ydown fields. The Grad_par operator will
   // shift to field aligned coordinates
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return f.getCoordinates(CELL_YLOW)->Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -779,8 +780,8 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
 
-  Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
+  Field2D sg = sqrt(f.getCoordinates(CELL_CENTRE)->g_22);
+  Field2D result = DDY(1. / sg, CELL_CENTRE, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
@@ -800,7 +801,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_ME
 
   result = ::DDY(f, outloc, method);
 
-  r2 = D2DY2(f, outloc, method) / g_22;
+  r2 = D2DY2(f, outloc, method) / f.getCoordinates(CELL_CENTRE)->g_22;
 
   result = sg * result + r2;
 
@@ -942,11 +943,11 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 }
 
 const Field2D Coordinates::Laplace_par(const Field2D &f, CELL_LOC outloc) {
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / f.getCoordinates(CELL_YLOW)->J;
 }
 
 const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22 + DDY(J / f.getCoordinates(CELL_YLOW)->g_22, CELL_YLOW) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
@@ -955,7 +956,7 @@ const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field2D )");
 
   Field2D result =
-      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+      f.getCoordinates(CELL_XLOW)->G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
 
   return result;
 }
@@ -963,7 +964,7 @@ const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
 const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field3D )");
 
-  Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
+  Field3D result = G1 * ::DDX(f, outloc) + f.getCoordinates(CELL_YLOW)->G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
                    g22 * D2DY2(f, outloc) + g33 * D2DZ2(f, outloc) +
                    2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
 

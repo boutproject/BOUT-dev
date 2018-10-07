@@ -239,7 +239,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = v.getCoordinates(outloc);
-  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
+  return f.getCoordinates(CELL_CENTRE)->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
 }
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
@@ -248,7 +248,7 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD metho
 
 const Field2D Div_par_flux(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = v.getCoordinates(outloc);
-  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
+  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(f.getCoordinates(CELL_YLOW)->g_22);
 }
 
 /*******************************************************************************
@@ -658,7 +658,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
   Field2D dpdy = DDY(phi, outloc);
   
   // Calculate advection velocity
-  Field2D vx = -metric->g_23*dpdy;
+  Field2D vx = -A.getCoordinates(CELL_CENTRE)->g_23*dpdy;
   Field2D vy = metric->g_23*dpdx;
 
   // Upwind A using these velocities
@@ -764,7 +764,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   // Calculate advection velocity
   Field3D vx = metric->g_22 * dpdz - metric->g_23 * dpdy;
-  Field3D vy = metric->g_23 * dpdx - metric->g_12 * dpdz;
+  Field3D vy = A.getCoordinates(CELL_CENTRE)->g_23 * dpdx - metric->g_12 * dpdz;
   Field3D vz = metric->g_12 * dpdy - metric->g_22 * dpdx;
 
   if(mesh->IncIntShear) {
@@ -834,7 +834,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(result_loc)->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(CELL_XLOW)->Bxy;
   }
   result.setLocation(result_loc);
   return result;
@@ -906,7 +906,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 
     BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
-      const BoutReal spacingFactor = fac / metric->dx[j2D];
+      const BoutReal spacingFactor = fac / f.getCoordinates(CELL_CENTRE)->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
 
@@ -1189,7 +1189,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     Field3D g_temp = g;
 
     BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
-      const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
+      const BoutReal spacingFactor = partialFactor / f.getCoordinates(CELL_CENTRE)->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
 

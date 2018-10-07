@@ -165,7 +165,7 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
     """
 
     # all derivatives at same inloc/outloc should work
-    dimensions_staggers = [(base_dimensions, None), # no staggering
+    dimensions_staggers = [
                            (base_dimensions+'x', ('CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
                            (base_dimensions+'x', ('XLOW', 'XLOW')),
                            (base_dimensions+'y', ('YLOW', 'YLOW')),
@@ -361,7 +361,7 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
     """
 
     # all derivatives at same inloc/outloc should work
-    dimensions_staggers = [(base_dimensions, None), # no staggering
+    dimensions_staggers = [
                            (base_dimensions+'x', ('CENTRE', 'CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
                            (base_dimensions+'x', ('XLOW', 'XLOW', 'XLOW')),
                            (base_dimensions+'y', ('YLOW', 'YLOW', 'YLOW')),
@@ -454,7 +454,7 @@ testfunc = 'cos(2*pi*x+y+z)'
 testfunc2 = 'sin(4*pi*x+2*y+2*z)+cos(2*pi*x-z)'
 order = 2
 plot_error = False
-test_throw = full_test
+test_throw = False
 test_deriv_ops = full_test
 
 boutcore.init('-q -q -q -q')
