@@ -1,9 +1,8 @@
 #!/bin/bash
 
 #requires boutcore
-#requires all_tests
 #requires not make
 
-./runtest.py
+../difops/runtest.py --short
 
 exit # exit with status of last command
