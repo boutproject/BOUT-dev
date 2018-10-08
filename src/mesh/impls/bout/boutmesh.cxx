@@ -2007,6 +2007,20 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   return false;
 }
 
+bool BoutMesh::hasBranchCut() const {
+  return TwistShift;
+}
+
+bool BoutMesh::hasBranchCutDown(int jx) const {
+  return (TS_down_in && jx<DDATA_XSPLIT)
+         || (TS_down_out && jx>=DDATA_XSPLIT);
+}
+
+bool BoutMesh::hasBranchCutUp(int jx) const {
+  return (TS_up_in && jx<UDATA_XSPLIT)
+         || (TS_up_out && jx>=UDATA_XSPLIT);
+}
+
 int BoutMesh::ySize(int xpos) const {
   int xglobal = XGLOBAL(xpos);
   int yglobal = YGLOBAL(MYG);
