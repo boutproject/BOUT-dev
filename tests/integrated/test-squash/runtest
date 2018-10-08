@@ -55,6 +55,15 @@ run("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../para.nc")
 
 verify("20.nc", "para.nc")
 
+# Parallel and in two pieces without dump_on_restart
+run("rm -f para.nc")
+run("mpirun -np 4 ./squash -q -q -q")
+run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
+run("mpirun -np 4 ./squash -q -q -q restart dump_on_restart=false")
+run("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../para.nc")
+
+verify("20.nc", "para.nc")
+
 # Sequential test
 run("rm -f seq.nc")
 run("./squash -q -q -q nout=20")
