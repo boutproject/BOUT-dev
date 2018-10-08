@@ -290,12 +290,13 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 }
 
 const Field2D Grad_par_CtoL(const Field2D &var) {
-  Field2D result;
+  const auto varMesh = var.getMesh();
+  Field2D result(varMesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);
 
-  for(const auto &i : result.region(RGN_NOBNDRY)) {
+  BOUT_FOR(i, varMesh->getRegion2D("RGN_NOBNDRY")) {
     result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 
@@ -310,115 +311,108 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
   ASSERT1(v.getLocation() == CELL_YLOW);
   ASSERT1(f.getLocation() == CELL_CENTRE);
 
-  stencil fval, vval;
-  Field3D result(v.getMesh());
+  const auto vMesh = v.getMesh();
+  Field3D result(vMesh);
 
   result.allocate();
 
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
+  /// Convert REGION enum to a Region string identifier
+  const auto region_str = REGION_STRING(region);
+
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-    fval.mm = nan("");
-    fval.pp = nan("");
-    vval.mm = nan("");
-    vval.pp = nan("");
-    for (const auto &i : result.region(region)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+        // Left side
+        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+        // Right side
+        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+      }
     }
   }
   else if (vUseUpDown) {
     // Only v has up/down fields
     // f must shift to field aligned coordinates
-    Field3D f_fa = mesh->toFieldAligned(f);
+    Field3D f_fa = vMesh->toFieldAligned(f);
 
-    vval.mm = nan("");
-    vval.pp = nan("");
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+        fval.mm = f_fa[i.ymm()];
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
+        fval.pp = f_fa[i.ypp()];
 
-    for (const auto &i : result.region(region)) {
+        vval.m = v.ydown()[i.ym()];
+        vval.c = v[i];
+        vval.p = v.yup()[i.yp()];
 
-      fval.mm = f_fa[i.offset(0, -2, 0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0, 2, 0)];
-
-      vval.m = v.ydown()[i.ym()];
-      vval.c = v[i];
-      vval.p = v.yup()[i.yp()];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+        // Left side
+        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+        // Right side
+        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+      }
     }
   }
   else if (fUseUpDown) {
     // Only f has up/down fields
     // v must shift to field aligned coordinates
-    Field3D v_fa = mesh->toFieldAligned(v);
+    Field3D v_fa = vMesh->toFieldAligned(v);
 
-    stencil vval;
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+        fval.m = f.ydown()[i.ym()];
+        fval.c = f[i];
+        fval.p = f.yup()[i.yp()];
 
-    stencil fval;
-    fval.mm = nan("");
-    fval.pp = nan("");
+        vval.mm = v_fa[i.ymm()];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
+        vval.pp = v_fa[i.ypp()];
 
-    for (const auto &i : result.region(region)) {
-
-      fval.m = f.ydown()[i.ym()];
-      fval.c = f[i];
-      fval.p = f.yup()[i.yp()];
-
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+        // Left side
+        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+        // Right side
+        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+      }
     }
   }
   else {
     // Both must shift to field aligned
-    Field3D v_fa = mesh->toFieldAligned(v);
-    Field3D f_fa = mesh->toFieldAligned(f);
+    Field3D v_fa = vMesh->toFieldAligned(v);
+    Field3D f_fa = vMesh->toFieldAligned(f);
 
-    for (const auto &i : result.region(region)) {
+    BOUT_OMP(parallel) {
+      stencil fval, vval;
+      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+        fval.m = f_fa[i.ym()];
+        fval.c = f_fa[i];
+        fval.p = f_fa[i.yp()];
 
-      fval.mm = f_fa[i.offset(0,-2,0)];
-      fval.m = f_fa[i.ym()];
-      fval.c = f_fa[i];
-      fval.p = f_fa[i.yp()];
-      fval.pp = f_fa[i.offset(0,2,0)];
+        vval.m = v_fa[i.ym()];
+        vval.c = v_fa[i];
+        vval.p = v_fa[i.yp()];
 
-      vval.mm = v_fa[i.offset(0,-2,0)];
-      vval.m = v_fa[i.ym()];
-      vval.c = v_fa[i];
-      vval.p = v_fa[i.yp()];
-      vval.pp = v_fa[i.offset(0,2,0)];
-
-      // Left side
-      result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-      // Right side
-      result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+        // Left side
+        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
+        // Right side
+        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
+      }
     }
   }
 
@@ -427,28 +421,30 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 }
 
 const Field3D Grad_par_LtoC(const Field3D &var) {
-  if (mesh->StaggerGrids) {
-    ASSERT1(var.getLocation() == CELL_YLOW);
-  } 
+  const auto varMesh = var.getMesh();
 
-  Field3D result(var.getMesh());
+  if (varMesh->StaggerGrids) {
+    ASSERT1(var.getLocation() == CELL_YLOW);
+  }
+
+  Field3D result(varMesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
   if (var.hasYupYdown()) {
-    for (const auto &i : result.region(RGN_NOBNDRY)) {
+    BOUT_FOR(i, varMesh->getRegion3D("RGN_NOBNDRY")) {
       result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = var.getMesh()->toFieldAligned(var);
+    Field3D var_fa = varMesh->toFieldAligned(var);
 
-    for(const auto &i : result.region(RGN_NOBNDRY)) {
+    BOUT_FOR(i, varMesh->getRegion3D("RGN_NOBNDRY")) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
-    result = var.getMesh()->fromFieldAligned(result);
+    result = varMesh->fromFieldAligned(result);
   }
 
   result.setLocation(CELL_CENTRE);
@@ -456,12 +452,13 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
 }
 
 const Field2D Grad_par_LtoC(const Field2D &var) {
-  Field2D result;
+  const auto varMesh = var.getMesh();
+  Field2D result(varMesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
-  for(const auto &i : result.region(RGN_NOBNDRY)) {
+  BOUT_FOR(i, varMesh->getRegion2D("RGN_NOBNDRY")) {
     result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 

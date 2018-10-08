@@ -48,6 +48,8 @@ class Field3D; // #include "field3d.hxx"
  */ 
 class FieldPerp : public Field {
  public:
+  using ind_type = IndPerp;
+    
   /*!
    * Constructor
    */
@@ -84,26 +86,26 @@ class FieldPerp : public Field {
   /*!
    * Iterators and data access
    */
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
 
-  const IndexRange region(REGION rgn) const override;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   const Region<IndPerp>& getRegion(const std::string &region_name) const;
   
   /*!
    * Direct data access using DataIterator indexing
    */
-  inline BoutReal& operator[](const DataIterator &d) {
+  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.z);
   }
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.z);
   }
-  BoutReal& operator[](const Indices &i) {
+  BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override{
+  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override{
     return operator()(i.x, i.z);
   }
 

@@ -541,4 +541,9 @@ std::string trimComments(const std::string &s, const std::string &c="#;");
     }                                                   \
   }
 
+/// Convert pointer or reference to pointer
+/// This allows consistent handling of both in macros, templates
+template <typename T> T *pointer(T *val) { return val; }
+template <typename T> T *pointer(T &val) { return &val; }
+
 #endif // __UTILS_H__

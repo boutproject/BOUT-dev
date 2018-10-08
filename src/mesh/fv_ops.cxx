@@ -147,14 +147,14 @@ namespace FV {
     
     Coordinates *coord = fin.getCoordinates();
     
-    for( const auto &i: result ) {
+    BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
       // Calculate flux at upper surface
       
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if(bndry_flux || !mesh->lastY() || (i.y != mesh->yend)) {
-        
+      if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
+
         BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
@@ -167,7 +167,7 @@ namespace FV {
       }
       
       // Calculate flux at lower surface
-      if(bndry_flux || !mesh->firstY() || (i.y != mesh->ystart)) {
+      if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         

@@ -169,6 +169,8 @@ class Mesh;  // #include "bout/mesh.hxx"
  */
 class Field3D : public Field, public FieldData {
  public:
+  using ind_type = Ind3D;
+  
   /*!
    * Constructor
    *
@@ -278,7 +280,7 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
   
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
   /*!
    * These begin and end functions are used to iterate over
@@ -295,8 +297,8 @@ class Field3D : public Field, public FieldData {
    * }
    * 
    */
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
   
   /*!
    * Returns a range of indices which can be iterated over
@@ -315,7 +317,7 @@ class Field3D : public Field, public FieldData {
    * }
    * 
    */
-  const IndexRange region(REGION rgn) const override;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   /*!
    * Like Field3D::region(REGION rgn), but returns range
@@ -324,7 +326,7 @@ class Field3D : public Field, public FieldData {
    * which need an explicit loop in z.
    *
    */
-  const IndexRange region2D(REGION rgn) const;
+  const IndexRange DEPRECATED(region2D(REGION rgn)) const;
 
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
   
@@ -333,16 +335,16 @@ class Field3D : public Field, public FieldData {
    * This uses operator(x,y,z) so checks will only be
    * performed if CHECK > 2.
    */
-  BoutReal& operator[](const DataIterator &d) {
+  BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.y, d.z);
   }
-  const BoutReal& operator[](const DataIterator &d) const {
+  const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.y, d.z);
   }
-  BoutReal& operator[](const Indices &i) {
+  BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.y, i.z);
   }
-  const BoutReal& operator[](const Indices &i) const override {
+  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
     return operator()(i.x, i.y, i.z);
   }
   

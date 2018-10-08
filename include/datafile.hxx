@@ -21,6 +21,7 @@ class Datafile;
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"
+#include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
 
@@ -140,7 +141,7 @@ class Datafile {
 };
 
 /// Write this variable once to the grid file
-#define SAVE_ONCE(var) dump.add(var, #var, 0)
+#define SAVE_ONCE1(var) dump.add(var, #var, 0);
 #define SAVE_ONCE2(var1, var2) { \
     dump.add(var1, #var1, 0); \
     dump.add(var2, #var2, 0);}
@@ -167,8 +168,11 @@ class Datafile {
     dump.add(var5, #var5, 0); \
     dump.add(var6, #var6, 0);}
 
+#define SAVE_ONCE(...)                          \
+  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
+
 /// Write this variable every timestep
-#define SAVE_REPEAT(var) dump.add(var, #var, 1)
+#define SAVE_REPEAT1(var) dump.add(var, #var, 1);
 #define SAVE_REPEAT2(var1, var2) { \
     dump.add(var1, #var1, 1); \
     dump.add(var2, #var2, 1);}
@@ -194,5 +198,8 @@ class Datafile {
     dump.add(var4, #var4, 1); \
     dump.add(var5, #var5, 1); \
     dump.add(var6, #var6, 1);}
+
+#define SAVE_REPEAT(...)                        \
+  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
 #endif // __DATAFILE_H__
