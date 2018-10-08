@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+import netCDF4 as nc
+import itertools as it
+import os
+
+
+def run(cmd):
+    s = os.system(cmd)
+    if s:
+        raise RuntimeError("%s exited with non-zero %d value" % (cmd, s))
+
+
+def verify(f1, f2):
+    org = nc.Dataset(f1)
+    para = nc.Dataset(f2)
+    for v in org.variables:
+        if org[v].shape != para[v].shape:
+            print(org[v])
+            print(para[v])
+            raise RuntimeError("shape mismatch in ", v)
+        if v in ["MXSUB","MYSUB","NXPE","NYPE","iteration"]:
+            continue
+        if (org[v][:] != para[v][:]).any():
+            a=org[v]
+            b=para[v]
+            print(a)
+            print(b)
+            lst=[range(x) for x in org[v].shape]
+            for i in it.product(*lst):
+                if a[i] != b[i]:
+                    print(i,":",a[i],"!=",b[i])
+            # There are differences, but I think only guard cells are affected
+            raise RuntimeError("data mismatch in ", v)
+
+run("make")
+
+# Run once to get normal data
+run("./squash -q -q -q nout=20")
+run("mv data/BOUT.dmp.0.nc 20.nc")
+
+# Parallel test
+run("rm -f para.nc")
+run("mpirun -np 4 ./squash -q -q -q nout=20")
+run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
+
+verify("20.nc", "para.nc")
+
+# Parallel and in two pieces
+run("rm -f para.nc")
+run("mpirun -np 4 ./squash -q -q -q")
+run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
+run("mpirun -np 4 ./squash -q -q -q restart")
+run("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../para.nc")
+
+verify("20.nc", "para.nc")
+
+# Sequential test
+run("rm -f seq.nc")
+run("./squash -q -q -q nout=20")
+run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../seq.nc")
+
+verify("20.nc", "seq.nc")
