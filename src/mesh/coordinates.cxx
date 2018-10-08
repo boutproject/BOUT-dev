@@ -648,11 +648,11 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc,
 // Parallel gradient
 
 const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
-                                    DIFF_METHOD UNUSED(method)) {
+                                    DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
@@ -669,9 +669,9 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          CELL_LOC outloc,
-                                         DIFF_METHOD UNUSED(method)) {
+                                         DIFF_METHOD method) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
-  return VDDY(v, f) / sqrt(g_22);
+  return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
