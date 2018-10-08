@@ -16,12 +16,8 @@
 #include <output.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
-  // Read the zShift angle from the mesh
-  
-  if(mesh.get(zShift, "zShift")) {
-    // No zShift variable. Try qinty in BOUT grid files
-    mesh.get(zShift, "qinty");
-  }
+  // Get the zShift angle from the mesh
+  zShift = mesh.coordinates()->zShift;
 
   //If we wanted to be efficient we could move the following cached phase setup
   //into the relevant shifting routines (with static bool first protection)
