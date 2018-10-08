@@ -16,12 +16,8 @@
 #include <output.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
-  // Read the zShift angle from the mesh
-  
-  if(mesh.get(zShift, "zShift")) {
-    // No zShift variable. Try qinty in BOUT grid files
-    mesh.get(zShift, "qinty");
-  }
+  // Get the zShift angle from the mesh
+  zShift = mesh.coordinates()->zShift;
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0

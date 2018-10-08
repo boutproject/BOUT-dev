@@ -87,6 +87,9 @@ public:
   Field2D G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
   
   Field2D G1, G2, G3;
+
+  /// z-shift for interpolation between field-aligned and shifted coordinates
+  Field2D zShift;
   
   Field2D ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
 
