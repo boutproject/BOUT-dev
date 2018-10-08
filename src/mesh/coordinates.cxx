@@ -95,17 +95,15 @@ namespace {
     if (extrap_at_branch_cut) {
       // Extrapolate into guard cells at branch cuts on core/PF field lines
       // This overwrites any communicated values in the guard cells
-      // Lower processor boundary
+      int firstjup = location==CELL_YLOW ? localmesh->yend+1 : localmesh->yend;
       for (int i=localmesh->xstart; i<=localmesh->xend; i++) {
+        // Lower processor boundary
         if (localmesh->hasBranchCutDown(i)) {
-          for (int j=localmesh->xstart-1; j>0; j--) {
+          for (int j=localmesh->ystart-1; j>0; j--) {
             result(i, j) = 3.0*result(i, j+1) - 3.0*result(i, j+2) + result(i, j+3);
           }
         }
-      }
-      // Upper processor boundary
-      int firstj = location==CELL_YLOW ? localmesh->xend+1 : localmesh->xend;
-      for (int i=localmesh->xstart; i<=localmesh->xend; i++) {
+        // Upper processor boundary
         if (localmesh->hasBranchCutUp(i)) {
           if (location == CELL_YLOW) {
             // interpolate boundary point, to be symmetric with lower boundary
@@ -113,7 +111,7 @@ namespace {
             result(i, j) =
               ( 9.*(f(i, j-1) + f(i, j)) - f(i, j-2) - f(i, j+1))/16.;
           }
-          for (int j=firstj; j<localmesh->LocalNx; j++) {
+          for (int j=firstjup; j<localmesh->LocalNy; j++) {
             result(i, j) = 3.0*result(i, j-1) - 3.0*result(i, j-2) + result(i, j-3);
           }
         }
@@ -142,7 +140,7 @@ Coordinates::Coordinates(Mesh *mesh)
       g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), zShift(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
   if (localmesh->get(dx, "dx")) {
@@ -280,9 +278,9 @@ Coordinates::Coordinates(Mesh *mesh)
   //////////////////////////////////////////////////////
 
   // try to read zShift from grid
-  if(localmesh->get(zShift, "zShift", 0., need_comms)) {
+  if(localmesh->get(zShift, "zShift", 0)) {
     // No zShift variable. Try qinty in BOUT grid files
-    localmesh->get(zShift, "qinty", 0., need_comms);
+    localmesh->get(zShift, "qinty", 0);
   }
   if (need_comms) {
     // zShift should never be periodic on closed field lines, so extrapolate
@@ -306,7 +304,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), zShift(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
   dx = interpolateAndExtrapolate(coords_in->dx, location, false);
