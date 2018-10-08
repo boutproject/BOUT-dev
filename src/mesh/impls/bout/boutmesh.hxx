@@ -111,6 +111,23 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const;
 
+  /// Is there a branch cut anywhere in this mesh?
+  bool hasBranchCut() const;
+
+  /// Is there a branch cut at the lower y-boundary of this processor at this
+  /// x-position, where geometric and topological quantities might be
+  /// discontinuous?
+  ///
+  /// \param[in] jx   The local (on this processor) index in X
+  bool hasBranchCutDown(int jx) const override;
+
+  /// Is there a branch cut at the upper y-boundary of this processor at this
+  /// x-position, where geometric and topological quantities might be
+  /// discontinuous?
+  ///
+  /// \param[in] jx   The local (on this processor) index in X
+  bool hasBranchCutUp(int jx) const override;
+
   int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
