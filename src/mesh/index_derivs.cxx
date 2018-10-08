@@ -2924,7 +2924,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDY(v);
+    return indexVDDY(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDY(v, outloc);
   }
 
   Mesh::flux_func func = fFDDY;
