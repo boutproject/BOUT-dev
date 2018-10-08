@@ -624,15 +624,18 @@ int Coordinates::jacobian() {
  *******************************************************************************/
 
 const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
   return localmesh->indexDDX(f, loc, method, region) / dx;
 }
 
 const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
   return localmesh->indexDDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
+const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc,
                                DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
   auto result = Field2D(0.0, localmesh);
   result.setLocation(location);
@@ -644,9 +647,10 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
                                     DIFF_METHOD UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return DDY(var) / sqrt(g_22);
 }
@@ -654,6 +658,7 @@ const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
                                     DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return ::DDY(var, outloc, method) / sqrt(g_22);
 }
@@ -663,13 +668,15 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
-                                         CELL_LOC UNUSED(outloc),
+                                         CELL_LOC outloc,
                                          DIFF_METHOD UNUSED(method)) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return VDDY(v, f) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          DIFF_METHOD method) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
@@ -679,6 +686,7 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
@@ -690,6 +698,7 @@ const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   TRACE("Coordinates::Div_par( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
@@ -721,6 +730,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 
 const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D sg = sqrt(g_22);
   Field2D result = DDY(1. / sg, outloc) * DDY(f, outloc) / sg + D2DY2(f, outloc) / g_22;
@@ -730,6 +740,7 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
 
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
@@ -765,6 +776,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
 const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
 
@@ -773,6 +785,7 @@ const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
 
 const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -842,6 +855,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
 
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   ASSERT2(f.getLocation() == outloc);
 
   FieldPerp result(localmesh);
@@ -890,10 +904,12 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 }
 
 const Field2D Coordinates::Laplace_par(const Field2D &f, CELL_LOC outloc) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
 
 const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
@@ -901,6 +917,7 @@ const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
 
 const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D result =
       G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
@@ -910,6 +927,7 @@ const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
 
 const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
                    g22 * D2DY2(f, outloc) + g33 * D2DZ2(f, outloc) +
