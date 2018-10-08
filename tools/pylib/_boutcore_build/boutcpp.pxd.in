@@ -87,6 +87,7 @@ cdef extern from "bout/fieldgroup.hxx":
     cppclass FieldGroup:
         FieldGroup()
         void add(Field3D&)
+        void add(Field2D&)
 cdef extern from "invert_laplace.hxx":
     cppclass Laplacian:
         @staticmethod

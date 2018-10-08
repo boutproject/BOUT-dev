@@ -778,7 +778,12 @@ cdef class Mesh:
         """
         cdef c.FieldGroup * fg = new c.FieldGroup()
         for f in args:
-            fg.add((<Field3D?> f).cobj[0])
+            if isinstance(f, Field3D):
+                fg.add((<Field3D?> f).cobj[0])
+            elif isinstance(f, Field2D):
+                fg.add((<Field2D?> f).cobj[0])
+            else:
+                raise ValueError("Cannot communicate type "+type(f))
         self.cobj.communicate(fg[0])
         del fg
         return self
