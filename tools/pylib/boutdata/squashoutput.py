@@ -20,6 +20,10 @@ from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
 import numpy
 import os
+import gc
+import tempfile
+import shutil
+import glob
 
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
@@ -72,14 +76,9 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         Delete the original files after squashing.
     """
 
-    import gc
-
     fullpath = os.path.join(datadir,outputname)
 
     if append:
-        import tempfile
-        import shutil
-        import glob
         datadirnew = tempfile.mkdtemp(dir=datadir)
         for f in glob.glob(datadir+"/BOUT.dmp.*.??"):
             if not quiet:
