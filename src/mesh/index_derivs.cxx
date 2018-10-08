@@ -1799,6 +1799,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     func = lookupFunc(UpwindTable, method);
   }
 
+  ASSERT1(this->xstart > 0); // Need at least one guard cell
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
   ASSERT2((v.getLocation() == f.getLocation()) && ((outloc == CELL_DEFAULT) || (outloc == f.getLocation()))); // No staggering allowed for Field2D
@@ -1824,7 +1825,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
       }
     }
 
-  } else if (this->xstart == 1) {
+  } else {
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil s;
@@ -1836,9 +1837,6 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
         result[i] = func(v[i], s);
       }
     }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in X requires at least one guard cell");
   }
 
 #if CHECK > 0
@@ -1857,6 +1855,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDX(Field3D, Field3D)");
 
+  ASSERT1(this->xstart > 0); // Need at least one guard cell
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
@@ -1949,7 +1948,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
       }
-    } else if (this->xstart == 1) {
+    } else {
       // One guard cell
 
       if ((vloc == CELL_XLOW) && (diffloc == CELL_CENTRE)) {
@@ -1986,9 +1985,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         throw BoutException("Unhandled shift in Mesh::indexVDDX");
       }
-    } else {
-      // No guard cells
-      throw BoutException("Error: Derivatives in X requires at least one guard cell");
     }
 
   } else {
@@ -2015,7 +2011,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
           result[i] = func(v[i], fs);
         }
       }
-    } else if (this->xstart == 1) {
+    } else {
       // Only one guard cell
       BOUT_OMP(parallel) {
         stencil fs;
@@ -2027,9 +2023,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
           result[i] = func(v[i], fs);
         }
       }
-    } else {
-      // No guard cells
-      throw BoutException("Error: Derivatives in X requires at least one guard cell");
     }
   }
 
@@ -2632,6 +2625,8 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
 
+  ASSERT1(this->xstart > 0); // Need at least one guard cell
+
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2682,7 +2677,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
         result[i] = func(vs, fs);
       }
     }
-  } else if (this->xstart == 1) {
+  } else {
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil fs, vs;
@@ -2698,9 +2693,6 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
         result[i] = func(vs, fs);
       }
     }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in X requires at least one guard cell");
   }
 
 #if CHECK > 0
@@ -2714,6 +2706,8 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDX(Field3D, Field3D)");
+
+  ASSERT1(this->xstart > 0); // Need at least one guard cell
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2835,7 +2829,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
     }
-  } else if (this->xstart == 1) {
+  } else {
     // One guard cell
     if (StaggerGrids && vloc != diffloc) {
       if ((vloc == CELL_CENTRE) && (diffloc == CELL_XLOW)) {
@@ -2895,9 +2889,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
     }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in X requires at least one guard cell");
   }
 
   result.setLocation(diffloc);
@@ -2916,6 +2907,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDY(Field2D, Field2D)");
 
+  ASSERT1(this->ystart > 0); // Need at least one guard cell
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
@@ -2969,7 +2961,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       }
     }
 
-  } else if (this->ystart == 1) {
+  } else {
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil fs, vs;
@@ -2985,9 +2977,6 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         result[i] = func(vs, fs);
       }
     }
-  } else {
-    // No guard cells
-    throw BoutException("Error: Derivatives in Y requires at least one guard cell");
   }
 
   result.setLocation(diffloc);
