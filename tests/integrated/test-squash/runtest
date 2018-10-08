@@ -19,17 +19,17 @@ def verify(f1, f2):
             print(org[v])
             print(para[v])
             raise RuntimeError("shape mismatch in ", v)
-        if v in ["MXSUB","MYSUB","NXPE","NYPE","iteration"]:
+        if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration"]:
             continue
         if (org[v][:] != para[v][:]).any():
-            a=org[v]
-            b=para[v]
+            a = org[v]
+            b = para[v]
             print(a)
             print(b)
-            lst=[range(x) for x in org[v].shape]
+            lst = [range(x) for x in org[v].shape]
             for i in it.product(*lst):
                 if a[i] != b[i]:
-                    print(i,":",a[i],"!=",b[i])
+                    print(i, ":", a[i], "!=", b[i])
             # There are differences, but I think only guard cells are affected
             raise RuntimeError("data mismatch in ", v)
 
