@@ -130,7 +130,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             var = outputs[varname]
             if append:
-                dims=old.dimensions(varname)
+                dims=outputs.dimensions[varname]
                 if 't' in dims:
                     var=var[cropnew:,...]
                     varold=old[varname]
