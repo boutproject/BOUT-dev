@@ -76,6 +76,7 @@ cdef extern from "bout/coordinates.hxx":
         Field2D G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
         Field2D G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
         Field2D G1, G2, G3
+        Field2D zShift
         Field2D ShiftTorsion
         Field2D IntShiftTorsion
         int geometry()
