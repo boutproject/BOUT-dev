@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#requires boutcore
+#requires all_tests
+#requires not make
+
+mpirun -np 4 python3 runtest.py
+
+exit
