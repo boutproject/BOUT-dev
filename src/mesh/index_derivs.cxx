@@ -685,7 +685,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
             // Producing a stencil centred around a lower X value
             s.pp = s.p;
             s.p = s.c;
-          } else if (inloc == CELL_XLOW) {
+          } else {
             // Stencil centred around a cell centre
             s.mm = s.m;
             s.m = s.c;
@@ -708,7 +708,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
             // Producing a stencil centred around a lower X value
             s.pp = s.p;
             s.p = s.c;
-          } else if (inloc == CELL_XLOW) {
+          } else {
             // Stencil centred around a cell centre
             s.mm = s.m;
             s.m = s.c;
