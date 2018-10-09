@@ -1,0 +1,17 @@
+# partial input file, further options are set using boutcore
+# interface in runtest
+
+[mesh]
+nx = 12
+ny = 8
+nz = 1
+shiftangle = 0
+
+[testmesh:ddx]
+upwind = U2
+
+[testmesh:ddy]
+upwind = U2
+
+[testmesh:ddz]
+upwind = U2
