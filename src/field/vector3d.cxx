@@ -40,7 +40,8 @@ Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+      location(f.getLocation()) {}
 
 Vector3D::~Vector3D() {
   if (deriv != nullptr) {
@@ -154,6 +155,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 
   covariant = rhs.covariant;
 
+  setLocation(rhs.getLocation());
   return *this;
 }
 
@@ -163,6 +165,8 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   z = rhs.z;
   
   covariant = rhs.covariant;
+
+  setLocation(rhs.getLocation());
 
   return *this;
 }
