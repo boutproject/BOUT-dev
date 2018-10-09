@@ -35,17 +35,15 @@
  **************************************************************************/
 
 const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
-  Vector2D result(f.getMesh());
-
   TRACE("Grad( Field2D )");
-  
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
+
+  Vector2D result(f.getMesh());
 
   result.x = DDX(f, outloc);
   result.y = DDY(f, outloc);
   result.z = DDZ(f, outloc);
+
+  result.setLocation(outloc);
 
   result.covariant = true;
 
@@ -54,23 +52,24 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
 
 const Vector3D Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
                     CELL_LOC outloc_z) {
-  Vector3D result(f.getMesh());
+  // Note no Vector2D equivalent to this three location overload
 
   TRACE("Grad( Field3D )");
 
-  if (outloc_x == CELL_DEFAULT) {
-    outloc_x = f.getLocation();
-  }
-  if (outloc_y == CELL_DEFAULT) {
-    outloc_y = f.getLocation();
-  }
-  if (outloc_z == CELL_DEFAULT) {
-    outloc_z = f.getLocation();
-  }
+  Vector3D result(f.getMesh());
+
+  ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
+          (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
+           outloc_z == CELL_ZLOW)); // CELL_VSHIFT
 
   result.x = DDX(f, outloc_x);
   result.y = DDY(f, outloc_y);
   result.z = DDZ(f, outloc_z);
+
+  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
+                        ? result.x.getLocation()
+                        : CELL_VSHIFT;
+  result.setLocation(outloc);
 
   result.covariant = true;
 
@@ -82,34 +81,32 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
     return Grad(f, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
   }
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-
   return Grad(f, outloc, outloc, outloc);
 }
 
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC UNUSED(outloc_y),
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
                          CELL_LOC outloc_z) {
-  Vector3D result(f.getMesh());
-
   TRACE("Grad_perp( Field3D )");
 
-  if (outloc_x == CELL_DEFAULT) {
-    outloc_x = f.getLocation();
-  }
-  if (outloc_z == CELL_DEFAULT) {
-    outloc_z = f.getLocation();
-  }
+  Vector3D result(f.getMesh());
 
-  Coordinates *metric_x = mesh->coordinates(outloc_x);
-  Coordinates *metric_z = mesh->coordinates(outloc_z);
+  ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
+          (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
+           outloc_z == CELL_ZLOW)); // CELL_VSHIFT
+
+  Coordinates *metric_x = f.getCoordinates(outloc_x);
+  Coordinates *metric_z = f.getCoordinates(outloc_z);
 
   result.x = DDX(f, outloc_x) -
              metric_x->g_12 * DDY(f, outloc_x) / SQ(metric_x->J * metric_x->Bxy);
   result.y = 0.0;
   result.z = DDZ(f, outloc_z) -
              metric_z->g_23 * DDY(f, outloc_z) / SQ(metric_z->J * metric_z->Bxy);
+
+  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
+                        ? result.x.getLocation()
+                        : CELL_VSHIFT;
+  result.setLocation(outloc);
 
   result.covariant = true;
 
@@ -123,12 +120,14 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC UNUSED(ou
 const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   TRACE("Div( Vector2D )");
 
-  Mesh *localmesh = v.x.getMesh();
-  Field2D result(localmesh);
-
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+
+  Mesh *localmesh = v.x.getMesh();
+  Field2D result(localmesh);
 
   Coordinates *metric = localmesh->coordinates(outloc);
 
@@ -140,19 +139,23 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   result += DDY(metric->J*vcn.y, outloc);
   result += DDZ(metric->J*vcn.z, outloc);
   result /= metric->J;
-  
+
+  result.setLocation(outloc);
+
   return result;
 }
 
 const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   TRACE("Div( Vector3D )");
 
-  Mesh *localmesh = v.x.getMesh();
-  Field3D result(localmesh);
-
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+
+  Mesh *localmesh = v.x.getMesh();
+  Field3D result(localmesh);
 
   Coordinates *metric = localmesh->coordinates(outloc);
 
@@ -165,6 +168,8 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   result += DDZ(metric->J * vcn.z, outloc);
   result /= metric->J;
 
+  result.setLocation(outloc);
+
   return result;
 }
 
@@ -175,14 +180,18 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
 const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   TRACE("Div( Vector2D, Field2D )");
 
-  ASSERT1(v.getLocation() == f.getLocation());
-
-  Mesh *localmesh = f.getMesh();
-
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
 
+  ASSERT1(outloc != CELL_VSHIFT);
+
+  // The following probably belongs in the FDD? routines rather than here
+  // as we don't directly interact v and f. Note also no equivalent in Field3D
+  // version of this routine.
+  ASSERT1(outloc == f.getLocation());
+
+  Mesh *localmesh = f.getMesh();
   Coordinates *metric = localmesh->coordinates(outloc);
 
   // get contravariant components of v
@@ -195,6 +204,8 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   result += FDDZ(metric->J * vcn.z, f, outloc);
   result /= metric->J;
 
+  result.setLocation(outloc);
+
   return result;
 }
 
@@ -202,32 +213,36 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
                   CELL_LOC outloc) {
   TRACE("Div( Vector3D, Field3D )");
 
-  Mesh *localmesh = f.getMesh();
-  Field3D result(localmesh);
-
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
+  ASSERT1(outloc != CELL_VSHIFT);
 
+  Mesh *localmesh = f.getMesh();
   Coordinates *metric = localmesh->coordinates(outloc);
 
   // get contravariant components of v
   Vector3D vcn = v;
   vcn.toContravariant();
 
+  Field3D result(localmesh);
   result = FDDX(metric->J * vcn.x, f, outloc, method);
   result += FDDY(metric->J * vcn.y, f, outloc, method);
   result += FDDZ(metric->J * vcn.z, f, outloc, method);
   result /= metric->J;
 
+  result.setLocation(outloc);
+
   return result;
 }
 
 const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  TRACE("Div( Vector3D, Field3D)");
   return Div(v, f, method, outloc);
 }
 
 const Field3D Div(const Vector3D &v, const Field3D &f) {
+  TRACE("Div( Vector3D, Field3D)");
   return Div(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
@@ -239,12 +254,13 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
 
   TRACE("Curl( Vector2D )");
 
-  Mesh *localmesh = v.x.getMesh();
-
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
 
+  ASSERT1(outloc != CELL_VSHIFT);
+
+  Mesh *localmesh = v.x.getMesh();
   Coordinates *metric = localmesh->coordinates(outloc);
 
   // Get covariant components of v
@@ -260,6 +276,8 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   /// Coordinate torsion
   result.z -= metric->ShiftTorsion * vco.z / metric->J;
 
+  result.setLocation(outloc);
+
   result.covariant = false; // result is contravariant
 
   return result;
@@ -270,19 +288,11 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
 
   TRACE("Curl( Vector3D )");
 
+  ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
+          (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
+           outloc_z == CELL_ZLOW)); // CELL_VSHIFT
+
   Mesh *localmesh = v.x.getMesh();
-
-  if (outloc_x == CELL_DEFAULT) {
-    outloc_x = v.getLocation();
-  }
-  if (outloc_y == CELL_DEFAULT) {
-    outloc_y = v.getLocation();
-  }
-  if (outloc_z == CELL_DEFAULT) {
-    outloc_z = v.getLocation();
-  }
-
-  Coordinates* metric_z = localmesh->coordinates(outloc_z);
 
   // Get covariant components of v
   Vector3D vco = v;
@@ -292,10 +302,17 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
   Vector3D result(localmesh);
   result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/localmesh->coordinates(outloc_x)->J;
   result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/localmesh->coordinates(outloc_y)->J;
-  result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/metric_z->J;
+  result.z =
+      (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z)) / localmesh->coordinates(outloc_z)->J;
 
+  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
+                        ? result.x.getLocation()
+                        : CELL_VSHIFT;
   // Coordinate torsion
+  auto metric_z = localmesh->coordinates(outloc_z);
   result.z -= metric_z->ShiftTorsion*vco.z / metric_z->J;
+
+  result.setLocation(outloc);
 
   result.covariant = false; // result is contravariant
 
@@ -307,10 +324,6 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
     return Curl(v, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
   }
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
   return Curl(v, outloc, outloc, outloc);
 }
 
@@ -319,9 +332,9 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
  **************************************************************************/
 
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
-  Field2D result(f.getMesh());
-
   TRACE("V_dot_Grad( Vector2D , Field2D )");
+
+  Field2D result(f.getMesh());
 
   // Get contravariant components of v
   Vector2D vcn = v;
@@ -333,9 +346,9 @@ const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
 }
 
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
-  Field3D result(f.getMesh());
-
   TRACE("V_dot_Grad( Vector2D , Field3D )");
+
+  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   Vector2D vcn = v;
@@ -347,9 +360,9 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
 }
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
-  Field3D result(f.getMesh());
-
   TRACE("V_dot_Grad( Vector3D , Field2D )");
+
+  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   Vector3D vcn = v;
@@ -361,9 +374,9 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
 }
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
-  Field3D result(f.getMesh());
-
   TRACE("V_dot_Grad( Vector3D , Field3D )");
+
+  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   Vector3D vcn = v;
@@ -374,8 +387,14 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   return result;
 }
 
-const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, const CELL_LOC outloc) {
+const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector2D , Vector2D )");
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  if (outloc == CELL_DEFAULT) {
+    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
+    outloc = v.getLocation();
+  }
 
   Mesh *localmesh = v.x.getMesh();
   Vector2D result(localmesh);
@@ -423,14 +442,22 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, const CELL_LOC o
     result.covariant = false;
   }
 
+  result.setLocation(outloc);
+
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, const CELL_LOC outloc) {
+const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, CELL_LOC outloc) {
+  TRACE("V_dot_Grad( Vector2D , Vector3D )");
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  if (outloc == CELL_DEFAULT) {
+    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
+    outloc = v.getLocation();
+  }
+
   Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
-
-  TRACE("V_dot_Grad( Vector2D , Vector3D )");
 
   Coordinates *metric = localmesh->coordinates(outloc);
 
@@ -473,15 +500,23 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, const CELL_LOC o
     result.covariant = false;
   }
 
+  result.setLocation(outloc);
+
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, const CELL_LOC outloc) {
-  Mesh *localmesh = v.x.getMesh();
-  Vector3D result(localmesh);
-
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
+  ASSERT1(outloc != CELL_VSHIFT);
+  if (outloc == CELL_DEFAULT) {
+    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
+    outloc = v.getLocation();
+  }
+
+  Mesh *localmesh = v.x.getMesh();
+  Vector3D result(localmesh);
+
   Coordinates *metric = localmesh->coordinates(outloc);
 
   Vector3D vcn = v;
@@ -522,15 +557,23 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, const CELL_LOC o
 
     result.covariant = false;
   }
+
+  result.setLocation(outloc);
 
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, const CELL_LOC outloc) {
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, CELL_LOC outloc) {
+  TRACE("V_dot_Grad( Vector3D , Vector3D )");
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  if (outloc == CELL_DEFAULT) {
+    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
+    outloc = v.getLocation();
+  }
+
   Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
-
-  TRACE("V_dot_Grad( Vector3D , Vector3D )");
 
   Coordinates *metric = localmesh->coordinates(outloc);
 
@@ -572,6 +615,8 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, const CELL_LOC o
 
     result.covariant = false;
   }
+
+  result.setLocation(outloc);
 
   return result;
 }
