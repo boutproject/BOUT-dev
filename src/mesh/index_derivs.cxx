@@ -645,13 +645,11 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   ASSERT1(this == var.getMesh());
   ASSERT1(var.isAllocated());
   CELL_LOC inloc = var.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_XLOW)
-          || (outloc==CELL_XLOW && inloc==CELL_CENTRE));
-
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
   if (var.getNx() == 1) {
     auto tmp = Field2D(0., this);
@@ -772,12 +770,11 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
   ASSERT1(var.isAllocated());
 
   CELL_LOC inloc = var.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_XLOW)
-          || (outloc==CELL_XLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
   if (var.getNx() == 1) {
     auto tmp = Field3D(0., this);
@@ -899,10 +896,10 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
 
   CELL_LOC inloc = var.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc);
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc);
 
   if (var.getNy() == 1) {
     auto tmp = Field2D(0., this);
@@ -963,12 +960,11 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
   // Cell location of the input field
   CELL_LOC inloc = var.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_YLOW)
-          || (outloc==CELL_YLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+          (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
   if (var.getNy() == 1) {
     auto tmp = Field3D(0., this);
@@ -1145,9 +1141,9 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   ASSERT1(var.isAllocated());
   CELL_LOC inloc = var.getLocation();
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc);
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
+  ASSERT1(outloc == inloc);
 
   if (var.getNz() == 1) {
     auto tmp = Field3D(0., this);
@@ -1196,11 +1192,10 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
 
   CELL_LOC inloc = f.getLocation(); // Input location
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_XLOW)
-          || (outloc==CELL_XLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
   Field3D result(this);
 
@@ -1232,18 +1227,17 @@ const Field2D Mesh::indexDDX(const Field2D &f, CELL_LOC outloc,
 
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc,
-                             DIFF_METHOD method, REGION region) {
+const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                             REGION region) {
   Mesh::deriv_func func = fDDY; // Set to default function
   DiffLookup *table = FirstDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_YLOW)
-          || (outloc==CELL_YLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+          (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
   Field3D result(this);
 
@@ -1280,12 +1274,11 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
   DiffLookup *table = FirstDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_ZLOW)
-          || (outloc==CELL_ZLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
+          (outloc == CELL_ZLOW && inloc == CELL_CENTRE));
 
   Field3D result(this);
 
@@ -1419,12 +1412,11 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
   DiffLookup *table = SecondDerivTable;
 
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_XLOW)
-          || (outloc==CELL_XLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
   ASSERT1(this == f.getMesh());
 
@@ -1486,11 +1478,10 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
 
   CELL_LOC inloc = f.getLocation(); // Input location
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_YLOW)
-          || (outloc==CELL_YLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+          (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
   Field3D result(this);
 
@@ -1550,11 +1541,10 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
 
   CELL_LOC inloc = f.getLocation(); // Input location
   // Allowed staggers:
-  ASSERT1(outloc==CELL_DEFAULT
-          || outloc==inloc
-          || (outloc==CELL_CENTRE && inloc==CELL_ZLOW)
-          || (outloc==CELL_ZLOW && inloc==CELL_CENTRE));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
+          (outloc == CELL_ZLOW && inloc == CELL_CENTRE));
 
   Field3D result(this);
 
@@ -1715,11 +1705,10 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   CELL_LOC inloc = f.getLocation();
   CELL_LOC vloc = v.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1((outloc==CELL_DEFAULT
-           || outloc==inloc)
-           && (inloc==vloc));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc && inloc == vloc);
 
   Mesh::upwind_func func = fVDDX;
 
@@ -1789,12 +1778,12 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_XLOW)
-               || (vloc==CELL_XLOW && inloc==CELL_CENTRE)));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+           (vloc == CELL_XLOW && inloc == CELL_CENTRE)));
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -1959,12 +1948,12 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_YLOW)
-               || (vloc==CELL_YLOW && inloc==CELL_CENTRE)));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+           (vloc == CELL_YLOW && inloc == CELL_CENTRE)));
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -2133,12 +2122,12 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_YLOW)
-               || (vloc==CELL_YLOW && inloc==CELL_CENTRE)));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+           (vloc == CELL_YLOW && inloc == CELL_CENTRE)));
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -2319,12 +2308,12 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_ZLOW)
-               || (vloc==CELL_ZLOW && inloc==CELL_CENTRE)));
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
+           (vloc == CELL_ZLOW && inloc == CELL_CENTRE)));
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
@@ -2418,7 +2407,8 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this->xstart > 0); // Need at least one guard cell
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2426,7 +2416,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     return indexVDDX(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDX(v, outloc);
   }
 
-  ASSERT1(outloc==f.getLocation() && v.getLocation()==f.getLocation());
+  ASSERT1(outloc == f.getLocation() && v.getLocation() == f.getLocation());
 
   Mesh::flux_func func = fFDDX;
   if (method != DIFF_DEFAULT) {
@@ -2497,7 +2487,8 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2509,10 +2500,9 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
 
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_XLOW)
-               || (vloc==CELL_XLOW && inloc==CELL_CENTRE)));
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_XLOW) ||
+           (vloc == CELL_XLOW && inloc == CELL_CENTRE)));
 
   Mesh::flux_func func = fFDDX;
   DiffLookup *table = FluxTable;
@@ -2681,7 +2671,8 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  if (outloc == CELL_DEFAULT)
+    outloc = f.getLocation();
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2689,7 +2680,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     return indexVDDY(v, f, outloc, DIFF_DEFAULT) + interp_to(f, outloc) * indexDDY(v, outloc);
   }
 
-  ASSERT1(outloc==f.getLocation() && v.getLocation()==f.getLocation());
+  ASSERT1(outloc == f.getLocation() && v.getLocation() == f.getLocation());
 
   Mesh::flux_func func = fFDDY;
   if (method != DIFF_DEFAULT) {
@@ -2759,7 +2750,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2770,10 +2762,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   DiffLookup *table = FluxTable;
 
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_YLOW)
-               || (vloc==CELL_YLOW && inloc==CELL_CENTRE)));
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_YLOW) ||
+           (vloc == CELL_YLOW && inloc == CELL_CENTRE)));
 
   if (StaggerGrids && (vloc != inloc)) {
     // V staggered w.r.t. variable
@@ -2891,7 +2882,8 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
-  if (outloc == CELL_DEFAULT) outloc = inloc;
+  if (outloc == CELL_DEFAULT)
+    outloc = inloc;
 
   if ((method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == nullptr))) {
     // Split into an upwind and a central differencing part
@@ -2904,10 +2896,9 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   DiffLookup *table = FluxTable;
 
   // Allowed staggers:
-  ASSERT1(( outloc==CELL_DEFAULT || outloc==inloc )
-          && ( (vloc==inloc)
-               || (vloc==CELL_CENTRE && inloc==CELL_ZLOW)
-               || (vloc==CELL_ZLOW && inloc==CELL_CENTRE)));
+  ASSERT1(outloc == inloc &&
+          ((vloc == inloc) || (vloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
+           (vloc == CELL_ZLOW && inloc == CELL_CENTRE)));
 
   if (StaggerGrids && (vloc != inloc)) {
     // V staggered w.r.t. variable
