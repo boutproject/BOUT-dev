@@ -807,6 +807,18 @@ cdef class Mesh:
             loc_= benum.resolve_cell_loc(loc)
             return coordsFromObj(self.cobj.getCoordinates(loc_))
 
+    def getXProcIndex(self):
+        """
+        Returns the x-index of the processor
+        """
+        return self.cobj.getXProcIndex()
+
+    def getYProcIndex(self):
+        """
+        Returns the y-index of the processor
+        """
+        return self.cobj.getYProcIndex()
+
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj
