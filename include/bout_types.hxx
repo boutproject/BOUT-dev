@@ -69,6 +69,19 @@ inline const std::string& REGION_STRING(REGION region) {
   return REGIONtoString.at(region);
 }
 
+/// To identify particular directions (in index space)
+enum class DIRECTION { X = 0, Y = 1, Z = 2 };
+
+const std::map<DIRECTION, std::string> DIRECTIONtoString = {
+  {DIRECTION::X, "X"},
+  {DIRECTION::Y, "Y"},
+  {DIRECTION::Z, "Z"}
+};
+
+inline const std::string& DIRECTION_STRING(DIRECTION direction) {
+  return DIRECTIONtoString.at(direction);
+}
+
 /// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
