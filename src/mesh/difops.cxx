@@ -239,7 +239,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = f.getCoordinates(outloc);
-  return -metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
+  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
 }
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
@@ -556,19 +556,19 @@ const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, const CELL_LOC o
 }
 
 const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, const CELL_LOC outloc) {
-  return kY*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
+  return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 /*******************************************************************************
@@ -789,25 +789,28 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 /*!
  * Calculate location of result
  */
-CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CELL_LOC &outloc) {
-  if(!mesh->StaggerGrids)
-    return CELL_CENTRE;
+// use anonymous namespace so this function is only available in this file
+namespace {
+  CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CELL_LOC &outloc, Mesh* localmesh=mesh) {
+    if(!localmesh->StaggerGrids)
+      return CELL_CENTRE;
 
-  if(outloc == CELL_DEFAULT){
-    // Check that f and g are in the same location
-    if (f_loc != g_loc){
-      throw BoutException("Bracket currently requires both fields to have the same cell location");
-    }else {
-      return f_loc;      	  // Location of result
+    if(outloc == CELL_DEFAULT){
+      // Check that f and g are in the same location
+      if (f_loc != g_loc){
+        throw BoutException("Bracket currently requires both fields to have the same cell location");
+      }else {
+        return f_loc;      	  // Location of result
+      }
     }
+
+    // Check that f, and g are in the same location as the specified output location
+    if(f_loc != g_loc || f_loc != outloc){
+      throw BoutException("Bracket currently requires the location of both fields and the output locaton to be the same");
+    }
+
+    return outloc;      	  // Location of result
   }
-  
-  // Check that f, and g are in the same location as the specified output location
-  if(f_loc != g_loc || f_loc != outloc){
-    throw BoutException("Bracket currently requires the location of both fields and the output locaton to be the same");
-  }
-  
-  return outloc;      	  // Location of result
 }
 
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
@@ -819,7 +822,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
   Field2D result(f.getMesh());
 
   // Sort out cell locations
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
+  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
   
   if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
@@ -842,7 +845,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 
   Field3D result(mesh);
 
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
+  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
 
   Coordinates *metric = f.getCoordinates(result_loc);
 
@@ -1023,7 +1026,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 
   Field3D result(mesh);
 
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
+  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
 
   switch(method) {
   case BRACKET_CTU:
@@ -1059,7 +1062,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
   Field3D result(mesh);
 
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc);
+  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
 
   Coordinates *metric = f.getCoordinates(result_loc);
 
