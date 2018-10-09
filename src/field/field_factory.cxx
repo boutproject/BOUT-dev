@@ -74,6 +74,7 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   addGenerator("sqrt", std::make_shared<FieldSqrt>(nullptr));
   addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
   addGenerator("erf", std::make_shared<FieldErf>(nullptr));
+  addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
   addGenerator("max", std::make_shared<FieldMax>());
