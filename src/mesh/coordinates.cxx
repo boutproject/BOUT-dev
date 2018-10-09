@@ -440,7 +440,7 @@ int Coordinates::geometry() {
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
 
-  OPTION(Options::getRoot(), non_uniform, false);
+  OPTION(Options::getRoot(), non_uniform, true);
 
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
