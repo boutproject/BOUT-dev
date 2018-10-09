@@ -60,6 +60,11 @@ cimport numpy as np
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
+
+cdef extern from "helper.h":
+    int _bout_check
+
+bout_CHECK = _bout_check
 EOF
 
 # make a list of the format "nx, ny, nz" or something similar
