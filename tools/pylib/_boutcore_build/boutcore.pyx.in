@@ -65,6 +65,11 @@ import copy
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
+
+cdef extern from "helper.h":
+    int _bout_check
+
+bout_CHECK = _bout_check
 EOF
 
 # Include list of fields, and some functions

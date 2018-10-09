@@ -4,6 +4,12 @@ cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
 
+#ifndef CHECK
+int _bout_check = 0;
+#else
+int _bout_check = CHECK;
+#endif
+
 EOF
 for ftype in $fields
 do
