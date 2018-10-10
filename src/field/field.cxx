@@ -60,14 +60,14 @@ Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates;    
   } else {
-    fieldCoordinates = getMesh()->coordinates(getLocation());
+    fieldCoordinates = getMesh()->getCoordinates(getLocation());
     return fieldCoordinates;
   }
 }
 
 Coordinates *Field::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) return getCoordinates();  
-  return getMesh()->coordinates(loc);
+  return getMesh()->getCoordinates(loc);
 }
 
 int Field::getNx() const{

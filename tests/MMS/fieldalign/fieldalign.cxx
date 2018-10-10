@@ -13,7 +13,7 @@ protected:
   }
 
   int rhs(BoutReal t) {
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = mesh->getCoordinates();
     mesh->communicate(f);
     f.applyBoundary(t);
 

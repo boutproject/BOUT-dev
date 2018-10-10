@@ -62,13 +62,13 @@ void Vector3D::toCovariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = localmesh->coordinates(CELL_XLOW);
-      metric_y = localmesh->coordinates(CELL_YLOW);
-      metric_z = localmesh->coordinates(CELL_ZLOW);
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
     } else {
-      metric_x = localmesh->coordinates(location);
-      metric_y = localmesh->coordinates(location);
-      metric_z = localmesh->coordinates(location);
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
     }
 
     // multiply by g_{ij}
@@ -91,13 +91,13 @@ void Vector3D::toContravariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = localmesh->coordinates(CELL_XLOW);
-      metric_y = localmesh->coordinates(CELL_YLOW);
-      metric_z = localmesh->coordinates(CELL_ZLOW);
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
     } else {
-      metric_x = localmesh->coordinates(location);
-      metric_y = localmesh->coordinates(location);
-      metric_z = localmesh->coordinates(location);
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
     }
 
     // multiply by g_{ij}
@@ -325,7 +325,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     v1 lco = lhs;                                                       \
     lco.toCovariant();                                                  \
                                                                         \
-    Coordinates *metric = localmesh->coordinates(lhs.getLocation());    \
+    Coordinates *metric = localmesh->getCoordinates(lhs.getLocation());    \
                                                                         \
     /* calculate contravariant components of cross-product */           \
     result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
@@ -436,7 +436,7 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = mesh->coordinates(location);
+    Coordinates *metric = mesh->getCoordinates(location);
     
     if(covariant) {
       // Both covariant

@@ -88,8 +88,8 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
   if(outloc_z == CELL_DEFAULT)
     outloc_z = f.getLocation();
 
-  Coordinates* metric_x = mesh->coordinates(outloc_x);
-  Coordinates* metric_z = mesh->coordinates(outloc_z);
+  Coordinates* metric_x = mesh->getCoordinates(outloc_x);
+  Coordinates* metric_z = mesh->getCoordinates(outloc_z);
 
   result.x = DDX(f, outloc_x) - metric_x->g_12*DDY(f, outloc_x) / SQ(metric_x->J * metric_x->Bxy);
   result.y = 0.0;
@@ -110,7 +110,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   Mesh *localmesh = v.x.getMesh();
   Field2D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
@@ -130,7 +130,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Mesh *localmesh = v.x.getMesh();
   Field3D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   if(outloc == CELL_DEFAULT) 
     outloc = CELL_CENTRE;
@@ -158,7 +158,7 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
 
   Mesh *localmesh = f.getMesh();
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
@@ -179,7 +179,7 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_
   Mesh *localmesh = f.getMesh();
   Field3D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   if(outloc == CELL_DEFAULT) 
     outloc = CELL_CENTRE;
@@ -213,7 +213,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   TRACE("Curl( Vector2D )");
 
   Mesh *localmesh = v.x.getMesh();
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // Get covariant components of v
   Vector2D vco = v;
@@ -240,7 +240,7 @@ const Vector3D Curl(const Vector3D &v,
 
   Mesh *localmesh = v.x.getMesh();
 
-  Coordinates* metric_z = localmesh->coordinates(outloc_z);
+  Coordinates* metric_z = localmesh->getCoordinates(outloc_z);
 
   // Get covariant components of v
   Vector3D vco = v;
@@ -248,8 +248,8 @@ const Vector3D Curl(const Vector3D &v,
 
   // get components (curl(v))^j
   Vector3D result(localmesh);
-  result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/localmesh->coordinates(outloc_x)->J;
-  result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/localmesh->coordinates(outloc_y)->J;
+  result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/localmesh->getCoordinates(outloc_x)->J;
+  result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/localmesh->getCoordinates(outloc_y)->J;
   result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/metric_z->J;
 
   // Coordinate torsion
@@ -333,7 +333,7 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, const CELL_LOC o
   Mesh *localmesh = v.x.getMesh();
   Vector2D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   Vector2D vcn = v;
   vcn.toContravariant();
@@ -385,7 +385,7 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, const CELL_LOC o
 
   TRACE("V_dot_Grad( Vector2D , Vector3D )");
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   Vector2D vcn = v;
   vcn.toContravariant();
@@ -435,7 +435,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, const CELL_LOC o
 
   TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   Vector3D vcn = v;
   vcn.toContravariant();
@@ -485,7 +485,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, const CELL_LOC o
 
   TRACE("V_dot_Grad( Vector3D , Vector3D )");
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   Vector3D vcn = v;
   vcn.toContravariant();

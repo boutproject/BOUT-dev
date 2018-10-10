@@ -291,7 +291,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
-  Coordinates *coords = mesh->coordinates(location);
+  Coordinates *coords = mesh->getCoordinates(location);
   
   //////////////////////////////////////////////////
   // Set Matrix elements

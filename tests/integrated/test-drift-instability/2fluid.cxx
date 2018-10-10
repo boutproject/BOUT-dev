@@ -86,7 +86,7 @@ int physics_init(bool restarting) {
   mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Coordinate system
-  coord = mesh->coordinates();
+  coord = mesh->getCoordinates();
 
   // Load metrics
   GRID_LOAD(Rxy);

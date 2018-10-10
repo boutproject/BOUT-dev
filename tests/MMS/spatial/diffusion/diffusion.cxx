@@ -14,7 +14,7 @@ int physics_init(bool restarting) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates();
 
   meshoptions->get("Lx",Lx,1.0);
   meshoptions->get("Ly",Ly,1.0);
