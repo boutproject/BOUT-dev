@@ -186,11 +186,6 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
 
   ASSERT1(outloc != CELL_VSHIFT);
 
-  // The following probably belongs in the FDD? routines rather than here
-  // as we don't directly interact v and f. Note also no equivalent in Field3D
-  // version of this routine.
-  ASSERT1(outloc == f.getLocation());
-
   Mesh *localmesh = f.getMesh();
   Coordinates *metric = localmesh->coordinates(outloc);
 
