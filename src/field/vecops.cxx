@@ -140,8 +140,6 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   result += DDZ(metric->J*vcn.z, outloc);
   result /= metric->J;
 
-  result.setLocation(outloc);
-
   return result;
 }
 
@@ -167,8 +165,6 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   result += DDY(metric->J * vcn.y, outloc);
   result += DDZ(metric->J * vcn.z, outloc);
   result /= metric->J;
-
-  result.setLocation(outloc);
 
   return result;
 }
@@ -199,8 +195,6 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   result += FDDZ(metric->J * vcn.z, f, outloc);
   result /= metric->J;
 
-  result.setLocation(outloc);
-
   return result;
 }
 
@@ -225,8 +219,6 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
   result += FDDY(metric->J * vcn.y, f, outloc, method);
   result += FDDZ(metric->J * vcn.z, f, outloc, method);
   result /= metric->J;
-
-  result.setLocation(outloc);
 
   return result;
 }
