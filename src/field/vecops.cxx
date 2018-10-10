@@ -63,8 +63,8 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D DEPRECATED(Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                               CELL_LOC outloc_z)) {
+const Vector3D Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                    CELL_LOC outloc_z) {
   // Note no Vector2D equivalent to this three location overload
   TRACE("Grad( Field3D )");
 
@@ -106,8 +106,8 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D DEPRECATED(Grad_perp(const Field3D &f, CELL_LOC outloc_x,
-                                    CELL_LOC outloc_y, CELL_LOC outloc_z)) {
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                         CELL_LOC outloc_z) {
   TRACE("Grad_perp( Field3D )");
   ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
   ASSERT1(outloc_x == CELL_DEFAULT || outloc_x == f.getLocation());
@@ -294,8 +294,8 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D DEPRECATED(Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                               CELL_LOC outloc_z)) {
+const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                    CELL_LOC outloc_z) {
   TRACE("Curl( Vector3D )");
   ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
   return Curl(v, outloc_x);
