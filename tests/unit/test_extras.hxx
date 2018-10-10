@@ -104,6 +104,9 @@ public:
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
   bool periodicY(int UNUSED(jx)) const { return true; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
+  bool hasBranchCut() const { return false; }
+  bool hasBranchCutDown(int UNUSED(jx)) const { return false; }
+  bool hasBranchCutUp(int UNUSED(jx)) const { return false; }
   bool firstY() const { return true; }
   bool lastY() const { return true; }
   bool firstY(int UNUSED(xpos)) const { return true; }
