@@ -266,10 +266,13 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
     outloc = v.getLocation();
   }
 
+  // We can't support VSHIFT here as, e.g. DDY can't produce an output at CELL_XLOW
+  // unless the input field is at CELL_XLOW, but then that field will also be needed
+  // at CELL_YLOW, for example for another component.
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
-  Coordinates *metric = localmesh->coordinates(outloc);
+  auto metric = localmesh->coordinates(outloc);
 
   // Get covariant components of v
   Vector2D vco = v;
@@ -291,16 +294,27 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                    CELL_LOC outloc_z) {
+const Vector3D DEPRECATED(Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                               CELL_LOC outloc_z)) {
+  TRACE("Curl( Vector3D )");
+  ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
+  return Curl(v, outloc_x);
+}
 
+const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
   TRACE("Curl( Vector3D )");
 
-  ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
-          (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
-           outloc_z == CELL_ZLOW)); // CELL_VSHIFT
+  if (outloc == CELL_DEFAULT) {
+    outloc = v.getLocation();
+  };
+
+  // We can't support VSHIFT here as, e.g. DDY can't produce an output at CELL_XLOW
+  // unless the input field is at CELL_XLOW, but then that field will also be needed
+  // at CELL_YLOW, for example for another component.
+  ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
+  auto metric = v.x.getCoordinates(outloc);
 
   // Get covariant components of v
   Vector3D vco = v;
@@ -308,31 +322,18 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
 
   // get components (curl(v))^j
   Vector3D result(localmesh);
-  result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/localmesh->coordinates(outloc_x)->J;
-  result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/localmesh->coordinates(outloc_y)->J;
-  result.z =
-      (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z)) / localmesh->coordinates(outloc_z)->J;
+  result.x = (DDY(vco.z, outloc) - DDZ(vco.y, outloc)) / metric->J;
+  result.y = (DDZ(vco.x, outloc) - DDX(vco.z, outloc)) / metric->J;
+  result.z = (DDX(vco.y, outloc) - DDY(vco.x, outloc)) / metric->J;
 
-  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
-                        ? result.x.getLocation()
-                        : CELL_VSHIFT;
   // Coordinate torsion
-  auto metric_z = localmesh->coordinates(outloc_z);
-  result.z -= metric_z->ShiftTorsion*vco.z / metric_z->J;
+  result.z -= metric->ShiftTorsion * vco.z / metric->J;
 
   result.setLocation(outloc);
 
   result.covariant = false; // result is contravariant
 
   return result;
-}
-
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
-  if (outloc == CELL_VSHIFT) {
-    return Curl(v, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
-  }
-
-  return Curl(v, outloc, outloc, outloc);
 }
 
 /**************************************************************************
