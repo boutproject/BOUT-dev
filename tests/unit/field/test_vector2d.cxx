@@ -123,28 +123,38 @@ TEST_F(Vector2DTest, AssignFromBoutReal) {
 
 TEST_F(Vector2DTest, AssignFromVector2D) {
   Vector2D vector1, vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 1.0;
   vector1.y = 2.0;
   vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
 
   vector2 = vector1;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.x, 1.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.y, 2.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector2DTest, CreateFromVector2D) {
   Vector2D vector1;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
+  vector1.setLocation(CELL_YLOW);
 
   Vector2D vector2{vector1};
 
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.x, 4.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.y, 5.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.z, 6.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector2DTest, UnaryMinus) {

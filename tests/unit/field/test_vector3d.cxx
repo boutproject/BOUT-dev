@@ -120,30 +120,59 @@ TEST_F(Vector3DTest, AssignFromBoutReal) {
   EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 0.0));
 }
 
-TEST_F(Vector3DTest, AssignFromVector3D) {
-  Vector3D vector1, vector2;
+TEST_F(Vector3DTest, AssignFromVector2D) {
+  Vector2D vector1;
+  Vector3D vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 1.0;
   vector1.y = 2.0;
   vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
 
   vector2 = vector1;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
+}
+
+TEST_F(Vector3DTest, AssignFromVector3D) {
+  Vector3D vector1, vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
+  vector1.x = 1.0;
+  vector1.y = 2.0;
+  vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
+
+  vector2 = vector1;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector3DTest, CreateFromVector3D) {
   Vector3D vector1;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
+  vector1.setLocation(CELL_YLOW);
 
   Vector3D vector2{vector1};
 
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 4.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 5.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 6.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector3DTest, UnaryMinus) {
