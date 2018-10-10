@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#requires boutcore
+#requires all_tests
+#requires not make
+
+./runtest.py
+
+exit # exit with status of last command
