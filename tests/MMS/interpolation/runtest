@@ -73,7 +73,6 @@ for inloc in locs:
                     slize=[slice(2,-2) if 'X' in dirs else 0,
                            slice(2,-2) if 'Y' in dirs else 0,
                            slice(2,-2) if 'Z' in dirs else 0]
-                    #err=np.max(np.abs(err))
                     err=err[slize]
                     err=np.sqrt(np.mean(err**2))
                     errors.append(err)
@@ -85,23 +84,16 @@ for inloc in locs:
                 else:
                     err="%s -- %s -> %s failed (conv: %f)\n"%(func_,inloc,outloc,conv)
                     errlist+=err
-                    try:
-                        #if True:
-                        #if 'Y' in dirs:
-                        if False:
-                            print(err)
-                            import matplotlib.pyplot as plt
-                            slize=[slice(2,-2) if 'X' == dir else 0,
-                                   slice(2,-2) if 'Y' == dir else 0,
-                                   slice(2,-2) if 'Z' == dir else 0]
-                            ind=inf.get()[slize]
-                            out=outf.get()[slize]
-                            plt.plot(ind-out)
-                            #plt.plot(ind)
-                            #plt.plot(out)
-                            plt.show()
-                    except:
-                        pass
+                    if '-p' in sys.argv or '--plot' in sys.argv:
+                        print(err)
+                        import matplotlib.pyplot as plt
+                        slize=[slice(2,-2) if 'X' == dir else 0,
+                               slice(2,-2) if 'Y' == dir else 0,
+                               slice(2,-2) if 'Z' == dir else 0]
+                        ind=inf.get()[slize]
+                        out=outf.get()[slize]
+                        plt.plot(ind-out)
+                        plt.show()
 
 if errlist:
     print(errlist)
