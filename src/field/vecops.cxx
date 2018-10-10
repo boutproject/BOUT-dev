@@ -37,13 +37,26 @@
 const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
   TRACE("Grad( Field2D )");
 
+  CELL_LOC outloc_x, outloc_y, outloc_z;
+  if (outloc == CELL_VSHIFT) {
+    outloc_x = CELL_XLOW;
+    outloc_y = CELL_YLOW;
+    outloc_z = CELL_ZLOW;
+  } else {
+    outloc_x = outloc_y = outloc_z = outloc;
+  }
+
   Vector2D result(f.getMesh());
 
-  result.x = DDX(f, outloc);
-  result.y = DDY(f, outloc);
-  result.z = DDZ(f, outloc);
+  result.x = DDX(f, outloc_x);
+  result.y = DDY(f, outloc_y);
+  result.z = DDZ(f, outloc_z);
 
-  result.setLocation(outloc);
+  if (outloc == CELL_DEFAULT) {
+    result.setLocation(result.x.getLocation());
+  } else {
+    result.setLocation(outloc);
+  }
 
   result.covariant = true;
 
