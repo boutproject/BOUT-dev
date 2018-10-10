@@ -1,12 +1,13 @@
 timestep = 1.
-nout = 10
+nout = 2
 
 MZ = 1
 
 [mesh]
-
-nx = 12
-ny = 8
+MXG=1
+MYG=1
+nx = 4
+ny = 2
 
 dx = 1.
 dy = 1.

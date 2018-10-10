@@ -1,72 +1,90 @@
 #!/usr/bin/env python3
 
-import netCDF4 as nc
+from boututils.datafile import DataFile
 import itertools as it
 import os
+import time
+import numpy as np
+from boututils.run_wrapper import shell_safe as _shell_safe
+
+#requires: all_tests
+#requires: netcdf
+
+class timer(object):
+
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, a, b, c):
+        end = time.time()
+        print("%12.8f %s" % (end - self.start, self.msg))
 
 
-def run(cmd):
-    s = os.system(cmd)
-    if s:
-        raise RuntimeError("%s exited with non-zero %d value" % (cmd, s))
+def shell_safe(cmd):
+    with timer(cmd):
+        _shell_safe(cmd)
 
 
 def verify(f1, f2):
-    org = nc.Dataset(f1)
-    para = nc.Dataset(f2)
-    for v in org.variables:
-        if org[v].shape != para[v].shape:
-            print(org[v])
-            print(para[v])
-            raise RuntimeError("shape mismatch in ", v)
-        if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration"]:
-            continue
-        if (org[v][:] != para[v][:]).any():
-            a = org[v]
-            b = para[v]
-            print(a)
-            print(b)
-            lst = [range(x) for x in org[v].shape]
-            for i in it.product(*lst):
-                if a[i] != b[i]:
-                    print(i, ":", a[i], "!=", b[i])
-            # There are differences, but I think only guard cells are affected
-            raise RuntimeError("data mismatch in ", v)
+    with timer("verify %s %s" % (f1, f2)):
+        d1 = DataFile(f1)
+        d2 = DataFile(f2)
+        for v in d1.keys():
+            if d1[v].shape != d2[v].shape:
+                raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
+            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration"]:
+                continue
+            if not np.allclose(d1[v], d2[v]):
+                # continue
+                a = d1[v]
+                b = d2[v]
+                err = ""
+                lst = [range(x) for x in d1[v].shape]
+                for i in it.product(*lst):
+                    if a[i] != b[i]:
+                        err += str(i) + ":" + str(a[i]) + "!=" + str( b[i]) + """
+"""
+                # There are differences, but I think only guard cells are
+                # affected
+                raise RuntimeError("data mismatch in ", v, err, a, b)
 
-run("make")
+shell_safe("make")
 
 # Run once to get normal data
-run("./squash -q -q -q nout=20")
-run("mv data/BOUT.dmp.0.nc 20.nc")
+shell_safe("./squash -q -q -q nout=4")
+shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
 # Parallel test
-run("rm -f para.nc")
-run("mpirun -np 4 ./squash -q -q -q nout=20")
-run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
+shell_safe("rm -f f2.nc")
+shell_safe("mpirun -np 4 ./squash -q -q -q nout=4")
+shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
 
-verify("20.nc", "para.nc")
+verify("f1.nc", "f2.nc")
 
 # Parallel and in two pieces
-run("rm -f para.nc")
-run("mpirun -np 4 ./squash -q -q -q")
-run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
-run("mpirun -np 4 ./squash -q -q -q restart")
-run("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../para.nc")
+shell_safe("rm -f f2.nc")
+shell_safe("mpirun -np 4 ./squash -q -q -q")
+shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+shell_safe("mpirun -np 4 ./squash -q -q -q restart")
+shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
 
-verify("20.nc", "para.nc")
+verify("f1.nc", "f2.nc")
 
 # Parallel and in two pieces without dump_on_restart
-run("rm -f para.nc")
-run("mpirun -np 4 ./squash -q -q -q")
-run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../para.nc")
-run("mpirun -np 4 ./squash -q -q -q restart dump_on_restart=false")
-run("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../para.nc")
+shell_safe("rm -f f2.nc")
+shell_safe("mpirun -np 4 ./squash -q -q -q")
+shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+shell_safe("mpirun -np 4 ./squash -q -q -q restart dump_on_restart=false")
+shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
 
-verify("20.nc", "para.nc")
+verify("f1.nc", "f2.nc")
 
 # Sequential test
-run("rm -f seq.nc")
-run("./squash -q -q -q nout=20")
-run("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../seq.nc")
+shell_safe("rm -f f2.nc")
+shell_safe("./squash -q -q -q nout=4")
+shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
 
-verify("20.nc", "seq.nc")
+verify("f1.nc", "f2.nc")
