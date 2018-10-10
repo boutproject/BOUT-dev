@@ -1,0 +1,22 @@
+# partial input file, further options are set using boutcore
+# interface in runtest
+
+twistshift = true
+
+[mesh]
+nx = 6
+ny = 2
+nz = 1
+shiftAngle = 0.
+
+[testmesh]
+paralleltransform = shifted
+
+[testmesh:ddx]
+upwind = C2
+
+[testmesh:ddy]
+upwind = C2
+
+[testmesh:ddz]
+upwind = C2
