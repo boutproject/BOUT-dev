@@ -399,11 +399,14 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector2D , Vector2D )");
 
-  ASSERT1(outloc != CELL_VSHIFT);
   if (outloc == CELL_DEFAULT) {
-    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  ASSERT1(v.getLocation() == a.getLocation());
+  // Note the following assert means the outloc argument is pointless
+  ASSERT1(v.getLocation() == outloc);
 
   Mesh *localmesh = v.x.getMesh();
   Vector2D result(localmesh);
@@ -459,11 +462,14 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, CELL_LOC outloc)
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector2D , Vector3D )");
 
-  ASSERT1(outloc != CELL_VSHIFT);
   if (outloc == CELL_DEFAULT) {
-    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  ASSERT1(v.getLocation() == a.getLocation());
+  // Note the following assert means the outloc argument is pointless
+  ASSERT1(v.getLocation() == outloc);
 
   Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
@@ -517,11 +523,14 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, CELL_LOC outloc)
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
-  ASSERT1(outloc != CELL_VSHIFT);
   if (outloc == CELL_DEFAULT) {
-    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  ASSERT1(v.getLocation() == a.getLocation());
+  // Note the following assert means the outloc argument is pointless
+  ASSERT1(v.getLocation() == outloc);
 
   Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
@@ -575,11 +584,14 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, CELL_LOC outloc)
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, CELL_LOC outloc) {
   TRACE("V_dot_Grad( Vector3D , Vector3D )");
 
-  ASSERT1(outloc != CELL_VSHIFT);
   if (outloc == CELL_DEFAULT) {
-    ASSERT1(outloc == v.getLocation() && outloc == a.getLocation());
     outloc = v.getLocation();
   }
+
+  ASSERT1(outloc != CELL_VSHIFT);
+  ASSERT1(v.getLocation() == a.getLocation());
+  // Note the following assert means the outloc argument is pointless
+  ASSERT1(v.getLocation() == outloc);
 
   Mesh *localmesh = v.x.getMesh();
   Vector3D result(localmesh);
