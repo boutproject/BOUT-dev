@@ -115,7 +115,9 @@ TEST_F(Vector3DTest, SetLocationNonStaggered) {
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_CENTRE));
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+#if CHECK > 0
   EXPECT_THROW(vector.setLocation(CELL_XLOW), BoutException);
+#endif
 }
 
 TEST_F(Vector3DTest, SetLocationXLOW) {
