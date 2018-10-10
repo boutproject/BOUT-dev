@@ -391,6 +391,11 @@ CELL_LOC Vector2D::getLocation() const {
 }
 
 void Vector2D::setLocation(CELL_LOC loc) {
+  TRACE("Vector2D::setLocation");
+  if (loc == CELL_DEFAULT) {
+    loc = CELL_CENTRE;
+  }
+
   location = loc;
   if(loc == CELL_VSHIFT) {
     x.setLocation(CELL_XLOW);
