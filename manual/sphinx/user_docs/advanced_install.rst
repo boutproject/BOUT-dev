@@ -265,7 +265,8 @@ BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
 
 OpenMP can be used to parallelise in more directions than can be
 achieved with MPI alone. For example, it is currently difficult to
-parallelise over the X, Z plane using pure MPI if FCI is used.
+parallelise in X using pure MPI if FCI is used, and impossible to
+parallelise at all in Z with pure MPI.
 
 OpenMP is in a large number of places now, such that a decent speed-up
 can be achieved with OpenMP alone. Hybrid parallelisation with both
