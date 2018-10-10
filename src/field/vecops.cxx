@@ -63,38 +63,47 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                    CELL_LOC outloc_z) {
+const Vector3D DEPRECATED(Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                               CELL_LOC outloc_z)) {
   // Note no Vector2D equivalent to this three location overload
-
   TRACE("Grad( Field3D )");
-
-  Vector3D result(f.getMesh());
 
   ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
           (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
            outloc_z == CELL_ZLOW)); // CELL_VSHIFT
 
+  CELL_LOC outloc =
+      (outloc_x == outloc_y && outloc_x == outloc_z) ? outloc_x : CELL_VSHIFT;
+  return Grad(f, outloc);
+}
+
+const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
+  TRACE("Grad( Field3D )");
+
+  CELL_LOC outloc_x, outloc_y, outloc_z;
+  if (outloc == CELL_VSHIFT) {
+    outloc_x = CELL_XLOW;
+    outloc_y = CELL_YLOW;
+    outloc_z = CELL_ZLOW;
+  } else {
+    outloc_x = outloc_y = outloc_z = outloc;
+  }
+
+  Vector3D result(f.getMesh());
+
   result.x = DDX(f, outloc_x);
   result.y = DDY(f, outloc_y);
   result.z = DDZ(f, outloc_z);
 
-  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
-                        ? result.x.getLocation()
-                        : CELL_VSHIFT;
-  result.setLocation(outloc);
+  if (outloc == CELL_DEFAULT) {
+    result.setLocation(result.x.getLocation());
+  } else {
+    result.setLocation(outloc);
+  }
 
   result.covariant = true;
 
   return result;
-}
-
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
-  if (outloc == CELL_VSHIFT) {
-    return Grad(f, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
-  }
-
-  return Grad(f, outloc, outloc, outloc);
 }
 
 const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
