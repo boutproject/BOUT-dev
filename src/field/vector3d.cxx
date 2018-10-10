@@ -524,16 +524,27 @@ void Vector3D::setLocation(CELL_LOC loc) {
     loc = CELL_CENTRE;
   }
 
-  location = loc;
-  if(loc == CELL_VSHIFT) {
-    x.setLocation(CELL_XLOW);
-    y.setLocation(CELL_YLOW);
-    z.setLocation(CELL_ZLOW);
+  if (x.getMesh()->StaggerGrids) {
+    if (loc == CELL_VSHIFT) {
+      x.setLocation(CELL_XLOW);
+      y.setLocation(CELL_YLOW);
+      z.setLocation(CELL_ZLOW);
+    } else {
+      x.setLocation(loc);
+      y.setLocation(loc);
+      z.setLocation(loc);
+    }
   } else {
-    x.setLocation(loc);
-    y.setLocation(loc);
-    z.setLocation(loc);
+#if CHECK > 0
+    if (loc != CELL_CENTRE) {
+      throw BoutException("Vector3D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
   }
+
+  location = loc;
 }
 
 /***************************************************************
