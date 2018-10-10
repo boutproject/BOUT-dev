@@ -106,29 +106,28 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                         CELL_LOC outloc_z) {
+const Vector3D DEPRECATED(Grad_perp(const Field3D &f, CELL_LOC outloc_x,
+                                    CELL_LOC outloc_y, CELL_LOC outloc_z)) {
   TRACE("Grad_perp( Field3D )");
+  ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
+  ASSERT1(outloc_x == CELL_DEFAULT || outloc_x == f.getLocation());
+  return Grad_perp(f, outloc_x);
+}
+
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc) {
+  TRACE("Grad_perp( Field3D )");
+
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+
+  Coordinates *metric = f.getCoordinates(outloc);
 
   Vector3D result(f.getMesh());
 
-  ASSERT1((outloc_x == outloc_y && outloc_x == outloc_z) ||
-          (outloc_x == CELL_XLOW && outloc_y == CELL_YLOW &&
-           outloc_z == CELL_ZLOW)); // CELL_VSHIFT
-
-  Coordinates *metric_x = f.getCoordinates(outloc_x);
-  Coordinates *metric_z = f.getCoordinates(outloc_z);
-
-  result.x = DDX(f, outloc_x) -
-             metric_x->g_12 * DDY(f, outloc_x) / SQ(metric_x->J * metric_x->Bxy);
+  result.x = DDX(f, outloc) - metric->g_12 * DDY(f, outloc) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
-  result.z = DDZ(f, outloc_z) -
-             metric_z->g_23 * DDY(f, outloc_z) / SQ(metric_z->J * metric_z->Bxy);
+  result.z = DDZ(f, outloc) - metric->g_23 * DDY(f, outloc) / SQ(metric->J * metric->Bxy);
 
-  CELL_LOC outloc = (outloc_x == outloc_y && outloc_x == outloc_z)
-                        ? result.x.getLocation()
-                        : CELL_VSHIFT;
-  result.setLocation(outloc);
+  result.setLocation(result.x.getLocation());
 
   result.covariant = true;
 
