@@ -110,6 +110,73 @@ TEST_F(Vector3DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
+TEST_F(Vector3DTest, SetLocationNonStaggered) {
+  Vector3D vector;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_CENTRE));
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_THROW(vector.setLocation(CELL_XLOW), BoutException);
+}
+
+TEST_F(Vector3DTest, SetLocationXLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_XLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationYLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_YLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationZLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_ZLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationVSHIFT) {
+  Vector3D vector;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_VSHIFT));
+  EXPECT_EQ(vector.getLocation(), CELL_VSHIFT);
+  EXPECT_EQ(vector.x.getLocation(), CELL_XLOW);
+  EXPECT_EQ(vector.y.getLocation(), CELL_YLOW);
+  EXPECT_EQ(vector.z.getLocation(), CELL_ZLOW);
+}
+
+TEST_F(Vector3DTest, SetLocationDEFAULT) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_CENTRE;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
 TEST_F(Vector3DTest, AssignFromBoutReal) {
   Vector3D vector;
 
