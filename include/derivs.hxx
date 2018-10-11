@@ -535,9 +535,13 @@ const Vector3D DDZ(const Vector3D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 /// Calculate mixed partial derivative in x and y
 ///
 ///   \f$\partial^2 / \partial x \partial y\f$
@@ -550,8 +554,56 @@ const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+
+/// Calculate mixed partial derivative in y and x (may not be the same as
+/// D2DXDY for non-uniform grid spacing)
+///
+///   \f$\partial^2 / \partial y \partial x\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field2D D2DYDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+/// Calculate mixed partial derivative in y and x (may not be the same as
+/// D2DXDY for non-uniform grid spacing)
+///
+///   \f$\partial^2 / \partial y \partial x\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field3D D2DYDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -565,8 +617,13 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -580,8 +637,55 @@ const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+/// Calculate mixed partial derivative in z and x. May not be the same as
+/// D2DXDZ if toroidal symmetry is not assumed and grid spacings are non-uniform
+///
+///   \f$\partial^2 / \partial z \partial x\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field2D D2DZDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+/// Calculate mixed partial derivative in z and x. May not be the same as
+/// D2DXDZ if toroidal symmetry is not assumed and grid spacings are non-uniform
+///
+///   \f$\partial^2 / \partial z \partial x\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field3D D2DZDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -595,8 +699,13 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -610,8 +719,56 @@ const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
 const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+
+/// Calculate mixed partial derivative in z and y. May not be the same as
+/// D2DYDZ if toroidal symmetry is not assumed and grid spacings are non-uniform
+///
+///   \f$\partial^2 / \partial z \partial y\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field2D D2DZDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
+
+/// Calculate mixed partial derivative in z and y. May not be the same as
+/// D2DYDZ if toroidal symmetry is not assumed and grid spacings are non-uniform
+///
+///   \f$\partial^2 / \partial z \partial y\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+/// @param[in] boundary_condition  String specifying the boundary condition to
+///                                use to set guard cells of the first
+///                                derivative before taking the second.
+///                                If not given, defaults to "free_o3"
+const Field3D D2DZDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY,
+                     string boundary_condition = "free_o3");
 
 /// For terms of form v * grad(f)
 ///

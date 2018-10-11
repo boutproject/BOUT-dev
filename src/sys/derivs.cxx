@@ -268,11 +268,13 @@ const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
  *
  * This first takes derivatives in X, then in Y.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Applies boundary_condition in Y, communicates
  */
-const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string boundary_condition) {
   Field2D dfdy = DDY(f, outloc, method, RGN_NOY);
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary(boundary_condition);
   return DDX(dfdy, outloc, method, region);
 }
 
@@ -281,23 +283,57 @@ const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
  *
  * This first takes derivatives in X, then in Y.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Applies boundary_condition in Y, communicates
  */
-const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string boundary_condition) {
   Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary(boundary_condition);
   return DDX(dfdy, outloc, method, region);
 }
 
+/*!
+ * Mixed derivative in Y and X
+ *
+ * This first takes derivatives in Y, then in X.
+ *
+ * ** Applies boundary_condition in X, communicates
+ */
+const Field2D D2DYDX(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string boundary_condition) {
+  Field2D dfdx = DDX(f, outloc, method, RGN_NOX);
+  f.getMesh()->communicate(dfdx);
+  dfdx.applyBoundary(boundary_condition);
+  return DDY(dfdx, outloc, method, region);
+}
+
+/*!
+ * Mixed derivative in Y and X
+ *
+ * This first takes derivatives in Y, then in X.
+ *
+ * ** Applies boundary_condition in X, communicates
+ */
+const Field3D D2DYDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string boundary_condition) {
+  Field3D dfdx = DDX(f, outloc, method, RGN_NOX);
+  f.getMesh()->communicate(dfdx);
+  dfdx.applyBoundary(boundary_condition);
+  return DDY(dfdx, outloc, method, region);
+}
+
 const Field2D D2DXDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
-                     DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region),
+                     string UNUSED(boundary_condition)) {
   auto tmp = Field2D(0., f.getMesh());
   tmp.setLocation(f.getLocation());
   return tmp;
 }
 
 /// X-Z mixed derivative
-const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string UNUSED(boundary_condition)) {
   // Take derivative in Z, including in X boundaries. Then take derivative in X
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -317,41 +353,71 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
     throw BoutException("Unhandled region case in D2DXDZ");
   }
 
-  return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
+  return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);
 }
 
-const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
-                     DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+const Field2D D2DZDX(const Field2D &f, CELL_LOC UNUSED(outloc),
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region),
+                     string UNUSED(boundary_condition)) {
   auto tmp = Field2D(0., f.getMesh());
   tmp.setLocation(f.getLocation());
   return tmp;
 }
 
-const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION UNUSED(region)) {
-  Coordinates *coords = f.getCoordinates(outloc);
-
-  Field3D result(f.getMesh());
+/// Z-X mixed derivative
+const Field3D D2DZDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string UNUSED(boundary_condition)) {
+  // Take derivative in X, then take derivative in Z
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  result.allocate();
-  result.setLocation(f.getLocation());
-  ASSERT1(method == DIFF_DEFAULT);
-  for(int i=f.getMesh()->xstart;i<=f.getMesh()->xend;i++)
-    for(int j=f.getMesh()->ystart;j<=f.getMesh()->yend;j++)
-      for(int k=0;k<f.getMesh()->LocalNz;k++) {
-        int kp = (k+1) % (f.getMesh()->LocalNz);
-        int km = (k-1+f.getMesh()->LocalNz) % (f.getMesh()->LocalNz);
-        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))
-                               -(f(i,j+1,km) - f(i,j-1,km)) )
-                    / (coords->dy(i,j) * coords->dz);
-      }
-  // TODO: use region aware implementation
-  // BOUT_FOR(i, f.getMesh()->getRegion3D(REGION_STRING(region))) {
-  // result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
-  //                              / (coords->dy[i.yp()])
-  //                    -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])
-  //                              / (coords->dy[i.ym()]))
-  //   / coords->dz; }
-  return result;
+
+  return DDZ(DDX(f, outloc, method, region), outloc, method, region);
+}
+
+const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region),
+                     string UNUSED(boundary_condition)) {
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
+}
+
+const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string UNUSED(boundary_condition)) {
+  // Take derivative in Z, including in Y boundaries. Then take derivative in Y
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  // region specifies what the combined derivative should return
+  // Therefore we need to add the Y boundary to the inner derivative
+  // RGN_NOX and RGN_NOZ include the Y boundary, therefore we need to
+  // throw - or add communication code.
+  REGION region_inner;
+  switch (region){
+  case RGN_NOBNDRY:
+    region_inner = RGN_NOX;
+    break;
+  case RGN_NOY:
+    region_inner = RGN_ALL;
+    break;
+  default:
+    throw BoutException("Unhandled region case in D2DYDZ");
+  }
+
+  return DDY(DDZ(f, outloc,method, region_inner),outloc,method,region);
+}
+
+const Field2D D2DZDY(const Field2D &f, CELL_LOC UNUSED(outloc),
+                     DIFF_METHOD UNUSED(method), REGION UNUSED(region),
+                     string UNUSED(boundary_condition)) {
+  auto tmp = Field2D(0., f.getMesh());
+  tmp.setLocation(f.getLocation());
+  return tmp;
+}
+
+const Field3D D2DZDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                     REGION region, string UNUSED(boundary_condition)) {
+  // Take derivative in Y, then take derivative in Z
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+
+  return DDZ(DDY(f, outloc,method, region), outloc, method, region);
 }
 
 /*******************************************************************************
