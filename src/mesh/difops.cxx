@@ -167,7 +167,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 * vparallel times the parallel derivative along unperturbed B-field
 *******************************************************************************/
 
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, const CELL_LOC outloc) {
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc);
 }
 
@@ -184,7 +184,7 @@ const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD meth
 * parallel divergence operator B \partial_{||} (F/B)
 *******************************************************************************/
 
-const Field2D Div_par(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Div_par(const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc);
 }
 
@@ -489,11 +489,11 @@ const Field3D Div_par_CtoL(const Field3D &var) {
 * Note: For parallel Laplacian use LaplacePar
 *******************************************************************************/
 
-const Field2D Grad2_par2(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Grad2_par2(f, outloc);
 }
 
-const Field3D Grad2_par2(const Field3D &f, const CELL_LOC outloc) {
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Grad2_par2(f, outloc);
 }
 
@@ -502,27 +502,27 @@ const Field3D Grad2_par2(const Field3D &f, const CELL_LOC outloc) {
 * Parallel divergence of diffusive flux, K*Grad_par
 *******************************************************************************/
 
-const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f, const CELL_LOC outloc) {
+const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f, CELL_LOC outloc) {
   return kY*Grad2_par2(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, const CELL_LOC outloc) {
+const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc) {
   return kY*Grad2_par2(f, outloc);
 }
 
-const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, const CELL_LOC outloc) {
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc) {
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, const CELL_LOC outloc) {
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, const CELL_LOC outloc) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, const CELL_LOC outloc) {
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
@@ -531,15 +531,15 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, const CELL
 * perpendicular Laplacian operator
 *******************************************************************************/
 
-const Field2D Delp2(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Delp2(const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Delp2(f, outloc);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth), const CELL_LOC outloc) {
+const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Delp2(f, outloc);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), const CELL_LOC outloc) {
+const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Delp2(f, outloc);
 }
 
@@ -550,11 +550,11 @@ const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), const CELL_L
 * Laplace_perp = Laplace - Laplace_par
 *******************************************************************************/
 
-const Field2D Laplace_perp(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Laplace_perp(const Field2D &f, CELL_LOC outloc) {
   return Laplace(f, outloc) - Laplace_par(f, outloc);
 }
 
-const Field3D Laplace_perp(const Field3D &f, const CELL_LOC outloc) {
+const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc) {
   return Laplace(f, outloc) - Laplace_par(f, outloc);
 }
 
@@ -566,11 +566,11 @@ const Field3D Laplace_perp(const Field3D &f, const CELL_LOC outloc) {
 *
 *******************************************************************************/
 
-const Field2D Laplace_par(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Laplace_par(f, outloc);
 }
 
-const Field3D Laplace_par(const Field3D &f, const CELL_LOC outloc) {
+const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Laplace_par(f, outloc);
 }
 
@@ -579,11 +579,11 @@ const Field3D Laplace_par(const Field3D &f, const CELL_LOC outloc) {
 * Full Laplacian operator on scalar field
 *******************************************************************************/
 
-const Field2D Laplace(const Field2D &f, const CELL_LOC outloc) {
+const Field2D Laplace(const Field2D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Laplace(f, outloc);
 }
 
-const Field3D Laplace(const Field3D &f, const CELL_LOC outloc) {
+const Field3D Laplace(const Field3D &f, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Laplace(f, outloc);
 }
 
