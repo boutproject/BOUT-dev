@@ -5,7 +5,7 @@ import itertools as it
 import os
 import time
 import numpy as np
-from boututils.run_wrapper import shell_safe as _shell_safe
+from boututils.run_wrapper import launch_safe, shell_safe
 
 #requires: all_tests
 #requires: netcdf
@@ -23,9 +23,20 @@ class timer(object):
         print("%12.8f %s" % (end - self.start, self.msg))
 
 
-def shell_safe(cmd):
+def timed_shell_safe(cmd, *args, **kwargs):
+    """Wraps shell_safe in a timer
+
+    """
     with timer(cmd):
-        _shell_safe(cmd)
+        shell_safe(cmd, *args, **kwargs)
+
+
+def timed_launch_safe(cmd, *args, **kwargs):
+    """Wraps launch_safe in a timer
+
+    """
+    with timer(cmd):
+        launch_safe(cmd, *args, **kwargs)
 
 
 def verify(f1, f2):
@@ -51,40 +62,40 @@ def verify(f1, f2):
                 # affected
                 raise RuntimeError("data mismatch in ", v, err, a, b)
 
-shell_safe("make")
+timed_shell_safe("make")
 
 # Run once to get normal data
-shell_safe("./squash -q -q -q nout=4")
-shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
+timed_shell_safe("./squash -q -q -q nout=2")
+timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
 # Parallel test
-shell_safe("rm -f f2.nc")
-shell_safe("mpirun -np 4 ./squash -q -q -q nout=4")
-shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_shell_safe("rm -f f2.nc")
+timed_launch_safe("./squash -q -q -q nout=2", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
 
 verify("f1.nc", "f2.nc")
 
 # Parallel and in two pieces
-shell_safe("rm -f f2.nc")
-shell_safe("mpirun -np 4 ./squash -q -q -q")
-shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
-shell_safe("mpirun -np 4 ./squash -q -q -q restart")
-shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
+timed_shell_safe("rm -f f2.nc")
+timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
 
 verify("f1.nc", "f2.nc")
 
 # Parallel and in two pieces without dump_on_restart
-shell_safe("rm -f f2.nc")
-shell_safe("mpirun -np 4 ./squash -q -q -q")
-shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
-shell_safe("mpirun -np 4 ./squash -q -q -q restart dump_on_restart=false")
-shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
+timed_shell_safe("rm -f f2.nc")
+timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_launch_safe("./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
 
 verify("f1.nc", "f2.nc")
 
 # Sequential test
-shell_safe("rm -f f2.nc")
-shell_safe("./squash -q -q -q nout=4")
-shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_shell_safe("rm -f f2.nc")
+timed_shell_safe("./squash -q -q -q nout=2")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
 
 verify("f1.nc", "f2.nc")
