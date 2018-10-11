@@ -453,7 +453,11 @@ if test_deriv_ops:
     if tests_3d:
         results += cycle_staggering('y', 'xyz', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order, type_3d)
     results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order, type_2d)
+    if tests_3d:
+        results += cycle_staggering('x', 'xyz', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order, type_3d)
+    results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order, type_2d)
     results += cycle_staggering('', 'yz', ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, order, type_3d)
+    results += cycle_staggering('y', 'yz', ngrids, testfunc, boutcore.D2DZDY, D2DZDY, order, type_3d)
 
 # check results of tests
 fail = False
