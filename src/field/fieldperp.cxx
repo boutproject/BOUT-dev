@@ -215,6 +215,13 @@ const IndexRange FieldPerp::region(REGION rgn) const {
   };
 }
 
+const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
+  return fieldmesh->getRegionPerp(REGION_STRING(region));
+};
+const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegionPerp(region_name);
+};
+
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
