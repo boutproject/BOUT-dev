@@ -13,10 +13,10 @@ shiftAngle = 0.
 paralleltransform = shifted
 
 [testmesh:ddx]
-upwind = U1
+upwind = C2
 
 [testmesh:ddy]
-upwind = U1
+upwind = C2
 
 [testmesh:ddz]
-upwind = U1
+upwind = C2
