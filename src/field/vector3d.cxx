@@ -37,11 +37,12 @@
 #include <interpolation.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+    : FieldData(localmesh), x(localmesh), y(localmesh), z(localmesh),
+      covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
-      location(f.getLocation()) {}
+    : FieldData(f.fielddatamesh), x(f.x), y(f.y), z(f.z), covariant(f.covariant),
+      deriv(nullptr), location(f.getLocation()) {}
 
 Vector3D::~Vector3D() {
   if (deriv != nullptr) {
@@ -149,6 +150,8 @@ Vector3D* Vector3D::timeDeriv() {
 /////////////////// ASSIGNMENT ////////////////////
 
 Vector3D & Vector3D::operator=(const Vector3D &rhs) {
+  fielddatamesh = rhs.fielddatamesh;
+
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -160,6 +163,8 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator=(const Vector2D &rhs) {
+  fielddatamesh = rhs.x.getMesh();
+
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
