@@ -662,64 +662,56 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   
   Field2D result(this);
   result.allocate(); // Make sure data allocated
-
+  
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
 
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          s.mm = var[i.xmm()];
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-          s.pp = var[i.xpp()];
-
-          if (outloc == CELL_XLOW) {
-            // Producing a stencil centred around a lower X value
-            s.pp = s.p;
-            s.p = s.c;
-          } else {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
-          }
-
-          result[i] = func(s);
-        }
+      if (outloc == CELL_XLOW) {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::C2L, 2>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
+      } else {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::L2C, 2>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-
-          if (outloc == CELL_XLOW) {
-            // Producing a stencil centred around a lower X value
-            s.pp = s.p;
-            s.p = s.c;
-          } else {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
-          }
-
-          result[i] = func(s);
-        }
+      if (outloc == CELL_XLOW) {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::C2L>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
+      } else {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::L2C>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
       }
     }
-
   } else {
     // Non-staggered differencing
-
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
@@ -727,12 +719,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       {
         stencil s;
         BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          s.mm = var[i.xmm()];
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-          s.pp = var[i.xpp()];
-
+	  populateStencil<DIRECTION::X, STAGGER::None, 2>(s, var, i);	  
           result[i] = func(s);
         }
       }
@@ -742,10 +729,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       {
         stencil s;
         BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-
+	  populateStencil<DIRECTION::X>(s, var, i);	  
           result[i] = func(s);
         }
       }
@@ -794,85 +778,69 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          s.mm = var[i.xmm()];
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-          s.pp = var[i.xpp()];
-
-          if ((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) {
-            // Producing a stencil centred around a lower X value
-            s.pp = s.p;
-            s.p = s.c;
-          } else if (inloc == CELL_XLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
-          }
-
-          result[i] = func(s);
-        }
+      if (outloc == CELL_XLOW) {	
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::C2L, 2>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
+      } else {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::L2C, 2>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-
-          if (outloc == CELL_XLOW) {
-            // Producing a stencil centred around a lower X value
-            s.pp = s.p;
-            s.p = s.c;
-          } else if (inloc == CELL_XLOW) {
-            // Stencil centred around a cell centre
-            s.mm = s.m;
-            s.m = s.c;
-          }
-
-          result[i] = func(s);
-        }
+      if (outloc == CELL_XLOW) {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::C2L>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
+      } else {
+	BOUT_OMP(parallel)
+	{
+	  stencil s;
+	  BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	    populateStencil<DIRECTION::X, STAGGER::L2C>(s, var, i);
+	    result[i] = func(s);
+	  }
+	}
       }
     }
-
   } else {
     // Non-staggered differencing
-
     if (this->xstart > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       BOUT_OMP(parallel)
       {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          s.mm = var[i.xmm()];
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-          s.pp = var[i.xpp()];
-
-          result[i] = func(s);
-        }
+	stencil s;
+	BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	  populateStencil<DIRECTION::X, STAGGER::None, 2>(s, var, i);
+	  result[i] = func(s);
+	}
       }
     } else {
       // Only one guard cell, so no pp or mm values
       BOUT_OMP(parallel)
       {
-        stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          s.m = var[i.xm()];
-          s.c = var[i];
-          s.p = var[i.xp()];
-
-          result[i] = func(s);
-        }
+	stencil s;
+	BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+	  populateStencil<DIRECTION::X>(s, var, i);
+	  result[i] = func(s);
+	}
       }
     }
   }
