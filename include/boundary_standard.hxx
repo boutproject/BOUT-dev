@@ -10,44 +10,23 @@
 
 #include <utility>
 
-/// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
-class BoundaryDirichlet_2ndOrder : public BoundaryOp {
- public:
-  BoundaryDirichlet_2ndOrder() : val(0.) {}
-  BoundaryDirichlet_2ndOrder(BoutReal setval ): val(setval) {}
-  BoundaryDirichlet_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
-
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  BoutReal val;
-};
-
 /// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
  public:
-  BoundaryDirichlet() : gen(nullptr) {}
-  BoundaryDirichlet(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-      : BoundaryOp(region), gen(std::move(g)) {}
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void apply(Field2D &f,BoutReal t = 0.) override {
+    applyTemplate<Field2D>(f, t);
+  }
+  void apply(Field3D &f,BoutReal t = 0.) override {
+    applyTemplate<Field3D>(f, t);
+  }
 
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
  private:
-  std::shared_ptr<FieldGenerator>  gen; // Generator
+  template<typename T>
+  void applyTemplate(T &f, BoutReal t);
 };
 
 BoutReal default_func(BoutReal t, int x, int y, int z);
@@ -55,62 +34,55 @@ BoutReal default_func(BoutReal t, int x, int y, int z);
 /// 3nd-order boundary condition
 class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
-  BoundaryDirichlet_O3() : gen(nullptr) {}
-  BoundaryDirichlet_O3(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-      : BoundaryOp(region), gen(std::move(g)) {}
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  std::shared_ptr<FieldGenerator>  gen; // Generator
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// 4th-order boundary condition
 class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
-  BoundaryDirichlet_O4() : gen(nullptr) {}
-  BoundaryDirichlet_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-      : BoundaryOp(region), gen(std::move(g)) {}
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f,BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+};
 
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  std::shared_ptr<FieldGenerator>  gen; // Generator
+/// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
+class BoundaryDirichlet_2ndOrder : public BoundaryOp {
+ public:
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
 };
 
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryDirichlet_4thOrder : public BoundaryOp {
  public:
-  BoundaryDirichlet_4thOrder() : val(0.) {}
-  BoundaryDirichlet_4thOrder(BoutReal setval ): val(setval) {}
-  BoundaryDirichlet_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  BoutReal val;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// Neumann (zero-gradient) boundary condition for non-orthogonal meshes
@@ -122,141 +94,128 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
+  }
+  void apply(Field3D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
+  }
  private:
   BoutReal val;
+
+  template<typename T>
+  void applyTemplate(T &f, BoutReal t);
 };
 
 /// Neumann (zero-gradient) boundary condition, using 2nd order on boundary
 class BoundaryNeumann2 : public BoundaryOp {
  public:
-  BoundaryNeumann2() {}
-  BoundaryNeumann2(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryNeumann_2ndOrder : public BoundaryOp {
  public:
-  BoundaryNeumann_2ndOrder() : val(0.) {}
-  BoundaryNeumann_2ndOrder(BoutReal setval ): val(setval) {}
-  BoundaryNeumann_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  BoutReal val;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 // Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryNeumann : public BoundaryOp {
  public:
-  BoundaryNeumann() : gen(nullptr) {}
-  BoundaryNeumann(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-      : BoundaryOp(region), gen(std::move(g)) {}
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  std::shared_ptr<FieldGenerator> gen;
-};
-
-/// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
-class BoundaryNeumann_4thOrder : public BoundaryOp {
- public:
-  BoundaryNeumann_4thOrder() : val(0.) {}
-  BoundaryNeumann_4thOrder(BoutReal setval ): val(setval) {}
-  BoundaryNeumann_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
-
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  BoutReal val;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
-  BoundaryNeumann_O4() : gen(nullptr) {}
-  BoundaryNeumann_O4(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-      : BoundaryOp(region), gen(std::move(g)) {}
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override;
-  void apply(Field3D &f,BoutReal t) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+};
 
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
- private:
-  std::shared_ptr<FieldGenerator> gen;
+/// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
+class BoundaryNeumann_4thOrder : public BoundaryOp {
+ public:
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// NeumannPar (zero-gradient) boundary condition on
 /// the variable / sqrt(g_22)
 class BoundaryNeumannPar : public BoundaryOp {
  public:
-  BoundaryNeumannPar() {}
-  BoundaryNeumannPar(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 /// Robin (mix of Dirichlet and Neumann)
 class BoundaryRobin : public BoundaryOp {
  public:
   BoundaryRobin() : aval(0.), bval(0.), gval(0.) {}
-  BoundaryRobin(BoundaryRegion *region, BoutReal a, BoutReal b, BoutReal g):BoundaryOp(region), aval(a), bval(b), gval(g) { }
+  BoundaryRobin(BoundaryRegion *region, BoutReal a, BoutReal b, BoutReal g)
+    : BoundaryOp(region), aval(a), bval(b), gval(g) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
+  }
+  void apply(Field3D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
+  }
 private:
   BoutReal aval, bval, gval;
+
+  template<typename T>
+  void applyTemplate(T &f, BoutReal t);
 };
 
 /// Constant gradient (zero second derivative)
 class BoundaryConstGradient : public BoundaryOp {
  public:
-  BoundaryConstGradient() {}
-  BoundaryConstGradient(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 /// Zero Laplacian, decaying solution
@@ -267,8 +226,8 @@ class BoundaryZeroLaplace : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal UNUSED(t)) override;
+  void apply(Field3D &f, BoutReal UNUSED(t)) override;
 };
 
 /// Zero Laplacian
@@ -279,8 +238,8 @@ class BoundaryZeroLaplace2 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal t) override;
+  void apply(Field3D &f, BoutReal t) override;
 };
 
 /// Constant Laplacian, decaying solution
@@ -291,8 +250,8 @@ class BoundaryConstLaplace : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal t) override;
+  void apply(Field3D &f, BoutReal t) override;
 };
 
 /// Vector boundary condition Div(B) = 0, Curl(B) = 0
@@ -303,8 +262,8 @@ class BoundaryDivCurl : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &UNUSED(f)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
-  void apply(Field3D &UNUSED(f)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
   void apply(Vector2D &f) override;
   void apply(Vector3D &f) override;
 };
@@ -312,14 +271,12 @@ class BoundaryDivCurl : public BoundaryOp {
 /// Free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
 class BoundaryFree : public BoundaryOp {
  public:
-  BoundaryFree() : val(0.) {apply_to_ddt = true;}
-  BoundaryFree(BoutReal setval): val(setval) {}
-  BoundaryFree(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
+  void apply(Field2D &f, BoutReal UNUSED(t)) override;
+  void apply(Field3D &f, BoutReal UNUSED(t)) override;
 
   using BoundaryOp::apply_ddt;
   void apply_ddt(Field2D &f) override;
@@ -332,33 +289,26 @@ class BoundaryFree : public BoundaryOp {
 /// Alternative free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
 class BoundaryFree_O2 : public BoundaryOp {
 public:
-  BoundaryFree_O2()  {}
-  BoundaryFree_O2(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
 };
 
 class BoundaryFree_O3 : public BoundaryOp {
 public:
-  BoundaryFree_O3() {}
-  BoundaryFree_O3(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
 
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override;
-  void apply(Field3D &f) override;
-
-  using BoundaryOp::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
-
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 // End L.Easy
 
@@ -373,9 +323,7 @@ class BoundaryRelax : public BoundaryModifier {
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t) override;
 
   using BoundaryModifier::apply_ddt;
@@ -393,9 +341,7 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t) override;
 
   using BoundaryModifier::apply_ddt;
@@ -414,9 +360,7 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t) override;
 
   using BoundaryModifier::apply_ddt;
@@ -434,9 +378,7 @@ public:
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
-  void apply(Field2D &f) override {apply(f, 0.);};
   void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f) override {apply(f, 0.);};
   void apply(Field3D &f, BoutReal t) override;
 
   using BoundaryModifier::apply_ddt;
