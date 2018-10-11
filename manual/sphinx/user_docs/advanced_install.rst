@@ -165,13 +165,14 @@ To compile for the SKL partition, configure with
 
 to enable AVX512 vectorization.
 
-.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4 modules
-          means that you will need to remove ``-lnetcdf`` from ``EXTRA_LIBS`` in
-          ``make.config`` after running ``./configure`` and before running
-          ``make``. ``-lnetcdf`` needs also to be removed from ``bin/bout-config``
-	  to allow a successful build of the python interface. Recreation of
-	  ``boutcore.pyx`` needs to be manually triggered, if
-	  ``boutcore.pyx`` has already been created.
+.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4
+          modules means that you will need to remove ``-lnetcdf`` from
+          ``EXTRA_LIBS`` in ``make.config`` after running
+          ``./configure`` and before running ``make``. ``-lnetcdf``
+          needs also to be removed from ``bin/bout-config`` to allow a
+          successful build of the python interface. Recreation of
+          ``boutcore.pyx`` needs to be manually triggered, if
+          ``boutcore.pyx`` has already been created.
 
 Ubgl
 ~~~~

@@ -265,7 +265,7 @@ to OpenMP parallelise or vectorise::
     }
 
 If you wish to vectorise but can't use OpenMP then there is a serial
-verion of the macro:
+verion of the macro::
 
      BoutReal max=0.;
      BOUT_FOR_SERIAL(i, region) {
@@ -285,10 +285,10 @@ For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
 If a more general OpenMP directive is needed, there is
 ``BOUT_FOR_OMP``::
 
-  BoutReal result=0.;
-  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
-    result = f[i] > result ? f[i] : result;
-  }
+    BoutReal result=0.;
+    BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+      result = f[i] > result ? f[i] : result;
+    }
   
 The iterator provides access to the x, y, z indices::
 
@@ -304,11 +304,11 @@ modulo operators are needed to calculate individual indices.
 To perform finite difference or similar operators, index offsets can
 be calculated::
 
-  Field3D f = ...;
-  Field3D g(0.0);
-  BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_NOBNDRY")) {
-    g[i] = f[i.xp()] - f[i.xm()];
-  }
+    Field3D f = ...;
+    Field3D g(0.0);
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_NOBNDRY")) {
+      g[i] = f[i.xp()] - f[i.xm()];
+    }
 
 The ``xp()`` function by default produces an offset of ``+1`` in ``X``, ``xm()``
 an offset of ``-1`` in the ``X`` direction. These functions can also
