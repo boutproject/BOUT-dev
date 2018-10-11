@@ -70,12 +70,15 @@ inline const std::string& REGION_STRING(REGION region) {
 }
 
 /// To identify particular directions (in index space)
-enum class DIRECTION { X = 0, Y = 1, Z = 2 };
+enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5 };
 
 const std::map<DIRECTION, std::string> DIRECTIONtoString = {
   {DIRECTION::X, "X"},
   {DIRECTION::Y, "Y"},
-  {DIRECTION::Z, "Z"}
+  {DIRECTION::Z, "Z"},
+  {DIRECTION::YAligned, "Y - field aligned"},
+  {DIRECTION::YOrthogonal, "Y - orthogonal"}
+
 };
 
 inline const std::string& DIRECTION_STRING(DIRECTION direction) {
