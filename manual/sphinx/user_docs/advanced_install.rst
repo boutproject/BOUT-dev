@@ -279,6 +279,16 @@ this is not always possible. You may need to perform some testing
 yourself to find e.g. the optimum split of OpenMP threads and MPI
 ranks.
 
+One such parameter that can potentially have a significant effect (for
+some problem sizes on some machines) is setting the OpenMP schedule
+used in some of the OpenMP loops (specifically those using
+`BOUT_FOR`). This can be set using::
+
+    ./configure --enable-openmp --with-openmp-schedule=<schedule>
+
+with ``<schedule>`` being one of: ``static`` (the default),
+``dynamic``, ``guided``, ``auto`` or ``runtime``.
+
 
 .. note::
     If you want to use OpenMP with Clang, you will need Clang 3.7+,
