@@ -135,7 +135,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -271,6 +271,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
           }	
         }
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet.");
     }
   } else {
     // Non-staggered, standard case
@@ -321,7 +323,7 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -473,6 +475,8 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	  }
 	}			
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet.");
     }
   }
   else {
@@ -587,7 +591,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -719,6 +723,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O3.");
     }
   }
   else {
@@ -771,7 +777,7 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -921,6 +927,8 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O3.");
     }
   }
   else {
@@ -1002,7 +1010,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if(loc == CELL_XLOW ) {
@@ -1145,6 +1153,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O4.");
     }
   }
   else {
@@ -1198,7 +1208,7 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -1353,6 +1363,8 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O4.");
     }
   }
   else {
@@ -1712,7 +1724,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
@@ -1861,6 +1873,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  }
 	}
       }	
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryNeumann.");
     }
   }
   else {
@@ -1909,7 +1923,7 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
@@ -2065,6 +2079,8 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryNeumann.");
     }
   }
   else {
@@ -2134,7 +2150,7 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   
   // Check for staggered grids
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     throw BoutException("neumann_o4 not implemented with staggered grid yet");
   }
   else {
@@ -2188,7 +2204,7 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
   
   // Check for staggered grids
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     throw BoutException("neumann_o4 not implemented with staggered grid yet");
   }
   else {
@@ -2796,7 +2812,7 @@ void BoundaryFree_O2::apply(Field2D &f) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -2869,6 +2885,8 @@ void BoundaryFree_O2::apply(Field2D &f) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O2.");
     }
   }
   else {
@@ -2894,7 +2912,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -2983,6 +3001,8 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O2.");
     }
   }
   else {
@@ -3033,7 +3053,7 @@ void BoundaryFree_O3::apply(Field2D &f) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -3107,6 +3127,8 @@ void BoundaryFree_O3::apply(Field2D &f) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O3.");
     }
   }
   else {
@@ -3132,7 +3154,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -3228,6 +3250,8 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O3.");
     }
   }
   else {
