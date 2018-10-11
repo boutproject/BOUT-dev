@@ -730,8 +730,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == A.getLocation())) ||
-          (result.getLocation() == outloc));
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
