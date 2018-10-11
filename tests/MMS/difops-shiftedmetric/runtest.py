@@ -114,12 +114,13 @@ def test_operator(dimensions, ngrids, testfunc, boutcore_operator, symbolic_oper
 
         # Calculate result of differential operator symbolically, then convert
         # to boutcore.Field3D/Field2D.
-        # Only want analytic derivatives to include zShift in y-derivatives.
-        # When taking x-derivatives, don't want to include d(zShift)/dx.
-        x2 = symbols('x2')
-        analytic_input = testfunc.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
-        analytic_func = symbolic_operator(analytic_input) # take derivatives
-        analytic_func = analytic_func.subs(x2, metric.x) # replace 'x2' with 'x' for evaluation as Field3D
+        # Only want analytic derivatives to include shift for y-derivatives,
+        # not x-derivatives. Note this is taken care of by mms_alternate
+        analytic_func = symbolic_operator(testfunc) # take derivatives
+
+        # shift analytic_func to pass to BOUT++, since create3D will shift from
+        # field-aligned to orthogonal
+        analytic_func = analytic_func.subs(metric.z, metric.z + metric.zShift)
         analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh)
 
         # calculate max error
@@ -141,7 +142,7 @@ def test_operator(dimensions, ngrids, testfunc, boutcore_operator, symbolic_oper
                 pyplot.loglog(1./ngrids, error_list)
                 pyplot.show()
                 from boututils.showdata import showdata
-                showdata(error)
+                showdata([error, bout_result.get()[mxg:-mxg, myg:-myg], analytic_result.get()[mxg:-mxg, myg:-myg]], titles=["error", "BOUT++ result", "analytic result"])
             except:
                 pass
         return [str(boutcore_operator)+' is not working for '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
@@ -240,13 +241,13 @@ def test_operator2(dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, 
 
         # Calculate result of differential operator symbolically, then convert
         # to boutcore.Field3D/Field2D.
-        # Only want analytic derivatives to include zShift in y-derivatives.
-        # When taking x-derivatives, don't want to include d(zShift)/dx.
-        x2 = symbols('x2')
-        analytic_input1 = testfunc1.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
-        analytic_input2 = testfunc2.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
-        analytic_func = symbolic_operator(analytic_input1, analytic_input2) # take derivatives
-        analytic_func = analytic_func.subs(x2, metric.x) # replace 'x2' with 'x' for evaluation as Field3D
+        # Only want analytic derivatives to include shift for y-derivatives,
+        # not x-derivatives. Note this is taken care of by mms_alternate
+        analytic_func = symbolic_operator(testfunc1, testfunc2) # take derivatives
+
+        # shift analytic_func to pass to BOUT++, since create3D will shift from
+        # field-aligned to orthogonal
+        analytic_func = analytic_func.subs(metric.z, metric.z + metric.zShift)
         analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh)
 
         # calculate max error
@@ -267,7 +268,7 @@ def test_operator2(dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, 
                 pyplot.loglog(1./ngrids, error_list)
                 pyplot.show()
                 from boututils.showdata import showdata
-                showdata([error, bout_result.get()[mxg:-mxg, myg:-myg], analytic_result.get()[mxg:-mxg, myg:-myg]])
+                showdata([error, bout_result.get()[mxg:-mxg, myg:-myg], analytic_result.get()[mxg:-mxg, myg:-myg]], titles=["error", "BOUT++ result", "analytic result"])
             except:
                 pass
         return [str(boutcore_operator)+' is not working for '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
@@ -281,7 +282,7 @@ myg = 2
 testfunc = cos(2*pi*metric.x+metric.y+metric.z)
 testfunc2 = sin(4*pi*metric.x+2*metric.y+2*metric.z)+cos(2*pi*metric.x-metric.z)
 order = 2
-plot_error = True
+plot_error = False
 test_deriv_ops = full_test
 tests_3d = full_test
 
