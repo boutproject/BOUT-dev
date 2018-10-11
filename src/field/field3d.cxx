@@ -454,7 +454,7 @@ void Field3D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    BoundaryOp* op = bfact->create(condition, reg);
     op->apply(*this);
     delete op;
   }
@@ -474,7 +474,7 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      BoundaryOp *op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
       break;
@@ -581,7 +581,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+      BoundaryOpPar* op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
     }
@@ -606,7 +606,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
-        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        BoundaryOpPar* op = bfact->create(condition, reg);
         op->apply(*this);
         delete op;
         break;
@@ -635,7 +635,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
-        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        BoundaryOpPar* tmp = bfact->create(condition, reg);
         // then clone that with the actual argument
         BoundaryOpPar* op = tmp->clone(reg, f);
         op->apply(*this);

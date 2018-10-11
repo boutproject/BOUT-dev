@@ -10,7 +10,7 @@
  * inside the boundary.
  *
  */
-class BoundaryRegionPar : public BoundaryRegionBase {
+class BoundaryRegionPar {
 
   struct IndexPoint {
     int jx;
@@ -45,20 +45,26 @@ class BoundaryRegionPar : public BoundaryRegionBase {
 
 public:
   BoundaryRegionPar(const string &name, int dir, Mesh* passmesh) :
-    BoundaryRegionBase(name, passmesh), dir(dir) {
-    BoundaryRegionBase::isParallel = true;}
+    localmesh(passmesh ? passmesh : mesh), label(std::move(name)), dir(dir) {}
   BoundaryRegionPar(const string &name, BndryLoc loc,int dir, Mesh* passmesh) :
-    BoundaryRegionBase(name, loc, passmesh), dir(dir) {
-    BoundaryRegionBase::isParallel = true;}
+    localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc), dir(dir) {}
 
   /// Add a point to the boundary
   void add_point(int jx,int jy,int jz,
                  const BoutReal x,BoutReal y,BoutReal z,
                  const BoutReal length,BoutReal angle);
 
-  void first() override;
-  void next() override;
-  bool isDone() override;
+  void first();  ///< Move the region iterator to the start
+  void next();   ///< Get the next element in the loop
+                 ///  over every element from inside out (in
+                 ///  X or Y first)
+  bool isDone(); ///< Returns true if outside domain. Can use this with nested nextX, nextY
+
+  Mesh* localmesh; ///< Mesh does this boundary region belongs to
+
+  string label; ///< Label for this boundary region
+
+  BndryLoc location;         ///< Which side of the domain is it on?
 
   /// Index of the point in the boundary
   int x, y, z;

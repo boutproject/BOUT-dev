@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////
 // Base class
 
-class BoundaryOpPar : public BoundaryOpBase {
+class BoundaryOpPar {
 public:
   BoundaryOpPar() : bndry(nullptr), real_value(0.), value_type(REAL) {}
   BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator> value)
@@ -25,18 +25,28 @@ public:
     bndry(region),
     real_value(value),
     value_type(REAL) {}
-  ~BoundaryOpPar() override {}
+  virtual ~BoundaryOpPar() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return nullptr; }
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return nullptr; }
 
-  using BoundaryOpBase::apply;
-  void apply(Field2D &UNUSED(f)) override {
+  /// Apply a boundary condition on field f
+  virtual void apply(Field3D &f,BoutReal t = 0.) = 0;
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t) = 0.) {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
-  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override {
-    throw BoutException("Can't apply parallel boundary conditions to Field2D!");
+
+  virtual void apply(Vector2D &f) {
+    apply(f.x);
+    apply(f.y);
+    apply(f.z);
+  }
+
+  virtual void apply(Vector3D &f) {
+    apply(f.x);
+    apply(f.y);
+    apply(f.z);
   }
 
   BoundaryRegionPar *bndry;
@@ -75,7 +85,6 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t) override;
 
 };
@@ -95,7 +104,6 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t) override;
 
 };
@@ -115,7 +123,6 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t) override;
 
 };
@@ -135,7 +142,6 @@ public:
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
   using BoundaryOpPar::apply;
-  void apply(Field3D &f) override {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t) override;
 
 };

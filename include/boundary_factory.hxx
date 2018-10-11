@@ -14,6 +14,12 @@ class BoundaryFactory;
 using std::string;
 using std::map;
 
+template<typename T>
+using BoundaryOpRegion = typename std::conditional<std::is_same<T, BoundaryOpPar>::value, BoundaryRegionPar, BoundaryRegion>::type;
+
+template<typename T>
+using BoundaryRegionOp = typename std::conditional<std::is_same<T, BoundaryRegionPar>::value, BoundaryOpPar, BoundaryOp>::type;
+
 /// Create BoundaryOp objects on demand
 /*!
  * This implements a simple string parser, used to match boundary condition
@@ -55,7 +61,7 @@ using std::map;
  * Subsequent calls to create() or createFromOptions() can make use
  * of the boundary type "myboundary".
  *
- * BoundaryOpBase *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
+ * BoundaryOp *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
  * 
  * where the region is defined in boundary_region.hxx
  * 
@@ -69,12 +75,16 @@ class BoundaryFactory {
   static void cleanup(); ///< Frees all memory
 
   /// Create a boundary operation object
-  BoundaryOpBase* create(const string &name, BoundaryRegionBase *region);
-  BoundaryOpBase* create(const char* name, BoundaryRegionBase *region);
+  template<typename T>
+  BoundaryRegionOp<T>* create(const string &name, T* region);
+  template<typename T>
+  BoundaryRegionOp<T>* create(const char* name, T* region);
 
   /// Create a boundary object using the options file
-  BoundaryOpBase* createFromOptions(const string &varname, BoundaryRegionBase *region);
-  BoundaryOpBase* createFromOptions(const char* varname, BoundaryRegionBase *region);
+  template<typename T>
+  BoundaryRegionOp<T>* createFromOptions(const string &varname, T* region);
+  template<typename T>
+  BoundaryRegionOp<T>* createFromOptions(const char* varname, T* region);
 
   /*!
    * Add available boundary conditions and modifiers
@@ -119,14 +129,18 @@ class BoundaryFactory {
   // map<string, BoundaryModifier*> par_modmap;
 
   // Functions to look up operations and modifiers
-  BoundaryOp* findBoundaryOp(const string &s);
+  // Standard or parallel boundary conditions
+  template<typename T>
+  T* findBoundaryOp(const string &s);
+  // Boundary modifiers
   BoundaryModifier* findBoundaryMod(const string &s);
-  // Parallel boundary conditions
-  BoundaryOpPar* findBoundaryOpPar(const string &s);
-  // To be implemented...
-  // BoundaryModifier* findBoundaryMod(const string &s);
 
 };
+
+template<>
+BoundaryOp* BoundaryFactory::findBoundaryOp<BoundaryOp>(const string &s);
+template<>
+BoundaryOpPar* BoundaryFactory::findBoundaryOp<BoundaryOpPar>(const string &s);
 
 #endif // __BNDRY_FACTORY_H__
 

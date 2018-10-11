@@ -20,40 +20,15 @@ enum BndryLoc {BNDRY_XIN=1,
                BNDRY_PAR_FWD=16,   // Don't include parallel boundaries
                BNDRY_PAR_BKWD=32};
 
-class BoundaryRegionBase {
-public:
-
-  BoundaryRegionBase() = delete;
-  BoundaryRegionBase(std::string name, Mesh *passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
-  BoundaryRegionBase(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
-
-  virtual ~BoundaryRegionBase() {}
-
-  Mesh* localmesh; ///< Mesh does this boundary region belongs to
-
-  string label; ///< Label for this boundary region
-
-  BndryLoc location;         ///< Which side of the domain is it on?
-  bool isParallel = false;   ///< Is this a parallel boundary?
-
-  virtual void first() = 0;  ///< Move the region iterator to the start
-  virtual void next() = 0;   ///< Get the next element in the loop
-                             ///  over every element from inside out (in
-                             ///  X or Y first)
-  virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
-};
-
 /// Describes a region of the boundary, and a means of iterating over it
-class BoundaryRegion : public BoundaryRegionBase {
+class BoundaryRegion {
 public:
   BoundaryRegion() = delete;
   BoundaryRegion(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
-      : BoundaryRegionBase(name, loc, passmesh) {}
+      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
-      : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
-  ~BoundaryRegion() override {}
+      : bx(xd), by(yd), width(2), localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
+  virtual ~BoundaryRegion() {}
 
   int x,y; ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
@@ -63,6 +38,18 @@ public:
   virtual void next1d() = 0; ///< Loop over the innermost elements
   virtual void nextX() = 0;  ///< Just loop over X
   virtual void nextY() = 0;  ///< Just loop over Y
+
+  Mesh* localmesh; ///< Mesh does this boundary region belongs to
+
+  string label; ///< Label for this boundary region
+
+  BndryLoc location;         ///< Which side of the domain is it on?
+
+  virtual void first() = 0;  ///< Move the region iterator to the start
+  virtual void next() = 0;   ///< Get the next element in the loop
+                             ///  over every element from inside out (in
+                             ///  X or Y first)
+  virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {
