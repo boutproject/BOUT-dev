@@ -272,9 +272,9 @@ const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
  */
 const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string boundary_condition) {
-  Field2D dfdy = DDY(f, outloc, method, RGN_NOY);
-  f.getMesh()->communicate(dfdy);
+  Field2D dfdy = DDY(f, outloc, method, RGN_NOBNDRY);
   dfdy.applyBoundary(boundary_condition);
+  f.getMesh()->communicate(dfdy);
   return DDX(dfdy, outloc, method, region);
 }
 
@@ -287,9 +287,9 @@ const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
  */
 const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string boundary_condition) {
-  Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
-  f.getMesh()->communicate(dfdy);
+  Field3D dfdy = DDY(f, outloc, method, RGN_NOBNDRY);
   dfdy.applyBoundary(boundary_condition);
+  f.getMesh()->communicate(dfdy);
   return DDX(dfdy, outloc, method, region);
 }
 
@@ -302,9 +302,9 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
  */
 const Field2D D2DYDX(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string boundary_condition) {
-  Field2D dfdx = DDX(f, outloc, method, RGN_NOX);
-  f.getMesh()->communicate(dfdx);
+  Field2D dfdx = DDX(f, outloc, method, RGN_NOBNDRY);
   dfdx.applyBoundary(boundary_condition);
+  f.getMesh()->communicate(dfdx);
   return DDY(dfdx, outloc, method, region);
 }
 
@@ -317,9 +317,13 @@ const Field2D D2DYDX(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
  */
 const Field3D D2DYDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string boundary_condition) {
-  Field3D dfdx = DDX(f, outloc, method, RGN_NOX);
-  f.getMesh()->communicate(dfdx);
+  // if free_o3 boundary condition is used, it might be better to have the
+  // boundary condition after the communication because there might not be
+  // enough grid points for the 3-point stencil. Then we would need to call
+  // calcYupYdown again somehow.
+  Field3D dfdx = DDX(f, outloc, method, RGN_NOBNDRY);
   dfdx.applyBoundary(boundary_condition);
+  f.getMesh()->communicate(dfdx);
   return DDY(dfdx, outloc, method, region);
 }
 
@@ -401,7 +405,16 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
     throw BoutException("Unhandled region case in D2DYDZ");
   }
 
-  return DDY(DDZ(f, outloc,method, region_inner),outloc,method,region);
+  Field3D dfdz = DDZ(f, outloc, method, region_inner);
+
+  if (f.hasYupYdown()) {
+    // Need to set yup/ydown fields for dfdz
+    dfdz.splitYupYdown();
+    dfdz.yup() = DDZ(f.yup(), outloc, method, region_inner);
+    dfdz.ydown() = DDZ(f.ydown(), outloc, method, region_inner);
+  }
+
+  return DDY(dfdz, outloc, method, region);
 }
 
 const Field2D D2DZDY(const Field2D &f, CELL_LOC UNUSED(outloc),
