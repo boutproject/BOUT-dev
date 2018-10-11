@@ -1093,12 +1093,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   {
     stencil s;
     BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-      s.mm = var[i.zmm()];
-      s.m = var[i.zm()];
-      s.c = var[i];
-      s.p = var[i.zp()];
-      s.pp = var[i.zpp()];
-
+      populateStencil<DIRECTION::Z, STAGGER::None, 2>(s, var, i);
       result[i] = func(s);
     }
   }
