@@ -274,7 +274,7 @@ def test_operator2(dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, 
 
 min_exponent = 6
 max_exponent = 7
-ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2, dtype=int)
+ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2).astype('int')
 default_n = 4
 mxg = 2
 myg = 2

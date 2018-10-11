@@ -382,7 +382,7 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
 
 min_exponent = 6
 max_exponent = 7
-ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2, dtype=int)
+ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2).astype('int')
 default_n = 4
 mxg = 2
 myg = 2
