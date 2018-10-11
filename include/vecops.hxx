@@ -117,12 +117,16 @@ const Vector3D DEPRECATED(Curl(const Vector3D &v,
 // Upwinding routines
 
 /// Advection of a scalar field \p f by a velocity vector \p v
+///
+/// Both vectors must be at the same location, which cannot be CELL_VSHIFT
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
 
 /// Advection of a vector field \p a by a velocity vector \p v
+///
+/// Both vectors must be at the same location, which cannot be CELL_VSHIFT
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
