@@ -1656,12 +1656,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     BOUT_OMP(parallel) {
       stencil s;
       BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-        s.mm = f[i.xmm()];
-        s.m = f[i.xm()];
-        s.c = f[i];
-        s.p = f[i.xp()];
-        s.pp = f[i.xpp()];
-
+        populateStencil<DIRECTION::X, STAGGER::None, 2>(s, f, i);
         result[i] = func(v[i], s);
       }
     }
@@ -1671,10 +1666,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     BOUT_OMP(parallel) {
       stencil s;
       BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-        s.m = f[i.xm()];
-        s.c = f[i];
-        s.p = f[i.xp()];
-
+        populateStencil<DIRECTION::X>(s, f, i);
         result[i] = func(v[i], s);
       }
     }
@@ -1740,17 +1732,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.mm = f[i.xmm()];
-            fs.m = f[i.xm()];
-            fs.c = f[i];
-            fs.p = f[i.xp()];
-            fs.pp = f[i.xpp()];
-
-            vs.mm = v[i.xm()];
-            vs.m = v[i];
-            vs.p = v[i.xp()];
-            vs.pp = v[i.xpp()];
-
+            populateStencil<DIRECTION::X, STAGGER::None, 2>(fs, f, i);
+            populateStencil<DIRECTION::X, STAGGER::L2C, 2>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1759,17 +1742,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.mm = f[i.xmm()];
-            fs.m = f[i.xm()];
-            fs.c = f[i];
-            fs.p = f[i.xp()];
-            fs.pp = f[i.xpp()];
-
-            vs.mm = v[i.xmm()];
-            vs.m = v[i.xm()];
-            vs.p = v[i];
-            vs.pp = v[i.xp()];
-
+            populateStencil<DIRECTION::X, STAGGER::None, 2>(fs, f, i);
+            populateStencil<DIRECTION::X, STAGGER::C2L, 2>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1781,14 +1755,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.m = f[i.xm()];
-            fs.c = f[i];
-            fs.p = f[i.xp()];
-
-            vs.mm = v[i.xm()];
-            vs.m = v[i];
-            vs.p = v[i.xp()];
-
+            populateStencil<DIRECTION::X, STAGGER::None>(fs, f, i);
+            populateStencil<DIRECTION::X, STAGGER::L2C>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1797,14 +1765,8 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.m = f[i.xm()];
-            fs.c = f[i];
-            fs.p = f[i.xp()];
-
-            vs.m = v[i.xm()];
-            vs.p = v[i];
-            vs.pp = v[i.xp()];
-
+            populateStencil<DIRECTION::X, STAGGER::None>(fs, f, i);
+            populateStencil<DIRECTION::X, STAGGER::C2L>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1826,12 +1788,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       BOUT_OMP(parallel) {
         stencil fs;
         BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          fs.mm = f[i.xmm()];
-          fs.m = f[i.xm()];
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-          fs.pp = f[i.xpp()];
-
+          populateStencil<DIRECTION::X, STAGGER::None, 2>(fs, f, i);
           result[i] = func(v[i], fs);
         }
       }
@@ -1840,10 +1797,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       BOUT_OMP(parallel) {
         stencil fs;
         BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          fs.m = f[i.xm()];
-          fs.c = f[i];
-          fs.p = f[i.xp()];
-
+          populateStencil<DIRECTION::X, STAGGER::None>(fs, f, i);
           result[i] = func(v[i], fs);
         }
       }
@@ -1916,17 +1870,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-            fs.mm = f[i.ymm()];
-            fs.m = f[i.ym()];
-            fs.c = f[i];
-            fs.p = f[i.yp()];
-            fs.pp = f[i.ypp()];
-
-            vs.mm = v[i.ym()];
-            vs.m = v[i];
-            vs.p = v[i.yp()];
-            vs.pp = v[i.ypp()];
-
+            populateStencil<DIRECTION::Y, STAGGER::None, 2>(fs, f, i);
+            populateStencil<DIRECTION::Y, STAGGER::L2C, 2>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1935,14 +1880,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-            fs.m = f[i.ym()];
-            fs.c = f[i];
-            fs.p = f[i.yp()];
-
-            vs.mm = v[i.ym()];
-            vs.m = v[i];
-            vs.p = v[i.yp()];
-
+            populateStencil<DIRECTION::Y, STAGGER::None>(fs, f, i);
+            populateStencil<DIRECTION::Y, STAGGER::L2C>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1953,17 +1892,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-            fs.mm = f[i.ymm()];
-            fs.m = f[i.ym()];
-            fs.c = f[i];
-            fs.p = f[i.yp()];
-            fs.pp = f[i.ypp()];
-
-            vs.mm = v[i.ymm()];
-            vs.m = v[i.ym()];
-            vs.p = v[i];
-            vs.pp = v[i.yp()];
-
+            populateStencil<DIRECTION::Y, STAGGER::None, 2>(fs, f, i);
+            populateStencil<DIRECTION::Y, STAGGER::C2L, 2>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -1972,14 +1902,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs, vs;
           BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-            fs.m = f[i.ym()];
-            fs.c = f[i];
-            fs.p = f[i.yp()];
-
-            vs.m = v[i.ym()];
-            vs.p = v[i];
-            vs.pp = v[i.yp()];
-
+            populateStencil<DIRECTION::Y, STAGGER::None>(fs, f, i);
+            populateStencil<DIRECTION::Y, STAGGER::C2L>(vs, v, i);
             result[i] = func(vs, fs);
           }
         }
@@ -2002,12 +1926,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       BOUT_OMP(parallel) {
         stencil fs;
         BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          fs.mm = f[i.ymm()];
-          fs.m = f[i.ym()];
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-          fs.pp = f[i.ypp()];
-
+          populateStencil<DIRECTION::Y, STAGGER::None, 2>(fs, f, i);
           result[i] = func(v[i], fs);
         }
       }
@@ -2016,10 +1935,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       BOUT_OMP(parallel) {
         stencil fs;
         BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-          fs.m = f[i.ym()];
-          fs.c = f[i];
-          fs.p = f[i.yp()];
-
+          populateStencil<DIRECTION::Y>(fs, f, i);
           result[i] = func(v[i], fs);
         }
       }
@@ -2093,60 +2009,46 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (vUseUpDown && fUseUpDown) {
       // Both v and f have up/down fields
-      BOUT_OMP(parallel) {
-        stencil vval, fval;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          vval.m = v.ydown()[i.ym()];
-          vval.c = v[i];
-          vval.p = v.yup()[i.yp()];
-
-          fval.m = f.ydown()[i.ym()];
-          fval.c = f[i];
-          fval.p = f.yup()[i.yp()];
-
-          // Non-centred stencil
-          if (inloc == CELL_YLOW) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+      if (inloc == CELL_YLOW) {
+        BOUT_OMP(parallel) {
+          stencil vval, fval;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            populateStencil<DIRECTION::YOrthogonal, STAGGER::None>(fval, f, i);
+            populateStencil<DIRECTION::YOrthogonal, STAGGER::C2L>(vval, v, i);
+            result[i] = func(vval, fval);
           }
-          result[i] = func(vval, fval);
+        }
+      } else {
+        BOUT_OMP(parallel) {
+          stencil vval, fval;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            populateStencil<DIRECTION::YOrthogonal, STAGGER::None>(fval, f, i);
+            populateStencil<DIRECTION::YOrthogonal, STAGGER::L2C>(vval, v, i);
+            result[i] = func(vval, fval);
+          }
         }
       }
     } else {
       // Both must shift to field aligned
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
-      BOUT_OMP(parallel) {
-        stencil vval, fval;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          vval.mm = v_fa[i.ymm()];
-          vval.m = v_fa[i.ym()];
-          vval.c = v_fa[i];
-          vval.p = v_fa[i.yp()];
-          vval.pp = v_fa[i.ypp()];
-
-          fval.mm = f_fa[i.ymm()];
-          fval.m = f_fa[i.ym()];
-          fval.c = f[i];
-          fval.p = f_fa[i.yp()];
-          fval.pp = f_fa[i.ypp()];
-
-          // Non-centred stencil
-          if (inloc == CELL_YLOW) {
-            // Producing a stencil centred around a lower Y value
-            vval.pp = vval.p;
-            vval.p = vval.c;
-          } else {
-            // Stencil centred around a cell centre
-            vval.mm = vval.m;
-            vval.m = vval.c;
+      if (inloc == CELL_YLOW) {
+        BOUT_OMP(parallel) {
+          stencil vval, fval;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            populateStencil<DIRECTION::Y, STAGGER::None, 2>(fval, f_fa, i);
+            populateStencil<DIRECTION::Y, STAGGER::C2L, 2>(vval, v_fa, i);
+            result[i] = func(vval, fval);
           }
-          result[i] = func(vval, fval);
+        }
+      } else {
+        BOUT_OMP(parallel) {
+          stencil vval, fval;
+          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+            populateStencil<DIRECTION::Y, STAGGER::None, 2>(fval, f_fa, i);
+            populateStencil<DIRECTION::Y, STAGGER::L2C, 2>(vval, v_fa, i);
+            result[i] = func(vval, fval);
+          }
         }
       }
     }
@@ -2163,15 +2065,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     if (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f))) {
       // f has yup and ydown fields which are distinct
-      const Field3D f_yup = f.yup();
-      const Field3D f_ydown = f.ydown();
       BOUT_OMP(parallel) {
         stencil fs;
         BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-          fs.m = f_ydown[i.ym()];
-          fs.c = f[i];
-          fs.p = f_yup[i.yp()];
-
+          populateStencil<DIRECTION::YOrthogonal, STAGGER::None>(fs, f, i);
           result[i] = func(v[i], fs);
         }
       }
@@ -2184,12 +2081,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.mm = f_fa[i.ymm()];
-            fs.m = f_fa[i.ym()];
-            fs.c = f_fa[i];
-            fs.p = f_fa[i.yp()];
-            fs.pp = f_fa[i.ypp()];
-
+            populateStencil<DIRECTION::Y, STAGGER::None, 2>(fs, f_fa, i);
             result[i] = func(v_fa[i], fs);
           }
         }
@@ -2197,10 +2089,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         BOUT_OMP(parallel) {
           stencil fs;
           BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-            fs.m = f_fa[i.ym()];
-            fs.c = f_fa[i];
-            fs.p = f_fa[i.yp()];
-
+            populateStencil<DIRECTION::Y>(fs, f_fa, i);
             result[i] = func(v_fa[i], fs);
           }
         }
@@ -2260,32 +2149,25 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    BOUT_OMP(parallel) {
-      stencil vval, fval;
-      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-        fval.mm = f[i.zmm()];
-        fval.m = f[i.zm()];
-        fval.c = f[i];
-        fval.p = f[i.zp()];
-        fval.pp = f[i.zpp()];
-
-        vval.mm = v[i.zmm()];
-        vval.m = v[i.zm()];
-        vval.c = v[i];
-        vval.p = v[i.zp()];
-        vval.pp = v[i.zpp()];
-
-        if (inloc == CELL_ZLOW) {
-          // Producing a stencil centred around a lower Z value
-          vval.pp = vval.p;
-          vval.p = vval.c;
-
-        } else {
-          // Stencil centred around a cell centre
-          vval.mm = vval.m;
-          vval.m = vval.c;
+    if (inloc == CELL_ZLOW) {
+      // Producing a stencil centred around a lower Z value
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          populateStencil<DIRECTION::Z, STAGGER::None, 2>(fval, f, i);
+          populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(vval, v, i);
+          result[i] = func(vval, fval);
         }
-        result[i] = func(vval, fval);
+      }
+    } else {
+      // Stencil centred around a cell centre
+      BOUT_OMP(parallel) {
+        stencil vval, fval;
+        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          populateStencil<DIRECTION::Z, STAGGER::None, 2>(fval, f, i);
+          populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(vval, v, i);
+          result[i] = func(vval, fval);
+        }
       }
     }
   } else {
@@ -2300,12 +2182,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     BOUT_OMP(parallel) {
       stencil fval;
       BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
-        fval.mm = f[i.zmm()];
-        fval.m = f[i.zm()];
-        fval.c = f[i];
-        fval.p = f[i.zp()];
-        fval.pp = f[i.zpp()];
-
+        populateStencil<DIRECTION::Z, STAGGER::None, 2>(fval, f, i);
         result[i] = func(v[i], fval);
       }
     }
