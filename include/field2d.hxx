@@ -113,6 +113,20 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
+  Field2D& yup() {
+    return *this;
+  }
+  const Field2D& yup() const {
+    return *this;
+  }
+
+  Field2D& ydown() {
+    return *this;
+  }
+  const Field2D& ydown() const {
+    return *this;
+  }
+  
   // Operators
 
   /*!
