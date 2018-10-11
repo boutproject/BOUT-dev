@@ -314,7 +314,9 @@ if test_deriv_ops:
     results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1)
     if tests_3d:
         results += test_operator('xyz', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order)
+        results += test_operator('xyz', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order)
     results += test_operator('yz', ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, order)
+    results += test_operator('yz', ngrids, testfunc, boutcore.D2DZDY, D2DZDY, order)
 
 # check results of tests
 fail = False
