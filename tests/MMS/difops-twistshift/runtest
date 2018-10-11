@@ -432,9 +432,6 @@ results += cycle_staggering2('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_
 # note bracket(Field2D, Field2D) is exactly zero, so doesn't make sense to MMS test
 # Note BRACKET_STD version of bracket includes parallel derivatives, so needs
 # y-dimension refinement to converge.
-# Also it converges faster than 2nd order at 64->128, but approaches closer
-# when resolution is increased. Allow test to pass anyway by increasing
-# expected order
 if tests_3d:
     results += cycle_staggering2('', 'xyz', ngrids, testfunc, testfunc2, boutcore.bracket, lambda a,b: b0xGrad_dot_Grad(a,b)/metric.B, order, types_3d, method='BRACKET_STD') # no staggering allowed
 
@@ -453,9 +450,12 @@ if test_deriv_ops:
     if tests_3d:
         results += cycle_staggering('y', 'xyz', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order, type_3d)
     results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order, type_2d)
-    if tests_3d:
-        results += cycle_staggering('x', 'xyz', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order, type_3d)
-    results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order, type_2d)
+    # Note: D2DYDX cannot converge for a field-aligned grid, because the
+    # x-derivative is not continuous across the poloidal branch cut, due to
+    # x-dependence of z-shift (in other words, the x-direction changes across
+    # the branch-cut, so the x-derivative also does, for a poloidally-periodic
+    # function). Therefore a y-derivative cannot be taken, because we can't get
+    # the guard cell values of DDX(f) by communicating.
     results += cycle_staggering('', 'yz', ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, order, type_3d)
     results += cycle_staggering('y', 'yz', ngrids, testfunc, boutcore.D2DZDY, D2DZDY, order, type_3d)
 
