@@ -112,8 +112,14 @@ def test_operator(dimensions, ngrids, testfunc, boutcore_operator, symbolic_oper
         else:
             bout_result = boutcore_operator(bout_input, method=method)
 
-        # calculate result of differential operator symbolically, then convert to boutcore.Field3D/Field2D
-        analytic_func = symbolic_operator(this_testfunc)
+        # Calculate result of differential operator symbolically, then convert
+        # to boutcore.Field3D/Field2D.
+        # Only want analytic derivatives to include zShift in y-derivatives.
+        # When taking x-derivatives, don't want to include d(zShift)/dx.
+        x2 = symbols('x2')
+        analytic_input = testfunc.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
+        analytic_func = symbolic_operator(analytic_input) # take derivatives
+        analytic_func = analytic_func.subs(x2, metric.x) # replace 'x2' with 'x' for evaluation as Field3D
         analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh)
 
         # calculate max error
@@ -232,8 +238,15 @@ def test_operator2(dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, 
         else:
             bout_result = boutcore_operator(bout_input1, bout_input2, method=method)
 
-        # calculate result of differential operator symbolically, then convert to boutcore.Field3D/Field2D
-        analytic_func = symbolic_operator(this_testfunc1, this_testfunc2)
+        # Calculate result of differential operator symbolically, then convert
+        # to boutcore.Field3D/Field2D.
+        # Only want analytic derivatives to include zShift in y-derivatives.
+        # When taking x-derivatives, don't want to include d(zShift)/dx.
+        x2 = symbols('x2')
+        analytic_input1 = testfunc1.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
+        analytic_input2 = testfunc2.subs(metric.z, metric.z + metric.zShift.subs(metric.x, x2)) # use a different symbol for 'x' in zShift
+        analytic_func = symbolic_operator(analytic_input1, analytic_input2) # take derivatives
+        analytic_func = analytic_func.subs(x2, metric.x) # replace 'x2' with 'x' for evaluation as Field3D
         analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh)
 
         # calculate max error
@@ -297,9 +310,6 @@ results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Div_par_fl
 # note bracket(Field2D, Field2D) is exactly zero, so doesn't make sense to MMS test
 # Note BRACKET_STD version of bracket includes parallel derivatives, so needs
 # y-dimension refinement to converge.
-# Also it converges faster than 2nd order at 64->128, but approaches closer
-# when resolution is increased. Allow test to pass anyway by increasing
-# expected order
 if tests_3d:
     results += test_operator2('xyz', ngrids, testfunc, testfunc2, boutcore.bracket, lambda a,b: b0xGrad_dot_Grad(a,b)/metric.B, order, method='BRACKET_STD')
 
