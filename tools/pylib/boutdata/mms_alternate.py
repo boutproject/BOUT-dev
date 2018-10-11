@@ -47,6 +47,10 @@ class Metric(object):
         self.scalex = 1.0
         self.scaley = 1.0
 
+        # if shifted, shift by zShift before taking y-derivatives
+        shifted = False
+        zShift = 0.
+
 metric = Metric()
 
 # Basic differencing
@@ -60,7 +64,17 @@ def DDX(f):
     return diff(f, metric.x)/metric.psiwidth/metric.scalex
 
 def DDY(f):
-    return diff(f, metric.y)/metric.scaley
+    if metric.shifted:
+        # shift the input
+        f_shifted = f.subs(metric.z, metric.z + metric.zShift)
+
+        # take y-derivative
+        result_shifted = diff(f_shifted, metric.y)/metric.scaley
+
+        # shift the output back, and return
+        return result_shifted.subs(metric.z, metric.z - metric.zShift)
+    else:
+        return diff(f, metric.y)/metric.scaley
 
 def DDZ(f):
     return diff(f, metric.z)*metric.zperiod
@@ -82,7 +96,17 @@ def D4DX4(f):
     return diff(f, metric.x, 4)/metric.psiwidth**4/metric.scalex**4
 
 def D4DY4(f):
-    return diff(f, metric.y, 4)/metric.scaley**4
+    if metric.shifted:
+        # shift the input
+        f_shifted = f.subs(metric.z, metric.z + metric.zShift)
+
+        # take y-derivative
+        result_shifted = diff(f_shifted, metric.y, 4)/metric.scaley**4
+
+        # shift the output back, and return
+        return result_shifted.subs(metric.z, metric.z - metric.zShift)
+    else:
+        return diff(f, metric.y, 4)/metric.scaley**4
 
 def D4DZ4(f):
     return diff(f, metric.z, 4)*metric.zperiod**4
@@ -416,6 +440,7 @@ class BaseTokamak(object):
         metric.g_13 = self.sinty*self.Rxy**2
         metric.g_23 = sbp*self.Btxy*self.hthe*self.Rxy / self.Bpxy
 
+        metric.shifted = self.shifted
         metric.zShift = self.zShift
         metric.shiftAngle = self.shiftAngle
 
