@@ -1046,7 +1046,8 @@ const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D result =
-      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
+      + g22 * D2DY2(f, outloc) + g12 * (D2DXDY(f, outloc) + D2DYDX(f, outloc));
 
   return result;
 }
@@ -1057,7 +1058,9 @@ const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
                    g22 * D2DY2(f, outloc) + g33 * D2DZ2(f, outloc) +
-                   2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
+                   g12 * (D2DXDY(f, outloc) + D2DYDX(f, outloc))
+                   + g13 * (D2DXDZ(f, outloc) + D2DZDX(f, outloc))
+                   + g23 * (D2DYDZ(f, outloc) + D2DZDY(f, outloc));
 
   ASSERT2(result.getLocation() == f.getLocation());
 
