@@ -21,6 +21,8 @@ function varn = import_data_netcdf(path, var_name,nt,ntsp)
 % Last two variables important only for [X,Y,Z,T] format and any number
 % will be ok if we wish to plot [X,Y,Z] and [X,Y] type data.
 
+error("This is currently broken for BOUT++ > v4.0.0. See issue #394")
+
 % Check input arguments
 if ( nargin < 4 )
     fprintf('\tBoth dump file path and variable name are requisite input arguments.\n');
