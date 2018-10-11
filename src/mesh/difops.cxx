@@ -239,7 +239,24 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Coordinates *metric = f.getCoordinates(outloc);
-  return metric->Bxy*FDDY(v, f/f.getCoordinates()->Bxy, outloc, method)/sqrt(metric->g_22);
+
+  Field2D Bxy_floc = f.getCoordinates()->Bxy;
+  if (f.hasYupYdown()) {
+    // Need to modify yup and ydown fields
+    Field3D f_B = f / Bxy_floc;
+    if (&f.yup() == &f) {
+      // Identity, yup and ydown point to same field
+      f_B.mergeYupYdown();
+    } else {
+      // Distinct fields
+      f_B.splitYupYdown();
+      f_B.yup() = f.yup() / Bxy_floc;
+      f_B.ydown() = f.ydown() / Bxy_floc;
+    }
+    return metric->Bxy*FDDY(v, f_B, outloc, method)/sqrt(metric->g_22);
+  }
+
+  return metric->Bxy*FDDY(v, f/Bxy_floc, outloc, method)/sqrt(metric->g_22);
 }
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
