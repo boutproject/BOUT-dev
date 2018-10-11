@@ -91,11 +91,20 @@ def D4DZ4(f):
 def D2DXDY(f):
     return DDX(DDY(f))
 
+def D2DYDX(f):
+    return DDY(DDX(f))
+
 def D2DXDZ(f):
     return DDX(DDZ(f))
 
+def D2DZDX(f):
+    return DDZ(DDX(f))
+
 def D2DYDZ(f):
     return DDY(DDZ(f))
+
+def D2DZDY(f):
+    return DDZ(DDY(f))
 
 # Operators
 
@@ -186,8 +195,10 @@ def Div_par(f):
 def Laplace(f):
     """The full Laplace operator"""
     result  = metric.G1*DDX(f) + metric.G2*DDY(f) + metric.G3*DDZ(f)\
-	      + metric.g11*D2DX2(f) + metric.g22*D2DY2(f) + metric.g33*D2DZ2(f)\
-	      + 2.0*(metric.g12*D2DXDY(f) + metric.g13*D2DXDZ(f) + metric.g23*D2DYDZ(f))
+              + metric.g11*D2DX2(f) + metric.g22*D2DY2(f) + metric.g33*D2DZ2(f)\
+              + metric.g12*(D2DXDY(f) + D2DYDX(f))\
+              + metric.g13*(D2DXDZ(f) + D2DZDX(f))\
+              + metric.g23*(D2DYDZ(f) + D2DZDY(f))
 
     return result
 
