@@ -161,7 +161,7 @@ do
         done
     done
 
-    for f in D2DXDY D2DXDZ D2DYDZ
+    for f in D2DXDY D2DYDX D2DXDZ D2DZDX D2DYDZ D2DZDY
     do
         DD=${f/d/$d}
         echo "    $ftype $DD($ftype, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
