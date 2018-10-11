@@ -248,7 +248,6 @@ def test_operator2(dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, 
     if order-.1 < convergence < order+.2:
         return ['pass']
     else:
-        print(error_list)
         if plot_error:
             try:
                 from matplotlib import pyplot
@@ -272,7 +271,6 @@ order = 2
 plot_error = True
 test_deriv_ops = full_test
 tests_3d = full_test
-test_throw = full_test
 
 boutcore.init('-q -q -q -q')
 
@@ -292,7 +290,7 @@ if tests_3d:
 #results += test_operator('xz', ngrids, testfunc, boutcore.Delp2, Delp2, order)
 
 # two-argument operators
-results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, order)
+results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, 1) # can only use U1 upwinding with ShiftedMetric (at least until 2 yup/ydown fields are implemented)
 results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, order)
 results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1)
 results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), order, method='C2')
@@ -309,8 +307,9 @@ if test_deriv_ops:
     # test derivative operators
     results += test_operator('yz', ngrids, testfunc, boutcore.DDY, DDY, order)
     results += test_operator('yz', ngrids, testfunc, boutcore.D2DY2, D2DY2, order)
-    results += test_operator('yz', ngrids, testfunc, boutcore.D4DY4, D4DY4, order)
-    results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), order)
+    # D4DY4 requires 5-point stencil, so can't test with ShiftedMetric
+    #results += test_operator('yz', ngrids, testfunc, boutcore.D4DY4, D4DY4, order)
+    results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), 1)
     results += test_operator2('yz', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1)
     if tests_3d:
         results += test_operator('xyz', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order)
