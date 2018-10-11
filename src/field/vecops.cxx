@@ -396,250 +396,216 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   return result;
 }
 
-const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, CELL_LOC outloc) {
+const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
   TRACE("V_dot_Grad( Vector2D , Vector2D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
-  ASSERT1(outloc != CELL_VSHIFT);
   ASSERT1(v.getLocation() == a.getLocation());
-  // Note the following assert means the outloc argument is pointless
-  ASSERT1(v.getLocation() == outloc);
 
-  Mesh *localmesh = v.x.getMesh();
-  Vector2D result(localmesh);
+  Vector2D result{v.x.getMesh()};
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  auto metric_x = v.x.getCoordinates();
+  auto metric_y = v.y.getCoordinates();
+  auto metric_z = v.z.getCoordinates();
 
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  if(a.covariant) {
-    
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+  if (a.covariant) {
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x -= vcn.x * (metric_x->G1_11 * a.x + metric_y->G2_11 * a.y + metric_z->G3_11 * a.z);
+    result.x -= vcn.y * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.x -= vcn.z * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
-    result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y -= vcn.x * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.y -= vcn.y * (metric_x->G1_22 * a.x + metric_y->G2_22 * a.y + metric_z->G3_22 * a.z);
+    result.y -= vcn.z * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
+
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z -= vcn.x * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
+    result.z -= vcn.y * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
+    result.z -= vcn.z * (metric_x->G1_33 * a.x + metric_y->G2_33 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = true;
-  }else {
-    
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+  } else {
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
-    result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x += vcn.x * (metric_x->G1_11 * a.x + metric_y->G1_12 * a.y + metric_z->G1_13 * a.z);
+    result.x += vcn.y * (metric_x->G1_12 * a.x + metric_y->G1_22 * a.y + metric_z->G1_23 * a.z);
+    result.x += vcn.z * (metric_x->G1_13 * a.x + metric_y->G1_23 * a.y + metric_z->G1_33 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
-    result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y += vcn.x * (metric_x->G2_11 * a.x + metric_y->G2_12 * a.y + metric_z->G2_13 * a.z);
+    result.y += vcn.y * (metric_x->G2_12 * a.x + metric_y->G2_22 * a.y + metric_z->G2_23 * a.z);
+    result.y += vcn.z * (metric_x->G2_13 * a.x + metric_y->G2_23 * a.y + metric_z->G2_33 * a.z);
+
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z += vcn.x * (metric_x->G3_11 * a.x + metric_y->G3_12 * a.y + metric_z->G3_13 * a.z);
+    result.z += vcn.y * (metric_x->G3_12 * a.x + metric_y->G3_22 * a.y + metric_z->G3_23 * a.z);
+    result.z += vcn.z * (metric_x->G3_13 * a.x + metric_y->G3_23 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = false;
   }
 
-  result.setLocation(outloc);
-
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, CELL_LOC outloc) {
+const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
   TRACE("V_dot_Grad( Vector2D , Vector3D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
-  ASSERT1(outloc != CELL_VSHIFT);
   ASSERT1(v.getLocation() == a.getLocation());
-  // Note the following assert means the outloc argument is pointless
-  ASSERT1(v.getLocation() == outloc);
 
-  Mesh *localmesh = v.x.getMesh();
-  Vector3D result(localmesh);
+  Vector3D result{v.x.getMesh()};
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  auto metric_x = v.x.getCoordinates();
+  auto metric_y = v.y.getCoordinates();
+  auto metric_z = v.z.getCoordinates();
 
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  if(a.covariant) {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+  if (a.covariant) {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x -= vcn.x * (metric_x->G1_11 * a.x + metric_y->G2_11 * a.y + metric_z->G3_11 * a.z);
+    result.x -= vcn.y * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.x -= vcn.z * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y -= vcn.x * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.y -= vcn.y * (metric_x->G1_22 * a.x + metric_y->G2_22 * a.y + metric_z->G3_22 * a.z);
+    result.y -= vcn.z * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
-    result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z -= vcn.x * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
+    result.z -= vcn.y * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
+    result.z -= vcn.z * (metric_x->G1_33 * a.x + metric_y->G2_33 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = true;
-  }else {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+  } else {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x += vcn.x * (metric_x->G1_11 * a.x + metric_y->G1_12 * a.y + metric_z->G1_13 * a.z);
+    result.x += vcn.y * (metric_x->G1_12 * a.x + metric_y->G1_22 * a.y + metric_z->G1_23 * a.z);
+    result.x += vcn.z * (metric_x->G1_13 * a.x + metric_y->G1_23 * a.y + metric_z->G1_33 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
-    result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y += vcn.x * (metric_x->G2_11 * a.x + metric_y->G2_12 * a.y + metric_z->G2_13 * a.z);
+    result.y += vcn.y * (metric_x->G2_12 * a.x + metric_y->G2_22 * a.y + metric_z->G2_23 * a.z);
+    result.y += vcn.z * (metric_x->G2_13 * a.x + metric_y->G2_23 * a.y + metric_z->G2_33 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
-    result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z += vcn.x * (metric_x->G3_11 * a.x + metric_y->G3_12 * a.y + metric_z->G3_13 * a.z);
+    result.z += vcn.y * (metric_x->G3_12 * a.x + metric_y->G3_22 * a.y + metric_z->G3_23 * a.z);
+    result.z += vcn.z * (metric_x->G3_13 * a.x + metric_y->G3_23 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = false;
   }
 
-  result.setLocation(outloc);
-
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, CELL_LOC outloc) {
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
   TRACE("V_dot_Grad( Vector3D , Vector2D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
-  ASSERT1(outloc != CELL_VSHIFT);
   ASSERT1(v.getLocation() == a.getLocation());
-  // Note the following assert means the outloc argument is pointless
-  ASSERT1(v.getLocation() == outloc);
 
-  Mesh *localmesh = v.x.getMesh();
-  Vector3D result(localmesh);
+  Vector3D result{v.x.getMesh()};
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  auto metric_x = v.x.getCoordinates();
+  auto metric_y = v.y.getCoordinates();
+  auto metric_z = v.z.getCoordinates();
 
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  if(a.covariant) {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+  if (a.covariant) {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x -= vcn.x * (metric_x->G1_11 * a.x + metric_y->G2_11 * a.y + metric_z->G3_11 * a.z);
+    result.x -= vcn.y * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.x -= vcn.z * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y -= vcn.x * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.y -= vcn.y * (metric_x->G1_22 * a.x + metric_y->G2_22 * a.y + metric_z->G3_22 * a.z);
+    result.y -= vcn.z * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
-    result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z -= vcn.x * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
+    result.z -= vcn.y * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
+    result.z -= vcn.z * (metric_x->G1_33 * a.x + metric_y->G2_33 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = true;
-  }else {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+  } else {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x += vcn.x * (metric_x->G1_11 * a.x + metric_y->G1_12 * a.y + metric_z->G1_13 * a.z);
+    result.x += vcn.y * (metric_x->G1_12 * a.x + metric_y->G1_22 * a.y + metric_z->G1_23 * a.z);
+    result.x += vcn.z * (metric_x->G1_13 * a.x + metric_y->G1_23 * a.y + metric_z->G1_33 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
-    result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y += vcn.x * (metric_x->G2_11 * a.x + metric_y->G2_12 * a.y + metric_z->G2_13 * a.z);
+    result.y += vcn.y * (metric_x->G2_12 * a.x + metric_y->G2_22 * a.y + metric_z->G2_23 * a.z);
+    result.y += vcn.z * (metric_x->G2_13 * a.x + metric_y->G2_23 * a.y + metric_z->G2_33 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
-    result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z += vcn.x * (metric_x->G3_11 * a.x + metric_y->G3_12 * a.y + metric_z->G3_13 * a.z);
+    result.z += vcn.y * (metric_x->G3_12 * a.x + metric_y->G3_22 * a.y + metric_z->G3_23 * a.z);
+    result.z += vcn.z * (metric_x->G3_13 * a.x + metric_y->G3_23 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = false;
   }
 
-  result.setLocation(outloc);
-
   return result;
 }
 
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, CELL_LOC outloc) {
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
   TRACE("V_dot_Grad( Vector3D , Vector3D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
-  ASSERT1(outloc != CELL_VSHIFT);
   ASSERT1(v.getLocation() == a.getLocation());
-  // Note the following assert means the outloc argument is pointless
-  ASSERT1(v.getLocation() == outloc);
 
-  Mesh *localmesh = v.x.getMesh();
-  Vector3D result(localmesh);
+  Vector3D result{v.x.getMesh()};
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  auto metric_x = v.x.getCoordinates();
+  auto metric_y = v.y.getCoordinates();
+  auto metric_z = v.z.getCoordinates();
 
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  if(a.covariant) {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x -= vcn.x*(metric->G1_11*a.x + metric->G2_11*a.y + metric->G3_11*a.z);
-    result.x -= vcn.y*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.x -= vcn.z*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
+  if (a.covariant) {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x -= vcn.x * (metric_x->G1_11 * a.x + metric_y->G2_11 * a.y + metric_z->G3_11 * a.z);
+    result.x -= vcn.y * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.x -= vcn.z * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y -= vcn.x*(metric->G1_12*a.x + metric->G2_12*a.y + metric->G3_12*a.z);
-    result.y -= vcn.y*(metric->G1_22*a.x + metric->G2_22*a.y + metric->G3_22*a.z);
-    result.y -= vcn.z*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y -= vcn.x * (metric_x->G1_12 * a.x + metric_y->G2_12 * a.y + metric_z->G3_12 * a.z);
+    result.y -= vcn.y * (metric_x->G1_22 * a.x + metric_y->G2_22 * a.y + metric_z->G3_22 * a.z);
+    result.y -= vcn.z * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z -= vcn.x*(metric->G1_13*a.x + metric->G2_13*a.y + metric->G3_13*a.z);
-    result.z -= vcn.y*(metric->G1_23*a.x + metric->G2_23*a.y + metric->G3_23*a.z);
-    result.z -= vcn.z*(metric->G1_33*a.x + metric->G2_33*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z -= vcn.x * (metric_x->G1_13 * a.x + metric_y->G2_13 * a.y + metric_z->G3_13 * a.z);
+    result.z -= vcn.y * (metric_x->G1_23 * a.x + metric_y->G2_23 * a.y + metric_z->G3_23 * a.z);
+    result.z -= vcn.z * (metric_x->G1_33 * a.x + metric_y->G2_33 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = true;
-  }else {
-    result.x = VDDX(vcn.x, a.x, outloc) + VDDY(vcn.y, a.x, outloc) + VDDZ(vcn.z, a.x, outloc);
-    result.x += vcn.x*(metric->G1_11*a.x + metric->G1_12*a.y + metric->G1_13*a.z);
-    result.x += vcn.y*(metric->G1_12*a.x + metric->G1_22*a.y + metric->G1_23*a.z);
-    result.x += vcn.z*(metric->G1_13*a.x + metric->G1_23*a.y + metric->G1_33*a.z);
+  } else {
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x += vcn.x * (metric_x->G1_11 * a.x + metric_y->G1_12 * a.y + metric_z->G1_13 * a.z);
+    result.x += vcn.y * (metric_x->G1_12 * a.x + metric_y->G1_22 * a.y + metric_z->G1_23 * a.z);
+    result.x += vcn.z * (metric_x->G1_13 * a.x + metric_y->G1_23 * a.y + metric_z->G1_33 * a.z);
 
-    result.y = VDDX(vcn.x, a.y, outloc) + VDDY(vcn.y, a.y, outloc) + VDDZ(vcn.z, a.y, outloc);
-    result.y += vcn.x*(metric->G2_11*a.x + metric->G2_12*a.y + metric->G2_13*a.z);
-    result.y += vcn.y*(metric->G2_12*a.x + metric->G2_22*a.y + metric->G2_23*a.z);
-    result.y += vcn.z*(metric->G2_13*a.x + metric->G2_23*a.y + metric->G2_33*a.z);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y += vcn.x * (metric_x->G2_11 * a.x + metric_y->G2_12 * a.y + metric_z->G2_13 * a.z);
+    result.y += vcn.y * (metric_x->G2_12 * a.x + metric_y->G2_22 * a.y + metric_z->G2_23 * a.z);
+    result.y += vcn.z * (metric_x->G2_13 * a.x + metric_y->G2_23 * a.y + metric_z->G2_33 * a.z);
 
-    result.z = VDDX(vcn.x, a.z, outloc) + VDDY(vcn.y, a.z, outloc) + VDDZ(vcn.z, a.z, outloc);
-    result.z += vcn.x*(metric->G3_11*a.x + metric->G3_12*a.y + metric->G3_13*a.z);
-    result.z += vcn.y*(metric->G3_12*a.x + metric->G3_22*a.y + metric->G3_23*a.z);
-    result.z += vcn.z*(metric->G3_13*a.x + metric->G3_23*a.y + metric->G3_33*a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z += vcn.x * (metric_x->G3_11 * a.x + metric_y->G3_12 * a.y + metric_z->G3_13 * a.z);
+    result.z += vcn.y * (metric_x->G3_12 * a.x + metric_y->G3_22 * a.y + metric_z->G3_23 * a.z);
+    result.z += vcn.z * (metric_x->G3_13 * a.x + metric_y->G3_23 * a.y + metric_z->G3_33 * a.z);
 
     result.covariant = false;
   }
 
-  result.setLocation(outloc);
-
   return result;
 }
-
-

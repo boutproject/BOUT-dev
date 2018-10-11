@@ -123,11 +123,9 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
 
 /// Advection of a vector field \p a by a velocity vector \p v
-///
-/// Both vectors must be at the same location, which cannot be CELL_VSHIFT
-const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a, CELL_LOC outloc);
-const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a, CELL_LOC outloc);
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a, CELL_LOC outloc);
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a, CELL_LOC outloc);
+const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
+const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
+const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a);
 
 #endif // __VECOPS_H__
