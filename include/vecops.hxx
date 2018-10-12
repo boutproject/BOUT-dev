@@ -36,6 +36,8 @@
 
 /// Gradient of scalar field \p f, returning a covariant vector
 ///
+/// All locations supported
+///
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc The location where the result is desired (if staggered meshes are enabled)
 ///                   By default this is the same location as the input \p f
@@ -44,14 +46,32 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 
 /// Gradient of scalar field \p f, returning a covariant vector
 ///
+/// All locations supported
+///
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc_x  The cell location where the X component should be defined
 /// @param[in] outloc_y  The cell location where the Y component should be defined
 /// @param[in] outloc_z  The cell location where the Z component should be defined
-const Vector3D Grad(const Field3D &f, 
-                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z = CELL_DEFAULT);
+const Vector3D DEPRECATED(Grad(const Field3D &f, 
+			       CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z));
 
 /// Perpendicular gradient of scalar field \p f
+///
+/// outloc must be either CELL_DEFAULT or f.getLocation() --> argument can be removed
+///
+/// result.x = df/dx - g_12/(JB)^2 df/dy
+/// result.y = 0
+/// result.z = df/dz - g_23/(JB)^2 df/dy
+/// 
+/// @param[in] f  The field to differentiate
+/// @param[in] outloc  The cell location where the result is desired
+///
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
+
+/// Perpendicular gradient of scalar field \p f
+///
+///
+/// outloc must all be the same and must be either CELL_DEFAULT or f.getLocation() --> arguments can be removed
 ///
 /// result.x = df/dx - g_12/(JB)^2 df/dy
 /// result.y = 0
@@ -62,12 +82,14 @@ const Vector3D Grad(const Field3D &f,
 /// @param[in] outloc_y  The cell location where the Y component should be defined
 /// @param[in] outloc_z  The cell location where the Z component should be defined
 ///
-const Vector3D Grad_perp(const Field3D &f, 
-			 CELL_LOC outloc_x = CELL_DEFAULT, 
-			 CELL_LOC outloc_y = CELL_DEFAULT,
-			 CELL_LOC outloc_z = CELL_DEFAULT);
+const Vector3D DEPRECATED(Grad_perp(const Field3D &f, 
+				    CELL_LOC outloc_x, 
+				    CELL_LOC outloc_y,
+				    CELL_LOC outloc_z));
 
 /// Divergence of a vector \p v, returning a scalar
+///
+/// All locations except CELL_VSHIFT supported
 ///
 /// @param[in] v  The vector to differentiate
 /// @param[in] outloc  The cell location where the result is desired
@@ -82,23 +104,29 @@ const Field3D Div(const Vector3D &v, const Field3D &f);
 
 /// Curl of a vector
 ///
+/// All locations except CELL_VSHIFT supported
+///
 /// @param[in] v  The vector to differentiate
 /// @param[in] outloc  The cell location where the result is desired
 ///
 const Vector2D Curl(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Curl(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D Curl(const Vector3D &v, 
-                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z);
+const Vector3D DEPRECATED(Curl(const Vector3D &v, 
+			       CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z));
 
 // Upwinding routines
 
 /// Advection of a scalar field \p f by a velocity vector \p v
+///
+/// Both vectors must be at the same location, which cannot be CELL_VSHIFT
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
 
 /// Advection of a vector field \p a by a velocity vector \p v
+///
+/// Both vectors must be at the same location, which cannot be CELL_VSHIFT
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
