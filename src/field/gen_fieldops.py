@@ -91,6 +91,8 @@ class Field(object):
         # Name of jz variable
         self.jz_var = jz_var
         self.mixed_base_ind_var = mixed_base_ind_var
+        #Note region_type isn't actually used currently but
+        #may be useful in future.
         if self.field_type == "Field3D":
             self.region_type="3D"
         elif self.field_type == "Field2D":
