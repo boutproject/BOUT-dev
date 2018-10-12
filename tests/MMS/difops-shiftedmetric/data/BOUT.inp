@@ -1,7 +1,7 @@
 # partial input file, further options are set using boutcore
 # interface in runtest
 
-twistshift = true
+twistshift = false
 
 [mesh]
 nx = 6
