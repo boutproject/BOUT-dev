@@ -91,6 +91,10 @@ class FieldPerp : public Field {
 
   const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
+  /// Return a Region<IndPerp> reference to use to iterate over this field
+  const Region<IndPerp>& getRegion(REGION region) const;  
+  const Region<IndPerp>& getRegion(const std::string &region_name) const;
+
   /*!
    * Direct data access using DataIterator indexing
    */

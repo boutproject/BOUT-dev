@@ -355,6 +355,13 @@ const IndexRange Field3D::region2D(REGION rgn) const {
   };
 }
 
+const Region<Ind3D> &Field3D::getRegion(REGION region) const {
+  return fieldmesh->getRegion3D(REGION_STRING(region));
+};
+const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegion3D(region_name);
+};
+
 /////////////////// ASSIGNMENT ////////////////////
 
 Field3D & Field3D::operator=(const Field3D &rhs) {
