@@ -650,12 +650,12 @@ class Mesh {
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
-  Region<> &getRegion(const std::string &region_name){
+  const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
-  Region<Ind3D> &getRegion3D(const std::string &region_name);
-  Region<Ind2D> &getRegion2D(const std::string &region_name);
-  Region<IndPerp> &getRegionPerp(const std::string &region_name);
+  const Region<Ind3D> &getRegion3D(const std::string &region_name) const;
+  const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
+  const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
   /// Add a new region to the region_map for the data iterator
   ///

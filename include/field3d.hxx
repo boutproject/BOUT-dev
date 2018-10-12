@@ -328,6 +328,10 @@ class Field3D : public Field, public FieldData {
    */
   const IndexRange DEPRECATED(region2D(REGION rgn)) const;
 
+  /// Return a Region<Ind3D> reference to use to iterate over this field
+  const Region<Ind3D>& getRegion(REGION region) const;  
+  const Region<Ind3D>& getRegion(const std::string &region_name) const;
+  
   /*!
    * Direct data access using DataIterator object.
    * This uses operator(x,y,z) so checks will only be
