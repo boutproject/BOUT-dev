@@ -656,9 +656,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     tmp.setLocation(var.getLocation());
     return tmp;
   }
-
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
   
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -672,7 +669,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.mm = var[i.xmm()];
           s.m = var[i.xm()];
           s.c = var[i];
@@ -697,7 +694,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.m = var[i.xm()];
           s.c = var[i];
           s.p = var[i.xp()];
@@ -726,7 +723,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.mm = var[i.xmm()];
           s.m = var[i.xm()];
           s.c = var[i];
@@ -741,7 +738,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.m = var[i.xm()];
           s.c = var[i];
           s.p = var[i.xp()];
@@ -782,9 +779,6 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     return tmp;
   }
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -797,7 +791,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.mm = var[i.xmm()];
           s.m = var[i.xm()];
           s.c = var[i];
@@ -822,7 +816,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.m = var[i.xm()];
           s.c = var[i];
           s.p = var[i.xp()];
@@ -851,7 +845,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.mm = var[i.xmm()];
           s.m = var[i.xm()];
           s.c = var[i];
@@ -866,7 +860,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           s.m = var[i.xm()];
           s.c = var[i];
           s.p = var[i.xp()];
@@ -906,9 +900,6 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     tmp.setLocation(var.getLocation());
     return tmp;
   }
-
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
   
   Field2D result(this);
   result.allocate(); // Make sure data allocated
@@ -919,7 +910,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     BOUT_OMP(parallel)
     {
       stencil s;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, var.getRegion(region)) {
         s.mm = var[i.ymm()];
         s.m = var[i.ym()];
         s.c = var[i];
@@ -933,7 +924,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
     BOUT_OMP(parallel)
     {
       stencil s;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, var.getRegion(region)) {
         s.m = var[i.ym()];
         s.c = var[i];
         s.p = var[i.yp()];
@@ -989,7 +980,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
 
           // Set stencils
           s.m = var.ydown()[i.ym()];
@@ -1014,7 +1005,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       BOUT_OMP(parallel)
       {
         stencil s;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, var.getRegion(region)) {
           // Set stencils
           s.m = var.ydown()[i.ym()];
           s.c = var[i];
@@ -1037,7 +1028,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         // This allows higher-order methods to be used
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, var.getRegion(region)) {
             // Set stencils
             s.mm = var_fa[i.ymm()];
             s.m = var_fa[i.ym()];
@@ -1062,7 +1053,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         // Only one guard cell, so no pp or mm values
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, var.getRegion(region)) {
             // Set stencils
             s.m = var_fa[i.ym()];
             s.c = var_fa[i];
@@ -1090,7 +1081,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         // This allows higher-order methods to be used
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, var.getRegion(region)) {
             // Set stencils
             s.mm = var_fa[i.ymm()];
             s.m = var_fa[i.ym()];
@@ -1105,7 +1096,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
         // Only one guard cell, so no pp or mm values
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, var.getRegion(region)) {
             // Set stencils
             s.m = var_fa[i.ym()];
             s.c = var_fa[i];
@@ -1151,9 +1142,6 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     return tmp;
   }
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -1163,7 +1151,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   BOUT_OMP(parallel)
   {
     stencil s;
-    BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+    BOUT_FOR_INNER(i, var.getRegion(region)) {
       s.mm = var[i.zmm()];
       s.m = var[i.zm()];
       s.c = var[i];
@@ -1721,9 +1709,6 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   Field2D result(this);
   result.allocate(); // Make sure data allocated
 
@@ -1731,7 +1716,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil s;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         s.mm = f[i.xmm()];
         s.m = f[i.xm()];
         s.c = f[i];
@@ -1746,7 +1731,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil s;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         s.m = f[i.xm()];
         s.c = f[i];
         s.p = f[i.xp()];
@@ -1788,9 +1773,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -1815,7 +1797,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       if (vloc == CELL_XLOW) {
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.mm = f[i.xmm()];
             fs.m = f[i.xm()];
             fs.c = f[i];
@@ -1834,7 +1816,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.mm = f[i.xmm()];
             fs.m = f[i.xm()];
             fs.c = f[i];
@@ -1856,7 +1838,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       if (vloc == CELL_XLOW) {
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.m = f[i.xm()];
             fs.c = f[i];
             fs.p = f[i.xp()];
@@ -1872,7 +1854,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.m = f[i.xm()];
             fs.c = f[i];
             fs.p = f[i.xp()];
@@ -1901,7 +1883,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Two or more guard cells
       BOUT_OMP(parallel) {
         stencil fs;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           fs.mm = f[i.xmm()];
           fs.m = f[i.xm()];
           fs.c = f[i];
@@ -1915,7 +1897,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Only one guard cell
       BOUT_OMP(parallel) {
         stencil fs;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           fs.m = f[i.xm()];
           fs.c = f[i];
           fs.p = f[i.xp()];
@@ -1966,9 +1948,6 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   ASSERT1(this->ystart > 0); // Must have at least one guard cell
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -1991,7 +1970,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         // Two or more guard cells
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.mm = f[i.ymm()];
             fs.m = f[i.ym()];
             fs.c = f[i];
@@ -2010,7 +1989,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         // Only one guard cell
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.m = f[i.ym()];
             fs.c = f[i];
             fs.p = f[i.yp()];
@@ -2028,7 +2007,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         // Two or more guard cells
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.mm = f[i.ymm()];
             fs.m = f[i.ym()];
             fs.c = f[i];
@@ -2047,7 +2026,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         // Only one guard cell
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.m = f[i.ym()];
             fs.c = f[i];
             fs.p = f[i.yp()];
@@ -2077,7 +2056,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       // Two or more guard cells
       BOUT_OMP(parallel) {
         stencil fs;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           fs.mm = f[i.ymm()];
           fs.m = f[i.ym()];
           fs.c = f[i];
@@ -2091,7 +2070,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       // Only one guard cell
       BOUT_OMP(parallel) {
         stencil fs;
-        BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           fs.m = f[i.ym()];
           fs.c = f[i];
           fs.p = f[i.yp()];
@@ -2140,9 +2119,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   ASSERT1(this->ystart > 0); // Need at least one guard cell
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2171,7 +2147,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Both v and f have up/down fields
       BOUT_OMP(parallel) {
         stencil vval, fval;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           vval.m = v.ydown()[i.ym()];
           vval.c = v[i];
           vval.p = v.yup()[i.yp()];
@@ -2199,7 +2175,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       Field3D f_fa = this->toFieldAligned(f);
       BOUT_OMP(parallel) {
         stencil vval, fval;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           vval.mm = v_fa[i.ymm()];
           vval.m = v_fa[i.ym()];
           vval.c = v_fa[i];
@@ -2243,7 +2219,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       const Field3D f_ydown = f.ydown();
       BOUT_OMP(parallel) {
         stencil fs;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           fs.m = f_ydown[i.ym()];
           fs.c = f[i];
           fs.p = f_yup[i.yp()];
@@ -2259,7 +2235,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       if (this->ystart > 1) {
         BOUT_OMP(parallel) {
           stencil fs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.mm = f_fa[i.ymm()];
             fs.m = f_fa[i.ym()];
             fs.c = f_fa[i];
@@ -2272,7 +2248,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       } else {
         BOUT_OMP(parallel) {
           stencil fs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             fs.m = f_fa[i.ym()];
             fs.c = f_fa[i];
             fs.p = f_fa[i.yp()];
@@ -2318,9 +2294,6 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2338,7 +2311,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     BOUT_OMP(parallel) {
       stencil vval, fval;
-      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fval.mm = f[i.zmm()];
         fval.m = f[i.zm()];
         fval.c = f[i];
@@ -2375,7 +2348,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
     BOUT_OMP(parallel) {
       stencil fval;
-      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fval.mm = f[i.zmm()];
         fval.m = f[i.zm()];
         fval.c = f[i];
@@ -2430,14 +2403,11 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (this->xstart > 1) {
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil fs, vs;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fs.mm = f[i.xmm()];
         fs.m = f[i.xm()];
         fs.c = f[i];
@@ -2457,7 +2427,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil fs, vs;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fs.m = f[i.xm()];
         fs.c = f[i];
         fs.p = f[i.xp()];
@@ -2521,9 +2491,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (this->xstart > 1) {
     // Two or more guard cells
     if (StaggerGrids && vloc != inloc) {
@@ -2531,7 +2498,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Producing a stencil centred around a lower X value
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             // Location of f always the same as the output
             fs.mm = f[i.xmm()];
             fs.m = f[i.xm()];
@@ -2552,7 +2519,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Stencil centred around a cell centre
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             // Location of f always the same as the output
             fs.mm = f[i.xmm()];
             fs.m = f[i.xm()];
@@ -2573,7 +2540,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Non-staggered, two or more guard cells
       BOUT_OMP(parallel) {
         stencil fs, vs;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           // Location of f always the same as the output
           fs.mm = f[i.xmm()];
           fs.m = f[i.xm()];
@@ -2599,7 +2566,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Producing a stencil centred around a lower X value
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             // Location of f always the same as the output
             fs.m = f[i.xm()];
             fs.c = f[i];
@@ -2617,7 +2584,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
         // Stencil centred around a cell centre
         BOUT_OMP(parallel) {
           stencil fs, vs;
-          BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, f.getRegion(region)) {
             // Location of f always the same as the output
             fs.m = f[i.xm()];
             fs.c = f[i];
@@ -2635,7 +2602,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Non-staggered, one guard cell
       BOUT_OMP(parallel) {
         stencil fs, vs;
-        BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+        BOUT_FOR_INNER(i, f.getRegion(region)) {
           // Location of f always the same as the output
           fs.m = f[i.xm()];
           fs.c = f[i];
@@ -2692,14 +2659,11 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(f.getLocation());
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (this->ystart > 1) {
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil fs, vs;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fs.mm = f[i.ymm()];
         fs.m = f[i.ym()];
         fs.c = f[i];
@@ -2720,7 +2684,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Only one guard cell
     BOUT_OMP(parallel) {
       stencil fs, vs;
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fs.m = f[i.ym()];
         fs.c = f[i];
         fs.p = f[i.yp()];
@@ -2797,14 +2761,11 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
     BOUT_OMP(parallel) {
       stencil fval, vval;
-      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fval.m = f.ydown()[i.ym()];
         fval.c = f[i];
         fval.p = f.yup()[i.yp()];
@@ -2834,7 +2795,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     Field3D f_fa = this->toFieldAligned(f);
     BOUT_OMP(parallel) {
       stencil fval, vval;
-      BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, f.getRegion(region)) {
         fval.mm = f_fa[i.ymm()];
         fval.m = f_fa[i.ym()];
         fval.c = f_fa[i];
@@ -2917,12 +2878,9 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
   Field3D result(this);
   result.allocate(); // Make sure data allocated
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   BOUT_OMP(parallel) {
     stencil vval, fval;
-    BOUT_FOR_INNER(i, this->getRegion3D(region_str)) {
+    BOUT_FOR_INNER(i, f.getRegion(region)) {
       fval.mm = f[i.zmm()];
       fval.m = f[i.zm()];
       fval.c = f[i];
