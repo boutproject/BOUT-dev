@@ -345,7 +345,7 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGI
                     / (coords->dy(i,j) * coords->dz);
       }
   // TODO: use region aware implementation
-  // BOUT_FOR(i, f.getMesh()->getRegion3D(REGION_STRING(region))) {
+  // BOUT_FOR(i, f.getRegion(region)) {
   // result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
   //                              / (coords->dy[i.yp()])
   //                    -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])

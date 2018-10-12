@@ -427,13 +427,10 @@ BOUT_OMP(for)
   result.allocate();
   result.setIndex(yindex);
 
-  #if CHECK>2
+#if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them
-  const auto &region = mesh->getRegionPerp("RGN_ALL");
-  BOUT_FOR(i, region) {
-    result[i] = BoutNaN;
-  }
-  #endif
+  result = BoutNan;
+#endif
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))
