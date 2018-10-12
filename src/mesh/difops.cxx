@@ -740,52 +740,25 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
  * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
  *******************************************************************************/
 
-/*!
- * Calculate location of result
- */
-// use anonymous namespace so this function is only available in this file
-namespace {
-  CELL_LOC bracket_location(const CELL_LOC &f_loc, const CELL_LOC &g_loc, const CELL_LOC &outloc, Mesh* localmesh=mesh) {
-    if(!localmesh->StaggerGrids)
-      return CELL_CENTRE;
-
-    if(outloc == CELL_DEFAULT){
-      // Check that f and g are in the same location
-      if (f_loc != g_loc){
-        throw BoutException("Bracket currently requires both fields to have the same cell location");
-      }else {
-        return f_loc;      	  // Location of result
-      }
-    }
-
-    // Check that f, and g are in the same location as the specified output location
-    if(f_loc != g_loc || f_loc != outloc){
-      throw BoutException("Bracket currently requires the location of both fields and the output locaton to be the same");
-    }
-
-    return outloc;      	  // Location of result
-  }
-}
-
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
+  if (outloc == CELL_DEFAULT)
+    outloc = g.getLocation();
+  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Field2D result(f.getMesh());
 
-  // Sort out cell locations
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
-  
   if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
     result = 0.0;
+    result.setLocation(outloc);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / f.getCoordinates(result_loc)->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(outloc)->Bxy;
   }
-  result.setLocation(result_loc);
   return result;
 }
 
@@ -794,14 +767,15 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   TRACE("bracket(Field3D, Field2D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
+  if (outloc == CELL_DEFAULT)
+    outloc = g.getLocation();
+  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
 
   Field3D result(mesh);
 
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
-
-  Coordinates *metric = f.getCoordinates(result_loc);
+  Coordinates *metric = f.getCoordinates(outloc);
 
   switch(method) {
   case BRACKET_CTU: {
@@ -812,6 +786,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
       throw BoutException("CTU method requires access to the solver");
     
     result.allocate();
+    result.setLocation(outloc);
     
     int ncz = mesh->LocalNz;
     for(int x=mesh->xstart;x<=mesh->xend;x++)
@@ -849,6 +824,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
     result.allocate();
+    result.setLocation(outloc);
 
     const BoutReal fac = 1.0 / (12 * metric->dz);
     const int ncz = mesh->LocalNz;
@@ -919,6 +895,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   }
   case BRACKET_ARAKAWA_OLD: {
     result.allocate();
+    result.setLocation(outloc);
     const int ncz = mesh->LocalNz;
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
     BOUT_OMP(parallel for)
@@ -958,15 +935,14 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   }
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
-    result = VDDX(DDZ(f), g);
+    result = VDDX(DDZ(f, outloc), g, outloc);
     break;
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
-  result.setLocation(result_loc);
   return result;
 }
 
@@ -975,12 +951,13 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
   TRACE("bracket(Field2D, Field3D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
+  if (outloc == CELL_DEFAULT)
+    outloc = g.getLocation();
+  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
 
   Field3D result(mesh);
-
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
 
   switch(method) {
   case BRACKET_CTU:
@@ -992,16 +969,15 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
     break;
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
-    result = VDDZ(-DDX(f), g);
+    result = VDDZ(-DDX(f, outloc), g, outloc);
     break;
   }
   default: {
     // Use full expression with all terms
-    Coordinates *metric = f.getCoordinates(result_loc);
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    Coordinates *metric = f.getCoordinates(outloc);
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
-  result.setLocation(result_loc) ;
   
   return result;
 }
@@ -1011,18 +987,19 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   TRACE("Field3D, Field3D");
 
   ASSERT1(f.getMesh() == g.getMesh());
+  if (outloc == CELL_DEFAULT)
+    outloc = g.getLocation();
+  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
 
   Field3D result(mesh);
 
-  CELL_LOC result_loc = bracket_location(f.getLocation(), g.getLocation(), outloc, f.getMesh());
-
-  Coordinates *metric = f.getCoordinates(result_loc);
+  Coordinates *metric = f.getCoordinates(outloc);
 
   if (mesh->GlobalNx == 1 || mesh->GlobalNz == 1) {
     result=0;
-    result.setLocation(result_loc);
+    result.setLocation(outloc);
     return result;
   }
   
@@ -1038,6 +1015,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     BoutReal dt = solver->getCurrentTimestep();
     
     result.allocate();
+    result.setLocation(outloc);
 
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
@@ -1128,6 +1106,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow
     
     result.allocate();
+    result.setLocation(outloc);
     
     const int ncz = mesh->LocalNz;
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
@@ -1221,6 +1200,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow
 
     result.allocate();
+    result.setLocation(outloc);
 
     const int ncz = mesh->LocalNz;
     const BoutReal partialFactor = 1.0 / (12 * metric->dz);
@@ -1270,16 +1250,14 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   }
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
-    result = VDDX(DDZ(f), g) + VDDZ(-DDX(f), g);
+    result = VDDX(DDZ(f, outloc), g, outloc) + VDDZ(-DDX(f, outloc), g, outloc);
     break;
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
   }
   }
-  
-  result.setLocation(result_loc) ;
   
   return result;
 }
