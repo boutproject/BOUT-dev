@@ -28,23 +28,23 @@ Coordinates::Coordinates(Mesh *mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
-  if (mesh->get(dx, "dx")) {
+  if (localmesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
 
-  if (mesh->periodicX) {
-    mesh->communicate(dx);
+  if (localmesh->periodicX) {
+    localmesh->communicate(dx);
   }
 
-  if (mesh->get(dy, "dy")) {
+  if (localmesh->get(dy, "dy")) {
     output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
 
-  nz = mesh->LocalNz;
+  nz = localmesh->LocalNz;
 
-  if (mesh->get(dz, "dz")) {
+  if (localmesh->get(dz, "dz")) {
     // Couldn't read dz from input
     int zperiod;
     BoutReal ZMIN, ZMAX;
@@ -64,14 +64,14 @@ Coordinates::Coordinates(Mesh *mesh)
   }
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  mesh->get(g11, "g11", 1.0);
-  mesh->get(g22, "g22", 1.0);
-  mesh->get(g33, "g33", 1.0);
+  localmesh->get(g11, "g11", 1.0);
+  localmesh->get(g22, "g22", 1.0);
+  localmesh->get(g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  mesh->get(g12, "g12", 0.0);
-  mesh->get(g13, "g13", 0.0);
-  mesh->get(g23, "g23", 0.0);
+  localmesh->get(g12, "g12", 0.0);
+  localmesh->get(g13, "g13", 0.0);
+  localmesh->get(g23, "g23", 0.0);
 
   // Check input metrics
   if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -86,19 +86,19 @@ Coordinates::Coordinates(Mesh *mesh)
 
   /// Find covariant metric components
   // Check if any of the components are present
-  if (mesh->sourceHasVar("g_11") or mesh->sourceHasVar("g_22") or
-      mesh->sourceHasVar("g_33") or mesh->sourceHasVar("g_12") or
-      mesh->sourceHasVar("g_13") or mesh->sourceHasVar("g_23")) {
+  if (localmesh->sourceHasVar("g_11") or localmesh->sourceHasVar("g_22") or
+      localmesh->sourceHasVar("g_33") or localmesh->sourceHasVar("g_12") or
+      localmesh->sourceHasVar("g_13") or localmesh->sourceHasVar("g_23")) {
     // Check that all components are present
-    if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22") and
-        mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
-        mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
-      mesh->get(g_11, "g_11");
-      mesh->get(g_22, "g_22");
-      mesh->get(g_33, "g_33");
-      mesh->get(g_12, "g_12");
-      mesh->get(g_13, "g_13");
-      mesh->get(g_23, "g_23");
+    if (localmesh->sourceHasVar("g_11") and localmesh->sourceHasVar("g_22") and
+        localmesh->sourceHasVar("g_33") and localmesh->sourceHasVar("g_12") and
+        localmesh->sourceHasVar("g_13") and localmesh->sourceHasVar("g_23")) {
+      localmesh->get(g_11, "g_11");
+      localmesh->get(g_22, "g_22");
+      localmesh->get(g_33, "g_33");
+      localmesh->get(g_12, "g_12");
+      localmesh->get(g_13, "g_13");
+      localmesh->get(g_23, "g_23");
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -124,7 +124,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read J from the grid file
   Field2D Jcalc = J;
-  if (mesh->get(J, "J")) {
+  if (localmesh->get(J, "J")) {
     output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
@@ -137,7 +137,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read Bxy from the grid file
   Field2D Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy")) {
+  if (localmesh->get(Bxy, "Bxy")) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
     Bxy = Bcalc;
@@ -155,15 +155,15 @@ Coordinates::Coordinates(Mesh *mesh)
     throw BoutException("Differential geometry failed\n");
   }
 
-  if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
+  if (localmesh->get(ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
 
   //////////////////////////////////////////////////////
 
-  if (mesh->IncIntShear) {
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+  if (localmesh->IncIntShear) {
+    if (localmesh->get(IntShiftTorsion, "IntShiftTorsion")) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
@@ -174,32 +174,73 @@ Coordinates::Coordinates(Mesh *mesh)
 namespace {
   /// Interpolate a Field2D to a new CELL_LOC with interp_to.
   /// Communicates to set internal guard cells.
-  /// Boundary guard cells are set equal to the nearest grid point (equivalent to
-  /// 2nd order accurate Neumann boundary condition).
+  /// Boundary guard cells are set by extrapolating from the grid, like
+  /// 'free_o3' boundary conditions
   /// Corner guard cells are set to BoutNaN
-  Field2D interpolateAndNeumann(const Field2D &f, CELL_LOC location) {
+  Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
     Mesh* localmesh = f.getMesh();
     Field2D result = interp_to(f, location, RGN_NOBNDRY);
+    // Ensure result's data is unique. Otherwise result might be a duplicate of
+    // f (if no interpolation is needed, e.g. if interpolation is in the
+    // z-direction); then f would be communicated. Since this function is used
+    // on geometrical quantities that might not be periodic in y even on closed
+    // field lines (due to dependence on integrated shear), we don't want to
+    // communicate f. We will sort out result's boundary guard cells below, but
+    // not f's so we don't want to change f.
+    result.allocate();
     localmesh->communicate(result);
 
-    // Copy nearest value into boundaries so that differential geometry terms can
-    // be interpolated if necessary
-    // Note: cannot use applyBoundary("neumann") here because applyBoundary()
+    // Extrapolate into boundaries so that differential geometry terms can be
+    // interpolated if necessary
+    // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
     // would try to create a new Coordinates object since we have not finished
-    // initializing yet, leading to an infinite recursion
+    // initializing yet, leading to an infinite recursion.
+    // Also, here we interpolate for the boundary points at xstart/ystart and
+    // (xend+1)/(yend+1) instead of extrapolating.
     for (auto bndry : localmesh->getBoundaries()) {
-      if (bndry->bx != 0) {
-        // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
-        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-          for (int i=0; i<localmesh->xstart; i++)
-            result(bndry->x+i*bndry->bx,bndry->y) = result(bndry->x+(i-1)*bndry->bx, bndry->y-bndry->by);
+      int extrap_start = 0;
+      if ( (location == CELL_XLOW) && (bndry->bx>0) )
+        extrap_start = 1;
+      else if ( (location == CELL_YLOW) && (bndry->by>0) )
+        extrap_start = 1;
+      for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        // interpolate extra boundary point that is missed by interp_to, if
+        // necessary
+        if (extrap_start>0) {
+          // note that either bx or by is >0 here
+          result(bndry->x, bndry->y) =
+            ( 9.*(f(bndry->x-bndry->bx, bndry->y-bndry->by)
+                  + f(bndry->x, bndry->y))
+              - f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)
+              - f(bndry->x+bndry->bx, bndry->y+bndry->by)
+            )/16.;
         }
-      }
-      if (bndry->by != 0) {
-        // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
-        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-          for (int i=0; i<localmesh->ystart; i++)
-            result(bndry->x,bndry->y+i*bndry->by) = result(bndry->x-bndry->bx, bndry->y+(i-1)*bndry->by);
+
+        // set boundary guard cells
+        if ((bndry->bx != 0 && localmesh->GlobalNx-2*bndry->width >= 3) || (bndry->by != 0 && localmesh->GlobalNy-2*bndry->width >= 3)) {
+          if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
+            throw BoutException("Not enough points in the x-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of x-guard cells MXG or decrease number of "
+                "processors in the x-direction NXPE.");
+          }
+          if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
+            throw BoutException("Not enough points in the y-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of y-guard cells MYG or decrease number of "
+                "processors in the y-direction NYPE.");
+          }
+          // extrapolate into boundary guard cells if there are enough grid points
+          for(int i=extrap_start;i<bndry->width;i++) {
+            int xi = bndry->x + i*bndry->bx;
+            int yi = bndry->y + i*bndry->by;
+            result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
+          }
+        } else {
+          // not enough grid points to extrapolate, set equal to last grid point
+          for(int i=extrap_start;i<bndry->width;i++) {
+            result(bndry->x + i*bndry->bx, bndry->y + i*bndry->by) = result(bndry->x - bndry->bx, bndry->y - bndry->by);
+          }
         }
       }
     }
@@ -229,22 +270,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolateAndNeumann(coords_in->dx, location);
-  dy = interpolateAndNeumann(coords_in->dy, location);
+  dx = interpolateAndExtrapolate(coords_in->dx, location);
+  dy = interpolateAndExtrapolate(coords_in->dy, location);
 
-  nz = mesh->LocalNz;
+  nz = localmesh->LocalNz;
 
   dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndNeumann(coords_in->g11, location);
-  g22 = interpolateAndNeumann(coords_in->g22, location);
-  g33 = interpolateAndNeumann(coords_in->g33, location);
+  g11 = interpolateAndExtrapolate(coords_in->g11, location);
+  g22 = interpolateAndExtrapolate(coords_in->g22, location);
+  g33 = interpolateAndExtrapolate(coords_in->g33, location);
 
   // Off-diagonal elements.
-  g12 = interpolateAndNeumann(coords_in->g12, location);
-  g13 = interpolateAndNeumann(coords_in->g13, location);
-  g23 = interpolateAndNeumann(coords_in->g23, location);
+  g12 = interpolateAndExtrapolate(coords_in->g12, location);
+  g13 = interpolateAndExtrapolate(coords_in->g13, location);
+  g23 = interpolateAndExtrapolate(coords_in->g23, location);
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
@@ -273,12 +314,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
+  ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
 
-  if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+  if (localmesh->IncIntShear) {
+    IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location);
   }
 }
 
@@ -648,11 +689,11 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC loc,
 // Parallel gradient
 
 const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc,
-                                    DIFF_METHOD UNUSED(method)) {
+                                    DIFF_METHOD method) {
   TRACE("Coordinates::Grad_par( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
@@ -669,9 +710,9 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          CELL_LOC outloc,
-                                         DIFF_METHOD UNUSED(method)) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return VDDY(v, f) / sqrt(g_22);
+                                         DIFF_METHOD method) {
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
+  return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
@@ -728,43 +769,37 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 // second parallel derivative (b dot Grad)(b dot Grad)
 // Note: For parallel Laplacian use Laplace_par
 
-const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
+const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1. / sg, outloc) * DDY(f, outloc) / sg + D2DY2(f, outloc) / g_22;
+  Field2D result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
 
-const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(location == outloc);
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
 
   sg = sqrt(g_22);
-  sg = DDY(1. / sg) / sg;
+  sg = DDY(1. / sg, outloc, method) / sg;
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
 
-  if (sg.getLocation() != outloc) {
-    localmesh->communicate(sg);
-    sg = interp_to(sg, outloc);
-  }
+  result = ::DDY(f, outloc, method);
 
-  result = ::DDY(f, outloc);
-
-  r2 = D2DY2(f, outloc) / interp_to(g_22, outloc);
+  r2 = D2DY2(f, outloc, method) / g_22;
 
   result = sg * result + r2;
 
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -785,7 +820,10 @@ const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
 
 const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(location == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -793,7 +831,6 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   ASSERT2(f.getLocation() == outloc);
 
   Field3D result(localmesh);
@@ -855,7 +892,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
 
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc);
   ASSERT2(f.getLocation() == outloc);
 
   FieldPerp result(localmesh);

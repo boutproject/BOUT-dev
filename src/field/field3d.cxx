@@ -45,8 +45,8 @@
 
 /// Constructor
 Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), FieldData(localmesh), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -71,6 +71,7 @@ Field3D::Field3D(Mesh *localmesh)
 /// later)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
+      FieldData(f.fieldmesh),
       background(nullptr), data(f.data), // This handles references to the data array
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
@@ -100,8 +101,8 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(f.getMesh()), FieldData(f.getMesh()), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
 
@@ -118,8 +119,8 @@ Field3D::Field3D(const Field2D &f)
 }
 
 Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), FieldData(localmesh), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
 
@@ -354,6 +355,13 @@ const IndexRange Field3D::region2D(REGION rgn) const {
   }
   };
 }
+
+const Region<Ind3D> &Field3D::getRegion(REGION region) const {
+  return fieldmesh->getRegion3D(REGION_STRING(region));
+};
+const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegion3D(region_name);
+};
 
 /////////////////// ASSIGNMENT ////////////////////
 

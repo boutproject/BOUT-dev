@@ -63,6 +63,10 @@ public:
                    Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
+
+  /// Test if grid data source includes y-boundary guard cells.
+  /// Older grid files may not: this then requires some special handling.
+  virtual bool hasYGuards() { return true; }
 };
 
 /// Interface to grid data in a file
@@ -88,6 +92,14 @@ public:
            GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
+
+  // Grid files from hypnotoad don't have y-guard cells at all. But even if
+  // they did, they don't have guard cells for the y-boundaries of the core
+  // region because the grid structure means the grid cells adjacent to the
+  // first/last core cells in the input arrays in the file store data for the
+  // PF region. So until a GridFile supports input with different domains, it
+  // cannot contain *all* y-guard cells
+  bool hasYGuards() override { return false; }
 
 private:
   std::unique_ptr<DataFormat> file;

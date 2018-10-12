@@ -30,12 +30,23 @@ def runtests(functions,derivatives,directions,stag,msg):
             boutcore.setOption("meshD:nD".replace("D",direction)
                                ,"%d"% (nz+ (2*guards if direction == "x" else 0)),force=True)
             boutcore.setOption("meshD:dD".replace("D",direction,)
-                               ,"2*pi/(%d)"%(nz),force=True)
+                               ,"2*pi/(%d)"%(nz) if direction == "z" else "2*pi*(1+.1*sin(2*pi*x)+.1*sin(y))/(%d)"%(nz),force=True)
+            boutcore.setOption("meshD:ddD:first".replace("D",direction,),diff,force=True)
+            boutcore.setOption("meshD:ddD:second".replace("D",direction,),diff,force=True)
+            if stag:
+                boutcore.setOption("meshD:ddD:firststag".replace("D",direction,),diff,force=True)
+                # not all methods available for secondstag, we only test "C2"
+                # so can skip setting here (get error otherwise)
+                #boutcore.setOption("meshD:ddD:secondstag".replace("D",direction,),diff,force=True)
+            else:
+                # method 'diff' may not be available for staggered derivatives, so set C2 explicitly
+                boutcore.setOption("meshD:ddD:firststag".replace("D",direction,),"C2",force=True)
+                boutcore.setOption("meshD:ddD:secondstag".replace("D",direction,),"C2",force=True)
             dirnfac=direction+"*"+fac
             mesh=boutcore.Mesh(section="mesh"+direction)
             f=boutcore.create3D(infunc.replace("%s",dirnfac),mesh
                                 ,outloc=inloc)
-            sim=diff_func(f,method=diff,outloc=outloc)
+            sim=diff_func(f,outloc=outloc)
             if sim.getLocation() != outloc:
                 cent=['CENTRE','CENTER']
                 if outloc in cent and sim.getLocation() in cent:
@@ -71,8 +82,8 @@ doPlot=False
 nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
 
 functions=[
-    ["sin(%s)","cos(%s)"] ,
-    ["cos(%s)", "-sin(%s)"]
+    ["sin(%s)","cos(%s)/(1+.1*sin(2*pi*x)+.1*sin(y))"] ,
+    ["cos(%s)", "-sin(%s)/(1+.1*sin(2*pi*x)+.1*sin(y))"]
 ]
 
 derivatives=[
@@ -99,9 +110,10 @@ derivatives=[
 runtests(functions,derivatives,directions,stag=True,msg="DD")
 
 
+# NB need to include derivative of grid-spacing here
 functions=[
-    ["sin(%s)","-sin(%s)"],
-    ["cos(%s)" , "-cos(%s)"]
+    ["cos(%s)" , "-cos(%s)/(1+.1*sin(2*pi*x)+.1*sin(y))^2 + .1*sin(%s)*cos(%s)/(1+.1*sin(2*pi*x)+.1*sin(y))^3"],
+    ["sin(%s)","-sin(%s)/(1+.1*sin(2*pi*x)+.1*sin(y))^2 - .1*(cos(%s)^2)/(1+.1*sin(2*pi*x)+.1*sin(y))^3"],
 ]
 
 derivatives=[

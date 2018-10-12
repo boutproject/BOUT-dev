@@ -45,7 +45,8 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) :
+  Field(localmesh), FieldData(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -66,6 +67,7 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
+                                     FieldData(f.fieldmesh),
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
@@ -95,7 +97,9 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh) :
+    Field(localmesh), FieldData(localmesh), deriv(nullptr) {
+
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -178,6 +182,13 @@ const IndexRange Field2D::region(REGION rgn) const {
   }
   };
 }
+
+const Region<Ind2D> &Field2D::getRegion(REGION region) const {
+  return fieldmesh->getRegion2D(REGION_STRING(region));
+};
+const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegion2D(region_name);
+};
 
 void Field2D::setLocation(CELL_LOC new_location) {
   if (getMesh()->StaggerGrids) {

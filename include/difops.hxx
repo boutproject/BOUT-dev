@@ -79,7 +79,8 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
  * @param[in] f  The scalar field to be differentiated
  * 
  */
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f);
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f,
+			    CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * vpar times parallel derivative along unperturbed B-field (upwinding)
@@ -121,9 +122,12 @@ const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD meth
  * \f]
  * 
  * @param[in] f  The component of a vector along the magnetic field 
+ * @param[in] outloc  The cell location for the result. By default the same as \p f
+ * @param[in] method  The numerical method to use
  * 
  */
-const Field2D Div_par(const Field2D &f);
+const Field2D Div_par(const Field2D &f,
+    CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * parallel divergence operator
@@ -158,6 +162,8 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CE
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, 
 		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Field2D Div_par_flux(const Field2D &v, const Field2D &f,
+		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 // Divergence of a parallel flow: Div(f*v)
 // Both f and v are interpolated onto cell boundaries
@@ -173,7 +179,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v);
  *
  * Note: For parallel Laplacian use LaplacePar
  */
-const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * second parallel derivative
@@ -186,7 +192,7 @@ const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
  * @param[in] f The field to be differentiated
  * @param[in] outloc The cell location of the result 
  */
-const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * Parallel derivatives, converting between cell-centred and lower cell boundary
@@ -214,10 +220,10 @@ const Field2D Div_par_CtoL(const Field2D &var);
  */
 const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
 const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * Perpendicular Laplacian operator

@@ -662,6 +662,7 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
   
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
@@ -752,8 +753,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -787,6 +786,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
@@ -877,8 +877,6 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -912,6 +910,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
   
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->ystart > 1) {
     // More than one guard cell, so set pp and mm values
@@ -942,8 +941,6 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_L
       }
     }
   }
-
-  result.setLocation(outloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -977,6 +974,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
     // Field "var" has distinct yup and ydown fields which
@@ -1122,8 +1120,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     result = this->fromFieldAligned(result);
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -1156,6 +1152,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
@@ -1173,8 +1170,6 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
       result[i] = func(s);
     }
   }
-
-  result.setLocation(outloc);
 
   return result;
 }
@@ -1197,8 +1192,6 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
           (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
-  Field3D result(this);
-
   if (this->StaggerGrids && (outloc != inloc)) {
     // Shifting in X. Centre -> Xlow, or Xlow -> Centre
 
@@ -1213,9 +1206,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
-  result = applyXdiff(f, func, outloc, region);
-
-  return result;
+  return applyXdiff(f, func, outloc, region);
 }
 
 const Field2D Mesh::indexDDX(const Field2D &f, CELL_LOC outloc,
@@ -1239,8 +1230,6 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
           (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
-  Field3D result(this);
-
   if (this->StaggerGrids && (outloc != inloc)) {
     // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
     func = sfDDY;                // Set default
@@ -1254,9 +1243,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
-  result = applyYdiff(f, func, outloc, region);
-
-  return result;
+  return applyYdiff(f, func, outloc, region);
 }
 
 const Field2D Mesh::indexDDY(const Field2D &f, CELL_LOC outloc,
@@ -1420,8 +1407,6 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
 
   ASSERT1(this == f.getMesh());
 
-  Field3D result(this);
-
   if (StaggerGrids && (outloc != inloc)) {
     // Shifting in X. Centre -> Xlow, or Xlow -> Centre
     func = sfD2DX2;               // Set default
@@ -1435,9 +1420,7 @@ const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc,
       throw BoutException("Cannot use FFT for X derivatives");
   }
 
-  result = applyXdiff(f, func, outloc, region);
-
-  return result;
+  return applyXdiff(f, func, outloc, region);
 }
 
 /*!
@@ -1483,8 +1466,6 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
           (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
-  Field3D result(this);
-
   if (StaggerGrids && (outloc != inloc)) {
     // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
     func = sfD2DY2;               // Set default
@@ -1498,9 +1479,7 @@ const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc,
       throw BoutException("Cannot use FFT for Y derivatives");
   }
 
-  result = applyYdiff(f, func, outloc, region);
-
-  return result;
+  return applyYdiff(f, func, outloc, region);
 }
 
 /*!
@@ -1726,6 +1705,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->xstart > 1) {
     // Two or more guard cells
@@ -1761,8 +1741,6 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.bndry_xin = result.bndry_xout = false;
 #endif
 
-  result.setLocation(outloc);
-
   return result;
 }
 
@@ -1776,6 +1754,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
+
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
   if (outloc == CELL_DEFAULT)
@@ -1787,6 +1766,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -1926,8 +1906,6 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -1957,10 +1935,10 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->LocalNy == 1){
     result=0;
-    result.setLocation(outloc);
     return result;
   }
 
@@ -2102,8 +2080,6 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2131,10 +2107,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   if (this->LocalNy == 1){
     result=0;
-    result.setLocation(outloc);
     return result;
   }
 
@@ -2158,12 +2134,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    // There are four cases, corresponding to whether or not f and v
-    // have yup, ydown fields.
-
-    // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-    // will be used to calculate a derivative along
-    // the magnetic field
+    // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+    // will be used to calculate a derivative along the magnetic field
     bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
     bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
@@ -2195,6 +2167,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     } else {
       // Both must shift to field aligned
+      // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+      // multiply them with one in field-aligned and one in non-field-aligned
+      // coordinates)
       Field3D v_fa = this->toFieldAligned(v);
       Field3D f_fa = this->toFieldAligned(f);
       BOUT_OMP(parallel) {
@@ -2208,7 +2183,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
           fval.mm = f_fa[i.ymm()];
           fval.m = f_fa[i.ym()];
-          fval.c = f[i];
+          fval.c = f_fa[i];
           fval.p = f_fa[i.yp()];
           fval.pp = f_fa[i.ypp()];
 
@@ -2225,6 +2200,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
           result[i] = func(vval, fval);
         }
       }
+
+      result = this->fromFieldAligned(result);
     }
   } else {
     // Non-staggered case
@@ -2286,8 +2263,6 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2317,6 +2292,7 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -2387,8 +2363,6 @@ const Field3D Mesh::indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2426,6 +2400,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
@@ -2520,6 +2495,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -2651,8 +2627,6 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   }
 
-  result.setLocation(outloc);
-
 #if CHECK > 0
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
@@ -2690,7 +2664,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
   Field2D result(this);
   result.allocate(); // Make sure data allocated
-  result.setLocation(f.getLocation());
+  result.setLocation(outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -2733,8 +2707,6 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       }
     }
   }
-
-  result.setLocation(outloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2787,13 +2759,10 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
-  // There are four cases, corresponding to whether or not f and v
-  // have yup, ydown fields.
-
-  // If vUseUpDown is true, field "v" has distinct yup and ydown fields which
-  // will be used to calculate a derivative along
-  // the magnetic field
+  // If *UseUpDown is true, field "*" has distinct yup and ydown fields which
+  // will be used to calculate a derivative along the magnetic field
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
@@ -2830,6 +2799,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     }
   } else {
     // Both must shift to field aligned
+    // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+    // multiply them with one in field-aligned and one in non-field-aligned
+    // coordinates)
     Field3D v_fa = this->toFieldAligned(v);
     Field3D f_fa = this->toFieldAligned(f);
     BOUT_OMP(parallel) {
@@ -2862,9 +2834,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         result[i] = func(vval, fval);
       }
     }
-  }
 
-  result.setLocation(outloc);
+    result = this->fromFieldAligned(result);
+  }
 
 #if CHECK > 0
   // Mark boundaries as invalid
@@ -2916,6 +2888,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated
+  result.setLocation(outloc);
 
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
@@ -2951,7 +2924,6 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       result[i] = func(vval, fval);
     }
   }
-  result.setLocation(outloc);
 
 #if CHECK > 0
   // Mark boundaries as invalid
