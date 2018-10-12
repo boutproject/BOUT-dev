@@ -483,8 +483,10 @@ public:
   /// Note that if the indices are altered using these iterators, the
   /// blocks may become out of sync and will need to manually updated
   typename RegionIndices::iterator begin() { return std::begin(indices); };
+  typename RegionIndices::const_iterator begin() const { return std::begin(indices); };
   typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
   typename RegionIndices::iterator end() { return std::end(indices); };
+  typename RegionIndices::const_iterator end() const { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
   const ContiguousBlocks &getBlocks() const { return blocks; };
