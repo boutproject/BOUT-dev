@@ -1341,8 +1341,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
-        auto i3D = mesh->ind2Dto3D(i, 0);
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        auto i3D = this->ind2Dto3D(i, 0);
         rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
@@ -1598,8 +1598,8 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, mesh->getRegion2D(region_str)) {
-        auto i3D = mesh->ind2Dto3D(i, 0);
+      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
+        auto i3D = this->ind2Dto3D(i, 0);
 
         rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
