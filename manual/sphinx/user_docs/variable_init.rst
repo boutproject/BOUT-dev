@@ -170,6 +170,8 @@ expressions.
    |                                          | :math:`\frac{1}{2}(\tanh[s (x-[c-\frac{w}{2}])]`     |
    |                                          | :math:`- \tanh[s (x-[c+\frac{w}{2}])] )`             |
    +------------------------------------------+------------------------------------------------------+
+   | ``fmod(x)``                              | The modulo operator, returns floating point remainder|
+   +------------------------------------------+------------------------------------------------------+
 
 For field-aligned tokamak simulations, the Y direction is along the
 field and in the core this will have a discontinuity at the twist-shift
