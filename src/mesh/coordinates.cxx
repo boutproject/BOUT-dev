@@ -740,8 +740,9 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_ME
 
 const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
+  }
   ASSERT1(location == outloc);
 
   Field2D sg(localmesh);
@@ -778,7 +779,9 @@ const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
 
 const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field3D )");
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
   ASSERT1(location == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {

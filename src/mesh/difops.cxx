@@ -745,8 +745,9 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
   TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
+  }
   ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Field2D result(f.getMesh());
@@ -767,8 +768,9 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   TRACE("bracket(Field3D, Field2D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
+  }
   ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
@@ -951,8 +953,9 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
   TRACE("bracket(Field2D, Field3D)");
 
   ASSERT1(f.getMesh() == g.getMesh());
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
+  }
   ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
@@ -987,8 +990,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   TRACE("Field3D, Field3D");
 
   ASSERT1(f.getMesh() == g.getMesh());
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
+  }
   ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
 
   Mesh *mesh = f.getMesh();
