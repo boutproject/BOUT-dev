@@ -439,7 +439,7 @@ class Mesh {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
-      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+      coords_map.emplace(location, createDefaultCoordinates(location));
       return coords_map[location].get();
     }
   }
