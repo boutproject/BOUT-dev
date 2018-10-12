@@ -429,7 +429,7 @@ BOUT_OMP(for)
 
 #if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them
-  result = BoutNaN;
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = BoutNaN; }
 #endif
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
