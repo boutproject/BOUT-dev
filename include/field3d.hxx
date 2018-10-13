@@ -157,7 +157,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       To have separate fields for yup and ydown, first call
 
-      f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.createYupYdown(); // f.yup() and f.ydown() separate
 
       f.yup(); // ok
       f.yup()(0,1,0) // error; f.yup not allocated
@@ -229,12 +229,13 @@ class Field3D : public Field, public FieldData {
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitYupYdown();
+  DEPRECATED(void splitYupYdown());
+  void createYupYdown();
 
   /*!
    * Ensure that yup and ydown refer to this field
    */
-  void mergeYupYdown();
+  DEPRECATED(void mergeYupYdown());
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {

@@ -712,7 +712,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
       f_B.mergeYupYdown();
     } else {
       // Distinct fields
-      f_B.splitYupYdown();
+      f_B.createYupYdown();
       f_B.yup() = f.yup() / Bxy_floc;
       f_B.ydown() = f.ydown() / Bxy_floc;
     }

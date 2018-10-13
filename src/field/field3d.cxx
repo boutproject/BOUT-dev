@@ -189,6 +189,17 @@ void Field3D::splitYupYdown() {
   ydown_field = new Field3D(fieldmesh);
 }
 
+void Field3D::createYupYdown() {
+  TRACE("Field3D::createYupYdown");
+  
+  if((yup_field != this) && (yup_field != nullptr))
+    return;
+
+  // yup_field and ydown_field null
+  yup_field = new Field3D(fieldmesh);
+  ydown_field = new Field3D(fieldmesh);
+}
+
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
   
