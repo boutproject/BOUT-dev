@@ -7,7 +7,7 @@ from __future__ import division
 #from builtins import str
 #from builtins import object
 
-from sympy import symbols, cos, sin, diff, sqrt, pi, simplify, trigsimp, Wild, integrate
+from sympy import symbols, cos, sin, diff, sqrt, pi, simplify, trigsimp, Wild, integrate, Heaviside, DiracDelta
 
 from numpy import arange, newaxis
 #from numpy import arange, zeros
@@ -56,12 +56,16 @@ metric = Metric()
 # Basic differencing
 def ddt(f):
     """Time derivative"""
-    return diff(f, t)
+    # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+    # just ignore the derivative at the discontinuity
+    return diff(f, t).replace(DiracDelta, lambda args: 0.)
 
 
 def DDX(f):
     # psiwidth = dx/dx_in
-    return diff(f, metric.x)/metric.psiwidth/metric.scalex
+    # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+    # just ignore the derivative at the discontinuity
+    return diff(f, metric.x).replace(DiracDelta, lambda args: 0.) /metric.psiwidth/metric.scalex
 
 def DDY(f):
     if metric.shifted:
@@ -69,15 +73,21 @@ def DDY(f):
         f_shifted = f.subs(metric.z, metric.z + metric.zShift)
 
         # take y-derivative
-        result_shifted = diff(f_shifted, metric.y)/metric.scaley
+        # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+        # just ignore the derivative at the discontinuity
+        result_shifted = diff(f_shifted, metric.y).replace(DiracDelta, lambda args: 0.)/metric.scaley
 
         # shift the output back, and return
         return result_shifted.subs(metric.z, metric.z - metric.zShift)
     else:
-        return diff(f, metric.y)/metric.scaley
+        # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+        # just ignore the derivative at the discontinuity
+        return diff(f, metric.y).replace(DiracDelta, lambda args: 0.)/metric.scaley
 
 def DDZ(f):
-    return diff(f, metric.z)*metric.zperiod
+    # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+    # just ignore the derivative at the discontinuity
+    return diff(f, metric.z).replace(DiracDelta, lambda args: 0.) * metric.zperiod
 
 
 def D2DX2(f):
@@ -93,7 +103,12 @@ def D2DZ2(f):
 # don't include derivatives of scalex/scaley, to match BOUT++ implementation
 # where D4D*4 are used just for numerical 'hyperdiffusion'
 def D4DX4(f):
-    return diff(f, metric.x, 4)/metric.psiwidth**4/metric.scalex**4
+    # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+    # just ignore the derivative at the discontinuity
+    deriv = f
+    for i in range(4):
+        deriv = diff(deriv, metric.x).replace(DiracDelta, lambda args: 0.)
+    return deriv/metric.psiwidth**4/metric.scalex**4
 
 def D4DY4(f):
     if metric.shifted:
@@ -101,15 +116,24 @@ def D4DY4(f):
         f_shifted = f.subs(metric.z, metric.z + metric.zShift)
 
         # take y-derivative
-        result_shifted = diff(f_shifted, metric.y, 4)/metric.scaley**4
+        deriv = f_shifted
+        for i in range(4):
+            deriv = diff(deriv, metric.y).replace(DiracDelta, lambda args: 0.)
+        result_shifted = deriv/metric.scaley**4
 
         # shift the output back, and return
         return result_shifted.subs(metric.z, metric.z - metric.zShift)
     else:
-        return diff(f, metric.y, 4)/metric.scaley**4
+        deriv = f
+        for i in range(4):
+            deriv = diff(deriv, metric.y).replace(DiracDelta, lambda args: 0.)
+        return deriv/metric.scaley**4
 
 def D4DZ4(f):
-    return diff(f, metric.z, 4)*metric.zperiod**4
+    deriv = f
+    for i in range(4):
+        deriv = diff(deriv, metric.z).replace(DiracDelta, lambda args: 0.)
+    return deriv*metric.zperiod**4
 
 
 def D2DXDY(f):
@@ -256,7 +280,11 @@ def exprToStr(expr):
     Convert a sympy expression to a string for BOUT++ input
     """
 
-    s = str(expr).replace("**", "^") # Replace exponent operator
+    s = str(expr)
+
+    s = s.replace("**", "^") # Replace exponent operator
+    s = s.replace("Heaviside", "H") # Replace Heaviside function
+    s = s.replace("DiracDelta", "0.*") # Don't include DiracDelta, assume derivatives of Heaviside functions are only used away from 0
 
     # Try to remove lots of 1.0*...
     s = s.replace("(1.0*", "(")
@@ -618,16 +646,18 @@ class SimpleTokamak(BaseTokamak):
         # dpsi = Bp * R * dr  -- width of the box in psi space
         self.psiwidth = Bp0 * self.R * self.dr
         self.psi0 = Bp0 * R * self.r # value of psi at 'separatrix' taken to be at r, psi=0 at magnetic axis
+        self.psiN = self.psiN0 + self.x/self.psi0
 
         # Get safety factor
         self.q = q((x + self.psiN0*self.psi0)/self.psi0)
 
-        # Toroidal angle of a field-line as function
-        # of poloidal angle y
-        self.zShift = self.q*(self.y-pi + eps * sin(y-pi))
-
         # Toroidal shift of field line at branch cut where poloidal angle goes 2pi->0
         self.shiftAngle = 2*pi*self.q
+
+        # Toroidal angle of a field-line as function
+        # of poloidal angle y
+        # Adjust in lower PF region (psi<psiN, y>2pi) to make zShift continuous by using shiftAngle
+        self.zShift = self.q*(self.y-pi + eps * sin(y-pi)) - Heaviside(-(self.psiN - 1))*Heaviside(self.y - 2*pi)*self.shiftAngle
 
         # Field-line pitch
         self.nu = self.q*(1 + eps*cos(y-pi)) #diff(self.zShift, y)
@@ -652,14 +682,17 @@ class SimpleTokamak(BaseTokamak):
         if shifted:
             self.sinty = 0*y
         else:
-            self.sinty = diff(self.zShift, x)
+            # Replace DiracDelta with zero so we can take derivatives of Heaviside and
+            # just ignore the derivative at the discontinuity
+            self.sinty = diff(self.zShift, x).replace(DiracDelta, lambda args: 0.)
 
         # Convert all "x" symbols from flux to [0,1]
         xsub = metric.x * self.psiwidth
 
+        self.psiN = self.psiN.subs(x, xsub)
         self.q = self.q.subs(x, xsub)
-        self.zShift = self.zShift.subs(x, xsub)
         self.shiftAngle = self.shiftAngle.subs(x, xsub)
+        self.zShift = self.zShift.subs(x, xsub)
         self.nu = self.nu.subs(x, xsub)
         self.Rxy = self.Rxy.subs(x, xsub)
         self.Zxy = self.Zxy.subs(x, xsub)
