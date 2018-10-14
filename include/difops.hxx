@@ -173,7 +173,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v);
  *
  * Note: For parallel Laplacian use LaplacePar
  */
-const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * second parallel derivative
@@ -186,7 +186,7 @@ const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
  * @param[in] f The field to be differentiated
  * @param[in] outloc The cell location of the result 
  */
-const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
 /*!
  * Parallel derivatives, converting between cell-centred and lower cell boundary
