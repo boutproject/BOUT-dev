@@ -213,8 +213,8 @@ class BoutMesh : public Mesh {
   int YPROC(int yind);
   int XPROC(int xind);
 
-  // Twist-shift switches, should be 0 or +/-1
-  int TS_up_in, TS_up_out, TS_down_in, TS_down_out;
+  // Twist-shift switches
+  bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
 
   // Communication parameters calculated by topology
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
@@ -233,7 +233,7 @@ class BoutMesh : public Mesh {
   int  MXG, MYG;     // Boundary sizes
 
   void default_connections();
-  void set_connection(int ypos1, int ypos2, int xge, int xlt, int ts = 0);
+  void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
   void topology();
   

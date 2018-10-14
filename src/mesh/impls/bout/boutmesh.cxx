@@ -1112,30 +1112,29 @@ int BoutMesh::wait(comm_handle handle) {
 
     // Perform Twist-shift using shifting method
     // Loop over 3D fields
-    // Multiply by TS_*_* for sign of shift
     for (const auto &var : ch->var_list.field3d()) {
       // Lower boundary
-      if (TS_down_in != 0 && (DDATA_INDEST != -1)) {
+      if (TS_down_in && (DDATA_INDEST != -1)) {
         for (jx = 0; jx < DDATA_XSPLIT; jx++)
           for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, TS_down_in*ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
-      if (TS_down_out != 0 && (DDATA_OUTDEST != -1)) {
+      if (TS_down_out && (DDATA_OUTDEST != -1)) {
         for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
           for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, TS_down_out*ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, ShiftAngle[jx]);
       }
 
       // Upper boundary
-      if (TS_up_in != 0 && (UDATA_INDEST != -1)) {
+      if (TS_up_in && (UDATA_INDEST != -1)) {
         for (jx = 0; jx < UDATA_XSPLIT; jx++)
           for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -TS_up_in*ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
-      if (TS_up_out != 0 && (UDATA_OUTDEST != -1)) {
+      if (TS_up_out && (UDATA_OUTDEST != -1)) {
         for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
           for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -TS_up_out*ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
       }
     }
   }
@@ -1515,7 +1514,7 @@ void BoutMesh::default_connections() {
   IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
   ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
 
-  TS_up_in = TS_up_out = TS_down_in = TS_down_out = 0; // No twist-shifts
+  TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
 
   /// Check if X is periodic
   if (periodicX) {
@@ -1532,7 +1531,7 @@ void BoutMesh::default_connections() {
  * Set ypos1 and ypos2 to be neighbours in the range xge <= x < xlt.
  * Optional argument ts sets whether to use twist-shift condition
  */
-void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, int ts) {
+void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   int ype1, ype2; // the two Y processor indices
   int ypeup, ypedown;
   int yind1, yind2;
@@ -1760,9 +1759,8 @@ void BoutMesh::topology() {
 
     default_connections();
     set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps1,
-                   1);                                 // Twist-shift this connection
-    set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1,
-                   -1); // Twist-shift in PF region with negative angle
+                   true);                                 // Twist-shift this connection
+    set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
   } else {
     /*************** DOUBLE NULL OPERATION *******************/
@@ -1800,19 +1798,14 @@ void BoutMesh::topology() {
 
     /********* DND CONNECTIONS **********/
     default_connections();
-    // Twist-shift needed in PF if it is needed in core, but in opposite
-    // direction because lower->upper connection in core is upper->lower
-    // connection in PF and vice versa
     /* Lower x-point */
     set_connection(jyseps1_1 + 1, jyseps2_2, 0, ixseps_lower,
                    ixseps1 <= ixseps2);                        /* Core */
-    set_connection(jyseps1_1, jyseps2_2 + 1, 0,
-                   -(ixseps1 <= ixseps2));                        /* PF   */
+    set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps_lower); /* PF   */
     /* Upper x-point */
     set_connection(jyseps2_1, jyseps1_2 + 1, 0, ixseps_upper,
                    ixseps1 > ixseps2);                         /* Core */
-    set_connection(jyseps2_1 + 1, jyseps1_2, 0,
-                   -(ixseps1 > ixseps2));                        /* PF   */
+    set_connection(jyseps2_1 + 1, jyseps1_2, 0, ixseps_upper); /* PF   */
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
@@ -1839,13 +1832,13 @@ void BoutMesh::topology() {
   output_info.write("\tXIN = %d, XOUT = %d\n", IDATA_DEST, ODATA_DEST);
 
   output_info.write("\tTwist-shift: ");
-  if (TS_down_in != 0)
+  if (TS_down_in)
     output_info.write("DI ");
-  if (TS_down_out != 0)
+  if (TS_down_out)
     output_info.write("DO ");
-  if (TS_up_in != 0)
+  if (TS_up_in)
     output_info.write("UI ");
-  if (TS_up_out != 0)
+  if (TS_up_out)
     output_info.write("UO ");
   output_info.write("\n");
 }
@@ -2019,13 +2012,13 @@ bool BoutMesh::hasBranchCut() const {
 }
 
 bool BoutMesh::hasBranchCutDown(int jx) const {
-  return (TS_down_in != 0 && jx<DDATA_XSPLIT)
-         || (TS_down_out != 0 && jx>=DDATA_XSPLIT);
+  return (TS_down_in && jx<DDATA_XSPLIT)
+         || (TS_down_out && jx>=DDATA_XSPLIT);
 }
 
 bool BoutMesh::hasBranchCutUp(int jx) const {
-  return (TS_up_in != 0 && jx<UDATA_XSPLIT)
-         || (TS_up_out != 0 && jx>=UDATA_XSPLIT);
+  return (TS_up_in && jx<UDATA_XSPLIT)
+         || (TS_up_out && jx>=UDATA_XSPLIT);
 }
 
 int BoutMesh::ySize(int xpos) const {
