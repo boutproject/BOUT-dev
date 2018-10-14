@@ -28,7 +28,7 @@ plot_error = False
 
 boutcore.init('-q -q -q -q')
 
-testfunc = exprToStr(sin(2*pi*metric.x + metric.y + metric.z + metric.zShift))
+testfunc = sin(2*pi*metric.x + metric.y + metric.z + metric.zShift)
 boutcore_operator = boutcore.Grad_par
 symbolic_operator = Grad_par
 order = 2
@@ -37,7 +37,8 @@ dimensions = 'xyz'
 method = None
 
 results = []
-for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted'), ('false', 'identity'), ('true', 'shifted')]:
+#for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted'), ('false', 'identity'), ('true', 'shifted')]:
+for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted'), ('false', 'identity')]:
     print('twistshift='+twistshift+' paralleltransform='+paralleltransform)
     error_list = []
     for n in ngrids:
@@ -106,7 +107,7 @@ for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')
             outloc = stagger[1]
 
         # calculate result of differential operator using BOUT++ implementation
-        bout_input = boutcore.create3D(testfunc, mesh, outloc=inloc)
+        bout_input = boutcore.create3D(exprToStr(testfunc), mesh, outloc=inloc)
         mesh.communicate(bout_input)
 
         if method is None:
@@ -115,8 +116,7 @@ for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')
             bout_result = boutcore_operator(bout_input, outloc=outloc, method=method)
         mesh.communicate(bout_result)
         # calculate result of differential operator symbolically, then convert to boutcore.Field3D/Field2D
-        analytic_input = sympy.sympify(testfunc)
-        analytic_func = symbolic_operator(analytic_input)
+        analytic_func = symbolic_operator(testfunc)
         analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh, outloc=outloc)
 
         # calculate max error
@@ -135,11 +135,13 @@ for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')
         #results.append('Proc #'+str(mesh.getYProcIndex())+' --- pass: '+str(boutcore_operator)+' is  working correctly for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
     else:
         if plot_error:
+            yproc = mesh.getYProcIndex()
             from matplotlib import pyplot
             pyplot.loglog(1./ngrids, error_list)
+            pyplot.title("proc = "+str(yproc))
             pyplot.show()
             from boututils.showdata import showdata
-            showdata(error)
+            showdata(error, titles=["proc = "+str(yproc)])
         results.append(str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
         #results.append('Proc #'+str(mesh.getYProcIndex())+' --- '+str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
 
