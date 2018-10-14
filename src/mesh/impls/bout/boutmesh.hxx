@@ -26,6 +26,9 @@ class BoutMesh : public Mesh {
   /// Read in the mesh from data sources
   int load();
 
+  /// Getter for TwistShift
+  bool hasTwistShift() const override { return TwistShift; }
+
   /////////////////////////////////////////////
   // Communicate variables
 

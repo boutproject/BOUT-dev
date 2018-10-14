@@ -75,6 +75,8 @@ public:
     maxregionblocksize = MAXREGIONBLOCKSIZE;
   }
 
+  bool hasTwistShift() const override { return false; }
+
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
   int wait(comm_handle UNUSED(handle)) { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal *UNUSED(buffer),
