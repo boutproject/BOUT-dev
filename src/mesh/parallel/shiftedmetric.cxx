@@ -21,8 +21,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0
-  if (!mesh.hasTwistShift()) {
-    throw BoutException("ShiftedMetric requires the option TwistShift=true");
+  if (mesh.hasTwistShift()) {
+    throw BoutException("ShiftedMetric requires the option TwistShift=false");
   }
 
   //If we wanted to be efficient we could move the following cached phase setup

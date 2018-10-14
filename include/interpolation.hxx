@@ -31,6 +31,13 @@
 #include "mask.hxx"
 #include "utils.hxx"
 
+/*!
+  Interpolate a point using 4th-order staggered formula
+
+  @param[in] s  Input stencil. mm -> -3/2, m -> -1/2, p -> +1/2, pp -> +3/2
+*/
+inline BoutReal interp(const stencil &s) { return (9. * (s.m + s.p) - s.mm - s.pp) / 16.; }
+
 /// Interpolate to a give cell location
 const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region = RGN_ALL);
 const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region = RGN_ALL);

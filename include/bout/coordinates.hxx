@@ -88,6 +88,8 @@ public:
   
   Field2D G1, G2, G3;
 
+  vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
+
   /// z-shift for interpolation between field-aligned and shifted coordinates
   Field2D zShift;
   

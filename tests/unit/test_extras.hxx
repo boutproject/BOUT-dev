@@ -104,8 +104,8 @@ public:
   }
   MPI_Comm getXcomm(int UNUSED(jy)) const { return MPI_COMM_NULL; }
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
-  bool periodicY(int UNUSED(jx)) const { return true; }
-  bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
+  bool periodicY(int UNUSED(jx)) { return true; }
+  bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts), CELL_LOC UNUSED(location)) { return true; }
   bool hasBranchCut() const { return false; }
   bool hasBranchCutDown(int UNUSED(jx)) const { return false; }
   bool hasBranchCutUp(int UNUSED(jx)) const { return false; }
