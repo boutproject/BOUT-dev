@@ -182,6 +182,30 @@ class Mesh {
   /// @returns zero always. 
   int get(Vector3D &var, const string &name);
 
+  /// Get a vector of int from the input source
+  ///
+  /// @param[out] var    Array that will be set. Must be allocated already
+  /// @param[in] name    Name of the variable to read
+  /// @param[in] len     The length of the Array
+  /// @param[in] offset  The point in the source to start reading from
+  /// @param[in] dir     The direction to read in
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(vector<int> &var, const string &name, int len, int offset = 0,
+          Direction dir = Direction::X);
+
+  /// Get a vector of BoutReal from the input source
+  ///
+  /// @param[out] var    Array that will be set. Must be allocated already
+  /// @param[in] name    Name of the variable to read
+  /// @param[in] len     The length of the Array
+  /// @param[in] offset  The point in the source to start reading from
+  /// @param[in] dir     The direction to read in
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(vector<BoutReal> &var, const string &name, int len,
+          int offset = 0, Direction dir = Direction::X);
+
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const string &name);
 

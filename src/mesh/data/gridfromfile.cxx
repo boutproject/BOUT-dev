@@ -332,7 +332,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 }
 
 bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
-                   int len, int offset, GridDataSource::Direction UNUSED(dir)) {
+                   int len, int offset, Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<int>)");
   
   if (!file->is_valid()) {
@@ -350,7 +350,7 @@ bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
 }
 
 bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
-                   int len, int offset, GridDataSource::Direction UNUSED(dir)) {
+                   int len, int offset, Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<BoutReal>)");
   
   if (!file->is_valid()){

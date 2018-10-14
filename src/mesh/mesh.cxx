@@ -116,6 +116,28 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool allow_communi
   return 0;
 }
 
+int Mesh::get(vector<int> &var, const string &name, int len, int offset,
+               Direction dir) {
+  TRACE("Loading vector<int>: Mesh::get(vector<int>, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, var, name, len, offset, dir)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+int Mesh::get(vector<BoutReal> &var, const string &name, int len, int offset,
+               Direction dir) {
+  TRACE("Loading vector<BoutReal>: Mesh::get(vector<BoutReal>, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, var, name, len, offset, dir)) {
+    return 1;
+  }
+
+  return 0;
+}
+
 /**************************************************************************
  * Data get routines
  **************************************************************************/
