@@ -23,6 +23,12 @@
  *
  *******************************************************************************/
 
+#ifndef __GRIDDATA_DIRECTION__
+#define __GRIDDATA_DIRECTION__
+/// enum to use to specify Direction
+enum Direction { X = 1, Y = 2, Z = 3 };
+#endif //__GRIDDATA_DIRECTION__
+
 class GridDataSource;
 
 #ifndef __GRIDDATA_H__
@@ -58,11 +64,10 @@ public:
   virtual bool get(Mesh *m, Field2D &var, const string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0) = 0;
 
-  enum Direction { X = 1, Y = 2, Z = 3 };
   virtual bool get(Mesh *m, vector<int> &var, const string &name, int len, int offset = 0,
-                   Direction dir = GridDataSource::X) = 0;
+                   Direction dir = Direction::X) = 0;
   virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
-                   int offset = 0, Direction dir = GridDataSource::X) = 0;
+                   int offset = 0, Direction dir = Direction::X) = 0;
 
   /// Test if grid data source includes y-boundary guard cells.
   /// Older grid files may not: this then requires some special handling.
@@ -89,9 +94,9 @@ public:
   bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0) override;
 
   bool get(Mesh *m, vector<int> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X) override;
+           Direction dir = Direction::X) override;
   bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X) override;
+           Direction dir = Direction::X) override;
 
   // Grid files from hypnotoad don't have y-guard cells at all. But even if
   // they did, they don't have guard cells for the y-boundaries of the core
@@ -190,7 +195,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, vector<int> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X) override;
+           Direction dir = Direction::X) override;
 
   /*!
    * Get an array of BoutReals. Uses FieldFactory to generate
@@ -206,7 +211,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, vector<BoutReal> &var, const string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::X) override;
+           Direction dir = Direction::X) override;
 
 private:
   /// The options section to use. Could be nullptr

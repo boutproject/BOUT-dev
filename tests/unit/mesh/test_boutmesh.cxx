@@ -26,12 +26,12 @@ public:
   }
   bool get(Mesh *UNUSED(m), vector<int> &UNUSED(var), const string &UNUSED(name),
            int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
+           Direction UNUSED(dir) = Direction::X) {
     return true;
   }
   bool get(Mesh *UNUSED(m), vector<BoutReal> &UNUSED(var), const string &UNUSED(name),
            int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
+           Direction UNUSED(dir) = Direction::X) {
     return true;
   }
 };

@@ -64,7 +64,7 @@ bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal de
 }
 
 bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len,
-                          int UNUSED(offset), GridDataSource::Direction UNUSED(dir)) {
+                          int UNUSED(offset), Direction UNUSED(dir)) {
   // Integers not expressions yet
 
   int ival;
@@ -77,7 +77,7 @@ bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len
 }
 
 bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
-                          int offset, GridDataSource::Direction dir) {
+                          int offset, Direction dir) {
 
   if(!hasVar(name)) {
     return false;
@@ -93,19 +93,19 @@ bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, in
   var.resize(len);
 
   switch(dir) {
-  case GridDataSource::X: {
+  case Direction::X: {
     for(int x=0;x<len;x++){
       var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0);
     }
     break;
   }
-  case GridDataSource::Y : {
+  case Direction::Y : {
     for(int y=0;y<len;y++){
       var[y] = gen->generate(0.0, TWOPI*m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
     }
     break;
   }
-  case GridDataSource::Z : {
+  case Direction::Z : {
     for(int z=0;z<len;z++){
       var[z] = gen->generate(0.0, 0.0, TWOPI*(static_cast<BoutReal>(z) + offset) / static_cast<BoutReal>(m->LocalNz), 0.0);
     }
