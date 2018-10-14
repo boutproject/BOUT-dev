@@ -23,88 +23,92 @@
     lead to an out of bounds access error later but we add it here to provide a
     more explanatory message.
  */
-void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
-  TRACE("Verifying number of points available for BC");
+namespace {
+  void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
+    TRACE("Verifying number of points available for BC");
 
 #ifndef CHECK
-  return; //No checking so just return
+    return; //No checking so just return
 #else
 
-  int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
-  string side, gridType;
-  
-  //Initialise var in case of no match and CHECK<=2
-  ptsAvail = ptsRequired; //Ensures test passes without exception
-	
-  switch(region->location) {
-  case BNDRY_XIN: 
-  case BNDRY_XOUT: {
-    side = "x";
+    Mesh* localmesh = region->localmesh;
 
-    //Here 2*mesh->xstart is the total number of guard/boundary cells
-    ptsAvailGlobal = mesh->GlobalNx - 2*mesh->xstart;
+    int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
+    string side, gridType;
 
-    //Work out how many processor local points we have excluding boundaries
-    //but including ghost/guard cells
-    ptsAvailLocal  = mesh->LocalNx;
-    if(mesh->firstX()) ptsAvailLocal -= mesh->xstart;
-    if(mesh->lastX())  ptsAvailLocal -= mesh->xstart;
+    //Initialise var in case of no match and CHECK<=2
+    ptsAvail = ptsRequired; //Ensures test passes without exception
 
-    //Now decide if it's a local or global limit, prefer global if a tie
-    if(ptsAvailGlobal <= ptsAvailLocal){
-      ptsAvail = ptsAvailGlobal;
-      gridType = "global";
-    }else{
-      ptsAvail = ptsAvailLocal;
-      gridType = "local";
+    switch(region->location) {
+    case BNDRY_XIN:
+    case BNDRY_XOUT: {
+      side = "x";
+
+      //Here 2*localmesh->xstart is the total number of guard/boundary cells
+      ptsAvailGlobal = localmesh->GlobalNx - 2*localmesh->xstart;
+
+      //Work out how many processor local points we have excluding boundaries
+      //but including ghost/guard cells
+      ptsAvailLocal  = localmesh->LocalNx;
+      if(localmesh->firstX()) ptsAvailLocal -= localmesh->xstart;
+      if(localmesh->lastX())  ptsAvailLocal -= localmesh->xstart;
+
+      //Now decide if it's a local or global limit, prefer global if a tie
+      if(ptsAvailGlobal <= ptsAvailLocal){
+        ptsAvail = ptsAvailGlobal;
+        gridType = "global";
+      }else{
+        ptsAvail = ptsAvailLocal;
+        gridType = "local";
+      }
+
+      break;
     }
+    case BNDRY_YUP:
+    case BNDRY_YDOWN: {
+      side = "y";
 
-    break;
-  }
-  case BNDRY_YUP: 
-  case BNDRY_YDOWN: {
-    side = "y";
+      //Here 2*localmesh->ystart is the total number of guard/boundary cells
+      ptsAvailGlobal = localmesh->GlobalNy - 2*localmesh->ystart;
 
-    //Here 2*mesh->ystart is the total number of guard/boundary cells
-    ptsAvailGlobal = mesh->GlobalNy - 2*mesh->ystart;
+      //Work out how many processor local points we have excluding boundaries
+      //but including ghost/guard cells
+      ptsAvailLocal  = localmesh->LocalNy;
+      if(localmesh->firstY()) ptsAvailLocal -= localmesh->ystart;
+      if(localmesh->lastY())  ptsAvailLocal -= localmesh->ystart;
 
-    //Work out how many processor local points we have excluding boundaries
-    //but including ghost/guard cells
-    ptsAvailLocal  = mesh->LocalNy;
-    if(mesh->firstY()) ptsAvailLocal -= mesh->ystart;
-    if(mesh->lastY())  ptsAvailLocal -= mesh->ystart;
+      //Now decide if it's a local or global limit, prefer global if a tie
+      if(ptsAvailGlobal <= ptsAvailLocal){
+        ptsAvail = ptsAvailGlobal;
+        gridType = "global";
+      }else{
+        ptsAvail = ptsAvailLocal;
+        gridType = "local";
+      }
 
-    //Now decide if it's a local or global limit, prefer global if a tie
-    if(ptsAvailGlobal <= ptsAvailLocal){
-      ptsAvail = ptsAvailGlobal;
-      gridType = "global";
-    }else{
-      ptsAvail = ptsAvailLocal;
-      gridType = "local";
+      break;
     }
-
-    break;
-  }
 #if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
-  default : {
-    throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
-  }
+    default : {
+      throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
+    }
+#endif
+    }
+
+    //Now check we have enough points and if not throw an exception
+    if(ptsAvail < ptsRequired){
+      throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
+                          gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
+    }
+
 #endif
   }
-
-  //Now check we have enough points and if not throw an exception
-  if(ptsAvail < ptsRequired){
-    throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
-			gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
-  }
-
-#endif
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,1);
+  verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen;
   if(!args.empty()) {
@@ -122,6 +126,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -135,7 +141,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -146,9 +152,9 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				     + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				     + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
           
@@ -167,9 +173,9 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
         // Inner x boundary. Set one point inwards
         for(; !bndry->isDone(); bndry->next1d()) {
           if(fg) {
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-                                     + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = mesh->GlobalY(bndry->y);
+            BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+                                     + localmesh->GlobalX(bndry->x - bndry->bx) );
+            BoutReal ynorm = localmesh->GlobalY(bndry->y);
             val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
           }
           
@@ -190,8 +196,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
           if(fg) {
             // x norm is shifted by half a grid point because it is staggered.
             // y norm is located half way between first grid cell and guard cell. 
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+            BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+            BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
             val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
           }
           f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
@@ -200,8 +206,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
           for(int i=1;i<bndry->width;i++) {
             int xi = bndry->x ;
             int yi = bndry->y + i*bndry->by;						
-            f(xi, yi) = 2*f(xi, yi - bndry->by) - f(xi, yi - 2*bndry->by);	
-          }					
+            f(xi, yi) = 2*f(xi, yi - bndry->by) - f(xi, yi - 2*bndry->by);
+          }
         }
       }
     }
@@ -213,9 +219,9 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
 	
         for(; !bndry->isDone(); bndry->next1d()) {
           if(fg) {
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
-                                   + mesh->GlobalY(bndry->y - bndry->by) );
+            BoutReal xnorm = localmesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*( localmesh->GlobalY(bndry->y)
+                                   + localmesh->GlobalY(bndry->y - bndry->by) );
             val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
           }
           
@@ -233,9 +239,9 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
         // Lower y boundary. Set one point inwards
         for(; !bndry->isDone(); bndry->next1d()) {
           if(fg) {
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-                                     + mesh->GlobalY(bndry->y - bndry->by) );
+            BoutReal xnorm = localmesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+                                     + localmesh->GlobalY(bndry->y - bndry->by) );
             
             val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
           }
@@ -255,10 +261,10 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
         for(; !bndry->isDone(); bndry->next1d()) {
           
           if(fg) {
-            // x norm is located half way between first grid cell and guard cell.  
-            // y norm is shifted by half a grid point because it is staggered. 
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+            // x norm is located half way between first grid cell and guard cell.
+            // y norm is shifted by half a grid point because it is staggered.
+            BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+            BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
             val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
           }
           f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
@@ -271,6 +277,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
           }	
         }
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet.");
     }
   } else {
     // Non-staggered, standard case
@@ -279,11 +287,11 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
       
       if(fg) {
 	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+				 + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 	
-	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+				 + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 	
 	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
       }
@@ -309,6 +317,8 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -321,7 +331,7 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -331,13 +341,13 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -355,13 +365,13 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
@@ -381,12 +391,12 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is shifted by half a grid point because it is staggered.
 	  // y norm is located half way between first grid cell and guard cell. 
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) );
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
       
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 						
@@ -408,11 +418,11 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	// Upper y boundary boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -430,12 +440,12 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 
@@ -452,14 +462,14 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
       if(bndry->bx != 0){
 	// x boundaries
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  // x norm is located half way between first grid cell and guard cell.  
-	  // y norm is shifted by half a grid point because it is staggered. 
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) );
+	  // x norm is located half way between first grid cell and guard cell.
+	  // y norm is shifted by half a grid point because it is staggered.
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
 					      
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 						
@@ -473,21 +483,23 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	  }
 	}			
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet.");
     }
   }
   else {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+			       + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+			       + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	if(fg){
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	}
 	f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 
@@ -525,11 +537,11 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
         // Set any other guard cells using the values on the cells
         int xi = bndry->x + i*bndry->bx;
         int yi = bndry->y + i*bndry->by;
-        xnorm = mesh->GlobalX(xi);
-        ynorm = mesh->GlobalY(yi);
-        for(int zk=0;zk<mesh->LocalNz;zk++) {
+        xnorm = localmesh->GlobalX(xi);
+        ynorm = localmesh->GlobalY(yi);
+        for(int zk=0;zk<localmesh->LocalNz;zk++) {
           if(fg) {
-            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
           }
           f(xi, yi, zk) = val;
         }
@@ -546,9 +558,10 @@ void BoundaryDirichlet::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -557,7 +570,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 // New implementation, accurate to higher order
 
 BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
@@ -574,6 +587,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -587,7 +602,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -597,8 +612,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	// Outer x boundary	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
           
@@ -616,8 +631,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
 	  f(bndry->x - bndry->bx,bndry->y) = val;
@@ -634,9 +649,9 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
 	    // x norm is shifted by half a grid point because it is staggered.
-	    // y norm is located half way between first grid cell and guard cell. 
-	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    // y norm is located half way between first grid cell and guard cell.
+	    BoutReal xnorm = 0.5*( localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	    BoutReal ynorm = 0.5*( localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
@@ -661,8 +676,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*( localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
           
@@ -681,8 +696,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
           
@@ -703,8 +718,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	  if(fg) {
 	    // x norm is located half way between first grid cell and guard cell.  
 	    // y norm is shifted by half a grid point because it is staggered. 
-	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) );
+	    BoutReal xnorm = 0.5*( localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = 0.5*( localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
 	
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
@@ -719,6 +734,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O3.");
     }
   }
   else {
@@ -728,11 +745,11 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
       
       if(fg) {
 	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+				 + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 	
-	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+				 + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 	
 	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
       }
@@ -759,6 +776,8 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -771,7 +790,7 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -781,12 +800,12 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -804,12 +823,12 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 						
@@ -828,13 +847,13 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 				
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is shifted by half a grid point because it is staggered.
-	  // y norm is located half way between first grid cell and guard cell. 
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	  // y norm is located half way between first grid cell and guard cell.
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
       
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 						
@@ -856,11 +875,11 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	// Upper y boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -878,12 +897,12 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(mesh->GlobalY(bndry->y)+ mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(localmesh->GlobalY(bndry->y)+ localmesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 						
@@ -902,12 +921,12 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is located half way between first grid cell and guard cell.
 	  // y norm is shifted by half a grid point because it is staggered.
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
       
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 						
@@ -921,21 +940,23 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O3.");
     }
   }
   else {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+			       + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+			       + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	if(fg)
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 				
@@ -958,11 +979,11 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
-
   bndry->first() ; 
   for(bndry->first(); !bndry->isDone(); bndry->next()){
-    for(int z=0;z<mesh->LocalNz;z++){
+    for(int z=0;z<localmesh->LocalNz;z++){
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
     }
   }
@@ -972,7 +993,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 // Extrapolate to calculate boundary cell to 4th-order
 
 BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,3);
+  verifyNumPoints(region, 3);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
@@ -989,6 +1010,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -1002,7 +1025,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if(loc == CELL_XLOW ) {
@@ -1013,8 +1036,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*( localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
 	  f(bndry->x,bndry->y) = val;
@@ -1033,9 +1056,9 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				     + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				     + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
           
@@ -1057,8 +1080,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  if(fg) {
 	    // x norm is shifted by half a grid point because it is staggered.
 	    // y norm is located half way between first grid cell and guard cell.
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
       
@@ -1082,9 +1105,9 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
-				   + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*( localmesh->GlobalY(bndry->y)
+				   + localmesh->GlobalY(bndry->y - bndry->by) );
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
 	  f(bndry->x,bndry->y) = val;
@@ -1102,9 +1125,9 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	// Inner y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				     + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				     + localmesh->GlobalY(bndry->y - bndry->by) );
             
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
@@ -1128,8 +1151,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  if(fg) {
 	    // x norm is located half way between first grid cell and guard cell.
 	    // y norm is shifted by half a grid point because it is staggered.
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
 	
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 	  }
@@ -1145,6 +1168,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O4.");
     }
   }
   else {
@@ -1154,11 +1179,11 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
       
       if(fg) {
 	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+				 + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 	
-	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+				 + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 	
 	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
       }
@@ -1186,6 +1211,8 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -1198,7 +1225,7 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -1208,13 +1235,13 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    }
 	    f(bndry->x,bndry->y, zk) = val;
 						
@@ -1232,13 +1259,13 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
           
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 
@@ -1258,12 +1285,12 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
         for(; !bndry->isDone(); bndry->next1d()) {
           // x norm is shifted by half a grid point because it is staggered.
           // y norm is located half way between first grid cell and guard cell.
-          BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) );
-          BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+          BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+          BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 
-          for(int zk=0;zk<mesh->LocalNz;zk++) {
+          for(int zk=0;zk<localmesh->LocalNz;zk++) {
             if(fg) {
-              val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+              val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
             }
             f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 
@@ -1285,12 +1312,12 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	// Outer y boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				   + localmesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    
 	    f(bndry->x,bndry->y,zk) = val;
 						
@@ -1308,13 +1335,13 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	// Inner y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				   + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				   + localmesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	    
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 
@@ -1334,12 +1361,12 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is located half way between first grid cell and guard cell.
 	  // y norm is shifted by half a grid point because it is staggered.
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
       
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 						
@@ -1353,21 +1380,23 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryDirichlet_O4.");
     }
   }
   else {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+			       + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+			       + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	if(fg)
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz), t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz), t);
 	
 	f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
 				
@@ -1390,9 +1419,10 @@ void BoundaryDirichlet_O4::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -1401,7 +1431,7 @@ void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
 BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"dirichlet_2ndorder\" is deprecated!\n";
   output << "         Consider using \"dirichlet\" instead\n";
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1424,10 +1454,11 @@ void BoundaryDirichlet_2ndOrder::apply(Field2D &f) {
 }
 
 void BoundaryDirichlet_2ndOrder::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       f(bndry->x,bndry->y,z) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
@@ -1444,16 +1475,17 @@ void BoundaryDirichlet_2ndOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,4);
+  verifyNumPoints(region, 4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -1471,9 +1503,10 @@ void BoundaryDirichlet_4thOrder::apply(Field2D &f) {
 }
 
 void BoundaryDirichlet_4thOrder::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       f(bndry->x,bndry->y,z) = 128./35.*val - 4.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 2.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 4./3.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./7.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -128./5.*val + 9.*f(bndry->x,bndry->y,z) + 18.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) -4.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) + 3./5.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z);
     }
@@ -1486,16 +1519,17 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,1); 
+  verifyNumPoints(region, 1);
   if(!args.empty()) {
     output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
     // First argument should be a value
@@ -1506,9 +1540,10 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const l
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
+  Mesh* localmesh = f.getMesh();
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
-  mesh->communicate(f);
+  localmesh->communicate(f);
   Field2D dfdy = DDY(f);
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
@@ -1546,9 +1581,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
-  mesh->communicate(f);
+  localmesh->communicate(f);
   Field3D dfdy = DDY(f);
   Field3D dfdz = DDZ(f);
   // Loop over all elements and set equal to the next point in
@@ -1560,7 +1596,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       BoutReal xshift = g12shift*dfdy(bndry->x-bndry->bx,bndry->y,z) 
         + g13shift*dfdz(bndry->x-bndry->bx,bndry->y,z);
       if(bndry->bx != 0 && bndry->by == 0) {
@@ -1594,7 +1630,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
 BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"neumann2\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -1608,8 +1644,9 @@ void BoundaryNeumann2::apply(Field2D &f) {
 }
 
 void BoundaryNeumann2::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, z))/3.;
 }
 
@@ -1619,9 +1656,9 @@ BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<s
   output << "WARNING: Use of boundary condition \"neumann_2ndorder\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
 #else
-  verifyNumPoints(region,1);
+  verifyNumPoints(region, 1);
 #endif
   if(!args.empty()) {
     // First argument should be a value
@@ -1648,12 +1685,13 @@ void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Coordinates *metric = f.getCoordinates();
   // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
       f(bndry->x,bndry->y,z) = f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + val*delta;
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
@@ -1671,16 +1709,17 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,1);
+  verifyNumPoints(region, 1);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
@@ -1698,6 +1737,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* localmesh = f.getMesh();
+
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1712,7 +1753,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
@@ -1726,9 +1767,9 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
 	  if(fg) {
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				     + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				     + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
@@ -1750,9 +1791,9 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  
 	  if(fg) {
 	    
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				     + mesh->GlobalX(bndry->x - bndry->bx) );
-	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				     + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	    
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
@@ -1778,8 +1819,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  if(fg) {
 	    // x norm is shifted by half a grid point because it is staggered.
 	    // y norm is located half way between first grid cell and guard cell.
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	    
 	    val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
 	  }
@@ -1799,9 +1840,9 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				     + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				     + localmesh->GlobalY(bndry->y - bndry->by) );
             
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
@@ -1823,9 +1864,9 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  
 	  if(fg) {
 	    
-	    BoutReal xnorm = mesh->GlobalX(bndry->x);
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				     + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				     + localmesh->GlobalY(bndry->y - bndry->by) );
             
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y - bndry->by);
 	  }
@@ -1849,8 +1890,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  if(fg) {
 	    // x norm is located half way between first grid cell and guard cell.
 	    // y norm is shifted by half a grid point because it is staggered.
-	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	    BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
 	    
 	    val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
 	  }
@@ -1861,6 +1902,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
 	  }
 	}
       }	
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryNeumann.");
     }
   }
   else {
@@ -1871,11 +1914,11 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
       
       if(fg) {
 	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+				 + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 	
-	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+				 + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 	
 	val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
       }
@@ -1895,6 +1938,8 @@ void BoundaryNeumann::apply(Field3D &f) {
 
 
 void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
+  Mesh* localmesh = f.getMesh();
+
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1909,7 +1954,7 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
@@ -1920,13 +1965,13 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
       if(bndry->bx > 0) {
 	// Outer x boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t) * metric->dx(bndry->x, bndry->y);
 	    
 	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
 	    
@@ -1946,14 +1991,14 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	// Inner x boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
+				   + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = localmesh->GlobalY(bndry->y);
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
             
 	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
 
@@ -1973,14 +2018,14 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is shifted by half a grid point because it is staggered.
 	  // y norm is located half way between first grid cell and guard cell.
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - 1) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
 	  
 	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	    if (bndry->width == 2){
@@ -1997,13 +2042,13 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	// Outer y boundary	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				   + localmesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	  
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t) * metric->dy(bndry->x, bndry->y);
 	    }
 	    f(bndry->x,bndry->y,zk) =   (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
 	    
@@ -2023,12 +2068,12 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	// Inner y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				   + mesh->GlobalY(bndry->y - bndry->by) );
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal xnorm = localmesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)
+				   + localmesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y - bndry->by);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t) * metric->dy(bndry->x, bndry->y - bndry->by);
             
 	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
 	    
@@ -2049,14 +2094,14 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  // x norm is located half way between first grid cell and guard cell.
 	  // y norm is shifted by half a grid point because it is staggered.
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	  BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x) + localmesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - 1) );
 	  
 	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	    if (bndry->width == 2){
@@ -2065,22 +2110,24 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryNeumann.");
     }
   }
   else {
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+			       + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
       
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+			       + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
       BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
       
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	if(fg){
-	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t);
 	}
 	f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
 	if (bndry->width == 2){
@@ -2098,9 +2145,10 @@ void BoundaryNeumann::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
@@ -2123,6 +2171,8 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -2134,7 +2184,7 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   
   // Check for staggered grids
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     throw BoutException("neumann_o4 not implemented with staggered grid yet");
   }
   else {
@@ -2147,11 +2197,11 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
       
       if(fg) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+        BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+                                 + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 	
-        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+        BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+                                 + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 	
         val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
       }
@@ -2177,6 +2227,8 @@ void BoundaryNeumann_O4::apply(Field3D &f) {
 }
 
 void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Decide which generator to use
@@ -2188,24 +2240,24 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
   
   // Check for staggered grids
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     throw BoutException("neumann_o4 not implemented with staggered grid yet");
   }
   else {
     Coordinates *coords = f.getCoordinates();
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
+                               + localmesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y)  // In the guard cell
+                               + localmesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
       BoutReal delta = bndry->bx*coords->dx(bndry->x,bndry->y)+bndry->by*coords->dy(bndry->x,bndry->y);
 
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
         if(fg){
-          val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
+          val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(localmesh->LocalNz),t);
         }
 
         f(bndry->x,bndry->y, zk) = 12.*delta*val/11.
@@ -2232,16 +2284,17 @@ void BoundaryNeumann_O4::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann_O4::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,4);
+  verifyNumPoints(region, 4);
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -2262,11 +2315,12 @@ void BoundaryNeumann_4thOrder::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_4thOrder::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Coordinates *metric = f.getCoordinates();
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       BoutReal delta = -(bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y));
       f(bndry->x,bndry->y,z) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x,bndry->y,z) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
@@ -2280,16 +2334,17 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,1);
+  verifyNumPoints(region, 1);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
@@ -2305,16 +2360,17 @@ void BoundaryNeumannPar::apply(Field2D &f) {
 }
 
 void BoundaryNeumannPar::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Coordinates *metric = f.getCoordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       f(bndry->x,bndry->y,z) = f(bndry->x - bndry->bx,bndry->y - bndry->by,z)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,1);
+  verifyNumPoints(region, 1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
   
   list<string>::const_iterator it = args.begin();
@@ -2358,16 +2414,17 @@ void BoundaryRobin::apply(Field2D &f) {
 }
 
 void BoundaryRobin::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   if(fabs(bval) < 1.e-12) {
     for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0;z<mesh->LocalNz;z++)
+      for(int z=0;z<localmesh->LocalNz;z++)
 	f(bndry->x, bndry->y, z) = gval / aval;
   }else {
     BoutReal sign = 1.;
     if( (bndry->bx < 0) || (bndry->by < 0))
       sign = -1.;
     for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0;z<mesh->LocalNz;z++)
+      for(int z=0;z<localmesh->LocalNz;z++)
 	f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y - bndry->by, z) + sign*(gval - aval*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) ) / bval;
   }
 }
@@ -2381,15 +2438,16 @@ void BoundaryConstGradient::apply(Field2D &f){
 }
 
 void BoundaryConstGradient::apply(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = 2.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx,bndry->y - 2*bndry->by,z);
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
   }
@@ -2399,7 +2457,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
   }
@@ -2429,7 +2487,9 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
-  int ncz = mesh->LocalNz;
+  Mesh* localmesh = f.getMesh();
+
+  int ncz = localmesh->LocalNz;
 
   Coordinates *metric = f.getCoordinates();
 
@@ -2452,8 +2512,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
     int y = bndry->y;
 
     // Take FFT of last 2 points in domain
-    rfft(f(x - bx, y), mesh->LocalNz, c0.begin());
-    rfft(f(x - 2 * bx, y), mesh->LocalNz, c1.begin());
+    rfft(f(x - bx, y), localmesh->LocalNz, c0.begin());
+    rfft(f(x - 2 * bx, y), localmesh->LocalNz, c1.begin());
     c1[0] = c0[0] - c1[0]; // Only need gradient
 
     // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
@@ -2472,7 +2532,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
         c0[jz] *= exp(coef * kwave);                        // The decaying solution only
       }
       // Reverse FFT
-      irfft(c0.begin(), mesh->LocalNz, f(x, y));
+      irfft(c0.begin(), localmesh->LocalNz, f(x, y));
 
       bndry->nextX();
       x = bndry->x;
@@ -2485,7 +2545,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 
 BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
                                         const list<string> &args) {
-  verifyNumPoints(region, 3);
+  verifyNumPoints(region,  3);
   if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
   }
@@ -2519,7 +2579,9 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
-  int ncz = mesh->LocalNz;
+  Mesh* localmesh = f.getMesh();
+
+  int ncz = localmesh->LocalNz;
 
   ASSERT0(ncz % 2 == 0); // Allocation assumes even number
   
@@ -2572,7 +2634,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
@@ -2615,9 +2677,11 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
   
+  Mesh* localmesh = f.getMesh();
+
   Coordinates *metric = f.getCoordinates();
   
-  int ncz = mesh->LocalNz;
+  int ncz = localmesh->LocalNz;
 
   // Allocate memory
   Array<dcomplex> c0(ncz/2 + 1), c1(ncz/2 + 1), c2(ncz/2 + 1);
@@ -2686,21 +2750,23 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
-  Coordinates *metric = mesh->coordinates(var.getLocation());
+  Mesh* localmesh = var.x.getMesh();
+
+  Coordinates *metric = localmesh->coordinates(var.getLocation());
   
-  int ncz = mesh->LocalNz;
+  int ncz = localmesh->LocalNz;
   
   if(bndry->location != BNDRY_XOUT) {
     throw BoutException("ERROR: DivCurl boundary only works for outer X currently\n");
   }
   var.toCovariant();
   
-  if(mesh->xstart > 2) {
+  if(localmesh->xstart > 2) {
     throw BoutException("Error: Div = Curl = 0 boundary condition doesn't work for MXG > 2. Sorry\n");
   }
 
-  jx = mesh->xend+1;
-  for(jy=1;jy<mesh->LocalNy-1;jy++) {
+  jx = localmesh->xend+1;
+  for(jy=1;jy<localmesh->LocalNy-1;jy++) {
     for(jz=0;jz<ncz;jz++) {
       jzp = (jz+1) % ncz;
       jzm = (jz - 1 + ncz) % ncz;
@@ -2711,7 +2777,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       tmp = (var.x(jx-1,jy+1,jz) - var.x(jx-1,jy-1,jz)) / (metric->dy(jx-1,jy-1) + metric->dy(jx-1,jy));
       
       var.y(jx,jy,jz) = var.y(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
-      if(mesh->xstart == 2)
+      if(localmesh->xstart == 2)
 	// 4th order to get last point
 	var.y(jx+1,jy,jz) = var.y(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
       
@@ -2720,7 +2786,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz);
       
       var.z(jx,jy,jz) = var.z(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
-      if(mesh->xstart == 2)
+      if(localmesh->xstart == 2)
 	var.z(jx+1,jy,jz) = var.z(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
 
       // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z) 
@@ -2739,7 +2805,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       
       var.x(jx,jy,jz) = ( metric->J(jx-2,jy)*metric->g11(jx-2,jy)*var.x(jx-2,jy,jz) + 
 			  (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
-      if(mesh->xstart == 2)
+      if(localmesh->xstart == 2)
 	var.x(jx+1,jy,jz) = ( metric->J(jx-3,jy)*metric->g11(jx-3,jy)*var.x(jx-3,jy,jz) + 
 			      4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
     }
@@ -2780,7 +2846,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 // 2nd order extrapolation:
 
 BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,2);
+  verifyNumPoints(region, 2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree\n";
   }
@@ -2791,12 +2857,14 @@ void BoundaryFree_O2::apply(Field2D &f) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -2869,6 +2937,8 @@ void BoundaryFree_O2::apply(Field2D &f) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O2.");
     }
   }
   else {
@@ -2890,11 +2960,12 @@ void BoundaryFree_O2::apply(Field3D &f) {
 
   bndry->first();
 
+  Mesh* localmesh = f.getMesh();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -2905,7 +2976,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2918,7 +2989,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2932,7 +3003,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 				
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2948,7 +3019,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
       if(bndry->by > 0) {
 	// Upper y boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2961,7 +3032,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2974,7 +3045,7 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	// x boundaries
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -2983,13 +3054,15 @@ void BoundaryFree_O2::apply(Field3D &f) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O2.");
     }
   }
   else {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
 			
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	for(int i=0;i<bndry->width;i++) {
 	  int xi = bndry->x + i*bndry->bx;
 	  int yi = bndry->y + i*bndry->by;
@@ -3007,9 +3080,10 @@ void BoundaryFree_O2::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFree_O2::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 
 }
@@ -3018,7 +3092,7 @@ void BoundaryFree_O2::apply_ddt(Field3D &f) {
 // Third order extrapolation:
 //////////////////////////////////
 BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region,3);
+  verifyNumPoints(region, 3);
 
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
@@ -3028,12 +3102,14 @@ BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &a
 
 void BoundaryFree_O3::apply(Field2D &f) {
 
+  Mesh* localmesh = f.getMesh();
+
   bndry->first();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -3107,6 +3183,8 @@ void BoundaryFree_O3::apply(Field2D &f) {
 	  }	
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O3.");
     }
   }
   else {
@@ -3126,13 +3204,14 @@ void BoundaryFree_O3::apply(Field2D &f) {
 void BoundaryFree_O3::apply(Field3D &f) {
   // Extrapolate from the last evolved simulation cells into the guard cells at 3rd order.  
 
-  bndry->first();
+  Mesh* localmesh = f.getMesh();
 
+  bndry->first();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(localmesh->StaggerGrids && loc != CELL_CENTRE && loc != CELL_ZLOW) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -3143,7 +3222,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3157,7 +3236,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3172,7 +3251,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 				
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3189,7 +3268,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
       if(bndry->by > 0) {
 	// Upper y boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3203,7 +3282,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=-1;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3217,7 +3296,7 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	// x boundaries
 	for(; !bndry->isDone(); bndry->next1d()) {
 					
-	  for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	    for(int i=0;i<bndry->width;i++) {
 	      int xi = bndry->x + i*bndry->bx;
 	      int yi = bndry->y + i*bndry->by;
@@ -3228,13 +3307,15 @@ void BoundaryFree_O3::apply(Field3D &f) {
 	  }
 	}
       }
+    } else {
+      throw BoutException("Unhandled staggering in BoundaryFree_O3.");
     }
   }
   else {
     // Standard (non-staggered) case
     for(; !bndry->isDone(); bndry->next1d()) {
 			
-      for(int zk=0;zk<mesh->LocalNz;zk++) {
+      for(int zk=0;zk<localmesh->LocalNz;zk++) {
 	for(int i=0;i<bndry->width;i++) {
 	  int xi = bndry->x + i*bndry->bx;
 	  int yi = bndry->y + i*bndry->by;
@@ -3253,9 +3334,10 @@ void BoundaryFree_O3::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFree_O3::apply_ddt(Field3D &f) {
+  Mesh* localmesh = f.getMesh();
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
+    for(int z=0;z<localmesh->LocalNz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 
 }
@@ -3304,13 +3386,15 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
 void BoundaryRelax::apply_ddt(Field3D &f) {
   TRACE("BoundaryRelax::apply_ddt(Field3D)");
   
+  Mesh* localmesh = f.getMesh();
+
   // Make a copy of f
   Field3D g = f; // NOTE: This is not very efficient... copying entire field
   // Apply the boundary to g
   op->apply(g);
   // Set time-derivatives
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++) {
+    for(int z=0;z<localmesh->LocalNz;z++) {
       ddt(f)(bndry->x, bndry->y, z) = r * (g(bndry->x, bndry->y, z) - f(bndry->x, bndry->y, z));
     }
 }
@@ -3377,14 +3461,16 @@ void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
+  Mesh* localmesh = f.getMesh();
+
   //NOTE: This is not very efficient... updating entire field
-  f = mesh->fromFieldAligned(f); 
+  f = localmesh->fromFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->toFieldAligned(f);
+  f = localmesh->toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3396,10 +3482,12 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  f = mesh->fromFieldAligned(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  Mesh* localmesh = f.getMesh();
+
+  f = localmesh->fromFieldAligned(f);
+  ddt(f) = localmesh->fromFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ddt(f) = localmesh->toFieldAligned(ddt(f));
 }
 
 
@@ -3420,14 +3508,16 @@ void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
+  Mesh* localmesh = f.getMesh();
+
   //NOTE: This is not very efficient... shifting entire field
-  f = mesh->toFieldAligned(f); 
+  f = localmesh->toFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->fromFieldAligned(f);
+  f = localmesh->fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3439,8 +3529,10 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
-  f = mesh->toFieldAligned(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  Mesh* localmesh = f.getMesh();
+
+  f = localmesh->toFieldAligned(f);
+  ddt(f) = localmesh->toFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ddt(f) = localmesh->fromFieldAligned(ddt(f));
 }
