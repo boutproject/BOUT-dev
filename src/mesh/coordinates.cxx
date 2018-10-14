@@ -277,15 +277,32 @@ Coordinates::Coordinates(Mesh *mesh)
 
   //////////////////////////////////////////////////////
 
+  // Try to read the shift angle from the grid file
+  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+  ShiftAngle.resize(localmesh->LocalNx);
+  if (!localmesh->get(ShiftAngle, "ShiftAngle", localmesh->LocalNx, localmesh->XGLOBAL(0))) {
+    output_warn.write("WARNING: Twist-shift angle 'ShiftAngle' not found.");
+    ShiftAngle.resize(0); // leave ShiftAngle empty
+  }
+
   // try to read zShift from grid
   if(localmesh->get(zShift, "zShift", 0)) {
     // No zShift variable. Try qinty in BOUT grid files
     localmesh->get(zShift, "qinty", 0);
   }
-  if (need_comms) {
-    // zShift should never be periodic on closed field lines, so extrapolate
-    // into branch-cut guard cells
-    interpolateAndExtrapolate(zShift, CELL_CENTRE, true);
+  localmesh->communicate(zShift);
+  // Correct for discontinuity at branch-cut
+  for (int x=0; x<localmesh->LocalNx; x++) {
+    if (localmesh->hasBranchCutDown(x)) {
+      for (int y=0; y<localmesh->ystart; y++) {
+        zShift(x, y) -= ShiftAngle[x];
+      }
+    }
+    if (localmesh->hasBranchCutUp(x)) {
+      for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
+        zShift(x, y) += ShiftAngle[x];
+      }
+    }
   }
 
   if (localmesh->IncIntShear) {
@@ -324,8 +341,40 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   g13 = interpolateAndExtrapolate(coords_in->g13, location, mesh->hasBranchCut());
   g23 = interpolateAndExtrapolate(coords_in->g23, location, mesh->hasBranchCut());
 
-  // always extrapolate zShift
-  zShift = interpolateAndExtrapolate(coords_in->zShift, location, true);
+  if (!coords_in->ShiftAngle.empty()) {
+    if (location == CELL_XLOW) {
+      // Need to interpolate ShiftAngle CELL_CENTRE->CELL_XLOW
+      ShiftAngle.resize(localmesh->LocalNx);
+      stencil s;
+      for (int x=localmesh->xstart; x<=localmesh->xend; x++) {
+        s.mm = coords_in->ShiftAngle[x-2];
+        s.m = coords_in->ShiftAngle[x-1];
+        s.p = coords_in->ShiftAngle[x];
+        s.pp = coords_in->ShiftAngle[x+1];
+        ShiftAngle[x] = interp(s);
+      }
+    } else {
+      ShiftAngle = coords_in->ShiftAngle;
+    }
+  }
+
+  // don't extrapolate zShift, set guard cells correctly using ShiftAngle
+  zShift = interpolateAndExtrapolate(coords_in->zShift, location, false);
+  localmesh->communicate(zShift);
+  // Correct for discontinuity at branch-cut
+  for (int x=0; x<localmesh->LocalNx; x++) {
+    if (localmesh->hasBranchCutDown(x)) {
+      for (int y=0; y<localmesh->ystart; y++) {
+        zShift(x, y) -= ShiftAngle[x];
+      }
+    }
+    if (localmesh->hasBranchCutUp(x)) {
+      for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
+        zShift(x, y) += ShiftAngle[x];
+      }
+    }
+  }
+
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {

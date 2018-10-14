@@ -30,14 +30,6 @@
 #include <stencils.hxx>
 #include <unused.hxx>
 
-/// Perform interpolation between centre -> shifted or vice-versa
-/*!
-  Interpolate using 4th-order staggered formula
-
-  @param[in] s  Input stencil. mm -> -3/2, m -> -1/2, p -> +1/2, pp -> +3/2
-*/
-BoutReal interp(const stencil &s) { return (9. * (s.m + s.p) - s.mm - s.pp) / 16.; }
-
 /*!
   Interpolate between different cell locations
 

@@ -104,7 +104,8 @@ class BoutMesh : public Mesh {
   ///
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
-  bool periodicY(int jx, BoutReal &ts) const;
+  /// \param[in] location  The location for the Twist-Shift angle
+  bool periodicY(int jx, BoutReal &ts, CELL_LOC location = CELL_CENTRE);
 
   /// Is local X index \p jx periodic in Y?
   ///
@@ -201,8 +202,6 @@ class BoutMesh : public Mesh {
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
   int ny_inner;
-
-  vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE

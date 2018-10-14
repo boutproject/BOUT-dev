@@ -338,13 +338,14 @@ class Mesh {
   /// Is local X index \p jx periodic in Y?
   ///
   /// \param[in] jx   The local (on this processor) index in X
-  virtual bool periodicY(int jx) const;
+  virtual bool periodicY(int jx);
 
   /// Is local X index \p jx periodic in Y?
   ///
-  /// \param[in] jx   The local (on this processor) index in X
-  /// \param[out] ts  The Twist-Shift angle if periodic
-  virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+  /// \param[in] jx         The local (on this processor) index in X
+  /// \param[out] ts        The Twist-Shift angle if periodic
+  /// \param[in] location  The location for the Twist-Shift angle
+  virtual bool periodicY(int jx, BoutReal &ts, CELL_LOC location = CELL_CENTRE) = 0;
 
   /// Is there a branch cut anywhere in this mesh?
   virtual bool hasBranchCut() const = 0;
