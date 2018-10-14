@@ -459,15 +459,6 @@ int BoutMesh::load() {
 
   if (TwistShift) {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-
-    // Try to read the shift angle from the grid file
-    // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-
-    ShiftAngle.resize(LocalNx);
-
-    if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
-      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found.");
-    }
   }
 
   //////////////////////////////////////////////////////
@@ -1113,28 +1104,30 @@ int BoutMesh::wait(comm_handle handle) {
     // Perform Twist-shift using shifting method
     // Loop over 3D fields
     for (const auto &var : ch->var_list.field3d()) {
+      Coordinates* coords = var->getCoordinates();
+
       // Lower boundary
       if (TS_down_in && (DDATA_INDEST != -1)) {
         for (jx = 0; jx < DDATA_XSPLIT; jx++)
           for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, coords->ShiftAngle[jx]);
       }
       if (TS_down_out && (DDATA_OUTDEST != -1)) {
         for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
           for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, coords->ShiftAngle[jx]);
       }
 
       // Upper boundary
       if (TS_up_in && (UDATA_INDEST != -1)) {
         for (jx = 0; jx < UDATA_XSPLIT; jx++)
           for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, -coords->ShiftAngle[jx]);
       }
       if (TS_up_out && (UDATA_OUTDEST != -1)) {
         for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
           for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+            shiftZ(*var, jx, jy, -coords->ShiftAngle[jx]);
       }
     }
   }
@@ -1997,11 +1990,12 @@ bool BoutMesh::periodicY(int jx) const {
   return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
-bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
+bool BoutMesh::periodicY(int jx, BoutReal &ts, CELL_LOC location) {
   ts = 0.;
   if ((XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
-    if (TwistShift)
-      ts = ShiftAngle[jx];
+    if (TwistShift) {
+      ts = getCoordinates(location)->ShiftAngle[jx];
+    }
     return true;
   }
   return false;

@@ -256,7 +256,7 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
   return len;
 }
 
-bool Mesh::periodicY(int jx) const {
+bool Mesh::periodicY(int jx) {
   BoutReal ts; return periodicY(jx, ts);
 }
 

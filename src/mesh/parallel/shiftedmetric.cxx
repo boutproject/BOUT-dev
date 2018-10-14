@@ -17,15 +17,13 @@
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   // Get the zShift angle from the mesh
-  zShift = mesh.coordinates()->zShift;
+  zShift = mesh.getCoordinates()->zShift;
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0
   bool twistshift = Options::root()["TwistShift"].withDefault(false);
-  bool shift_without_twist = Options::root()["ShiftWithoutTwist"].withDefault(false);
-  if (!twistshift and !shift_without_twist) {
-    throw BoutException("ShiftedMetric usually requires the option TwistShift=true\n"
-        "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
+  if (twistshift) {
+    throw BoutException("ShiftedMetric requires the option TwistShift=false");
   }
 
   //If we wanted to be efficient we could move the following cached phase setup
