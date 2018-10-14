@@ -37,8 +37,7 @@ dimensions = 'xyz'
 method = None
 
 results = []
-#for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted'), ('false', 'identity'), ('true', 'shifted')]:
-for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted'), ('false', 'identity')]:
+for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')]:
     print('twistshift='+twistshift+' paralleltransform='+paralleltransform)
     error_list = []
     for n in ngrids:
