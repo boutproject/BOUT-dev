@@ -213,4 +213,9 @@ cdef extern from "helper.h":
         void cy_execute(void * parameter)
     void throw_BoutException(string)
 
+cdef extern from "mpi.h":
+    ctypedef int MPI_Comm
+    MPI_Comm MPI_COMM_WORLD
+    int MPI_Barrier(MPI_Comm comm)
+
 EOF
