@@ -724,11 +724,8 @@ class Mesh {
   void derivs_init(Options* options);
   
   /// Loop over mesh, applying a stencil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyXdiff(const Field3D &var, deriv_func func,
+  template<typename T>
+  const T applyXdiff(const T &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
 

@@ -639,110 +639,15 @@ void Mesh::derivs_init(Options *options) {
  *******************************************************************************/
 
 // X derivative
-
-const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func,
+template<typename T>
+const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
                                CELL_LOC outloc, REGION region) {
-  ASSERT1(this == var.getMesh());
-  ASSERT1(var.isAllocated());
-  CELL_LOC inloc = var.getLocation();
-  if (outloc == CELL_DEFAULT)
-    outloc = inloc;
-  // Allowed staggers:
-  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
-          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
-
-  if (var.getNx() == 1) {
-    auto tmp = Field2D(0., this);
-    tmp.setLocation(var.getLocation());
-    return tmp;
-  }
+  static_assert(
+		std::is_base_of<Field2D, T>::value
+		|| std::is_base_of<Field3D, T>::value,
+		"applyXdiff only works on Field2D or Field3D input"
+		);
   
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
-  if (this->StaggerGrids && (outloc != inloc)) {
-    // Staggered differencing
-
-    if (this->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
-      if (outloc == CELL_XLOW) {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::C2L, 2>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
-      } else {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::L2C, 2>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
-      }
-    } else {
-      // Only one guard cell, so no pp or mm values
-      if (outloc == CELL_XLOW) {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::C2L>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
-      } else {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::L2C>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
-      }
-    }
-  } else {
-    // Non-staggered differencing
-    if (this->xstart > 1) {
-      // More than one guard cell, so set pp and mm values
-      // This allows higher-order methods to be used
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, result.getRegion(region)) {
-	  populateStencil<DIRECTION::X, STAGGER::None, 2>(s, var, i);	  
-          result[i] = func(s);
-        }
-      }
-    } else {
-      // Only one guard cell, so no pp or mm values
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, result.getRegion(region)) {
-	  populateStencil<DIRECTION::X>(s, var, i);	  
-          result[i] = func(s);
-        }
-      }
-    }
-  }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
-#endif
-
-  return result;
-}
-
-const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
-                               CELL_LOC outloc, REGION region) {
   // Check that the mesh is correct
   ASSERT1(this == var.getMesh());
   // Check that the input variable has data
@@ -756,12 +661,12 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func,
           (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
   if (var.getNx() == 1) {
-    auto tmp = Field3D(0., this);
+    auto tmp = T(0., this);
     tmp.setLocation(var.getLocation());
     return tmp;
   }
 
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
