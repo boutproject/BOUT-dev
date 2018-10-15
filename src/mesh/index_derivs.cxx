@@ -684,44 +684,16 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       if (outloc == allowedStaggerLoc) {
-        BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::C2L, 2>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
+        applyDiffKernel<DIRECTION::X, STAGGER::C2L, 2>(var, func, result, region);
       } else {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::L2C, 2>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
+        applyDiffKernel<DIRECTION::X, STAGGER::L2C, 2>(var, func, result, region);
       }
     } else {
       // Only one guard cell, so no pp or mm values
       if (outloc == allowedStaggerLoc) {
-        BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::C2L>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
+        applyDiffKernel<DIRECTION::X, STAGGER::C2L, 1>(var, func, result, region);
       } else {
-	BOUT_OMP(parallel)
-	{
-	  stencil s;
-	  BOUT_FOR_INNER(i, result.getRegion(region)) {
-	    populateStencil<DIRECTION::X, STAGGER::L2C>(s, var, i);
-	    result[i] = func(s);
-	  }
-	}
+        applyDiffKernel<DIRECTION::X, STAGGER::L2C, 1>(var, func, result, region);
       }
     }
   } else {
@@ -729,24 +701,10 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
     if (nGuard > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      BOUT_OMP(parallel)
-      {
-	stencil s;
-	BOUT_FOR_INNER(i, result.getRegion(region)) {
-	  populateStencil<DIRECTION::X, STAGGER::None, 2>(s, var, i);
-	  result[i] = func(s);
-	}
-      }
+      applyDiffKernel<DIRECTION::X, STAGGER::None, 2>(var, func, result, region);
     } else {
       // Only one guard cell, so no pp or mm values
-      BOUT_OMP(parallel)
-      {
-	stencil s;
-	BOUT_FOR_INNER(i, result.getRegion(region)) {
-	  populateStencil<DIRECTION::X>(s, var, i);
-	  result[i] = func(s);
-	}
-      }
+      applyDiffKernel<DIRECTION::X, STAGGER::None, 1>(var, func, result, region);
     }
   }
 
@@ -806,33 +764,16 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     if (this->StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
       if (outloc == allowedStaggerLoc) {
-        BOUT_OMP(parallel) {
-          stencil s;
-          BOUT_FOR_INNER(i, result.getRegion(region)) {
-            populateStencil<DIRECTION::YOrthogonal, STAGGER::C2L>(s, var, i);
-            result[i] = func(s);
-          }
-        }
+        applyDiffKernel<DIRECTION::YOrthogonal, STAGGER::C2L, 1>(var, func, result,
+                                                                 region);
       } else {
-        BOUT_OMP(parallel) {
-          stencil s;
-          BOUT_FOR_INNER(i, result.getRegion(region)) {
-            populateStencil<DIRECTION::YOrthogonal, STAGGER::L2C>(s, var, i);
-            result[i] = func(s);
-          }
-        }
+        applyDiffKernel<DIRECTION::YOrthogonal, STAGGER::L2C, 1>(var, func, result,
+                                                                 region);
       }
     } else {
       // Non-staggered
-      BOUT_OMP(parallel)
-      {
-        stencil s;
-        BOUT_FOR_INNER(i, var.getRegion(region)) {
-          // Set stencils
-          populateStencil<DIRECTION::YOrthogonal>(s, var, i);
-          result[i] = func(s);
-        }
-      }
+      applyDiffKernel<DIRECTION::YOrthogonal, STAGGER::None, 1>(var, func, result,
+                                                                region);
     }
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
@@ -840,45 +781,20 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
 
     if (this->StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
-
       if (nGuard > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         if (outloc == allowedStaggerLoc) {
-          BOUT_OMP(parallel) {
-            stencil s;
-            BOUT_FOR_INNER(i, result.getRegion(region)) {
-              populateStencil<DIRECTION::Y, STAGGER::C2L, 2>(s, var_fa, i);
-              result[i] = func(s);
-            }
-          }
+          applyDiffKernel<DIRECTION::Y, STAGGER::C2L, 2>(var_fa, func, result, region);
         } else {
-          BOUT_OMP(parallel) {
-            stencil s;
-            BOUT_FOR_INNER(i, result.getRegion(region)) {
-              populateStencil<DIRECTION::Y, STAGGER::L2C, 2>(s, var_fa, i);
-              result[i] = func(s);
-            }
-          }
+          applyDiffKernel<DIRECTION::Y, STAGGER::L2C, 2>(var_fa, func, result, region);
         }
       } else {
         // Only one guard cell, so no pp or mm values
         if (outloc == allowedStaggerLoc) {
-          BOUT_OMP(parallel) {
-            stencil s;
-            BOUT_FOR_INNER(i, result.getRegion(region)) {
-              populateStencil<DIRECTION::Y, STAGGER::C2L>(s, var_fa, i);
-              result[i] = func(s);
-            }
-          }
+          applyDiffKernel<DIRECTION::Y, STAGGER::C2L, 1>(var_fa, func, result, region);
         } else {
-          BOUT_OMP(parallel) {
-            stencil s;
-            BOUT_FOR_INNER(i, result.getRegion(region)) {
-              populateStencil<DIRECTION::Y, STAGGER::L2C>(s, var_fa, i);
-              result[i] = func(s);
-            }
-          }
+          applyDiffKernel<DIRECTION::Y, STAGGER::L2C, 1>(var_fa, func, result, region);
         }
       }
     } else {
@@ -887,22 +803,10 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
       if (nGuard > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        BOUT_OMP(parallel) {
-          stencil s;
-          BOUT_FOR_INNER(i, result.getRegion(region)) {
-            populateStencil<DIRECTION::Y, STAGGER::None, 2>(s, var_fa, i);
-            result[i] = func(s);
-          }
-        }
+        applyDiffKernel<DIRECTION::Y, STAGGER::None, 2>(var_fa, func, result, region);
       } else {
         // Only one guard cell, so no pp or mm values
-        BOUT_OMP(parallel) {
-          stencil s;
-          BOUT_FOR_INNER(i, result.getRegion(region)) {
-            populateStencil<DIRECTION::Y>(s, var_fa, i);
-            result[i] = func(s);
-          }
-        }
+        applyDiffKernel<DIRECTION::Y, STAGGER::None, 1>(var_fa, func, result, region);
       }
     }
 
@@ -959,40 +863,13 @@ const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
     if (outloc == allowedStaggerLoc) {
-      BOUT_OMP(parallel) {
-        stencil s;
-        BOUT_FOR_INNER(i, result.getRegion(region)) {
-          populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(s, var, i);
-          result[i] = func(s);
-        }
-      }
+      applyDiffKernel<DIRECTION::Z, STAGGER::C2L, 2>(var, func, result, region);
     } else {
-      BOUT_OMP(parallel) {
-        stencil s;
-        BOUT_FOR_INNER(i, result.getRegion(region)) {
-          populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(s, var, i);
-          result[i] = func(s);
-        }
-      }
+      applyDiffKernel<DIRECTION::Z, STAGGER::L2C, 2>(var, func, result, region);
     }
   } else {
     // Non-staggered differencing
-    BOUT_OMP(parallel) {
-      stencil s;
-      BOUT_FOR_INNER(i, result.getRegion(region)) {
-        populateStencil<DIRECTION::Z, STAGGER::None, 2>(s, var, i);
-        result[i] = func(s);
-      }
-    }
-  }
-
-  BOUT_OMP(parallel)
-  {
-    stencil s;
-    BOUT_FOR_INNER(i, result.getRegion(region)) {
-      populateStencil<DIRECTION::Z, STAGGER::None, 2>(s, var, i);
-      result[i] = func(s);
-    }
+    applyDiffKernel<DIRECTION::Z, STAGGER::None, 2>(var, func, result, region);
   }
 
   return result;
