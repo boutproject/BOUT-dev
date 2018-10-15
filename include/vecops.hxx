@@ -105,15 +105,23 @@ const Field3D Div(const Vector3D &v, const Field3D &f);
 
 /// Curl of a vector
 ///
-/// All locations except CELL_VSHIFT supported
+/// Does not currently support any output locations
 ///
 /// @param[in] v  The vector to differentiate
-/// @param[in] outloc  The cell location where the result is desired
 ///
-const Vector2D Curl(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D DEPRECATED(Curl(const Vector3D &v, 
-			       CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z));
+const Vector2D Curl(const Vector2D &v);
+const Vector3D Curl(const Vector3D &v);
+inline const Vector2D DEPRECATED(Curl(const Vector2D &v, CELL_LOC UNUSED(outloc))) {
+  return Curl(v);
+}
+inline const Vector3D DEPRECATED(Curl(const Vector3D &v, CELL_LOC UNUSED(outloc))) {
+  return Curl(v);
+}
+inline const Vector3D DEPRECATED(Curl(const Vector3D &v, CELL_LOC UNUSED(outloc_x),
+                                      CELL_LOC UNUSED(outloc_y),
+                                      CELL_LOC UNUSED(outloc_z))) {
+  return Curl(v);
+}
 
 // Upwinding routines
 
