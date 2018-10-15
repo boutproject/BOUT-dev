@@ -752,86 +752,38 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
 }
 
 // Y derivative
+template <typename T>
+const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
+                         REGION region) {
 
-const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, CELL_LOC outloc,
-                               REGION region) {
+  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
+                "applyYdiff only works on Field2D or Field3D input");
+
   ASSERT1(this == var.getMesh());
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
 
-  CELL_LOC inloc = var.getLocation();
-  if (outloc == CELL_DEFAULT)
-    outloc = inloc;
-  // Allowed staggers:
-  ASSERT1(outloc == inloc);
-
-  if (var.getNy() == 1) {
-    auto tmp = Field2D(0., this);
-    tmp.setLocation(var.getLocation());
-    return tmp;
-  }
-  
-  Field2D result(this);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
-
-  if (this->ystart > 1) {
-    // More than one guard cell, so set pp and mm values
-    // This allows higher-order methods to be used
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_INNER(i, result.getRegion(region)) {
-        populateStencil<DIRECTION::Y, STAGGER::None, 2>(s, var, i);
-        result[i] = func(s);
-      }
-    }
-  } else {
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_INNER(i, result.getRegion(region)) {
-        populateStencil<DIRECTION::Y>(s, var, i);
-        result[i] = func(s);
-      }
-    }
-  }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_yup = result.bndry_ydown = false;
-#endif
-
-  return result;
-}
-
-const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC outloc,
-                               REGION region) {
-  ASSERT1(this == var.getMesh());
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
   // Cell location of the input field
   CELL_LOC inloc = var.getLocation();
   if (outloc == CELL_DEFAULT)
     outloc = inloc;
+
   // Allowed staggers:
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
           (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
   if (var.getNy() == 1) {
-    auto tmp = Field3D(0., this);
-    tmp.setLocation(var.getLocation());
+    auto tmp = T(0., this);
+    tmp.setLocation(outloc);
     return tmp;
   }
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-  
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
+  if (std::is_base_of<Field3D, T>::value && var.hasYupYdown() &&
+      ((&var.yup() != &var) || (&var.ydown() != &var))) {
     // Field "var" has distinct yup and ydown fields which
     // will be used to calculate a derivative along
     // the magnetic field
@@ -869,8 +821,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
     }
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
-
-    Field3D var_fa = this->toFieldAligned(var);
+    T var_fa = this->toFieldAligned(var);
 
     if (this->StaggerGrids && (outloc != inloc)) {
       // Staggered differencing

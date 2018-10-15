@@ -736,11 +736,8 @@ class Mesh {
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
 
-  const Field2D applyYdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyYdiff(const Field3D &var, deriv_func func,
+  template<typename T>
+  const T applyYdiff(const T &var, deriv_func func,
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
 
