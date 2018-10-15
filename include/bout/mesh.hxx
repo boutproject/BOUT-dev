@@ -746,6 +746,11 @@ class Mesh {
                            CELL_LOC loc = CELL_DEFAULT,
                            REGION region = RGN_NOBNDRY);
 
+  template<DIRECTION direction, STAGGER stagger, int nGuard, typename T>  
+  void applyDiffKernel(const T &var, deriv_func func, T &result,
+                           REGION region = RGN_NOBNDRY);
+
+  
 private:
   /// Allocates default Coordinates objects
   std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);

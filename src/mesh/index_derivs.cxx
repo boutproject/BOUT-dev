@@ -654,11 +654,20 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
   CELL_LOC inloc = var.getLocation();
   if (outloc == CELL_DEFAULT)
     outloc = inloc;
-  // Allowed staggers:
-  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
-          (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
-  if (var.getNx() == 1) {
+  // Determine what the non-centre allowed location is for outloc
+  CELL_LOC allowedStaggerLoc;
+  allowedStaggerLoc = CELL_XLOW;
+
+  // Allowed staggers:
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
+          (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
+
+  int nPoint, nGuard;
+  nPoint = var.getNx();
+  nGuard = xstart;
+
+  if (nPoint == 1) {
     auto tmp = T(0., this);
     tmp.setLocation(outloc);
     return tmp;
@@ -671,11 +680,11 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
 
-    if (this->xstart > 1) {
+    if (nGuard > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
-      if (outloc == CELL_XLOW) {	
-	BOUT_OMP(parallel)
+      if (outloc == allowedStaggerLoc) {
+        BOUT_OMP(parallel)
 	{
 	  stencil s;
 	  BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -695,8 +704,8 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
       }
     } else {
       // Only one guard cell, so no pp or mm values
-      if (outloc == CELL_XLOW) {
-	BOUT_OMP(parallel)
+      if (outloc == allowedStaggerLoc) {
+        BOUT_OMP(parallel)
 	{
 	  stencil s;
 	  BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -717,7 +726,7 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
     }
   } else {
     // Non-staggered differencing
-    if (this->xstart > 1) {
+    if (nGuard > 1) {
       // More than one guard cell, so set pp and mm values
       // This allows higher-order methods to be used
       BOUT_OMP(parallel)
@@ -766,11 +775,19 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT)
     outloc = inloc;
 
-  // Allowed staggers:
-  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
-          (outloc == CELL_YLOW && inloc == CELL_CENTRE));
+  // Determine what the non-centre allowed location is for outloc
+  CELL_LOC allowedStaggerLoc;
+  allowedStaggerLoc = CELL_YLOW;
 
-  if (var.getNy() == 1) {
+  // Allowed staggers:
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
+          (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
+
+  int nPoint, nGuard;
+  nPoint = var.getNy();
+  nGuard = ystart;
+
+  if (nPoint == 1) {
     auto tmp = T(0., this);
     tmp.setLocation(outloc);
     return tmp;
@@ -788,7 +805,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
 
     if (this->StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
-      if (outloc == CELL_YLOW) {
+      if (outloc == allowedStaggerLoc) {
         BOUT_OMP(parallel) {
           stencil s;
           BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -824,10 +841,10 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     if (this->StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
 
-      if (this->ystart > 1) {
+      if (nGuard > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
-        if (outloc == CELL_YLOW) {
+        if (outloc == allowedStaggerLoc) {
           BOUT_OMP(parallel) {
             stencil s;
             BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -846,7 +863,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
         }
       } else {
         // Only one guard cell, so no pp or mm values
-        if (outloc == CELL_YLOW) {
+        if (outloc == allowedStaggerLoc) {
           BOUT_OMP(parallel) {
             stencil s;
             BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -867,7 +884,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     } else {
       // Non-staggered differencing
 
-      if (this->ystart > 1) {
+      if (nGuard > 1) {
         // More than one guard cell, so set pp and mm values
         // This allows higher-order methods to be used
         BOUT_OMP(parallel) {
@@ -905,6 +922,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
 template <typename T>
 const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
                          REGION region) {
+
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "applyZdiff only works on Field2D or Field3D input");
 
@@ -916,11 +934,19 @@ const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT)
     outloc = inloc;
 
-  // Allowed staggers:
-  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
-          (outloc == CELL_ZLOW && inloc == CELL_CENTRE));
+  // Determine what the non-centre allowed location is for outloc
+  CELL_LOC allowedStaggerLoc;
+  allowedStaggerLoc = CELL_ZLOW;
 
-  if (var.getNz() == 1) {
+  // Allowed staggers:
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
+          (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
+
+  int nPoint, nGuard;
+  nPoint = var.getNz();
+  nGuard = 2;
+
+  if (nPoint == 1) {
     auto tmp = T(0., this);
     tmp.setLocation(outloc);
     return tmp;
@@ -932,7 +958,7 @@ const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
 
   if (this->StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
-    if (outloc == CELL_ZLOW) {
+    if (outloc == allowedStaggerLoc) {
       BOUT_OMP(parallel) {
         stencil s;
         BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -972,6 +998,18 @@ const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
   return result;
 }
 
+template <DIRECTION direction, STAGGER stagger, int nGuard, typename T>
+void Mesh::applyDiffKernel(const T &var, Mesh::deriv_func func, T &result,
+                           REGION region) {
+  BOUT_OMP(parallel) {
+    stencil s;
+    BOUT_FOR_INNER(i, result.getRegion(region)) {
+      populateStencil<direction, stagger, nGuard, T>(s, var, i);
+      result[i] = func(s);
+    }
+  }
+  return;
+}
 /*******************************************************************************
  * First central derivatives
  *******************************************************************************/
