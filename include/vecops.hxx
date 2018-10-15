@@ -103,7 +103,13 @@ const Field3D Div(const Vector3D &v, const Field3D &f);
 
 /// Curl of a vector
 ///
-/// Does not currently support any output locations
+/// Does not currently support any output locations. \p v must not be
+/// at `CELL_VSHIFT`
+///
+/// We can't support VSHIFT here as, e.g. DDY can't produce an output
+/// at CELL_XLOW unless the input field is at CELL_XLOW, but then that
+/// field will also be needed at CELL_YLOW, for example for another
+/// component.
 ///
 /// @param[in] v  The vector to differentiate
 ///

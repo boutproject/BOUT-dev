@@ -259,21 +259,13 @@ const Field3D Div(const Vector3D &v, const Field3D &f) {
  * Curl operators
  **************************************************************************/
 
-const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
+const Vector2D Curl(const Vector2D &v) {
 
   TRACE("Curl( Vector2D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  }
-
-  // We can't support VSHIFT here as, e.g. DDY can't produce an output at CELL_XLOW
-  // unless the input field is at CELL_XLOW, but then that field will also be needed
-  // at CELL_YLOW, for example for another component.
-  ASSERT1(outloc != CELL_VSHIFT);
-
+  ASSERT1(v.getLocation() != CELL_VSHIFT);
   Mesh *localmesh = v.x.getMesh();
-  auto metric = localmesh->coordinates(outloc);
+  auto metric = v.x.getCoordinates();
 
   // Get covariant components of v
   Vector2D vco = v;
@@ -281,41 +273,27 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
 
   // get components (curl(v))^j
   Vector2D result(localmesh);
-  result.x = (DDY(vco.z, outloc) - DDZ(vco.y, outloc)) / metric->J;
-  result.y = (DDZ(vco.x, outloc) - DDX(vco.z, outloc)) / metric->J;
-  result.z = (DDX(vco.y, outloc) - DDY(vco.x, outloc)) / metric->J;
+  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J;
+  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J;
+  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J;
 
   /// Coordinate torsion
   result.z -= metric->ShiftTorsion * vco.z / metric->J;
 
-  result.setLocation(outloc);
+  result.setLocation(v.getLocation());
 
   result.covariant = false; // result is contravariant
 
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                    CELL_LOC outloc_z) {
-  TRACE("Curl( Vector3D )");
-  ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
-  return Curl(v, outloc_x);
-}
-
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
+const Vector3D Curl(const Vector3D &v) {
   TRACE("Curl( Vector3D )");
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = v.getLocation();
-  };
-
-  // We can't support VSHIFT here as, e.g. DDY can't produce an output at CELL_XLOW
-  // unless the input field is at CELL_XLOW, but then that field will also be needed
-  // at CELL_YLOW, for example for another component.
-  ASSERT1(outloc != CELL_VSHIFT);
+  ASSERT1(v.getLocation() != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
-  auto metric = v.x.getCoordinates(outloc);
+  auto metric = v.x.getCoordinates();
 
   // Get covariant components of v
   Vector3D vco = v;
@@ -323,14 +301,14 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
 
   // get components (curl(v))^j
   Vector3D result(localmesh);
-  result.x = (DDY(vco.z, outloc) - DDZ(vco.y, outloc)) / metric->J;
-  result.y = (DDZ(vco.x, outloc) - DDX(vco.z, outloc)) / metric->J;
-  result.z = (DDX(vco.y, outloc) - DDY(vco.x, outloc)) / metric->J;
+  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J;
+  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J;
+  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J;
 
   // Coordinate torsion
   result.z -= metric->ShiftTorsion * vco.z / metric->J;
 
-  result.setLocation(outloc);
+  result.setLocation(v.getLocation());
 
   result.covariant = false; // result is contravariant
 
