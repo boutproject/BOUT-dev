@@ -642,12 +642,10 @@ void Mesh::derivs_init(Options *options) {
 template<typename T>
 const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
                                CELL_LOC outloc, REGION region) {
-  static_assert(
-		std::is_base_of<Field2D, T>::value
-		|| std::is_base_of<Field3D, T>::value,
-		"applyXdiff only works on Field2D or Field3D input"
-		);
-  
+
+  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
+                "applyXdiff only works on Field2D or Field3D input");
+
   // Check that the mesh is correct
   ASSERT1(this == var.getMesh());
   // Check that the input variable has data
