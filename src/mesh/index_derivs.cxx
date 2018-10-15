@@ -904,30 +904,63 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
 }
 
 // Z derivative
+template <typename T>
+const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
+                         REGION region) {
+  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
+                "applyZdiff only works on Field2D or Field3D input");
 
-const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC outloc,
-                               REGION region) {
   ASSERT1(this == var.getMesh());
   // Check that the input variable has data
   ASSERT1(var.isAllocated());
+
   CELL_LOC inloc = var.getLocation();
-  // Allowed staggers:
   if (outloc == CELL_DEFAULT)
     outloc = inloc;
-  ASSERT1(outloc == inloc);
+
+  // Allowed staggers:
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_ZLOW) ||
+          (outloc == CELL_ZLOW && inloc == CELL_CENTRE));
 
   if (var.getNz() == 1) {
-    auto tmp = Field3D(0., this);
-    tmp.setLocation(var.getLocation());
+    auto tmp = T(0., this);
+    tmp.setLocation(outloc);
     return tmp;
   }
 
-  Field3D result(this);
+  T result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  // Check that the input variable has data
-  ASSERT1(var.isAllocated());
+  if (this->StaggerGrids && (outloc != inloc)) {
+    // Staggered differencing
+    if (outloc == CELL_ZLOW) {
+      BOUT_OMP(parallel) {
+        stencil s;
+        BOUT_FOR_INNER(i, result.getRegion(region)) {
+          populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(s, var, i);
+          result[i] = func(s);
+        }
+      }
+    } else {
+      BOUT_OMP(parallel) {
+        stencil s;
+        BOUT_FOR_INNER(i, result.getRegion(region)) {
+          populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(s, var, i);
+          result[i] = func(s);
+        }
+      }
+    }
+  } else {
+    // Non-staggered differencing
+    BOUT_OMP(parallel) {
+      stencil s;
+      BOUT_FOR_INNER(i, result.getRegion(region)) {
+        populateStencil<DIRECTION::Z, STAGGER::None, 2>(s, var, i);
+        result[i] = func(s);
+      }
+    }
+  }
 
   BOUT_OMP(parallel)
   {
