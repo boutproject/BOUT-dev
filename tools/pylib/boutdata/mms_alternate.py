@@ -737,13 +737,13 @@ class SimpleTokamak(BaseTokamak):
         self.dz = 2.*pi/self.nz
 
         # find position of separatrix (uniform grid in x), i.e. x-index for which psiN=1
-        self.ixseps1 = int(self.nx * (1. - self.psiN0)*self.psi0/self.psiwidth)-1 + mxg # numbering for ixseps* includes x-guard cells
+        self.ixseps1 = int(self.nx * (1. - self.psiN0)*self.psi0/self.psiwidth + 0.5) + mxg # numbering for ixseps* includes x-guard cells
         self.ixseps2 = self.nx+2*mxg # assume connected double-null if double-null: set ixseps2 to BoutMesh default
 
         if self.ixseps1 < 0 or self.ixseps1 >= self.nx:
             # no separatrix, so no branch cuts: make everywhere 'core', like BoutMesh defaults
             self.jyseps1_1 = -1
-            self.jyseps1_2 = self.nx/2
+            self.jyseps1_2 = self.ny/2
             self.jyseps2_1 = self.jyseps1_2
             self.jyseps2_2 = self.ny-1
         else:
