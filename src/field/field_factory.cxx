@@ -124,7 +124,7 @@ const Field2D FieldFactory::create2D(const string &value, const Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
       result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
                                 0.0, // Z
@@ -133,7 +133,7 @@ const Field2D FieldFactory::create2D(const string &value, const Options *opt,
     break;
   }
   case CELL_YLOW: {
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
       result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
@@ -143,7 +143,7 @@ const Field2D FieldFactory::create2D(const string &value, const Options *opt,
     break;
   }
   default: {// CELL_CENTRE or CELL_ZLOW
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
                         0.0, // Z
@@ -182,7 +182,7 @@ const Field3D FieldFactory::create3D(const string &value, const Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
       result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
                                 TWOPI * static_cast<BoutReal>(i.z()) /
@@ -192,7 +192,7 @@ const Field3D FieldFactory::create3D(const string &value, const Options *opt,
     break;
   }
   case CELL_YLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
       result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
@@ -203,7 +203,7 @@ const Field3D FieldFactory::create3D(const string &value, const Options *opt,
     break;
   }
   case CELL_ZLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
                         TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
@@ -213,7 +213,7 @@ const Field3D FieldFactory::create3D(const string &value, const Options *opt,
     break;
   }
   default: {// CELL_CENTRE
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
                         TWOPI * static_cast<BoutReal>(i.z()) /

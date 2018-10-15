@@ -395,12 +395,8 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   allocate();
 
   /// Copy data
-  const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
 
-  BOUT_FOR(i, region_all) {
-    (*this)[i] = rhs[i];
-  }
-  
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
   
@@ -417,11 +413,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
   allocate();
 
   /// Copy data
-  const Region<IndPerp> &region_all = fieldmesh->getRegionPerp("RGN_ALL");
-
-  BOUT_FOR(i, region_all) {
-    (*this)(i, rhs.getIndex()) = rhs[i];
-  }
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
 }
 
 Field3D & Field3D::operator=(const BoutReal val) {
@@ -431,15 +423,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
 
   allocate();
 
-  const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
-
-  BOUT_FOR(i, region_all) {
-    (*this)[i] = val;
-  }
-
-  // Only 3D fields have locations
-  //location = CELL_CENTRE;
-  // DON'T RE-SET LOCATION
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
 
   return *this;
 }
@@ -726,8 +710,7 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
     FieldPerp result;                                                                    \
     result.allocate();                                                                   \
     result.setIndex(rhs.getIndex());                                                     \
-    const Region<IndPerp> &region_all = rhs.getMesh()->getRegionPerp("RGN_ALL");         \
-    BOUT_FOR(i, region_all) {                                                            \
+    BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {                                              \
       result[i] = lhs(i, rhs.getIndex()) op rhs[i];                                      \
       return result;                                                                     \
     }
@@ -743,12 +726,8 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   Field3D result(lhs.getMesh());
   result.allocate();
 
-  const Region<Ind3D> &region = lhs.getMesh()->getRegion3D(REGION_STRING(rgn));
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
-  
   result.setLocation( lhs.getLocation() );
   
   checkData(result);
@@ -766,11 +745,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   Field3D result(lhs.getMesh());
   result.allocate();
 
-  const Region<Ind3D> &region = lhs.getMesh()->getRegion3D(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   result.setLocation( lhs.getLocation() );
   
@@ -789,9 +764,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
   result.setIndex(rhs.getIndex());
 
-  const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
+  BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
   }
 
@@ -810,12 +783,8 @@ Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
   Field3D result(lhs.getMesh());
   result.allocate();
 
-  const Region<Ind3D> &region = lhs.getMesh()->getRegion3D(REGION_STRING(rgn));
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs);
-  }
-  
   result.setLocation( lhs.getLocation() );
 
   checkData(result);
@@ -832,12 +801,8 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   Field3D result(rhs.getMesh());
   result.allocate();
 
-  const Region<Ind3D> &region = rhs.getMesh()->getRegion3D(REGION_STRING(rgn));
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs, rhs[i]);
-  }
-  
   result.setLocation( rhs.getLocation() );
 
   checkData(result);
@@ -849,8 +814,7 @@ BoutReal min(const Field3D &f, bool allpe, REGION rgn) {
 
   checkData(f);
 
-  const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));
-
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
@@ -872,9 +836,8 @@ BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
   TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
 
   checkData(f);
-  
-  const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));
 
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
@@ -901,9 +864,7 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
   BoutReal result = 0.;
   int count = 0;
 
-  const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));
-
-  BOUT_FOR_OMP(i, region, parallel for reduction(+:result,count)) {
+  BOUT_FOR_OMP(i, f.getRegion(rgn), parallel for reduction(+:result,count)) {
     result += f[i];
     count += 1;
   }
@@ -946,10 +907,7 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
     /* Define and allocate the output result */                                          \
     Field3D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
-    const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));          \
-    BOUT_FOR (d, region) {                                                               \
-      result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
     result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
@@ -1166,9 +1124,7 @@ bool finite(const Field3D &f, REGION rgn) {
     return false;
   }
 
-  const Region<Ind3D> &region = f.getMesh()->getRegion3D(REGION_STRING(rgn));
-
-  BOUT_FOR_SERIAL(i, region) {
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!finite(f[i])) {
       return false;
     }
@@ -1183,9 +1139,7 @@ namespace {
 #if CHECK > 2
   void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
     // Do full checks
-    const Region<Ind3D> &new_region = f.getMesh()->getRegion3D(REGION_STRING(region));
-    
-    BOUT_FOR_SERIAL(i, new_region) {
+    BOUT_FOR_SERIAL(i, f.getRegion(region)) {
       if (!finite(f[i])) {
 	throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
 			    i.x(), i.y(), i.z());
@@ -1216,8 +1170,7 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   checkData(var);
   Field3D result = copy(var);
 
-  const Region<Ind3D> &region = var.getMesh()->getRegion3D(REGION_STRING(rgn));
-  BOUT_FOR(d, region) {
+  BOUT_FOR(d, var.getRegion(rgn)) {
     if (result[d] < f) {
       result[d] = f;
     }
@@ -1235,9 +1188,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
   Field2D result(localmesh);
   result.allocate();
 
-  const Region<Ind2D> &region = localmesh->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
+  BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = 0.0;
     for (int k = 0; k < localmesh->LocalNz; k++) {
       result[i] += f[localmesh->ind2Dto3D(i, k)];
@@ -1253,10 +1204,6 @@ Field2D DC(const Field3D &f, REGION rgn) {
 void invalidateGuards(Field3D &var) {
   Mesh *localmesh = var.getMesh();
 
-  const Region<Ind3D> &region_guards = localmesh->getRegion3D("RGN_GUARDS");
-
-  BOUT_FOR(i, region_guards) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

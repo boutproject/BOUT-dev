@@ -296,7 +296,7 @@ const Field2D Grad_par_CtoL(const Field2D &var) {
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);
 
-  BOUT_FOR(i, varMesh->getRegion2D("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 
@@ -319,14 +319,11 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
   bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
 
-  /// Convert REGION enum to a Region string identifier
-  const auto region_str = REGION_STRING(region);
-
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
     BOUT_OMP(parallel) {
       stencil fval, vval;
-      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, result.getRegion(region)) {
         vval.m = v.ydown()[i.ym()];
         vval.c = v[i];
         vval.p = v.yup()[i.yp()];
@@ -352,7 +349,7 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 
     BOUT_OMP(parallel) {
       stencil fval, vval;
-      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
+      BOUT_FOR_INNER(i, result.getRegion(region)) {
         fval.m = f_fa[i.ym()];
         fval.c = f_fa[i];
         fval.p = f_fa[i.yp()];
@@ -388,7 +385,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
   if (var.hasYupYdown()) {
-    BOUT_FOR(i, varMesh->getRegion3D("RGN_NOBNDRY")) {
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
   } else {
@@ -396,7 +393,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
 
     Field3D var_fa = varMesh->toFieldAligned(var);
 
-    BOUT_FOR(i, varMesh->getRegion3D("RGN_NOBNDRY")) {
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
     result = varMesh->fromFieldAligned(result);
@@ -413,7 +410,7 @@ const Field2D Grad_par_LtoC(const Field2D &var) {
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
-  BOUT_FOR(i, varMesh->getRegion2D("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 
@@ -854,7 +851,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     const BoutReal fac = 1.0 / (12 * metric->dz);
     const int ncz = mesh->LocalNz;
 
-    BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
       // Get constants for this iteration
       const BoutReal spacingFactor = fac / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
@@ -1138,7 +1135,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     Field3D f_temp = f;
     Field3D g_temp = g;
 
-    BOUT_FOR(j2D, mesh->getRegion2D("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
       const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;

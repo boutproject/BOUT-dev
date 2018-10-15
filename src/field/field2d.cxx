@@ -270,10 +270,7 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
 
-  const Region<Ind2D> &region_all = fieldmesh->getRegion2D("RGN_ALL");
-  BOUT_FOR(i, region_all) {
-    (*this)[i] = rhs;
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;
 }
@@ -416,8 +413,7 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 
   checkData(f);
 
-  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
-
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
@@ -440,8 +436,7 @@ BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
 
   checkData(f);
 
-  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
-
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
@@ -466,9 +461,7 @@ bool finite(const Field2D &f, REGION rgn) {
     return false;
   }
 
-  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR_SERIAL(i, region) {
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -504,10 +497,7 @@ bool finite(const Field2D &f, REGION rgn) {
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
-    const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));          \
-    BOUT_FOR(d, region) {                                                                \
-      result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
     result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
@@ -539,9 +529,7 @@ const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
 
   Field2D result = copy(var);
 
-  const Region<Ind2D> &region = var.getMesh()->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR(d, region) {
+  BOUT_FOR(d, result.getRegion(rgn)) {
     if (result[d] < f) {
       result[d] = f;
     }
@@ -562,11 +550,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   result.setLocation(lhs.getLocation());
 
@@ -584,11 +568,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
   result.setLocation(lhs.getLocation());
 
@@ -606,11 +586,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   Field2D result(rhs.getMesh());
   result.allocate();
 
-  const Region<Ind2D> &region = rhs.getMesh()->getRegion2D(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs, rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
   result.setLocation(rhs.getLocation());
 
@@ -623,10 +599,8 @@ namespace {
   // levels and UNUSED parameters
 #if CHECK > 2
   void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
-    const Region<Ind2D> &new_region = f.getMesh()->getRegion2D(REGION_STRING(region));
-    
     // Do full checks
-    BOUT_FOR_SERIAL (i, new_region) {
+    BOUT_FOR_SERIAL(i, f.getRegion(region)) {
       if (!::finite(f[i])) {
 	throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
 			    i.y());
@@ -653,10 +627,6 @@ void checkData(const Field2D &f, REGION region) {
 void invalidateGuards(Field2D &var) {
   Mesh *localmesh = var.getMesh();
 
-  const Region<Ind2D> &region_guards = localmesh->getRegion2D("RGN_GUARDS");
-
-  BOUT_FOR(i, region_guards) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
