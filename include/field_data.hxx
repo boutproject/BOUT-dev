@@ -62,13 +62,13 @@ class FieldVisitor;
 */
 class FieldData {
 public:
-  FieldData(Mesh* m);
+  FieldData(Mesh* m = nullptr);
   virtual ~FieldData();
 
   // Visitor pattern support
   virtual void accept(FieldVisitor &v) = 0;
   
-  virtual Mesh * getDataMesh() const{
+  Mesh * getDataMesh() const{
     if (fielddatamesh){
       return fielddatamesh;
     } else {
