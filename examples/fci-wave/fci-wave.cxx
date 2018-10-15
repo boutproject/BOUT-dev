@@ -17,7 +17,7 @@ private:
   Field3D Div_par_integrate(const Field3D &f) {
     Field3D f_B = f / Bxyz;
 
-    f_B.splitYupYdown();
+    f_B.createYupYdown();
     mesh->getParallelTransform().integrateYUpDown(f_B);
 
     // integrateYUpDown replaces all yup/down points, so the boundary conditions
@@ -93,7 +93,7 @@ protected:
       logn.applyParallelBoundary();
 
       n = exp(logn);
-      n.splitYupYdown();
+      n.createYupYdown();
       n.yup() = exp(logn.yup());
       n.ydown() = exp(logn.ydown());
     } else {
@@ -107,7 +107,7 @@ protected:
     Field3D momflux = nv * v;
 
     // Apply boundary conditions to v
-    v.splitYupYdown();
+    v.createYupYdown();
     v.yup().allocate();
     v.ydown().allocate();
     v.applyParallelBoundary();
@@ -115,7 +115,7 @@ protected:
     // Ensure that boundary conditions are consistent
     // between v, nv and momentum flux
 
-    momflux.splitYupYdown();
+    momflux.createYupYdown();
     for (const auto &reg : mesh->getBoundariesPar()) {
       // Using the values of density and velocity on the boundary
       const Field3D &n_next = n.ynext(reg->dir);

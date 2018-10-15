@@ -16,7 +16,7 @@ private:
   Field3D Div_par_integrate(const Field3D &f) {
     Field3D f_B = f / Bxyz;
     
-    f_B.splitYupYdown();
+    f_B.createYupYdown();
     mesh->getParallelTransform().integrateYUpDown(f_B);
 
     // integrateYUpDown replaces all yup/down points, so the boundary conditions
@@ -106,7 +106,7 @@ protected:
       // Calculate the flux divergence using Div_par_integrate
       
       Field3D nv = n * v;
-      nv.splitYupYdown();
+      nv.createYupYdown();
       for (const auto &reg : mesh->getBoundariesPar()) {
         Field3D &nv_next = nv.ynext(reg->dir);
         nv_next.allocate();
