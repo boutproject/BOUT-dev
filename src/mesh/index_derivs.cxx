@@ -662,7 +662,7 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
 
   if (var.getNx() == 1) {
     auto tmp = T(0., this);
-    tmp.setLocation(var.getLocation());
+    tmp.setLocation(outloc);
     return tmp;
   }
 
