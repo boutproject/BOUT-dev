@@ -431,15 +431,16 @@ class Mesh {
 
   /// Coordinate system
   Coordinates *coordinates(const CELL_LOC location = CELL_CENTRE) {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+    
     if (coords_map.count(location)) { // True branch most common, returns immediately
       return coords_map[location].get();
-    } else if (location == CELL_DEFAULT) {
-      throw BoutException("Ambiguous location 'CELL_DEFAULT' passed to mesh::coordinates");
     } else {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
-      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+      coords_map.emplace(location, createDefaultCoordinates(location));
       return coords_map[location].get();
     }
   }
