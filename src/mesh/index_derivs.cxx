@@ -677,7 +677,7 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->StaggerGrids && (outloc != inloc)) {
+  if (StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
 
     if (nGuard > 1) {
@@ -707,11 +707,6 @@ const T Mesh::applyXdiff(const T &var, Mesh::deriv_func func,
       applyDiffKernel<DIRECTION::X, STAGGER::None, 1>(var, func, result, region);
     }
   }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
-#endif
 
   return result;
 }
@@ -761,7 +756,7 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     // will be used to calculate a derivative along
     // the magnetic field
 
-    if (this->StaggerGrids && (outloc != inloc)) {
+    if (StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
       if (outloc == allowedStaggerLoc) {
         applyDiffKernel<DIRECTION::YOrthogonal, STAGGER::C2L, 1>(var, func, result,
@@ -777,9 +772,9 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     }
   } else {
     // var has no yup/ydown fields, so we need to shift into field-aligned coordinates
-    T var_fa = this->toFieldAligned(var);
+    T var_fa = toFieldAligned(var);
 
-    if (this->StaggerGrids && (outloc != inloc)) {
+    if (StaggerGrids && (outloc != inloc)) {
       // Staggered differencing
       if (nGuard > 1) {
         // More than one guard cell, so set pp and mm values
@@ -811,13 +806,8 @@ const T Mesh::applyYdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
     }
 
     // Shift result back
-    result = this->fromFieldAligned(result);
+    result = fromFieldAligned(result);
   }
-
-#if CHECK > 0
-  // Mark boundaries as invalid
-  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
-#endif
 
   return result;
 }
@@ -860,16 +850,34 @@ const T Mesh::applyZdiff(const T &var, Mesh::deriv_func func, CELL_LOC outloc,
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->StaggerGrids && (outloc != inloc)) {
+  if (StaggerGrids && (outloc != inloc)) {
     // Staggered differencing
-    if (outloc == allowedStaggerLoc) {
-      applyDiffKernel<DIRECTION::Z, STAGGER::C2L, 2>(var, func, result, region);
+    if (nGuard > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      if (outloc == allowedStaggerLoc) {
+        applyDiffKernel<DIRECTION::Z, STAGGER::C2L, 2>(var, func, result, region);
+      } else {
+        applyDiffKernel<DIRECTION::Z, STAGGER::L2C, 2>(var, func, result, region);
+      }
     } else {
-      applyDiffKernel<DIRECTION::Z, STAGGER::L2C, 2>(var, func, result, region);
+      // Only one guard cell, so no pp or mm values
+      if (outloc == allowedStaggerLoc) {
+        applyDiffKernel<DIRECTION::Z, STAGGER::C2L, 1>(var, func, result, region);
+      } else {
+        applyDiffKernel<DIRECTION::Z, STAGGER::L2C, 1>(var, func, result, region);
+      }
     }
   } else {
     // Non-staggered differencing
-    applyDiffKernel<DIRECTION::Z, STAGGER::None, 2>(var, func, result, region);
+    if (nGuard > 1) {
+      // More than one guard cell, so set pp and mm values
+      // This allows higher-order methods to be used
+      applyDiffKernel<DIRECTION::Z, STAGGER::None, 2>(var, func, result, region);
+    } else {
+      // Only one guard cell, so no pp or mm values
+      applyDiffKernel<DIRECTION::Z, STAGGER::None, 1>(var, func, result, region);
+    }
   }
 
   return result;
@@ -905,7 +913,7 @@ const Field3D Mesh::indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_XLOW) ||
           (outloc == CELL_XLOW && inloc == CELL_CENTRE));
 
-  if (this->StaggerGrids && (outloc != inloc)) {
+  if (StaggerGrids && (outloc != inloc)) {
     // Shifting in X. Centre -> Xlow, or Xlow -> Centre
 
     func = sfDDX;                // Set default
@@ -943,7 +951,7 @@ const Field3D Mesh::indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD meth
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == CELL_YLOW) ||
           (outloc == CELL_YLOW && inloc == CELL_CENTRE));
 
-  if (this->StaggerGrids && (outloc != inloc)) {
+  if (StaggerGrids && (outloc != inloc)) {
     // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
     func = sfDDY;                // Set default
     table = FirstStagDerivTable; // Set table for others
@@ -982,7 +990,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
 
   Field3D result(this);
 
-  if (this->StaggerGrids && (outloc != inloc)) {
+  if (StaggerGrids && (outloc != inloc)) {
     // Shifting in Z. Centre -> Zlow, or Zlow -> Centre
     func = sfDDZ;                // Set default
     table = FirstStagDerivTable; // Set table for others
@@ -997,7 +1005,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
-    if (this->StaggerGrids && (outloc != inloc)) {
+    if (StaggerGrids && (outloc != inloc)) {
       if (outloc == CELL_ZLOW) {
         // Shifting down - multiply by exp(-0.5*i*k*dz)
         shift = -1.;
@@ -1012,7 +1020,7 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
     result.allocate(); // Make sure data allocated
 
     // Calculate how many Z wavenumbers will be removed
-    const int ncz = this->LocalNz;
+    const int ncz = LocalNz;
     int kfilter =
         static_cast<int>(fft_derivs_filter * ncz / 2); // truncates, rounding down
     if (kfilter < 0)
@@ -1041,8 +1049,8 @@ const Field3D Mesh::indexDDZ(const Field3D &f, CELL_LOC outloc,
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-        auto i3D = this->ind2Dto3D(i, 0);
+      BOUT_FOR_INNER(i, getRegion2D(region_str)) {
+        auto i3D = ind2Dto3D(i, 0);
         rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
@@ -1268,7 +1276,7 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
     result.allocate(); // Make sure data allocated
 
     // No filtering in 2nd derivative method
-    const int ncz = this->LocalNz;
+    const int ncz = LocalNz;
     const int kmax = ncz / 2; // Up to and including this wavenumber index
 
     const auto region_str = REGION_STRING(region);
@@ -1290,8 +1298,8 @@ const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc,
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, this->getRegion2D(region_str)) {
-        auto i3D = this->ind2Dto3D(i, 0);
+      BOUT_FOR_INNER(i, getRegion2D(region_str)) {
+        auto i3D = ind2Dto3D(i, 0);
 
         rfft(&f[i3D], ncz, cv.begin()); // Forward FFT
 
@@ -1409,7 +1417,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
     func = lookupFunc(UpwindTable, method);
   }
 
-  ASSERT1(this->xstart > 0); // Need at least one guard cell
+  ASSERT1(xstart > 0); // Need at least one guard cell
   ASSERT1(this == f.getMesh());
   ASSERT1(this == v.getMesh());
 
@@ -1417,7 +1425,7 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->xstart > 1) {
+  if (xstart > 1) {
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil s;
@@ -1452,7 +1460,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexVDDX(Field3D, Field3D)");
 
-  ASSERT1(this->xstart > 0); // Need at least one guard cell
+  ASSERT1(xstart > 0); // Need at least one guard cell
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
@@ -1488,7 +1496,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // Note: The velocity stencil contains only (mm, m, p, pp)
     // v.p is v at +1/2, v.m is at -1/2 relative to the field f
 
-    if (this->xstart > 1) {
+    if (xstart > 1) {
       // Two or more guard cells
 
       if (vloc == CELL_XLOW) {
@@ -1546,7 +1554,7 @@ const Field3D Mesh::indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    if (this->xstart > 1) {
+    if (xstart > 1) {
       // Two or more guard cells
       BOUT_OMP(parallel) {
         stencil fs;
@@ -1598,12 +1606,12 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->LocalNy == 1){
+  if (LocalNy == 1) {
     result=0;
     return result;
   }
 
-  ASSERT1(this->ystart > 0); // Must have at least one guard cell
+  ASSERT1(ystart > 0); // Must have at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -1623,7 +1631,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
     // Note: vs.c not used for staggered differencing
     // vs.m is at i-1/2, vs.p is as i+1/2
     if (vloc == CELL_YLOW) {
-      if (this->ystart > 1) {
+      if (ystart > 1) {
         // Two or more guard cells
         BOUT_OMP(parallel) {
           stencil fs, vs;
@@ -1645,7 +1653,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
         }
       }
     } else {
-      if (this->ystart > 1) {
+      if (ystart > 1) {
         // Two or more guard cells
         BOUT_OMP(parallel) {
           stencil fs, vs;
@@ -1679,7 +1687,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       func = lookupFunc(table, method);
     }
 
-    if (this->ystart > 1) {
+    if (ystart > 1) {
       // Two or more guard cells
       BOUT_OMP(parallel) {
         stencil fs;
@@ -1729,12 +1737,12 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->LocalNy == 1){
+  if (LocalNy == 1) {
     result=0;
     return result;
   }
 
-  ASSERT1(this->ystart > 0); // Need at least one guard cell
+  ASSERT1(ystart > 0); // Need at least one guard cell
 
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
@@ -1782,8 +1790,8 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // (even if one of v and f has yup/ydown fields, it doesn't make sense to
       // multiply them with one in field-aligned and one in non-field-aligned
       // coordinates)
-      Field3D v_fa = this->toFieldAligned(v);
-      Field3D f_fa = this->toFieldAligned(f);
+      Field3D v_fa = toFieldAligned(v);
+      Field3D f_fa = toFieldAligned(f);
       if (inloc == CELL_YLOW) {
         BOUT_OMP(parallel) {
           stencil vval, fval;
@@ -1804,7 +1812,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
 
-      result = this->fromFieldAligned(result);
+      result = fromFieldAligned(result);
     }
   } else {
     // Non-staggered case
@@ -1828,10 +1836,10 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     } else {
       // Not using yup/ydown fields, so first transform to field-aligned coordinates
-      Field3D f_fa = this->toFieldAligned(f);
-      Field3D v_fa = this->toFieldAligned(v);
+      Field3D f_fa = toFieldAligned(f);
+      Field3D v_fa = toFieldAligned(v);
 
-      if (this->ystart > 1) {
+      if (ystart > 1) {
         BOUT_OMP(parallel) {
           stencil fs;
           BOUT_FOR_INNER(i, result.getRegion(region)) {
@@ -1849,7 +1857,7 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
         }
       }
       // Shift result back
-      result = this->fromFieldAligned(result);
+      result = fromFieldAligned(result);
     }
   }
 
@@ -1954,7 +1962,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::::indexFDDX(Field2D, Field2D)");
 
-  ASSERT1(this->xstart > 0); // Need at least one guard cell
+  ASSERT1(xstart > 0); // Need at least one guard cell
 
   if (outloc == CELL_DEFAULT)
     outloc = f.getLocation();
@@ -1980,7 +1988,7 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
-  if (this->xstart > 1) {
+  if (xstart > 1) {
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil fs, vs;
@@ -2014,7 +2022,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDX(Field3D, Field3D)");
 
-  ASSERT1(this->xstart > 0); // Need at least one guard cell
+  ASSERT1(xstart > 0); // Need at least one guard cell
 
   CELL_LOC vloc = v.getLocation();
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -2053,7 +2061,7 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->xstart > 1) {
+  if (xstart > 1) {
     // Two or more guard cells
     if (StaggerGrids && vloc != inloc) {
       if (inloc == CELL_XLOW) {
@@ -2141,7 +2149,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
                               DIFF_METHOD method, REGION region) {
   TRACE("Mesh::indexFDDY(Field2D, Field2D)");
 
-  ASSERT1(this->ystart > 0); // Need at least one guard cell
+  ASSERT1(ystart > 0); // Need at least one guard cell
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
 
@@ -2166,7 +2174,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
-  if (this->ystart > 1) {
+  if (ystart > 1) {
     // Two or more guard cells
     BOUT_OMP(parallel) {
       stencil fs, vs;
@@ -2284,8 +2292,8 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
     // (even if one of v and f has yup/ydown fields, it doesn't make sense to
     // multiply them with one in field-aligned and one in non-field-aligned
     // coordinates)
-    Field3D v_fa = this->toFieldAligned(v);
-    Field3D f_fa = this->toFieldAligned(f);
+    Field3D v_fa = toFieldAligned(v);
+    Field3D f_fa = toFieldAligned(f);
     if (StaggerGrids && (inloc != vloc)) {
       // Non-centred stencil
       if (inloc == CELL_YLOW) {
@@ -2318,7 +2326,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       }
     }
 
-    result = this->fromFieldAligned(result);
+    result = fromFieldAligned(result);
   }
 
 #if CHECK > 0
