@@ -1639,7 +1639,8 @@ cdef class Datafile:
      def write(self):
          self.cobj.write()
 
-
+def MPI_Barrier():
+    return c.MPI_Barrier(c.MPI_COMM_WORLD)
 
 EOF
 
