@@ -342,58 +342,11 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
       }
     }
   }
-  else if (vUseUpDown) {
-    // Only v has up/down fields
-    // f must shift to field aligned coordinates
-    Field3D f_fa = vMesh->toFieldAligned(f);
-
-    BOUT_OMP(parallel) {
-      stencil fval, vval;
-      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
-        fval.mm = f_fa[i.ymm()];
-        fval.m = f_fa[i.ym()];
-        fval.c = f_fa[i];
-        fval.p = f_fa[i.yp()];
-        fval.pp = f_fa[i.ypp()];
-
-        vval.m = v.ydown()[i.ym()];
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-
-        // Left side
-        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-        // Right side
-        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-      }
-    }
-  }
-  else if (fUseUpDown) {
-    // Only f has up/down fields
-    // v must shift to field aligned coordinates
-    Field3D v_fa = vMesh->toFieldAligned(v);
-
-    BOUT_OMP(parallel) {
-      stencil fval, vval;
-      BOUT_FOR_INNER(i, vMesh->getRegion3D(region_str)) {
-        fval.m = f.ydown()[i.ym()];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-
-        vval.mm = v_fa[i.ymm()];
-        vval.m = v_fa[i.ym()];
-        vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-        vval.pp = v_fa[i.ypp()];
-
-        // Left side
-        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-        // Right side
-        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-      }
-    }
-  }
   else {
     // Both must shift to field aligned
+    // (even if one of v and f has yup/ydown fields, it doesn't make sense to
+    // multiply them with one in field-aligned and one in non-field-aligned
+    // coordinates)
     Field3D v_fa = vMesh->toFieldAligned(v);
     Field3D f_fa = vMesh->toFieldAligned(f);
 
@@ -413,6 +366,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
         // Right side
         result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
       }
+
+    result = vMesh->fromFieldAligned(result);
     }
   }
 
