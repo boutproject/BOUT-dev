@@ -612,9 +612,16 @@ class Mesh {
   const Field3D toFieldAligned(const Field3D &f) {
     return getParallelTransform().toFieldAligned(f);
   }
+  const Field2D toFieldAligned(const Field2D &f) {
+    return f;
+  }
+  
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f) {
     return getParallelTransform().fromFieldAligned(f);
+  }
+  const Field2D fromFieldAligned(const Field2D &f) {
+    return f;
   }
 
   bool canToFromFieldAligned() {
