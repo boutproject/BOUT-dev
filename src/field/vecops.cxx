@@ -171,6 +171,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
     outloc = v.getLocation();
   }
 
+  // This also catches the combination of v at VSHIFT and outloc at DEFAULT
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
@@ -182,9 +183,9 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  result = DDX(metric->J * vcn.x, outloc);
-  result += DDY(metric->J * vcn.y, outloc);
-  result += DDZ(metric->J * vcn.z, outloc);
+  result = DDX(vcn.x.getCoordinates()->J * vcn.x, outloc);
+  result += DDY(vcn.y.getCoordinates()->J * vcn.y, outloc);
+  result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc);
   result /= metric->J;
 
   return result;
@@ -211,9 +212,9 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   vcn.toContravariant();
 
   Field2D result(localmesh);
-  result = FDDX(metric->J * vcn.x, f, outloc);
-  result += FDDY(metric->J * vcn.y, f, outloc);
-  result += FDDZ(metric->J * vcn.z, f, outloc);
+  result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc);
+  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc);
+  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc);
   result /= metric->J;
 
   return result;
@@ -236,9 +237,9 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
   vcn.toContravariant();
 
   Field3D result(localmesh);
-  result = FDDX(metric->J * vcn.x, f, outloc, method);
-  result += FDDY(metric->J * vcn.y, f, outloc, method);
-  result += FDDZ(metric->J * vcn.z, f, outloc, method);
+  result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
+  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
+  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
   result /= metric->J;
 
   return result;

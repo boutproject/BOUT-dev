@@ -89,7 +89,8 @@ const Vector3D DEPRECATED(Grad_perp(const Field3D &f,
 
 /// Divergence of a vector \p v, returning a scalar
 ///
-/// All locations except CELL_VSHIFT supported
+/// All locations except `CELL_VSHIFT` supported. Note that if \p v is
+/// at `CELL_VSHIFT`, then \p outloc must be `CELL_CENTRE`
 ///
 /// @param[in] v  The vector to differentiate
 /// @param[in] outloc  The cell location where the result is desired
