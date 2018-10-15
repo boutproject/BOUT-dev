@@ -10,6 +10,13 @@ import numpy
 import sympy
 from sys import exit
 
+# get command line arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--short', action='store_true', default=False)
+args = parser.parse_args()
+full_test = not args.short
+
 min_exponent = 6
 max_exponent = 7
 ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2, dtype=int)
@@ -17,20 +24,45 @@ default_n = 4
 mxg = 2
 myg = 2
 plot_error = False
+test_derivs = full_test
 
 boutcore.init('-q -q -q -q')
 
-testfunc = sin(2*pi*metric.x + metric.y + metric.z)
-boutcore_operator = boutcore.DDX
-symbolic_operator = DDX
-order = 2
-stagger = None
-dimensions = 'xyz'
-method = None
+def test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore_operator, symbolic_operator, order, method=None):
+    """
+    Test a set of parameters
 
-results = []
-for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')]:
+    Parameters
+    ----------
+
+    twistshift : str
+        'true' or 'false' value for twistshift option
+    paralleltransform : str
+        value for paralleltransform option
+    dimensions : str
+        string containing any of 'x', 'y' and 'z': the grid must be refined in
+        the directions contained in this argument in order to converge. E.g.
+        Grad_par requires refinement only in the y-direction.
+    stagger : tuple of str, None
+        inloc/outloc for the operator, or None for staggergrids=false
+    ngrids : numpy.array(int)
+        Array of grid sizes to use. All directions being refined are given the
+        same size.
+    testfunc : sympy expression
+        The input that will be given to the function being tested
+    boutcore_operator : function
+        function from boutcore to be tested
+    symbolic_operator : function
+        function using sympy to do the symbolic equivalent of boutcore_operator
+    order : int
+        expected order of convergence of boutcore_operator
+    method : str or None
+        method argument for operator, e.g. 'C2'. None to use value from
+        BOUT.inp (or default if no option set).
+    """
+
     print('twistshift='+twistshift+' paralleltransform='+paralleltransform)
+    print(boutcore_operator)
 
     # geometry for simple circular tokamak
     if paralleltransform == 'identity':
@@ -138,9 +170,9 @@ for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')
     convergence = logerrors/logspacing
 
     if order-.1 < convergence < order+.2:
-        results.append('pass')
-        #results.append('pass: '+str(boutcore_operator)+' is  working correctly for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
-        results.append('Proc #'+str(mesh.getYProcIndex())+' --- pass: '+str(boutcore_operator)+' is  working correctly for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
+        #return['pass']
+        #return['pass: '+str(boutcore_operator)+' is  working correctly for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
+        return ['Proc #'+str(mesh.getYProcIndex())+' --- pass: '+str(boutcore_operator)+' is  working correctly for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
     else:
         if plot_error:
             yproc = mesh.getYProcIndex()
@@ -150,8 +182,34 @@ for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')
             pyplot.show()
             from boututils.showdata import showdata
             showdata(error, titles=["proc = "+str(yproc)])
-        #results.append(str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
-        results.append('Proc #'+str(mesh.getYProcIndex())+' --- '+str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.')
+            #showdata([bout_result.get()[mxg:-mxg, myg:-myg], analytic_result.get()[mxg:-mxg, myg:-myg], error], titles=["proc = "+str(yproc)+" bout", "proc = "+str(yproc)+" analytic", "proc = "+str(yproc)+" error"])
+        #return[str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
+        return['Proc #'+str(mesh.getYProcIndex())+' --- '+str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
+
+#testfunc = sin(2*pi*metric.x + metric.y + metric.z)
+testfunc = sin(z)
+order = 2
+dimensions = 'xyz'
+stagger = None
+
+results = []
+
+#for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')]:
+for twistshift, paralleltransform in [('false', 'shifted')]:
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
+    if test_derivs:
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.DDX, DDX, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.DDY, DDY, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.DDZ, DDZ, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DX2, D2DX2, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DY2, D2DY2, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DZ2, D2DZ2, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DXDY, D2DXDY, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DYDX, D2DYDX, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DXDZ, D2DXDZ, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DZDX, D2DZDX, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, order)
+        results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.D2DZDY, D2DZDY, order)
 
 # check results of tests
 fail = False
@@ -159,7 +217,7 @@ for result in results:
     if result is not 'pass':
         print(result)
         fail = True
-mesh.communicate(bout_result) # use this like MPI_Barrier() to synchronise processes
+boutcore.MPI_Barrier()
 if fail:
     exit(1)
 else:
