@@ -186,16 +186,24 @@ def test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, te
         #return[str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
         return['Proc #'+str(mesh.getYProcIndex())+' --- '+str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' twistshift='+twistshift+' paralleltransform='+paralleltransform+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
 
-#testfunc = sin(2*pi*metric.x + metric.y + metric.z)
-testfunc = sin(z)
+testfunc = sin(2*pi*metric.x + metric.y + metric.z)
 order = 2
 dimensions = 'xyz'
 stagger = None
 
 results = []
 
-#for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')]:
-for twistshift, paralleltransform in [('false', 'shifted')]:
+for twistshift, paralleltransform in [('true', 'identity'), ('false', 'shifted')]:
+#for twistshift, paralleltransform in [('false', 'shifted')]:
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Div_par, Div_par, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad2_par2, Grad2_par2, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Laplace, Laplace, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Laplace_par, Laplace_par, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Laplace_perp, Laplace_perp, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
+    results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
     results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.Grad_par, Grad_par, order)
     if test_derivs:
         results += test_operator(twistshift, paralleltransform, dimensions, stagger, ngrids, testfunc, boutcore.DDX, DDX, order)
