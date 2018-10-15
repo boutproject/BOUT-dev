@@ -1,6 +1,6 @@
 /*!************************************************************************
  * \file vecops.hxx
- * 
+ *
  * Operators on vector objects
  * B.Dudson, October 2007
  *
@@ -8,7 +8,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -52,8 +52,8 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 /// @param[in] outloc_x  The cell location where the X component should be defined
 /// @param[in] outloc_y  The cell location where the Y component should be defined
 /// @param[in] outloc_z  The cell location where the Z component should be defined
-const Vector3D DEPRECATED(Grad(const Field3D &f, 
-			       CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z));
+const Vector3D DEPRECATED(Grad(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
+                               CELL_LOC outloc_z));
 
 /// Perpendicular gradient of scalar field \p f
 ///
@@ -62,7 +62,7 @@ const Vector3D DEPRECATED(Grad(const Field3D &f,
 /// result.x = df/dx - g_12/(JB)^2 df/dy
 /// result.y = 0
 /// result.z = df/dz - g_23/(JB)^2 df/dy
-/// 
+///
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc  The cell location where the result is desired
 ///
@@ -76,16 +76,14 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 /// result.x = df/dx - g_12/(JB)^2 df/dy
 /// result.y = 0
 /// result.z = df/dz - g_23/(JB)^2 df/dy
-/// 
+///
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc_x  The cell location where the X component should be defined
 /// @param[in] outloc_y  The cell location where the Y component should be defined
 /// @param[in] outloc_z  The cell location where the Z component should be defined
 ///
-const Vector3D DEPRECATED(Grad_perp(const Field3D &f, 
-				    CELL_LOC outloc_x, 
-				    CELL_LOC outloc_y,
-				    CELL_LOC outloc_z));
+const Vector3D DEPRECATED(Grad_perp(const Field3D &f, CELL_LOC outloc_x,
+                                    CELL_LOC outloc_y, CELL_LOC outloc_z));
 
 /// Divergence of a vector \p v, returning a scalar
 ///
