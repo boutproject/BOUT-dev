@@ -280,7 +280,7 @@ Coordinates::Coordinates(Mesh *mesh)
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
   ShiftAngle.resize(localmesh->LocalNx);
-  if (!localmesh->get(ShiftAngle, "ShiftAngle", localmesh->LocalNx, localmesh->XGLOBAL(0))) {
+  if (localmesh->get(ShiftAngle, "ShiftAngle", localmesh->LocalNx, localmesh->XGLOBAL(0))) {
     output_warn.write("WARNING: Twist-shift angle 'ShiftAngle' not found.");
     ShiftAngle.resize(0); // leave ShiftAngle empty
   }
