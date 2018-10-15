@@ -226,6 +226,46 @@ public:
   int y() const { return (ind / nz) % ny; }
   int z() const { return (ind % nz); }
 
+  /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd plus() const{
+    switch(dir) {
+    case(DIRECTION::X):
+      return xp(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return yp(dd);
+    case(DIRECTION::Z):
+      return zp(dd);
+#if CHECK > 2      
+    default: throw BoutException("Invalid direction passed to SpecificInd.plus<int, direction>");
+#endif      
+    }
+  }
+
+  /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd minus() const{
+    switch(dir) {
+    case(DIRECTION::X):
+      return xm(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return ym(dd);
+    case(DIRECTION::Z):
+      return zm(dd);
+#if CHECK > 2
+    default: throw BoutException("Invalid direction passed to SpecificInd.minus<int, direction>");
+#endif      
+    }
+  }
+
   const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
   const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }

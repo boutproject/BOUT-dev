@@ -69,6 +69,36 @@ inline const std::string& REGION_STRING(REGION region) {
   return REGIONtoString.at(region);
 }
 
+/// To identify particular directions (in index space)
+enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5 };
+
+const std::map<DIRECTION, std::string> DIRECTIONtoString = {
+  {DIRECTION::X, "X"},
+  {DIRECTION::Y, "Y"},
+  {DIRECTION::Z, "Z"},
+  {DIRECTION::YAligned, "Y - field aligned"},
+  {DIRECTION::YOrthogonal, "Y - orthogonal"}
+
+};
+
+inline const std::string& DIRECTION_STRING(DIRECTION direction) {
+  return DIRECTIONtoString.at(direction);
+}
+
+/// To identify valid staggering combinations
+enum class STAGGER { None = 0, C2L = 1, L2C = 2};
+
+const std::map<STAGGER, std::string> STAGGERtoString = {
+  {STAGGER::None, "No staggering"},
+  {STAGGER::C2L, "Centre to Low"},
+  {STAGGER::L2C, "Low to Centre"}
+
+};
+
+inline const std::string& STAGGER_STRING(STAGGER stagger) {
+  return STAGGERtoString.at(stagger);
+}
+
 /// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
