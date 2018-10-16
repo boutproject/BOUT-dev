@@ -67,10 +67,12 @@ Field2D::Field2D(Mesh *localmesh) :
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
-                                     FieldData(f.fieldmesh),
+                                     FieldData(f.fielddatamesh),
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
 #ifdef TRACK
   name = f.name;
@@ -248,8 +250,9 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 #endif
 
   // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
-  fielddatamesh = rhs.fielddatamesh;
+  fieldmesh = rhs.getMesh();
+  fielddatamesh = rhs.getDataMesh();
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
   nx = rhs.nx;
   ny = rhs.ny;
 

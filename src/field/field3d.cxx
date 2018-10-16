@@ -71,11 +71,13 @@ Field3D::Field3D(Mesh *localmesh)
 /// later)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
-      FieldData(f.fieldmesh),
+      FieldData(f.fielddatamesh),
       background(nullptr), data(f.data), // This handles references to the data array
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D(Field3D&)");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
 #if CHECK > 2
   checkData(f);
@@ -101,10 +103,12 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), FieldData(f.getMesh()), background(nullptr),
+    : Field(f.getMesh()), FieldData(f.getDataMesh()), background(nullptr),
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
   boundaryIsSet = false;
 
@@ -376,8 +380,9 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   checkData(rhs);
   
   // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
-  fielddatamesh = rhs.fielddatamesh;
+  fieldmesh = rhs.getMesh();
+  fielddatamesh = rhs.getDataMesh();
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
   data = rhs.data;
@@ -392,6 +397,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   ASSERT1(fieldmesh == rhs.getMesh());
   ASSERT1(fielddatamesh == rhs.getDataMesh());
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
   
   /// Check that the data is valid
   checkData(rhs);
