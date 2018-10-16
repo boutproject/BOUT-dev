@@ -403,8 +403,10 @@ class Mesh {
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(int jz) const = 0; ///< Continuous Z index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(BoutReal jz) const = 0; ///< Continuous Z index (0 -> 1)
   
   //////////////////////////////////////////////////////////
   
