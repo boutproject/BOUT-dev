@@ -388,10 +388,12 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
+
+  ASSERT1(fieldmesh == rhs.getMesh());
   
   /// Check that the data is valid
   checkData(rhs);
- 
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
