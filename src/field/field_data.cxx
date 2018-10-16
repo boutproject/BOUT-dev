@@ -6,13 +6,6 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-FieldData::FieldData(Mesh* m) :
-    fielddatamesh(m), boundaryIsCopy(false), boundaryIsSet(true) {
-  if (fielddatamesh == nullptr) {
-    fielddatamesh = mesh;
-  }
-}
-
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations
