@@ -184,6 +184,9 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const string &name);
+
+  /// Getter for TwistShift
+  virtual bool hasTwistShift() const = 0;
   
   // Communications
   /*!
