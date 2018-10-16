@@ -42,7 +42,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //not change once we've been created so precalculate the complex
   //phases used in transformations
   int nmodes = mesh.LocalNz/2 + 1;
-  BoutReal zlength = mesh.coordinates()->zlength();
+  BoutReal zlength = mesh.getCoordinates()->zlength();
 
   //Allocate storage for complex intermediate
   cmplx.resize(nmodes);
@@ -204,7 +204,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   rfft(in, len, &cmplxLoc[0]);
   
   // Apply phase shift
-  BoutReal zlength = mesh.coordinates()->zlength();
+  BoutReal zlength = mesh.getCoordinates()->zlength();
   for(int jz=1;jz<nmodes;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
     cmplxLoc[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));

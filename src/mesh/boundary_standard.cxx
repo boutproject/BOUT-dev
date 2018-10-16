@@ -2686,7 +2686,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
-  Coordinates *metric = mesh->coordinates(var.getLocation());
+  Coordinates *metric = mesh->getCoordinates(var.getLocation());
   
   int ncz = mesh->LocalNz;
   

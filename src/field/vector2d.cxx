@@ -62,13 +62,13 @@ void Vector2D::toCovariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = localmesh->coordinates(CELL_XLOW);
-      metric_y = localmesh->coordinates(CELL_YLOW);
-      metric_z = localmesh->coordinates(CELL_ZLOW);
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
     } else {
-      metric_x = localmesh->coordinates(location);
-      metric_y = localmesh->coordinates(location);
-      metric_z = localmesh->coordinates(location);
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
     }
 
     // multiply by g_{ij}
@@ -92,13 +92,13 @@ void Vector2D::toContravariant() {
 
     Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
-      metric_x = localmesh->coordinates(CELL_XLOW);
-      metric_y = localmesh->coordinates(CELL_YLOW);
-      metric_z = localmesh->coordinates(CELL_ZLOW);
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
     } else {
-      metric_x = localmesh->coordinates(location);
-      metric_y = localmesh->coordinates(location);
-      metric_z = localmesh->coordinates(location);
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
     }
 
     // multiply by g_{ij}
@@ -339,7 +339,7 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const {
     result = x*rhs.x + y*rhs.y + z*rhs.z;
   }else {
     // Both are covariant or contravariant
-    Coordinates *metric = localmesh->coordinates(location);
+    Coordinates *metric = localmesh->getCoordinates(location);
 
     if(covariant) {
       // Both covariant

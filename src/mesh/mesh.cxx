@@ -331,7 +331,7 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
     return std::make_shared<Coordinates>(this);
   else
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, coordinates(CELL_CENTRE));
+    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
 }
 
 

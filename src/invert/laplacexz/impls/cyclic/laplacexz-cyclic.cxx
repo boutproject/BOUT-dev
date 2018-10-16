@@ -62,7 +62,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   
   // Set coefficients
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->getCoordinates(location);
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
   ASSERT2(max(abs(coord->g13)) < 1e-5);

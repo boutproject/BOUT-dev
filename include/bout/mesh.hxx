@@ -430,10 +430,10 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates(const CELL_LOC location = CELL_CENTRE) {
+  Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
-    
+
     if (coords_map.count(location)) { // True branch most common, returns immediately
       return coords_map[location].get();
     } else {
@@ -443,6 +443,10 @@ class Mesh {
       coords_map.emplace(location, createDefaultCoordinates(location));
       return coords_map[location].get();
     }
+  }
+
+  Coordinates *DEPRECATED(coordinates(const CELL_LOC location = CELL_CENTRE)) {
+    return getCoordinates(location);
   }
 
   // First derivatives in index space

@@ -153,7 +153,7 @@ int physics_init(bool restarting) {
   mesh->get(hthe, "hthe"); // m
   mesh->get(I,    "sinty");// m^-2 T^-1
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates();
 
   //////////////////////////////////////////////////////////////
   // Read parameters from the options file
@@ -505,7 +505,7 @@ int physics_run(BoutReal t) {
   // Perform communications
   mesh->communicate(comms);
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates();
 
   ////////////////////////////////////////////
   // Transitions from 0 in core to 1 in vacuum
