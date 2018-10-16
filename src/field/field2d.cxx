@@ -249,6 +249,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
+  fielddatamesh = rhs.fielddatamesh;
   nx = rhs.nx;
   ny = rhs.ny;
 
