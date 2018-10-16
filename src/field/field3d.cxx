@@ -302,6 +302,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
+  fielddatamesh = rhs.fielddatamesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
   data = rhs.data;
@@ -315,6 +316,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
 
   ASSERT1(fieldmesh == rhs.getMesh());
+  ASSERT1(fielddatamesh == rhs.getDataMesh());
   
   /// Check that the data is valid
   checkData(rhs);
