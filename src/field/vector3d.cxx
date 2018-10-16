@@ -163,7 +163,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator=(const Vector2D &rhs) {
-  fielddatamesh = rhs.x.getMesh();
+  fielddatamesh = rhs.x.getDataMesh();
 
   x = rhs.x;
   y = rhs.y;
