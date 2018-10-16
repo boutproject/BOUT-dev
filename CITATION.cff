@@ -140,10 +140,10 @@ authors:
   - family-names: Wang
     given-names: Zhanhui
 version: 4.2.0
-date-released: TBC
+date-released: 2018-10-16
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: TBC
+doi: 10.5281/zenodo.1464133
 license: 'LGPL-3.0-or-later'
 references:
   - type: article
