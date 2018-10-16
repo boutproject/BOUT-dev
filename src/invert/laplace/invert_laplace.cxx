@@ -80,7 +80,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
   OPTION(options, low_mem, false);
 
   OPTION(options, nonuniform,
-         mesh->coordinates(location)->non_uniform); // Default is the mesh setting
+         mesh->getCoordinates(location)->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
@@ -249,7 +249,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
 
-  Coordinates *coord = mesh->coordinates(loc);
+  Coordinates *coord = mesh->getCoordinates(loc);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
@@ -296,7 +296,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates *coord = mesh->coordinates(loc);
+  Coordinates *coord = mesh->getCoordinates(loc);
 
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
@@ -361,7 +361,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
   ASSERT1(ccoef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->getCoordinates(location);
 
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -426,7 +426,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->getCoordinates(location);
 
   // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
   // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.

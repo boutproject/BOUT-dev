@@ -54,8 +54,8 @@ int main(int argc, char** argv) {
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
   BoutReal nz = mesh->GlobalNz;
 
-  dump.add(mesh->coordinates()->G1,"G1");
-  dump.add(mesh->coordinates()->G3,"G3");
+  dump.add(mesh->getCoordinates()->G1,"G1");
+  dump.add(mesh->getCoordinates()->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
@@ -238,13 +238,13 @@ int main(int argc, char** argv) {
   if (mesh->firstX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xstart,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xstart,mesh->ystart));
+                                        /mesh->getCoordinates()->dx(mesh->xstart,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xstart,mesh->ystart));
   if (mesh->lastX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xend,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xend,mesh->ystart));
+                                        /mesh->getCoordinates()->dx(mesh->xend,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xend,mesh->ystart));
 
   try {
     sol4 = invert->solve(b4, x0);
@@ -289,8 +289,8 @@ int main(int argc, char** argv) {
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
-  Field3D result = mesh->coordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->coordinates()->g33 * ::DDZ(f) * ::DDZ(g)
-                   + mesh->coordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
+  Field3D result = mesh->getCoordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->getCoordinates()->g33 * ::DDZ(f) * ::DDZ(g)
+                   + mesh->getCoordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
   
   return result;
 }

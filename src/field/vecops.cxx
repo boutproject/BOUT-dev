@@ -150,7 +150,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   Mesh *localmesh = v.x.getMesh();
   Field2D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
@@ -177,7 +177,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Mesh *localmesh = v.x.getMesh();
   Field3D result(localmesh);
 
-  Coordinates *metric = localmesh->coordinates(outloc);
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector3D vcn = v;
@@ -205,7 +205,8 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = f.getMesh();
-  Coordinates *metric = localmesh->coordinates(outloc);
+
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector2D vcn = v;
@@ -230,7 +231,8 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = f.getMesh();
-  Coordinates *metric = localmesh->coordinates(outloc);
+
+  Coordinates *metric = localmesh->getCoordinates(outloc);
 
   // get contravariant components of v
   Vector3D vcn = v;
