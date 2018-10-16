@@ -335,24 +335,24 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 }
 
 
-Region<> & Mesh::getRegion3D(const std::string &region_name){
-   auto found = regionMap3D.find(region_name);
-   if (found == end(regionMap3D)) {
-     throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
-   }
-   return found->second;
+const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
+  }
+  return found->second;
 }
 
-Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
-   auto found = regionMap2D.find(region_name);
-   if (found == end(regionMap2D)) {
-     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
-   }
-   return found->second;
+const Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name) const {
+  const auto found = regionMap2D.find(region_name);
+  if (found == end(regionMap2D)) {
+    throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+  }
+  return found->second;
 }
 
-Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) {
-  auto found = regionMapPerp.find(region_name);
+const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const {
+  const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
     throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
   }

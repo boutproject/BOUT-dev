@@ -40,7 +40,8 @@ Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector3D::Vector3D(const Vector3D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+      location(f.getLocation()) {}
 
 Vector3D::~Vector3D() {
   if (deriv != nullptr) {
@@ -154,6 +155,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 
   covariant = rhs.covariant;
 
+  setLocation(rhs.getLocation());
   return *this;
 }
 
@@ -163,6 +165,8 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   z = rhs.z;
   
   covariant = rhs.covariant;
+
+  setLocation(rhs.getLocation());
 
   return *this;
 }
@@ -515,16 +519,32 @@ CELL_LOC Vector3D::getLocation() const {
 }
 
 void Vector3D::setLocation(CELL_LOC loc) {
-  location = loc;
-  if(loc == CELL_VSHIFT) {
-    x.setLocation(CELL_XLOW);
-    y.setLocation(CELL_YLOW);
-    z.setLocation(CELL_ZLOW);
-  } else {
-    x.setLocation(loc);
-    y.setLocation(loc);
-    z.setLocation(loc);
+  TRACE("Vector3D::setLocation");
+  if (loc == CELL_DEFAULT) {
+    loc = CELL_CENTRE;
   }
+
+  if (x.getMesh()->StaggerGrids) {
+    if (loc == CELL_VSHIFT) {
+      x.setLocation(CELL_XLOW);
+      y.setLocation(CELL_YLOW);
+      z.setLocation(CELL_ZLOW);
+    } else {
+      x.setLocation(loc);
+      y.setLocation(loc);
+      z.setLocation(loc);
+    }
+  } else {
+#if CHECK > 0
+    if (loc != CELL_CENTRE) {
+      throw BoutException("Vector3D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+  }
+
+  location = loc;
 }
 
 /***************************************************************

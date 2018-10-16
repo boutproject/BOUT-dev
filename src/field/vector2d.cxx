@@ -39,7 +39,8 @@ Vector2D::Vector2D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
 Vector2D::Vector2D(const Vector2D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr), location(CELL_CENTRE) {}
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+      location(f.getLocation()) {}
 
 Vector2D::~Vector2D() {
   if (deriv != nullptr) {
@@ -150,6 +151,8 @@ Vector2D & Vector2D::operator=(const Vector2D &rhs) {
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
+
+  setLocation(rhs.getLocation());
 
   covariant = rhs.covariant;
 
@@ -388,16 +391,32 @@ CELL_LOC Vector2D::getLocation() const {
 }
 
 void Vector2D::setLocation(CELL_LOC loc) {
-  location = loc;
-  if(loc == CELL_VSHIFT) {
-    x.setLocation(CELL_XLOW);
-    y.setLocation(CELL_YLOW);
-    z.setLocation(CELL_ZLOW);
-  } else {
-    x.setLocation(loc);
-    y.setLocation(loc);
-    z.setLocation(loc);
+  TRACE("Vector2D::setLocation");
+  if (loc == CELL_DEFAULT) {
+    loc = CELL_CENTRE;
   }
+
+  if (x.getMesh()->StaggerGrids) {
+    if (loc == CELL_VSHIFT) {
+      x.setLocation(CELL_XLOW);
+      y.setLocation(CELL_YLOW);
+      z.setLocation(CELL_ZLOW);
+    } else {
+      x.setLocation(loc);
+      y.setLocation(loc);
+      z.setLocation(loc);
+    }
+  } else {
+#if CHECK > 0
+    if (loc != CELL_CENTRE) {
+      throw BoutException("Vector2D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+  }
+
+  location = loc;
 }
 
 /***************************************************************
