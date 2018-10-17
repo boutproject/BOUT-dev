@@ -67,13 +67,6 @@ class Field {
     return CELL_CENTRE;
   }
 
-#ifdef TRACK
-  DEPRECATED(std::string getName() const) { return name; }
-  DEPRECATED(void setName(std::string s)) { name = s; }
-#else
-  DEPRECATED(std::string getName()) const { return ""; }
-  DEPRECATED(void setName(std::string UNUSED(s))) {}
-#endif
   std::string name;
 
 #if CHECK > 0
