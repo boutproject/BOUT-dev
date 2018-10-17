@@ -120,9 +120,6 @@ class Field {
  protected:
   Mesh * fieldmesh;
   mutable Coordinates * fieldCoordinates = nullptr;
-  /// Supplies an error method. Currently just prints and exits, but
-  /// should do something more cunning...
-  DEPRECATED(void error(const char *s, ...) const);
 };
 
 #endif /* __FIELD_H__ */
