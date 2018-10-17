@@ -371,10 +371,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Field3D::setBackground(const Field2D &f2d) {
-  background = &f2d;
-}
-
 void Field3D::applyBoundary(bool init) {
   TRACE("Field3D::applyBoundary()");
 

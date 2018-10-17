@@ -36,7 +36,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 
-#include "bout/deprecated.hxx"
 #include "bout/assert.hxx"
 
 #include "bout/field_visitor.hxx"
@@ -432,7 +431,6 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
-  DEPRECATED(void setBackground(const Field2D &f2d)); ///< Boundary is applied to the total of this and f2d
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const string &condition);
