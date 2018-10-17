@@ -445,10 +445,6 @@ class Mesh {
     }
   }
 
-  Coordinates *DEPRECATED(coordinates(const CELL_LOC location = CELL_CENTRE)) {
-    return getCoordinates(location);
-  }
-
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
