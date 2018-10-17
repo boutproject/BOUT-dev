@@ -60,7 +60,7 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
-        Coordinates * coordinates()
+        Coordinates * getCoordinates()
 
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
