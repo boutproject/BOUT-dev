@@ -86,6 +86,9 @@ class FieldPerp : public Field {
   const Region<IndPerp>& getRegion(REGION region) const;  
   const Region<IndPerp>& getRegion(const std::string &region_name) const;
 
+  Region<IndPerp>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<IndPerp>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
+  
   inline BoutReal& operator[](const IndPerp &d) {
     return data[d.ind];
   }

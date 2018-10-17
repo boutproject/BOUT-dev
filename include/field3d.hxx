@@ -286,6 +286,8 @@ class Field3D : public Field, public FieldData {
   const Region<Ind3D>& getRegion(REGION region) const;  
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
   
+  Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
   BoutReal& operator[](const Ind3D &d) {
     return data[d.ind];
