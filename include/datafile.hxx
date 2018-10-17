@@ -73,10 +73,6 @@ class Datafile {
   bool write(); ///< Write added variables
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
-  
-  // Write a variable to the file now
-  DEPRECATED(bool writeVar(const int &i, const char *name));
-  DEPRECATED(bool writeVar(BoutReal r, const char *name));
 
   void setAttribute(const string &varname, const string &attrname, const string &text);
   void setAttribute(const string &varname, const string &attrname, int value);
