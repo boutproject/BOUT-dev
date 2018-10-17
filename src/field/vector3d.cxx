@@ -346,16 +346,6 @@ CROSS(Vector3D, Vector3D, Vector2D);
 CROSS(Vector3D, Vector2D, Vector3D);
 CROSS(Vector2D, Vector2D, Vector2D);
 
-Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  *this = cross(*this, rhs);
-  return *this;
-}
-
-Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  *this = cross(*this, rhs);
-  return *this;
-}
-
 /***************************************************************
  *                      BINARY OPERATORS 
  ***************************************************************/
@@ -491,16 +481,6 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
   return result;
 }
  
-///////////////// CROSS PRODUCT //////////////////
-
-const Vector3D Vector3D::operator^(const Vector3D &rhs) const {
-  return cross(*this,rhs);
-}
-
-const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
-  return cross(*this,rhs);
-}
-
 /***************************************************************
  *       Get/set variable location for staggered meshes
  ***************************************************************/
