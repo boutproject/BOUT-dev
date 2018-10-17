@@ -36,8 +36,6 @@ class Field;
 #include <bout/rvec.hxx>
 #include "boutexception.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "unused.hxx"
 
 class Mesh;
