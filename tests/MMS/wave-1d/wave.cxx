@@ -23,7 +23,7 @@ const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) 
   Field3D result;
   result.allocate();
   
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
   
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart; j<=mesh->yend; j++)
@@ -52,7 +52,7 @@ private:
 protected:
   int init(bool restarting) {
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     // Get the options
     Options *meshoptions = Options::getRoot()->getSection("mesh");
@@ -160,7 +160,7 @@ protected:
           
           E_f(xi,yj,zk) = f(xi,yj,zk) - Sf(xi,yj,zk);
           E_g(xi,yj,zk) = g(xi,yj,zk) - Sg(xi,yj,zk);
-          output.write("Error at %d,%d,%d = %e, %e",
+          output_error.write("Error at %d,%d,%d = %e, %e",
                        xi, yj, zk, E_f(xi,yj,zk), E_g(xi,yj,zk));
         }
       }

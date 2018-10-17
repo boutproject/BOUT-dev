@@ -2,10 +2,11 @@
 #include <bout/invert/laplacexz.hxx>
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
+#include "utils.hxx"
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXZcyclic(Mesh *m, Options *options);
+  LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc);
   ~LaplaceXZcyclic();
   
   using LaplaceXZ::setCoefs;
@@ -18,7 +19,8 @@ private:
 
   int xstart, xend;
   int nmode, nloc, nsys;
-  dcomplex **acoef, **bcoef, **ccoef, **xcmplx, **rhscmplx, *k1d, *k1d_2;
+  Matrix<dcomplex> acoef, bcoef, ccoef, xcmplx, rhscmplx;
+  Array<dcomplex> k1d, k1d_2;
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 
   int inner_boundary_flags; ///< Flags to set inner boundary condition

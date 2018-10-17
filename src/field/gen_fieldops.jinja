@@ -1,0 +1,100 @@
+// Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
+{{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
+  {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
+#if CHECK > 0
+  if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
+    throw BoutException(
+        "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
+        strLocation({{lhs.name}}.getLocation()), strLocation({{rhs.name}}.getLocation()));
+  }
+#endif
+  {% endif %}
+
+  Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+
+  {% if lhs != "BoutReal" and rhs != "BoutReal" %}
+    ASSERT1(localmesh == {{rhs.name}}.getMesh());
+  {% endif %}
+
+  {{out.field_type}} {{out.name}}(localmesh);
+  {{out.name}}.allocate();
+  checkData({{lhs.name}});
+  checkData({{rhs.name}});
+
+  {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
+    {{region_loop}}({{index_var}}, localmesh->getRegion2D({{region_name}})) {
+	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
+	{% if (operator == "/") and (rhs == "Field2D") %}
+           const auto tmp = 1.0 / {{rhs.mixed_index}};
+	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+         	   {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
+        {% else %}
+	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
+        {% endif %}
+	}
+	}
+  {% else %}
+    {{region_loop}}({{index_var}}, localmesh->getRegion{{out.region_type}}({{region_name}})) {
+	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
+	}
+  {% endif %}
+
+  {% if out in ['Field3D','Field2D'] %}
+    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
+  {% endif %}
+
+  checkData({{out.name}});
+  return {{out.name}};
+}
+
+{% if out.field_type == lhs.field_type %}
+// Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
+{{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}    
+#if CHECK > 0
+    if (this->getLocation() != rhs.getLocation()) {
+      throw BoutException(
+        "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
+        strLocation(this->getLocation()), strLocation({{rhs.name}}.getLocation()));
+    }
+#endif
+    {% endif %}
+
+    {% if lhs != "BoutReal" and rhs != "BoutReal" %}
+      ASSERT1(fieldmesh == {{rhs.name}}.getMesh());
+    {% endif %}
+
+    checkData(*this);
+    checkData({{rhs.name}});
+
+  {% if (out == "Field3D") and (rhs =="Field2D") %}  
+    {{region_loop}}({{index_var}}, fieldmesh->getRegion2D({{region_name}})) {
+	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+	{% if (operator == "/") and (rhs == "Field2D") %}
+           const auto tmp = 1.0 / {{rhs.mixed_index}};
+	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
+        {% else %}
+           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+        {% endif %}
+	}
+	}
+  {% else %}
+    {{region_loop}}({{index_var}}, fieldmesh->getRegion{{lhs.region_type}}({{region_name}})) {
+      (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+    }
+  {% endif %}
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) {{operator}} {{rhs.name}};
+  }
+  return *this;
+}
+{% endif %}

@@ -1,0 +1,33 @@
+---
+languages:
+  cpp:
+    extensions:
+      - '*.hxx'
+      - '*.cxx'
+engines:
+  coverage:
+    enabled: true
+    exclude_paths:
+      - tests/**
+      - examples/**
+  bandit:
+    enabled: true
+    include_paths:
+      - tools/pylib/**
+  cppcheck:
+    enabled: true
+    exclude_paths:
+      - externalpackages/**
+      - tools/**
+  pylint:
+    enable: true
+    include_paths:
+      - tools/pylib/**
+  prospector:
+    enable: true
+    include_paths:
+      - tools/pylib/**
+  shellcheck:
+    enable: true
+    exclude_paths:
+      - build-aux/**

@@ -1,8 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # 
 # Run the test, compare results
 #
+
+#requires: all_tests
 
 # Variables to compare
 from __future__ import print_function
@@ -11,7 +13,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 from numpy import abs, seterr
 from sys import stdout, exit
@@ -29,7 +31,7 @@ tol = 1e-10  # Relative tolerance
 MPIRUN=getmpirun()
 
 print("Making {nm} test".format(nm=name))
-shell("make > make.log")
+shell_safe("make > make.log")
 
 print("Running {nm} test".format(nm=name))
 success = True
@@ -41,10 +43,10 @@ for nproc in [1,2,4]:
   
   cmd = "./{exe} ".format(exe=exeName)
   
-  shell("rm -f data/BOUT.dmp.*.nc")
+  shell("rm data/BOUT.dmp.*.nc")
 
   print("   %d processors ...." % (nproc))
-  s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

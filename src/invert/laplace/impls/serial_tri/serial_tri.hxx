@@ -35,15 +35,24 @@ class LaplaceSerialTri;
 
 class LaplaceSerialTri : public Laplacian {
 public:
-  LaplaceSerialTri(Options *opt=NULL);
-  ~LaplaceSerialTri();
+  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  ~LaplaceSerialTri(){};
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { A = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    A = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { C = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    C = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { D = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    D = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceSerialTri does not have Ex coefficient");
@@ -54,33 +63,12 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b);
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override;
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
-
-  /* Allocation fo
-   * bk   = The fourier transformed of b, where b is one of the inputs in
-   *        LaplaceSerialTri::solve()
-   * bk1d = The 1d array of bk
-   * xk   = The fourier transformed of x, where x the output of
-   *        LaplaceSerialTri::solve()
-   * xk1d = The 1d array of xk
-   */
-  dcomplex **bk, *bk1d;
-  dcomplex **xk, *xk1d;
-
-  /* Coefficents in the tridiagonal solver matrix
-   * Following the notation in "Numerical recipes"
-   * avec is the lower diagonal of the matrix
-   * bvec is the diagonal of the matrix
-   * cvec is the upper diagonal of the matrix
-   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
-   *       above
-   */
-  dcomplex *avec, *bvec, *cvec;
 };
 
 #endif // __SERIAL_TRI_H__

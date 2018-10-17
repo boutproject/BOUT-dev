@@ -4,6 +4,10 @@
 #ifndef __OPERATORS_DI_H__
 #define __OPERATORS_DI_H__
 
+#include <bout_types.hxx>
+#include <field3d.hxx>
+#include <bout/mesh.hxx>
+
 /// \brief 2nd order central differencing in X
 ///
 /// Performs calculation at a single point. The input field
@@ -13,7 +17,7 @@
 /// @param i  The point where the result is calculated
 ///
 inline BoutReal DDX_C2(const Field3D &f, const DataIterator &i) {
-  return (f[i.xp()] - f[i.xm()])/(2.*mesh->coordinates()->dx[i]);
+  return (f[i.xp()] - f[i.xm()])/(2.*f.getCoordinates()->dx[i]);
 }
 
 /// \brief 2nd order central differencing in Y using yup/down fields
@@ -22,7 +26,7 @@ inline BoutReal DDX_C2(const Field3D &f, const DataIterator &i) {
 /// @param i  The point where the result is calculated
 /// 
 inline BoutReal DDY_C2(const Field3D &f, const DataIterator &i) {
-  return (f.yup()[i.yp()] - f.ydown()[i.ym()])/(2.*mesh->coordinates()->dy[i]);
+  return (f.yup()[i.yp()] - f.ydown()[i.ym()])/(2.*f.getCoordinates()->dy[i]);
 }
 
 /// \brief 2nd order central differencing in Y assuming field aligned
@@ -31,7 +35,7 @@ inline BoutReal DDY_C2(const Field3D &f, const DataIterator &i) {
 /// @param i  The point where the result is calculated
 /// 
 inline BoutReal DDY_C2_FA(const Field3D &f, const DataIterator &i) {
-  return (f[i.yp()] - f[i.ym()])/(2.*mesh->coordinates()->dy[i]);
+  return (f[i.yp()] - f[i.ym()])/(2.*f.getCoordinates()->dy[i]);
 }
 
 /// \brief 2nd order central differencing in Z 
@@ -40,7 +44,7 @@ inline BoutReal DDY_C2_FA(const Field3D &f, const DataIterator &i) {
 /// @param i  The point where the result is calculated
 /// 
 inline BoutReal DDZ_C2(const Field3D &f, const DataIterator &i) {
-  return (f[i.zp()] - f[i.zm()])/(2.*mesh->coordinates()->dz);
+  return (f[i.zp()] - f[i.zm()])/(2.*f.getCoordinates()->dz);
 }
 
 
@@ -48,7 +52,7 @@ inline BoutReal DDZ_C2(const Field3D &f, const DataIterator &i) {
 /// d/dx( g^xx df/dx + g^xz df/dz) + d/dz( g^zz df/dz + g^xz df/dx)
 /// 
 BoutReal Delp2_C2(const Field3D &f, const DataIterator &i) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
 
   //  o -- UZ -- o
   //  |          |
@@ -65,10 +69,9 @@ BoutReal Delp2_C2(const Field3D &f, const DataIterator &i) {
 ///
 /// @param[in] f  Field to be differentiated
 /// @param[in] g  Field to be differentiated
-/// @param[in[ i  The point where the result is calculated
-///
+/// @param[in] i  The point where the result is calculated
 BoutReal bracket_arakawa(const Field3D &f, const Field3D &g, const DataIterator &i) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
 
   // Indexing
   const auto xp = i.xp();

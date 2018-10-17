@@ -33,7 +33,11 @@
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/deprecated.hxx"
+#include "msg_stack.hxx"
+#include "unused.hxx"
 
 #include <string>
 #include <list>
@@ -43,45 +47,221 @@
 using std::abs;
 using std::swap;
 
-/*!
- * Allocates an array of \p size BoutReals
- */
-DEPRECATED(BoutReal *rvector(int size));
+/// Helper class for 2D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
+template <typename T>
+class Matrix {
+public:
+  using data_type = T;
+  using size_type = int;
+  
+  Matrix() : n1(0), n2(0){};
+  Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
+    data = Array<T>(n1*n2);
+  }
+  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+  }
 
-/*!
- * Resizes an array of BoutReals to \p newsize
- */ 
-DEPRECATED(BoutReal *rvresize(BoutReal *v, int newsize));
+  Matrix& operator=(const Matrix &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    data = other.data;
+    // Prevent copy on write for Matrix
+    data.ensureUnique();
+    return *this;
+  }
+  
+  inline T& operator()(size_type i1, size_type i2) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
+  inline const T& operator()(size_type i1, size_type i2) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    return data[i1*n2+i2];
+  }
 
-/*!
- * Frees an array of BoutReals
- */
-DEPRECATED(void rvfree(BoutReal *r));
+  Matrix& operator=(const T&val){
+    for (auto &i: data) {
+      i = val;
+    };
+    return *this;
+  };
+  
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(T* operator[](size_type i1)) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
+  // To provide backwards compatibility with matrix to be removed
+  DEPRECATED(const T* operator[](size_type i1) const) {
+    ASSERT2(0<=i1 && i1<n1);
+    return &(data[i1*n2]);
+  }
 
-/*!
- * Allocates an array of \p size ints
- */
-DEPRECATED(int *ivector(int size));
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
 
-/*!
- * Resizes an array of ints to \p newsize
- */
-DEPRECATED(int *ivresize(int *v, int newsize));
+  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
 
-/*!
- * Frees an array of ints
- */
-DEPRECATED(void ivfree(int *v));
+  bool empty(){
+    return n1*n2 == 0;
+  }
 
-/*!
- * Allocate a 2D array of \p xsize by \p ysize BoutReals
- */
-DEPRECATED(BoutReal **rmatrix(int xsize, int ysize));
+  /*!
+   * Ensures that this Matrix does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
+  
+private:
+  size_type n1, n2;
+  Array<T> data;
+};
 
-/*!
- * Allocate a 2D array of \p xsize by \p ysize ints
- */
-DEPRECATED(int **imatrix(int xsize, int ysize));
+// For backwards compatibility with old matrix -- to be removed
+template <typename T>
+DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
+template <typename T>
+void free_matrix(Matrix<T> UNUSED(m)) {};
+
+/// Helper class for 3D arrays
+///
+/// Allows bounds checking through `operator()` with CHECK > 1
+template <typename T>
+class Tensor {
+public:
+  using data_type = T;
+  using size_type = int;
+
+  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
+    data = Array<T>(n1*n2*n3);
+  }
+  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+  }
+
+  Tensor& operator=(const Tensor &other) {
+    n1 = other.n1;
+    n2 = other.n2;
+    n3 = other.n3;
+    data = other.data;
+    // Prevent copy on write for Tensor
+    data.ensureUnique();
+    return *this;
+  }
+
+  T& operator()(size_type i1, size_type i2, size_type i3) {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+  const T& operator()(size_type i1, size_type i2, size_type i3) const {
+    ASSERT2(0<=i1 && i1<n1);
+    ASSERT2(0<=i2 && i2<n2);
+    ASSERT2(0<=i3 && i3<n3);
+    return data[(i1*n2+i2)*n3 + i3];
+  }
+
+  Tensor& operator=(const T&val){
+    for(auto &i: data){
+      i = val;
+    };
+    return *this;
+  };
+  
+  T* begin() { return std::begin(data);};
+  const T* begin() const { return std::begin(data);};
+  T* end() { return std::end(data);};
+  const T* end() const { return std::end(data);};
+  
+  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
+  
+  bool empty(){
+    return n1*n2*n3 == 0;
+  }
+  
+  /*!
+   * Ensures that this Tensor does not share data with another
+   * This should be called before performing any write operations
+   * on the data.
+   */
+  void ensureUnique() {
+    data.ensureUnique();
+  }
+ 
+private:
+  size_type n1, n2, n3;
+  Array<T> data;
+};
+
+/**************************************************************************
+ * Matrix routines
+ **************************************************************************/
+/// Explicit inversion of a 3x3 matrix \p a
+///
+/// The input \p small determines how small the determinant must be for
+/// us to throw due to the matrix being singular (ill conditioned);
+/// If small is less than zero then instead of throwing we return 1.
+/// This is ugly but can be used to support some use cases.
+template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
+  TRACE("invert3x3");
+
+  // Calculate the first co-factors
+  T A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
+  T B = a(1, 2) * a(2, 0) - a(1, 0) * a(2, 2);
+  T C = a(1, 0) * a(2, 1) - a(1, 1) * a(2, 0);
+
+  // Calculate the determinant
+  T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
+
+  if (abs(det) < abs(small)) {
+    if (small >=0 ){
+      throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+    } else {
+      return 1;
+    }      
+  }
+
+  // Calculate the rest of the co-factors
+  T D = a(0, 2) * a(2, 1) - a(0, 1) * a(2, 2);
+  T E = a(0, 0) * a(2, 2) - a(0, 2) * a(2, 0);
+  T F = a(0, 1) * a(2, 0) - a(0, 0) * a(2, 1);
+  T G = a(0, 1) * a(1, 2) - a(0, 2) * a(1, 1);
+  T H = a(0, 2) * a(1, 0) - a(0, 0) * a(1, 2);
+  T I = a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
+
+  // Now construct the output, overwrites input
+  T detinv = 1.0 / det;
+
+  a(0, 0) = A * detinv;
+  a(0, 1) = D * detinv;
+  a(0, 2) = G * detinv;
+  a(1, 0) = B * detinv;
+  a(1, 1) = E * detinv;
+  a(1, 2) = H * detinv;
+  a(2, 0) = C * detinv;
+  a(2, 1) = F * detinv;
+  a(2, 2) = I * detinv;
+
+  return 0;
+};
+
+// Give signature here as not able to mark implementation below as DEPRECATED
+template <class T>
+DEPRECATED(T **matrix(int xsize, int ysize));
 
 /*!
  * Create a 2D array of \p xsize by \p ysize 
@@ -92,6 +272,8 @@ DEPRECATED(int **imatrix(int xsize, int ysize));
  * no effort to manage memory. Prefer other methods
  * (like standard containers) over this if possible.
  * 
+ * \deprecated
+ *
  * Example
  * -------
  * 
@@ -107,10 +289,10 @@ T **matrix(int xsize, int ysize) {
   if(ysize == 0)
      ysize = 1;
 
-  if((m = new T*[xsize]) == NULL)
+  if((m = new T*[xsize]) == nullptr)
     throw BoutException("Error: could not allocate memory:%d\n", xsize);
   
-  if((m[0] = new T[xsize*ysize]) == NULL)
+  if((m[0] = new T[xsize*ysize]) == nullptr)
     throw BoutException("Error: could not allocate memory\n");
 
   for(i=1;i<xsize;i++) {
@@ -119,20 +301,13 @@ T **matrix(int xsize, int ysize) {
   return m;
 }
 
-/*!
- * Free a 2D array of BoutReals, assumed to have been allocated using rmatrix()
- */
-DEPRECATED(void free_rmatrix(BoutReal **m));
-
-/*!
- * Free a 2D array of ints, assumed to have been allocated using imatrix()
- */
-DEPRECATED(void free_imatrix(int **m));
-
+template <class T>
+DEPRECATED(void free_matrix(T **m));
 /*!
  * Free a matrix, assumed to have been allocated using matrix()
  *
- * @param[in] T  The matrix to free
+ * @param[in] m  The matrix to free
+ * @deprecated
  *
  * Example
  * -------
@@ -147,42 +322,26 @@ void free_matrix(T **m) {
   delete[] m;
 }
 
-/*!
- * Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
-BoutReal ***r3tensor(int nrow, int ncol, int ndep);
 
-/*!
- * Free a 3D BoutReal array, assumed to have been created
- * by r3tensor()
- *
- */
-void free_r3tensor(BoutReal ***m);
+/// Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
+DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Allocate a 3D int array of size \p nrow x \p ncol \p ndep
- 
- * Note: Prefer other methods like standard containers
- */ 
-int ***i3tensor(int nrow, int ncol, int ndep);
+/// Free a 3D BoutReal array, assumed to have been created by r3tensor
+///
+/// \deprecated
+DEPRECATED(void free_r3tensor(BoutReal ***m));
 
-/*!
- * Free a 3D int array, assumed to have been created
- * by i3tensor()
- */
-void free_i3tensor(int ***m);
+/// Allocate a 3D int array of size \p nrow x \p ncol \p ndep
+///
+/// \deprecated Prefer other methods like standard containers
+DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
 
-/*!
- * Allocate a 2D array of \p nrow by \p ncol dcomplex objects
- */
-DEPRECATED(dcomplex **cmatrix(int nrow, int ncol));
-
-/*!
- * Free a 2D array, assumed to have been allocated using cmatrix
- */
-DEPRECATED(void free_cmatrix(dcomplex** cm));
+/// Free a 3D int array, assumed to have been created by i3tensor()
+///
+/// \deprecated
+DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
  * Get Random number between 0 and 1
@@ -196,7 +355,7 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-T SQ(T t){
+T SQ(const T &t){
   return t*t;
 }
 
@@ -207,31 +366,27 @@ inline int ROUND(BoutReal x){
   return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
-/*!
- * Calculate the maximum of a list of values
- * using a > b operator
- */
+/// Calculate the maximum of a list of values
+/// using a > b operator
 template <typename T>
-T BOUTMAX(T a){
+T BOUTMAX(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMAX(T a,T b,Args... args){
-  T c = BOUTMAX(b,args...);
+T BOUTMAX(T a, T b, Args... args) {
+  T c = BOUTMAX(b, args...);
   return c > a ? c : a;
 }
 
-/*!
- * Calculate the minimum of a list of values
- * using the a < b operator
- */
+/// Calculate the minimum of a list of values
+/// using the a < b operator
 template <typename T>
-T BOUTMIN(T a){
+T BOUTMIN(T a) {
   return a;
 }
 template <typename T, typename... Args>
-T BOUTMIN(T a,T b,Args... args){
-  T c = BOUTMIN(b,args...);
+T BOUTMIN(T a, T b, Args... args) {
+  T c = BOUTMIN(b, args...);
   return c < a ? c : a;
 }
 
@@ -261,6 +416,18 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
   return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
 }
+
+#if CHECK > 0
+/// Throw an exception if \p f is not finite
+inline void checkData(BoutReal f) {
+  if (!finite(f)) {
+    throw BoutException("BoutReal: Operation on non-finite data");
+  }
+}
+#else
+/// Ignored with disabled CHECK; Throw an exception if \p f is not finite
+inline void checkData(BoutReal UNUSED(f)){};
+#endif
 
 /*!
  * Allocate memory and copy string \p s
@@ -324,7 +491,7 @@ std::list<std::string> strsplit(const std::string &s, char delim);
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trim(const string &s, const string &c=" \t\r");
+std::string trim(const std::string &s, const std::string &c=" \t\r");
 
 /*!
  * Strips leading spaces from a string
@@ -332,7 +499,7 @@ string trim(const string &s, const string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimLeft(const string &, const string &c=" \t");
+std::string trimLeft(const std::string &s, const std::string &c=" \t");
 
 /*!
  * Strips leading spaces from a string
@@ -340,15 +507,15 @@ string trimLeft(const string &, const string &c=" \t");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-string trimRight(const string &, const string &c=" \t\r");
+std::string trimRight(const std::string &s, const std::string &c=" \t\r");
 
-/*! 
+/*!
  * Strips the comments from a string
- * Removes anything after the first appearance of one 
- * of the characters in \p c
  * 
+ * @param[in] s   The string to trim (not modified)
+ * @param[in] c   Collection of characters to remove
  */
-string trimComments(const string &, const string &c="#;");
+std::string trimComments(const std::string &s, const std::string &c="#;");
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.
@@ -373,5 +540,10 @@ string trimComments(const string &, const string &c="#;");
       va_end(va);                                       \
     }                                                   \
   }
+
+/// Convert pointer or reference to pointer
+/// This allows consistent handling of both in macros, templates
+template <typename T> T *pointer(T *val) { return val; }
+template <typename T> T *pointer(T &val) { return &val; }
 
 #endif // __UTILS_H__

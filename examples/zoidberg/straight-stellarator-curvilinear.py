@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-# Create grids for a straight stellarator, based on 
-# curvilinear grids
+# Create grids for a straight stellarator, based on curvilinear grids
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import zoidberg
 
@@ -76,29 +74,4 @@ zoidberg.write_maps(grid, magnetic_field, maps, gridfile=filename, new_names=Fal
 #############################################################################
 # Plot maps
 
-yslice = 0
-pol, ycoord = grid.getPoloidalGrid(yslice)
-pol_next, ycoord_next = grid.getPoloidalGrid(yslice+1)
-
-# Plot the points on yslice+1 as 'bx'
-# Note: ravel used here only so multiple labels are not created
-plt.plot(np.ravel(pol_next.R), np.ravel(pol_next.Z), 'bx', label="Grid points on slice {0}".format(yslice+1))
-
-# Plot the forward map from yslice to yslice+1 as red 'o'
-forward_R = maps['forward_R'][:,yslice,:]
-forward_Z = maps['forward_Z'][:,yslice,:]
-plt.plot(np.ravel(forward_R), np.ravel(forward_Z), 'ro', label="Forward map from slice {0}".format(yslice))
-
-# Mark the points which hit the inner boundary
-# These are marked with a negative x index
-in_boundary = maps['forward_xt_prime'][:,yslice,:] < 0.0
-plt.plot( np.ravel(forward_R[ in_boundary ]), np.ravel(forward_Z[ in_boundary ]), 'ko', label="Inner boundary points")
-
-# Outer boundary marked with x index nx
-out_boundary = maps['forward_xt_prime'][:,yslice,:] > nx-0.5
-plt.plot( np.ravel(forward_R[ out_boundary ]), np.ravel(forward_Z[ out_boundary ]), 'bo', label="Outer boundary points")
-
-
-plt.legend()
-
-plt.show()
+zoidberg.plot.plot_forward_map(grid, maps)

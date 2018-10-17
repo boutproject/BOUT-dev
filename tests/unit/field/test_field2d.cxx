@@ -1,11 +1,17 @@
+// We know stuff might be deprecated, but we still want to test it
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field2d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 
 #include <cmath>
 #include <set>
@@ -24,6 +30,9 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {
@@ -84,7 +93,7 @@ TEST_F(Field2DTest, IsFinite) {
 
   EXPECT_TRUE(finite(field));
 
-  field(1, 1, 1) = std::nan("");
+  field(1, 1) = std::nan("");
 
   EXPECT_FALSE(finite(field));
 }
@@ -92,29 +101,109 @@ TEST_F(Field2DTest, IsFinite) {
 TEST_F(Field2DTest, GetGridSizes) {
   Field2D field;
 
-  field.allocate();
-
   EXPECT_EQ(field.getNx(), nx);
   EXPECT_EQ(field.getNy(), ny);
   EXPECT_EQ(field.getNz(), 1);
 }
 
 TEST_F(Field2DTest, CreateOnGivenMesh) {
-  int test_nx = 2;
-  int test_ny = 3;
-  int test_nz = 5;
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
 
-  FakeMesh *fieldmesh = new FakeMesh(test_nx, test_ny, test_nz);
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
-  Field2D field(fieldmesh);
-
-  field.allocate();
+  Field2D field{&fieldmesh};
 
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), test_ny);
   EXPECT_EQ(field.getNz(), 1);
+}
 
-  delete fieldmesh;
+TEST_F(Field2DTest, CopyCheckFieldmesh) {
+  int test_nx = Field2DTest::nx + 2;
+  int test_ny = Field2DTest::ny + 2;
+  int test_nz = Field2DTest::nz + 2;
+
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+
+  // createDefaultRegions is noisy
+  output_info.disable();
+  fieldmesh.createDefaultRegions();
+  output_info.enable();
+
+  Field2D field{1.0, &fieldmesh};
+  Field2D field2{field};
+
+  EXPECT_EQ(field2.getNx(), test_nx);
+  EXPECT_EQ(field2.getNy(), test_ny);
+  EXPECT_EQ(field2.getNz(), 1);
+}
+
+#if CHECK > 0
+TEST_F(Field2DTest, CreateOnNullMesh) {
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field2D field;
+
+  EXPECT_EQ(field.getNx(), -1);
+  EXPECT_EQ(field.getNy(), -1);
+  EXPECT_EQ(field.getNz(), 1);
+
+  mesh = old_mesh;
+
+  field.allocate();
+
+  EXPECT_EQ(field.getNx(), Field2DTest::nx);
+  EXPECT_EQ(field.getNy(), Field2DTest::ny);
+  EXPECT_EQ(field.getNz(), 1);
+}
+#endif
+
+#if CHECK > 0 && CHECK <= 2
+// We only want to run this test in a certain range of CHECK as we're
+// checking some behaviour that is only enabled for CHECK above 0
+// but there are checks that will throw before reaching these lines if
+// check is greater than 2, so the test only makes sense in a certain range.
+TEST_F(Field2DTest, CreateCopyOnNullMesh) {
+  // Whilst the declaration of field below looks like it should create a Field2D
+  // without a mesh, it in fact will result in a Field2D associated with the
+  // global mesh as we end up calling the Field constructor that forces this.
+  // Hence, to test the case of copying a field without a mesh we have to
+  // temporarily hide the global mesh, before restoring it later.
+  auto old_mesh = mesh;
+  mesh = nullptr;
+
+  Field2D field;
+  // If CHECK > 2 then the following will throw due to the data
+  // block in field not being allocated. We can't allocate as that
+  // would force field to have a mesh associated with it.
+  Field2D field2(field);
+
+  EXPECT_EQ(field2.getNx(), -1);
+  EXPECT_EQ(field2.getNy(), -1);
+  EXPECT_EQ(field2.getNz(), 1);
+
+  mesh = old_mesh;
+  field2.allocate();
+
+  EXPECT_EQ(field2.getNx(), Field2DTest::nx);
+  EXPECT_EQ(field2.getNy(), Field2DTest::ny);
+  EXPECT_EQ(field2.getNz(), 1);
+}
+#endif
+
+TEST_F(Field2DTest, TimeDeriv) {
+  Field2D field;
+
+  auto deriv = field.timeDeriv();
+  EXPECT_NE(&field, deriv);
+
+  auto deriv2 = field.timeDeriv();
+  EXPECT_EQ(deriv, deriv2);
+
+  EXPECT_EQ(&(ddt(field)), deriv);
 }
 
 /// This test is split into two parts: a very basic sanity check first
@@ -210,6 +299,71 @@ TEST_F(Field2DTest, IterateOverRGN_ALL) {
 
   EXPECT_EQ(found_sentinels, num_sentinels);
   EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
+TEST_F(Field2DTest, IterateOverRegionInd2D_RGN_ALL) {
+  Field2D field{1.0};
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  const int num_sentinels = test_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (auto &i : field.getMesh()->getRegion2D("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
+TEST_F(Field2DTest, IterateOverRegionInd3D_RGN_ALL) {
+  Field2D field{1.0};
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  // nz more sentinels than expected, as we're looping over a 3D region
+  const int num_sentinels = test_indices.size() * nz;
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (auto &i : field.getMesh()->getRegion3D("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nz * nx * ny) - num_sentinels) + (num_sentinels * sentinel));
   EXPECT_TRUE(test_indices == result_indices);
 }
 
@@ -335,6 +489,13 @@ TEST_F(Field2DTest, IterateOverRGN_NOY) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
+TEST_F(Field2DTest, IterateOverRGN_NOZ) {
+  Field2D field = 1.0;
+
+  // This is not a valid region for Field2D
+  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+}
+
 TEST_F(Field2DTest, Indexing) {
   Field2D field;
 
@@ -347,6 +508,76 @@ TEST_F(Field2DTest, Indexing) {
   }
 
   EXPECT_DOUBLE_EQ(field(2, 2), 4);
+}
+
+TEST_F(Field2DTest, IndexingAs3D) {
+  Field2D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  EXPECT_DOUBLE_EQ(field(2, 2), 4 + nz -1);
+}
+
+TEST_F(Field2DTest, ConstIndexingAs3D) {
+  const Field2D field = 3.0;
+  Field2D field2;
+  field2.allocate();
+  
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field2(i, j, k) = field(i, j, k) + i + j + k;
+      }
+    }
+  }
+
+  EXPECT_DOUBLE_EQ(field2(2, 2), 3 + 4 + nz - 1);
+}
+
+TEST_F(Field2DTest, IndexingInd3D) {
+  Field2D field;
+
+  field.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field[ind], 10);
+}
+
+TEST_F(Field2DTest, ConstIndexingInd3D) {
+  Field2D field1;
+
+  field1.allocate();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        field1(i, j, k) = i + j + k;
+      }
+    }
+  }
+
+  const Field2D field2{field1};
+
+  Ind3D ind{(2*ny + 2)*nz + 2};
+
+  EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
 #if CHECK > 2
@@ -390,9 +621,70 @@ TEST_F(Field2DTest, CheckData) {
 
   EXPECT_NO_THROW(checkData(field));
 
-  field(1, 1, 1) = std::nan("");
+  field(1, 1) = std::nan("");
 
   EXPECT_THROW(checkData(field), BoutException);
+  
+  field = 1.0;
+  field(0, 0) = std::nan("");
+
+  EXPECT_NO_THROW(checkData(field));
+  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
+  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+
+}
+
+#if CHECK > 0
+TEST_F(Field2DTest, DoneComms) {
+  Field2D field = 1.0;
+  field.bndry_xin = false;
+  field.bndry_xout = false;
+  field.bndry_yup = false;
+  field.bndry_ydown = false;
+
+  EXPECT_THROW(field.bndryValid(), BoutException);
+  field.doneComms();
+  EXPECT_EQ(field.bndryValid(), true);
+}
+#endif
+
+TEST_F(Field2DTest, InvalidateGuards) {
+  Field2D field;
+  field.allocate(); // Calls invalidateGuards
+  field = 1.0;      // Sets everywhere including boundaries
+
+  const int nmesh = nx * ny;
+
+  int sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  EXPECT_EQ(sum, nmesh); // Field operator= hasn't been broken by invalidateGuards
+
+  // Count the number of non-boundary points
+  sum = 0;
+  for (const auto &i : field.region(RGN_NOBNDRY)) {
+    field[i] = 0.0; // Reset field value
+    sum++;
+  }
+  const int nbndry = nmesh - sum;
+
+  auto localmesh = field.getMesh();
+  EXPECT_NO_THROW(checkData(field(0, 0)));
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
+
+  invalidateGuards(field);
+
+  EXPECT_THROW(checkData(field(0, 0)), BoutException);
+  EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
+
+  sum = 0;
+  for (const auto &i : field.region(RGN_ALL)) {
+    if (!finite(field[i]))
+      sum++;
+  }
+  EXPECT_EQ(sum, nbndry);
 }
 
 #endif // CHECK > 2
@@ -418,6 +710,16 @@ TEST_F(Field2DTest, AssignFromBoutReal) {
   EXPECT_TRUE(IsField2DEqualBoutReal(field, 2.0));
 }
 
+TEST_F(Field2DTest, AssignFromInvalid) {
+  Field2D field;
+
+#if CHECK > 0
+  EXPECT_THROW(field = std::nan(""), BoutException);
+#else
+  EXPECT_NO_THROW(field = std::nan(""));
+#endif
+}
+
 TEST_F(Field2DTest, UnaryMinus) {
   Field2D field;
 
@@ -434,6 +736,13 @@ TEST_F(Field2DTest, AddEqualsBoutReal) {
   a += 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 11.0));
 }
 
 TEST_F(Field2DTest, AddEqualsField2D) {
@@ -444,6 +753,13 @@ TEST_F(Field2DTest, AddEqualsField2D) {
   a += b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c += b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 8.0));
 }
 
 TEST_F(Field2DTest, AddField2DBoutReal) {
@@ -481,6 +797,13 @@ TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
   a *= 1.5;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= 1.5;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.5));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsField2D) {
@@ -491,6 +814,13 @@ TEST_F(Field2DTest, MultiplyEqualsField2D) {
   a *= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c *= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 40.0));
 }
 
 TEST_F(Field2DTest, MultiplyField2DBoutReal) {
@@ -528,6 +858,13 @@ TEST_F(Field2DTest, SubtractEqualsBoutReal) {
   a -= 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, -9.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsField2D) {
@@ -538,6 +875,13 @@ TEST_F(Field2DTest, SubtractEqualsField2D) {
   a -= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c -= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, -12.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DBoutReal) {
@@ -575,6 +919,13 @@ TEST_F(Field2DTest, DivideEqualsBoutReal) {
   a /= 5.0;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= 5.0;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.1));
 }
 
 TEST_F(Field2DTest, DivideEqualsField2D) {
@@ -585,6 +936,13 @@ TEST_F(Field2DTest, DivideEqualsField2D) {
   a /= b;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+
+  // Check case where field is not unique
+  auto c = a;
+  c /= b;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.8));
 }
 
 TEST_F(Field2DTest, DivideField2DBoutReal) {
@@ -765,7 +1123,9 @@ TEST_F(Field2DTest, Min) {
   // min doesn't include guard cells
   const BoutReal min_value = 40.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(min(field, false), min_value));
+  EXPECT_EQ(min(field, false), min_value);
+  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
 }
 
 TEST_F(Field2DTest, Max) {
@@ -780,5 +1140,9 @@ TEST_F(Field2DTest, Max) {
   // max doesn't include guard cells
   const BoutReal max_value = 60.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(max(field, false), max_value));
+  EXPECT_EQ(max(field, false), max_value);
+  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
 }
+
+#pragma GCC diagnostic pop

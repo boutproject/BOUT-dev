@@ -21,10 +21,9 @@ BOUT.inp input file
 
 The text input file ``BOUT.inp`` is always in a subdirectory called
 ``data`` for all examples. The files include comments (starting with
-either ’;’ or ’#’) and should be fairly self-explanatory. The format is
+either ``;`` or ``#``) and should be fairly self-explanatory. The format is
 the same as a windows INI file, consisting of ``name = value`` pairs.
-Comments are started with a hash (#) or semi-colon, which comments out
-the rest of the line. values can be:
+Supported value types are:
 
 -  Integers
 
@@ -51,6 +50,39 @@ Subsections can also be used, separated by colons ’:’, e.g.
 
     [section:subsection]
 
+Numerical quantities can be plain numbers or expressions:
+
+.. code-block:: cfg
+
+   short_pi = 3.145
+   foo = 6 * 9
+
+Variables can even reference other variables:
+
+.. code-block:: cfg
+
+   pressure = temperature * density
+   temperature = 12
+   density = 3
+
+Note that variables can be used before their definition; all variables
+are first read, and then processed afterwards.
+
+All expressions are calculated in floating point and then converted to
+an integer when read inside BOUT++. The conversion is done by rounding
+to the nearest integer, but throws an error if the floating point
+value is not within :math:`1e-3` of an integer. This is to minimise
+unexpected behaviour. If you want to round any result to an integer,
+use the ``round`` function:
+
+.. code-block:: cfg
+
+    bad_integer = 256.4
+    ok_integer = round(256.4)
+
+Note that it is still possible to read ``bad_integer`` as a real
+number though.
+
 Have a look through the examples to see how the options are used.
 
 Command line options
@@ -63,7 +95,7 @@ Command-line switches are:
 ==============  ============================================================
 -h, --help      Prints a help message and quits
 -v, --verbose   Outputs more messages to BOUT.log files
--q, --quiet     Outputs fewer messages to log files 
+-q, --quiet     Outputs fewer messages to log files
 -d <directory>  Look in <directory> for input/output files (default "data")
 -f <file>       Use OPTIONS given in <file>
 -o <file>       Save used OPTIONS given to <file> (default BOUT.settings)
@@ -103,7 +135,7 @@ At the top of the BOUT.inp file (before any section headers), options
 which affect the core code are listed. These are common to all physics
 models, and the most useful of them are:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     NOUT = 100       # number of time-points output
     TIMESTEP = 1.0   # time between outputs
@@ -122,7 +154,7 @@ run for called “wall time”, because it’s the time taken according to a
 clock on the wall, as opposed to the CPU time actually used. If this is
 the case, you can use the option
 
-.. code-block:: bash
+.. code-block:: cfg
 
     wall_limit = 10 # wall clock limit (in hours)
 
@@ -137,31 +169,47 @@ the last simulation. Whilst it is possible to create a restart file from
 the output data afterwards, it’s much easier if you have the restart
 files. Using the option
 
-.. code-block:: bash
+.. code-block:: cfg
 
     archive = 20
 
 saves a copy of the restart files every 20 timesteps, which can then be
 used as a starting point.
 
-The X and Y size of the computational grid is set by the grid file, but
-the number of points in the Z (axisymmetric) direction is specified in
-the options file:
+.. _sec-grid-options:
 
-.. code-block:: bash
+Grids
+~~~~~~~~~
+
+You can set the size of the computational grid in the ``mesh`` section
+of the input file (see :ref:`sec-gridgen` for more information):
+
+.. code-block:: cfg
 
     [mesh]
-    nz = 32
+    nx = 16  # Number of points in X
+    ny = 16  # Number of points in Y
+    nz = 32  # Number of points in Z
 
-It is recommended, but not necessary, that this be :math:`\texttt{nz} = 2^n`, i.e.
-:math:`1,2,4,8,\ldots`. This is because FFTs are usually slightly faster
-with power-of-two length arrays, and FFTs are used quite frequently in many models.
+It is recommended, but not necessary, that this be :math:`\texttt{nz}
+= 2^n`, i.e.  :math:`1,2,4,8,\ldots`. This is because FFTs are usually
+slightly faster with power-of-two length arrays, and FFTs are used
+quite frequently in many models.
+
+.. note:: In previous versions of BOUT++, ``nz`` was constrained to be
+          a power-of-two, and had to be specified as a power-of-two
+          plus one (i.e. a number of the form :math:`2^n + 1` like
+          :math:`2, 3, 5, 9,\ldots`) in order to account for an
+          additional, unused, point in Z. Both of these conditions
+          were relaxed in BOUT++ 4.0. If you use an input file from a
+          previous version, check that this superfluous point is not
+          included in ``nz``.
 
 Since the Z dimension is periodic, the domain size is specified as
 multiples or fractions of :math:`2\pi`. To specify a fraction of
 :math:`2\pi`, use
 
-.. code-block:: bash
+.. code-block:: cfg
 
     ZPERIOD = 10
 
@@ -171,7 +219,7 @@ tokamaks to make sure that the domain is an integer fraction of a torus.
 If instead you want to specify the Z range directly (for example if Z is
 not an angle), there are the options
 
-.. code-block:: bash
+.. code-block:: cfg
 
     ZMIN = 0.0
     ZMAX = 0.1
@@ -183,7 +231,7 @@ directions. By default BOUT++ automatically divides the grid in both X and Y,
 finding the decomposition with domains closest to square, whilst satisfying
 constraints. These constraints are:
 
-- Every processor must have the same size and shape domain 
+- Every processor must have the same size and shape domain
 
 - Branch cuts, mostly at X-points, must be on processor boundaries.
   This is because the connection between grid points is modified in BOUT++
@@ -192,17 +240,24 @@ constraints. These constraints are:
 To specify a splitting manually, the number of processors in the X
 direction can be specified:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     NXPE = 1  # Set number of X processors
 
-The grid file to use is specified relative to the root directory where
-the simulation is run (i.e. running “``ls ./data/BOUT.inp``” gives the
-options file)
+If you need to specify complex input values, e.g. numerical values
+from experiment, you may want to use a grid file. The grid file to use
+is specified relative to the root directory where the simulation is
+run (i.e. running “``ls ./data/BOUT.inp``” gives the options
+file). You can use the global option ``grid``, or ``mesh:file``:
 
-.. code-block:: bash
+.. code-block:: cfg
 
     grid = "data/cbm18_8_y064_x260.nc"
+
+    # Alternatively:
+    [mesh]
+    file = "data/cbm18_8_y064_x260.nc"
+
 
 Communications
 --------------
@@ -217,8 +272,13 @@ and problem.
 Differencing methods
 --------------------
 
-Differencing methods are specified in three section (``[ddx]``,
-``[ddy]`` and ``[ddz]``), one for each dimension.
+Differencing methods are specified in the section (``[mesh:ddx]``,
+``[mesh:ddy]``, ``[mesh:ddz]`` and ``[mesh:diff]``), one for each
+dimension. The ``[mesh:diff]`` section is only used if the section for
+the dimension does not contain an option for the differencing method.
+Note that ``[mesh]`` is the name of the section passed to the mesh
+constructor, which is most often ``mesh`` - but could have another
+name, e.g. if multiple meshes are used.
 
 -  ``first``, the method used for first derivatives
 
@@ -231,6 +291,14 @@ Differencing methods are specified in three section (``[ddx]``,
 The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
+
+The staggered derivatives can be specified as ``FirstStag`` or if the
+value is not set, then ``First`` is checked.
+Note that for the staggered quantities, if the staggered quantity in a
+dimension is not set, first the staggered quantity in the ``[mesh:diff]``
+section is checked. This is useful, as the staggered quantities are
+more restricted in the available choices than the non-staggered
+differenciating operators.
 
 Model-specific options
 ----------------------
@@ -267,26 +335,29 @@ to select HDF5 instead of the default NetCDF format put
 before any section headers. The output (dump) files with time-history
 are controlled by settings in a section called “output”. Restart files
 contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table [tab:outputopts].
+“restart”. The options available are listed in table :numref:`tab-outputopts`.
 
-+-------------+----------------------------------------------------+--------------+
-| Option      | Description                                        | Default      |
-|             |                                                    | value        |
-+-------------+----------------------------------------------------+--------------+
-| enabled     | Writing is enabled                                 | true         |
-+-------------+----------------------------------------------------+--------------+
-| floats      | Write floats rather than doubles                   | true (dmp)   |
-+-------------+----------------------------------------------------+--------------+
-| flush       | Flush the file to disk after each write            | true         |
-+-------------+----------------------------------------------------+--------------+
-| guards      | Output guard cells                                 | true         |
-+-------------+----------------------------------------------------+--------------+
-| openclose   | Re-open the file for each write, and close after   | true         |
-+-------------+----------------------------------------------------+--------------+
-| parallel    | Use parallel I/O                                   | false        |
-+-------------+----------------------------------------------------+--------------+
+.. _tab-outputopts:
+.. table:: Output file options
+	   
+   +-------------+----------------------------------------------------+--------------+
+   | Option      | Description                                        | Default      |
+   |             |                                                    | value        |
+   +-------------+----------------------------------------------------+--------------+
+   | enabled     | Writing is enabled                                 | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | floats      | Write floats rather than doubles                   | true (dmp)   |
+   +-------------+----------------------------------------------------+--------------+
+   | flush       | Flush the file to disk after each write            | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | guards      | Output guard cells                                 | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | openclose   | Re-open the file for each write, and close after   | true         |
+   +-------------+----------------------------------------------------+--------------+
+   | parallel    | Use parallel I/O                                   | false        |
+   +-------------+----------------------------------------------------+--------------+
 
-Table: Output file options
+|
 
 **enabled** is useful mainly for doing performance or scaling tests,
 where you want to exclude I/O from the timings. **floats** is used to
@@ -314,68 +385,133 @@ Implementation
 
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
-tree structure there is the ``Options`` class defined in
-``bout++/include/options.hxx``
+tree structure there is the `Options` class defined in
+``bout++/include/options.hxx``. 
 
-.. code:: c++
+To access the options, there is a static function (singleton)::
 
-    class Options {
-     public:
-      // Setting options
-      void set(const string &key, int value, const string &source="");
-      ...
-      // Testing if set
-      bool isSet(const string &key);
-      // Getting options
-      void get(const string &key,int &val,const int default);
-      ...
-      // Get a subsection. Creates if doesn't exist
-      Options* getSection(const string &name);
-    };
+    auto options = Options::root();
 
-To access the options, there is a static function (singleton)
+which returns a reference (type ``Options&``). Options can be set by
+assigning, treating options as a map or dictionary::
 
-::
+    options["nout"] = 10;    // Integer
+    options["restart"] = true;  // bool
+    
+Internally these values are converted to strings. Any type can be
+assigned, so long as it can be streamed to a string (using ``<<``
+operator and a ``std::stringstream``).
 
-      Options *options = Options::getRoot();
+Often it’s useful to see where an option setting has come from e.g. the
+name of the options file or “command line”. To specify a source, use
+the ``assign`` function to assign values::
+
+    options["nout"].assign(10, "manual");
+
+A value cannot be assigned more than once with different values and
+the same source ("manual" in this example). This is to catch a common
+error in which a setting is inconsistently specified in an input
+file. To force a value to change, overwriting the existing value (if
+any)::
+
+    options["nout"].force(20, "manual");
+
+Sub-sections are created as they are accessed, so a value in a
+sub-section could be set using::
+
+    auto section = options["mysection"];
+    section["myswitch"] = true;
+
+or just::
+
+    options["mysection"]["myswitch"] = true;
+
+To get options, they can be assigned to a variable::
+
+    int nout = options["nout"];
+
+If the option is not found then a ``BoutException`` will be thrown. A
+default value can be given, which will be used if the option has not
+been set::
+
+    int nout = options["nout"].withDefault(1);
+
+If ``options`` is not ``const``, then the given default value will be
+cached. If a default value has already been cached for this option,
+then the default values must be consistent: A ``BoutException`` is
+thrown if inconsistent default values are detected.
+
+It is common for BOUT++ models to read in many settings which have the
+same variable name as option setting (e.g. "nout" here). A convenient
+macro reads options into an already-defined variable::
+
+    int nout;
+    OPTION(options, nout, 1);
+
+where the first argument is a section, second argument is the variable
+whose name will also be used as the option string, and third argument
+is the default value.
+
+Every time an option is accessed, a message is written
+to ``output_info``. This message includes the value used and the
+source of that value. By default this message is printed to the
+terminal and saved in the log files, but this can be disabled by
+changing the logging level: Add ``-q`` to the command line to reduce
+logging level. See section :ref:`sec-logging` for more details about
+logging.
+
+The type to be returned can also be specified as a template argument::
+
+    BoutReal nout = options["nout"].as<BoutReal>();
+
+Any type can be used which can be streamed (operator ``>>``) from a
+``stringstream``. There are special implementations for ``bool``,
+``int`` and ``BoutReal`` which enable use of expressions in the input
+file. The type can also be specified to ``withDefault``, or will be
+inferred from the argument::
+
+    BoutReal nout = options["nout"].withDefault<BoutReal>(1);
+
+
+Older interface
+~~~~~~~~~~~~~~~
+
+Most code in BOUT++ currently uses an older interface to ``Options``
+which uses pointers rather than references. Both interfaces are
+currently supported, but use of the newer interface above is
+encouraged.
+
+To access the options, there is a static function (singleton)::
+  
+    Options *options = Options::getRoot();
 
 which gives the top-level (root) options class. Setting options is done
 using the ``set()`` methods which are currently defined for ``int``,
-``BoutReal``, ``bool`` and ``string`` . For example:
-
-::
+``BoutReal``, ``bool`` and ``string`` . For example::
 
       options->set("nout", 10);      // Set an integer
       options->set("restart", true); // A bool
 
 Often it’s useful to see where an option setting has come from e.g. the
 name of the options file or “command line”. To specify a source, pass it
-as a third argument:
-
-::
+as a third argument::
 
       options->set("nout", 10, "manual");
 
 To create a section, just use ``getSection`` : if it doesn’t exist it
-will be created.
-
-::
+will be created::
 
       Options *section = options->getSection("mysection");
       section->set("myswitch", true);
 
 To get options, use the ``get()`` method which take the name of the
-option, the variable to set, and the default value.
-
-.. code:: c++
+option, the variable to set, and the default value::
 
       int nout;
       options->get("nout", nout, 1);
 
-Internally, ``Options`` converts all types to strings and does type
-conversion when needed, so the following code would work:
-
-.. code:: c++
+Internally, `Options` converts all types to strings and does type
+conversion when needed, so the following code would work::
 
       Options *options = Options::getRoot();
       options->set("test", "123");
@@ -386,38 +522,12 @@ This is because often the type of the option is not known at the time
 when it’s set, but only when it’s requested.
 
 
-If the verbose flag is set (``-v`` on command line) , then ``get`` methods output a
-message to the log files giving the value used and the source of that value.
-This is controlled by the ``log`` member of Options and can be turned on and off
-by calling ``setLogging`` e.g.
-
-.. code:: c++
-   
-   options->getRoot()->setLogging(false); // Turn off logging of options
-
-Changes to logging propagate to all sub-sections, so setting the logging
-of the root options object sets it for all sections. To see logs from
-a particular subset of the options tree set the logging for that section:
-
-.. code:: c++
-   
-   options->getRoot()->getSection("mesh")->setLogging(true); // Turn on some logging
-
-so the above code turns on logging of options for the "mesh" section and all subsections of mesh.
-
-Note: This logging only affects messages printed to screen and to ``BOUT.log`` files.
-It does not affect the ``BOUT.settings`` file, which should always contain a full list
-of options used and their values.
-
-
 Reading options
 ---------------
 
 To allow different input file formats, each file parser implements the
-``OptionParser`` interface defined in
-``bout++/src/sys/options/optionparser.hxx``
-
-::
+`OptionParser` interface defined in
+``bout++/src/sys/options/optionparser.hxx``::
 
     class OptionParser {
      public:
@@ -426,12 +536,10 @@ To allow different input file formats, each file parser implements the
     };
 
 and so just needs to implement a single function which reads a given
-file name and inserts the options into the given ``Options`` object.
+file name and inserts the options into the given `Options` object.
 
-To use these parsers and read in a file, there is the ``OptionsReader``
-class defined in ``bout++/include/optionsreader.hxx``
-
-::
+To use these parsers and read in a file, there is the `OptionsReader`
+class defined in ``bout++/include/optionsreader.hxx``::
 
     class OptionsReader {
      public:
@@ -439,26 +547,48 @@ class defined in ``bout++/include/optionsreader.hxx``
      void parseCommandLine(Options *options, int argc, char **argv);
     };
 
-This is a singleton object which is accessed using
-
-::
+This is a singleton object which is accessed using::
 
       OptionsReader *reader = OptionsReader::getInstance();
 
 so to read a file ``BOUT.inp`` in a directory given in a variable
-``data_dir`` the following code is used in ``bout++.cxx``:
-
-::
+``data_dir`` the following code is used in ``bout++.cxx``::
 
       Options *options = Options::getRoot();
       OptionsReader *reader = OptionsReader::getInstance();
       reader->read(options, "%s/BOUT.inp", data_dir);
 
-To parse command line arguments as options, the ``OptionsReader`` class
-has a method:
-
-::
+To parse command line arguments as options, the `OptionsReader` class
+has a method::
 
       reader->parseCommandLine(options, argc, argv);
 
 This is currently quite rudimentary and needs improving.
+
+
+FFT
+---
+
+There is one global option for Fourier transforms, ``fft_measure``
+(default: ``false``). Setting this to true enables the
+``FFTW_MEASURE`` mode when performing FFTs, otherwise
+``FFTW_ESTIMATE`` is used:
+
+.. code-block:: cfg
+
+    [fft]
+    fft_measure = true
+
+In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several
+FFTs take, and tries to find the optimal method.
+
+.. note:: Technically, ``FFTW_MEASURE`` is non-deterministic and
+          enabling ``fft_measure`` may result in slightly different
+          answers from run to run, or be dependent on the number of
+          MPI processes. This may be important if you are trying to
+          benchmark or measure performance of your code.
+
+          See the `FFTW FAQ`_ for more information.
+
+
+.. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic

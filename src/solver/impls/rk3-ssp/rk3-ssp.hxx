@@ -41,13 +41,18 @@ class RK3SSP;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");
+}
+
 class RK3SSP : public Solver {
  public:
-  RK3SSP(Options *opt = NULL);
-  ~RK3SSP();
+  RK3SSP(Options *opt = nullptr);
+  ~RK3SSP(){};
   
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
   
   int init(int nout, BoutReal tstep) override;
   
@@ -57,7 +62,7 @@ class RK3SSP : public Solver {
   BoutReal max_timestep; // Maximum timestep
   int mxstep; // Maximum number of internal steps between outputs
   
-  BoutReal *f;
+  Array<BoutReal> f;
   
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
@@ -67,9 +72,9 @@ class RK3SSP : public Solver {
   int nlocal, neq; // Number of variables on local processor and in total
   
   void take_step(BoutReal curtime, BoutReal dt, 
-                 BoutReal *start, BoutReal *result); // Take a single step to calculate f1
+                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
   
-  BoutReal *u1, *u2, *u3, *L; // Time-stepping arrays
+  Array<BoutReal> u1, u2, u3, L; // Time-stepping arrays
   
 };
 

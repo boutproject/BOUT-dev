@@ -20,7 +20,7 @@ using std::vector;
 /// conventions.
 class BoutMesh : public Mesh {
  public:
-  BoutMesh(GridDataSource *s, Options *options = NULL);
+  BoutMesh(GridDataSource *s, Options *options = nullptr);
   ~BoutMesh();
 
   /// Read in the mesh from data sources
@@ -162,16 +162,6 @@ class BoutMesh : public Mesh {
   int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
-  // poloidal lowpass filtering for n=0 mode
-  void slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
-  void get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
-  void set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
-  const Field2D lowPass_poloidal(const Field2D &var,int mmax);
-
-  //added for volume average and integral
-  const Field3D Switch_YZ(const Field3D &var);
-  const Field3D Switch_XZ(const Field3D &var);
-
  private:
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
@@ -226,7 +216,9 @@ class BoutMesh : public Mesh {
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
   void topology();
-
+  
+  void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
+  
   vector<BoundaryRegion*> boundary; // Vector of boundary regions
   vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
 
@@ -243,8 +235,8 @@ class BoutMesh : public Mesh {
     /// Array of send requests (for non-blocking send). One for each possible neighbour; one each way in X, two each way in Y
     MPI_Request sendreq[6];
     int xbufflen, ybufflen;  ///< Length of the buffers used to send/receive (in BoutReals)
-    BoutReal *umsg_sendbuff, *dmsg_sendbuff, *imsg_sendbuff, *omsg_sendbuff; ///< Sending buffers
-    BoutReal *umsg_recvbuff, *dmsg_recvbuff, *imsg_recvbuff, *omsg_recvbuff; ///< Receiving buffers
+    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff; ///< Sending buffers
+    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff; ///< Receiving buffers
     bool in_progress; ///< Is the communication still going?
 
     /// List of fields being communicated

@@ -24,7 +24,6 @@
  **************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <bout/constants.hxx>
 // #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -34,8 +33,10 @@
 
 BoutReal max_error_at_ystart(const Field3D &error);
 
-int physics_init(bool restarting) {
+int main(int argc, char** argv) {
 
+  BoutInitialise(argc, argv);
+  
   Options *options = Options::getRoot()->getSection("petsc2nd");
   class Laplacian* invert = Laplacian::create(options);
   options = Options::getRoot()->getSection("petsc4th");
@@ -50,7 +51,7 @@ int physics_init(bool restarting) {
   // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
   // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart - 1;
-  BoutReal nz = mesh->GlobalNz-1;
+  BoutReal nz = mesh->GlobalNz;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: Gaussian x-profiles, 2nd order Krylov
@@ -62,9 +63,10 @@ int physics_init(bool restarting) {
       for (int jz=0; jz<mesh->LocalNz; jz++) {
 	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
-	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
+	f1(jx, jy, jz) = 0. + exp(-(100.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-100.*pow(-p,2))*x + (-p*exp(-100.*pow(-p,2))-(1-p)*exp(-100.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
 			;
+        ASSERT0(finite(f1(jx, jy, jz)));
       }
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
@@ -72,8 +74,9 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-          f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          f1(jx, jy, jz) = 0. + exp(-(60.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-60.*pow(-p,2))*x + (-p*exp(-60.*pow(-p,2))-(1-p)*exp(-60.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          ASSERT0(finite(f1(jx, jy, jz)));
 	}
   if (mesh->lastX())
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
@@ -81,9 +84,12 @@ int physics_init(bool restarting) {
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
 	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
-          f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
-			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          f1(jx, jy, jz) = 0. + exp(-(60.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
+			 - 50.*(2.*p*exp(-60.*pow(-p,2))*x + (-p*exp(-60.*pow(-p,2))-(1-p)*exp(-60.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
+          ASSERT0(finite(f1(jx, jy, jz)));
 	}
+
+  f1.applyBoundary("neumann");
   
   p = 0.512547;
   q = 0.30908712;
@@ -171,10 +177,16 @@ int physics_init(bool restarting) {
 	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
 // 	  a1(jx, jy, jz) = a1(jx-1, jy, jz);
 	}
+
+  checkData(f1);
+  checkData(a1);
+  checkData(c1);
+  checkData(d1);
   
   mesh->communicate(f1,a1,c1,d1);
 
   b1 = d1*Delp2(f1) + Grad_perp(c1)*Grad_perp(f1)/c1 + a1*f1;
+  
   if (mesh->firstX())
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
@@ -194,15 +206,18 @@ int physics_init(bool restarting) {
   invert->setCoefC(c1);
   invert->setCoefD(d1);
 
+  checkData(b1);
+  
   try {
     sol1 = invert->solve(sliceXZ(b1, mesh->ystart));
     error1 = (f1-sol1)/f1;
     absolute_error1 = f1-sol1;
 //     max_error1 = max_error_at_ystart(abs(error1));
     max_error1 = max_error_at_ystart(abs(absolute_error1));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): "
+           << err.what()
+           << endl;
     max_error1 = -1;
   }
 
@@ -244,9 +259,10 @@ int physics_init(bool restarting) {
     absolute_error2 = f1-sol2;
 //     max_error2 = max_error_at_ystart(abs(error2));
     max_error2 = max_error_at_ystart(abs(absolute_error2));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b1): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): "
+           << err.what()
+           << endl;
     max_error2 = -1;
   }
 
@@ -297,16 +313,17 @@ int physics_init(bool restarting) {
   invert->setCoefA(a3);
   invert->setCoefC(c3);
   invert->setCoefD(d3);
-
+  
   try {
     sol3 = invert->solve(sliceXZ(b3, mesh->ystart));
     error3 = (f1-sol3)/f1;
     absolute_error3 = f1-sol3;
 //     max_error3 = max_error_at_ystart(abs(error3));
     max_error3 = max_error_at_ystart(abs(absolute_error3));
-  }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b3): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b3): "
+      << err.what()
+      << endl;
     max_error3 = -1;
   }
 
@@ -331,6 +348,8 @@ int physics_init(bool restarting) {
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
   invert_SPT = Laplacian::create(SPT_options);
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a3);
   invert_SPT->setCoefC(c3);
   invert_SPT->setCoefD(d3);
@@ -475,7 +494,8 @@ int physics_init(bool restarting) {
 	  BoutReal z = BoutReal(jz)/nz;
 	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}
-    
+
+  f5.applyBoundary("neumann");
   mesh->communicate(f5,a5,c5,d5);
 
   b5 = d5*Delp2(f5) + Grad_perp(c5)*Grad_perp(f5)/c5 + a5*f5;
@@ -504,9 +524,10 @@ int physics_init(bool restarting) {
     absolute_error5 = f5-sol5;
 //     max_error5 = max_error_at_ystart(abs(error5));
     max_error5 = max_error_at_ystart(abs(absolute_error5));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b5): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b5): "
+           << err.what()
+           << endl;
     max_error5 = -1;
   }
 
@@ -545,9 +566,10 @@ int physics_init(bool restarting) {
     absolute_error6 = f5-sol6;
 //     max_error6 = max_error_at_ystart(abs(error6));
     max_error6 = max_error_at_ystart(abs(absolute_error6));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b6): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
+              "converge (probably)"
+           << endl;
     max_error6 = -1;
   }
 
@@ -605,9 +627,10 @@ int physics_init(bool restarting) {
     absolute_error7 = f5-sol7;
 //     max_error7 = max_error_at_ystart(abs(error7));
     max_error7 = max_error_at_ystart(abs(absolute_error7));
-    }
-  catch (BoutException err) {
-    output<<"BoutException occured in invert->solve(b7): Laplacian inversion failed to converge (probably)"<<endl;
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b7): "
+           << err.what()
+           << endl;
     max_error7 = -1;
   }
 
@@ -628,6 +651,8 @@ int physics_init(bool restarting) {
   dump.add(absolute_error7,"absolute_error7");
   dump.add(max_error7,"max_error7");
 
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a7);
   invert_SPT->setCoefC(c7);
   invert_SPT->setCoefD(d7);
@@ -660,18 +685,12 @@ int physics_init(bool restarting) {
   dump.write();
   dump.close();
 
-  output << "\nFinished running test. Triggering error to quit\n\n";
-
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
-  return 1;
-
+  BoutFinalise();
+  return 0;
 }
 
-int physics_run(BoutReal t) {
-  // Doesn't do anything;
-  return 1;
-}
 
 BoutReal max_error_at_ystart(const Field3D &error) {
 

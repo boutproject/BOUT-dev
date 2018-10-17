@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # 
 # Run the test, compare results against the benchmark
@@ -13,7 +13,7 @@ except:
 vars = ['yavg2d', 'yavg3d', 'sm3d']
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
@@ -21,7 +21,7 @@ from sys import stdout, exit
 MPIRUN=getmpirun()
 
 print("Making smoothing operator test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 # Read benchmark values
 print("Reading benchmark data")
@@ -40,7 +40,7 @@ for nype in [1,2]:
     shell("rm data/BOUT.dmp.*.nc")
 
     print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
-    s, out = launch(cmd+" nxpe="+str(nxpe), runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd+" nxpe="+str(nxpe), runcmd=MPIRUN, nproc=nproc, pipe=True)
     with open("run.log."+str(nproc), "w") as f:
       f.write(out)
 

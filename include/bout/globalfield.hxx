@@ -19,6 +19,7 @@ class GlobalField2D;
  */ 
 class GlobalField {
 public:
+  GlobalField() = delete;
   virtual ~GlobalField();
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
   bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
@@ -45,7 +46,7 @@ public:
    *
    * Stored as a 1D array [x*ny*nz + y*nz + z]
    */ 
-  BoutReal* getData() {return data;}
+  Array<BoutReal>& getData() {return data;}
 protected:
   GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize);
   
@@ -53,16 +54,16 @@ protected:
 
   int data_on_proc; ///< Which processor is this data on?  
   int nx, ny, nz; ///< Global field sizes
-  BoutReal *data; ///< The global data, if on this processor
+  Array<BoutReal> data; ///< The global data, if on this processor
 
   MPI_Comm comm; ///< Communicator for all mesh
   int npes, mype; ///< Number of MPI processes, this processor index
-  
-  void proc_local_origin(int proc, int *x, int *y, int *z = NULL) const;
-  void proc_origin(int proc, int *x, int *y, int *z = NULL) const;  ///< Return the global origin of processor proc
-  void proc_size(int proc, int *lx, int *ly, int *lz = NULL) const; ///< Return the array size of processor proc
-private:
-  GlobalField();
+
+  void proc_local_origin(int proc, int *x, int *y, int *z = nullptr) const;
+  /// Return the global origin of processor proc
+  void proc_origin(int proc, int *x, int *y, int *z = nullptr) const;
+  /// Return the array size of processor proc
+  void proc_size(int proc, int *lx, int *ly, int *lz = nullptr) const;
 };
 
 /*!
@@ -111,19 +112,24 @@ private:
  */ 
 class GlobalField2D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField2D() = delete;
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
   /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
-  GlobalField2D(Mesh *m, int proc = 0);
+  GlobalField2D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField2D();
-  
-  bool valid() const {return data_valid;} ///< Is the data valid and on this processor?
-  
-  void gather(const Field2D &f); ///< Gather all data onto one processor
-  const Field2D scatter() const; ///< Scatter data back from one to many processors
+  ~GlobalField2D() override;
+
+  /// Is the data valid and on this processor?
+  bool valid() const override { return data_valid; }
+
+  /// Gather all data onto one processor
+  void gather(const Field2D &f);
+  /// Scatter data back from one to many processors
+  const Field2D scatter() const;
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors
   /// The scatter assignment operator needs to be a member of Field2D.
@@ -139,8 +145,7 @@ public:
 protected:
   
 private:
-  GlobalField2D(); ///< Private so can't be constructed without args
-  
+
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data
   BoutReal** buffer;
@@ -202,22 +207,25 @@ private:
  */
 class GlobalField3D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField3D() = delete;
+
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
   /// @param[in] proc   The processor index where everything will be gathered/scattered to/from
-  GlobalField3D(Mesh *m, int proc = 0);
+  GlobalField3D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField3D();
-  
-  /*!
-   * Test if the data is valid i.e. has been allocated
-   */ 
-  bool valid() const {return data_valid;}
-  
-  void gather(const Field3D &f); ///< Gather all data onto one processor
-  const Field3D scatter() const; ///< Scatter data back from one to many processors
+  ~GlobalField3D() override;
+
+  /// Test if the data is valid i.e. has been allocated
+  bool valid() const override { return data_valid; }
+
+  /// Gather all data onto one processor
+  void gather(const Field3D &f);
+  /// Scatter data back from one to many processors
+  const Field3D scatter() const;
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors
   /// The scatter assignment operator needs to be a member of Field2D.
@@ -229,7 +237,6 @@ public:
 protected:
   
 private:
-  GlobalField3D(); ///< Private so can't be constructed without args
 
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data

@@ -33,23 +33,24 @@
 #include <vector3d.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
+#include <bout/assert.hxx>
+#include <interpolation.hxx>
 
-Vector3D::Vector3D() : covariant(true), deriv(NULL) { }
+Vector3D::Vector3D(Mesh *localmesh)
+    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
 
-Vector3D::Vector3D(const Vector3D &f) : covariant(f.covariant), deriv(NULL) {
-  x = f.x;
-  y = f.y;
-  z = f.z;
-}
+Vector3D::Vector3D(const Vector3D &f)
+    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+      location(f.getLocation()) {}
 
 Vector3D::~Vector3D() {
-  if(deriv != NULL) {
+  if (deriv != nullptr) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
     // only delete once
-    x.deriv = NULL;
-    y.deriv = NULL;
-    z.deriv = NULL;
-    
+    x.deriv = nullptr;
+    y.deriv = nullptr;
+    z.deriv = nullptr;
+
     // Now delete them as part of the deriv vector
     delete deriv;
   }
@@ -57,14 +58,24 @@ Vector3D::~Vector3D() {
 
 void Vector3D::toCovariant() {  
   if(!covariant) {
-    Field3D gx, gy, gz;
+    Mesh *localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = mesh->coordinates();
-    
+    Coordinates *metric_x, *metric_y, *metric_z;
+    if (location == CELL_VSHIFT) {
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+    } else {
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
+    }
+
     // multiply by g_{ij}
-    gx = x*metric->g_11 + metric->g_12*y + metric->g_13*z;
-    gy = y*metric->g_22 + metric->g_12*x + metric->g_23*z;
-    gz = z*metric->g_33 + metric->g_13*x + metric->g_23*y;
+    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation());
+    gy = y*metric_y->g_22 + metric_y->g_12*interp_to(x, y.getLocation()) + metric_y->g_23*interp_to(z, y.getLocation());
+    gz = z*metric_z->g_33 + metric_z->g_13*interp_to(x, z.getLocation()) + metric_z->g_23*interp_to(y, z.getLocation());
 
     x = gx;
     y = gy;
@@ -76,14 +87,24 @@ void Vector3D::toCovariant() {
 void Vector3D::toContravariant() {  
   if(covariant) {
     // multiply by g^{ij}
-    
-    Field3D gx, gy, gz;
+    Mesh *localmesh = x.getMesh();
+    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric_x, *metric_y, *metric_z;
+    if (location == CELL_VSHIFT) {
+      metric_x = localmesh->getCoordinates(CELL_XLOW);
+      metric_y = localmesh->getCoordinates(CELL_YLOW);
+      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+    } else {
+      metric_x = localmesh->getCoordinates(location);
+      metric_y = localmesh->getCoordinates(location);
+      metric_z = localmesh->getCoordinates(location);
+    }
 
-    gx = x*metric->g11 + metric->g12*y + metric->g13*z;
-    gy = y*metric->g22 + metric->g12*x + metric->g23*z;
-    gz = z*metric->g33 + metric->g13*x + metric->g23*y;
+    // multiply by g_{ij}
+    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation());
+    gy = y*metric_y->g22 + metric_y->g12*interp_to(x, y.getLocation()) + metric_y->g23*interp_to(z, y.getLocation());
+    gz = z*metric_z->g33 + metric_z->g13*interp_to(x, z.getLocation()) + metric_z->g23*interp_to(y, z.getLocation());
 
     x = gx;
     y = gy;
@@ -94,22 +115,22 @@ void Vector3D::toContravariant() {
 }
 
 Vector3D* Vector3D::timeDeriv() {
-  if(deriv == NULL) {
-    deriv = new Vector3D();
-    
+  if (deriv == nullptr) {
+    deriv = new Vector3D(x.getMesh());
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
-    
-    if(x.deriv != NULL) {
+
+    if (x.deriv != nullptr) {
       // already set. Copy across then delete
       deriv->x = *(x.deriv);
       delete x.deriv;
     }
-    if(y.deriv != NULL) {
+    if (y.deriv != nullptr) {
       deriv->y = *(y.deriv);
       delete y.deriv;
     }
-    if(z.deriv != NULL) {
+    if (z.deriv != nullptr) {
       deriv->z = *(z.deriv);
       delete z.deriv;
     }
@@ -134,6 +155,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 
   covariant = rhs.covariant;
 
+  setLocation(rhs.getLocation());
   return *this;
 }
 
@@ -143,6 +165,8 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
   z = rhs.z;
   
   covariant = rhs.covariant;
+
+  setLocation(rhs.getLocation());
 
   return *this;
 }
@@ -292,45 +316,43 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 
 ///////////////// CROSS PRODUCT //////////////////
 
+#define CROSS(v0, v1, v2)                                               \
+                                                                        \
+  const v0 cross(const v1 &lhs, const v2 &rhs) {                        \
+    ASSERT1(lhs.getLocation() == rhs.getLocation());                    \
+    Mesh *localmesh = lhs.x.getMesh();                                  \
+    v0 result(localmesh);                                               \
+                                                                        \
+    /* Make sure both vector components are covariant */                \
+    v2 rco = rhs;                                                       \
+    rco.toCovariant();                                                  \
+    v1 lco = lhs;                                                       \
+    lco.toCovariant();                                                  \
+                                                                        \
+    Coordinates *metric = localmesh->getCoordinates(lhs.getLocation());    \
+                                                                        \
+    /* calculate contravariant components of cross-product */           \
+    result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
+    result.y = (lco.z * rco.x - lco.x * rco.z) / metric->J;             \
+    result.z = (lco.x * rco.y - lco.y * rco.x) / metric->J;             \
+    result.covariant = false;                                           \
+                                                                        \
+    return result;                                                      \
+  };                                                                    \
+
+
+CROSS(Vector3D, Vector3D, Vector3D);
+CROSS(Vector3D, Vector3D, Vector2D);
+CROSS(Vector3D, Vector2D, Vector3D);
+CROSS(Vector2D, Vector2D, Vector2D);
+
 Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  Vector3D result;
-
-  // Make sure both vector components are covariant
-  Vector3D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-
-  Coordinates *metric = mesh->coordinates();
-  
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
 Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  Vector3D result;
-  
-  // Make sure both vector components are covariant
-  Vector2D rco = rhs;
-  rco.toCovariant();
-  toCovariant();
-  
-  Coordinates *metric = mesh->coordinates();
- 
-  // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/metric->J;
-  result.y = (z*rco.x - x*rco.z)/metric->J;
-  result.z = (x*rco.y - y*rco.x)/metric->J;
-  result.covariant = false;
-
-  *this = result;
-
+  *this = cross(*this, rhs);
   return *this;
 }
 
@@ -409,7 +431,8 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Field3D result;
+  Field3D result(x.getMesh());
+  ASSERT2(location == rhs.getLocation())
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -417,7 +440,7 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = mesh->getCoordinates(location);
     
     if(covariant) {
       // Both covariant
@@ -439,7 +462,9 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
 
 const Field3D Vector3D::operator*(const Vector2D &rhs) const
 {
-  Field3D result;
+  ASSERT2(location == rhs.getLocation());
+
+  Field3D result(x.getMesh());
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -447,7 +472,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
   }else {
     // Both are covariant or contravariant
 
-    Coordinates *metric = mesh->coordinates();
+    Coordinates *metric = x.getCoordinates(location);
     if(covariant) {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
@@ -469,35 +494,57 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
 ///////////////// CROSS PRODUCT //////////////////
 
 const Vector3D Vector3D::operator^(const Vector3D &rhs) const {
-  Vector3D result = *this;
-  
-  result ^= rhs;
-
-  return result;
+  return cross(*this,rhs);
 }
 
 const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
-  Vector3D result = *this;
-  
-  result ^= rhs;
-
-  return result;
+  return cross(*this,rhs);
 }
 
 /***************************************************************
- *       Set variable location for staggered meshes
+ *       Get/set variable location for staggered meshes
  ***************************************************************/
 
-void Vector3D::setLocation(CELL_LOC loc) {
-  if(loc == CELL_VSHIFT) {
-    x.setLocation(CELL_XLOW);
-    y.setLocation(CELL_YLOW);
-    z.setLocation(CELL_ZLOW);
-  }else {
-    x.setLocation(loc);
-    y.setLocation(loc);
-    z.setLocation(loc);
+CELL_LOC Vector3D::getLocation() const {
+
+  if (location == CELL_VSHIFT) {
+    ASSERT1((x.getLocation() == CELL_XLOW) && (y.getLocation() == CELL_YLOW) &&
+            (z.getLocation() == CELL_ZLOW));
+  } else {
+    ASSERT1((location == x.getLocation()) && (location == y.getLocation()) &&
+            (location == z.getLocation()));
   }
+
+  return location;
+}
+
+void Vector3D::setLocation(CELL_LOC loc) {
+  TRACE("Vector3D::setLocation");
+  if (loc == CELL_DEFAULT) {
+    loc = CELL_CENTRE;
+  }
+
+  if (x.getMesh()->StaggerGrids) {
+    if (loc == CELL_VSHIFT) {
+      x.setLocation(CELL_XLOW);
+      y.setLocation(CELL_YLOW);
+      z.setLocation(CELL_ZLOW);
+    } else {
+      x.setLocation(loc);
+      y.setLocation(loc);
+      z.setLocation(loc);
+    }
+  } else {
+#if CHECK > 0
+    if (loc != CELL_CENTRE) {
+      throw BoutException("Vector3D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+  }
+
+  location = loc;
 }
 
 /***************************************************************
@@ -522,8 +569,8 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v) {
-  return sqrt(v*v);
+const Field3D abs(const Vector3D &v, REGION region) {
+  return sqrt(v*v, region);
 }
 
 /***************************************************************

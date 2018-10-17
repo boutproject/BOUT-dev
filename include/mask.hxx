@@ -39,28 +39,25 @@
  *     // Set an index to true to skip this index
  *     mask(3, 4, 5) = true;
  *     // Iterate over field
- *     for (auto index : field) {
+ *     for (const auto &index : field) {
  *       // Skip any indices which are set to true in the mask
  *       if (mask(index.x, index.y, index.z)) continue;
  *       ...
  *     }
  */
 class BoutMask {
-  // Typedef for internal container
-  typedef std::vector<std::vector<std::vector<bool>>> vec3bool;
-
   // Dimensions of mask
   int nx;
   int ny;
   int nz;
   // Internal data
-  vec3bool mask;
+  Tensor<bool> mask;
 public:
   BoutMask(int nx, int ny, int nz, bool value=false) :
     nx(nx), ny(ny), nz(nz),
-    mask(nx, std::vector<std::vector<bool>>
-         (ny, std::vector<bool>
-          (nz, value))) {}
+    mask(nx, ny, nz) {
+    mask = value;
+  }
   BoutMask(Mesh& mesh, bool value=false) :
     BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   // Default constructor uses global mesh
@@ -68,15 +65,11 @@ public:
 
   // Assignment from bool
   BoutMask& operator=(bool value) {
-    mask = vec3bool(nx, std::vector<std::vector<bool>>
-                    (ny, std::vector<bool>
-                     (nz, value)));
+    mask = value;
     return *this;
   }
 
-  // vector<bool> is weird nonsense and doesn't actually store bools.
-  // Hence we need to return the vector<bool>::reference member type
-  inline std::vector<bool>::reference operator()(int jx,int jy,int jz) {
+  inline bool& operator()(int jx,int jy,int jz) {
 #if CHECK > 2
     // Perform bounds checking
     if((jx < 0) || (jx >= nx) ||
@@ -85,9 +78,9 @@ public:
       throw BoutException("BoutMask: (%d, %d, %d) operator out of bounds (%d, %d, %d)",
                           jx, jy, jz, nx, ny, nz);
 #endif
-    return mask[jx][jy][jz];
+    return mask(jx, jy, jz);
   }
-  inline std::vector<bool>::const_reference operator()(int jx,int jy,int jz) const {
+  inline const bool& operator()(int jx,int jy,int jz) const {
 #if CHECK > 2
     // Perform bounds checking
     if((jx < 0) || (jx >= nx) ||
@@ -96,7 +89,7 @@ public:
       throw BoutException("BoutMask: (%d, %d, %d) operator out of bounds (%d, %d, %d)",
                           jx, jy, jz, nx, ny, nz);
 #endif
-    return mask[jx][jy][jz];
+    return mask(jx, jy, jz);
   }
 
 };

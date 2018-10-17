@@ -25,7 +25,10 @@ CXXFLAGS += -g -Wall -Wextra -pthread
 GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
                 $(GTEST_DIR)/include/gtest/internal/*.h
 
+all:  serial_tests
 include $(BOUT_TOP)/make.config
+
+LDFLAGS += -pthread
 
 # Existence of this file indicates that GTEST has been downloaded
 GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
@@ -76,7 +79,7 @@ TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
 $(TEST_SOURCES): checklib
-$(TEST_OBJECTS): $(LIB)
+$(TEST_OBJECTS): $(LIB) $(GTEST_SENTINEL)
 
 serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
@@ -87,7 +90,8 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 #       The GTEST_SENTINEL dependency cannot be added to the %.o target, since this results in the %.o
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
-	./serial_tests
+	@echo "Running unit test"
+	@./quiet.sh ./serial_tests
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.

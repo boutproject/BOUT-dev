@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 
+#include <iostream>
 #include <mpi.h>
 
 #include "bout/mesh.hxx"
@@ -22,6 +23,19 @@ const BoutReal BoutRealTolerance = 1e-15;
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
+
+/// Is \p field equal to \p number, with a tolerance of \p tolerance?
+::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
+                                                  BoutReal tolerance = BoutRealTolerance);
+
+
+/// Teach googletest how to print SpecificInds
+template<IND_TYPE N>
+inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
+  return out << index.ind;
+}
+
+class Options;
 
 /// FakeMesh has just enough information to create fields
 ///
@@ -45,21 +59,20 @@ public:
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
-    GlobalNx = 0;
-    GlobalNy = 0;
-    GlobalNz = 0;
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
 
+    StaggerGrids=true;
     // Unused variables
     periodicX = false;
     NXPE = 1;
     PE_XIND = 0;
     StaggerGrids = false;
     IncIntShear = false;
+    maxregionblocksize = MAXREGIONBLOCKSIZE;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -131,7 +144,8 @@ public:
   const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
-  vector<BoundaryRegion *> getBoundaries() { return vector<BoundaryRegion *>(); }
+  void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
+  vector<BoundaryRegion *> getBoundaries() { return boundaries; }
   vector<BoundaryRegionPar *> getBoundariesPar() { return vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
@@ -139,14 +153,15 @@ public:
   BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
-  const Field3D Switch_YZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
-  const Field3D Switch_XZ(const Field3D &UNUSED(var)) { return Field3D(0.0); }
-  void slice_r_y(const BoutReal *, BoutReal *, int, int) {}
-  void get_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
-              BoutReal *UNUSED(i)) {}
-  void set_ri(dcomplex *UNUSED(ayn), int UNUSED(n), BoutReal *UNUSED(r),
-              BoutReal *UNUSED(i)) {}
-  const Field2D lowPass_poloidal(const Field2D &, int) { return Field2D(0.0); }
+
+  void initDerivs(Options * opt){
+    StaggerGrids=true;
+    derivs_init(opt);
+  }
+private:
+  vector<BoundaryRegion *> boundaries;
 };
+
+
 
 #endif //  TEST_EXTRAS_H__

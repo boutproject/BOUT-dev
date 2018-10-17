@@ -34,11 +34,18 @@
 #include <msg_stack.hxx>
 #include <cmath>
 
-LaplaceMumps::LaplaceMumps(Options *opt) : 
-  Laplacian(opt),
+LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc) : 
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+  Ex.setLocation(location);
+  Ez.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -204,22 +211,22 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     localrhssize += mesh->xstart*(mesh->LocalNz);
     
     int nxpe = mesh->NXPE;
-    localrhs_size_array = new int[nxpe];
+    localrhs_size_array = Array<int>(nxpe);
     localrhs_size_array[0] = localrhssize;
     if (nxpe>1) {
       for (int i=1; i<nxpe-1; i++)
 	localrhs_size_array[i] = (mesh->xend-mesh->xstart+1)*(mesh->LocalNz);
       localrhs_size_array[nxpe-1] = (mesh->LocalNx-mesh->xstart)*(mesh->LocalNz);
     }
-    rhs_positions = new int[nxpe];
+    rhs_positions = Array<int>(nxpe);
     rhs_positions[0] = 0;
     for (int i=1; i<nxpe; i++)
       rhs_positions[i] = rhs_positions[i-1] + localrhs_size_array[i-1];
-    
-    rhs = new BoutReal[meshx*meshz];
+
+    rhs = Array<BoutReal>(meshx * meshz);
   }
-  localrhs = new BoutReal[localrhssize];
-  
+  localrhs = Array<BoutReal>(localrhssize);
+
   // Set Arrays of matrix indices, using i (0<=i<nz_loc), and solution indices, using j (0<=j<localN)
   int i=0; //int j=0;
   if (mesh->firstX())
@@ -413,12 +420,14 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
       }
   
   if ( i!=mumps_struc.nz_loc ) throw BoutException("LaplaceMumps: matrix index error");
-//   if ( j!=localN ) bout_error("LaplaceMumps: vector index error");
-// output<<"matrix indices:"<<endl;for (int k=0; k<mumps_struc.nz; k++) output<<k<<" "<<mumps_struc.irn_loc[k]<<" "<<mumps_struc.jcn_loc[k]<<endl;
-// output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++) output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
-// output<<"nz="<<mumps_struc.nz<<" nz_loc="<<mumps_struc.nz_loc<<endl;
-// MPI_Barrier(BoutComm::get()); exit(13);
-  
+  //   if ( j!=localN ) throw BoutException("LaplaceMumps: vector index error");
+  // output<<"matrix indices:"<<endl;for (int k=0; k<mumps_struc.nz; k++) output<<k<<"
+  // "<<mumps_struc.irn_loc[k]<<" "<<mumps_struc.jcn_loc[k]<<endl;
+  // output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++)
+  // output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
+  // output<<"nz="<<mumps_struc.nz<<" nz_loc="<<mumps_struc.nz_loc<<endl;
+  // MPI_Barrier(BoutComm::get()); exit(13);
+
   mumps_struc.job = MUMPS_JOB_ANALYSIS;
   dmumps_c( &mumps_struc );
   mumps_struc.job = MUMPS_JOB_BOTH;
@@ -604,7 +613,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 { Timer timer("mumpssetup");
   int i = 0;
   
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   // Set Matrix Elements corresponding to index lists created in constructor (x,z) loop over rows
 
@@ -847,7 +856,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 
 void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 )
 {
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->coordinates(location);
 
   coef1 = coord->g11[x][y];     // X 2nd derivative coefficient
   coef2 = coord->g33[x][y];     // Z 2nd derivative coefficient

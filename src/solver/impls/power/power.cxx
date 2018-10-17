@@ -9,10 +9,6 @@
 
 #include <output.hxx>
 
-PowerSolver::~PowerSolver(){
-  if(f0 != nullptr) delete[] f0;
-}
-
 int PowerSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Power solver");
   
@@ -39,14 +35,14 @@ int PowerSolver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), nglobal, nlocal);
   
   // Allocate memory
-  f0 = new BoutReal[nlocal];
-  
+  f0 = Array<BoutReal>(nlocal);
+
   // Save the eigenvalue to the output
-  dump.add(eigenvalue, "eigenvalue", 1);
+  dump.add(eigenvalue, "eigenvalue", true);
   eigenvalue = 0.0;
   
   // Put starting values into f0
-  save_vars(f0);
+  save_vars(std::begin(f0));
 
   return 0;
 }
@@ -58,11 +54,11 @@ int PowerSolver::run() {
   divide(f0, norm(f0));
   
   for(int s=0;s<nsteps;s++) {
-    
-    load_vars(f0);
+
+    load_vars(std::begin(f0));
     run_rhs(curtime);
-    save_derivs(f0);
-    
+    save_derivs(std::begin(f0));
+
     // Estimate eigenvalue
     eigenvalue = norm(f0);
     
@@ -78,15 +74,12 @@ int PowerSolver::run() {
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;
 }
 
-BoutReal PowerSolver::norm(BoutReal *state) {
+BoutReal PowerSolver::norm(Array<BoutReal> &state) {
   BoutReal total = 0.0, result;
   
   for(int i=0;i<nlocal;i++)
@@ -99,7 +92,7 @@ BoutReal PowerSolver::norm(BoutReal *state) {
   return sqrt(result);
 }
 
-void PowerSolver::divide(BoutReal *in, BoutReal value) {
+void PowerSolver::divide(Array<BoutReal> &in, BoutReal value) {
   for(int i=0;i<nlocal;i++)
     in[i] /= value;
 }

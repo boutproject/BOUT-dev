@@ -82,20 +82,24 @@ void OptionINI::read(Options *options, const string &filename) {
 
       // Check for section
       size_t startpos, endpos;
-      startpos = buffer.find_first_of("[");
-      endpos   = buffer.find_last_of("]");
+      startpos = buffer.find_first_of('[');
+      endpos   = buffer.find_last_of(']');
 
       if (startpos != string::npos) {
         // A section header
-        if (endpos == string::npos) throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if (endpos == string::npos) {
+          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
 
         buffer = trim(buffer, "[]");
 
-        if(buffer.empty()) throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        if(buffer.empty()) {
+          throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+        }
         
         section = options;
         size_t scorepos;
-        while((scorepos = buffer.find_first_of(":")) != string::npos) {
+        while((scorepos = buffer.find_first_of(':')) != string::npos) {
           // sub-section
           string sectionname = trim(buffer.substr(0,scorepos));
           buffer = trim(buffer.substr(scorepos+1));
@@ -153,7 +157,7 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
 {
    // A key/value pair, separated by a '='
 
-  size_t startpos = buffer.find_first_of("=");
+  size_t startpos = buffer.find_first_of('=');
 
   if (startpos == string::npos) {
     // Just set a flag to true
@@ -166,10 +170,10 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
   key = trim(buffer.substr(0, startpos), " \t\r\n\"");
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
 
-  if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
+  if(key.empty()) throw BoutException("\tEmpty key\n\tLine: %s", buffer.c_str());
 }
 
-void OptionINI::writeSection(Options *options, std::ofstream &fout) {
+void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
   string section_name = options->str();
 
   if (section_name.length() > 0) {
@@ -179,6 +183,10 @@ void OptionINI::writeSection(Options *options, std::ofstream &fout) {
   // Iterate over all values
   for(const auto& it : options->values()) {
     fout << it.first << " = " << it.second.value;
+    if (it.second.value.empty()) {
+      // Print an empty string as ""
+      fout << "\"\""; 
+    }
     if (! it.second.used ) {
       fout << "  # not used , from: "
 	   << it.second.source;

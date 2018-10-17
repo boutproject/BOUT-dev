@@ -16,6 +16,8 @@
 
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
+// Staggered versions of initial profiles
+Field2D Ni0_maybe_ylow, Te0_maybe_ylow;
 Vector2D b0xcv; // for curvature terms
 
 // 3D evolving fields
@@ -60,6 +62,8 @@ FieldGroup comms; // Group of variables for communications
 
 Coordinates *coord; // Coordinate system
 
+CELL_LOC maybe_ylow;
+
 int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
@@ -82,7 +86,7 @@ int physics_init(bool restarting) {
   mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Coordinate system
-  coord = mesh->coordinates();
+  coord = mesh->getCoordinates();
 
   // Load metrics
   GRID_LOAD(Rxy);
@@ -167,16 +171,6 @@ int physics_init(bool restarting) {
   if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
-
-  /************** SHIFTED GRIDS LOCATION ***************/
-
-  // Velocities defined on cell boundaries
-  Vi.setLocation(CELL_YLOW);
-  Ajpar.setLocation(CELL_YLOW);
-
-  // Apar and jpar too
-  Apar.setLocation(CELL_YLOW); 
-  jpar.setLocation(CELL_YLOW);
 
   /************** NORMALISE QUANTITIES *****************/
 
@@ -302,6 +296,15 @@ int physics_init(bool restarting) {
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
 
+  if (mesh->StaggerGrids) {
+    maybe_ylow = CELL_YLOW;
+  } else {
+    maybe_ylow = CELL_CENTRE;
+  }
+  Vi = interp_to(Vi,maybe_ylow);
+  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, RGN_NOBNDRY);
+  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, RGN_NOBNDRY);
+
   return(0);
 }
 
@@ -341,7 +344,7 @@ int physics_run(BoutReal t) {
   
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
-    jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
+    jpar = ((Te0_maybe_ylow*Grad_par(Ni, maybe_ylow)) - (Ni0_maybe_ylow*Grad_par(phi, maybe_ylow)))/interp_to(fmei*0.51*nu,maybe_ylow);
     
     // Set boundary conditions on jpar (in BOUT.inp)
     jpar.applyBoundary();
@@ -349,12 +352,12 @@ int physics_run(BoutReal t) {
     // Need to communicate jpar
     mesh->communicate(jpar);
 
-    Ve = Vi - jpar/Ni0;
+    Ve = Vi - jpar/Ni0_maybe_ylow;
     Ajpar = Ve;
   }else {
     
     Ve = Ajpar + Apar;
-    jpar = Ni0*(Vi - Ve);
+    jpar = Ni0_maybe_ylow*(Vi - Ve);
   }
 
   // DENSITY EQUATION
@@ -370,7 +373,7 @@ int physics_run(BoutReal t) {
   if(evolve_vi) {
     ddt(Vi) -= vE_Grad(Vi0, phi) + vE_Grad(Vi, phi0) + vE_Grad(Vi, phi);
     ddt(Vi) -= Vpar_Grad_par(Vi0, Vi) + Vpar_Grad_par(Vi, Vi0) + Vpar_Grad_par(Vi, Vi);
-    ddt(Vi) -= Grad_par(pei)/Ni0;
+    ddt(Vi) -= Grad_par(pei)/Ni0_maybe_ylow;
   }
 
   // ELECTRON TEMPERATURE
@@ -399,8 +402,9 @@ int physics_run(BoutReal t) {
 
   ddt(rho) = 0.0;
   if(evolve_rho) {
-
-    ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
+    auto divPar_jpar_ylow = Div_par(jpar);
+    mesh->communicate(divPar_jpar_ylow);
+    ddt(rho) += SQ(coord->Bxy)*interp_to(divPar_jpar_ylow, CELL_CENTRE);
   }
   
 
@@ -409,10 +413,10 @@ int physics_run(BoutReal t) {
 
   ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
-    ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
-    ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
+    ddt(Ajpar) += (1./fmei)*Grad_par(phi, maybe_ylow);
+    ddt(Ajpar) -= (1./fmei)*(Te0_maybe_ylow/Ni0_maybe_ylow)*Grad_par(Ni, maybe_ylow);
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
-    ddt(Ajpar) += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;
+    ddt(Ajpar) += 0.51*interp_to(nu, maybe_ylow)*jpar/Ni0_maybe_ylow;
   }
 
   return(0);

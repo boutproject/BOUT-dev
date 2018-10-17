@@ -142,16 +142,43 @@ if test "$with_parallelhdf5" = "yes"; then
         [*h5cc], [PARALLELHDF5_TYPE=serial],
         [PARALLELHDF5_TYPE=neither])
     AC_MSG_RESULT([$PARALLELHDF5_TYPE])
-    AC_MSG_CHECKING([for HDF5 libraries])
+
     if test ! -f "$PARALLELH5CC" || test ! -x "$PARALLELH5CC"; then
-        AC_MSG_RESULT([no])
-        AC_MSG_WARN([
+
+        AC_MSG_CHECKING([if we can compile parallel HDF5 program without helper script])
+        AC_LANG_PUSH([C++])
+        AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([
+            #include <hdf5.h>
+            ], [H5Fcreate(0, 0, 0, 0);])],
+            [ac_cv_parallelhdf5_h=yes
+             ac_cv_libparallelhdf5=yes],
+            [ac_cv_parallelhdf5_h=no
+             ac_cv_libparallelhdf5=no])
+        AC_MSG_RESULT([$ac_cv_parallelhdf5_h])
+
+        if test "$ac_cv_parallelhdf5_h" = "yes"; then
+          AC_MSG_CHECKING([if found HDF5 is parallel])
+          AC_EGREP_CPP([yes], [
+            #include <H5pubconf.h>
+            #ifdef H5_HAVE_PARALLEL
+              yes
+            #endif
+          ], [ac_cv_parallelhdf5_h=yes], [ac_cv_parallelhdf5_h=no])
+          AC_MSG_RESULT([$ac_cv_parallelhdf5_h])
+        fi
+        AC_LANG_POP([C++])
+
+        if test "$ac_cv_parallelhdf5_h" = "no" ; then
+          AC_MSG_FAILURE([
 Unable to locate parallel HDF5 compilation helper script 'h5pcc'.
 Please specify --with-parallelhdf5=<LOCATION> as the full path to h5pcc.
 HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
 ])
-        with_parallelhdf5="no"
+          with_parallelhdf5="no"
+        fi
     else
+        AC_MSG_CHECKING([for HDF5 libraries])
         dnl Get the h5cc output
         PARALLELHDF5_SHOW=$(eval $PARALLELH5CC -show)
 
@@ -218,11 +245,11 @@ HDF5 support is being disabled (equivalent to --with-parallelhdf5=no).
         CPPFLAGS=$PARALLELHDF5_CPPFLAGS
         LIBS=$PARALLELHDF5_LIBS
         LDFLAGS=$PARALLELHDF5_LDFLAGS
-        AC_CHECK_HEADER([hdf5.h], [ac_cv_hadf5_h=yes], [ac_cv_hadf5_h=no])
+        AC_CHECK_HEADER([hdf5.h], [ac_cv_parallelhdf5_h=yes], [ac_cv_parallelhdf5_h=no])
         AC_CHECK_LIB([hdf5], [H5Fcreate], [ac_cv_libparallelhdf5=yes],
                      [ac_cv_libparallelhdf5=no])
-        if test "$ac_cv_hadf5_h" = "no" && test "$ac_cv_libparallelhdf5" = "no" ; then
-          AC_MSG_WARN([Unable to compile HDF5 test program])
+        if test "$ac_cv_parallelhdf5_h" = "no" && test "$ac_cv_libparallelhdf5" = "no" ; then
+          AC_MSG_FAILURE([Unable to compile HDF5 test program])
         fi
         dnl Look for HDF5's high level library
         AC_HAVE_LIBRARY([hdf5_hl], [PARALLELHDF5_LIBS="-lhdf5_hl $PARALLELHDF5_LIBS"], [], [])

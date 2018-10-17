@@ -60,52 +60,52 @@ class PncFormat : public DataFormat {
   PncFormat(const string &name) : PncFormat(name.c_str()) {}
   ~PncFormat();
 
-  bool openr(const char *name);
+  bool openr(const char *name) override;
   bool openr(const string &name, int mype) {return openr(name);}
 
-  bool openw(const char *name, bool append=false);
+  bool openw(const char *name, bool append=false) override;
   bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
 
-  bool is_valid() { return fname != NULL;}
+  bool is_valid() override { return fname != nullptr; }
+
+  void close() override;
   
-  void close();
-  
-  void flush();
+  void flush() override;
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var);
-  const vector<int> getSize(const string &var) { return getSize(var.c_str()); }
+  const vector<int> getSize(const char *var) override;
+  const vector<int> getSize(const string &var) override { return getSize(var.c_str()); }
   
   // Set the origin for all subsequent calls
-  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setRecord(int t); // negative -> latest
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
+  bool setRecord(int t) override; // negative -> latest
   
   // Read / Write simple variables up to 3D
 
-  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
-  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
   
-  void setLowPrecision() { lowPrecision = true; }
+  void setLowPrecision() override { lowPrecision = true; }
 
  private:
   

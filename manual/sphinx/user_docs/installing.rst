@@ -1,14 +1,25 @@
+.. Use bash as the default language for syntax highlighting in this file
+.. highlight:: console
+
+.. _sec-install:
+
 Getting started
 ===============
 
 .. _sec-getting-started:
 
 This section goes through the process of getting, installing, and
-starting to run BOUT++. Only the basic functionality needed to use
-BOUT++ is described here; the next section ([sec-advancedinstall]) goes
-through more advanced options, and how to fix some common problems.
+starting to run BOUT++. 
 
-This section will go through the following steps:
+The quickest way to get started is to use a pre-built binary. These
+take care of all dependencies, configuration and compilation. See
+section :ref:`sec-prebuiltinstall`. 
+
+The remainder of this section will go through the following steps to
+manually install BOUT++. Only the basic functionality needed to use
+BOUT++ is described here; the next section (:ref:`sec-advancedinstall`) goes
+through more advanced options, configurations for particular machines,
+and how to fix some common problems.
 
 #. :ref:`Obtaining a copy of BOUT++ <sec-obtainbout>`
 
@@ -31,31 +42,72 @@ This section will go through the following steps:
 **Note**: In this manual commands to run in a BASH shell will begin with
 ’$’, and commands specific to CSH with a ’%’.
 
-.. _sec-obtainbout:
+Pre-built binaries
+------------------
 
-Obtaining BOUT++
+.. _sec-prebuiltinstall:
+
+Docker image
+~~~~~~~~~~~~
+
+`Docker <https://www.docker.com>`_ is a widely used container system,
+which packages together the operating system environment, libraries
+and other dependencies into an image. This image can be downloaded and
+run reproducibly on a wide range of hosts, including Windows, Linux and OS X. 
+Here is the starting page for `instructions on installing Docker
+<https://docs.docker.com/install/>`_. 
+
+The BOUT++ docker images are `hosted on dockerhub
+<https://hub.docker.com/u/boutproject/>`_ for some releases and
+snapshots. Check the `list of BOUT-next tags <https://hub.docker.com/r/boutproject/bout-next/tags/>`_
+if you want a recent version of BOUT++ “next” (development) branch.
+First download the image::
+
+    $ sudo docker pull boutproject/boutproject/bout-next:9f4c663-petsc
+
+then run::
+
+    $ sudo docker run --rm -it boutproject/bout-next:9f4c663-petsc
+
+This should give a terminal in a "boutuser" home directory, in which
+there is "BOUT-next", containing BOUT++ configured and compiled with
+NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
+with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
+an X11 display is needed. Alternatively a shared directory can be
+created to pass files between the docker image and host. The following
+commands both enable X11 and create a shared directory::
+
+    $ mkdir shared
+    $ sudo docker run --rm -it \
+       -e DISPLAY -v $HOME/.Xauthority:/home/boutuser/.Xauthority --net=host \
+       -v $PWD/shared:/home/boutuser/bout-img-shared \
+       boutproject/bout-next:9f4c663-petsc
+
+This should enable plotting from python, and files in the docker image
+put in "/home/boutuser/bout-img-shared" should be visible on the host in
+the "shared" directory.
+
+If this is successful, then you can skip to section :ref:`sec-running`.
+
+ Obtaining BOUT++
 ----------------
+
+.. _sec-obtainbout:
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable
 version from https://github.com/boutproject/BOUT-dev/releases. If you
 want to develop BOUT++, you should use git to clone the repository. To
-obtain a copy of the latest version, run
-
-.. code-block:: bash
+obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
 which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run
-
-.. code-block:: bash
+the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
-Development is done on the “next” branch, which you can checkout with
-
-.. code-block:: bash
+Development is done on the “next” branch, which you can checkout with::
 
     $ git checkout next
 
@@ -66,7 +118,9 @@ Installing dependencies
 
 .. _sec-dependencies:
 
-To compile and run BOUT++ needs:
+The bare-minimum requirements for compiling and running BOUT++ are:
+
+#. A C++ compiler that supports C++11
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
@@ -76,19 +130,23 @@ To compile and run BOUT++ needs:
    
 #. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
 
+.. note::
+   If you use an Intel compiler, you must also make sure that you have
+   a version of GCC that supports C++11 (GCC 4.8+).
+
+   On supercomputers, or in other environments that use a module
+   system, you may need to load modules for both Intel and GCC.
 
 On a cluster or supercomputer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are installing on a cluster or supercomputer then the MPI C++ compilers will
 already be installed, and on Cray or IBM machines will probably be
-called ’CC’ and ’xlC’ respectively. 
+called ``CC`` and ``xlC`` respectively.
 
 On large facilities (e.g NERSC or Archer), the compilers and libraries
 needed should already be installed, but you may need to load them to use them.
-It is common to organise libraries using the ``modules`` system, so try typing
-
-.. code-block:: bash
+It is common to organise libraries using the ``modules`` system, so try typing::
 
    modules avail
 
@@ -104,13 +162,25 @@ Ubuntu / Debian
 ~~~~~~~~~~~~~~~   
 
 On Ubuntu or Debian distributions if you have administrator rights then you can install
-MPICH2 and the needed libraries by running:
-
-.. code-block:: bash
+MPICH2 and the needed libraries by running::
 
     $ sudo apt-get install mpich2 libmpich2-dev
-    $ sudo apt-get install libfftw3-dev libnetcdf-dev
-   
+    $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+
+
+On Ubuntu 18.04::
+
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
+    $ pip3 install --user Cython
+
+
+The first line should be sufficient to install BOUT++, while the 2nd
+and 3rd line make sure that the tests work, and that the python
+interface can be build.
+Further, the encoding for python needs to be utf8 - it may be required
+to set `export LC_CTYPE=C.utf8`.
+
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
 See sections on :ref:`installing MPI <sec-mpi-from-source>`, :ref:`installing FFTW <sec-fftw-from-source>`
@@ -119,9 +189,39 @@ and :ref:`installing NetCDF <sec-netcdf-from-source>`.
 Arch Linux
 ~~~~~~~~~~
 
-.. code-block:: bash
+::
 
    $ pacman -S openmpi fftw netcdf-cxx 
+
+
+Fedora
+~~~~~~
+
+On Fedora the required libraries can be installed by running::
+
+   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
+   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
+   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
+   $ sudo dnf install mpich-devel
+   $ sudo dnf install openmpi-devel
+
+Note that the python2/python3 stack is only required for for post
+processing and the tests, so feel free to install only what you
+actually need.
+Further, only either mpich or openmpi is required.
+To load an mpi implementation type::
+
+   $ module load mpi
+
+After that the mpi library is loaded.
+Precompiled binaries are available for fedora as well.
+To get the latest release run::
+
+   $ sudo dnf copr enable davidsch/bout
+   $ # install the mpich version - openmpi is available as well
+   $ sudo dnf install bout++-mpich-devel
+   $ # get the python3 modules - python2 is available as well
+   $ sudo dnf install python3-bout++
 
 .. _sec-config-bout:
 
@@ -129,12 +229,9 @@ Configuring  BOUT++
 -------------------
 
 To compile BOUT++, you first need to configure it. 
-Go into the ``BOUT-dev`` directory and run
-
-.. code-block:: bash
+Go into the ``BOUT-dev`` directory and run::
 
     $ ./configure
-
 
 If this finishes by printing a summary, and paths for IDL, Python, and
 Octave, then the libraries are set up and you can skip to the next
@@ -143,9 +240,7 @@ section. If you see a message
 FFTW-3 is installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
 If FFTW-3 is installed in a non-standard location, you can specify  the
-directory with the ``–with-fftw=`` option e.g:
-
-.. code-block:: bash
+directory with the ``–with-fftw=`` option e.g::
 
     $ ./configure --with-fftw=$HOME/local
 
@@ -158,16 +253,12 @@ will be followed by a message
 NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
 Like the FFTW-3 library, if NetCDF is installed in a non-standard location then
-you can specify the directory with the ``--with-netcdf=`` option e.g.:
-
-.. code-block:: bash
+you can specify the directory with the ``--with-netcdf=`` option e.g.::
 
     $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
 
 which should now finish successfully, printing a summary of the
-configuration:
-
-.. code-block:: bash
+configuration::
 
     Configuration summary
       PETSc support: no
@@ -198,23 +289,19 @@ get IDL, Python, and Octave analysis routines working. If you
 just want to compile BOUT++ then you can skip to the next section, but
 make a note of what configure printed out.
 
-Python
-~~~~~~
 
 .. _sec-config-python:
 
+Python configuration
+~~~~~~~~~~~~~~~~~~~~
 
 To use Python, you will need the NumPy and SciPy libraries. On Debian or
-Ubuntu these can be installed with
-
-.. code-block:: bash
+Ubuntu these can be installed with::
 
     $ sudo apt-get install python-scipy
 
 which should then add all the other dependencies like NumPy. To test if
-everything is installed, run
-
-.. code-block:: bash
+everything is installed, run::
 
     $ python -c "import scipy"
 
@@ -223,41 +310,33 @@ installing.
 
 To do this, the path to ``tools/pylib`` should be added to the
 ``PYTHONPATH`` environment variable. Instructions for doing this are
-printed at the end of the configure script, for example:
-
-.. code-block:: bash
+printed at the end of the configure script, for example::
 
     Make sure that the tools/pylib directory is in your PYTHONPATH
     e.g. by adding to your ~/.bashrc file
 
        export PYTHONPATH=/home/ben/BOUT/tools/pylib/:$PYTHONPATH
 
-To test if this command has worked, try running
-
-.. code-block:: bash
+To test if this command has worked, try running::
 
     $ python -c "import boutdata"
 
 If this doesn’t produce any error messages then Python is configured
 correctly.
 
-IDL
-~~~
-
 .. _sec-config-idl:
+
+IDL configuration
+~~~~~~~~~~~~~~~~~
 
 If you want to use `IDL <https://en.wikipedia.org/wiki/IDL_(programming_language)>`__ to analyse
 BOUT++ outputs, then the ``IDL_PATH`` environment variable should include the
 ``tools/idllib/`` subdirectory included with BOUT++. 
-The required command (for Bash) is printed at the end of the BOUT++ configuration:
-
-.. code-block:: bash
+The required command (for Bash) is printed at the end of the BOUT++ configuration::
 
     $ export IDL_PATH=...
 
-After running that command, check that ``idl`` can find the analysis routines by running:
-
-.. code-block:: bash
+After running that command, check that ``idl`` can find the analysis routines by running::
 
     $ idl
     IDL> .r collect
@@ -266,9 +345,7 @@ After running that command, check that ``idl`` can find the analysis routines by
 You should see the function ``COLLECT`` in the ``BOUT/tools/idllib``
 directory. If not, something is wrong with your ``IDL_PATH`` variable.
 On some machines, modifying ``IDL_PATH`` causes problems, in which case
-you can try modifying the path inside IDL by running
-
-.. code-block:: bash
+you can try modifying the path inside IDL by running::
 
     IDL> !path = !path + ":/path/to/BOUT-dev/tools/idllib"
 
@@ -282,16 +359,12 @@ Compiling BOUT++
 ----------------
 
 Once BOUT++ has been configured, you can compile the bulk of the code by
-going to the ``BOUT-dev`` directory (same as ``configure``) and running
-
-.. code-block:: bash
+going to the ``BOUT-dev`` directory (same as ``configure``) and running::
 
     $ make
 
 (on OS-X, FreeBSD, and AIX this should be ``gmake``). This should print
-something like:
-
-.. code-block:: bash
+something like::
 
     ----- Compiling BOUT++ -----
     CXX      =  mpicxx
@@ -321,16 +394,12 @@ Running the test suite
 
 BOUT++ comes with three sets of test suites: unit tests, integrated
 tests and method of manufactured solutions (MMS) tests. The easiest
-way to run all of them is to simply do
-
-.. code-block:: bash
+way to run all of them is to simply do::
 
     $ make check
 
 from the top-level directory. Alternatively, if you just want to run
-one them individually, you can do
-
-.. code-block:: bash
+one them individually, you can do::
 
     $ make check-unit-tests
     $ make check-integrated-tests
@@ -365,13 +434,11 @@ As of version 4.1 (August 2017), it is possible to install BOUT++ but this is
 not widely used and so should be considered experimental. 
 
 After configuring and compiling BOUT++ as above, BOUT++ can be installed
-to system directories by running as superuser or ``sudo``:
+to system directories by running as superuser or ``sudo``::
 
-**NOTE:** Do not do this unless you know what you're doing!
+   $ sudo make install
 
-.. code-block:: bash
-
-   $ make install
+.. DANGER:: Do not do this unless you know what you're doing!
 
 This will install the following files under ``/usr/local/``:
    
@@ -390,15 +457,13 @@ This will install the following files under ``/usr/local/``:
 * ``/usr/local/share/bout++/make.config`` A ``makefile`` configuration, used to compile many BOUT++ examples
 
 
-To install BOUT++ under a different directory, use the ``--prefix=`` flag e.g. to install in your home directory:
-
-  .. code-block:: bash
+To install BOUT++ under a different directory, use the ``--prefix=``
+flag e.g. to install in your home directory::
 
    $ make install prefix=$HOME/local/
 
-You can also specify this prefix when configuring, in the usual way (see :ref:`sec-config-bout`):
-   
-  .. code-block:: bash
+You can also specify this prefix when configuring, in the usual way
+(see :ref:`sec-config-bout`)::
 
      $ ./configure --prefix=$HOME/local/
      $ make
@@ -416,170 +481,25 @@ More control over where files are installed is possible by passing options to
 * ``--datadir=`` sets where ``idllib``, ``pylib`` and ``make.config`` are installed (default ``/usr/local/share/``)
 
 
-After installing, that you can run ``bout-config`` e.g
-
-.. code-block:: bash
+After installing, that you can run ``bout-config`` e.g::
 
     $ bout-config --all
 
 which should print out the list of configuration settings which ``bout-config`` can provide.
 If this doesn't work, check that the directory containing ``bout-config`` is in your ``PATH``.
 
-The python and IDL analysis scripts can be configured using ``bout-config`` rather than manually
-setting paths as in :ref:`sec-configanalysis`. Add this line to your startup file (e.g. ``$HOME/.bashrc``):
-
-.. code-block:: bash
+The python and IDL analysis scripts can be configured using
+``bout-config`` rather than manually setting paths as in
+:ref:`sec-configanalysis`. Add this line to your startup file
+(e.g. ``$HOME/.bashrc``)::
    
    export PYTHONPATH=`bout-config --python`:$PYTHONPATH
 
-note the back ticks around ``bout-config --python`` not quotes. Similarly for IDL:
+note the back ticks around ``bout-config --python`` not
+quotes. Similarly for IDL::
 
-.. code-block:: bash
-   
    export IDL_PATH=`bout-config --idl`:'<IDL_DEFAULT>':$IDL_PATH
 
 More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
 
 
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-----------------------------
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler:
-
-.. code-block:: bash
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(June 2012), the file was called ``mpich2-1.4.1p1.tar.gz``. Untar the
-file:
-
-.. code-block:: bash
-
-    $ tar -xzvf mpich2-1.4.1p1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run
-
-.. code-block:: bash
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run
-
-.. code-block:: bash
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is
-
-.. code-block:: bash
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
-
-.. _sec-fftw-from-source:
-
-Installing FFTW from source
----------------------------
-
-If you haven’t already, create directories “install” and “local”
-in your home directory:
-
-.. code-block:: bash
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version from
-http://www.fftw.org/download.html into the “install” directory. At the
-time of writing, this was called ``fftw-3.3.2.tar.gz``. Untar this file,
-and ’cd’ into the resulting directory. As with the MPI compiler,
-configure and install the FFTW library into ``$HOME/local`` by running:
-
-.. code-block:: bash
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-
-.. _sec-netcdf-from-source:
-
-Installing NetCDF from source
------------------------------
-
-The latest versions of NetCDF have separated out the C++ API from the
-main C library. As a result, you will need to download and install both.
-Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
-from https://www.unidata.ucar.edu/downloads/netcdf. As of
-January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
-
-Untar the file and ’cd’ into the resulting directory:
-
-.. code-block:: bash
-
-    $ tar -xzvf netcdf-4.4.1.1.tar.gz
-    $ cd netcdf-4.4.1.1
-
-As with MPI compilers and FFTW, configure, then make and make install:
-
-.. code-block:: bash
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Sometimes configure can fail, in which case try disabling Fortran:
-
-.. code-block:: bash
-
-    $ ./configure --prefix=$HOME/local --disable-fortran
-    $ make
-    $ make install
-
-Similarly for the C++ API:
-
-.. code-block:: bash
-
-    $ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
-    $ cd netcdf-cxx4-4.3.0
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-You may need to set a couple of environment variables as well:
-
-.. code-block:: bash
-
-    $ export PATH=$HOME/local/bin:$PATH
-    $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
-
-You should check where NetCDF actually installed its libraries. On some
-systems this will be ``$HOME/local/lib``, but on others it may be, e.g.
-``$HOME/local/lib64``. Check which it is, and set ``$LD_LIBRARY_PATH``
-appropriately.

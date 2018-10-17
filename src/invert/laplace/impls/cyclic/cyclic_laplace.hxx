@@ -36,21 +36,32 @@ class LaplaceCyclic;
 #include <dcomplex.hxx>
 #include <options.hxx>
 
+#include "utils.hxx"
+
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!
  * 
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = NULL);
+  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Acoef = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Ccoef = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    Dcoef = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceCyclic does not have Ex coefficient");
@@ -61,15 +72,17 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+
+  const Field3D solve(const Field3D &b) override {return solve(b,b);}
+  const Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices
-  dcomplex **a, **b, **c, **bcmplx, **xcmplx;
-  dcomplex *k1d;
+  Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
   
   bool dst;
   

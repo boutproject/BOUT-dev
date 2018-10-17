@@ -36,9 +36,13 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-LaplaceShoot::LaplaceShoot(Options *opt)
-    : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc)
+    : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
+
+  Acoef.setLocation(location);
+  Ccoef.setLocation(location);
+  Dcoef.setLocation(location);
 
   if(mesh->periodicX) {
         throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
@@ -49,44 +53,36 @@ LaplaceShoot::LaplaceShoot(Options *opt)
   
   // Allocate memory
   int size = (mesh->LocalNz)/2 + 1;
-  km = new dcomplex[size];
-  kc = new dcomplex[size];
-  kp = new dcomplex[size];
-  
+  km = Array<dcomplex>(size);
+  kc = Array<dcomplex>(size);
+  kp = Array<dcomplex>(size);
+
   for(int i=0;i<size;i++) {
     km[i] = 0.0;
     kc[i] = 0.0;
     kp[i] = 0.0;
   }
 
-  rhsk = new dcomplex[size];
+  rhsk = Array<dcomplex>(size);
 
-  buffer = new BoutReal[4*maxmode];
-}
-
-LaplaceShoot::~LaplaceShoot() {
-  delete[] km;
-  delete[] kc;
-  delete[] kp;
-  
-  delete[] rhsk;
-  
-  delete[] buffer;
+  buffer = Array<BoutReal>(4 * maxmode);
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
-  FieldPerp x;  // Result
+  Mesh *mesh = rhs.getMesh();
+  FieldPerp x(mesh); // Result
   x.allocate();
   
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates(location);
   
   // Get the width of the boundary
   
-  int inbndry = 2, outbndry=2;
-  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
+  int inbndry = mesh->xstart, outbndry=mesh->xstart;
+  // If the flags to assign that only one guard cell should be used is set
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -113,12 +109,12 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     
     for(int ix=xe;ix<mesh->LocalNx;ix++)
       for(int iz=0;iz<mesh->LocalNz;iz++) {
-        x[ix][iz] = 0.0;
+        x(ix, iz) = 0.0;
       }
       
   }else {
     // Wait for processor outer X
-    comm_handle handle = mesh->irecvXOut(buffer, 4*maxmode, jy);
+    comm_handle handle = mesh->irecvXOut(std::begin(buffer), 4 * maxmode, jy);
     mesh->wait(handle);
     
     // Copy into kc, kp
@@ -128,15 +124,15 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     }
     
     // Calculate solution at xe using kc
-    irfft(kc, mesh->LocalNz, x[xe]);
+    irfft(std::begin(kc), mesh->LocalNz, x[xe]);
   }
   
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
   for(int ix=xe; ix >= xs; ix--) {
-    rfft(rhs[ix], mesh->LocalNz, rhsk);
-    
+    rfft(rhs[ix], mesh->LocalNz, std::begin(rhsk));
+
     for(int kz=0; kz<maxmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
       
@@ -151,12 +147,11 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     }
     
     // Inverse FFT to get x[ix-1]
-    irfft(km, mesh->LocalNz, x[ix-1]);
-    
+    irfft(std::begin(km), mesh->LocalNz, x[ix - 1]);
+
     // Cycle km->kc->kp
-    
-    dcomplex *tmp;
-    tmp = kp; kp = kc; kc = km; km = tmp;
+    std::swap(kp, kc);
+    std::swap(kc, km);
   }
   
   // Finished on this processor. Send data to next inner processor
@@ -168,12 +163,12 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
       buffer[4*i + 2] = kp[i].real();
       buffer[4*i + 3] = kp[i].imag();
     }
-    mesh->sendXIn(buffer, 4*maxmode, jy);
+    mesh->sendXIn(std::begin(buffer), 4 * maxmode, jy);
   }else {
     // Set inner boundary
     for(int ix=xs-2;ix>=0;ix--) {
       for(int iz=0;iz<mesh->LocalNz;iz++) {
-        x[ix][iz] = x[xs-1][iz];
+        x(ix, iz) = x(xs - 1, iz);
       }
     }
   }

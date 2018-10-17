@@ -39,11 +39,10 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/dataiterator.hxx"
 
-#include "bout/deprecated.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -55,17 +54,18 @@ class Field3D; //#include "field3d.hxx"
  */
 class Field2D : public Field, public FieldData {
  public:
+  using ind_type = Ind2D;    
   /*!
    * Constructor, taking an optional mesh pointer
    * This mesh pointer is not used until the data is allocated,
    * since Field2D objects can be globals, created before a mesh
    * has been created.
    *
-   * @param[in] msh  The mesh which defines the field size. 
+   * @param[in] localmesh  The mesh which defines the field size. 
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *msh = nullptr);
+  Field2D(Mesh *localmesh = nullptr);
 
   /*!
    * Copy constructor. After this both fields
@@ -83,12 +83,12 @@ class Field2D : public Field, public FieldData {
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */ 
-  Field2D(BoutReal val);
+  Field2D(BoutReal val, Mesh *localmesh = nullptr);
 
   /*!
    * Destructor
-   */ 
-  ~Field2D();
+   */
+  ~Field2D() override;
 
   /// Data type
   using value_type = BoutReal;
@@ -130,41 +130,63 @@ class Field2D : public Field, public FieldData {
    */ 
   Field2D & operator=(BoutReal rhs);
 
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
+
   /////////////////////////////////////////////////////////
   // Data access
 
   /// Iterator over the Field2D indices
-  const DataIterator iterator() const;
+  const DataIterator DEPRECATED(iterator() const);
 
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  const DataIterator DEPRECATED(begin()) const;
+  const DataIterator DEPRECATED(end()) const;
   
   /*!
    * Returns a range of indices which can be iterated over
    * Uses the REGION flags in bout_types.hxx
    */
-  const IndexRange region(REGION rgn) const;
+  const IndexRange DEPRECATED(region(REGION rgn)) const override;
+
+  /// Return a Region<Ind2D> reference to use to iterate over this field
+  const Region<Ind2D>& getRegion(REGION region) const;  
+  const Region<Ind2D>& getRegion(const std::string &region_name) const;
+  
+  BoutReal& operator[](const Ind2D &d) {
+    return data[d.ind];
+  }
+  const BoutReal& operator[](const Ind2D &d) const {
+    return data[d.ind];
+  }
+  BoutReal& operator[](const Ind3D &d);
+  const BoutReal& operator[](const Ind3D &d) const;
 
   /*!
    * Direct access to the data array. Since operator() is used
    * to implement this, no checks are performed if CHECK <= 2
    */
-  inline BoutReal& operator[](const DataIterator &d) {
+  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
     return operator()(d.x, d.y);
   }
 
   /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
+  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
     return operator()(d.x, d.y);
   }
 
   /// Indices are also used as a lightweight way to specify indexing
   /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
+  inline BoutReal& DEPRECATED(operator[](const Indices &i)) {
     return operator()(i.x, i.y);
   }
   /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
+  inline const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
     return operator()(i.x, i.y);
   }
 
@@ -223,18 +245,6 @@ class Field2D : public Field, public FieldData {
   Field2D & operator/=(const Field2D &rhs); ///< In-place division. Copy-on-write used if data is shared
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
-  DEPRECATED(void getXArray(int y, int z, rvec &xv) const override);
-  DEPRECATED(void getYArray(int x, int z, rvec &yv) const override);
-  DEPRECATED(void getZArray(int x, int y, rvec &zv) const override);
-
-  DEPRECATED(void setXArray(int y, int z, const rvec &xv) override);
-  DEPRECATED(void setYArray(int x, int z, const rvec &yv) override);
-
-  // Stencils
-  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const override;
-  
   // FieldData virtual functions
 
   /// Visitor pattern support
@@ -266,161 +276,185 @@ class Field2D : public Field, public FieldData {
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
+  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+
   Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators
 
-const Field2D operator+(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator-(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator*(const Field2D &lhs, const Field2D &rhs);
-const Field2D operator/(const Field2D &lhs, const Field2D &rhs);
+Field2D operator+(const Field2D &lhs, const Field2D &rhs);
+Field2D operator-(const Field2D &lhs, const Field2D &rhs);
+Field2D operator*(const Field2D &lhs, const Field2D &rhs);
+Field2D operator/(const Field2D &lhs, const Field2D &rhs);
 
-const Field3D operator+(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator-(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator*(const Field2D &lhs, const Field3D &rhs);
-const Field3D operator/(const Field2D &lhs, const Field3D &rhs);
+Field3D operator+(const Field2D &lhs, const Field3D &rhs);
+Field3D operator-(const Field2D &lhs, const Field3D &rhs);
+Field3D operator*(const Field2D &lhs, const Field3D &rhs);
+Field3D operator/(const Field2D &lhs, const Field3D &rhs);
 
-const Field2D operator+(const Field2D &lhs, BoutReal rhs);
-const Field2D operator-(const Field2D &lhs, BoutReal rhs);
-const Field2D operator*(const Field2D &lhs, BoutReal rhs);
-const Field2D operator/(const Field2D &lhs, BoutReal rhs);
+Field2D operator+(const Field2D &lhs, BoutReal rhs);
+Field2D operator-(const Field2D &lhs, BoutReal rhs);
+Field2D operator*(const Field2D &lhs, BoutReal rhs);
+Field2D operator/(const Field2D &lhs, BoutReal rhs);
 
-const Field2D operator+(BoutReal lhs, const Field2D &rhs);
-const Field2D operator-(BoutReal lhs, const Field2D &rhs);
-const Field2D operator*(BoutReal lhs, const Field2D &rhs);
-const Field2D operator/(BoutReal lhs, const Field2D &rhs);
+Field2D operator+(BoutReal lhs, const Field2D &rhs);
+Field2D operator-(BoutReal lhs, const Field2D &rhs);
+Field2D operator*(BoutReal lhs, const Field2D &rhs);
+Field2D operator/(BoutReal lhs, const Field2D &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
  */
-const Field2D operator-(const Field2D &f);
+Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-/// Square root
-const Field2D sqrt(const Field2D &f);
+/// Square root of \p f over region \p rgn
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+const Field2D sqrt(const Field2D &f, REGION rgn=RGN_ALL);
 
-/// Absolute value
-const Field2D abs(const Field2D &f);
+/// Absolute value (modulus, |f|) of \p f over region \p rgn
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+const Field2D abs(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Calculates the minimum of a field, excluding
- * the boundary/guard cells. 
- * By default this is only on the local processor,
- * but setting allpe=true does a collective Allreduce
- * over all processors.
- *
- * @param[in] f  The field to loop over
- * @param[in] allpe  Minimum over all processors?
- * 
- */
-BoutReal min(const Field2D &f, bool allpe=false);
+/// Calculates the minimum of a field, excluding the boundary/guard
+/// cells by default (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe true does a collective Allreduce over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Minimum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
-/*!
- * Calculates the maximum of a field, excluding
- * the boundary/guard cells. 
- * By default this is only on the local processor,
- * but setting allpe=true does a collective Allreduce
- * over all processors.
- *
- * @param[in] f  The field to loop over
- * @param[in] allpe  Minimum over all processors?
- * 
- */
-BoutReal max(const Field2D &f, bool allpe=false);
+/// Calculates the maximum of a field, excluding the boundary/guard
+/// cells by default (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe to true does a collective Allreduce over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Maximum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
 
-/*!
- * Test if all values of this field are finite
- * Loops over the entire domain including boundaries
- */
-bool finite(const Field2D &f);
+/// Check if all values of a field \p var are finite.
+/// Loops over all points including the boundaries by
+/// default (can be changed using the \p rgn argument
+bool finite(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Exponential
-const Field2D exp(const Field2D &f);
+const Field2D exp(const Field2D &f, REGION rgn=RGN_ALL);
 
 /// Natural logarithm
-const Field2D log(const Field2D &f);
+const Field2D log(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Sine trigonometric function. 
- *
- * @param[in] f  Angle in radians
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D sin(const Field2D &f);
+/// Sine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D sin(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Cosine trigonometric function. 
- *
- * @param[in] f  Angle in radians
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D cos(const Field2D &f);
+/// Cosine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D cos(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Tangent trigonometric function. 
- *
- * @param[in] f  Angle in radians
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D tan(const Field2D &f);
+/// Tangent trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D tan(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Hyperbolic sine function. 
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D sinh(const Field2D &f);
+/// Hyperbolic sine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D sinh(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Hyperbolic cosine function. 
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D cosh(const Field2D &f);
+/// Hyperbolic cosine trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D cosh(const Field2D &f, REGION rgn=RGN_ALL);
 
-/*!
- * Hyperbolic tangent function. 
- *
- * This loops over the entire domain, including guard/boundary cells
- * If CHECK >= 3 then the result will be checked for non-finite numbers
- */
-const Field2D tanh(const Field2D &f);
+/// Hyperbolic tangent trigonometric function.
+///
+/// @param[in] f    Angle in radians
+/// @param[in] rgn  The region to calculate the result over
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument).
+/// If CHECK >= 3 then the result will be checked for non-finite numbers
+const Field2D tanh(const Field2D &f, REGION rgn=RGN_ALL);
 
-/// Make an independent copy of field f
+/// Make an independent copy of field \p f
 const Field2D copy(const Field2D &f);
 
-/// Sets a floor on var, so minimum of the return value is >= f
-const Field2D floor(const Field2D &var, BoutReal f);
+/// Apply a floor value \p f to a field \p var. Any value lower than
+/// the floor is set to the floor.
+///
+/// @param[in] var  Variable to apply floor to
+/// @param[in] f    The floor value
+/// @param[in] rgn  The region to calculate the result over
+const Field2D floor(const Field2D &var, BoutReal f, REGION rgn=RGN_ALL);
 
-/// Power, lhs ** rhs
-Field2D pow(const Field2D &lhs, const Field2D &rhs);
-Field2D pow(const Field2D &lhs, BoutReal rhs);
-Field2D pow(BoutReal lhs, const Field2D &rhs);
+/// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
+///
+/// This loops over the entire domain, including guard/boundary cells by
+/// default (can be changed using the \p rgn argument)
+Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
+Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
+Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
 
 #if CHECK > 0
-void checkData(const Field2D &f);
+/// Throw an exception if \p f is not allocated or if any
+/// elements are non-finite (for CHECK > 2).
+/// Loops over all points including the boundaries by
+/// default (can be changed using the \p rgn argument
+void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
 #else
-inline void checkData(const Field2D &UNUSED(f)) {}
+inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
 #endif
 
+/// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
+void invalidateGuards(Field2D &var);
+#else
+inline void invalidateGuards(Field2D &UNUSED(var)) {}
+#endif
 
-/*!
- * @brief Returns a reference to the time-derivative of a field
- * 
- * Wrapper around member function f.timeDeriv()
- *
- */
+/// Returns a reference to the time-derivative of a field \p f
+///
+/// Wrapper around member function f.timeDeriv()
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }

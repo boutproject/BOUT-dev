@@ -110,7 +110,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   // Set machEnv block
   machEnv = static_cast<machEnvType>(PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv));
 
-  if (machEnv == NULL) {
+  if (machEnv == nullptr) {
     throw BoutException("\tError: PVecInitMPI failed\n");
   }
 
@@ -136,8 +136,8 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
                      solver_gloc, solver_cfn, static_cast<void*>(this));
-  
-  if (pdata == NULL) {
+
+  if (pdata == nullptr) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
   }
 
@@ -168,13 +168,13 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
                 for(i=0;i<OPT_SIZE;i++)ropt[i]=ZERO;
 		iopt[MXSTEP]=pvode_mxstep;
 
-  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol,
-                          &abstol, this, NULL, optIn, iopt, ropt, machEnv);
+  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol, &abstol,
+                          this, nullptr, optIn, iopt, ropt, machEnv);
 
-  if(cvode_mem == NULL) {
+  if (cvode_mem == nullptr) {
     throw BoutException("\tError: CVodeMalloc failed.\n");
   }
-  
+
   /* Call CVSpgmr to specify the CVODE linear solver CVSPGMR with
      left preconditioning, modified Gram-Schmidt orthogonalization,
      default values for the maximum Krylov dimension maxl and the tolerance
@@ -232,8 +232,6 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   BoutReal *udata;
   
-  //rhs_ncalls = 0;
-
   // Set pointer to data array in vector u.
   udata = N_VDATA(u);
 
@@ -252,7 +250,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
       if(flag < 0) {
-        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
       
@@ -272,7 +270,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Check return flag
   if(flag != SUCCESS) {
-    output.write("ERROR CVODE step failed, flag = %d\n", flag);
+    output_error.write("ERROR CVODE step failed, flag = %d\n", flag);
     return(-1.0);
   }
 
@@ -312,8 +310,6 @@ void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dud
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-  
-  rhs_ncalls++;
 }
 
 /**************************************************************************

@@ -35,13 +35,18 @@ class EulerSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
+#include "bout/solverfactory.hxx"
+namespace{
+RegisterSolver<EulerSolver> registersolvereuler("euler");
+}
+
 class EulerSolver : public Solver {
  public:
-  EulerSolver(Options *options);
-  ~EulerSolver();
+  EulerSolver(Options *options) : Solver(options) {};
+  ~EulerSolver(){};
   
-  void setMaxTimestep(BoutReal dt);
-  BoutReal getCurrentTimestep() {return timestep; }
+  void setMaxTimestep(BoutReal dt) override;
+  BoutReal getCurrentTimestep() override {return timestep; }
   
   int init(int nout, BoutReal tstep) override;
   
@@ -50,7 +55,7 @@ class EulerSolver : public Solver {
   int mxstep; // Maximum number of internal steps between outputs
   BoutReal cfl_factor; // Factor by which timestep must be smaller than maximum
 
-  BoutReal *f0, *f1;
+  Array<BoutReal> f0, f1;
   
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
@@ -61,7 +66,7 @@ class EulerSolver : public Solver {
   int nlocal; // Number of variables on local processor
   
   void take_step(BoutReal curtime, BoutReal dt, 
-                 BoutReal *start, BoutReal *result); // Take a single step to calculate f1
+                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__

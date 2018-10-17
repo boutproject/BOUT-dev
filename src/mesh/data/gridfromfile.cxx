@@ -16,15 +16,18 @@
 
 #include <unused.hxx>
 
+#include <utility>
+
 /*!
  * Creates a GridFile object
  * 
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(std::unique_ptr<DataFormat> format, const string gridfilename) : file(format.release()), filename(gridfilename) {
+GridFile::GridFile(std::unique_ptr<DataFormat> format, string gridfilename)
+    : file(std::move(format)), filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
-  
+
   if (! file->openr(filename) ) {
     throw BoutException("Could not open file '%s'", filename.c_str());
   }
@@ -268,8 +271,8 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   }
   case 2: {
     // Read as 2D
-    
-    Field2D var2d;
+
+    Field2D var2d(m);
     if (!get(m, var2d, name, def)) {
       throw BoutException("Couldn't read 2D variable '%s'\n", name.c_str());
     }
@@ -399,7 +402,12 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 
   int ncz = m->LocalNz;
 
-  BoutReal zlength = m->coordinates()->zlength();
+  /// we should be able to replace the following with
+  /// var.getCoordinates()->zlength();
+  /// but don't do it yet as we don't assert that m == var.getMesh()
+  /// Expect the assertion to be true, in which case we probably don't
+  /// need to pass m as can just use var.getMesh()
+  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength();
   
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
@@ -409,7 +417,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
     output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
-    int mm = static_cast<int>(maxmode / zperiod) * zperiod;
+    int mm = (maxmode / zperiod) * zperiod;
     if ( (ncz/2)*zperiod < mm )
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
@@ -421,8 +429,8 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   }
 
   /// Data for FFT. Only positive frequencies
-  dcomplex* fdata = new dcomplex[ncz/2 + 1];
-  BoutReal* zdata = new BoutReal[size[2]];
+  Array<dcomplex> fdata(ncz / 2 + 1);
+  Array<BoutReal> zdata(size[2]);
 
   for(int jx=xge;jx<xlt;jx++) {
     // Set the global X index
@@ -433,8 +441,8 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
       int yind = yread + jy; // Global location to read from
 
       file->setGlobalOrigin(jx + m->OffsetX, yind);
-      if (!file->read(zdata, name, 1, 1, size[2])) {
-        return 1;
+      if (!file->read(std::begin(zdata), name, 1, 1, size[2])) {
+        return true;
       }
 
       /// Load into dcomplex array
@@ -451,15 +459,11 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
           fdata[i] = 0.0;
         }
       }
-      irfft(fdata, ncz, &var(jx,ydest+jy,0));
+      irfft(std::begin(fdata), ncz, &var(jx, ydest + jy, 0));
     }
   }
 
   file->setGlobalOrigin();
-
-  // free data
-  delete[] zdata;
-  delete[] fdata;
   
   return true;
 }

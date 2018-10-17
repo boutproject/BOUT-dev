@@ -12,7 +12,7 @@ public:
 
     D = 10;
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
     mesh->get(coord->g_22, "g_22");
 
@@ -40,7 +40,7 @@ BOUTMAIN(FCISlab);
 int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
 
   f.applyParallelBoundary(time);
   g.applyParallelBoundary(time);

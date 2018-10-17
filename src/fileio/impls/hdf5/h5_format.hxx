@@ -67,47 +67,62 @@ class H5Format : public DataFormat {
   using DataFormat::openw;
   bool openw(const char *name, bool append=false) override;
   
-  bool is_valid();
+  bool is_valid() override;
   
-  void close();
+  void close() override;
   
-  void flush();
+  void flush() override;
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var);
-  const vector<int> getSize(const string &var);
+  const vector<int> getSize(const char *var) override;
+  const vector<int> getSize(const string &var) override;
   
   // Set the origin for all subsequent calls
-  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
-  bool setRecord(int t); // negative -> latest
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0) override;
+  bool setRecord(int t) override; // negative -> latest
+
+  // Add a variable to the file
+  bool addVarInt(const string &name, bool repeat) override;
+  bool addVarBoutReal(const string &name, bool repeat) override;
+  bool addVarField2D(const string &name, bool repeat) override;
+  bool addVarField3D(const string &name, bool repeat) override;
   
   // Read / Write simple variables up to 3D
 
-  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
-  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
-  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
   
-  void setLowPrecision() { lowPrecision = true; }
+  void setLowPrecision() override { lowPrecision = true; }
+
+  // Attributes
+
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    const std::string &text) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    int value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, int &value) override;
 
  private:
 
@@ -125,10 +140,20 @@ class H5Format : public DataFormat {
   
   hsize_t chunk_length;
 
+  bool addVar(const string &name, bool repeat, hid_t write_hdf5_type, int nd);
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool write_rec(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+
+  // Attributes
+
+  void setAttribute(const hid_t &dataSet, const std::string &attrname,
+                    const std::string &text);
+  void setAttribute(const hid_t &dataSet, const std::string &attrname,
+                    int value);
+  bool getAttribute(const hid_t &dataSet, const std::string &attrname, std::string &text);
+  bool getAttribute(const hid_t &dataSet, const std::string &attrname, int &value);
 };
 
 #endif // __H5FORMAT_H__

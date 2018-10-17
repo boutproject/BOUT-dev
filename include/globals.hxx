@@ -27,9 +27,9 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "bout/deprecated.hxx"
 #include "bout/mesh.hxx"
 #include "datafile.hxx"
+#include "bout/macro_for_each.hxx"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
@@ -39,10 +39,10 @@
 #define SETTING(name, val) name = val
 #endif
 
-SETTING(Mesh *mesh, NULL); ///< The mesh object
+SETTING(Mesh *mesh, nullptr); ///< The mesh object
 
 /// Define for reading a variable from the grid
-#define GRID_LOAD(var) mesh->get(var, #var)
+#define GRID_LOAD1(var) mesh->get(var, #var)
 #define GRID_LOAD2(var1, var2) {\
     mesh->get(var1, #var1); \
     mesh->get(var2, #var2);}
@@ -69,15 +69,17 @@ SETTING(Mesh *mesh, NULL); ///< The mesh object
     mesh->get(var5, #var5); \
     mesh->get(var6, #var6);}
 
+/// Read fields from the global mesh
+/// The name of the variable will be used as the name
+/// in the input.
+/// This should accept up to 10 arguments
+#define GRID_LOAD(...) \
+  { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
+
 ///////////////////////////////////////////////////////////////
 
 /// Dump file object
 GLOBAL Datafile dump;
-
-/// Error handling (bout++.cpp)
-/// Deprecated! Use "throw BoutException(str)" instead
-/// Will be removed in 5.0
-void DEPRECATED(bout_error(const char *str=NULL));
 
 #undef GLOBAL
 #undef SETTING

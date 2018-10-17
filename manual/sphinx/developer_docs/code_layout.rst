@@ -5,9 +5,10 @@ BOUT++ is organised into classes and groups of functions which operate
 on them: It’s not purely object-oriented, but takes advantage of many of
 C++’s object-oriented features.
 
-Figure [fig:layout1] shows the most important parts of BOUT++ and how
+:numref:`fig-layout1` shows the most important parts of BOUT++ and how
 they fit together.
 
+.. _fig-layout1:
 .. figure:: ../figs/layout1.*
    :alt: Overview of BOUT++ control flow
 
@@ -15,26 +16,29 @@ they fit together.
    running (blue)
 
 The initialisation process is shown in red: basic information is first
-read from the grid file (e.g. size of the grid, topology etc.), then the
-user-supplied initialisation code is called. This code can read other
-variables from the grid, and makes at least one call to ``bout_solve``
-to specify a variable to be evolved. The main thing ``bout_solve`` does
-is to add these variables to the solver.
+read from the grid file (e.g. size of the grid, topology etc.), then
+the user-supplied initialisation code is called. This code can read
+other variables from the grid, and makes at least one call to
+`PhysicsModel::bout_solve` to specify a variable to be evolved. The
+main thing `bout_solve <PhysicsModel::bout_solve>` does is to add
+these variables to the solver.
 
 The process of running a timestep is shown in blue in
-figure [fig:layout1]: The main loop calls the solver, which in turn
-calls PVODE. To evolve the system PVODE makes calls to the RHS function
-inside solver. This moves data between PVODE and BOUT++, and calls the
-user-supplied ``physics_run`` code to calculate time-derivatives. Much
-of the work calculating time-derivatives involves differential
-operators.
+:numref:`fig-layout1`: The main loop calls the solver, which in turn
+calls PVODE. To evolve the system PVODE makes calls to the RHS
+function inside solver. This moves data between PVODE and BOUT++, and
+calls the user-supplied `PhysicsModel::rhs` code to calculate
+time-derivatives. Much of the work calculating time-derivatives
+involves differential operators.
 
-Calculation of the RHS function ``physics_run``, and handling of data in
-BOUT++ involves many different components. Figure [fig:layout2] shows
-(most) of the classes and functions involved, and the relationships
-between them. Some thought was put into how this should be organised,
-but it has also changed over time, so some parts could be cleaner.
+Calculation of the `RHS function <PhysicsModel::rhs>`, and handling of
+data in BOUT++ involves many different
+components. :numref:`fig-layout2` shows (most) of the classes and
+functions involved, and the relationships between them. Some thought
+was put into how this should be organised, but it has also changed
+over time, so some parts could be cleaner.
 
+.. _fig-layout2:
 .. figure:: ../figs/layout2.*
    :alt: Relationships used in calculating the RHS function
 
@@ -74,57 +78,56 @@ inversion codes, ``mesh``, and ``solver``.
 
 The current source code files are:
 
-- :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`: Main file
-  which initialises, runs and finalises BOUT++. Currently contains a
-  :cpp:func:`main()` function, though this is being removed shortly.
+- :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`: Main
+  file which initialises, runs and finalises BOUT++. Currently
+  contains a `main()` function, though this is being removed shortly.
 
 - field
 
-   - :doc:`field2d.cxx<../_breathe_autogen/file/field2d_8cxx>` implements
-     the :cpp:class:`Field2D` class. This is a scalar field which
+   - :doc:`field2d.cxx<../_breathe_autogen/file/field2d_8cxx>`
+     implements the `Field2D` class. This is a scalar field which
      varies only in :math:`x` and :math:`y` and is used for things
      like metric tensor components and initial profiles. It supplies
      lots of overloaded operators and functions on these objects.
 
-   - :doc:`field3d.cxx<../_breathe_autogen/file/field3d_8cxx>` implements
-     the :cpp:class:`Field3D` class, which varies in :math:`x`,
+   - :doc:`field3d.cxx<../_breathe_autogen/file/field3d_8cxx>`
+     implements the `Field3D` class, which varies in :math:`x`,
      :math:`y` and :math:`z`. Since these handle a lot more memory
      than Field2D objects, the memory management is more complicated
-     and includes reference counting. See section [sec:memorymanage]
-     for more details.
+     and includes reference counting. See section
+     :ref:`sec-memorymanage` for more details.
 
    - :doc:`field_data.cxx<../_breathe_autogen/file/field__data_8cxx>`
-     Implements some functions in the :cpp:class:`FieldData`
-     class. This is a mainly pure virtual interface class which is
-     inherited by :cpp:class:`Field2D` and :cpp:class:`Field3D`.
+     Implements some functions in the `FieldData` class. This is a
+     mainly pure virtual interface class which is inherited by
+     `Field2D` and `Field3D`.
 
    - :doc:`fieldperp.cxx<../_breathe_autogen/file/fieldperp_8cxx>`
-     implements a :cpp:class:`FieldPerp` class to store slices
-     perpendicular to the magnetic field i.e. they are a function of
-     :math:`x` and :math:`z` only. This is mainly used for Laplacian
-     inversion routines, and needs to be integrated with the other
-     fields better.
+     implements a `FieldPerp` class to store slices perpendicular to
+     the magnetic field i.e. they are a function of :math:`x` and
+     :math:`z` only. This is mainly used for Laplacian inversion
+     routines, and needs to be integrated with the other fields
+     better.
 
    - :doc:`initialprofiles.cxx<../_breathe_autogen/file/initialprofiles_8cxx>`
      routines to set the initial values of fields when a simulation
      first starts. Reads settings from the option file based on the name
      of the variable.
 
-   - :doc:`vecops.cxx<../_breathe_autogen/file/vecops_8cxx>` a collection
-     of function to operate on vectors.  Contains things like
-     ``Grad``, ``Div`` and ``Curl``, and uses a combination of field
-     differential operators (in
-     :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`) and metric
-     tensor components (in :cpp:class:`Mesh`).
+   - :doc:`vecops.cxx<../_breathe_autogen/file/vecops_8cxx>` a
+     collection of function to operate on vectors.  Contains things
+     like ``Grad``, ``Div`` and ``Curl``, and uses a combination of
+     field differential operators (in
+     :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`) and
+     metric tensor components (in `Mesh`).
 
    - :doc:`vector2d.cxx<../_breathe_autogen/file/vector2d_8cxx>`
-     implements the :cpp:class:`Vector2D` class, which uses a
-     :cpp:class:`Field2D` object for each of its 3
-     components. Overloads operators to supply things like dot and
-     cross products.
+     implements the `Vector2D` class, which uses a `Field2D` object
+     for each of its 3 components. Overloads operators to supply
+     things like dot and cross products.
 
    - :doc:`vector3d.cxx<../_breathe_autogen/file/vector3d_8cxx>`
-     implements :cpp:class:`Vector3D` by using a :cpp:class:`Field3D`
+     implements `Vector3D` by using a `Field3D`
      object for each component.
 
    - :doc:`where.cxx<../_breathe_autogen/file/where_8cxx>` supplies
@@ -134,7 +137,7 @@ The current source code files are:
 - fileio
 
    - :doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`
-     supplies an abstract :cpp:class:`DataFile` interface for data
+     supplies an abstract `DataFile` interface for data
      input and output. Handles the conversion of data in fields and
      vectors into blocks of data which are then sent to a specific
      file format.
@@ -252,12 +255,12 @@ The current source code files are:
 
    - :doc:`boundary_factory.cxx<../_breathe_autogen/file/boundary__factory_8cxx>` creates boundary
      condition operators which can then be applied to
-     fields. Described in section [sec:BoundaryFactory].
+     fields. Described in section :ref:`sec-BoundaryFactory`.
 
    - :doc:`boundary_region.cxx<../_breathe_autogen/file/boundary__region_8cxx>` implements a way
      to describe and iterate over boundary regions. Created by the
      mesh, and then used by boundary conditions. See
-     section [sec:BoundaryRegion] for more details.
+     section :ref:`sec-BoundaryRegion` for more details.
 
    - :doc:`boundary_standard.cxx<../_breathe_autogen/file/boundary__standard_8cxx>` implements some
      standard boundary operations and modifiers such as ``Neumann``
@@ -266,14 +269,14 @@ The current source code files are:
    - :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>` is a
      collection of differential operators on scalar fields. It uses
      the differential methods in :doc:`derivs.cxx<../_breathe_autogen/file/derivs_8cxx>` and the metric tensor
-     components in :cpp:class:`Mesh` to compute operators.
+     components in `Mesh` to compute operators.
 
    - :doc:`interpolation.cxx<../_breathe_autogen/file/interpolation_8cxx>` contains functions
      for interpolating fields
 
    - :doc:`mesh.cxx<../_breathe_autogen/file/mesh_8cxx>` is the base
-     class for the :cpp:class:`Mesh` object. Contains routines useful
-     for all :cpp:class:`Mesh` implementations.
+     class for the `Mesh` object. Contains routines useful
+     for all `Mesh` implementations.
 
    - impls
 
@@ -297,11 +300,6 @@ The current source code files are:
      some useful routines for creating sources and sinks in physics
      equations.
 
-- precon
-
-   - :doc:`jstruc.cxx<../_breathe_autogen/file/jstruc_8cxx>` is an
-     experimental code for preconditioning using PETSc
-
 - solver
 
    - :doc:`solver.cxx<../_breathe_autogen/file/solver_8cxx>` is the
@@ -317,7 +315,7 @@ The current source code files are:
       - cvode
 
          - :doc:`cvode.cxx<../_breathe_autogen/file/cvode_8cxx>` is the
-           implementation of :cpp:class:`Solver` which interfaces with
+           implementation of `Solver` which interfaces with
            the SUNDIALS CVODE library.
 
          - :doc:`cvode.hxx<../_breathe_autogen/file/cvode_8hxx>`
@@ -361,7 +359,7 @@ The current source code files are:
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by
      :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`. Details are
-     given in section [sec:derivatives].
+     given in section :ref:`sec-derivatives`.
 
    - :doc:`msg_stack.cxx<../_breathe_autogen/file/msg__stack_8cxx>` is
      part of the error handling system. It maintains a stack of
@@ -380,7 +378,7 @@ The current source code files are:
 
    - :doc:`range.cxx<../_breathe_autogen/file/range_8cxx>` Provides the
      RangeIterator class, used to iterate over a set of
-     ranges. Described in section [sec:rangeiterator]
+     ranges. Described in section :ref:`sec-rangeiterator`
 
    - :doc:`stencils.cxx<../_breathe_autogen/file/stencils_8cxx>` contains
      methods to operate on stencils which are used by differential
@@ -388,7 +386,7 @@ The current source code files are:
 
    - :doc:`timer.cxx<../_breathe_autogen/file/timer_8cxx>` a class for
      timing parts of the code like communications and file
-     I/O. Described in section [sec:timerclass]
+     I/O. Described in section :ref:`sec-timerclass`
 
    - :doc:`utils.cxx<../_breathe_autogen/file/utils_8cxx>` contains
      miscellaneous small useful routines such as allocating and

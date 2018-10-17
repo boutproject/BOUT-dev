@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 from __future__ import division
@@ -7,7 +7,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
@@ -16,13 +16,13 @@ from sys import stdout, exit
 MPIRUN=getmpirun()
 
 print("Making griddata test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 for nproc in [1]:
   stdout.write("Checking %d processors ... " % (nproc))
 
-  shell("rm -f ./data*nc")
-  s, out = launch("./test_griddata -d screw", runcmd=MPIRUN, nproc=nproc, pipe=True)
+  shell("rm ./data*nc")
+  s, out = launch_safe("./test_griddata -d screw", runcmd=MPIRUN, nproc=nproc, pipe=True)
 
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)

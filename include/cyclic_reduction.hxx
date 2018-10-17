@@ -1,7 +1,7 @@
 /************************************************************************
  * Cyclic reduction for direct solution of a complex tridiagonal system
- * 
- * 
+ *
+ *
  * (b0  c0      a0)
  * (a1  b1  c1    )
  * (    a2  b2  c2)
@@ -16,7 +16,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -44,20 +44,25 @@
 
 #include "mpi.h"
 #include "utils.hxx"
+#include "msg_stack.hxx"
 #include <lapack_routines.hxx>
+
+#include "bout/assert.hxx"
 #include "boutexception.hxx"
 
-template <class T>
-class CyclicReduce {
+#include "output.hxx"
+
+#include "bout/openmpwrap.hxx"
+
+template <class T> class CyclicReduce {
 public:
-  
   CyclicReduce() {
     nprocs = 0;
     myproc = -1;
     N = 0;
     Nsys = 0;
   }
-  
+
   CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0), periodic(false) {
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
@@ -68,107 +73,234 @@ public:
   /// @param[in] size  The number of rows on this processor
   void setup(MPI_Comm c, int size) {
     comm = c;
-    
+
     int np, myp;
     MPI_Comm_size(c, &np);
     MPI_Comm_rank(c, &myp);
-    if((size != N) || (np != nprocs) || (myp != myproc))
-      freeMemory(); // Need to re-size
+    if ((size != N) || (np != nprocs) || (myp != myproc))
+      Nsys = 0; // Need to re-size
     N = size;
     periodic = false;
     nprocs = np;
     myproc = myp;
   }
 
-  ~CyclicReduce() {
-    freeMemory();
-  }
+  ~CyclicReduce() { N = Nsys = 0; }
 
   /// Specify that the tridiagonal system is periodic
   /// By default not periodic
-  void setPeriodic(bool p=true) {periodic=p;}
-  
-  /// Set up a single equation to invert
-  void setCoefs(T a[], T b[], T c[]) {
+  void setPeriodic(bool p = true) { periodic = p; }
+
+  DEPRECATED(void setCoefs(T a[], T b[], T c[])) {
+    // Set coefficients
     setCoefs(1, &a, &b, &c);
+  }
+
+  DEPRECATED(void setCoefs(int nsys, T **a, T **b, T **c)) {
+    Matrix<T> aMatrix(nsys, N);
+    Matrix<T> bMatrix(nsys, N);
+    Matrix<T> cMatrix(nsys, N);
+
+    // Copy data into matrices
+    BOUT_OMP(parallel for)
+    for (int j = 0; j < nsys; ++j) {
+      for (int i = 0; i < N; ++i) {
+        aMatrix(j, i) = a[j][i];
+        bMatrix(j, i) = b[j][i];
+        cMatrix(j, i) = c[j][i];
+      }
+    }
+
+    setCoefs(aMatrix, bMatrix, cMatrix);
+    // Don't copy ?Matrix back into ? as setCoefs
+    // doesn't modify these. Could copy out if we really wanted.
+  }
+
+  void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
+    ASSERT2(a.size() == b.size());
+    ASSERT2(a.size() == c.size());
+    ASSERT2(a.size() == N);
+
+    Matrix<T> aMatrix(1, N);
+    Matrix<T> bMatrix(1, N);
+    Matrix<T> cMatrix(1, N);
+
+    // Copy data into matrices
+    BOUT_OMP(parallel for)    
+    for (int i = 0; i < N; ++i) {
+      aMatrix(0, i) = a[i];
+      bMatrix(0, i) = b[i];
+      cMatrix(0, i) = c[i];
+    }
+
+    setCoefs(aMatrix, bMatrix, cMatrix);
+    // Don't copy ?Matrix back into ? as setCoefs
+    // doesn't modify these. Could copy out if we really wanted.
   }
 
   /// Set the entries in the matrix to be inverted
   ///
-  /// @param[in] nsys   The number of independent matrices to be solved
   /// @param[in] a   Left diagonal. Should have size [nsys][N]
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
-  void setCoefs(int nsys, T **a, T **b, T **c) {
+  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+    TRACE("CyclicReduce::setCoefs");
+
+    int nsys = std::get<0>(a.shape());
+
     // Make sure correct memory arrays allocated
     allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
-    for(int j=0;j<Nsys;j++)
-      for(int i=0;i<N;i++) {
-        coefs[j][4*i] = a[j][i];
-        coefs[j][4*i + 1] = b[j][i];
-        coefs[j][4*i + 2] = c[j][i];
+    BOUT_OMP(parallel for)
+    for (int j = 0; j < Nsys; j++)
+      for (int i = 0; i < N; i++) {
+        coefs(j, 4 * i) = a(j, i);
+        coefs(j, 4 * i + 1) = b(j, i);
+        coefs(j, 4 * i + 2) = c(j, i);
         // 4*i + 3 will contain RHS
       }
   }
 
   /// Solve a single triadiagonal system
-  /// 
-  void solve(T rhs[], T x[]) {
+  ///
+  DEPRECATED(void solve(T rhs[], T x[])) {
     // Solving single system
     solve(1, &rhs, &x);
   }
 
   /// Solve a set of tridiagonal systems
-  /// 
-  void solve(int nrhs, T **rhs, T **x) {
+  ///
+  DEPRECATED(void solve(int nrhs, T **rhs, T **x)) {
+    Matrix<T> rhsMatrix(nrhs, N);
+    Matrix<T> xMatrix(nrhs, N);
+
+    // Copy input data into matrix
+    BOUT_OMP(parallel for)    
+    for (int j = 0; j < nrhs; ++j) {
+      for (int i = 0; i < N; ++i) {
+        rhsMatrix(j, i) = rhs[j][i];
+      }
+    }
+
+    // Solve
+    solve(rhsMatrix, xMatrix);
+
+    // Copy result back into argument
+    BOUT_OMP(parallel for)    
+    for (int j = 0; j < nrhs; ++j) {
+      for (int i = 0; i < N; ++i) {
+        x[j][i] = xMatrix(j, i);
+      }
+    }
+  }
+
+  /// Solve a set of tridiagonal systems
+  ///
+  /// @param[in] rhs Array storing Values of the rhs for a single system
+  /// @param[out] x  Array storing the result for a single system
+  void solve(Array<T> &rhs, Array<T> &x) {
+    ASSERT2(rhs.size() == x.size());
+    ASSERT2(rhs.size() == N);
+
+    int nrhs = rhs.size();
+    Matrix<T> rhsMatrix(1, N);
+    Matrix<T> xMatrix(1, N);
+
+    // Copy input data into matrix
+    BOUT_OMP(parallel for)    
+    for (int j = 0; j < nrhs; ++j) {
+      for (int i = 0; i < N; ++i) {
+        rhsMatrix(j, i) = rhs[j][i];
+      }
+    }
+
+    // Solve
+    solve(rhsMatrix, xMatrix);
+
+    // Copy result back into argument
+    BOUT_OMP(parallel for)    
+    for (int j = 0; j < nrhs; ++j) {
+      for (int i = 0; i < N; ++i) {
+        x[j][i] = xMatrix(j, i);
+      }
+    }
+  };
+
+  /// Solve a set of tridiagonal systems
+  ///
+  /// @param[in] rhs Matrix storing Values of the rhs for each system
+  /// @param[out] x  Matrix storing the result for each system
+  void solve(Matrix<T> &rhs, Matrix<T> &x) {
+    TRACE("CyclicReduce::solve");
+    ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
+    ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
+    ASSERT2(static_cast<int>(std::get<1>(rhs.shape())) == N);
+    ASSERT2(static_cast<int>(std::get<1>(x.shape())) == N);
+
     // Multiple RHS
-    
-    if(nrhs != Nsys)
+    int nrhs = std::get<0>(rhs.shape());
+
+    if (nrhs != Nsys)
       throw BoutException("Sorry, can't yet handle nrhs != nsys");
-    
+
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
-    for(int j=0;j<Nsys;j++)
-      for(int i=0;i<N;i++) {
-        coefs[j][4*i + 3] = rhs[j][i];
+    BOUT_OMP(parallel for)    
+    for (int j = 0; j < Nsys; j++)
+      for (int i = 0; i < N; i++) {
+        coefs(j, 4 * i + 3) = rhs(j, i);
       }
 
     ///////////////////////////////////////
     // Reduce local part of the matrix to interface equations
     reduce(Nsys, N, coefs, myif);
-    
+
     ///////////////////////////////////////
     // Gather all interface equations onto single processor
     // NOTE: Need to replace with divide-and-conquer at some point
-    
-    int ns = Nsys / nprocs; // Number of systems to assign to all processors
-    int nsextra = Nsys % nprocs;  // Number of processors with 1 extra 
-    
-    MPI_Request* req = new MPI_Request[nprocs];
+    //
+    // There are Nsys sets of equations to gather, and nprocs processors
+    // which can be used. Each processor therefore sends interface equations
+    // to several different processors for gathering
+    //
+    // e.g. 3 processors (nproc=3), 4 sets of equations (Nsys=4):
+    //
+    // PE 0: [1a 2a 3a 4a]  PE 1: [1b 2b 3b 4b]  PE 2: [1c 2c 3c 4c]
+    //
+    // Gathered into:
+    //
+    // PE 0: [1a 1b 1c]  PE 1: [2a 2b 2c]   PE 2: [3a 3b 3c]
+    //       [4a 4b 4c]
+    //
+    // Here PE 0 would have myns=2, PE 1 and 2 would have myns=1
 
-    if(myns > 0) {
+    int ns = Nsys / nprocs;      // Number of systems to assign to all processors
+    int nsextra = Nsys % nprocs; // Number of processors with 1 extra
+
+    MPI_Request *req = new MPI_Request[nprocs];
+
+    if (myns > 0) {
       // Post receives from all other processors
       req[myproc] = MPI_REQUEST_NULL;
-      for(int p=0;p<nprocs;p++) { // Loop over processor
+      for (int p = 0; p < nprocs; p++) { // Loop over processor
         // 2 interface equations per processor
         // myns systems to solve
         // 3 coefficients + 1 RHS value
         int len = 2 * myns * 4 * sizeof(T); // Length of data in bytes
-        
-        if(p == myproc) {
+
+        if (p == myproc) {
           // Just copy the data
-          for(int i=0;i<myns; i++)
-            for(int j=0;j<8;j++)
-              ifcs[i][8*p + j] = myif[sys0+i][j];
-        }else {
+	  BOUT_OMP(parallel for)
+          for (int i = 0; i < myns; i++)
+            for (int j = 0; j < 8; j++)
+              ifcs(i, 8 * p + j) = myif(sys0 + i, j);
+        } else {
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
 #endif
-          MPI_Irecv(recvbuffer[p], 
-                    len, 
+          MPI_Irecv(&recvbuffer(p, 0), len,
                     MPI_BYTE, // Just sending raw data, unknown type
                     p,        // Destination processor
                     p,        // Identifier
@@ -177,374 +309,382 @@ public:
         }
       }
     }
-    
+
     // Send data
     int s0 = 0;
-    for(int p=0;p<nprocs;p++) { // Loop over processor
+    for (int p = 0; p < nprocs; p++) { // Loop over processor
       int nsp = ns;
-      if(p < nsextra)
+      if (p < nsextra)
         nsp++;
-      if((p != myproc) && (nsp > 0)) {
+      if ((p != myproc) && (nsp > 0)) {
 #ifdef DIAGNOSE
         output << "Sending to " << p << endl;
-        for(int i=0;i<8;i++)
-          output << "value " << i << " : " << myif[s0][i] << endl;
+        for (int i = 0; i < 8; i++)
+          output << "value " << i << " : " << myif(s0, i) << endl;
 #endif
-        MPI_Send(myif[s0],        // Data pointer
-                 8*nsp*sizeof(T), // Number
-                 MPI_BYTE,        // Type
-		 p,               // Destination
-                 myproc,          // Message identifier
-                 comm);           // Communicator
+        MPI_Send(&myif(s0, 0),        // Data pointer
+                 8 * nsp * sizeof(T), // Number
+                 MPI_BYTE,            // Type
+                 p,                   // Destination
+                 myproc,              // Message identifier
+                 comm);               // Communicator
       }
       s0 += nsp;
     }
-    
-    if(myns > 0) {
+
+    if (myns > 0) {
       // Wait for data
       int p;
       do {
         MPI_Status stat;
         MPI_Waitany(nprocs, req, &p, &stat);
-        if(p != MPI_UNDEFINED) {
-          // p is the processor number. Copy data
+        if (p != MPI_UNDEFINED) {
+// p is the processor number. Copy data
 #ifdef DIAGNOSE
           output << "Copying received data from " << p << endl;
 #endif
-          for(int i=0;i<myns; i++)
-            for(int j=0;j<8;j++) {
+	  BOUT_OMP(parallel for)
+          for (int i = 0; i < myns; i++)
+            for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
-              output << "Value " << j << " : " << recvbuffer[p][8*i + j] << endl;
+              output << "Value " << j << " : " << recvbuffer(p, 8 * i + j) << endl;
 #endif
-              ifcs[i][8*p + j] = recvbuffer[p][8*i + j];
+              ifcs(i, 8 * p + j) = recvbuffer(p, 8 * i + j);
             }
           req[p] = MPI_REQUEST_NULL;
         }
-      }while(p != MPI_UNDEFINED);
+      } while (p != MPI_UNDEFINED);
 
       ///////////////////////////////////////
-      if(nprocs > 1) {
-	// Reduce the interface equations to a pair of equations
+      if (nprocs > 1) {
+// Reduce the interface equations to a pair of equations
 #ifdef DIAGNOSE
-	output << "Reducing again\n";
+        output << "Reducing again\n";
 #endif
-	reduce(myns, 2*nprocs, ifcs, if2x2);
-      }else {
-	// Already just a pair of equations
-	if2x2 = ifcs;
+        reduce(myns, 2 * nprocs, ifcs, if2x2);
+      } else {
+        // Already just a pair of equations
+        if2x2 = ifcs;
       }
       ///////////////////////////////////////
       // Solve the 2x2 system directly
-        
-      for(int i=0;i<myns;i++) {
-	//  (a  b) (x1) = (b1)
-	//  (c  d) (xn)   (bn)
-          
-	T a, b, c, d;
-	a = if2x2[i][1];
-	b = if2x2[i][2];
-	c = if2x2[i][4];
-	d = if2x2[i][5];
-	if(periodic) {
-	  b += if2x2[i][0];
-	  c += if2x2[i][6];
-	}
-	T b1 = if2x2[i][3];
-	T bn = if2x2[i][7];
-          
-	// Solve
-	T det = a*d - b*c; // Determinant
-	x1[i] = (d*b1 - b*bn) / det;
-	xn[i] = (-c*b1 + a*bn) / det;
-          
-#ifdef DIAGNOSE    
-	output << "system " << i << endl;
-	output << "(" << a << ", " << b << ") ("<<x1[i]<<") = (" << b1 << ")\n";
-	output << "(" << c << ", " << d << ") ("<<xn[i]<<")   (" << bn << ")\n\n";
+
+      // For OpenMP, ensure that memory won't be modified inside parallel loop
+      if2x2.ensureUnique();
+      x1.ensureUnique();
+      xn.ensureUnique();
+      
+      BOUT_OMP(parallel for)
+      for (int i = 0; i < myns; ++i) {
+        //  (a  b) (x1) = (b1)
+        //  (c  d) (xn)   (bn)
+
+        T a, b, c, d;
+        a = if2x2(i, 1);
+        b = if2x2(i, 2);
+        c = if2x2(i, 4);
+        d = if2x2(i, 5);
+        if (periodic) {
+          b += if2x2(i, 0);
+          c += if2x2(i, 6);
+        }
+        T b1 = if2x2(i, 3);
+        T bn = if2x2(i, 7);
+
+        // Solve
+        T det = a * d - b * c; // Determinant
+        x1[i] = (d * b1 - b * bn) / det;
+        xn[i] = (-c * b1 + a * bn) / det;
+
+#ifdef DIAGNOSE
+        output << "system " << i << endl;
+        output << "(" << a << ", " << b << ") (" << x1[i] << ") = (" << b1 << ")\n";
+        output << "(" << c << ", " << d << ") (" << xn[i] << ")   (" << bn << ")\n\n";
 #endif
       }
-      
+
       // Solve the interface equations
-      back_solve(myns, 2*nprocs, ifcs, x1, xn, ifx);
+      back_solve(myns, 2 * nprocs, ifcs, x1, xn, ifx);
     }
-    
-    if(nprocs > 1) { 
+
+    if (nprocs > 1) {
       ///////////////////////////////////////
       // Scatter back solution
-      
+
       // Post receives
-      for(int p=0;p<nprocs;p++) { // Loop over processor
+      for (int p = 0; p < nprocs; p++) { // Loop over processor
         int nsp = ns;
-	if(p < nsextra)
-	  nsp++;
-	int len = 2 * nsp * sizeof(T); // 2 values per system
-        
-	if(p == myproc) {
-	  // Just copy the data
-	  for(int i=0;i<myns; i++) {
-	    x1[sys0+i] = ifx[i][2*p];
-	    xn[sys0+i] = ifx[i][2*p+1];
-	  }
+        if (p < nsextra)
+          nsp++;
+        int len = 2 * nsp * sizeof(T); // 2 values per system
+
+        if (p == myproc) {
+          // Just copy the data
+	  BOUT_OMP(parallel for)	  
+          for (int i = 0; i < myns; i++) {
+            x1[sys0 + i] = ifx(i, 2 * p);
+            xn[sys0 + i] = ifx(i, 2 * p + 1);
+          }
           req[p] = MPI_REQUEST_NULL;
-	}else if(nsp > 0) {
+        } else if (nsp > 0) {
 #ifdef DIAGNOSE
           output << "Expecting receive from " << p << " of size " << len << endl;
 #endif
-	  MPI_Irecv(recvbuffer[p],
-		    len,
-		    MPI_BYTE, // Just sending raw data, unknown type
-		    p,        // Destination processor
-		    p,        // Identifier
-		    comm,     // Communicator
-		    &req[p]); // Request
-	}else
+          MPI_Irecv(&recvbuffer(p, 0), len,
+                    MPI_BYTE, // Just sending raw data, unknown type
+                    p,        // Destination processor
+                    p,        // Identifier
+                    comm,     // Communicator
+                    &req[p]); // Request
+        } else
           req[p] = MPI_REQUEST_NULL;
       }
-      
-      if(myns > 0) {
+
+      if (myns > 0) {
         // Send data
-        for(int p=0;p<nprocs;p++) { // Loop over processor
-          if(p != myproc) {
-            for(int i=0;i<myns;i++) {
-              ifp[2*i]   = ifx[i][2*p];
-              ifp[2*i+1] = ifx[i][2*p+1];
+        for (int p = 0; p < nprocs; p++) { // Loop over processor
+          if (p != myproc) {
+	    BOUT_OMP(parallel for)	    
+            for (int i = 0; i < myns; i++) {
+              ifp[2 * i] = ifx(i, 2 * p);
+              ifp[2 * i + 1] = ifx(i, 2 * p + 1);
 #ifdef DIAGNOSE
-              output << "Returning: " << ifp[2*i] 
-                     << ", " << ifp[2*i+1] << " to " << p << endl;
+              output << "Returning: " << ifp[2 * i] << ", " << ifp[2 * i + 1] << " to "
+                     << p << endl;
 #endif
             }
-            MPI_Send(ifp,
-                     2*myns*sizeof(T),
-                     MPI_BYTE,
-                     p,
+            MPI_Send(std::begin(ifp), 2 * myns * sizeof(T), MPI_BYTE, p,
                      myproc, // Message identifier
                      comm);
           }
         }
       }
-      
+
       // Wait for data
       int fromproc;
       int nsp;
       do {
-	MPI_Status stat;
-	MPI_Waitany(nprocs, req, &fromproc, &stat);
-	if(fromproc != MPI_UNDEFINED) {
-	  // fromproc is the processor number. Copy data
+        MPI_Status stat;
+        MPI_Waitany(nprocs, req, &fromproc, &stat);
+
+        if (fromproc != MPI_UNDEFINED) {
+          // fromproc is the processor number. Copy data
+
+          int s0 = fromproc * ns;
+          if (fromproc > nsextra) {
+            s0 += nsextra;
+          } else
+            s0 += fromproc;
+
+          nsp = ns;
+          if (fromproc < nsextra)
+            nsp++;
 	  
-	  int s0 = fromproc*ns;
-	  if(fromproc > nsextra) {
-	    s0 += nsextra;
-	  }else
-	    s0 += fromproc;
-	    
-	  nsp = ns;
-	  if(fromproc < nsextra)
-	    nsp++;
-	  
-	  for(int i=0;i<nsp; i++) {
-	    x1[s0+i] = recvbuffer[fromproc][2*i];
-	    xn[s0+i] = recvbuffer[fromproc][2*i+1];
+	  BOUT_OMP(parallel for)
+          for (int i = 0; i < nsp; i++) {
+            x1[s0 + i] = recvbuffer(fromproc, 2 * i);
+            xn[s0 + i] = recvbuffer(fromproc, 2 * i + 1);
 #ifdef DIAGNOSE
-            output << "Received x1,xn[" << s0+i << "] = " << x1[s0+i] << ", "
-		   << xn[s0+i] << " from " << fromproc << endl;
+            output << "Received x1,xn[" << s0 + i << "] = " << x1[s0 + i] << ", "
+                   << xn[s0 + i] << " from " << fromproc << endl;
 #endif
-	  }
-	  req[fromproc] = MPI_REQUEST_NULL;
-	}
-      }while(fromproc != MPI_UNDEFINED);
+          }
+          req[fromproc] = MPI_REQUEST_NULL;
+        }
+      } while (fromproc != MPI_UNDEFINED);
     }
-    
+
     ///////////////////////////////////////
     // Solve local equations
     back_solve(Nsys, N, coefs, x1, xn, x);
     delete[] req;
   }
-  
+
 private:
   MPI_Comm comm;      ///< Communicator
   int nprocs, myproc; ///< Number of processors and ID of my processor
-  
-  int N;         ///< Total size of the problem
-  int Nsys;      ///< Number of independent systems to solve
-  int myns;      ///< Number of systems for interface solve on this processor
-  int sys0;      ///< Starting system index for interface solve
-  
+
+  int N;    ///< Total size of the problem
+  int Nsys; ///< Number of independent systems to solve
+  int myns; ///< Number of systems for interface solve on this processor
+  int sys0; ///< Starting system index for interface solve
+
   bool periodic; ///< Is the domain periodic?
 
-  T **coefs;  ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
-  T **myif;   ///< Interface equations for this processor
-  
-  T **recvbuffer; ///< Buffer for receiving from other processors
-  T **ifcs;   ///< Coefficients for interface solve
-  T **if2x2;  ///< 2x2 interface equations on this processor
-  T **ifx;    ///< Solution of interface equations
-  T *ifp;     ///< Interface equations returned to processor p
-  T *x1, *xn; ///< Interface solutions for back-solving
+  Matrix<T> coefs; ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
+  Matrix<T> myif;  ///< Interface equations for this processor
+
+  Matrix<T> recvbuffer; ///< Buffer for receiving from other processors
+  Matrix<T> ifcs;       ///< Coefficients for interface solve
+  Matrix<T> if2x2;      ///< 2x2 interface equations on this processor
+  Matrix<T> ifx;        ///< Solution of interface equations
+  Array<T> ifp;         ///< Interface equations returned to processor p
+  Array<T> x1, xn;      ///< Interface solutions for back-solving
 
   /// Allocate memory arrays
-  /// @param[in[ np   Number of processors
+  /// @param[in] np   Number of processors
   /// @param[in] nsys  Number of independent systems to solve
   /// @param[in] n     Size of each system of equations
   void allocMemory(int np, int nsys, int n) {
-    if( (nsys == Nsys) && (n == N) && (np == nprocs))
+    if ((nsys == Nsys) && (n == N) && (np == nprocs))
       return; // No need to allocate memory
-    
-    if(Nsys > 0)
-      freeMemory(); // Free existing memory
-    
+
     nprocs = np;
-    Nsys   = nsys;
-    N      = n;
+    Nsys = nsys;
+    N = n;
 
     // Work out how many systems are going to be solved on this processor
-    int ns = nsys / nprocs; // Number of systems to assign to all processors
-    int nsextra = nsys % nprocs;  // Number of processors with 1 extra 
-    
-    myns = ns; // Number of systems to gather onto this processor
+    int ns = nsys / nprocs;      // Number of systems to assign to all processors
+    int nsextra = nsys % nprocs; // Number of processors with 1 extra
+
+    myns = ns;          // Number of systems to gather onto this processor
     sys0 = ns * myproc; // Starting system number
-    if(myproc < nsextra) {
+    if (myproc < nsextra) {
       myns++;
       sys0 += myproc;
-    }else
+    } else {
       sys0 += nsextra;
-    
-    int my = myns;
-    if(my == 0)
-      my = 0;
+    }
 
-    coefs = matrix<T>(Nsys, 4*N);
-      
-    myif = matrix<T>(Nsys, 8);
-    
-    recvbuffer = matrix<T>(nprocs, my*8); // Buffer for receiving from other processors
-    ifcs = matrix<T>(my, 2*4*nprocs);     // Coefficients for interface solve
-    if(nprocs > 1)
-      if2x2 = matrix<T>(my, 2*4);         // 2x2 interface equations on this processor
-    ifx  = matrix<T>(my, 2*nprocs);       // Solution of interface equations
-    ifp = new T[my*2];     // Solution to be sent to processor p
-    x1 = new T[Nsys];
-    xn = new T[Nsys];
-    
-  }
+    coefs = Matrix<T>(Nsys, 4 * N);
+    myif = Matrix<T>(Nsys, 8);
 
-  /// Free all memory arrays allocated by allocMemory()
-  void freeMemory() {
-    if(Nsys == 0)
-      return;
-    
-    // Free all working memory
-    free_matrix(coefs);
-    free_matrix(myif);
-    free_matrix(recvbuffer);
-    free_matrix(ifcs);
-    if(nprocs > 1)
-      free_matrix(if2x2);
-    free_matrix(ifx);
-    delete[] ifp;
-    delete[] x1;
-    delete[] xn;
-    
-    N = Nsys = 0;
+    // Note: The recvbuffer is used to receive data in both stages of the solve:
+    //  1. In the gather step, this processor will receive myns interface equations
+    //     from each processor.
+    //  2. In the scatter step, this processor receives the solved interface values
+    //     from each processor. The number of systems of equations received will
+    //     vary from myns to myns+1 (if myproc >= nsextra).
+    // The size of the array reserved is therefore (myns+1)
+    recvbuffer =
+        Matrix<T>(nprocs, (myns + 1) * 8); // Buffer for receiving from other processors
+
+    // Some interface systems to be solved on this processor
+    // Note that the interface equations are organised by system (myns as first argument)
+    // but communication buffers are organised by processor (nprocs first).
+    ifcs = Matrix<T>(myns, 2 * 4 * nprocs); // Coefficients for interface solve
+    if (nprocs > 1)
+      if2x2 = Matrix<T>(myns, 2 * 4);  // 2x2 interface equations on this processor
+    ifx = Matrix<T>(myns, 2 * nprocs); // Solution of interface equations
+    ifp = Array<T>(myns * 2);          // Solution to be sent to processor p
+    // Each system to be solved on this processor has two interface equations from each
+    // processor
+
+    x1 = Array<T>(Nsys);
+    xn = Array<T>(Nsys);
   }
 
   /// Calculate interface equations
-  void reduce(int ns, int nloc, T **co, T **ifc) {
+  ///
+  /// This reduces ns separate systems of equations, each consisting
+  /// of nloc rows on this processor, to two interface rows for each system,
+  /// which are stored in ifc.
+  ///
+  /// (a1 b1 c1                  )
+  /// (   a2 b2 c2               )       (A1 B1 C1   )
+  /// (      a3 b3 c3            )   =>  (   A2 B2 C2)
+  /// (              ...         )
+  /// (                  an bn cn)
+  void reduce(int ns, int nloc, Matrix<T> &co, Matrix<T> &ifc) {
 #ifdef DIAGNOSE
-    if(nloc < 2)
+    if (nloc < 2)
       throw BoutException("CyclicReduce::reduce nloc < 2");
 #endif
-    for(int j=0;j<ns;j++) {
-      T *c = co[j];    // Coefficients for system j
-      T *ic = ifc[j];  // Interface equations for system j
-        
+    
+    BOUT_OMP(parallel for)
+    for (int j = 0; j < ns; j++) {
       // Calculate upper interface equation
-      
+
       // v_l <- v_(k+N-2)
       // b_u <- b_{k+N-2}
-      for(int i=0;i<4;i++) {
-        ic[i] = c[4*(nloc-2)+i];
+      for (int i = 0; i < 4; i++) {
+        ifc(j, i) = co(j, 4 * (nloc - 2) + i);
       }
-      
-      for(int i=nloc-3;i>=0;i--) {
-	// Check for zero pivot
-	if(abs(ic[1]) < 1e-10)
-	  throw BoutException("Zero pivot in CyclicReduce::reduce");
-	
+
+      for (int i = nloc - 3; i >= 0; i--) {
+        // Check for zero pivot
+        if (abs(ifc(j, 1)) < 1e-10)
+          throw BoutException("Zero pivot in CyclicReduce::reduce");
+
         // beta <- v_{i,i+1} / v_u,i
-        T beta = c[4*i+2] / ic[1];
-          
+        T beta = co(j, 4 * i + 2) / ifc(j, 1);
+
         // v_u <- v_i - beta * v_u
-        ic[1] = c[4*i + 1] - beta * ic[0];
-        ic[0] = c[4*i];
-	ic[2] *= -beta;
+        ifc(j, 1) = co(j, 4 * i + 1) - beta * ifc(j, 0);
+        ifc(j, 0) = co(j, 4 * i);
+        ifc(j, 2) *= -beta;
         // ic columns  {i-1, i, N-1}
-        
+
         // b_u <- b_i - beta*b_u
-        ic[3] = c[4*i + 3] - beta*ic[3];
+        ifc(j, 3) = co(j, 4 * i + 3) - beta * ifc(j, 3);
       }
-      
-      ic += 4;
-      
+
       // Calculate lower interface equation
-      
+      // Uses next 4 ifc values for this system so have +4 in indexinf
+
       // v_l <- v_(k+1)
       // b_l <- b_{k+1}
-      for(int i=0;i<4;i++)
-        ic[i] = c[4+i];
-        
-      for(int i=2;i<nloc;i++) {
-	
-	if(abs(ic[1]) < 1e-10)
-	  throw BoutException("Zero pivot in CyclicReduce::reduce");
-	
+      for (int i = 0; i < 4; i++)
+        ifc(j, 4 + i) = co(j, 4 + i);
+
+      for (int i = 2; i < nloc; i++) {
+
+        if (abs(ifc(j, 4 + 1)) < 1e-10)
+          throw BoutException("Zero pivot in CyclicReduce::reduce");
+
         // alpha <- v_{i,i-1} / v_l,i-1
-        T alpha = c[4*i] / ic[1];
-          
+        T alpha = co(j, 4 * i) / ifc(j, 4 + 1);
+
         // v_l <- v_i - alpha*v_l
-	ic[0] *= -alpha;
-        ic[1] = c[4*i + 1] - alpha*ic[2];
-        ic[2] = c[4*i + 2];
-        // columns of ic are {0, i, i+1}
-          
-        // b_l <- b_{k+i} - alpha*b_l
-        ic[3] = c[4*i + 3] - alpha * ic[3];   
+        ifc(j, 4 + 0) *= -alpha;
+        ifc(j, 4 + 1) = co(j, 4 * i + 1) - alpha * ifc(j, 4 + 2);
+        ifc(j, 4 + 2) = co(j, 4 * i + 2);
+        // columns of ic are {0, i, i + 1}
+
+        // b_l <- b_{k + i} - alpha*b_l
+        ifc(j, 4 + 3) = co(j, 4 * i + 3) - alpha * ifc(j, 4 + 3);
       }
-      
+
 #ifdef DIAGNOSE
-      output << "Lower: " << ic[0] << ", " << ic[1] << ", " << ic[2] << " : " << ic[3] << endl;
-      output << "Upper: " << ic[0] << ", " << ic[1] << ", " << ic[2] << " : " << ic[3] << endl;
+      output << "Lower: " << ifc(j, 4 + 0) << ", " << ifc(j, 4 + 1) << ", "
+             << ifc(j, 4 + 2) << " : " << ifc(j, 4 + 3) << endl;
+      output << "Upper: " << ifc(j, 0) << ", " << ifc(j, 1) << ", " << ifc(j, 2) << " : "
+             << ifc(j, 3) << endl;
 #endif
     }
 
     // Lower system couples {0, N-1, N}
     // Upper system couples {-1. 0, N-1}
   }
-  
+
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, T **co, T *x1, T *xn, T **xa) {
-    // Tridiagonal system, solve using serial Thomas algorithm
+  void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn,
+                  Matrix<T> &xa) {
+
+    xa.ensureUnique(); // Going to be modified, so call this outside parallel region
     
-    T *gam = new T[nloc];
-    for(int i=0;i<ns;i++) { // Loop over systems
-      T *c = co[i]; // Coefficients & rhs for this system
-      T *x = xa[i]; // Result for this system
+    // Tridiagonal system, solve using serial Thomas algorithm
+    // xa -- Result for each system
+    // co -- Coefficients & rhs for each system
+    BOUT_OMP(parallel for)
+    for (int i = 0; i < ns; i++) { // Loop over systems
+      Array<T> gam(nloc); // Thread-local array
       T bet = 1.0;
-      x[0] = x1[i]; // Already know the first 
+      xa(i, 0) = x1[i]; // Already know the first
       gam[1] = 0.;
-      for(int j=1;j<nloc-1;j++) {
-        bet = c[4*j+1] - c[4*j]*gam[j]; // bet = b[j]-a[j]*gam[j]
-        x[j] = (c[4*j+3] - c[4*j]*x[j-1])/bet;  // x[j] = (r[j]-a[j]*x[j-1])/bet;
-        gam[j+1] = c[4*j+2] / bet;    // gam[j+1] = c[j]/bet
+      for (int j = 1; j < nloc - 1; j++) {
+        bet = co(i, 4 * j + 1) - co(i, 4 * j) * gam[j]; // bet = b[j]-a[j]*gam[j]
+        xa(i, j) = (co(i, 4 * j + 3) - co(i, 4 * j) * xa(i, j - 1)) /
+                   bet;                      // x[j] = (r[j]-a[j]*x[j-1])/bet;
+        gam[j + 1] = co(i, 4 * j + 2) / bet; // gam[j+1] = c[j]/bet
       }
-      x[nloc-1] = xn[i]; // Know the last value
-      
-      for(int j=nloc-2;j>0;j--) {
-        x[j] = x[j]-gam[j+1]*x[j+1];
+      xa(i, nloc - 1) = xn[i]; // Know the last value
+
+      for (int j = nloc - 2; j > 0; j--) {
+        xa(i, j) = xa(i, j) - gam[j + 1] * xa(i, j + 1);
       }
     }
-    delete[] gam;
   }
 };
 

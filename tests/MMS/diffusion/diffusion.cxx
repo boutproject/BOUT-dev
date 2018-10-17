@@ -28,7 +28,7 @@ int physics_init(bool restarting) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
-  coord = mesh->coordinates();
+  coord = mesh->getCoordinates();
   
   meshoptions->get("Lx",Lx,1.0);
   meshoptions->get("Ly",Ly,1.0);
@@ -183,7 +183,7 @@ int ErrorMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
       for (int zk = 0; zk < mesh->LocalNz ; zk++) {
         E_N(xi, yj, zk) = N(xi, yj, zk) - S(xi, yj, zk);
 
-        output.write("Error(%d,%d,%d): %e, %e -> %e\n",
+        output_error.write("Error(%d,%d,%d): %e, %e -> %e\n",
                      xi, yj, zk, 
                      N(xi, yj, zk), S(xi, yj, zk), E_N(xi, yj, zk));
       }

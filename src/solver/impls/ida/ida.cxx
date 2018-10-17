@@ -96,7 +96,7 @@ IdaSolver::~IdaSolver() { }
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
+    output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
@@ -104,12 +104,12 @@ IdaSolver::~IdaSolver() { }
 	       n3d, n2d, neq, local_N);
 
   // Allocate memory
-  
-  if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  if((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  if((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec
@@ -133,8 +133,7 @@ IdaSolver::~IdaSolver() { }
   int mukeep, mlkeep;
   bool use_precon;
   bool correct_start;
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
+
   OPTION(options, mudq, n3d*(MXSUB+2));
   OPTION(options, mldq, n3d*(MXSUB+2));
   OPTION(options, mukeep, n3d);
@@ -149,7 +148,7 @@ IdaSolver::~IdaSolver() { }
 
   // Call IDACreate and IDAMalloc to initialise
 
-  if((idamem = IDACreate()) == NULL)
+  if ((idamem = IDACreate()) == nullptr)
     throw BoutException("ERROR: IDACreate failed\n");
   
   if( IDASetUserData(idamem, this) < 0 ) // For callbacks, need pointer to solver object
@@ -173,13 +172,13 @@ IdaSolver::~IdaSolver() { }
   if(use_precon) {
     if(!have_user_precon()) {
       output.write("\tUsing BBD preconditioner\n");
-      if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
-			 ZERO, ida_bbd_res, NULL) )
-	throw BoutException("ERROR: IDABBDPrecInit failed\n");
+      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
+                         nullptr))
+        throw BoutException("ERROR: IDABBDPrecInit failed\n");
     }else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if( IDASpilsSetPreconditioner(idamem, NULL, ida_pre) )
-	throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
+      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre))
+        throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
     }
   }
 
@@ -230,8 +229,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
@@ -245,7 +242,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
   
   if(flag < 0) {
-    output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
 

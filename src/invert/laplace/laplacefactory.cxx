@@ -14,6 +14,7 @@
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/shoot/shoot_laplace.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
+#include "impls/naulin/naulin_laplace.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
@@ -24,19 +25,20 @@
 #define LAPLACE_CYCLIC "cyclic"
 #define LAPLACE_SHOOT "shoot"
 #define LAPLACE_MULTIGRID "multigrid"
+#define LAPLACE_NAULIN "naulin"
 
-LaplaceFactory* LaplaceFactory::instance = NULL;
+LaplaceFactory *LaplaceFactory::instance = nullptr;
 
 LaplaceFactory* LaplaceFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new LaplaceFactory();
   }
   return instance;
 }
 
-Laplacian* LaplaceFactory::createLaplacian(Options *options) {
-  if(options == NULL)
+Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc) {
+  if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
   string type;
@@ -44,46 +46,50 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
   if(mesh->firstX() && mesh->lastX()) {
     // Can use serial algorithm
 
-    options->get("type", type, LAPLACE_TRI);
+    options->get("type", type, LAPLACE_CYCLIC);
 
     if(strcasecmp(type.c_str(), LAPLACE_TRI) == 0) {
-      return new LaplaceSerialTri(options);
+      return new LaplaceSerialTri(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_BAND) == 0) {
-      return new LaplaceSerialBand(options);
+      return new LaplaceSerialBand(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-      return new LaplaceSPT(options);
+      return new LaplaceSPT(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-      return new LaplacePetsc(options);
+      return new LaplacePetsc(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-      return new LaplaceMumps(options);
+      return new LaplaceMumps(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-      return new LaplaceCyclic(options);
+      return new LaplaceCyclic(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-      return new LaplaceShoot(options);
+      return new LaplaceShoot(options, loc);
     }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc);
+    }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
+      return new LaplaceNaulin(options, loc);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
   }
 
-  options->get("type", type, LAPLACE_SPT);
+  options->get("type", type, LAPLACE_CYCLIC);
 
   // Parallel algorithm
   if(strcasecmp(type.c_str(), LAPLACE_PDD) == 0) {
-    return new LaplacePDD(options);
+    return new LaplacePDD(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-    return new LaplaceSPT(options);
+    return new LaplaceSPT(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-    return new LaplacePetsc(options);
+    return new LaplacePetsc(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-    return new LaplaceMumps(options);
+    return new LaplaceMumps(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-    return new LaplaceCyclic(options);
+    return new LaplaceCyclic(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-    return new LaplaceShoot(options);
+    return new LaplaceShoot(options, loc);
   }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc);
+  }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
+    return new LaplaceNaulin(options, loc);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }

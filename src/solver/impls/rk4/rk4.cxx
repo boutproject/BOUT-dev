@@ -5,27 +5,15 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #include <cmath>
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options), f0(nullptr) {
-  canReset = true;
-}
+RK4Solver::RK4Solver(Options *options) : Solver(options) { canReset = true; }
 
 RK4Solver::~RK4Solver() {
-  if(f0 != nullptr) {
-    delete[] f0;
-    delete[] f1;
-    delete[] f2;
-    
-    delete[] k1;
-    delete[] k2;
-    delete[] k3;
-    delete[] k4;
-    delete[] k5;
-  }
 }
 
 void RK4Solver::setMaxTimestep(BoutReal dt) {
@@ -64,20 +52,20 @@ int RK4Solver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = new BoutReal[nlocal];
-  f1 = new BoutReal[nlocal];
-  f2 = new BoutReal[nlocal];
-  
+  f0 = Array<BoutReal>(nlocal);
+  f1 = Array<BoutReal>(nlocal);
+  f2 = Array<BoutReal>(nlocal);
+
   // memory for taking a single time step
-  k1 = new BoutReal[nlocal];
-  k2 = new BoutReal[nlocal];
-  k3 = new BoutReal[nlocal];
-  k4 = new BoutReal[nlocal];
-  k5 = new BoutReal[nlocal];
+  k1 = Array<BoutReal>(nlocal);
+  k2 = Array<BoutReal>(nlocal);
+  k3 = Array<BoutReal>(nlocal);
+  k4 = Array<BoutReal>(nlocal);
+  k5 = Array<BoutReal>(nlocal);
 
   // Put starting values into f0
-  save_vars(f0);
-  
+  save_vars(std::begin(f0));
+
   // Get options
   OPTION(options, atol, 1.e-5); // Absolute tolerance
   OPTION(options, rtol, 1.e-3); // Relative tolerance
@@ -118,7 +106,7 @@ int RK4Solver::run() {
           
           // Check accuracy
           BoutReal local_err = 0.;
-          #pragma omp parallel for reduction(+: local_err)   
+          BOUT_OMP(parallel for reduction(+: local_err)   )
           for(int i=0;i<nlocal;i++) {
             local_err += fabs(f2[i] - f1[i]) / ( fabs(f1[i]) + fabs(f2[i]) + atol );
           }
@@ -158,8 +146,8 @@ int RK4Solver::run() {
       
       call_timestep_monitors(simtime, dt);
     }while(running);
-    
-    load_vars(f0); // Put result into variables
+
+    load_vars(std::begin(f0)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
     
@@ -170,9 +158,6 @@ int RK4Solver::run() {
     if(call_monitors(simtime, s, nsteps)) {
       break; // Stop simulation
     }
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;
@@ -185,40 +170,41 @@ void RK4Solver::resetInternalFields(){
   }
   
   //Copy fields into current step
-  save_vars(f0);
+  save_vars(std::begin(f0));
 }
 
-void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
-  
-  load_vars(start);
+void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal> &start,
+                          Array<BoutReal> &result) {
+
+  load_vars(std::begin(start));
   run_rhs(curtime);
-  save_derivs(k1);
-  
-  #pragma omp parallel for
+  save_derivs(std::begin(k1));
+
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k1[i];
-  
-  load_vars(k5);
+
+  load_vars(std::begin(k5));
   run_rhs(curtime + 0.5*dt);
-  save_derivs(k2);
-  
-  #pragma omp parallel for 
+  save_derivs(std::begin(k2));
+
+  BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k2[i];
-  
-  load_vars(k5);
+
+  load_vars(std::begin(k5));
   run_rhs(curtime + 0.5*dt);
-  save_derivs(k3);
- 
-  #pragma omp parallel for
+  save_derivs(std::begin(k3));
+
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + dt*k3[i];
-  
-  load_vars(k5);
+
+  load_vars(std::begin(k5));
   run_rhs(curtime + dt);
-  save_derivs(k4);
-  
-  #pragma omp parallel for
+  save_derivs(std::begin(k4));
+
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
 }

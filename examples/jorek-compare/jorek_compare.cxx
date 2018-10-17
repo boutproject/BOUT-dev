@@ -181,11 +181,11 @@ private:
     coord = mesh->coordinates();
     
     if (mesh->get(Rxy,  "Rxy")) { // m
-      output.write("Error: Cannot read Rxy from grid\n");
+      output_error.write("Error: Cannot read Rxy from grid\n");
       return 1;
     }
     if (mesh->get(Bpxy, "Bpxy")) { // T
-      output.write("Error: Cannot read Bpxy from grid\n");
+      output_error.write("Error: Cannot read Bpxy from grid\n");
       return 1;
     }
     mesh->get(Btxy, "Btxy"); // T

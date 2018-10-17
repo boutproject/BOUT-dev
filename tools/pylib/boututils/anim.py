@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+"""Animate graph with mayavi
+
+"""
+
 from __future__ import print_function
 from builtins import range
 from boutdata.collect import collect
@@ -17,15 +21,24 @@ except ImportError:
 from tvtk.tools import visual
 
 
-
 @mlab.show
 @mlab.animate(delay=250)
 def anim(s, d, *args, **kwargs):
-    """ Animate graph s with data d[nt,nx,ny] 
-    optional argument s1 -> additional bundled graph
-    optional kargument 'save = False' -> save png files for creating movie
-    """ 
-       
+    """Animate graph with mayavi
+
+    Parameters
+    ----------
+    s : mayavi axis object
+        Axis to animate data on
+    d : array_like
+        3-D array to animate
+    s1 : mayavi axis object, optional
+        Additional bundled graph (first item in *args)
+    save : bool, optional
+        Save png files for creating movie (default: False)
+
+    """
+
     if len(args) == 1:
         s1 = args[0]
     else:

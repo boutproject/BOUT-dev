@@ -35,26 +35,22 @@
 
 #include "boutmesh.hxx"
 
-#include <utils.hxx>
-#include <fft.hxx>
-#include <derivs.hxx>
-#include <boutcomm.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutcomm.hxx>
+#include <boutexception.hxx>
+#include <dcomplex.hxx>
+#include <derivs.hxx>
+#include <fft.hxx>
+#include <msg_stack.hxx>
+#include <options.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
-  if (options == NULL) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
+BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile;
@@ -120,7 +116,9 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
+      output_warn.write("WARNING: Number of toroidal points should be 2^n for efficient "
+                        "FFT performance -- consider changing MZ if using FFTs\n",
+                        MZ);
     }
   } else {
     output_info.write("\tRead nz from input grid file\n");
@@ -220,6 +218,14 @@ int BoutMesh::load() {
                       jyseps2_2, ny, ny - 1);
     jyseps2_2 = ny - 1;
   }
+  if (jyseps2_2 < jyseps1_2) {
+    if (jyseps1_2 >= ny) {
+      throw BoutException("jyseps1_2 (%d) must be < ny (%d).", jyseps1_2, ny);
+    }
+    output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps1_2 (%d). Setting to %d\n",
+                      jyseps2_2, jyseps1_2, jyseps1_2);
+    jyseps2_2 = jyseps1_2;
+  }
 
   if (options->isSet("NXPE")) {    // Specified NXPE
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
@@ -230,6 +236,62 @@ int BoutMesh::load() {
     }
 
     NYPE = NPES / NXPE;
+
+    int nyp = NPES / NXPE;
+    int ysub = ny / NYPE;
+
+    // Check size of Y mesh
+    if (ysub < MYG) {
+      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+                        ysub, MYG);
+    }
+    // Check branch cuts
+    if ((jyseps1_1 + 1) % ysub != 0) {
+      throw BoutException(
+          "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+          jyseps1_1 + 1, ysub);
+    }
+
+    if (jyseps2_1 != jyseps1_2) {
+      // Double Null
+
+      if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
+      }
+
+      if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
+      }
+
+      // Check upper legs
+      if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
+        throw BoutException("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
+      }
+      if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
+        throw BoutException("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
+      }
+    } else {
+      // Single Null
+      if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
+        throw BoutException("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
+                          "be a multiple of MYSUB (%d)\n",
+                          jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
+      }
+    }
+
+    if ((ny - jyseps2_2 - 1) % ysub != 0) {
+      throw BoutException("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
+                        "multiple of MYSUB (%d)\n",
+                        ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
+    }
   } else {
     // Choose NXPE
 
@@ -240,11 +302,11 @@ int BoutMesh::load() {
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
     output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
-    
-    for(int i=1; i<= NPES; i++) { // Loop over all possibilities
-      if( (NPES % i == 0) &&      // Processors divide equally
-          (MX % i == 0) &&        // Mesh in X divides equally
-          (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
+
+    for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
+      if ((NPES % i == 0) &&          // Processors divide equally
+          (MX % i == 0) &&            // Mesh in X divides equally
+          (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
         output_info.write("\tCandidate value: %d\n", i);
 
@@ -611,7 +673,6 @@ int BoutMesh::load() {
 
           comm_middle = comm_outer;
           // MPI_Comm_dup(comm_outer, &comm_middle);
-
         }
       }
 
@@ -735,15 +796,15 @@ int BoutMesh::load() {
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
         // Core
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
       } else {
         // PF region
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
     if (PE_XIND == (NXPE - 1)) {
       // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
     }
   }
 
@@ -751,15 +812,15 @@ int BoutMesh::load() {
     // Need boundaries in Y
 
     if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
     if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
 
     if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1));
+          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
     if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
   }
 
   if (!boundary.empty()) {
@@ -771,6 +832,12 @@ int BoutMesh::load() {
   } else {
     output_info << "No boundary regions in this processor" << endl;
   }
+  
+  output_info << "Constructing default regions" << endl;
+  createDefaultRegions();
+
+  // Add boundary regions
+  addBoundaryRegions();
 
   output_info.write("\tdone\n");
 
@@ -798,8 +865,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(ch.umsg_recvbuff, len, PVEC_REAL_MPI_TYPE, UDATA_INDEST, IN_SENT_DOWN,
-              BoutComm::get(), &ch.request[0]);
+    MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+              IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
@@ -814,8 +881,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(ch.dmsg_recvbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_UP,
-              BoutComm::get(), &ch.request[2]);
+    MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+              IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
@@ -827,7 +894,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    MPI_Irecv(ch.imsg_recvbuff, msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
               &ch.request[4]);
   }
@@ -835,7 +902,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    MPI_Irecv(ch.omsg_recvbuff, msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
               PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
               &ch.request[5]);
   }
@@ -865,19 +932,19 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
-                    ch->umsg_sendbuff);
+                    std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
-      MPI_Isend(ch->umsg_sendbuff,  // Buffer to send
-                len,                // Length of buffer in BoutReals
-                PVEC_REAL_MPI_TYPE, // Real variable type
-                UDATA_INDEST,       // Destination processor
-                IN_SENT_UP,         // Label (tag) for the message
+      MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
+                len,                           // Length of buffer in BoutReals
+                PVEC_REAL_MPI_TYPE,            // Real variable type
+                UDATA_INDEST,                  // Destination processor
+                IN_SENT_UP,                    // Label (tag) for the message
                 BoutComm::get(), &(ch->sendreq[0]));
     } else
-      MPI_Send(ch->umsg_sendbuff, len, PVEC_REAL_MPI_TYPE, UDATA_INDEST, IN_SENT_UP,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+               IN_SENT_UP, BoutComm::get());
   }
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
@@ -897,14 +964,15 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG, ch->dmsg_sendbuff);
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
+                    std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
-      MPI_Isend(ch->dmsg_sendbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_DOWN,
-                BoutComm::get(), &(ch->sendreq[2]));
+      MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
     } else
-      MPI_Send(ch->dmsg_sendbuff, len, PVEC_REAL_MPI_TYPE, DDATA_INDEST, IN_SENT_DOWN,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+               IN_SENT_DOWN, BoutComm::get());
   }
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
@@ -923,43 +991,43 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len =
-        pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB, ch->imsg_sendbuff);
+    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
+                    std::begin(ch->imsg_sendbuff));
     if (async_send) {
-      MPI_Isend(ch->imsg_sendbuff, len, PVEC_REAL_MPI_TYPE, IDATA_DEST, IN_SENT_OUT,
-                BoutComm::get(), &(ch->sendreq[4]));
+      MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
     } else
-      MPI_Send(ch->imsg_sendbuff, len, PVEC_REAL_MPI_TYPE, IDATA_DEST, IN_SENT_OUT,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+               IN_SENT_OUT, BoutComm::get());
   }
 
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
     len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
-                    ch->omsg_sendbuff);
+                    std::begin(ch->omsg_sendbuff));
     if (async_send) {
-      MPI_Isend(ch->omsg_sendbuff, len, PVEC_REAL_MPI_TYPE, ODATA_DEST, OUT_SENT_IN,
-                BoutComm::get(), &(ch->sendreq[5]));
+      MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
     } else
-      MPI_Send(ch->omsg_sendbuff, len, PVEC_REAL_MPI_TYPE, ODATA_DEST, OUT_SENT_IN,
-               BoutComm::get());
+      MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+               OUT_SENT_IN, BoutComm::get());
   }
 
   /// Mark communication handle as in progress
   ch->in_progress = true;
-  
-  return static_cast<void*>(ch);
+
+  return static_cast<void *>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
   TRACE("BoutMesh::wait(comm_handle)");
 
-  if (handle == NULL)
+  if (handle == nullptr)
     return 1;
-  
-  CommHandle *ch = static_cast<CommHandle*>(handle);
-  
+
+  CommHandle *ch = static_cast<CommHandle *>(handle);
+
   if (!ch->in_progress)
     return 2;
 
@@ -985,7 +1053,7 @@ int BoutMesh::wait(comm_handle handle) {
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
-                  ch->umsg_recvbuff);
+                  std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
@@ -995,7 +1063,8 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, ch->dmsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
+                  std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
@@ -1005,12 +1074,13 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB, ch->imsg_recvbuff);
+      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
+                  std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
       unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
-                  ch->omsg_recvbuff);
+                  std::begin(ch->omsg_recvbuff));
       break;
     }
     }
@@ -1021,7 +1091,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status async_status;
-    
+
     if (UDATA_INDEST != -1)
       MPI_Wait(ch->sendreq, &async_status);
     if (UDATA_OUTDEST != -1)
@@ -1107,7 +1177,7 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1155,7 +1225,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1166,13 +1236,13 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1183,7 +1253,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
             BoutComm::get(), ch->request);
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1290,7 +1360,7 @@ int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
 
 comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1304,13 +1374,13 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == NYPE - 1)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1324,13 +1394,13 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1344,13 +1414,13 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
 comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
   if (PE_YIND == 0)
-    return NULL;
+    return nullptr;
 
   Timer timer("comms");
 
@@ -1364,7 +1434,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
     throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
 
   ch->in_progress = true;
-  
+
   return static_cast<comm_handle>(ch);
 }
 
@@ -1781,22 +1851,22 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
-    CommHandle *ch = new CommHandle;
-    for (int i = 0; i < 6; i++)
-      ch->request[i] = MPI_REQUEST_NULL;
+    auto *ch = new CommHandle;
+    for (auto &i : ch->request)
+      i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
-      ch->umsg_sendbuff = new BoutReal[ylen];
-      ch->dmsg_sendbuff = new BoutReal[ylen];
-      ch->umsg_recvbuff = new BoutReal[ylen];
-      ch->dmsg_recvbuff = new BoutReal[ylen];
+      ch->umsg_sendbuff = Array<BoutReal>(ylen);
+      ch->dmsg_sendbuff = Array<BoutReal>(ylen);
+      ch->umsg_recvbuff = Array<BoutReal>(ylen);
+      ch->dmsg_recvbuff = Array<BoutReal>(ylen);
     }
 
     if (xlen > 0) {
-      ch->imsg_sendbuff = new BoutReal[xlen];
-      ch->omsg_sendbuff = new BoutReal[xlen];
-      ch->imsg_recvbuff = new BoutReal[xlen];
-      ch->omsg_recvbuff = new BoutReal[xlen];
+      ch->imsg_sendbuff = Array<BoutReal>(xlen);
+      ch->omsg_sendbuff = Array<BoutReal>(xlen);
+      ch->imsg_recvbuff = Array<BoutReal>(xlen);
+      ch->omsg_recvbuff = Array<BoutReal>(xlen);
     }
 
     ch->xbufflen = xlen;
@@ -1813,32 +1883,18 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
-    if (ch->ybufflen > 0) {
-      delete[] ch->umsg_sendbuff;
-      delete[] ch->umsg_recvbuff;
-      delete[] ch->dmsg_sendbuff;
-      delete[] ch->dmsg_recvbuff;
-    }
-
-    ch->umsg_sendbuff = new BoutReal[ylen];
-    ch->dmsg_sendbuff = new BoutReal[ylen];
-    ch->umsg_recvbuff = new BoutReal[ylen];
-    ch->dmsg_recvbuff = new BoutReal[ylen];
+    ch->umsg_sendbuff = Array<BoutReal>(ylen);
+    ch->dmsg_sendbuff = Array<BoutReal>(ylen);
+    ch->umsg_recvbuff = Array<BoutReal>(ylen);
+    ch->dmsg_recvbuff = Array<BoutReal>(ylen);
 
     ch->ybufflen = ylen;
   }
   if (ch->xbufflen < xlen) {
-    if (ch->xbufflen > 0) {
-      delete[] ch->imsg_sendbuff;
-      delete[] ch->imsg_recvbuff;
-      delete[] ch->omsg_sendbuff;
-      delete[] ch->omsg_recvbuff;
-    }
-
-    ch->imsg_sendbuff = new BoutReal[xlen];
-    ch->omsg_sendbuff = new BoutReal[xlen];
-    ch->imsg_recvbuff = new BoutReal[xlen];
-    ch->omsg_recvbuff = new BoutReal[xlen];
+    ch->imsg_sendbuff = Array<BoutReal>(xlen);
+    ch->omsg_sendbuff = Array<BoutReal>(xlen);
+    ch->imsg_recvbuff = Array<BoutReal>(xlen);
+    ch->omsg_recvbuff = Array<BoutReal>(xlen);
 
     ch->xbufflen = xlen;
   }
@@ -1858,18 +1914,6 @@ void BoutMesh::free_handle(CommHandle *h) {
 void BoutMesh::clear_handles() {
   while (!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
-    if (ch->ybufflen > 0) {
-      delete[] ch->umsg_sendbuff;
-      delete[] ch->umsg_recvbuff;
-      delete[] ch->dmsg_sendbuff;
-      delete[] ch->dmsg_recvbuff;
-    }
-    if (ch->xbufflen > 0) {
-      delete[] ch->imsg_sendbuff;
-      delete[] ch->imsg_recvbuff;
-      delete[] ch->omsg_sendbuff;
-      delete[] ch->omsg_recvbuff;
-    }
 
     delete ch;
 
@@ -1891,19 +1935,21 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
     if (var->is3D()) {
       // 3D variable
       ASSERT2(static_cast<Field3D *>(var)->isAllocated());
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*static_cast<Field3D *>(var))(jx, jy, jz);
+            buffer[len] = var3d_ref(jx, jy, jz);
           }
         }
       }
     } else {
       // 2D variable
       ASSERT2(static_cast<Field2D *>(var)->isAllocated());
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*static_cast<Field2D *>(var))(jx, jy);
+          buffer[len] = var2d_ref(jx, jy);
         }
       }
     }
@@ -1921,18 +1967,20 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*static_cast<Field3D *>(var))(jx, jy, jz) = buffer[len];
+            var3d_ref(jx, jy, jz) = buffer[len];
           }
         }
       }
     } else {
       // 2D variable
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          (*static_cast<Field2D *>(var))(jx, jy) = buffer[len];
+          var2d_ref(jx, jy) = buffer[len];
         }
       }
     }
@@ -2012,6 +2060,207 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 /****************************************************************
  *                 Range iteration
  ****************************************************************/
+
+void BoutMesh::addBoundaryRegions() {
+  std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
+  
+  // Lower Inner Y
+  int xs = 0;
+  int xe = LocalNx - 1;
+
+  if (!firstY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+  
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+
+  all_boundaries.emplace_back("RGN_LOWER_INNER_Y");
+
+  // Lower Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+  if (!firstY()) {
+    if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+      xs = DDATA_XSPLIT;
+    if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+      xe = DDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_LOWER_OUTER_Y");
+  
+  // Lower Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
+    xs = DDATA_XSPLIT;
+  if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
+    xe = DDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_LOWER_Y");
+  
+  // Upper Inner Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  } else {
+    xs = -1;
+    xe = -2;
+  }
+  
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
+
+  // Upper Outer Y
+  
+  xs = 0;
+  xe = LocalNx - 1;
+
+  if (!lastY()) {
+    xs = -1;
+    xe = -2;
+  } else {
+    if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+      xs = UDATA_XSPLIT;
+    if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+      xe = UDATA_XSPLIT - 1;
+
+    if (xs < xstart)
+      xs = xstart;
+    if (xe > xend)
+      xe = xend;
+  }
+
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                                 LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                                 LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
+
+  // Upper Y
+
+  xs = 0;
+  xe = LocalNx - 1;
+  if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
+    xs = UDATA_XSPLIT;
+  if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
+    xe = UDATA_XSPLIT - 1;
+
+  if (xs < xstart)
+    xs = xstart;
+  if (xe > xend)
+    xe = xend;
+
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+                                           LocalNy, LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+                                           LocalNy, 1, maxregionblocksize));
+  all_boundaries.emplace_back("RGN_UPPER_Y");
+  
+  // Inner X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    all_boundaries.emplace_back("RGN_INNER_X");
+    
+    output_info.write("\tBoundary region inner X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+
+  // Outer X
+  if(mesh->firstX() && !mesh->periodicX) {
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+    all_boundaries.emplace_back("RGN_OUTER_X");
+    
+    output_info.write("\tBoundary region outer X\n");
+  } else {
+    // Empty region
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
+                                             LocalNy, 1, maxregionblocksize));
+  }
+
+  // Join boundary regions together
+  
+  Region<Ind3D> bndry3d; // Empty
+  for (const auto &region_name : all_boundaries) {
+    bndry3d += getRegion3D(region_name);
+  }
+  bndry3d.unique(); // Ensure that the points are unique
+
+  // Create a region which is all boundaries
+  addRegion3D("RGN_BNDRY", bndry3d);
+
+  Region<Ind2D> bndry2d; // Empty
+  for (const auto &region_name : all_boundaries) {
+    bndry2d += getRegion2D(region_name);
+  }
+  bndry2d.unique(); // Ensure that the points are unique
+
+  // Create a region which is all boundaries
+  addRegion2D("RGN_BNDRY", bndry2d);
+}
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
@@ -2181,7 +2430,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + XGLOBAL(jx) - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
 }
@@ -2194,7 +2443,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + xglo - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + xglo - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return xglo / static_cast<BoutReal>(MX);
 }
@@ -2285,219 +2534,24 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", 0);
-  file.add(MXSUB, "MXSUB", 0);
-  file.add(MYSUB, "MYSUB", 0);
-  file.add(MXG, "MXG", 0);
-  file.add(MYG, "MYG", 0);
-  file.add(nx, "nx", 0);
-  file.add(ny, "ny", 0);
-  file.add(LocalNz, "MZ", 0);
-  file.add(NXPE, "NXPE", 0);
-  file.add(NYPE, "NYPE", 0);
-  file.add(ZMAX, "ZMAX", 0);
-  file.add(ZMIN, "ZMIN", 0);
-  file.add(ixseps1, "ixseps1", 0);
-  file.add(ixseps2, "ixseps2", 0);
-  file.add(jyseps1_1, "jyseps1_1", 0);
-  file.add(jyseps1_2, "jyseps1_2", 0);
-  file.add(jyseps2_1, "jyseps2_1", 0);
-  file.add(jyseps2_2, "jyseps2_2", 0);
+  file.add(zperiod, "zperiod", false);
+  file.add(MXSUB, "MXSUB", false);
+  file.add(MYSUB, "MYSUB", false);
+  file.add(MXG, "MXG", false);
+  file.add(MYG, "MYG", false);
+  file.add(nx, "nx", false);
+  file.add(ny, "ny", false);
+  file.add(LocalNz, "MZ", false);
+  file.add(NXPE, "NXPE", false);
+  file.add(NYPE, "NYPE", false);
+  file.add(ZMAX, "ZMAX", false);
+  file.add(ZMIN, "ZMIN", false);
+  file.add(ixseps1, "ixseps1", false);
+  file.add(ixseps2, "ixseps2", false);
+  file.add(jyseps1_1, "jyseps1_1", false);
+  file.add(jyseps1_2, "jyseps1_2", false);
+  file.add(jyseps2_1, "jyseps2_1", false);
+  file.add(jyseps2_2, "jyseps2_2", false);
 
-  coordinates()->outputVars(file);
-}
-
-//================================================================
-// Poloidal lowpass filter for n=0 mode, keeping 0<=m<=mmax
-// Developed by T. Rhee and S. S. Kim
-//================================================================
-
-void BoutMesh::slice_r_y(const BoutReal *fori, BoutReal *fxy, int ystart, int ncy) {
-  int i;
-  for (i = 0; i < ncy; i++)
-    fxy[i] = fori[i + ystart];
-}
-
-void BoutMesh::get_ri(dcomplex *ayn, int ncy, BoutReal *ayn_Real, BoutReal *ayn_Imag) {
-  for (int i = 0; i < ncy; i++) {
-    ayn_Real[i] = ayn[i].real();
-    ayn_Imag[i] = ayn[i].imag();
-  }
-}
-
-void BoutMesh::set_ri(dcomplex *ayn, int ncy, BoutReal *ayn_Real, BoutReal *ayn_Imag) {
-  for (int i = 0; i < ncy; i++) {
-    ayn[i] = dcomplex(ayn_Real[i], ayn_Imag[i]);
-  }
-}
-
-// Lowpass filter for n=0 mode, keeping poloidal mode number 0<=m<=mmax
-const Field2D BoutMesh::lowPass_poloidal(const Field2D &var, int mmax) {
-  Field2D result;
-  static BoutReal *f1d = (BoutReal *)NULL; // Never freed
-  static dcomplex *aynall = (dcomplex *)NULL; // Never freed
-  static BoutReal *aynall_Real = (BoutReal *)NULL; // Never freed
-  static BoutReal *aynall_Imag = (BoutReal *)NULL; // Never freed
-  static dcomplex *ayn = (dcomplex *)NULL; // Never freed
-  static BoutReal *aynReal = (BoutReal *)NULL; // Never freed
-  static BoutReal *aynImag = (BoutReal *)NULL; // Never freed
-
-  int ncx, ncy;
-  int jx, jy;
-  int ncyall; // nype is number of processors in the Y dir.
-  int mmax1;
-
-  mmax1 = mmax + 1;
-  ncx = LocalNx;
-  ncy = yend - ystart + 1;
-  ncyall = ncy * NYPE;
-
-  result.allocate(); // initialize
-  if (f1d == (BoutReal *)NULL)
-    f1d = new BoutReal[ncy];
-  if (ayn == (dcomplex *)NULL)
-    ayn = new dcomplex[ncy];
-  if (aynall == (dcomplex *)NULL)
-    aynall = new dcomplex[ncyall];
-  if (aynall_Real == (BoutReal *)NULL)
-    aynall_Real = new BoutReal[ncyall];
-  if (aynall_Imag == (BoutReal *)NULL)
-    aynall_Imag = new BoutReal[ncyall];
-  if (aynReal == (BoutReal *)NULL)
-    aynReal = new BoutReal[ncy];
-  if (aynImag == (BoutReal *)NULL)
-    aynImag = new BoutReal[ncy];
-
-  for (jx = 0; jx < ncx; jx++) { // start x
-    // saving the real 2D data
-    slice_r_y(&var(jx, 0), f1d, ystart, ncy); // 2d -> 1d
-
-    for (jy = 0; jy < ncy; jy++)
-      ayn[jy] = dcomplex(f1d[jy], 0.);
-
-    // allgather from ayn to aynall
-    get_ri(ayn, ncy, aynReal, aynImag);
-    MPI_Allgather(aynReal, ncy, MPI_DOUBLE, aynall_Real, ncy, MPI_DOUBLE, comm_inner);
-    MPI_Allgather(aynImag, ncy, MPI_DOUBLE, aynall_Imag, ncy, MPI_DOUBLE, comm_inner);
-    set_ri(aynall, ncyall, aynall_Real, aynall_Imag);
-
-    // FFT in y over extended domain
-    cfft(aynall, ncyall, -1);
-
-    // lowpass filter
-    for (jy = mmax1; jy <= (ncyall - mmax1); jy++)
-      aynall[jy] = dcomplex(0., 0.);
-
-    // inverse FFT in y over extended domain
-    cfft(aynall, ncyall, 1);
-
-    // scatter data
-    get_ri(aynall, ncyall, aynall_Real, aynall_Imag);
-    MPI_Scatter(aynall_Real, ncy, MPI_DOUBLE, aynReal, ncy, MPI_DOUBLE, 0, comm_inner);
-    MPI_Scatter(aynall_Imag, ncy, MPI_DOUBLE, aynImag, ncy, MPI_DOUBLE, 0, comm_inner);
-    set_ri(ayn, ncy, aynReal, aynImag);
-
-    for (jy = 0; jy < ncy; jy++)
-      f1d[jy] = ayn[jy].real();
-
-    for (jy = 0; jy < ncy; jy++) {
-      result(jx, jy + ystart, 1) = f1d[jy];
-    }
-  } // end of x
-
-  return result;
-}
-
-/*================================================================
-// Volume integral of Field2D variable
-// Developed by T. Rhee and S. S. Kim
-//================================================================*/
-
-const Field3D BoutMesh::Switch_YZ(const Field3D &var) {
-  static BoutReal **ayz = (BoutReal **)NULL;
-  static BoutReal **ayz_all = (BoutReal **)NULL;
-  Field3D result;
-  int ncy, ncy_all, ncz;
-  int i, j, ix;
-  ncy = yend - ystart + 1;
-  ncy_all = MY;
-  ncz = LocalNz;
-  
-  if (MY != LocalNz) {
-    throw BoutException("Y and Z dimension is not same in Switch_YZ code");
-  }
-
-  // memory allocation
-  result.allocate();
-  if (ayz == (BoutReal **)NULL)
-    ayz = matrix<BoutReal>(ncy, ncz);
-  if (ayz_all == (BoutReal **)NULL)
-    ayz_all = matrix<BoutReal>(ncy_all, ncz);
-
-  for (ix = xstart; ix <= xend; ix++) {
-    // Field 3D to rmatrix of local
-    for (i = 0; i < ncy; i++)
-      for (j = 0; j < ncz; j++)
-        ayz[i][j] = var(ix, i + ystart, j);
-
-    // Collect to rmatrix of global from local
-    MPI_Allgather(ayz[0], ncy * ncz, MPI_DOUBLE, ayz_all[0], ncy * ncz, MPI_DOUBLE,
-                  comm_inner);
-
-    // Y 2 Z switch
-    for (i = ystart; i <= yend; i++)
-      for (j = 0; j < ncz; j++)
-        result(ix, i, j) = ayz_all[j][YGLOBAL(i)];
-  }
-  return result;
-}
-
-const Field3D BoutMesh::Switch_XZ(const Field3D &var) {
-  if (MX != LocalNz) {
-    throw BoutException("X and Z dimension must be the same to use Switch_XZ");
-  }
-  static BoutReal ***buffer = (BoutReal ***)NULL;
-
-  int ncx, ncy, ncz;
-  int i, j, k, l;
-
-  Field3D result;
-
-  ncx = LocalNx - 2 * MXG;
-  ncy = LocalNy - 2 * MYG;
-  ncz = LocalNz;
-
-  // Allocate Memory
-  result.allocate();
-  if (buffer == (BoutReal ***)NULL) {
-    buffer = r3tensor(ncz, ncy,
-                      ncx); // Note, this is deliberately such that x contiguous in memory
-  }
-  
-  // Put input data into buffer.  X needs to be contiguous in memory
-  for (i = 0; i < ncx; i++) {
-    for (j = 0; j < ncy; j++) {
-      for (k = 0; k < ncz; k++) {
-        buffer[k][j][i] = var(MXG + i, MYG + j, k);
-      }
-    }
-  }
-
-  int sendcount = ncx * ncy * ncz / NXPE;
-
-  MPI_Alltoall(MPI_IN_PLACE, sendcount, MPI_DOUBLE, buffer[0][0], sendcount, MPI_DOUBLE,
-               Mesh::getXcomm());
-
-  // Need to transpose on each process appropriately.
-  for (i = 0; i < NXPE; i++) {
-    for (j = 0; j < ncx; j++) {
-      for (k = 0; k < ncy; k++) {
-        for (l = 0; l < ncx; l++) {
-          result(MXG + j, MYG + k, l + i * ncx) = buffer[j + i * ncx][k][l];
-        }
-      }
-    }
-  }
-
-  return result;
+  getCoordinates()->outputVars(file);
 }

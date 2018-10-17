@@ -25,10 +25,10 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
+LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), location(loc) {
   Timer timer("invert");
-  
-  if(opt == NULL) {
+
+  if (opt == nullptr) {
     // If no options supplied, use default
     opt = Options::getRoot()->getSection("laplacexy");
   }
@@ -84,15 +84,17 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
   nloc    = xend - xstart + 1; // Number of X points on this processor
   nsys = mesh->yend - mesh->ystart + 1; // Number of separate Y slices
-  
-  acoef = matrix<BoutReal>(nsys, nloc);
-  bcoef = matrix<BoutReal>(nsys, nloc);
-  ccoef = matrix<BoutReal>(nsys, nloc);
-  xvals = matrix<BoutReal>(nsys, nloc);
-  bvals = matrix<BoutReal>(nsys, nloc);
+
+  acoef = Matrix<BoutReal>(nsys, nloc);
+  bcoef = Matrix<BoutReal>(nsys, nloc);
+  ccoef = Matrix<BoutReal>(nsys, nloc);
+  xvals = Matrix<BoutReal>(nsys, nloc);
+  bvals = Matrix<BoutReal>(nsys, nloc);
 
   // Create a cyclic reduction object
-  cr = new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc);
+  // FIXME: replace with make_unique when we upgrade to C++14 or add our own version
+  cr = std::unique_ptr<CyclicReduce<BoutReal>>(
+      new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc));
 
   //////////////////////////////////////////////////
   // Pre-allocate PETSc storage
@@ -216,7 +218,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(direct) {
     KSPGetPC(ksp,&pc);
     PCSetType(pc,PCLU);
+#if PETSC_VERSION_GE(3,9,0)
+    PCFactorSetMatSolverType(pc,"mumps");
+#else
     PCFactorSetMatSolverPackage(pc,"mumps");
+#endif
   }else {
     
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
@@ -285,7 +291,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates(location);
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -322,10 +328,10 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       c += B(x,y);
       
       // Put values into the preconditioner, X derivatives only
-      acoef[y - mesh->ystart][x - xstart] = xm;
-      bcoef[y - mesh->ystart][x - xstart] = c;
-      ccoef[y - mesh->ystart][x - xstart] = xp;
-      
+      acoef(y - mesh->ystart, x - xstart) = xm;
+      bcoef(y - mesh->ystart, x - xstart) = c;
+      ccoef(y - mesh->ystart, x - xstart) = xp;
+
       if( include_y_derivs ) {
         // YY component
         // Metrics at y+1/2
@@ -396,8 +402,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         
         // Preconditioner
-        bcoef[y-mesh->ystart][0] = 0.5;
-        ccoef[y-mesh->ystart][0] = 0.5;
+        bcoef(y - mesh->ystart, 0) = 0.5;
+        ccoef(y - mesh->ystart, 0) = 0.5;
       }
       
     }else {
@@ -413,8 +419,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         
         // Preconditioner
-        bcoef[y-mesh->ystart][0] =  1.0;
-        ccoef[y-mesh->ystart][0] = -1.0;
+        bcoef(y - mesh->ystart, 0) = 1.0;
+        ccoef(y - mesh->ystart, 0) = -1.0;
       }
     }
   }
@@ -430,8 +436,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
       
       // Preconditioner
-      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
-      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
+      acoef(y - mesh->ystart, mesh->xend + 1 - xstart) = 0.5;
+      bcoef(y - mesh->ystart, mesh->xend + 1 - xstart) = 0.5;
     }
   }
 
@@ -490,24 +496,21 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 #endif
   
   // Set coefficients for preconditioner
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+  cr->setCoefs(acoef, bcoef, ccoef);
 }
 
 LaplaceXY::~LaplaceXY() {
-  KSPDestroy( &ksp );
-  VecDestroy( &xs );
-  VecDestroy( &bs );
-  MatDestroy( &MatA );
+  PetscBool is_finalised;
+  PetscFinalized(&is_finalised);
 
-  // Free memory for preconditioner
-  free_matrix(acoef);
-  free_matrix(bcoef);
-  free_matrix(ccoef);
-  free_matrix(xvals);
-  free_matrix(bvals);
-  
-  // Delete tridiagonal solver
-  delete cr;
+  if (!is_finalised) {
+    // PetscFinalize may already have destroyed this object
+    KSPDestroy(&ksp);
+  }
+
+  VecDestroy(&xs);
+  VecDestroy(&bs);
+  MatDestroy(&MatA);
 }
 
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
@@ -729,20 +732,20 @@ int LaplaceXY::precon(Vec input, Vec result) {
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       PetscScalar val;
-      VecGetValues(input, 1, &ind, &val ); 
-      bvals[y-mesh->ystart][x-xstart] = val;
+      VecGetValues(input, 1, &ind, &val );
+      bvals(y - mesh->ystart, x - xstart) = val;
       ind++;
     }
   }
   
   // Solve tridiagonal systems using CR solver
-  cr->solve(nsys, bvals, xvals);
+  cr->solve(bvals, xvals);
 
   // Save result xvals into y array
   ind = ind0;
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
-      PetscScalar val = xvals[y-mesh->ystart][x-xstart];
+      PetscScalar val = xvals(y - mesh->ystart, x - xstart);
       VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
       ind++;
     }

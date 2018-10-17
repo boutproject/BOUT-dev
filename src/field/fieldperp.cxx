@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include <boutcomm.hxx>
 #include <globals.hxx>
 
 #include <stdlib.h>
@@ -33,12 +34,10 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp() {
-  // Get mesh size
-
-  if(mesh) {
-    nx = mesh->LocalNx;
-    nz = mesh->LocalNz;
+FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
+  if (fieldmesh) {
+    nx = fieldmesh->LocalNx;
+    nz = fieldmesh->LocalNz;
   }
   
 #if CHECK > 0
@@ -47,15 +46,42 @@ FieldPerp::FieldPerp() {
     nz=-1;
   }
 #endif
+}
 
-  yindex = -1;
+FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {
+  nx = fieldmesh->LocalNx;
+  nz = fieldmesh->LocalNz;
+  *this = val;
+}
+
+void FieldPerp::allocate() {
+  if (data.empty()) {
+    if (!fieldmesh) {
+      /// If no mesh, use the global
+      fieldmesh = mesh;
+      nx = fieldmesh->LocalNx;
+      nz = fieldmesh->LocalNz;
+    }
+    data = Array<BoutReal>(nx * nz);
+#if CHECK > 2
+    invalidateGuards(*this);
+#endif
+  } else
+    data.ensureUnique();
 }
 
 /***************************************************************
  *                         ASSIGNMENT 
  ***************************************************************/
 
-FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
+FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
+  /// Check for self-assignment
+  if (this == &rhs) {
+    return (*this); // skip this assignment
+  }
+
+  checkData(rhs);
+
   nx = rhs.nx;
   nz = rhs.nz;
   yindex = rhs.yindex;
@@ -64,12 +90,18 @@ FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
 }
 
 FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
+  TRACE("FieldPerp = BoutReal");
+
   allocate();
 
-  for(auto&& d : data) {
-    d = rhs;
+  checkData(rhs);
+
+  const Region<IndPerp> &region_all = fieldmesh->getRegionPerp("RGN_ALL");
+
+  BOUT_FOR(i, region_all) {
+    (*this)[i] = rhs;
   }
-  
+
   return *this;
 }
 
@@ -94,48 +126,73 @@ const DataIterator FieldPerp::end() const {
  *                         OPERATORS 
  ***************************************************************/
 
-#define FPERP_OP_FIELD(op, bop, ftype)			\
-  FieldPerp& FieldPerp::operator op(const ftype &rhs) { \
-    if(data.unique()) {                                 \
-      /* Only reference to the data */			\
-      for(int i=0;i<nx;i++)                             \
-        for(int k=0;k<nz;k++)                           \
-          (*this)(i,k) op rhs(i, yindex, k);            \
-    }else {  			                        \
-      /* Shared with another FieldPerp */		\
-      (*this) = (*this) bop rhs;                        \
-    }                                                   \
-    return *this;                                       \
+#define FPERP_OP_FPERP(op, bop, ftype)                                                   \
+  FieldPerp &FieldPerp::operator op(const ftype &rhs) {                                  \
+    if (data.unique()) {                                                                 \
+      checkData(rhs);                                                                    \
+      /* Only reference to the data */                                                   \
+      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
+      BOUT_FOR(i, region) {                                                              \
+        (*this)[i] op rhs[i];                                                            \
+      }                                                                                  \
+      checkData(*this);                                                                  \
+    } else {                                                                             \
+      /* Shared with another FieldPerp */                                                \
+      (*this) = (*this)bop rhs;                                                          \
+    }                                                                                    \
+    return *this;                                                                        \
   }
 
-FPERP_OP_FIELD(+=, +, FieldPerp);
+FPERP_OP_FPERP(+=, +, FieldPerp);
+FPERP_OP_FPERP(-=, -, FieldPerp);
+FPERP_OP_FPERP(*=, *, FieldPerp);
+FPERP_OP_FPERP(/=, /, FieldPerp);
+
+#define FPERP_OP_FIELD(op, bop, ftype)                                                   \
+  FieldPerp &FieldPerp::operator op(const ftype &rhs) {                                  \
+    if (data.unique()) {                                                                 \
+      checkData(*this);                                                                  \
+      checkData(rhs);                                                                    \
+      /* Only reference to the data */                                                   \
+      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
+      BOUT_FOR(i, region) {                                                              \
+        (*this)[i] op rhs(i.x(), yindex, i.z());                                         \
+      }                                                                                  \
+      checkData(*this);                                                                  \
+    } else {                                                                             \
+      /* Shared with another FieldPerp */                                                \
+      (*this) = (*this)bop rhs;                                                          \
+    }                                                                                    \
+    return *this;                                                                        \
+  }
+
 FPERP_OP_FIELD(+=, +, Field3D);
 FPERP_OP_FIELD(+=, +, Field2D);
 
-FPERP_OP_FIELD(-=, -, FieldPerp);
 FPERP_OP_FIELD(-=, -, Field3D);
 FPERP_OP_FIELD(-=, -, Field2D);
 
-FPERP_OP_FIELD(*=, *, FieldPerp);
 FPERP_OP_FIELD(*=, *, Field3D);
 FPERP_OP_FIELD(*=, *, Field2D);
 
-FPERP_OP_FIELD(/=, /, FieldPerp);
 FPERP_OP_FIELD(/=, /, Field3D);
 FPERP_OP_FIELD(/=, /, Field2D);
 
-#define FPERP_OP_REAL(op, bop)  			\
-  FieldPerp& FieldPerp::operator op(BoutReal rhs) { \
-    if(data.unique()) {                                 \
-      /* Only reference to the data */           	\
-      for(int i=0;i<nx;i++)                             \
-        for(int k=0;k<nz;k++)                           \
-          (*this)(i,k) op rhs;				\
-    }else {  			                        \
-      /* Shared with another FieldPerp */		\
-      (*this) = (*this) bop rhs;                        \
-    }                                                   \
-    return *this;                                       \
+#define FPERP_OP_REAL(op, bop)                                                           \
+  FieldPerp &FieldPerp::operator op(BoutReal rhs) {                                      \
+    if (data.unique()) {                                                                 \
+      checkData(rhs);                                                                    \
+      /* Only reference to the data */                                                   \
+      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
+      BOUT_FOR(i, region) {                                                              \
+        (*this)[i] op rhs;                                                               \
+      }                                                                                  \
+      checkData(*this);                                                                  \
+    } else {                                                                             \
+      /* Shared with another FieldPerp */                                                \
+      (*this) = (*this)bop rhs;                                                          \
+    }                                                                                    \
+    return *this;                                                                        \
   }
 
 FPERP_OP_REAL(+=, +);
@@ -143,72 +200,102 @@ FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
-////////////////////// STENCILS //////////////////////////
-
-void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.p = (*this)(bx.jxp,bx.jz);
-  fval.m = (*this)(bx.jxm,bx.jz);
-  fval.pp = (*this)(bx.jx2p,bx.jz);
-  fval.mm = (*this)(bx.jx2m,bx.jz);
+const IndexRange FieldPerp::region(REGION rgn) const {
+  switch (rgn) {
+  case RGN_ALL:
+  case RGN_NOZ:
+    return IndexRange{0, nx - 1, 0, 0, 0, nz - 1};
+    break;
+  case RGN_NOX:
+    return IndexRange{getMesh()->xstart, getMesh()->xend, 0, 0, 0, nz - 1};
+    break;
+  default:
+    throw BoutException("FieldPerp::region() : Requested region not implemented");
+    break;
+  };
 }
 
-void FieldPerp::setYStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval = (*this)(bx.jx,bx.jz);
-}
+const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
+  return fieldmesh->getRegionPerp(REGION_STRING(region));
+};
+const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegionPerp(region_name);
+};
 
-void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC UNUSED(loc)) const {
-  fval.p = (*this)(bx.jx,bx.jzp);
-  fval.m = (*this)(bx.jx,bx.jzm);
-  fval.pp = (*this)(bx.jx,bx.jz2p);
-  fval.mm = (*this)(bx.jx,bx.jz2m);
-}
+//////////////// NON-MEMBER FUNCTIONS //////////////////
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
+// Unary minus
+FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
+
 // Operator on FieldPerp and another field
-#define FPERP_FPERP_OP_FIELD(op, ftype)                     	          \
-  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {   \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = lhs.getIndex();            		                          \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs[i] op rhs[i];                                       \
-                                                                          \
-    return result;                                                        \
+#define FPERP_FPERP_OP_FPERP(op, ftype)                                                  \
+  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {                  \
+    checkData(lhs);                                                                      \
+    checkData(rhs);                                                                      \
+    FieldPerp result(lhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+    result.setIndex(lhs.getIndex());                                                     \
+                                                                                         \
+    const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp("RGN_ALL");             \
+    BOUT_FOR(i, region) {                                                                \
+      result[i] = lhs[i] op rhs[i];                                                      \
+    }                                                                                    \
+    checkData(result);                                                                   \
+    return result;                                                                       \
   }
 
-FPERP_FPERP_OP_FIELD(+, FieldPerp);
+FPERP_FPERP_OP_FPERP(+, FieldPerp);
+FPERP_FPERP_OP_FPERP(-, FieldPerp);
+FPERP_FPERP_OP_FPERP(*, FieldPerp);
+FPERP_FPERP_OP_FPERP(/, FieldPerp);
+
+// Operator on FieldPerp and another field
+#define FPERP_FPERP_OP_FIELD(op, ftype)                                                  \
+  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {                  \
+    checkData(lhs);                                                                      \
+    checkData(rhs);                                                                      \
+    FieldPerp result(lhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+    result.setIndex(lhs.getIndex());                                                     \
+                                                                                         \
+    const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp("RGN_ALL");             \
+    BOUT_FOR(i, region) {                                                                \
+      result[i] = lhs[i] op rhs(i.x(), lhs.getIndex(), i.z());                           \
+    }                                                                                    \
+    checkData(result);                                                                   \
+    return result;                                                                       \
+  }
+
 FPERP_FPERP_OP_FIELD(+, Field3D);
 FPERP_FPERP_OP_FIELD(+, Field2D);
 
-FPERP_FPERP_OP_FIELD(-, FieldPerp);
 FPERP_FPERP_OP_FIELD(-, Field3D);
 FPERP_FPERP_OP_FIELD(-, Field2D);
 
-FPERP_FPERP_OP_FIELD(*, FieldPerp);
 FPERP_FPERP_OP_FIELD(*, Field3D);
 FPERP_FPERP_OP_FIELD(*, Field2D);
 
-FPERP_FPERP_OP_FIELD(/, FieldPerp);
 FPERP_FPERP_OP_FIELD(/, Field3D);
 FPERP_FPERP_OP_FIELD(/, Field2D);
 
 // Operator on FieldPerp and BoutReal
-#define FPERP_FPERP_OP_REAL(op)                     	                   \
-  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) { \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = lhs.getIndex();                                               \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs[i] op rhs;                                          \
-                                                                          \
-    return result;                                                        \
+#define FPERP_FPERP_OP_REAL(op)                                                          \
+  const FieldPerp operator op(const FieldPerp &lhs, BoutReal rhs) {                      \
+    checkData(lhs);                                                                      \
+    checkData(rhs);                                                                      \
+    FieldPerp result(lhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+    result.setIndex(lhs.getIndex());                                                     \
+                                                                                         \
+    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
+    BOUT_FOR (i, region) {                                                               \
+      result[i] = lhs[i] op rhs;                                                         \
+    }                                                                                    \
+                                                                                         \
+    checkData(result);                                                                   \
+    return result;                                                                       \
   }
 
 FPERP_FPERP_OP_REAL(+);
@@ -216,23 +303,78 @@ FPERP_FPERP_OP_REAL(-);
 FPERP_FPERP_OP_REAL(*);
 FPERP_FPERP_OP_REAL(/);
 
-#define FPERP_REAL_OP_FPERP(op)                     	                   \
-  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) { \
-    FieldPerp result;                                                     \
-    result.allocate();                                                    \
-                                                                          \
-    int y = rhs.getIndex();                                               \
-    result.setIndex(y);                                                   \
-                                                                          \
-    for(auto i : result)                                                  \
-      result[i] = lhs op rhs[i];                                          \
-                                                                          \
-    return result;                                                        \
+#define FPERP_REAL_OP_FPERP(op)                                                          \
+  const FieldPerp operator op(BoutReal lhs, const FieldPerp &rhs) {                      \
+    checkData(lhs);                                                                      \
+    checkData(rhs);                                                                      \
+    FieldPerp result(rhs.getMesh());                                                     \
+    result.allocate();                                                                   \
+    result.setIndex(rhs.getIndex());                                                     \
+                                                                                         \
+    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
+    BOUT_FOR (i, region) {                                                               \
+      result[i] = lhs op rhs[i];                                                         \
+    }                                                                                    \
+                                                                                         \
+    checkData(result);                                                                   \
+    return result;                                                                       \
   }
 
 // Only need the asymmetric operators
 FPERP_REAL_OP_FPERP(-);
 FPERP_REAL_OP_FPERP(/);
+
+/////////////////////////////////////////////////
+// functions
+
+/*!
+ * This macro takes a function \p func, which is
+ * assumed to operate on a single BoutReal and return
+ * a single BoutReal, and wraps it up into a function
+ * of a FieldPerp called \p name.
+ *
+ * @param name  The name of the function to define
+ * @param func  The function to apply to each value
+ *
+ * If CHECK >= 1, checks if the FieldPerp is allocated
+ *
+ * Loops over the entire domain, applies function,
+ * and uses checkData() to, if CHECK >= 3, check
+ * result for non-finite numbers
+ *
+ */
+#define FPERP_FUNC(name, func)                                                           \
+  const FieldPerp name(const FieldPerp &f, REGION rgn) {                                 \
+    checkData(f);                                                                        \
+    TRACE(#name "(FieldPerp)");                                                          \
+    /* Check if the input is allocated */                                                \
+    ASSERT1(f.isAllocated());                                                            \
+    /* Define and allocate the output result */                                          \
+    FieldPerp result(f.getMesh());                                                       \
+    result.allocate();                                                                   \
+    result.setIndex(f.getIndex());                                                       \
+    const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));      \
+    BOUT_FOR (d, region) {                                                               \
+      result[d] = func(f[d]);                                                            \
+    }                                                                                    \
+    checkData(result);                                                                   \
+    return result;                                                                       \
+  }
+
+FPERP_FUNC(abs, ::fabs);
+
+FPERP_FUNC(sqrt, ::sqrt);
+
+FPERP_FUNC(exp, ::exp);
+FPERP_FUNC(log, ::log);
+
+FPERP_FUNC(sin, ::sin);
+FPERP_FUNC(cos, ::cos);
+FPERP_FUNC(tan, ::tan);
+
+FPERP_FUNC(sinh, ::sinh);
+FPERP_FUNC(cosh, ::cosh);
+FPERP_FUNC(tanh, ::tanh);
 
 const FieldPerp copy(const FieldPerp &f) {
   FieldPerp fcopy = f;
@@ -240,19 +382,209 @@ const FieldPerp copy(const FieldPerp &f) {
   return fcopy;
 }
 
+const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
+  checkData(var);
+  FieldPerp result = copy(var);
+
+  const Region<IndPerp> &region = var.getMesh()->getRegionPerp(REGION_STRING(rgn));
+  BOUT_FOR(d, region) {
+    if (result[d] < f) {
+      result[d] = f;
+    }
+  }
+
+  checkData(result);
+  return result;
+}
+
 const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
-  ASSERT1(f.isAllocated());
-  
-  FieldPerp result;
+  checkData(f);
+
+  FieldPerp result(f.getMesh());
 
   // Allocate memory
   result.allocate();
   result.setIndex(y);
 
-  for(auto i : result)
-    result[i] = f[i];
+  const Region<IndPerp> &region_all = f.getMesh()->getRegionPerp("RGN_ALL");
+  BOUT_FOR(i, region_all) {
+    result[i] = f(i, y);
+  }
   
+  checkData(result);
   return result;
 }
 
+BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
+  TRACE("FieldPerp::Min() %s", allpe ? "over all PEs" : "");
+
+  checkData(f);
+
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
+    if (f[i] < result) {
+      result = f[i];
+    }
+  }
+
+  if (allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+  }
+
+  return result;
+}
+
+BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
+  TRACE("FieldPerp::Max() %s", allpe ? "over all PEs" : "");
+
+  checkData(f);
+
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+    if (f[i] > result) {
+      result = f[i];
+    }
+  }
+
+  if (allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+
+  return result;
+}
+
+bool finite(const FieldPerp &f, REGION rgn) {
+  TRACE("finite(FieldPerp)");
+
+  if (!f.isAllocated()) {
+    return false;
+  }
+
+  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR_SERIAL(i, region) {
+    if (!::finite(f[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
+  TRACE("pow(FieldPerp, FieldPerp)");
+  // Check if the inputs are allocated
+  checkData(lhs);
+  checkData(rhs);
+
+  // Define and allocate the output result
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
+  ASSERT1(lhs.getIndex() == rhs.getIndex());
+  FieldPerp result(lhs.getMesh());
+  result.allocate();
+  result.setIndex(lhs.getIndex());
+
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
+    result[i] = ::pow(lhs[i], rhs[i]);
+  }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
+  TRACE("pow(FieldPerp, BoutReal)");
+  // Check if the inputs are allocated
+  checkData(lhs);
+  checkData(rhs);
+
+  // Define and allocate the output result
+  FieldPerp result(lhs.getMesh());
+  result.allocate();
+  result.setIndex(lhs.getIndex());
+
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
+    result[i] = ::pow(lhs[i], rhs);
+  }
+
+  checkData(result);
+  return result;
+}
+
+FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
+  TRACE("pow(lhs, FieldPerp)");
+  // Check if the inputs are allocated
+  checkData(lhs);
+  checkData(rhs);
+
+  // Define and allocate the output result
+  FieldPerp result(rhs.getMesh());
+  result.allocate();
+  result.setIndex(rhs.getIndex());
+
+  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
+    result[i] = ::pow(lhs, rhs[i]);
+  }
+
+  checkData(result);
+  return result;
+}
+
+#if CHECK > 2
+void checkDataIsFiniteOnRegion(const FieldPerp &f, REGION region) {
+  const Region<IndPerp> &new_region = f.getMesh()->getRegionPerp(REGION_STRING(region));
+  
+  // Do full checks
+  BOUT_FOR_SERIAL(i, new_region) {
+    if (!::finite(f[i])) {
+      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x(),
+                          i.z());
+    }
+  }
+}
+#else
+void checkDataIsFiniteOnRegion(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+
+
+#if CHECK > 0
+/// Check if the data is valid
+void checkData(const FieldPerp &f, REGION region) {
+  if (!f.isAllocated()) {
+    throw BoutException("FieldPerp: Operation on empty data\n");
+  }
+
+  ASSERT3(f.getIndex() >= 0 && f.getIndex() < f.getMesh()->LocalNy);
+
+  checkDataIsFiniteOnRegion(f, region);
+}
+#endif
+
+#if CHECK > 2
+void invalidateGuards(FieldPerp &var) {
+  Mesh *localmesh = var.getMesh();
+
+  const Region<IndPerp> &region_guards = localmesh->getRegionPerp("RGN_GUARDS");
+
+  BOUT_FOR(i, region_guards) {
+    var[i] = BoutNaN;
+  }
+}
+#endif

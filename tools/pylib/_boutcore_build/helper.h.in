@@ -1,0 +1,127 @@
+cat <<EOF
+#include <field3d.hxx>
+#include <bout_types.hxx>
+
+EOF
+for ftype in "Field3D" "Field2D"
+do
+  if [ $ftype = "Field3D" ]; then fdd="f3d";
+  elif [ $ftype = "Field2D" ]; then fdd="f2d";
+  else
+    echo "Error, unimplemented ftype"; exit 1
+  fi
+cat <<EOF
+void c_get_${fdd}_all(const $ftype * f, double * data);
+void c_set_${fdd}_all($ftype * f, const double * data);
+void c_set_${fdd}_all_($ftype * f, double data);
+void c_set_${fdd}_from_${fdd}($ftype * lhs,const $ftype * rhs){
+  *lhs=*rhs;
+}
+EOF
+for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
+do
+    n=${f%:*}
+    echo "$ftype * f$n( $ftype*,$ftype*);"
+    echo "$ftype * f$n( $ftype*,double);"
+    echo "$ftype * f$n( double,$ftype*);"
+    echo "void fi$n( $ftype*,$ftype*);"
+    echo "void fi$n( $ftype*,double);"
+    if [ $ftype = "Field3D" ]; then
+      echo "Field3D * f$n( Field3D*,Field2D*);"
+      echo "Field3D * f$n( Field2D*,Field3D*);"
+      echo "void fi$n( Field3D*,Field2D*);"
+    fi
+done
+    echo "$ftype c_minus($ftype a){return -a;};"
+done
+cat <<EOF
+void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part(Field3D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part_(Field3D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_get_f2d_part(const Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part(Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part_(Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
+EOF
+cat <<EOF
+
+Mesh * c_get_global_mesh();
+
+Field3D c_Grad_perp_dot_Grad_perp(Field3D a, Field3D b){
+  return Grad_perp(a)*Grad_perp(b);
+}
+
+void c_mesh_normalise(Mesh * , double);
+
+
+class PythonModelCallback{
+ public:
+  typedef void (*Method)(void *param, void *user_data);
+  PythonModelCallback(Method method, void *user_data){
+    _method=method;
+    _user_data=user_data;
+  }
+  virtual ~PythonModelCallback(){};
+  void cy_execute(void *parameter){
+    _method(parameter, _user_data);
+  }
+ private:
+  Method _method; // cython function
+  void *_user_data; // actual function
+};
+
+class PythonModel: public PhysicsModel{
+protected:
+  int init(bool restarting) override{
+    if (_init){
+      _init->cy_execute(&restarting);
+    }
+    return 0;
+  };
+  int rhs(BoutReal t) override {
+    _rhs->cy_execute( &t);
+    return 0;
+  };
+public:
+  PythonModel():_init(nullptr), _rhs(nullptr){};
+  void pyinit(){
+    solver = Solver::create();
+    solver->setModel(this);
+    bout_monitor = new BoutMonitor();
+    solver->addMonitor(bout_monitor, Solver::BACK);
+    solver->outputVars(dump);
+  };
+  void free(){
+    delete solver;
+    delete bout_monitor;
+  };
+  void set_init_func(PythonModelCallback * __init){
+    _init=__init;
+  };
+  void set_rhs_func(PythonModelCallback * __rhs){
+    _rhs=__rhs;
+  };
+  void solve(){
+    //solver->outputVars(dump);
+    solver->solve();
+  }
+  Solver * getSolver(){
+    return solver;
+  };
+private:
+  //void (*init_func)(bool);
+  //void (*rhs_func)(BoutReal time);
+  PythonModelCallback * _init;
+  PythonModelCallback * _rhs;
+  Solver * solver;
+  Monitor * bout_monitor;
+};
+
+void throw_BoutException(std::string err){
+  throw BoutException(err);
+}
+
+Datafile * c_get_global_datafile(){
+  return &dump;
+}
+
+EOF

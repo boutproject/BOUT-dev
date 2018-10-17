@@ -309,11 +309,11 @@ int physics_init(bool restarting) {
 
   // Load metrics
   if(mesh->get(Rxy,  "Rxy")) { // m
-    output.write("Error: Cannot read Rxy from grid\n");
+    output_error.write("Error: Cannot read Rxy from grid\n");
     return 1;
   }
   if(mesh->get(Bpxy, "Bpxy")) { // T
-    output.write("Error: Cannot read Bpxy from grid\n");
+    output_error.write("Error: Cannot read Bpxy from grid\n");
     return 1;
   }
   mesh->get(Btxy, "Btxy"); // T
@@ -552,7 +552,7 @@ int physics_init(bool restarting) {
 
       Field2D pol_angle;
       if(mesh->get(pol_angle, "pol_angle")) {
-	output.write("     ***WARNING: need poloidal angle for simple RMP\n");
+	output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
 	include_rmp = false;
       }else {
 	OPTION(options, rmp_n,  3);
@@ -564,7 +564,7 @@ int physics_init(bool restarting) {
         int zperiod;
         globalOptions->get("zperiod", zperiod, 1);
 	if((rmp_n % zperiod) != 0)
-	  output.write("     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n, zperiod);
+	  output_warn.write("     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n, zperiod);
 
 	output.write("\tMagnetic perturbation: n = %d, m = %d, magnitude %e Tm\n", 
 		     rmp_n, rmp_m, rmp_factor);
@@ -601,7 +601,7 @@ int physics_init(bool restarting) {
       // Load perturbation from grid file.
       include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
       if(!include_rmp) {
-         output.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
+         output_warn.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
       }
       // Multiply by factor
       rmp_Psi0 *= rmp_factor;
@@ -792,17 +792,17 @@ int physics_init(bool restarting) {
       else
 	{
 	  if(mesh->get(N0,  "Niexp")) { // N_i0                                          
-	    output.write("Error: Cannot read Ni0 from grid\n");
+	    output_error.write("Error: Cannot read Ni0 from grid\n");
 	    return 1;
 	  } 
 	  
 	  if(mesh->get(Ti0,  "Tiexp")) { // T_i0                                         
-	    output.write("Error: Cannot read Ti0 from grid\n");
+	    output_error.write("Error: Cannot read Ti0 from grid\n");
 	    return 1;
 	  }
 
 	  if(mesh->get(Te0,  "Teexp")) { // T_e0  
-	    output.write("Error: Cannot read Te0 from grid\n");
+	    output_error.write("Error: Cannot read Te0 from grid\n");
 	    return 1;
 	  }
 	  N0 /= Nbar;
@@ -931,17 +931,7 @@ int physics_init(bool restarting) {
   V0net.z = -Dphi0;
 
   U0=B0vec*Curl(V0net)/B0;     //get 0th vorticity for Kelvin-Holmholtz term
-
-  /**************** SET VARIABLE LOCATIONS *************/
-
-  P.setLocation(CELL_CENTRE);
-  U.setLocation(CELL_CENTRE);
-  phi.setLocation(CELL_CENTRE);
-  Psi.setLocation(CELL_YLOW);
-  Jpar.setLocation(CELL_YLOW);
-  Vpar.setLocation(CELL_YLOW);
-  //sourp.setLocation(CELL_CENTRE);
-
+  
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT which variables to evolve
@@ -958,23 +948,26 @@ int physics_init(bool restarting) {
     dump.add(Jpar, "jpar", 1);
   }
   
-  if(compress0) {
+  if (compress0) {
     output.write("Including compression (Vpar) effects\n");
     
     SOLVE_FOR(Vpar);
+    comms.add(Vpar);
 
     beta = B0*B0 / ( 0.5 + (B0*B0 / (g*P0)));
     gradparB = Grad_par(B0) / B0;
 
     output.write("Beta in range %e -> %e\n",
                  min(beta), max(beta));
+  } else {
+    Vpar = 0.0;
   }
 
   if(phi_constraint) {
     // Implicit Phi solve using IDA
     
     if(!bout_constrain(phi, C_phi, "phi")) {
-      output.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
+      output_error.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
       throw BoutException("Aborting.\n");
     }
     

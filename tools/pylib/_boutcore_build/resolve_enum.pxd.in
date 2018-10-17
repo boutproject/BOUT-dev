@@ -1,0 +1,55 @@
+for file in ../../../include/bout_types.hxx other_enums.hxx
+do
+end=${file##*/}
+grep enum $file| \
+    while read line
+do
+    what=${line:5}
+    #echo $what
+    name=${what%\{*}
+    tmp=${what#*\{}
+    enums=${tmp%\}*}
+    echo "cdef extern from \"$end\":"
+    echo "    cpdef enum ${name}:"
+    while test "$enums"
+    do
+        cur=${enums%%,*}
+        test "$cur" == "$enums" && enums=
+        cur=$(echo $cur)
+        enums=${enums#*,}
+        shrt=${cur%=*}
+        shrts+=" $shrt"
+        echo "        $cur,"
+        #echo $enums
+    done
+    echo
+    same=1
+    continue=yes
+    while test $continue
+    do
+        same=$((same + 1))
+        same_=${shrt::$same}
+        for shrt in $shrts:
+        do
+            if test ${shrt::$same} != $same_
+            then
+                same=$((same - 1))
+                continue=
+                break;
+            fi
+        done
+    done
+    lower=$(echo ${name}|tr [:upper:] [:lower:])
+    echo "cdef inline $name resolve_${lower}(str):"
+    echo "    opts={"
+    for shrt in $shrts
+    do
+        echo "        \"$shrt\":$shrt,"
+        echo "        \"${shrt:$same}\":$shrt,"
+    done
+    echo "          }"
+    echo "    return opts[str]"
+    echo
+    shrts=
+done
+done

@@ -1,16 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Python script to run and analyse MMS test
 #
 # Tests a range of different schemes
 #
 
+#requires: all_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 from builtins import range
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
@@ -24,26 +26,27 @@ import pickle
 MPIRUN = getmpirun()
 
 print("Making MMS steady-state advection test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 # List of options to be passed for each test
 options = [
-    ("method=2", "Arakawa", "-^"),
-    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "1st order upwind", "-o"),
-    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "2nd order central", "-x"),
-    ("method=0 mesh:ddx:upwind=w3 mesh:ddz:upwind=w3", "3rd order WENO", "-s")
+    ("method=2", "Arakawa", "-^" , 2),
+    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "1st order upwind", "-o", 1),
+    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "2nd order central", "-x", 2),
+    ("method=0 mesh:ddx:upwind=w3 mesh:ddz:upwind=w3", "3rd order WENO", "-s", 3)
     ]
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128, 256, 512, 1024]
+nxlist = [16, 32]
+#nxlist = [16, 32, 64, 128, 256, 512, 1024]
 
-nproc = 8
+nproc = 2
 
 success = True
 
 err_2_all = []
 err_inf_all = []
-for opts,label,sym in options:
+for opts,label,sym,exp_ord in options:
     error_2   = []  # The L2 error (RMS)
     error_inf = []  # The maximum error
 
@@ -62,7 +65,7 @@ for opts,label,sym in options:
         # Command to run
         cmd = "./advection "+args
         # Launch using MPI
-        s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
         # Save output to log file
         f = open("run.log."+str(nx), "w")
@@ -94,7 +97,13 @@ for opts,label,sym in options:
     
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
-    
+
+    if not ( exp_ord + .2 > order > exp_ord - .2):
+        success=False
+        print("... Failure")
+    else:
+        print("... Success")
+
     # plot errors
     if False:
         plt.figure()

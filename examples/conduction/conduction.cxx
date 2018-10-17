@@ -18,9 +18,10 @@ protected:
   int init(bool restarting) override {
     
     // Get the options
-    Options *options = Options::getRoot()->getSection("conduction");
+    auto options = Options::root()["conduction"];
     
-    OPTION(options, chi, 1.0); // Read from BOUT.inp, setting default to 1.0
+    // Read from BOUT.inp, setting default to 1.0
+    OPTION(options, chi, 1.0);
 
     // Tell BOUT++ to solve T
     SOLVE_FOR(T);
@@ -28,7 +29,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal time) override {
     mesh->communicate(T); // Communicate guard cells
     
     ddt(T) = Div_par_K_Grad_par(chi, T); // Parallel diffusion Div_{||}( chi * Grad_{||}(T) )

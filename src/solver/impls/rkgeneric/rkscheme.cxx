@@ -1,18 +1,16 @@
 #include "rkschemefactory.hxx"
-#include <bout/rkscheme.hxx>
-#include <output.hxx>
-#include <cmath>
-#include <boutcomm.hxx>
 #include "unused.hxx"
+#include <bout/rkscheme.hxx>
+#include <boutcomm.hxx>
+#include <cmath>
+#include <output.hxx>
 
 ////////////////////
 // PUBLIC
 ////////////////////
 
 //Initialise
-RKScheme::RKScheme(Options *UNUSED(opts))
-    : steps(nullptr), stageCoeffs(nullptr), resultCoeffs(nullptr), timeCoeffs(nullptr),
-      resultAlt(nullptr) {
+RKScheme::RKScheme(Options *UNUSED(opts)) {
   // Currently not reading anything from the options here
 
   // Initialise internals
@@ -21,22 +19,6 @@ RKScheme::RKScheme(Options *UNUSED(opts))
 
 //Cleanup
 RKScheme::~RKScheme(){
-  ///These arrays are allocated in the derived class, should
-  ///we really free them there as well?
-  
-  //stageCoeffs
-  if(stageCoeffs != nullptr) free_matrix(stageCoeffs);
-
-  //resultCoeffs
-  if(stageCoeffs != nullptr) free_matrix(resultCoeffs);
-
-  //steps
-  if(stageCoeffs != nullptr) free_matrix(steps);
-
-  //timeCoeffs
-  if(stageCoeffs != nullptr) delete[] timeCoeffs;
-  
-  if(stageCoeffs != nullptr) delete[] resultAlt;
 }
 
 //Finish generic initialisation
@@ -55,11 +37,12 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   adaptive = adaptiveIn;
 
   //Allocate storage for stages
-  steps = matrix<BoutReal>(getStageCount(),nlocal);
+  steps = Matrix<BoutReal>(getStageCount(), nlocal);
   zeroSteps();
 
   //Allocate array for storing alternative order result
-  if(adaptive) resultAlt = new BoutReal[nlocal]; //Result--alternative order
+  if (adaptive)
+    resultAlt = Array<BoutReal>(nlocal); // Result--alternative order
 
   //Will probably only want the following when debugging, but leave it on for now
   if(diagnose){
@@ -74,10 +57,11 @@ BoutReal RKScheme::setCurTime(const BoutReal timeIn, const BoutReal dt, const in
 }
 
 //Get the state vector at given stage
-void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
-			   const BoutReal dt){
+void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
+                           const int curStage, const BoutReal dt) {
 
   //Set the initial stage
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     out[i] = start[i];
   }
@@ -87,16 +71,20 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
   
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
-    if(abs(stageCoeffs[curStage][j]) < atol) continue;
-    BoutReal fac=stageCoeffs[curStage][j]*dt;
+    if (abs(stageCoeffs(curStage, j)) < atol)
+      continue;
+    BoutReal fac = stageCoeffs(curStage, j) * dt;
+
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
-      out[i] = out[i] + fac*steps[j][i];
+      out[i] = out[i] + fac * steps(j, i);
     }
   }
 }
 
 //Construct the system state at the next time
-BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
+BoutReal RKScheme::setOutputStates(const Array<BoutReal> &start, const BoutReal dt,
+                                   Array<BoutReal> &resultFollow) {
   //Only really need resultAlt in order to calculate the error, so if not adaptive could avoid it
   //*and* technically we can write resultFollow-resultAlt in terms of resultCoeffs and steps.
 
@@ -125,11 +113,11 @@ BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, Bou
 
   //If adaptive get the second state
   if(adaptive){
-    constructOutput(start,dt,altInd,resultAlt);
+    constructOutput(start, dt, altInd, resultAlt);
   }
 
   //Get the error coefficient
-  return getErr(resultFollow,resultAlt);
+  return getErr(resultFollow, resultAlt);
 }
 
 BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
@@ -141,7 +129,7 @@ BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
 ////////////////////
 
 //Estimate the error, given two solutions
-BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
+BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
   BoutReal err=0.;
 
   //If not adaptive don't care about the error
@@ -149,8 +137,15 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
 
   //Get local part of relative error
   BoutReal local_err = 0.;
+
+  // Note because the order of operation is not deterministic
+  // we expect slightly different round-off error each time this
+  // is called and hence the nrhs may no longer be exactly
+  // repeatable with this parallelisation.
+  BOUT_OMP(parallel for reduction(+:local_err))
   for(int i=0;i<nlocal;i++) {
-    local_err += fabs(solA[i] - solB[i]) / ( fabs(solA[i]) + fabs(solB[i]) + atol );
+    local_err +=
+        std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
   if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
@@ -162,28 +157,32 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
   return err;
 }
 
-void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt, 
-			       const int index, BoutReal *sol){
+void RKScheme::constructOutput(const Array<BoutReal> &start, const BoutReal dt,
+                               const int index, Array<BoutReal> &sol) {
   //Initialise the return data
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     sol[i]=start[i];
   }
 
   //Construct the solution
   for(int curStage=0;curStage<getStageCount();curStage++){
-    if(resultCoeffs[curStage][index] == 0.) continue; //Real comparison not great
-    BoutReal fac=dt*resultCoeffs[curStage][index];
+    if (resultCoeffs(curStage, index) == 0.)
+      continue; // Real comparison not great
+    BoutReal fac = dt * resultCoeffs(curStage, index);
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
-      sol[i]=sol[i]+fac*steps[curStage][i];
+      sol[i] = sol[i] + fac * steps(curStage, i);
     }
   }
   
 }
 
-void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt, 
-				const int indexFollow, const int indexAlt, 
-				BoutReal *solFollow, BoutReal *solAlt){
+void RKScheme::constructOutputs(const Array<BoutReal> &start, const BoutReal dt,
+                                const int indexFollow, const int indexAlt,
+                                Array<BoutReal> &solFollow, Array<BoutReal> &solAlt) {
   //Initialise the return data
+  BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++){
     solFollow[i]=start[i];
     solAlt[i]=start[i];
@@ -191,12 +190,12 @@ void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt,
 
   //Construct the solution
   for(int curStage=0;curStage<getStageCount();curStage++){
-    BoutReal facFol=dt*resultCoeffs[curStage][indexFollow];
-    BoutReal facAlt=dt*resultCoeffs[curStage][indexAlt];
-
+    BoutReal facFol = dt * resultCoeffs(curStage, indexFollow);
+    BoutReal facAlt = dt * resultCoeffs(curStage, indexAlt);
+    BOUT_OMP(parallel for)
     for(int i=0;i<nlocal;i++){
-      solFollow[i]=solFollow[i]+facFol*steps[curStage][i];
-      solAlt[i]=solAlt[i]+facAlt*steps[curStage][i];
+      solFollow[i] = solFollow[i] + facFol * steps(curStage, i);
+      solAlt[i] = solAlt[i] + facAlt * steps(curStage, i);
     }
   }
   
@@ -217,7 +216,7 @@ void RKScheme::verifyCoeffs(){
   for(int i=0;i<getStageCount();i++){
     BoutReal tmp=0;
     for(int j=0;j<i;j++){
-      tmp+=stageCoeffs[i][j];
+      tmp += stageCoeffs(i, j);
     }
     output<<setw(10)<<timeCoeffs[i]<<" | "<<setw(10)<<tmp<<endl;
     if(fabs(timeCoeffs[i]-tmp)>atol) warn=true;
@@ -237,7 +236,7 @@ void RKScheme::verifyCoeffs(){
   for(int j=0;j<getNumOrders();j++){
     BoutReal tmp=0;
     for(int i=0;i<getStageCount();i++){
-      tmp+=resultCoeffs[i][j];
+      tmp += resultCoeffs(i, j);
     }
     output<<"Order : "<<j<<" = "<<tmp<<endl;
     if(fabs(1.0-tmp)>atol) warn=true;
@@ -269,7 +268,7 @@ void RKScheme::printButcherTableau(){
   for(int i=0;i<getStageCount();i++){
     output<<setw(width)<<timeCoeffs[i]<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output<<setw(width)<<stageCoeffs[i][j];
+      output << setw(width) << stageCoeffs(i, j);
     }
     output<<endl;
   }
@@ -281,7 +280,7 @@ void RKScheme::printButcherTableau(){
   for(int i=0;i<getNumOrders();i++){
     output<<setw(width)<<i<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output<<setw(width)<<resultCoeffs[j][i];
+      output << setw(width) << resultCoeffs(j, i);
     }
     output<<endl;
   }
@@ -294,7 +293,7 @@ void RKScheme::printButcherTableau(){
 void RKScheme::zeroSteps(){
   for(int i=0;i<getStageCount();i++){
     for(int j=0;j<nlocal;j++){
-      steps[i][j]=0.;
+      steps(i, j) = 0.;
     }
   }
 }

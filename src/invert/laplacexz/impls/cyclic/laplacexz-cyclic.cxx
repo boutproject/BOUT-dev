@@ -8,22 +8,22 @@
 
 #include <output.hxx>
 
-LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), mesh(m) {
 
   // Number of Z Fourier modes, including DC
-  nmode = (mesh->LocalNz)/2 + 1;
+  nmode = (m->LocalNz) / 2 + 1;
 
   // Number of independent systems of
   // equations to solve
-  nsys = nmode * (mesh->yend - mesh->ystart+1);
+  nsys = nmode * (m->yend - m->ystart + 1);
 
   // Start and end X index
-  xstart = mesh->xstart; // Starting X index
-  if(mesh->firstX()) {
+  xstart = m->xstart; // Starting X index
+  if (m->firstX()) {
     xstart -= 1;
   }
-  xend = mesh->xend;
-  if(mesh->lastX()) {
+  xend = m->xend;
+  if (m->lastX()) {
     xend += 1;
   }
 
@@ -31,14 +31,14 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
-  acoef  = matrix<dcomplex>(nsys, nloc);
-  bcoef  = matrix<dcomplex>(nsys, nloc);
-  ccoef  = matrix<dcomplex>(nsys, nloc);
-  xcmplx = matrix<dcomplex>(nsys, nloc);
-  rhscmplx = matrix<dcomplex>(nsys, nloc);
+  acoef  = Matrix<dcomplex>(nsys, nloc);
+  bcoef  = Matrix<dcomplex>(nsys, nloc);
+  ccoef  = Matrix<dcomplex>(nsys, nloc);
+  xcmplx = Matrix<dcomplex>(nsys, nloc);
+  rhscmplx = Matrix<dcomplex>(nsys, nloc);
 
-  k1d = new dcomplex[(mesh->LocalNz)/2 + 1];
-  k1d_2 = new dcomplex[(mesh->LocalNz)/2 + 1];
+  k1d = Array<dcomplex>((m->LocalNz) / 2 + 1);
+  k1d_2 = Array<dcomplex>((m->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), nloc);
@@ -52,16 +52,6 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
 }
 
 LaplaceXZcyclic::~LaplaceXZcyclic() {
-  // Free coefficient arrays
-  free_matrix(acoef);
-  free_matrix(bcoef);
-  free_matrix(ccoef);
-  free_matrix(xcmplx);
-  free_matrix(rhscmplx);
-
-  delete[] k1d;
-  delete[] k1d_2;
-  
   // Delete tridiagonal solver
   delete cr;
 }
@@ -72,7 +62,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   
   // Set coefficients
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates(location);
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
   ASSERT2(max(abs(coord->g13)) < 1e-5);
@@ -88,27 +78,27 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         if( ((kz == 0) && (inner_boundary_flags & INVERT_DC_GRAD)) ||
             ((kz != 0) && (inner_boundary_flags & INVERT_AC_GRAD)) ) {
           // Neumann
-          acoef[ind][0] =  0.0;
-          bcoef[ind][0] =  1.0;
-          ccoef[ind][0] =  -1.0;
+          acoef(ind, 0) = 0.0;
+          bcoef(ind, 0) = 1.0;
+          ccoef(ind, 0) = -1.0;
         }else {
           // Dirichlet
           // This includes cases where the boundary is set to a value
-          acoef[ind][0] =  0.0;
-          bcoef[ind][0] =  0.5;
-          ccoef[ind][0] =  0.5;
+          acoef(ind, 0) = 0.0;
+          bcoef(ind, 0) = 0.5;
+          ccoef(ind, 0) = 0.5;
         }
       }
 
       // Bulk of the domain
       for(int x=mesh->xstart; x <= mesh->xend; x++) {
-        acoef[ind][x-xstart] = 0.0; // X-1
-        bcoef[ind][x-xstart] = 0.0; // Diagonal
-        ccoef[ind][x-xstart] = 0.0; // X+1
+        acoef(ind, x - xstart) = 0.0; // X-1
+        bcoef(ind, x - xstart) = 0.0; // Diagonal
+        ccoef(ind, x - xstart) = 0.0; // X+1
 
         //////////////////////////////
         // B coefficient
-        bcoef[ind][x-xstart] += B2D(x,y);
+        bcoef(ind, x - xstart) += B2D(x, y);
 
         //////////////////////////////
         // A coefficient
@@ -123,8 +113,8 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 
         BoutReal val = A * J * g11 / (coord->J(x,y) * dx * coord->dx(x,y));
 
-        ccoef[ind][x-xstart] += val;
-        bcoef[ind][x-xstart] -= val;
+        ccoef(ind, x - xstart) += val;
+        bcoef(ind, x - xstart) -= val;
 
         // Metrics on x-1/2 boundary
         J = 0.5*(coord->J(x,y) + coord->J(x-1,y));
@@ -133,12 +123,11 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         A = 0.5*(A2D(x,y) + A2D(x-1,y));
 
         val = A * J * g11 / (coord->J(x,y) * dx * coord->dx(x,y));
-        acoef[ind][x-xstart] += val;
-        bcoef[ind][x-xstart] -= val;
+        acoef(ind, x - xstart) += val;
+        bcoef(ind, x - xstart) -= val;
 
         // ZZ component
-        bcoef[ind][x-xstart] -= A2D(x,y) * SQ(kwave) * coord->g33(x,y);
-
+        bcoef(ind, x - xstart) -= A2D(x, y) * SQ(kwave) * coord->g33(x, y);
       }
 
       // Outer X boundary
@@ -147,14 +136,14 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         if( ((kz == 0) && (outer_boundary_flags & INVERT_DC_GRAD)) ||
             ((kz != 0) && (outer_boundary_flags & INVERT_AC_GRAD)) ) {
           // Neumann
-          acoef[ind][nloc-1] =  -1.0;
-          bcoef[ind][nloc-1] =  1.0;
-          ccoef[ind][nloc-1] =  0.0;
+          acoef(ind, nloc - 1) = -1.0;
+          bcoef(ind, nloc - 1) = 1.0;
+          ccoef(ind, nloc - 1) = 0.0;
         }else {
           // Dirichlet
-          acoef[ind][nloc-1] =  0.5;
-          bcoef[ind][nloc-1] =  0.5;
-          ccoef[ind][nloc-1] =  0.0;
+          acoef(ind, nloc - 1) = 0.5;
+          bcoef(ind, nloc - 1) = 0.5;
+          ccoef(ind, nloc - 1) = 0.0;
         }
       }
       
@@ -162,12 +151,13 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
     }
   }
   // Set coefficients in tridiagonal solver
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
+  cr->setCoefs(acoef, bcoef, ccoef);
 }
 
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
-  
+
+  Mesh *mesh = rhs.getMesh();
   // Create the rhs array
   int ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {
@@ -177,25 +167,27 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
       
       if(inner_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xstart-1 and xstart
-        rfft(&x0(mesh->xstart-1,y,0), mesh->LocalNz, k1d);
-        rfft(&x0(mesh->xstart,y,0), mesh->LocalNz, k1d_2);
+        rfft(&x0(mesh->xstart - 1, y, 0), mesh->LocalNz, std::begin(k1d));
+        rfft(&x0(mesh->xstart, y, 0), mesh->LocalNz, std::begin(k1d_2));
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
-          rhscmplx[ind + kz][0] = bcoef[ind + kz][0]*k1d[kz] + ccoef[ind + kz][0]*k1d_2[kz];
+          rhscmplx(ind + kz, 0) =
+              bcoef(ind + kz, 0) * k1d[kz] + ccoef(ind + kz, 0) * k1d_2[kz];
         }
       }else if(inner_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        rfft(&rhs(mesh->xstart-1,y,0), mesh->LocalNz, k1d);
-        rfft(&rhs(mesh->xstart,y,0), mesh->LocalNz, k1d_2);
+        rfft(&rhs(mesh->xstart - 1, y, 0), mesh->LocalNz, std::begin(k1d));
+        rfft(&rhs(mesh->xstart, y, 0), mesh->LocalNz, std::begin(k1d_2));
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
-          rhscmplx[ind + kz][0] = bcoef[ind + kz][0]*k1d[kz] + ccoef[ind + kz][0]*k1d_2[kz];
+          rhscmplx(ind + kz, 0) =
+              bcoef(ind + kz, 0) * k1d[kz] + ccoef(ind + kz, 0) * k1d_2[kz];
         }
       }else {
         for(int kz = 0; kz < nmode; kz++) {
-          rhscmplx[ind + kz][0] = 0.0;
+          rhscmplx(ind + kz, 0) = 0.0;
         }
       }
     }
@@ -203,9 +195,9 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
     // Bulk of the domain
     for(int x=mesh->xstart; x <= mesh->xend; x++) {
       // Fourier transform RHS
-      rfft(&rhs(x,y,0), mesh->LocalNz, k1d);
+      rfft(&rhs(x, y, 0), mesh->LocalNz, std::begin(k1d));
       for(int kz = 0; kz < nmode; kz++) {
-        rhscmplx[ind + kz][x-xstart] = k1d[kz];
+        rhscmplx(ind + kz, x - xstart) = k1d[kz];
       }
     }
 
@@ -214,52 +206,54 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
       // Outer X boundary
       if(outer_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xend and xend+1
-        rfft(&x0(mesh->xend,y,0), mesh->LocalNz, k1d);
-        rfft(&x0(mesh->xend+1,y,0), mesh->LocalNz, k1d_2);
+        rfft(&x0(mesh->xend, y, 0), mesh->LocalNz, std::begin(k1d));
+        rfft(&x0(mesh->xend + 1, y, 0), mesh->LocalNz, std::begin(k1d_2));
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
-          rhscmplx[ind + kz][nloc-1] = acoef[ind + kz][nloc-1]*k1d[kz] + bcoef[ind + kz][nloc-1]*k1d_2[kz];
+          rhscmplx(ind + kz, nloc - 1) =
+              acoef(ind + kz, nloc - 1) * k1d[kz] + bcoef(ind + kz, nloc - 1) * k1d_2[kz];
         }
       }else if(outer_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        rfft(&rhs(mesh->xend,y,0), mesh->LocalNz, k1d);
-        rfft(&rhs(mesh->xend+1,y,0), mesh->LocalNz, k1d_2);
+        rfft(&rhs(mesh->xend, y, 0), mesh->LocalNz, std::begin(k1d));
+        rfft(&rhs(mesh->xend + 1, y, 0), mesh->LocalNz, std::begin(k1d_2));
         for(int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
-          rhscmplx[ind + kz][nloc-1] = acoef[ind + kz][nloc-1]*k1d[kz] + bcoef[ind + kz][nloc-1]*k1d_2[kz];
+          rhscmplx(ind + kz, nloc - 1) =
+              acoef(ind + kz, nloc - 1) * k1d[kz] + bcoef(ind + kz, nloc - 1) * k1d_2[kz];
         }
       }else {
         for(int kz = 0; kz < nmode; kz++) {
-          rhscmplx[ind + kz][nloc-1] = 0.0;
+          rhscmplx(ind + kz, nloc - 1) = 0.0;
         }
       }
       
       for(int kz = 0; kz < nmode; kz++) {
-        rhscmplx[ind + kz][nloc-1] = 0.0;
+        rhscmplx(ind + kz, nloc - 1) = 0.0;
       }
     }
     ind += nmode;
   }
 
   // Solve tridiagonal systems
-  cr->solve(nsys, rhscmplx, xcmplx);
+  cr->solve(rhscmplx, xcmplx);
 
   // FFT back to real space
 
-  Field3D result;
+  Field3D result(mesh);
   result.allocate();
 
   ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {
     for(int x=xstart;x<=xend;x++) {
       for(int kz = 0; kz < nmode; kz++) {
-        k1d[kz] = xcmplx[ind + kz][x-xstart];
+        k1d[kz] = xcmplx(ind + kz, x - xstart);
       }
 
       // This shifts back to field-aligned coordinates
-      irfft(k1d, mesh->LocalNz, &result(x,y,0));
+      irfft(std::begin(k1d), mesh->LocalNz, &result(x, y, 0));
     }
     ind += nmode;
   }

@@ -1,272 +1,244 @@
-#include <options.hxx>
 #include <boutexception.hxx>
-#include <utils.hxx>
-#include <sstream>
-#include <output.hxx>
-
 #include <field_factory.hxx> // Used for parsing expressions
+#include <options.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
-const string DEFAULT_SOURCE{"default"}; // The source label given to default values
+#include <iomanip>
+#include <sstream>
 
-Options::Options() : parent(nullptr) {}
+/// The source label given to default values
+const std::string Options::DEFAULT_SOURCE{"default"};
+Options *Options::root_instance{nullptr};
 
-Options::~Options() {
-  // Delete sub-sections
-  for (const auto &it : sections) {
-    delete it.second;
-  }
-}
-
-Options *Options::root = nullptr;
-
-Options *Options::getRoot() {
-  if (root == nullptr) {
+Options &Options::root() {
+  if (root_instance == nullptr) {
     // Create the singleton
-    root = new Options();
+    root_instance = new Options();
   }
-  return root;
+  return *root_instance;
 }
 
 void Options::cleanup() {
-  if (root == nullptr)
+  if (root_instance == nullptr)
     return;
-  delete root;
-  root = nullptr;
+  delete root_instance;
+  root_instance = nullptr;
 }
 
-void Options::set(const string &key, const int &val, const string &source) {
-  std::stringstream ss;
-  ss << val;
-  set(key, ss.str(), source);
-}
+Options &Options::operator[](const std::string &name) {
+  // Mark this object as being a section
+  is_section = true;
 
-void Options::set(const string &key, const bool &val, const string &source) {
-  if (val) {
-    set(key, "true", source);
-  } else {
-    set(key, "false", source);
-  }
-}
-
-void Options::set(const string &key, BoutReal val, const string &source) {
-  std::stringstream ss;
-  ss << val;
-  set(key, ss.str(), source);
-}
-
-void Options::set(const string &key, const string &val, const string &source) {
-  OptionValue opt;
-  opt.value = val;
-  opt.source = source;
-  opt.used = false;
-
-  options[lowercase(key)] = opt;
-}
-
-bool Options::isSet(const string &key) {
-  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  return it != options.end();
-}
-
-void Options::get(const string &key, int &val, int def) {
-  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  if (it == options.end()) {
-    // Option not found
-    // Set the option, with source "default". This is to ensure that:
-    //   a) the same option has a consistent default value
-    //   b) the value used can be recorded in the output settings file
-    set(key, def, DEFAULT_SOURCE);
-    options[lowercase(key)].used = true; // Mark the option as used
-
-    // Set the return value
-    val = def;
-    output_info << "\tOption " << sectionName << ":" << key << " = " << def
-                << " (default)" << endl;
-    return;
-  }
-
-  // Use FieldFactory to evaluate expression
-  // Parse the string, giving this Option pointer for the context
-  // then generate a value at t,x,y,z = 0,0,0,0
-  std::shared_ptr<FieldGenerator>  gen = FieldFactory::get()->parse( it->second.value, this );
-  if (!gen) {
-    throw BoutException("Couldn't get integer from %s:%s = '%s'", sectionName.c_str(),
-                        key.c_str(), it->second.value.c_str());
-  }
-  BoutReal rval = gen->generate(0, 0, 0, 0);
-
-  // Convert to int by rounding
-  val = ROUND(rval);
-
-  // Check that the value is close to an integer
-  if (fabs(rval - static_cast<BoutReal>(val)) > 1e-3) {
-    throw BoutException("Value for %s:%s = %e is not an integer", sectionName.c_str(),
-                        key.c_str(), rval);
-  }
-
-  // Check if this was previously set as a default option
-  if (it->second.source == DEFAULT_SOURCE) {
-    // Check that the default values are the same
-    if (def != val) {
-      throw BoutException("Inconsistent default values for '%s': '%d' then '%d'",
-                          key.c_str(), val, def);
-    }
-  }
-
-  it->second.used = true;
-
-  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
-  if (!it->second.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << it->second.source << ")";
-  }
-  output_info << endl;
-}
-
-void Options::get(const string &key, BoutReal &val, BoutReal def) {
-  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  if (it == options.end()) {
-    set(key, def, "default");
-    options[lowercase(key)].used = true; // Mark the option as used
-
-    val = def;
-
-    output_info << "\tOption " << sectionName << ":" << key << " = " << def
-                << " (default)" << endl;
-    return;
-  }
-
-  // Use FieldFactory to evaluate expression
-  // Parse the string, giving this Option pointer for the context
-  // then generate a value at t,x,y,z = 0,0,0,0
-  std::shared_ptr<FieldGenerator>  gen = FieldFactory::get()->parse( it->second.value, this );
-  if (!gen) {
-    throw BoutException("Couldn't get BoutReal from %s:%s = '%s'", sectionName.c_str(),
-                        key.c_str(), it->second.value.c_str());
-  }
-  val = gen->generate(0, 0, 0, 0);
-
-  // Check if this was previously set as a default option
-  if (it->second.source == DEFAULT_SOURCE) {
-    // Check that the default values are the same
-    if (fabs(def - val) > 1e-10) {
-      throw BoutException("Inconsistent default values for '%s': '%e' then '%e'",
-                          key.c_str(), val, def);
-    }
-  }
-
-  // Mark this option as used
-  it->second.used = true;
-
-  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
-  if (!it->second.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << it->second.source << ")";
-  }
-  output_info << endl;
-}
-
-void Options::get(const string &key, bool &val, bool def) {
-  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  if (it == options.end()) {
-    set(key, def, "default");
-    options[lowercase(key)].used = true; // Mark the option as used
-
-    val = def;
-
-    if (def) {
-      output_info << "\tOption " << sectionName << ":" << key << " = true   (default)"
-                  << endl;
-    } else {
-      output_info << "\tOption " << sectionName << ":" << key << " = false  (default)"
-                  << endl;
-    }
-    return;
-  }
-
-  it->second.used = true;
-  
-  char c = static_cast<char>(toupper((it->second.value)[0]));
-  if ((c == 'Y') || (c == 'T') || (c == '1')) {
-    val = true;
-    output_info << "\tOption " << sectionName << ":" << it->first << " = true";
-  } else if ((c == 'N') || (c == 'F') || (c == '0')) {
-    val = false;
-    output_info << "\tOption " << sectionName << ":" << it->first << " = false";
-  } else {
-    throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", it->first.c_str(),
-                        it->second.value.c_str());
-  }
-  if (!it->second.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << it->second.source << ")";
-  }
-  output_info << endl;
-}
-
-void Options::get(const string &key, string &val, const string &def) {
-  std::map<string, OptionValue>::iterator it(options.find(lowercase(key)));
-  if (it == options.end()) {
-    set(key, def, "default");
-    options[lowercase(key)].used = true; // Mark the option as used
-
-    val = def;
-
-    output_info << "\tOption " << sectionName << ":" << key << " = " << def
-                << " (default)" << endl;
-    return;
-  }
-
-  val = it->second.value;
-
-  // Check if this was previously set as a default option
-  if (it->second.source == DEFAULT_SOURCE) {
-    // Check that the default values are the same
-    if (val != def) {
-      throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-                          key.c_str(), val.c_str(), def.c_str());
-    }
-  }
-
-  it->second.used = true;
-
-  output_info << "\tOption " << sectionName << ":" << it->first << " = " << val;
-  if (!it->second.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << it->second.source << ")";
-  }
-  output_info << endl;
-}
-
-Options *Options::getSection(const string &name) {
   if (name.empty()) {
-    return this;
+    return *this;
   }
-  std::map<string, Options *>::iterator it(sections.find(lowercase(name)));
-  if (it != sections.end()) {
+
+  // Find and return if already exists
+  auto it = children.find(lowercase(name));
+  if (it != children.end()) {
     return it->second;
   }
 
   // Doesn't exist yet, so add
-  string secname = name;
-  if (!sectionName.empty()) { // prepend the section name
-    secname = sectionName + ":" + secname;
+  std::string secname = name;
+  if (!full_name.empty()) { // prepend the section name
+    secname = full_name + ":" + secname;
   }
-  Options *o = new Options(this, secname);
-  sections[lowercase(name)] = o;
-  return o;
+
+  // emplace returns a pair with iterator first, boolean (insert yes/no) second
+  auto pair_it = children.emplace(lowercase(name), Options{this, secname});
+
+  return pair_it.first->second;
 }
 
-string Options::str() {
-  // Note: name of parent already prepended in getSection
-  return sectionName;
+const Options &Options::operator[](const std::string &name) const {
+  TRACE("Options::operator[] const");
+  
+  if (!is_section) {
+    throw BoutException("Option %s is not a section", full_name.c_str());
+  }
+
+  if (name.empty()) {
+    return *this;
+  }
+
+  // Find and return if already exists
+  auto it = children.find(lowercase(name));
+  if (it == children.end()) {
+    // Doesn't exist
+    throw BoutException("Option %s:%s does not exist", full_name.c_str(), name.c_str());
+  }
+
+  return it->second;
 }
 
-void Options::printUnused() {
+template <> void Options::assign<bool>(bool val, const std::string source) {
+  if (val) {
+    _set("true", source, false);
+  } else {
+    _set("false", source, false);
+  }
+}
+
+template <> void Options::assign<BoutReal>(BoutReal val, const std::string source) {
+  std::stringstream ss;
+  // Make sure the precision is large enough to hold a BoutReal
+  ss << std::scientific << std::setprecision(17) << val;
+  _set(ss.str(), source, false);
+}
+
+void Options::_set(string val, std::string source, bool force) {
+  if (isSet()) {
+    // Check if current value the same as new value
+    if (value.value != val) {
+      if (force or value.source != source) {
+        output_warn << "\tOption " << full_name << " = " << value.value << " ("
+                    << value.source << ") overwritten with:"
+                    << "\n"
+                    << "\t\t" << full_name << " = " << val << " (" << source << ")\n";
+      } else {
+        throw BoutException("Options: Setting a value from same source (%s) to new value "
+                            "'%s' - old value was '%s'.",
+                            source.c_str(), val.c_str(), value.value.c_str());
+      }
+    }
+  }
+
+  value.value = std::move(val);
+  value.source = std::move(source);
+  value.used = false;
+  is_value = true;
+}
+
+bool Options::isSet() const {
+  // Check if no value
+  if (!is_value) {
+    return false;
+  }
+
+  // Ignore if set from default
+  if (value.source == DEFAULT_SOURCE) {
+    return false;
+  }
+
+  return true;
+}
+
+template <> std::string Options::as<std::string>() const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+
+  // Mark this option as used
+  value.used = true;
+
+  output_info << "\tOption " << full_name << " = " << value.value;
+  if (!value.source.empty()) {
+    // Specify the source of the setting
+    output_info << " (" << value.source << ")";
+  }
+  output_info << endl;
+
+  return value.value;
+}
+
+template <> int Options::as<int>() const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+
+  // Use FieldFactory to evaluate expression
+  // Parse the string, giving this Option pointer for the context
+  // then generate a value at t,x,y,z = 0,0,0,0
+  auto gen = FieldFactory::get()->parse(value.value, this);
+  if (!gen) {
+    throw BoutException("Couldn't get integer from %s = '%s'", full_name.c_str(),
+                        value.value.c_str());
+  }
+  BoutReal rval = gen->generate(0, 0, 0, 0);
+
+  // Convert to int by rounding
+  int val = ROUND(rval);
+
+  // Check that the value is close to an integer
+  if (fabs(rval - static_cast<BoutReal>(val)) > 1e-3) {
+    throw BoutException("Value for %s = %e is not an integer", full_name.c_str(), rval);
+  }
+
+  value.used = true;
+
+  output_info << "\tOption " << full_name << " = " << val;
+  if (!value.source.empty()) {
+    // Specify the source of the setting
+    output_info << " (" << value.source << ")";
+  }
+  output_info << endl;
+
+  return val;
+}
+
+template <> BoutReal Options::as<BoutReal>() const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+
+  // Use FieldFactory to evaluate expression
+  // Parse the string, giving this Option pointer for the context
+  // then generate a value at t,x,y,z = 0,0,0,0
+  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(value.value, this);
+  if (!gen) {
+    throw BoutException("Couldn't get BoutReal from %s = '%s'", full_name.c_str(),
+                        value.value.c_str());
+  }
+  BoutReal val = gen->generate(0, 0, 0, 0);
+
+  // Mark this option as used
+  value.used = true;
+
+  output_info << "\tOption " << full_name << " = " << val;
+  if (!value.source.empty()) {
+    // Specify the source of the setting
+    output_info << " (" << value.source << ")";
+  }
+  output_info << endl;
+
+  return val;
+}
+
+template <> bool Options::as<bool>() const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+
+  value.used = true;
+
+  bool val;
+  char c = static_cast<char>(toupper((value.value)[0]));
+  if ((c == 'Y') || (c == 'T') || (c == '1')) {
+    val = true;
+    output_info << "\tOption " << full_name << " = true";
+  } else if ((c == 'N') || (c == 'F') || (c == '0')) {
+    val = false;
+    output_info << "\tOption " << full_name << " = false";
+  } else {
+    throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", full_name.c_str(),
+                        value.value.c_str());
+  }
+  if (!value.source.empty()) {
+    // Specify the source of the setting
+    output_info << " (" << value.source << ")";
+  }
+  output_info << endl;
+
+  return val;
+}
+
+void Options::printUnused() const {
   bool allused = true;
   // Check if any options are unused
-  for (const auto &it : options) {
-    if (!it.second.used) {
+  for (const auto &it : children) {
+    if (it.second.is_value && !it.second.value.used) {
       allused = false;
       break;
     }
@@ -275,20 +247,41 @@ void Options::printUnused() {
     output_info << "All options used\n";
   } else {
     output_info << "Unused options:\n";
-    for (const auto &it : options) {
-      if (!it.second.used) {
-        output_info << "\t" << sectionName << ":" << it.first << " = " << it.second.value;
-        if (!it.second.source.empty())
-          output_info << " (" << it.second.source << ")";
+    for (const auto &it : children) {
+      if (it.second.is_value && !it.second.value.used) {
+        output_info << "\t" << full_name << ":" << it.first << " = "
+                    << it.second.value.value;
+        if (!it.second.value.source.empty())
+          output_info << " (" << it.second.value.source << ")";
         output_info << endl;
       }
     }
   }
-  for (const auto &it : sections) {
-    it.second->printUnused();
+  for (const auto &it : children) {
+    if (it.second.is_section) {
+      it.second.printUnused();
+    }
   }
 }
 
-void Options::cleanCache() {
-  FieldFactory::get()->cleanCache();
+void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
+
+std::map<string, Options::OptionValue> Options::values() const {
+  std::map<string, OptionValue> options;
+  for (const auto &it : children) {
+    if (it.second.is_value) {
+      options[it.first] = it.second.value;
+    }
+  }
+  return options;
+}
+
+std::map<string, const Options *> Options::subsections() const {
+  std::map<string, const Options *> sections;
+  for (const auto &it : children) {
+    if (it.second.is_section) {
+      sections[it.first] = &it.second;
+    }
+  }
+  return sections;
 }

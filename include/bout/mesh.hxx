@@ -51,7 +51,6 @@ class Mesh;
 #include "field3d.hxx"
 #include "datafile.hxx"
 #include "options.hxx"
-#include "dcomplex.hxx" // For poloidal lowpass filter
 
 #include "fieldgroup.hxx"
 
@@ -59,8 +58,6 @@ class Mesh;
 #include "parallel_boundary_region.hxx"
 
 #include "sys/range.hxx" // RangeIterator
-
-#include "bout/deprecated.hxx"
 
 #include <bout/griddata.hxx>
 
@@ -70,8 +67,11 @@ class Mesh;
 
 #include "unused.hxx"
 
+#include <bout/region.hxx>
+
 #include <list>
 #include <memory>
+#include <map>
 
 /// Type used to return pointers to handles
 typedef void* comm_handle;
@@ -81,7 +81,7 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -95,7 +95,7 @@ class Mesh {
   ///
   /// @param[in] source  The data source to use for loading variables
   /// @param[in] opt     The option section. By default this is "mesh"
-  static Mesh* create(GridDataSource *source, Options *opt = NULL);
+  static Mesh *create(GridDataSource *source, Options *opt = nullptr);
 
   /// Create a Mesh object
   ///
@@ -105,8 +105,8 @@ class Mesh {
   ///  3) Use options as data source
   ///
   /// @param[in] opt  Input options. Default is "mesh" section
-  static Mesh* create(Options *opt = NULL);
-  
+  static Mesh *create(Options *opt = nullptr);
+
   /// Loads the mesh values
   /// 
   /// Currently need to create and load mesh in separate calls
@@ -412,46 +412,12 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Global locator functions
-  virtual int XGLOBAL(int xloc) const = 0; ///< Continuous global X index
-  virtual int YGLOBAL(int yloc) const = 0; ///< Continuous global Y index
-
-  /// Not sure what this does. Probably should not be part of Mesh
-  /// \todo Make this function standalone
-  virtual void slice_r_y(const BoutReal *, BoutReal *, int , int)=0;
-
-  /// Split a dcomplex array \p ayn of length \p n
-  /// into real part \p r and imaginary part \p i
-  /// All arrays are assumed to be allocated
-  ///
-  /// \todo Make this function standalone
-  virtual void get_ri( dcomplex *ayn, int n, BoutReal *r, BoutReal *i)=0;
-
-  /// Set a dcomplex array \p ayn of length \p n
-  /// taking values from real array \p r and imaginary
-  /// array \p i
-  /// All arrays are assumed to be allocated
-  ///
-  /// \todo Make this function standalone
-  virtual void set_ri( dcomplex *ayn, int n, BoutReal *r, BoutReal *i)=0;
-
-  /// poloidal lowpass filter for n=0 mode
-  /// \todo Make this function standalone
-  virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
-  
-  /// volume integral
-
-  /// Transpose Y and Z dimensions. Assumes that the
-  /// size of the global Y and Z dimensions are the same
-  ///
-  /// \todo Make this function standalone
-  virtual const Field3D Switch_YZ(const Field3D &var) = 0;
-
-  /// Transpose X and Z dimensions. Assumes that the
-  /// size of the global X and Z dimensions are the same
-  ///
-  /// \todo Make this function standalone
-  virtual const Field3D Switch_XZ(const Field3D &var) = 0;
+  /// Returns the global X index given a local indexs
+  /// If the local index includes the boundary cells, then so does the global.
+  virtual int XGLOBAL(int xloc) const = 0;
+  /// Returns the global Y index given a local index
+  /// The local index must include the boundary, the global index does not.
+  virtual int YGLOBAL(int yloc) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
@@ -464,28 +430,54 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates() {
-    if (coords) { // True branch most common, returns immediately
-      return coords;
+  Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    if (coords_map.count(location)) { // True branch most common, returns immediately
+      return coords_map[location].get();
+    } else {
+      // No coordinate system set. Create default
+      // Note that this can't be allocated here due to incomplete type
+      // (circular dependency between Mesh and Coordinates)
+      coords_map.emplace(location, createDefaultCoordinates(location));
+      return coords_map[location].get();
     }
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    coords = createDefaultCoordinates();
-    return coords;
+  }
+
+  Coordinates *DEPRECATED(coordinates(const CELL_LOC location = CELL_CENTRE)) {
+    return getCoordinates(location);
   }
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
-  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method); ///< First derivative in X direction, in index space
-  const Field2D indexDDX(const Field2D &f); ///< First derivative in X direction, in index space
-  
-  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method); ///< First derivative in Y direction in index space
-  const Field2D indexDDY(const Field2D &f); ///< ///< First derivative in Y direction in index space
-
-  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry); ///< First derivative in Z direction in index space
-  const Field2D indexDDZ(const Field2D &f); ///< First derivative in Z direction in index space
+  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  /// First derivative in X direction, in index space
+  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                         REGION region=RGN_NOBNDRY);
+  /// First derivative in X direction, in index space
+  const Field2D indexDDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                         DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region= RGN_NOBNDRY);
+  /// First derivative in Y direction in index space
+  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                         REGION region=RGN_NOBNDRY);
+  /// First derivative in Y direction in index space
+  const Field2D indexDDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                         DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY);
+  /// First derivative in Z direction in index space
+  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                         REGION region=RGN_NOBNDRY);
+  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                         bool inc_xbndry) {
+    return indexDDZ(f, outloc, method, inc_xbndry? RGN_NOY : RGN_NOBNDRY);
+  }
+  /// First derivative in Z direction in index space
+  const Field2D indexDDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                         DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY);
 
   // Second derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
@@ -495,30 +487,65 @@ class Mesh {
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
-  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexD2DX2(const Field2D &f); ///< Second derivative in X direction in index space
+  /// @param[in] region  The region of the grid for which the result is calculated.
+  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                           REGION region=RGN_NOBNDRY);
+  /// Second derivative in X direction in index space
+  const Field2D indexD2DX2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
 
   /// Second derivative in Y direction in index space
   ///
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
-  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexD2DY2(const Field2D &f); ///< Second derivative in Y direction in index space
+  /// @param[in] region  The region of the grid for which the result is calculated.
+  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                           REGION region=RGN_NOBNDRY);
+  /// Second derivative in Y direction in index space
+  const Field2D indexD2DY2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
 
   /// Second derivative in Z direction in index space
   ///
   /// @param[in] f  The field to be differentiated
   /// @param[in] outloc  The cell location where the result is desired
   /// @param[in] method  The differencing method to use, overriding default
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
-  
+  /// @param[in] region  The region of the grid for which the result is calculated.
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
+                           DIFF_METHOD method, REGION region);
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
+                           DIFF_METHOD method, bool inc_xbndry) {
+    return indexD2DZ2(f,outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
+  }
+
   // Fourth derivatives in index space
-  const Field3D indexD4DX4(const Field3D &f); ///< Fourth derivative in X direction in index space
-  const Field2D indexD4DX4(const Field2D &f); ///< Fourth derivative in X direction in index space
-  const Field3D indexD4DY4(const Field3D &f); ///< Fourth derivative in Y direction in index space
-  const Field2D indexD4DY4(const Field2D &f); ///< Fourth derivative in Y direction in index space
-  const Field3D indexD4DZ4(const Field3D &f); ///< Fourth derivative in Z direction in index space
+  /// Fourth derivative in X direction in index space
+  const Field3D indexD4DX4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
+  /// Fourth derivative in X direction in index space
+  const Field2D indexD4DX4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
+  /// Fourth derivative in Y direction in index space
+  const Field3D indexD4DY4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
+  /// Fourth derivative in Y direction in index space
+  const Field2D indexD4DY4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
+  /// Fourth derivative in Z direction in index space
+  const Field3D indexD4DZ4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
+  /// Fourth derivative in Z direction in index space
+  const Field2D indexD4DZ4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
+                           DIFF_METHOD method = DIFF_DEFAULT,
+                           REGION region=RGN_NOBNDRY);
   
   // Advection schemes
 
@@ -528,12 +555,16 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the X direction
-  /// @param[in] f  The field being advected
-  /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
+  /// @param[in] v       The velocity in the X direction
+  /// @param[in] f       The field being advected
+  /// @param[in] outloc  The cell location where the result is desired.
+  ///                    The default is the same as \p f
   /// @param[in] method  The differencing method to use
-  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  /// @param[in] region  The region of the grid for which the result is calculated
+  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
+  const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
 
   /// Advection operator in index space in Y direction
   ///
@@ -541,12 +572,15 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Y direction
+  /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
-  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  /// @param[in] region  The region of the grid for which the result is calculated.
+  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
   /// Advection operator in index space in Z direction
   ///
@@ -554,21 +588,30 @@ class Mesh {
   ///   v \frac{d}{di} f
   /// \f]
   ///
-  /// @param[in] The velocity in the Z direction
+  /// @param[in] v  The velocity in the Z direction
   /// @param[in] f  The field being advected
   /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
   /// @param[in] method  The differencing method to use
-  const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  /// @param[in] region  The region of the grid for which the result is calculated.
+  const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
-  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
-  
-  typedef BoutReal (*deriv_func)(stencil &); ///< Derivative functions of a single field stencil
-  typedef BoutReal (*upwind_func)(BoutReal, stencil &); ///< Derivative functions of a BoutReal velocity, and field stencil
-  typedef BoutReal (*flux_func)(stencil&, stencil &); ///< ///< Derivative functions of a velocity field, and field stencil v, f
+  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
+                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  /// Derivative functions of a single field stencil
+  typedef BoutReal (*deriv_func)(stencil &);
+  /// Derivative functions of a BoutReal velocity, and field stencil
+  typedef BoutReal (*upwind_func)(BoutReal, stencil &);
+  /// Derivative functions of a velocity field, and field stencil v, f
+  typedef BoutReal (*flux_func)(stencil&, stencil &);
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
@@ -577,6 +620,10 @@ class Mesh {
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f) {
     return getParallelTransform().fromFieldAligned(f);
+  }
+
+  bool canToFromFieldAligned() {
+    return getParallelTransform().canToFromFieldAligned();
   }
 
   /*!
@@ -595,19 +642,80 @@ class Mesh {
    * Set the parallel (y) transform from the options file
    */
   void setParallelTransform();
-  
- protected:
-  
-  GridDataSource *source; ///< Source for grid data
-  
-  Coordinates *coords;    ///< Coordinate system. Initialised to Null
 
-  Options *options; ///< Mesh options section
+  /////////////////////////
+  // Region related routines
+  /////////////////////////
+
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize;
+  
+  /// Get the named region from the region_map for the data iterator
+  ///
+  /// Throws if region_name not found
+  const Region<> &getRegion(const std::string &region_name) const{
+    return getRegion3D(region_name);
+  }
+  const Region<Ind3D> &getRegion3D(const std::string &region_name) const;
+  const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
+  const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
+
+  /// Add a new region to the region_map for the data iterator
+  ///
+  /// Outputs an error message if region_name already exists
+  void addRegion(const std::string &region_name, const Region<> &region) {
+    return addRegion3D(region_name, region);
+  }
+  void addRegion(const std::string &region_name, const Region<Ind2D> &region) {
+    return addRegion2D(region_name, region);
+  }
+  void addRegion(const std::string &region_name, const Region<IndPerp> &region) {
+    return addRegionPerp(region_name, region);
+  }
+  void addRegion3D(const std::string &region_name, const Region<Ind3D> &region);
+  void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
+  void addRegionPerp(const std::string &region_name, const Region<IndPerp> &region);
+
+  /// Converts an Ind2D to an Ind3D using calculation
+  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0) { return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz}; }
+
+  /// Converts an Ind3D to an Ind2D using calculation
+  Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
+
+  /// Converts an Ind3D to an IndPerp using calculation
+  IndPerp ind3DtoPerp(const Ind3D &ind3D) { return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz}; }
+
+  /// Converts an IndPerp to an Ind3D using calculation
+  Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
+    int jz = indPerp.z();
+    return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
+  }
+  
+  /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
+  Ind2D map3Dto2D(const Ind3D &ind3D){
+    return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
+  }
+  
+  /// Create the default regions for the data iterator
+  ///
+  /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
+  void createDefaultRegions();
   
   /*!
    * Return the parallel transform, setting it if need be
    */
   ParallelTransform& getParallelTransform();
+  
+ protected:
+  
+  GridDataSource *source; ///< Source for grid data
+  
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+
+  Options *options; ///< Mesh options section
+  
 
   PTptr transform; ///< Handles calculation of yup and ydown
 
@@ -617,21 +725,39 @@ class Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
-  // Initialise derivatives
+  /// Initialise derivatives
   void derivs_init(Options* options);
   
-  // Loop over mesh, applying a stencil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
-  const Field3D applyXdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOX);
-  
-  const Field2D applyYdiff(const Field2D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
-  const Field3D applyYdiff(const Field3D &var, deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_NOBNDRY);
+  /// Loop over mesh, applying a stencil in the X direction
+  const Field2D applyXdiff(const Field2D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT,
+                           REGION region = RGN_NOBNDRY);
 
-  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT, REGION region = RGN_ALL);
-  
+  const Field3D applyXdiff(const Field3D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT,
+                           REGION region = RGN_NOBNDRY);
+
+  const Field2D applyYdiff(const Field2D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT,
+                           REGION region = RGN_NOBNDRY);
+
+  const Field3D applyYdiff(const Field3D &var, deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT,
+                           REGION region = RGN_NOBNDRY);
+
+  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func,
+                           CELL_LOC loc = CELL_DEFAULT,
+                           REGION region = RGN_NOBNDRY);
+
 private:
-  /// Allocates a default Coordinates object
-  Coordinates *createDefaultCoordinates();
+  /// Allocates default Coordinates objects
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+
+  //Internal region related information
+  std::map<std::string, Region<Ind3D>> regionMap3D;
+  std::map<std::string, Region<Ind2D>> regionMap2D;
+  std::map<std::string, Region<IndPerp>> regionMapPerp;
+  Array<int> indexLookup3Dto2D;
 };
 
 #endif // __MESH_H__

@@ -14,6 +14,7 @@
 
 #include <field3d.hxx>
 #include <field2d.hxx>
+#include <bout/mesh.hxx>
 
 /// Literal class to capture BoutReal values in expressions
 class Literal {
@@ -175,7 +176,9 @@ struct Power {
     return type(asExpr<ExprT1>::getExpr(e1), asExpr<ExprT2>::getExpr(e2)); \
   }
 
+/// Addition of two Expressions
 DEFINE_OVERLOAD_FUNC(Add, add);
+/// Multiplication of two Expressions
 DEFINE_OVERLOAD_FUNC(Multiply, mul);
 
 /// A function to evaluate expressions

@@ -12,19 +12,14 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options), f0(nullptr) {
+RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+  canReset = true;
 }
 
 RKGenericSolver::~RKGenericSolver() {
   delete scheme;
-
-  if(f0 != nullptr) {
-    delete[] f0;
-    delete[] f2;
-    delete[] tmpState;
-  }
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -42,10 +37,6 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
     return 1;
-
-  //Read options
-  if(options == nullptr)
-    options = Options::getRoot()->getSection("solver");
 
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
@@ -75,17 +66,28 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   OPTION(options, adaptive, true); // Prefer adaptive scheme
 
   // Allocate memory
-  f0 = new BoutReal[nlocal]; //Input
-  f2 = new BoutReal[nlocal]; //Result--follow order
-  tmpState = new BoutReal[nlocal];
+  f0 = Array<BoutReal>(nlocal); // Input
+  f2 = Array<BoutReal>(nlocal); // Result--follow order
+  tmpState = Array<BoutReal>(nlocal);
 
   // Put starting values into f0
-  save_vars(f0);
+  save_vars(std::begin(f0));
 
   //Initialise scheme
   scheme->init(nlocal,neq,adaptive,atol,rtol,options);
 
   return 0;
+}
+
+void RKGenericSolver::resetInternalFields(){
+  //Zero out history
+  BOUT_OMP(parallel for)
+  for(int i=0;i<nlocal;i++){
+    tmpState[i]=0; f2[i]=0;
+  }
+  
+  //Copy fields into current step
+  save_vars(std::begin(f0));
 }
 
 int RKGenericSolver::run() {
@@ -152,8 +154,8 @@ int RKGenericSolver::run() {
       call_timestep_monitors(simtime, dt);
 
     }while(running);
-    
-    load_vars(f0); // Put result into variables
+
+    load_vars(std::begin(f0)); // Put result into variables
 
     run_rhs(simtime); //Ensure aux. variables are up to date
 
@@ -161,17 +163,15 @@ int RKGenericSolver::run() {
     
     /// Call the output step monitor function
     if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;
 }
 
 //Returns the evolved state vector along with an error estimate
-BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
-				BoutReal *resultFollow){
+BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt,
+                                    const Array<BoutReal> &start,
+                                    Array<BoutReal> &resultFollow) {
 
   //Calculate the intermediate stages
   for(int curStage=0;curStage<scheme->getStageCount();curStage++){
@@ -180,9 +180,9 @@ BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, co
     scheme->setCurState(start, tmpState, curStage, dt);
 
     //Get derivs for this stage
-    load_vars(tmpState);
+    load_vars(std::begin(tmpState));
     run_rhs(curTime);
-    save_derivs(scheme->steps[curStage]);
+    save_derivs(&(scheme->steps(curStage,0)));
   }
 
   return scheme->setOutputStates(start, dt, resultFollow);

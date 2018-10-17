@@ -26,12 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_ARKODE
+#ifdef BOUT_HAS_ARKODE
 
-#include "../emptysolver.hxx"
-typedef EmptySolver ArkodeSolver;
- 
-#else
 class ArkodeSolver;
 
 #ifndef __ARKODE_SOLVER_H__
@@ -55,14 +51,19 @@ class ArkodeSolver;
 #include <vector>
 using std::vector;
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
+}
+
 class ArkodeSolver : public Solver {
   public:
-    ArkodeSolver(Options *opts = NULL);
+    ArkodeSolver(Options *opts = nullptr);
     ~ArkodeSolver();
 
-    void setJacobian(Jacobian j) {jacfunc = j; }
-    
-    BoutReal getCurrentTimestep() { return hcur; }
+    void setJacobian(Jacobian j) override { jacfunc = j; }
+
+    BoutReal getCurrentTimestep() override { return hcur; }
 
     int init(int nout, BoutReal tstep) override;
 
@@ -90,7 +91,7 @@ class ArkodeSolver : public Solver {
     BoutReal pre_ncalls; // Number of calls to preconditioner
     
     void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
+    void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
 #endif // __ARKODE_SOLVER_H__

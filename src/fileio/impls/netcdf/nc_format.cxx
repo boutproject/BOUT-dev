@@ -35,7 +35,7 @@
 //#define NCDF_VERBOSE
 
 NcFormat::NcFormat() {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -44,11 +44,11 @@ NcFormat::NcFormat() {
   default_rec = 0;
   rec_nr.clear();
 
-  fname = NULL;
+  fname = nullptr;
 }
 
 NcFormat::NcFormat(const char *name) {
-  dataFile = NULL;
+  dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
   dimList = recDimList+1;
@@ -69,7 +69,7 @@ NcFormat::~NcFormat() {
 bool NcFormat::openr(const char *name) {
   TRACE("NcFormat::openr");
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   // Create an error object so netCDF doesn't exit
@@ -83,21 +83,21 @@ bool NcFormat::openr(const char *name) {
 
   if(!dataFile->is_valid()) {
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
   }
 
   /// Get the dimensions from the file
 
   if(!(xDim = dataFile->get_dim("x"))) {
-    output.write("WARNING: NetCDF file should have an 'x' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
     /*
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
     */
-    xDim = NULL;
-  }else if(mesh != NULL) {
+    xDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(xDim->size() != mesh->LocalNx) {
       throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
@@ -105,14 +105,14 @@ bool NcFormat::openr(const char *name) {
   }
   
   if(!(yDim = dataFile->get_dim("y"))) {
-    output.write("WARNING: NetCDF file should have a 'y' dimension\n");
+    output_warn.write("WARNING: NetCDF file should have a 'y' dimension\n");
     /*
     delete dataFile;
-    dataFile = NULL;
+    dataFile = nullptr;
     return false;
     */
-    yDim = NULL;
-  }else if(mesh != NULL) {
+    yDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->LocalNy) {
       throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
@@ -122,10 +122,10 @@ bool NcFormat::openr(const char *name) {
   if(!(zDim = dataFile->get_dim("z"))) {
     // Z dimension optional, and could be any size (Fourier harmonics)
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 'z' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
-    zDim = NULL;
-  }else if(mesh != NULL) {
+    zDim = nullptr;
+  } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->LocalNz) {
       throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
@@ -135,9 +135,9 @@ bool NcFormat::openr(const char *name) {
   if(!(tDim = dataFile->get_dim("t"))) {
     // T dimension optional
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF file has no 't' coordinate\n");
+    output_info.write("INFO: NetCDF file has no 't' coordinate\n");
 #endif
-    tDim = NULL;
+    tDim = nullptr;
   }
   
   recDimList[0] = tDim;
@@ -161,7 +161,7 @@ bool NcFormat::openw(const char *name, bool append) {
   NcError err(NcError::silent_nonfatal);
 #endif
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
   if(append) {
@@ -169,37 +169,37 @@ bool NcFormat::openw(const char *name, bool append) {
 
     if(!dataFile->is_valid()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     /// Get the dimensions from the file
 
     if(!(xDim = dataFile->get_dim("x"))) {
-      output.write("ERROR: NetCDF file should have an 'x' dimension\n");
+      output_error.write("ERROR: NetCDF file should have an 'x' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(yDim = dataFile->get_dim("y"))) {
-      output.write("ERROR: NetCDF file should have a 'y' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 'y' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(zDim = dataFile->get_dim("z"))) {
-      output.write("ERROR: NetCDF file should have a 'z' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 'z' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
     if(!(tDim = dataFile->get_dim("t"))) {
-      output.write("ERROR: NetCDF file should have a 't' dimension\n");
+      output_error.write("ERROR: NetCDF file should have a 't' dimension\n");
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -208,7 +208,7 @@ bool NcFormat::openw(const char *name, bool append) {
     if((xDim->size() != mesh->LocalNx) || (yDim->size() != mesh->LocalNy) || (zDim->size() != mesh->LocalNz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -220,7 +220,7 @@ bool NcFormat::openw(const char *name, bool append) {
     
     if(!dataFile->is_valid()) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -228,25 +228,25 @@ bool NcFormat::openw(const char *name, bool append) {
     
     if(!(xDim = dataFile->add_dim("x", mesh->LocalNx))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
   
     if(!(yDim = dataFile->add_dim("y", mesh->LocalNy))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     if(!(zDim = dataFile->add_dim("z", mesh->LocalNz))) {
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
     
     if(!(tDim = dataFile->add_dim("t"))) { // unlimited dimension
       delete dataFile;
-      dataFile = NULL;
+      dataFile = nullptr;
       return false;
     }
 
@@ -264,13 +264,13 @@ bool NcFormat::openw(const char *name, bool append) {
 }
 
 bool NcFormat::is_valid() {
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return false;
   return dataFile->is_valid();
 }
 
 void NcFormat::close() {
-  if(dataFile == NULL)
+  if (dataFile == nullptr)
     return;
   
   TRACE("NcFormat::close");
@@ -283,10 +283,10 @@ void NcFormat::close() {
 
   dataFile->close();
   delete dataFile;
-  dataFile = NULL;
-  
+  dataFile = nullptr;
+
   free(fname);
-  fname = NULL;
+  fname = nullptr;
 }
 
 void NcFormat::flush() {
@@ -352,6 +352,118 @@ bool NcFormat::setRecord(int t) {
   return true;
 }
 
+// Add a variable to the file
+bool NcFormat::addVarInt(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), ncInt, 1, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), ncInt, 0, dimList);
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NcFormat::addVarBoutReal(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 1, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 0, dimList);
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NcFormat::addVarField2D(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 2, dimList);
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add Field2D '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
+bool NcFormat::addVarField3D(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat)
+      var = dataFile->add_var(name.c_str(), nc_float_type, 4, recDimList);
+    else
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, dimList);
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add Field3D '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
@@ -375,7 +487,7 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   
   if(!(var = dataFile->get_var(name))) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: NetCDF variable '%s' not found\n", name);
 #endif
     return false;
   }
@@ -386,7 +498,7 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if(!(var->set_cur(cur))) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF Could not set cur(%d,%d,%d) for variable '%s'\n", 
+    output_info.write("INFO: NetCDF Could not set cur(%d,%d,%d) for variable '%s'\n", 
 		 x0,y0,z0, name);
 #endif
     return false;
@@ -394,7 +506,7 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if(!(var->get(data, counts))) {
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF could not read data for '%s'\n", name);
+    output_info.write("INFO: NetCDF could not read data for '%s'\n", name);
 #endif
     return false;
   }
@@ -472,17 +584,8 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   
   NcVar *var;
   if(!(var = dataFile->get_var(name))) {
-    // Variable not in file, so add it.
-    
-    var = dataFile->add_var(name, ncInt, nd, dimList);
-    if(var == NULL) {
-      output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
-      return false;
-    }
-    if(!var->is_valid()) {
-      output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
-      return false;
-    }
+    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }
   
   long cur[3], counts[3];
@@ -527,16 +630,8 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
   NcVar *var;
   if(!(var = dataFile->get_var(name))) {
-    // Variable not in file, so add it.
-    if(lowPrecision) {
-      var = dataFile->add_var(name, ncFloat, nd, dimList);
-    }else
-      var = dataFile->add_var(name, ncDouble, nd, dimList);
-
-    if(!var->is_valid()) {
-      output.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
-      return false;
-    }
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }  
 
   long cur[3], counts[3];
@@ -688,18 +783,8 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   
   // Try to find variable
   if(!(var = dataFile->get_var(name))) {
-    // Need to add to file
-
-    var = dataFile->add_var(name, ncInt, nd, recDimList);
-
-    rec_nr[name] = default_rec; // Starting record
-
-    if(!var->is_valid()) {
-#ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-      return false;
-    }
+    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -750,23 +835,8 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
 
   // Try to find variable
   if(!(var = dataFile->get_var(name))) {
-    // Need to add to file
-    
-    NcType vartype = ncDouble;
-    if(lowPrecision)
-      vartype = ncFloat;
-    
-    var = dataFile->add_var(name, vartype, nd, recDimList);
-    ASSERT1(var != 0);
-    
-    rec_nr[name] = default_rec; // Starting record
-    
-    if(!var->is_valid()) {
-#ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-      return false;
-    }
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    return false;
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -778,7 +848,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {
@@ -817,6 +887,111 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
 bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
+
+/***************************************************************************
+ * Attributes
+ ***************************************************************************/
+
+void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
+                            const std::string &text) {
+  TRACE("NcFormat::setAttribute(string)");
+
+  NcVar* var = dataFile->get_var(varname.c_str());
+  if (!var->is_valid()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  std::string existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (text != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%s', was previously '%s'",
+          attrname.c_str(), varname.c_str(), text.c_str(), existing_att.c_str());
+    }
+  }
+  // else: attribute does not exist, so just write it
+  
+  var->add_att(attrname.c_str(), text.c_str());
+}
+
+void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
+                            int value) {
+  TRACE("NcFormat::setAttribute(int)");
+
+  NcVar* var = dataFile->get_var(varname.c_str());
+  if (!var->is_valid()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+  
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  int existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (value != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%i', was previously '%i'",
+          attrname.c_str(), varname.c_str(), value, existing_att);
+    }
+  }
+  // else: attribute does not exist, so just write it
+
+  var->add_att(attrname.c_str(), value);
+}
+
+bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
+  TRACE("NcFormat::getStringAttribute(string)");
+
+  NcVar* var = dataFile->get_var(varname.c_str());
+  if (!var->is_valid()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcAtt* varAtt;
+  if (!(varAtt = var->get_att(attrname.c_str())))
+    return false;
+
+  text = varAtt->values()->as_string(0);
+
+  return true;
+}
+
+bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
+  TRACE("NcFormat::getIntAttribute(string)");
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(varname.c_str()))) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcAtt* varAtt = var->get_att(attrname.c_str());
+  if (!varAtt->is_valid())
+    return false;
+
+  value = varAtt->values()->as_int(0);
+
+  return true;
+}
+
 
 /***************************************************************************
  * Private functions

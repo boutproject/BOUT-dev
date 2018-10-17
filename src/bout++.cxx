@@ -28,6 +28,7 @@
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
 const char DEFAULT_SET[] = "BOUT.settings";
+const char DEFAULT_LOG[] = "BOUT.log";
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -40,6 +41,11 @@ const char DEFAULT_SET[] = "BOUT.settings";
 #define REV REV_(REVISION)
 
 #define GLOBALORIGIN
+
+
+#define INDIRECT1_BOUTMAIN(a) #a
+#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 #include "mpi.h"
 
@@ -66,7 +72,6 @@ const char DEFAULT_SET[] = "BOUT.settings";
 #include <string>
 #include <list>
 using std::string;
-using std::list;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -116,6 +121,7 @@ int BoutInitialise(int &argc, char **&argv) {
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
   const char *set_file; ///< Filename for the options file
+  const char *log_file; ///< File name for the log file
 
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
@@ -133,6 +139,7 @@ int BoutInitialise(int &argc, char **&argv) {
   data_dir = DEFAULT_DIR;
   opt_file = DEFAULT_OPT;
   set_file = DEFAULT_SET;
+  log_file = DEFAULT_LOG;
 
   int verbosity=4;
   /// Check command-line arguments
@@ -143,19 +150,24 @@ int BoutInitialise(int &argc, char **&argv) {
     	string(argv[i]) == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
       fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
-      fprintf(stdout, "\n"
-	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
-	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
-	      "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-	      "  -v, --verbose\t\tIncrease verbosity\n"
-	      "  -q, --quiet\t\tDecrease verbosity\n"
+      fprintf(stdout,
+              "\n"
+              "  -d <data directory>\tLook in <data directory> for input/output files\n"
+              "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+              "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+              "  -l, --log <log filename>\tPrint log to <log filename>\n"
+              "  -v, --verbose\t\tIncrease verbosity\n"
+              "  -q, --quiet\t\tDecrease verbosity\n"
 #ifdef LOGCOLOR
               "  -c, --color\t\tColor output using bout-log-color\n"
 #endif
-	      "  -h, --help\t\tThis message\n"
-	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
-	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
+              "  -h, --help\t\tThis message\n"
+              "  restart [append]\tRestart the simulation. If append is specified, "
+              "append to the existing output files, otherwise overwrite them\n"
+              "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+              "\nFor all possible input parameters, see the user manual and/or the "
+              "physics model source (e.g. %s.cxx)\n",
+              argv[0]);
 
       return -1;
     }
@@ -188,7 +200,15 @@ int BoutInitialise(int &argc, char **&argv) {
       }
       i++;
       set_file = argv[i];
-      
+
+    } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Usage is %s -l <log filename>\n", argv[0]);
+        return 1;
+      }
+      i++;
+      log_file = argv[i];
+
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
       verbosity++;
@@ -245,8 +265,8 @@ int BoutInitialise(int &argc, char **&argv) {
     // Run bout-log-color through the shell. This should share stdout with BOUT++,
     // and read stdin from the pipe
     FILE *outpipe = popen("bout-log-color", "w");
-    
-    if (outpipe != NULL) {
+
+    if (outpipe != nullptr) {
       // Valid pipe
       // Get the integer file descriptor
       int fno = fileno(outpipe);
@@ -278,7 +298,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+    if (output.open("%s/%s.%d", data_dir, log_file, MYPE)) {
       return 1;
     }
   }
@@ -287,7 +307,7 @@ int BoutInitialise(int &argc, char **&argv) {
   output_warn.enable(verbosity>1);
   output_progress.enable(verbosity>2);
   output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4);
+  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
   
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
@@ -366,6 +386,10 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.write("\tFloatingPointExceptions enabled\n");
 #endif
 
+  //The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+  //which could cause problems (e.g. terminate strings).
+  output_info.write("\tCompiled with flags : %s\n",STRINGIFY(BOUT_FLAGS_STRING));
+  
   /// Get the options tree
   Options *options = Options::getRoot();
 
@@ -428,7 +452,6 @@ int BoutInitialise(int &argc, char **&argv) {
     
   }catch(BoutException &e) {
     output_error.write("Error encountered during initialisation: %s\n", e.what());
-    BoutComm::cleanup();
     throw;
   }
   return 0;
@@ -536,9 +559,10 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");
-  int ncalls            = solver->rhs_ncalls;
-  int ncalls_e		= solver->rhs_ncalls_e;
-  int ncalls_i		= solver->rhs_ncalls_i;
+  int ncalls            = solver->resetRHSCounter();
+  int ncalls_e		= solver->resetRHSCounter_e();
+  int ncalls_i		= solver->resetRHSCounter_i();
+
   bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
@@ -598,7 +622,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
-  
+
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
@@ -635,11 +659,6 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 /**************************************************************************
  * Global error handling
  **************************************************************************/
-
-/// Print an error message and exit
-void bout_error(const char *str) {
-  throw BoutException(str);
-}
 
 /// Signal handler - handles all signals
 void bout_signal_handler(int sig) {

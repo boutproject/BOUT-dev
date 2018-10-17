@@ -16,15 +16,11 @@ GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize)
 
   if(mype == proc) {
     // Allocate memory
-    data = new BoutReal[nx*ny*nz];
-  }else {
-    data = NULL;
+    data = Array<BoutReal>(nx * ny * nz);
   }
 }
 
 GlobalField::~GlobalField() {
-  if(data)
-    delete[] data;
 }
 
 void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {
@@ -36,8 +32,8 @@ void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {
     *x = mesh->xstart;
   
   *y = mesh->ystart;
-  
-  if(z != NULL)
+
+  if (z != nullptr)
     *z = 0;
 }
 
@@ -58,7 +54,7 @@ void GlobalField::proc_origin(int proc, int *x, int *y, int *z) const {
   // Set the origin values
   *x = pex * nx;
   *y = pey * ny;
-  if(z != NULL)
+  if (z != nullptr)
     *z = 0;
 
   if(pex != 0)
@@ -71,7 +67,7 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
   
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
-  if(lz != NULL)
+  if (lz != nullptr)
     *lz = mesh->LocalNz;
   
   int nxpe = mesh->getNXPE();
@@ -184,7 +180,7 @@ void GlobalField2D::gather(const Field2D &f) {
 }
 
 const Field2D GlobalField2D::scatter() const {
-  Field2D result;
+  Field2D result(mesh);
   result.allocate();
   
   MPI_Status status;
@@ -352,7 +348,7 @@ void GlobalField3D::gather(const Field3D &f) {
 }
 
 const Field3D GlobalField3D::scatter() const {
-  Field3D result;
+  Field3D result(mesh);
   result.allocate();
   
   MPI_Status status;

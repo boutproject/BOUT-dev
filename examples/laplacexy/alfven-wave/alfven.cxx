@@ -170,7 +170,7 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Coordinates *coord = mesh->coordinates(); // Metric tensor
+    Coordinates *coord = mesh->getCoordinates(); // Metric tensor
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

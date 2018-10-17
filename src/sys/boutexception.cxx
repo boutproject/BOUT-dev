@@ -8,11 +8,12 @@
 
 #ifdef BACKTRACE
 #include <execinfo.h>
+#include <dlfcn.h>
 #endif
 
 #include <utils.hxx>
 
-void BoutParallelThrowRhsFail(int &status, const char *message) {
+void BoutParallelThrowRhsFail(int status, const char *message) {
   int allstatus;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
@@ -39,17 +40,22 @@ void BoutException::Backtrace() {
 #endif
   
 #ifdef BACKTRACE
-  void *trace[64];
-  char **messages = (char **)NULL;
-  int i, trace_size = 0;
 
-  trace_size = backtrace(trace, 64);
+  trace_size = backtrace(trace, TRACE_MAX);
   messages = backtrace_symbols(trace, trace_size);
 
-  // skip first stack frame (points here)
-  message += ("====== Exception path ======\n");
+#else // BACKTRACE
+  message += "Stacktrace not enabled.\n";
+#endif
+}
+
+std::string BoutException::BacktraceGenerate() const{
+  std::string message;
+#ifdef BACKTRACE
+    // skip first stack frame (points here)
+  message = ("====== Exception path ======\n");
   char buf[1024];
-  for (i = 1; i < trace_size; ++i) {
+  for (int i = 1; i < trace_size; ++i) {
     snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i, messages[i]);
     message += buf;
     // find first occurence of '(' or ' ' in message[i] and assume
@@ -61,33 +67,48 @@ void BoutException::Backtrace() {
     }
 
     char syscom[256];
+    // If we are compiled as PIE, need to get base pointer of .so and substract
+    Dl_info info;
+    void * ptr=trace[i];
+    if (dladdr(trace[i],&info)){
+      // Additionally, check whether this is the default offset for an executable
+      if (info.dli_fbase != (void*)0x400000)
+        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
+    }
+
     // Pipe stderr to /dev/null to avoid cluttering output
     // when addr2line fails or is not installed
     snprintf(syscom, sizeof(syscom) - 1, "addr2line %p -Cfpie %.*s 2> /dev/null",
-             trace[i], p, messages[i]);
+             ptr, p, messages[i]);
     // last parameter is the file name of the symbol
     FILE *fp = popen(syscom, "r");
-    if (fp != NULL) {
+    if (fp != nullptr) {
       char out[1024];
-      char *retstr = fgets(out, sizeof(out) - 1, fp);
+      char *retstr;
+      std::string buf;
+      do {
+        retstr = fgets(out, sizeof(out) - 1, fp);
+        if (retstr != nullptr)
+          buf+=retstr;
+      } while (retstr != nullptr);
       int status = pclose(fp);
-      if ((status == 0) && (retstr != NULL)) {
-        message += out;
+      if (status == 0) {
+        message += buf;
       }
-    } else {
-      message += syscom;
     }
   }
-#else // BACKTRACE
-  message += "Stacktrace not enabled.\n";
 #endif
+  return message;
 }
 
+/// Common set up for exceptions
+///
+/// Formats the message s using C-style printf formatting
 #define INIT_EXCEPTION(s)                                                                \
   {                                                                                      \
     buflen = 0;                                                                          \
     buffer = nullptr;                                                                    \
-    if (s == (const char *)NULL) {                                                       \
+    if (s == nullptr) {                                                                  \
       message = "No error message given!\n";                                             \
     } else {                                                                             \
       buflen = BoutException::BUFFER_LEN;                                                \
@@ -112,19 +133,27 @@ void BoutException::Backtrace() {
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }
 
-BoutException::BoutException(const std::string msg) {
+BoutException::BoutException(const std::string &msg) {
   message = "====== Exception thrown ======\n" + msg + "\n";
 
   this->Backtrace();
 }
 
-const char *BoutException::what() const noexcept { return message.c_str(); }
+const char *BoutException::what() const noexcept{
+#ifdef BACKTRACE
+  _tmp=message;
+  _tmp+=BacktraceGenerate();
+  return _tmp.c_str();
+#else
+  return message.c_str();
+#endif
+}
 
-BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(NULL) {
+BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(nullptr) {
   INIT_EXCEPTION(s);
 }
 
 BoutIterationFail::BoutIterationFail(const char *s, ...)
-    : BoutException::BoutException(NULL) {
+    : BoutException::BoutException(nullptr) {
   INIT_EXCEPTION(s);
 }

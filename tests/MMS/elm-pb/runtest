@@ -1,16 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Python script to run and analyse MMS test
 #
 # Tests a range of different schemes
 #
 
+#requires: all_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boututils.datafile import DataFile
 from boutdata.collect import collect
 
@@ -52,7 +54,7 @@ shape.add(bxcvz, "bxcvz")
 MPIRUN = getmpirun()
 
 print("Making MMS elm-pb test")
-shell("make > make.log")
+shell_safe("make > make.log")
 
 # List of NX values to use
 nxlist = [8, 16, 32, 64]#, 128]#, 256]
@@ -96,7 +98,7 @@ for nx,nproc in zip(nxlist, nprocs):
 
         # Run each simulation in a different directory
         shell("mkdir " + directory)
-        shell("cp data/BOUT.inp "+directory)
+        shell_safe("cp data/BOUT.inp "+directory)
         # Delete old data
         shell("rm %s/BOUT.dmp.*.nc" % directory)
     
@@ -105,7 +107,7 @@ for nx,nproc in zip(nxlist, nprocs):
         # Command to run
         cmd = "./elm_pb "+args
         # Launch using MPI
-        s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
         
         # Save output to log file
         f = open("run.log."+str(nx), "w")
@@ -146,11 +148,11 @@ for var,mark,label in zip(varlist, markers, labels):
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
     
-    if order < 1.5: # Should be second order accurate
-        print("............ FAIL")
-        success = False 
-    else:
+    if 1.8 < order < 2.2: # Should be second order accurate
         print("............ PASS")
+    else:
+        success = False
+        print("............ FAIL")
 
 
 plt.legend(loc="upper left")

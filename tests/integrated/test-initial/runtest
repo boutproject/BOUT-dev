@@ -2,7 +2,7 @@
 
 # Test initial conditions
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 import configparser
@@ -10,6 +10,8 @@ import itertools
 from scipy.special import erf
 import numpy as np
 import os
+
+#requires not make
 
 ########################################
 # Implementations of BOUT++ functions
@@ -172,12 +174,12 @@ with open("test_functions.cxx", "w") as f:
         f.write(cxx_snippet.format(name=var))
 
 print("Making initial conditions test")
-shell("make clean")
-shell("make > make.log")
+shell_safe("make clean")
+shell_safe("make > make.log")
 
 nprocs = [1, 2, 3, 4]
 for nproc in nprocs:
-    status, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True, verbose=True)
+    status, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True, verbose=True)
     with open("run.log.{}".format(nproc), "w") as f:
         f.write(out)
 

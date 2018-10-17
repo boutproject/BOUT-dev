@@ -43,11 +43,12 @@
 
 #include "invert_parderiv.hxx"
 #include "dcomplex.hxx"
+#include "utils.hxx"
 
 class InvertParSerial : public InvertPar {
 public:
   InvertParSerial(Options* opt);
-  ~InvertParSerial();
+  ~InvertParSerial(){};
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;
@@ -66,10 +67,10 @@ public:
 private:
   Field2D A, B, C, D, E;
   
-  dcomplex **rhs;
-  dcomplex *rhsk;
-  dcomplex *xk;
-  dcomplex *a, *b, *c; // Matrix coefficients
+  Matrix<dcomplex> rhs;
+  Array<dcomplex> rhsk;
+  Array<dcomplex> xk;
+  Array<dcomplex> a, b, c; // Matrix coefficients
 };
 
 
