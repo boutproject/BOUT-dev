@@ -430,18 +430,23 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates(const CELL_LOC location = CELL_CENTRE) {
+  Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
     if (coords_map.count(location)) { // True branch most common, returns immediately
       return coords_map[location].get();
-    } else if (location == CELL_DEFAULT) {
-      throw BoutException("Ambiguous location 'CELL_DEFAULT' passed to mesh::coordinates");
     } else {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
-      coords_map.insert(std::pair<CELL_LOC, std::shared_ptr<Coordinates> >(location, createDefaultCoordinates(location)));
+      coords_map.emplace(location, createDefaultCoordinates(location));
       return coords_map[location].get();
     }
+  }
+
+  Coordinates *DEPRECATED(coordinates(const CELL_LOC location = CELL_CENTRE)) {
+    return getCoordinates(location);
   }
 
   // First derivatives in index space
@@ -650,12 +655,12 @@ class Mesh {
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
-  Region<> &getRegion(const std::string &region_name){
+  const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
-  Region<Ind3D> &getRegion3D(const std::string &region_name);
-  Region<Ind2D> &getRegion2D(const std::string &region_name);
-  Region<IndPerp> &getRegionPerp(const std::string &region_name);
+  const Region<Ind3D> &getRegion3D(const std::string &region_name) const;
+  const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
+  const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
   /// Add a new region to the region_map for the data iterator
   ///

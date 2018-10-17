@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     mesh->get(hthe, "hthe"); // m
     mesh->get(I,    "sinty");// m^-2 T^-1
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
     // Calculate metrics
     coord->g11 = SQ(Rxy * Bpxy);

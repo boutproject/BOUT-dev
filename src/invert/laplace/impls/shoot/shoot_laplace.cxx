@@ -76,7 +76,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->getCoordinates(location);
   
   // Get the width of the boundary
   

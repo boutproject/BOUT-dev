@@ -1,0 +1,22 @@
+timestep = 1.
+nout = 1
+
+MZ = 1
+
+[mesh]
+MXG=1
+MYG=1
+nx = 4
+ny = 2
+
+dx = 1.
+dy = 1.
+
+[solver]
+
+[f2]
+scale = 1.
+function = 0.
+
+[f3]
+function = 0.

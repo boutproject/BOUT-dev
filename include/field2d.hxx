@@ -154,6 +154,10 @@ class Field2D : public Field, public FieldData {
    */
   const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
+  /// Return a Region<Ind2D> reference to use to iterate over this field
+  const Region<Ind2D>& getRegion(REGION region) const;  
+  const Region<Ind2D>& getRegion(const std::string &region_name) const;
+  
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
   }

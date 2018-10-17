@@ -86,7 +86,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->coordinates(location);
+  Coordinates *coord = mesh->getCoordinates(location);
   
   int ncz = mesh->LocalNz;
   int ncx = mesh->LocalNx-1;
