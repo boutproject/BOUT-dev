@@ -320,15 +320,15 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
 
-  ASSERT1(fieldmesh == rhs.getMesh());
-  ASSERT1(fielddatamesh == rhs.getDataMesh());
-  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
-  
   /// Check that the data is valid
   checkData(rhs);
 
   /// Make sure there's a unique array to copy data into
   allocate();
+
+  ASSERT1(fieldmesh == rhs.getMesh());
+  ASSERT1(fielddatamesh == rhs.getDataMesh());
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
   /// Copy data
   const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
