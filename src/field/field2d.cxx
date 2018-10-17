@@ -120,6 +120,7 @@ void Field2D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
+      fielddatamesh = mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
