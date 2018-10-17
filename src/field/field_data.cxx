@@ -6,8 +6,11 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
-  
+FieldData::FieldData(Mesh* m) :
+    fielddatamesh(m), boundaryIsCopy(false), boundaryIsSet(true) {
+  if (fielddatamesh == nullptr) {
+    fielddatamesh = mesh;
+  }
 }
 
 FieldData::~FieldData() {
@@ -24,7 +27,7 @@ void FieldData::setBoundary(const string &name) {
   
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
+  for(const auto& reg : getDataMesh()->getBoundaries()) {
     BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
@@ -32,9 +35,9 @@ void FieldData::setBoundary(const string &name) {
   }
 
   /// Get the mesh boundary regions
-  vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
+  vector<BoundaryRegionPar*> par_reg = getDataMesh()->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(const auto& reg : mesh->getBoundariesPar()) {
+  for(const auto& reg : getDataMesh()->getBoundariesPar()) {
     BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
@@ -47,7 +50,7 @@ void FieldData::setBoundary(const string &name) {
 
 void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
   /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  vector<BoundaryRegion*> reg = getDataMesh()->getBoundaries();
  
   /// Find the region
   
@@ -76,7 +79,7 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
 
 void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
   if(location == BNDRY_ALL){
-    for(const auto& reg : mesh->getBoundaries()) {
+    for(const auto& reg : getDataMesh()->getBoundaries()) {
       bndry_generator[reg->location] = gen;
     }
   } else {
