@@ -38,8 +38,6 @@ class Field;
 
 #include "bout/deprecated.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "unused.hxx"
 
 class Mesh;
@@ -60,9 +58,6 @@ class Field {
   Field();
   Field(Mesh * localmesh);
   virtual ~Field() { }
-
-  // Data access
-  virtual const BoutReal& operator[](const Indices &i) const = 0;
 
   virtual void setLocation(CELL_LOC loc) {
     if (loc != CELL_CENTRE)
@@ -129,8 +124,6 @@ class Field {
    */
   virtual int getNz() const;
 
-  /// Make region mendatory for all fields
-  virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
   mutable Coordinates * fieldCoordinates = nullptr;
