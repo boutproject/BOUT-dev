@@ -28,6 +28,7 @@ cdef extern from "$fheader.hxx":
         void setLocation(benum.CELL_LOC)
         benum.CELL_LOC getLocation()
         void applyBoundary(const string bndry)
+        void applyBoundary(const string region, const string bndry)
         void applyBoundary()
         void applyBoundary(double t)
 EOF

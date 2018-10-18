@@ -572,7 +572,7 @@ EOF
 
 done
 cat <<EOF
-    def applyBoundary(self, boundary=None, time=None):
+    def applyBoundary(self, boundary=None, time=None, region=None):
         """
         Set the boundaries of a $ftype. Only one of both arguments
         can be provided. If no value is provided, the default boundary
@@ -586,18 +586,28 @@ cat <<EOF
         time : float
             The time to be used by the boundary, if time dependent
             boundary conditions are used.
+        region : string
+            The boundary region where the boundary condition is to be applied.
+            Used only if 'boundary' option is set.
         """
         cdef c.string bndry
         cdef double _time
         if boundary is not None and time is not None:
-            raise RuntimeError("Can only pass one option at a time")
+            raise ValueError("Can only pass one of 'boundary' and 'time' options")
+        if region is not None and boundary is None:
+            raise ValueError("'region' has been passed but 'boundary' has not: region argument would be ignored.")
         if time is not None:
             _time = time
             self.cobj.applyBoundary(_time)
         elif boundary is not None:
             tmp=boundary.encode('ascii')
             bndry=tmp
-            self.cobj.applyBoundary(bndry)
+            if region is None:
+                self.cobj.applyBoundary(bndry)
+            else:
+                tmp=region.encode('ascii')
+                region=tmp
+                self.cobj.applyBoundary(region, bndry)
         else:
             self.cobj.applyBoundary()
 
