@@ -309,6 +309,10 @@ Field2D operator/(BoutReal lhs, const Field2D &rhs);
  */
 Field2D operator-(const Field2D &f);
 
+/// Unary plus. This does nothing, but is sometimes useful
+/// when commenting out code or for clarification.
+Field2D operator+(const Field2D &f) { return f; }
+
 // Non-member functions
 
 /// Square root of \p f over region \p rgn

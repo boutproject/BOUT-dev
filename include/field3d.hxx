@@ -561,6 +561,10 @@ Field3D operator/(BoutReal lhs, const Field3D &rhs);
  */
 Field3D operator-(const Field3D &f);
 
+/// Unary plus. This does nothing, but is sometimes useful
+/// when commenting out code or for clarification.
+Field3D operator+(const Field3D &f) { return f; }
+
 // Non-member functions
 
 /// Calculates the minimum of a field, excluding the boundary/guard
