@@ -860,12 +860,13 @@ void BoundaryRobin::applyTemplate(T &f, BoutReal UNUSED(t)) {
       for(int z=0; z<f.getNz(); z++)
 	f(bndry->x, bndry->y, z) = gval / aval;
   }else {
-    BoutReal sign = 1.;
-    if( (bndry->bx < 0) || (bndry->by < 0))
-      sign = -1.;
-    for(bndry->first(); !bndry->isDone(); bndry->next())
-      for(int z=0; z<f.getNz(); z++)
-	f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y - bndry->by, z) + sign*(gval - aval*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) ) / bval;
+    Coordinates* metric = f.getCoordinates();
+    for(bndry->first(); !bndry->isDone(); bndry->next()) {
+      BoutReal delta = bndry->bx*metric->dx(bndry->x, bndry->y) + bndry->by*metric->dy(bndry->x, bndry->y);
+      for(int z=0; z<f.getNz(); z++) {
+        f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y - bndry->by, z) + (gval - aval*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) ) * delta / bval;
+      }
+    }
   }
 }
 
