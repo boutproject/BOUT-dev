@@ -312,6 +312,31 @@ public:
 };
 // End L.Easy
 
+class BoundaryFree_O4 : public BoundaryOp {
+public:
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+};
+
+class BoundaryFree_O5 : public BoundaryOp {
+public:
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+};
 
 /////////////////////////////////////////////////////////
 

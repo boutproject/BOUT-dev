@@ -1323,6 +1323,86 @@ void BoundaryFree_O3::extrapFurther(Field3D &f, int x, int bx, int y, int by, in
   f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
 }
 
+// Fourth order extrapolation:
+BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region, 4);
+
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryFree_O4\n";
+  }
+  return new BoundaryFree_O4(region);
+}
+
+void BoundaryFree_O4::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+void BoundaryFree_O4::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+
+void BoundaryFree_O4::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+void BoundaryFree_O4::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+
+void BoundaryFree_O4::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+void BoundaryFree_O4::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
+  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+}
+
+// Fifth order extrapolation:
+BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region, 5);
+
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryFree_O5\n";
+  }
+  return new BoundaryFree_O5(region);
+}
+
+void BoundaryFree_O5::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+void BoundaryFree_O5::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+
+void BoundaryFree_O5::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+void BoundaryFree_O5::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+
+void BoundaryFree_O5::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+void BoundaryFree_O5::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
+  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+    + f(x - 5*bx, y - 5*by, z);
+}
+
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
