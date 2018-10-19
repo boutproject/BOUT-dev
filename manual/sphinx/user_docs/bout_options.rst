@@ -92,7 +92,27 @@ Have a look through the examples to see how the options are used.
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+If option names contain symbols such as ``+`` or ``-`` then these symbols need
+to be escaped in expressions or they will be treated as arithmetic
+operators like addition or subtraction. To escape a single character
+``\`` (backslash) can be used, for example ``plasma\-density * 10``
+would read the option ``plasma-density`` and multiply it
+by 10 e.g
 
+.. code-block:: cfg
+
+    plasma-density = 1e19
+    value = plasma\-density * 10
+
+To escape multiple characters, ` (backquote) can be used:
+
+.. code-block:: cfg
+
+    plasma-density = 1e19
+    value = `plasma-density` * 10
+
+The character ``:`` cannot be part of an option or section name, as it
+is always used to separate sections.
 
 Command line options
 --------------------
