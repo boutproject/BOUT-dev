@@ -44,6 +44,10 @@ name in square brackets.
     yetanother = true       # a boolean
     finally = "some text"   # a string
 
+Option names can contain almost any character except ’=’ and ’:’, but
+if they contain symbols then these will need to be escaped in
+expressions. See below for how this is done.
+
 Subsections can also be used, separated by colons ’:’, e.g.
 
 .. code-block:: cfg
@@ -84,6 +88,11 @@ Note that it is still possible to read ``bad_integer`` as a real
 number though.
 
 Have a look through the examples to see how the options are used.
+
+Special symbols in Option names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 Command line options
 --------------------
