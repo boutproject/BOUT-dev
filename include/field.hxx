@@ -120,4 +120,8 @@ class Field {
   mutable Coordinates * fieldCoordinates = nullptr;
 };
 
+/// Unary + operator. This doesn't do anything
+template<typename T>
+T operator+(const T& f) {return f;}
+
 #endif /* __FIELD_H__ */

@@ -112,7 +112,7 @@ class Field2D : public Field, public FieldData {
   int getNz() const override {return 1;};
 
   // Operators
-
+  
   /*!
    * Assignment from Field2D. After this both fields will
    * share the same underlying data. To make a true copy,

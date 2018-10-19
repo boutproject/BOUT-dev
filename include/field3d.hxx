@@ -374,8 +374,6 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() const {return *this;}
-  
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
