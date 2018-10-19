@@ -35,6 +35,8 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryFree(), "free");
   add(new BoundaryFree_O2(), "free_o2");
   add(new BoundaryFree_O3(), "free_o3");
+  add(new BoundaryFree_O4(), "free_o4");
+  add(new BoundaryFree_O5(), "free_o5");
   
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
