@@ -310,17 +310,40 @@ char ExpressionParser::LexInfo::nextToken() {
     curtok = 0;
     return 0;
   }
-  
-  if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9_:]*
+
+  if (isalpha(LastChar) || (LastChar == '`')) { // identifier: [a-zA-Z`][a-zA-Z0-9_:\`]*
     curident.clear();
     do {
-      curident += LastChar;
+      if (LastChar == '\\') {
+        // Escape character. Whatever the next character is, include it in the identifier
+        LastChar = static_cast<signed char>(ss.get());
+        if (LastChar == EOF) {
+          throw ParseException("Unexpected end of input after \\ character");
+        }
+        
+        curident += LastChar;
+      } else if (LastChar == '`') {
+        // An escaped symbol
+        // Include all characters until the next ` (backtick)
+        LastChar = static_cast<signed char>(ss.get()); // Skip the `
+        do {
+          curident += LastChar;
+          LastChar = static_cast<signed char>(ss.get());
+          if (LastChar == EOF) {
+            throw ParseException("Unexpected end of input; expecting ` (backtick)");
+          }
+        } while (LastChar != '`');
+        // Final ` will not be added to the symbol
+      } else {
+        curident += LastChar;
+      }
       LastChar = static_cast<signed char>(ss.get());
-    }while(isalnum(LastChar) || (LastChar == '_') || (LastChar == ':'));
+    } while (isalnum(LastChar) || (LastChar == '_') || (LastChar == ':') ||
+             (LastChar == '\\') || (LastChar == '`'));
     curtok = -2;
     return curtok;
   }
-  
+
   // Handle numbers
 
   if (isdigit(LastChar) || (LastChar == '.')) {   // Number: [0-9.]+

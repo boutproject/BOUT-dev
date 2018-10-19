@@ -352,3 +352,69 @@ TEST(ParseExceptionTest, WhatTest) {
     EXPECT_NE(message.find("test message"), std::string::npos);
   }
 }
+
+TEST_F(ExpressionParserTest, EscapeSymbol) {
+  auto fieldgen = parser.parseString("`x`");
+  EXPECT_EQ(fieldgen->str(), "x");
+  
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+        }
+      }
+    }
+  }
+}
+
+// Backslash can be used to escape a single character
+TEST_F(ExpressionParserTest, GeneratorNameEscape) {
+  parser.addGenerator("one+", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("one\\+(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+// Back-ticks can be used to escape sequences of characters
+TEST_F(ExpressionParserTest, GeneratorNameLongEscape) {
+  parser.addGenerator("++", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("`++`(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+// Back-ticks can be used for part of a symbol
+TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
+  parser.addGenerator("one+this", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("one`+`this(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
