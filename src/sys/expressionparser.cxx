@@ -133,11 +133,13 @@ void ExpressionParser::addGenerator(const string &name, FieldGeneratorPtr g) {
 
 void ExpressionParser::addBinaryOp(char sym, FieldGeneratorPtr b, int precedence) {
   bin_op[sym] = std::make_pair(b, precedence);
+  // Add to string of reserved characters
+  reserved_chars += sym; 
 }
 
 FieldGeneratorPtr ExpressionParser::parseString(const string &input) {
   // Allocate a new lexer
-  LexInfo lex(input);
+  LexInfo lex(input, reserved_chars);
 
   // Parse
   return parseExpression(lex);
@@ -293,17 +295,19 @@ FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo &lex) {
 //////////////////////////////////////////////////////////
 // LexInfo
 
-ExpressionParser::LexInfo::LexInfo(const std::string &input) {
+ExpressionParser::LexInfo::LexInfo(const std::string &input,
+                                   const std::string &reserved_chars)
+    : reserved_chars(reserved_chars) {
   ss.clear();
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);
-  
+
   LastChar = static_cast<signed char>(ss.get()); // First char from stream
-  nextToken(); // Get first token
+  nextToken();                                   // Get first token
 }
 
 char ExpressionParser::LexInfo::nextToken() {
-  while(isspace(LastChar))
+  while (isspace(LastChar))
     LastChar = static_cast<signed char>(ss.get());
   
   if(!ss.good()) {
@@ -311,41 +315,7 @@ char ExpressionParser::LexInfo::nextToken() {
     return 0;
   }
 
-  if (isalpha(LastChar) || (LastChar == '`')) { // identifier: [a-zA-Z`][a-zA-Z0-9_:\`]*
-    curident.clear();
-    do {
-      if (LastChar == '\\') {
-        // Escape character. Whatever the next character is, include it in the identifier
-        LastChar = static_cast<signed char>(ss.get());
-        if (LastChar == EOF) {
-          throw ParseException("Unexpected end of input after \\ character");
-        }
-        
-        curident += LastChar;
-      } else if (LastChar == '`') {
-        // An escaped symbol
-        // Include all characters until the next ` (backtick)
-        LastChar = static_cast<signed char>(ss.get()); // Skip the `
-        do {
-          curident += LastChar;
-          LastChar = static_cast<signed char>(ss.get());
-          if (LastChar == EOF) {
-            throw ParseException("Unexpected end of input; expecting ` (backtick)");
-          }
-        } while (LastChar != '`');
-        // Final ` will not be added to the symbol
-      } else {
-        curident += LastChar;
-      }
-      LastChar = static_cast<signed char>(ss.get());
-    } while (isalnum(LastChar) || (LastChar == '_') || (LastChar == ':') ||
-             (LastChar == '\\') || (LastChar == '`'));
-    curtok = -2;
-    return curtok;
-  }
-
   // Handle numbers
-
   if (isdigit(LastChar) || (LastChar == '.')) {   // Number: [0-9.]+
     bool gotdecimal = false, gotexponent = false;
     std::string NumStr;
@@ -376,6 +346,48 @@ char ExpressionParser::LexInfo::nextToken() {
     
     curval = std::stod(NumStr);
     curtok = -1;
+    return curtok;
+  }
+  
+  // Symbols can contain anything else which is not reserved
+  if ((LastChar == '`') ||
+      (reserved_chars.find(LastChar) == std::string::npos)) {
+    
+    curident.clear();
+    do {
+      if (LastChar == '\\') {
+        // Escape character.
+        // Whatever the next character is, include it in the identifier
+        // Note: Even though this only treats one character specially,
+        //       it should still work for utf8 since all chars are
+        //       allowed except reserved_chars and whitespace
+        LastChar = static_cast<signed char>(ss.get());
+        if (LastChar == EOF) {
+          throw ParseException("Unexpected end of input after \\ character");
+        }
+        
+        curident += LastChar;
+      } else if (LastChar == '`') {
+        // An escaped symbol
+        // Include all characters until the next ` (backquote)
+        LastChar = static_cast<signed char>(ss.get()); // Skip the `
+        do {
+          curident += LastChar;
+          LastChar = static_cast<signed char>(ss.get());
+          if (LastChar == EOF) {
+            throw ParseException("Unexpected end of input; expecting ` (backquote)");
+          }
+        } while (LastChar != '`');
+        // Final ` will not be added to the symbol
+      } else {
+        curident += LastChar;
+      }
+      LastChar = static_cast<signed char>(ss.get());
+    } while ( (LastChar != EOF && 
+               !isspace(LastChar) &&
+               (reserved_chars.find(LastChar) == std::string::npos))
+              || (LastChar == '\\') || (LastChar == '`'));
+    curtok = -2;
     return curtok;
   }
 

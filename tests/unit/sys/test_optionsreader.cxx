@@ -456,4 +456,30 @@ some:value = 3
   std::remove(filename);
 }
 
+TEST_F(OptionsReaderTest, ReadUnicodeNames) {
+  const std::string text = R"(
 
+α = 1.3
+重要的數字 = 3
+
+[tests]
+結果 = 重要的數字 + 5
+value = α*(1 + 重要的數字)
+twopi = 2 * π   # Unicode symbol defined for pi
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), filename);
+  std::remove(filename);
+
+  auto options = Options::root()["tests"];
+  
+  EXPECT_EQ(options["結果"].as<int>(), 8);
+  EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3*(1+3));
+  EXPECT_DOUBLE_EQ(options["twopi"].as<BoutReal>(), 2 * 3.141592653589793);
+}

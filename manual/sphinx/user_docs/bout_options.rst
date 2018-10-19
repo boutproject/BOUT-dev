@@ -23,7 +23,9 @@ The text input file ``BOUT.inp`` is always in a subdirectory called
 ``data`` for all examples. The files include comments (starting with
 either ``;`` or ``#``) and should be fairly self-explanatory. The format is
 the same as a windows INI file, consisting of ``name = value`` pairs.
-Supported value types are:
+Any type which can be read from a stream using the ``>>`` operator can
+be stored in an option (see later for the implementation details).
+Supported value types include:
 
 -  Integers
 
@@ -41,12 +43,12 @@ name in square brackets.
     [section1]
     something = 132         # an integer
     another = 5.131         # a real value
-    yetanother = true       # a boolean
-    finally = "some text"   # a string
+    工作的 = true            # a boolean
+    इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, but
-if they contain symbols then these will need to be escaped in
-expressions. See below for how this is done.
+Option names can contain almost any character except ’=’ and ’:’, including unicode. 
+If they contain arithmetic symbols (``+-*/^``), brackets (``(){}[]``) or whitespace,
+then these will need to be escaped in expressions. See below for how this is done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -71,6 +73,7 @@ Variables can even reference other variables:
 
 Note that variables can be used before their definition; all variables
 are first read, and then processed afterwards.
+The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 All expressions are calculated in floating point and then converted to
 an integer when read inside BOUT++. The conversion is done by rounding
@@ -111,8 +114,8 @@ To escape multiple characters, ` (backquote) can be used:
     plasma-density = 1e19
     value = `plasma-density` * 10
 
-The character ``:`` cannot be part of an option or section name, as it
-is always used to separate sections.
+The character ``:`` cannot be part of an option or section name, and cannot be escaped,
+as it is always used to separate sections.
 
 Command line options
 --------------------
