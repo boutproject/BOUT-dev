@@ -37,8 +37,6 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
@@ -142,21 +140,12 @@ class Field2D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
 
-  /// Iterator over the Field2D indices
-  const DataIterator DEPRECATED(iterator() const);
-
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
-  
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   */
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
-
   /// Return a Region<Ind2D> reference to use to iterate over this field
   const Region<Ind2D>& getRegion(REGION region) const;  
   const Region<Ind2D>& getRegion(const std::string &region_name) const;
+
+  Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
@@ -166,29 +155,6 @@ class Field2D : public Field, public FieldData {
   }
   BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
-
-  /*!
-   * Direct access to the data array. Since operator() is used
-   * to implement this, no checks are performed if CHECK <= 2
-   */
-  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.y);
-  }
-
-  /// Const access to data array
-  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.y);
-  }
-
-  /// Indices are also used as a lightweight way to specify indexing
-  /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.y);
-  }
-  /// const Indices data access
-  inline const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
-    return operator()(i.x, i.y);
-  }
 
   /*!
    * Access to the underlying data array. 

@@ -276,91 +276,16 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
   return operator[](fieldmesh->ind2Dto3D(d, jz));
 }
 
-/***************************************************************
- *                         OPERATORS 
- ***************************************************************/
-
-const DataIterator Field3D::iterator() const {
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1);
-}
-
-const DataIterator Field3D::begin() const {
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1);
-}
-
-const DataIterator Field3D::end() const {
-  // end() iterator should be one past the last element
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1,DI_GET_END);
-}
-
-const IndexRange Field3D::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, nz-1};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, nz-1};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
-  }
-  default: {
-    throw BoutException("Field3D::region() : Requested region not implemented");
-  }
-  };
-}
-
-const IndexRange Field3D::region2D(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  default: {
-    throw BoutException("Field3D::region() : Requested region not implemented");
-  }
-  };
-}
-
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(REGION_STRING(region));
 };
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
 };
+
+/***************************************************************
+ *                         OPERATORS 
+ ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
 
@@ -445,10 +370,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
-
-void Field3D::setBackground(const Field2D &f2d) {
-  background = &f2d;
-}
 
 void Field3D::applyBoundary(bool init) {
   TRACE("Field3D::applyBoundary()");

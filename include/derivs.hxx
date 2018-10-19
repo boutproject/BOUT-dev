@@ -58,13 +58,6 @@
 const Field3D DDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match DDX(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDX(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDX(f, outloc, method, region);
-}
-
 /// Calculate first partial derivative in X
 ///
 ///   \f$\partial / \partial x\f$
@@ -79,13 +72,6 @@ DEPRECATED(inline const Field3D DDX(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D DDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDX(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDX(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDX(f, outloc, method, region);
-}
 
 /// Calculate first partial derivative in Y
 ///
@@ -102,13 +88,6 @@ DEPRECATED(inline const Field2D DDX(const Field2D &f, DIFF_METHOD method,
 const Field3D DDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match DDY(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDY(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDY(f, outloc, method, region);
-}
-
 /// Calculate first partial derivative in Y
 ///
 ///   \f$\partial / \partial y\f$
@@ -123,13 +102,6 @@ DEPRECATED(inline const Field3D DDY(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D DDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDY(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDY(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDY(f, outloc, method, region);
-}
 
 /// Calculate first partial derivative in Z
 ///
@@ -146,13 +118,6 @@ DEPRECATED(inline const Field2D DDY(const Field2D &f, DIFF_METHOD method,
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match DDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
-
 /// Calculate first partial derivative in Z
 ///
 ///   \f$\partial / \partial z\f$
@@ -167,13 +132,6 @@ DEPRECATED(inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D DDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDZ(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
 ////////// SECOND DERIVATIVES //////////
 
 /// Calculate second partial derivative in X
@@ -191,13 +149,6 @@ DEPRECATED(inline const Field2D DDZ(const Field2D &f, DIFF_METHOD method,
 const Field3D D2DX2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DX2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DX2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DX2(f, outloc, method, region);
-}
-
 /// Calculate second partial derivative in X
 ///
 ///   \f$\partial^2 / \partial x^2\f$
@@ -212,13 +163,6 @@ DEPRECATED(inline const Field3D D2DX2(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D D2DX2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DX2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DX2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DX2(f, outloc, method, region);
-}
 
 /// Calculate second partial derivative in Y
 ///
@@ -235,13 +179,6 @@ DEPRECATED(inline const Field2D D2DX2(const Field2D &f, DIFF_METHOD method,
 const Field3D D2DY2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DY2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DY2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DY2(f, outloc, method, region);
-}
-
 /// Calculate second partial derivative in Y
 ///
 ///   \f$\partial^2 / \partial y^2\f$
@@ -256,13 +193,6 @@ DEPRECATED(inline const Field3D D2DY2(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D D2DY2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DY2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DY2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DY2(f, outloc, method, region);
-}
 
 /// Calculate second partial derivative in Z
 ///
@@ -279,13 +209,6 @@ DEPRECATED(inline const Field2D D2DY2(const Field2D &f, DIFF_METHOD method,
 const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DZ2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DZ2(f, outloc, method, region);
-}
-
 /// Calculate second partial derivative in Z
 ///
 ///   \f$\partial^2 / \partial z^2\f$
@@ -301,13 +224,7 @@ DEPRECATED(inline const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method,
 const Field2D D2DZ2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DZ2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DZ2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DZ2(f, outloc, method, region);
-}
-////////// FORTH DERIVATIVES //////////
+////////// FOURTH DERIVATIVES //////////
 
 /// Calculate forth partial derivative in X
 ///
@@ -324,13 +241,6 @@ DEPRECATED(inline const Field2D D2DZ2(const Field2D &f, DIFF_METHOD method,
 const Field3D D4DX4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D4DX4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DX4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DX4(f, outloc, method, region);
-}
-
 /// Calculate forth partial derivative in X
 ///
 ///   \f$\partial^4 / \partial x^4\f$
@@ -345,13 +255,6 @@ DEPRECATED(inline const Field3D D4DX4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D D4DX4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DX4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DX4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DX4(f, outloc, method, region);
-}
 
 /// Calculate forth partial derivative in Y
 ///
@@ -368,13 +271,6 @@ DEPRECATED(inline const Field2D D4DX4(const Field2D &f, DIFF_METHOD method,
 const Field3D D4DY4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D4DY4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DY4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DY4(f, outloc, method, region);
-}
-
 /// Calculate forth partial derivative in Y
 ///
 ///   \f$\partial^4 / \partial y^4\f$
@@ -389,13 +285,6 @@ DEPRECATED(inline const Field3D D4DY4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D D4DY4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DY4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DY4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DY4(f, outloc, method, region);
-}
 
 /// Calculate forth partial derivative in Z
 ///
@@ -412,13 +301,6 @@ DEPRECATED(inline const Field2D D4DY4(const Field2D &f, DIFF_METHOD method,
 const Field3D D4DZ4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D4DZ4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DZ4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DZ4(f, outloc, method, region);
-}
-
 /// Calculate forth partial derivative in Z
 ///
 ///   \f$\partial^4 / \partial z^4\f$
@@ -433,14 +315,6 @@ DEPRECATED(inline const Field3D D4DZ4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DZ4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DZ4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DZ4(f, outloc, method, region);
-}
-///////// UPWINDING METHODS /////////////
 
 /// For terms of form v * grad(f)
 ///
@@ -458,14 +332,6 @@ DEPRECATED(inline const Field2D D4DZ4(const Field2D &f, DIFF_METHOD method,
 const Field3D VDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match VDDX(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDX(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDX(v, f, outloc, method, region);
-}
-
 /// For terms of form v * grad(f)
 ///
 ///   \f$v \cdot \partial f / \partial x\f$
@@ -481,14 +347,6 @@ DEPRECATED(inline const Field3D VDDX(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDX(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDX(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDX(v, f, outloc, method, region);
-}
 
 /// For terms of form v * grad(f)
 ///
@@ -506,14 +364,6 @@ DEPRECATED(inline const Field2D VDDX(const Field2D &v, const Field2D &f,
 const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match VDDY(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDY(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDY(v, f, outloc, method, region);
-}
-
 /// For terms of form v * grad(f)
 ///
 ///   \f$v \cdot \partial f / \partial y\f$
@@ -529,14 +379,6 @@ DEPRECATED(inline const Field3D VDDY(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDY(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDY(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDY(v, f, outloc, method, region);
-}
 
 /// For terms of form v * grad(f)
 ///
@@ -554,14 +396,6 @@ DEPRECATED(inline const Field2D VDDY(const Field2D &v, const Field2D &f,
 const Field3D VDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match VDDZ(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDZ(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
-
 /// For terms of form v * grad(f)
 ///
 ///   \f$v \cdot \partial f / \partial z\f$
@@ -577,15 +411,6 @@ DEPRECATED(inline const Field3D VDDZ(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D VDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDZ(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDZ(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
-///////// FLUX METHODS /////////////
 
 /// for terms of form div(v * f)
 ///
@@ -603,14 +428,6 @@ DEPRECATED(inline const Field2D VDDZ(const Field2D &v, const Field2D &f,
 const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match FDDX(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDX(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDX(v, f, outloc, method, region);
-}
-
 /// for terms of form div(v * f)
 ///
 ///   \f$\partial (v f) / \partial x\f$
@@ -626,14 +443,6 @@ DEPRECATED(inline const Field3D FDDX(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDX(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDX(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDX(v, f, outloc, method, region);
-}
 
 /// for terms of form div(v * f)
 ///
@@ -651,14 +460,6 @@ DEPRECATED(inline const Field2D FDDX(const Field2D &v, const Field2D &f,
 const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match FDDY(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDY(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDY(v, f, outloc, method, region);
-}
-
 /// for terms of form div(v * f)
 ///
 ///   \f$\partial (v f) / \partial y\f$
@@ -674,14 +475,6 @@ DEPRECATED(inline const Field3D FDDY(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDY(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDY(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDY(v, f, outloc, method, region);
-}
 
 /// for terms of form div(v * f)
 ///
@@ -699,14 +492,6 @@ DEPRECATED(inline const Field2D FDDY(const Field2D &v, const Field2D &f,
 const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match FDDZ(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDZ(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDZ(v, f, outloc, method, region);
-}
-
 /// for terms of form div(v * f)
 ///
 ///   \f$\partial (v f) / \partial z\f$
@@ -723,14 +508,6 @@ DEPRECATED(inline const Field3D FDDZ(const Field3D &v, const Field3D &f,
 const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match FDDZ(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDZ(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDZ(v, f, outloc, method, region);
-}
-
 /// Calculate first partial derivative in Z
 ///
 ///   \f$\partial / \partial z\f$
@@ -745,13 +522,6 @@ DEPRECATED(inline const Field2D FDDZ(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Vector3D DDZ(const Vector3D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDZ(const Vector3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Vector3D DDZ(const Vector3D &f, DIFF_METHOD method,
-                                     CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
 
 /// Calculate mixed partial derivative in x and y
 ///
@@ -768,13 +538,6 @@ DEPRECATED(inline const Vector3D DDZ(const Vector3D &f, DIFF_METHOD method,
 const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DXDY(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DXDY(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDY(f, outloc, method, region);
-}
-
 /// Calculate mixed partial derivative in x and y
 ///
 ///   \f$\partial^2 / \partial x \partial y\f$
@@ -789,13 +552,6 @@ DEPRECATED(inline const Field2D D2DXDY(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDY(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DXDY(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDY(f, outloc, method, region);
-}
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -812,13 +568,6 @@ DEPRECATED(inline const Field3D D2DXDY(const Field3D &f, DIFF_METHOD method,
 const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DXDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DXDZ(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDZ(f, outloc, method, region);
-}
-
 /// Calculate mixed partial derivative in x and z
 ///
 ///   \f$\partial^2 / \partial x \partial z\f$
@@ -833,13 +582,6 @@ DEPRECATED(inline const Field2D D2DXDZ(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DXDZ(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDZ(f, outloc, method, region);
-}
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -856,13 +598,6 @@ DEPRECATED(inline const Field3D D2DXDZ(const Field3D &f, DIFF_METHOD method,
 const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
 
-/// Reorder arguments to match D2DYDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DYDZ(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DYDZ(f, outloc, method, region);
-}
-
 /// Calculate mixed partial derivative in y and z
 ///
 ///   \f$\partial^2 / \partial y \partial z\f$
@@ -877,13 +612,6 @@ DEPRECATED(inline const Field2D D2DYDZ(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
                      DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DYDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DYDZ(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DYDZ(f, outloc, method, region);
-}
 
 /// For terms of form v * grad(f)
 ///
@@ -900,14 +628,6 @@ DEPRECATED(inline const Field3D D2DYDZ(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 const Field2D VDDZ(const Field3D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDZ(const Field3D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDZ(const Field3D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
 
 // Deprecated methods
 //

@@ -245,14 +245,6 @@ Vector2D & Vector2D::operator/=(const Field2D &rhs) {
   return *this;
 }
 
-///////////////// CROSS PRODUCT //////////////////
-
-// cross product implementation in vector3d.cxx
-Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
-  *this = cross(*this, rhs);
-  return *this;
-}
-
 /***************************************************************
  *                      BINARY OPERATORS 
  ***************************************************************/
@@ -361,16 +353,6 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const {
 
 const Field3D Vector2D::operator*(const Vector3D &rhs) const {
   return rhs*(*this);
-}
-
-///////////////// CROSS PRODUCT //////////////////
-
-const Vector2D Vector2D::operator^(const Vector2D &rhs) const {
-  return cross(*this,rhs);
-}
-
-const Vector3D Vector2D::operator^(const Vector3D &rhs) const {
-  return cross(*this,rhs);
 }
 
 /***************************************************************

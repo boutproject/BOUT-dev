@@ -14,10 +14,3 @@
 const {{field}} {{DD}}({{in_sig}}, CELL_LOC outloc = CELL_DEFAULT,
                   DIFF_METHOD method = DIFF_DEFAULT,
                   REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match {{DD}}({{in_sig}}, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const {{field}} {{DD}}({{in_sig}}, DIFF_METHOD method,
-                  CELL_LOC outloc = CELL_DEFAULT,
-                  REGION region = RGN_NOBNDRY)) {
-  return {{DD}}({{in_field}}, outloc, method,region);
-}

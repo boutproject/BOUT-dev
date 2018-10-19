@@ -91,31 +91,6 @@ public:
   /// By default not periodic
   void setPeriodic(bool p = true) { periodic = p; }
 
-  DEPRECATED(void setCoefs(T a[], T b[], T c[])) {
-    // Set coefficients
-    setCoefs(1, &a, &b, &c);
-  }
-
-  DEPRECATED(void setCoefs(int nsys, T **a, T **b, T **c)) {
-    Matrix<T> aMatrix(nsys, N);
-    Matrix<T> bMatrix(nsys, N);
-    Matrix<T> cMatrix(nsys, N);
-
-    // Copy data into matrices
-    BOUT_OMP(parallel for)
-    for (int j = 0; j < nsys; ++j) {
-      for (int i = 0; i < N; ++i) {
-        aMatrix(j, i) = a[j][i];
-        bMatrix(j, i) = b[j][i];
-        cMatrix(j, i) = c[j][i];
-      }
-    }
-
-    setCoefs(aMatrix, bMatrix, cMatrix);
-    // Don't copy ?Matrix back into ? as setCoefs
-    // doesn't modify these. Could copy out if we really wanted.
-  }
-
   void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
@@ -161,39 +136,6 @@ public:
         coefs(j, 4 * i + 2) = c(j, i);
         // 4*i + 3 will contain RHS
       }
-  }
-
-  /// Solve a single triadiagonal system
-  ///
-  DEPRECATED(void solve(T rhs[], T x[])) {
-    // Solving single system
-    solve(1, &rhs, &x);
-  }
-
-  /// Solve a set of tridiagonal systems
-  ///
-  DEPRECATED(void solve(int nrhs, T **rhs, T **x)) {
-    Matrix<T> rhsMatrix(nrhs, N);
-    Matrix<T> xMatrix(nrhs, N);
-
-    // Copy input data into matrix
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        rhsMatrix(j, i) = rhs[j][i];
-      }
-    }
-
-    // Solve
-    solve(rhsMatrix, xMatrix);
-
-    // Copy result back into argument
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        x[j][i] = xMatrix(j, i);
-      }
-    }
   }
 
   /// Solve a set of tridiagonal systems

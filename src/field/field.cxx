@@ -82,29 +82,3 @@ int Field::getNz() const{
   return getMesh()->LocalNz;
 };
 
-/////////////////// PROTECTED ////////////////////
-
-
-// Report an error occurring
-void Field::error(const char *s, ...) const {
-  int buf_len=512;
-  char * err_buffer=new char[buf_len];
-
-  if (s == nullptr) {
-    output_error.write("Unspecified error in field\n");
-  } else {
-
-    bout_vsnprintf(err_buffer,buf_len, s);
-
-#ifdef TRACK
-      output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
-#else
-      output_error.write("Error in field: %s", err_buffer);
-#endif
-  }
-  std::string msg="Error in field: ";
-  msg+=err_buffer;
-  delete[] err_buffer;
-  throw BoutException(msg);
-}
-
