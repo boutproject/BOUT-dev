@@ -18,7 +18,8 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder"); // Deprecated
   add(new BoundaryDirichlet_O3(), "dirichlet_o3");
   add(new BoundaryDirichlet_O4(), "dirichlet_o4");
-  add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
+  add(new BoundaryDirichlet_O5(), "dirichlet_o5");
+  add(new BoundaryDirichlet_O5(), "dirichlet_4thorder"); // Synonym for "dirichlet_o5"
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann(), "neumann_O2"); // Synonym for "neumann"
   add(new BoundaryNeumann2(), "neumann2"); // Deprecated

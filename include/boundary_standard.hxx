@@ -72,7 +72,7 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
 };
 
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
-class BoundaryDirichlet_4thOrder : public BoundaryOp {
+class BoundaryDirichlet_O5 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
