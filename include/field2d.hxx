@@ -114,7 +114,7 @@ class Field2D : public Field, public FieldData {
   int getNz() const override {return 1;};
 
   // Operators
-
+  
   /*!
    * Assignment from Field2D. After this both fields will
    * share the same underlying data. To make a true copy,
@@ -308,10 +308,6 @@ Field2D operator/(BoutReal lhs, const Field2D &rhs);
  * iterates over whole domain including guard/boundary cells.
  */
 Field2D operator-(const Field2D &f);
-
-/// Unary plus. This does nothing, but is sometimes useful
-/// when commenting out code or for clarification.
-Field2D operator+(const Field2D &f) { return f; }
 
 // Non-member functions
 

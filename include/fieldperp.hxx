@@ -310,10 +310,6 @@ const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
  */
 FieldPerp operator-(const FieldPerp &f);
 
-/// Unary plus. This does nothing, but is sometimes useful
-/// when commenting out code or for clarification.
-FieldPerp operator+(const FieldPerp &f) { return f; }
-
 /// Square root
 const FieldPerp sqrt(const FieldPerp &f, REGION rgn=RGN_ALL);
 

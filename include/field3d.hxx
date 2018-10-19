@@ -437,8 +437,6 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() const {return *this;}
-  
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
@@ -560,10 +558,6 @@ Field3D operator/(BoutReal lhs, const Field3D &rhs);
  * iterates over whole domain including guard/boundary cells.
  */
 Field3D operator-(const Field3D &f);
-
-/// Unary plus. This does nothing, but is sometimes useful
-/// when commenting out code or for clarification.
-Field3D operator+(const Field3D &f) { return f; }
 
 // Non-member functions
 
