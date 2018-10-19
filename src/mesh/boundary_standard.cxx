@@ -512,7 +512,7 @@ void BoundaryDirichlet_2ndOrder::applyAtPointStaggered(Field3D &f, BoutReal val,
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDirichlet_O5::clone(BoundaryRegion *region, const list<string> &args) {
   verifyNumPoints(region, 4);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
@@ -520,29 +520,29 @@ BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
-  return new BoundaryDirichlet_4thOrder(region, newgen);
+  return new BoundaryDirichlet_O5(region, newgen);
 }
 
-void BoundaryDirichlet_4thOrder::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+void BoundaryDirichlet_O5::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
   f(x, y, z) = 128./35.*val - 4.*f(x - bx, y - by, z) + 2.*f(x - 2*bx, y - 2*by, z) - 4./5.*f(x - 3*bx, y - 3*by, z) + 1./7.*f(x - 4*bx, y - 4*by, z);
 }
-void BoundaryDirichlet_4thOrder::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+void BoundaryDirichlet_O5::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
   f(x, y, z) = 128./35.*val - 4.*f(x - bx, y - by, z) + 2.*f(x - 2*bx, y - 2*by, z) - 4./5.*f(x - 3*bx, y - 3*by, z) + 1./7.*f(x - 4*bx, y - 4*by, z);
 }
 
-void BoundaryDirichlet_4thOrder::applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
+void BoundaryDirichlet_O5::applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
   f(x, y, z) = val;
 }
-void BoundaryDirichlet_4thOrder::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
+void BoundaryDirichlet_O5::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
   f(x, y, z) = val;
 }
 
-void BoundaryDirichlet_4thOrder::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
+void BoundaryDirichlet_O5::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
   // values. JTO 16/10/2018
   extrap5th(f, x, bx, y, by, z);
 }
-void BoundaryDirichlet_4thOrder::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
+void BoundaryDirichlet_O5::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
   // values. Not sure if this is the correct order... JTO 16/10/2018
   extrap5th(f, x, bx, y, by, z);
