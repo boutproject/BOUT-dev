@@ -76,6 +76,22 @@ Note that variables can be used before their definition; all variables
 are first read, and then processed afterwards.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
+Uses for expressions include initialising variables
+:ref:`_sec-expressions` and input sources, defining grids
+:ref:`_sec-gridgen` and MMS convergence tests :ref:`_sec-mms`.
+
+Expressions can include addition (``+``), subtraction (``-``),
+multiplication (``*``), division (``/``) and exponentiation (``^``)
+operators, with the usual precedence rules. In addition to ``π``,
+expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
+to refer to the spatial and time coordinates.
+A number of functions are defined, listed in table
+:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
+number comes before a symbol or an opening bracket (``(``)
+then a multiplication is assumed: ``2x+3y^2`` is the same as
+``2*x + 3*y^2``, which with the usual precedence rules is the same as
+``(2*x) + (3*(y^2))``. 
+
 All expressions are calculated in floating point and then converted to
 an integer when read inside BOUT++. The conversion is done by rounding
 to the nearest integer, but throws an error if the floating point

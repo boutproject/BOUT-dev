@@ -240,8 +240,8 @@ TEST_F(ExpressionParserTest, BadNumbers) {
   EXPECT_THROW(parser.parseString("1.1.4"), ParseException);
   EXPECT_THROW(parser.parseString("2.1e4.5."), ParseException);
   EXPECT_THROW(parser.parseString("3.e8e4"), ParseException);
-  EXPECT_THROW(parser.parseString("4ee"), ParseException);
-  EXPECT_THROW(parser.parseString("5G"), ParseException);
+  EXPECT_THROW(parser.parseString("4()"), ParseException);
+  EXPECT_THROW(parser.parseString("5_000"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, BadFunctions) {
@@ -463,4 +463,40 @@ TEST_F(ExpressionParserTest, AddBinaryGenerator) {
       }
     }
   }
+}
+
+TEST_F(ExpressionParserTest, ImplicitMultiply) {
+
+  auto fieldgen = parser.parseString("2x + 3y");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*x + 3*y);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, ImplicitMultiplyBracket) {
+
+  auto fieldgen = parser.parseString("2(x + 3y)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*(x + 3*y));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, BadImplicitMultiply) {
+  EXPECT_THROW(parser.parseString("x2"), ParseException);
+  EXPECT_THROW(parser.parseString("(1+x)2"), ParseException);
+  EXPECT_THROW(parser.parseString("2 2"), ParseException);
 }

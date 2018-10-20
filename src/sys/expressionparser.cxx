@@ -352,6 +352,13 @@ char ExpressionParser::LexInfo::nextToken() {
   // Symbols can contain anything else which is not reserved
   if ((LastChar == '`') ||
       (reserved_chars.find(LastChar) == std::string::npos)) {
+
+    // Special case: If the last token returned was a number
+    // then insert a multiplication ("*")
+    if (curtok == -1) {
+      curtok = '*';
+      return curtok;
+    }
     
     curident.clear();
     do {
@@ -391,6 +398,15 @@ char ExpressionParser::LexInfo::nextToken() {
     return curtok;
   }
 
+  if (LastChar == '(') {
+    // Special case: If the last token returned was a number
+    // then insert a multiplication ("*") before the opening bracket
+    if (curtok == -1) {
+      curtok = '*';
+      return curtok;
+    }
+  }
+  
   // LastChar is unsigned, explicitly cast
   curtok = LastChar;
   LastChar = static_cast<signed char>(ss.get());
