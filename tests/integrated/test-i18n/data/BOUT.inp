@@ -1,0 +1,8 @@
+
+mxg = 0
+myg = 0
+[mesh]
+
+nx = 1
+ny = 1
+nz = 1
