@@ -22,6 +22,35 @@ public:
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
 };
 
+/// For testing, a generator function of two inputs
+class BinaryGenerator : public FieldGenerator {
+public:
+  BinaryGenerator(std::shared_ptr<FieldGenerator> a = nullptr,
+                  std::shared_ptr<FieldGenerator> b = nullptr)
+      : a(a), b(b) {}
+
+  std::shared_ptr<FieldGenerator>
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+    if (args.size() != 2) {
+      throw ParseException(
+          "Incorrect number of arguments to increment function. Expecting 2, got %d",
+          args.size());
+    }
+
+    return std::make_shared<BinaryGenerator>(args.front(), args.back());
+  }
+
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+    return a->generate(x, y, z, t) + b->generate(x, y, z, t);
+  }
+  const std::string str() {
+    return std::string{"add(" + a->str() + ", " + b->str() + ")"};
+  }
+
+private:
+  std::shared_ptr<FieldGenerator> a, b;
+};
+
 class IncrementGenerator : public FieldGenerator {
 public:
   IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr) : gen(gen) {}
@@ -413,6 +442,23 @@ TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
       for (auto z : z_array) {
         for (auto t : t_array) {
           EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, AddBinaryGenerator) {
+  parser.addGenerator("add", std::make_shared<BinaryGenerator>());
+
+  auto fieldgen = parser.parseString("add(x,y)");
+  EXPECT_EQ(fieldgen->str(), "add(x, y)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + y);
         }
       }
     }

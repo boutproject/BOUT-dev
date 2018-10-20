@@ -117,7 +117,7 @@ protected:
   /// Characters which cannot be used in symbols; all other allowed
   /// In addition, whitespace cannot be used
   /// Adding a binary operator adds its symbol to this string
-  std::string reserved_chars = "+-*/^[](){}";
+  std::string reserved_chars = "+-*/^[](){},";
   
 private:
   

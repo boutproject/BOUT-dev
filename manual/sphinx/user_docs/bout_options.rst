@@ -46,9 +46,10 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode. 
-If they contain arithmetic symbols (``+-*/^``), brackets (``(){}[]``) or whitespace,
-then these will need to be escaped in expressions. See below for how this is done.
+Option names can contain almost any character except ’=’ and ’:’, including unicode.
+If they start with a number or ``.``, contain arithmetic symbols
+(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
+to be escaped in expressions. See below for how this is done. 
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -95,9 +96,10 @@ Have a look through the examples to see how the options are used.
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If option names contain symbols such as ``+`` or ``-`` then these symbols need
-to be escaped in expressions or they will be treated as arithmetic
-operators like addition or subtraction. To escape a single character
+If option names start with numbers or ``.`` or contain symbols such as
+``+`` and ``-`` then these symbols need to be escaped in expressions
+or they will be treated as arithmetic operators like addition or
+subtraction. To escape a single character 
 ``\`` (backslash) can be used, for example ``plasma\-density * 10``
 would read the option ``plasma-density`` and multiply it
 by 10 e.g
@@ -105,14 +107,16 @@ by 10 e.g
 .. code-block:: cfg
 
     plasma-density = 1e19
-    value = plasma\-density * 10
+    2ndvalue = 10
+    value = plasma\-density * \2ndvalue
 
 To escape multiple characters, ` (backquote) can be used:
 
 .. code-block:: cfg
 
     plasma-density = 1e19
-    value = `plasma-density` * 10
+    2ndvalue = 10
+    value = `plasma-density` * `2ndvalue`
 
 The character ``:`` cannot be part of an option or section name, and cannot be escaped,
 as it is always used to separate sections.
