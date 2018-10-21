@@ -481,6 +481,38 @@ void BoundaryDirichlet_O4::extrapFurther(Field3D &f, int x, int bx, int y, int b
 
 ///////////////////////////////////////////////////////////////
 
+BoundaryOp* BoundaryDirichlet_smooth::clone(BoundaryRegion *region, const list<string> &args){
+  verifyNumPoints(region, 2);
+
+  std::shared_ptr<FieldGenerator> newgen = nullptr;
+  if(!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BoundaryDirichlet_smooth(region, newgen);
+}
+
+void BoundaryDirichlet_smooth::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = 5./3.*val - 0.5*f(x - bx, y - by, z) - 1./6.*f(x - 2*bx, y - 2*by, z);
+}
+void BoundaryDirichlet_smooth::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
+  // Dirichlet bc using val and first grid point would be
+  // fb = 2*val - f0
+  // using val and second grid point would be
+  // fb = 4/3*val - 1/3*f1
+  // Here we apply the bc using the average of the two, to try and suppress
+  // grid-scale oscillations at the boundary
+  f(x, y, z) = 5./3.*val - 0.5*f(x - bx, y - by, z) - 1./6.*f(x - 2*bx, y - 2*by, z);
+}
+
+void BoundaryDirichlet_smooth::applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = val;
+}
+void BoundaryDirichlet_smooth::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) {
+  f(x, y, z) = val;
+}
+///////////////////////////////////////////////////////////////
+
 BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"dirichlet_2ndorder\" is deprecated!\n";
   output << "         Consider using \"dirichlet\" instead\n";

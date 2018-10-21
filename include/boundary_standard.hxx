@@ -59,6 +59,18 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
   void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
+/// Dirichlet boundary condition, tries to smooth out grid-scale oscillations at the boundary
+class BoundaryDirichlet_smooth : public BoundaryOp {
+ public:
+  using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+
+  void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+  void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
+};
+
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
 class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  public:
