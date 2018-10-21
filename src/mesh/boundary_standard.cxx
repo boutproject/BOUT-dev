@@ -101,6 +101,33 @@ namespace {
 
 #endif
   }
+
+  // 2nd order extrapolation to a point
+  template<typename T>
+  void extrap2nd(T &f, int x, int bx, int y, int by, int z) {
+    f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
+  }
+
+  // 3rd order extrapolation to a point
+  template<typename T>
+  void extrap3rd(T &f, int x, int bx, int y, int by, int z) {
+    f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  }
+
+  // 4th order extrapolation to a point
+  template<typename T>
+  void extrap4th(T &f, int x, int bx, int y, int by, int z) {
+    f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
+      + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  }
+
+  // 5th order extrapolation to a point
+  template<typename T>
+  void extrap5th(T &f, int x, int bx, int y, int by, int z) {
+    f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
+      + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
+      + f(x - 5*bx, y - 5*by, z);
+  }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -411,10 +438,10 @@ void BoundaryDirichlet_O3::applyAtPointStaggered(Field3D &f, BoutReal val, int x
 }
 
 void BoundaryDirichlet_O3::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 void BoundaryDirichlet_O3::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -446,12 +473,10 @@ void BoundaryDirichlet_O4::applyAtPointStaggered(Field3D &f, BoutReal val, int x
 }
 
 void BoundaryDirichlet_O4::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 void BoundaryDirichlet_O4::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -514,17 +539,13 @@ void BoundaryDirichlet_4thOrder::applyAtPointStaggered(Field3D &f, BoutReal val,
 
 void BoundaryDirichlet_4thOrder::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
-  // values. Not sure if this is the correct order... JTO 16/10/2018
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  // values. JTO 16/10/2018
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryDirichlet_4thOrder::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
   // values. Not sure if this is the correct order... JTO 16/10/2018
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 
@@ -722,14 +743,10 @@ void BoundaryNeumann_O4::applyAtPointStaggered(Field3D &f, BoutReal val, int x, 
 }
 
 void BoundaryNeumann_O4::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryNeumann_O4::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -763,19 +780,17 @@ void BoundaryNeumann_4thOrder::applyAtPointStaggered(Field3D &UNUSED(f), BoutRea
 
 void BoundaryNeumann_4thOrder::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
-  // values. Not sure if this is the correct order... Previously was
+  // values. Previously was:
   // f(x+bx,y+by,z) = -24.*delta*val + 27.*f(x,y,z) - 27.*f(x-bx,y-by,z) + f(x-2*bx,y-2*by,z); // The f(x-4*bx,y-4*by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
   // - JTO 16/10/2018
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryNeumann_4thOrder::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
   // Changing this extrapolation to not depend on val, so just using grid point
-  // values. Not sure if this is the correct order... Previously was
+  // values. Previously was
   // f(x+bx,y+by,z) = -24.*delta*val + 27.*f(x,y,z) - 27.*f(x-bx,y-by,z) + f(x-2*bx,y-2*by,z); // The f(x-4*bx,y-4*by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
   // - JTO 16/10/2018
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -1277,17 +1292,17 @@ BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BoundaryFree_O2::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
+  extrap2nd(f, x, bx, y, by, z);
 }
 void BoundaryFree_O2::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
+  extrap2nd(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O2::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
+  extrap2nd(f, x, bx, y, by, z);
 }
 void BoundaryFree_O2::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
+  extrap2nd(f, x, bx, y, by, z);
 }
 
 //////////////////////////////////
@@ -1303,24 +1318,24 @@ BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BoundaryFree_O3::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 void BoundaryFree_O3::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O3::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 void BoundaryFree_O3::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O3::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 void BoundaryFree_O3::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
+  extrap3rd(f, x, bx, y, by, z);
 }
 
 // Fourth order extrapolation:
@@ -1334,30 +1349,24 @@ BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BoundaryFree_O4::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O4::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O4::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O4::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O4::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O4::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
-    + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
+  extrap4th(f, x, bx, y, by, z);
 }
 
 // Fifth order extrapolation:
@@ -1371,36 +1380,24 @@ BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BoundaryFree_O5::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O5::applyAtPoint(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O5::applyAtPointStaggered(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O5::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 void BoundaryFree_O5::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 void BoundaryFree_O5::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
-  f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
-    + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
-    + f(x - 5*bx, y - 5*by, z);
+  extrap5th(f, x, bx, y, by, z);
 }
 
 ///////////////////////////////////////////////////////////////
