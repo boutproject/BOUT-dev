@@ -42,6 +42,8 @@ int physics_init(bool restarting) {
 
   Options *cytooptions = Options::getRoot()->getSection("cyto");
   cytooptions->get("dis", mu_N, 1);
+  bool neumann_boundaries;
+  cytooptions->get("neumann_boundaries", neumann_boundaries, false);
 
   SAVE_ONCE(mu_N);
 
@@ -61,12 +63,11 @@ int physics_init(bool restarting) {
   coord->g_23 = 0.0;
   coord->geometry();
 
-  //Dirichlet everywhere except inner x-boundary Neumann
-  N.addBndryFunction(MS,BNDRY_ALL);
-  N.addBndryFunction(dxMS,BNDRY_XIN);
-
-  //Dirichlet boundary conditions everywhere
-  //N.addBndryFunction(MS,BNDRY_ALL);
+  if (neumann_boundaries) {
+    N.addBndryFunction(dxMS,BNDRY_ALL);
+  } else {
+    N.addBndryFunction(MS,BNDRY_ALL);
+  }
 
   // Tell BOUT++ to solve N
   SOLVE_FOR(N);
