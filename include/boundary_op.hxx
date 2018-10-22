@@ -36,10 +36,10 @@ public:
 
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f,BoutReal t = 0.) {
-    applyTemplate<Field2D>(f, t);
+    applyTemplate(f, t);
   }
   virtual void apply(Field3D &f,BoutReal t = 0.) {
-    applyTemplate<Field3D>(f, t);
+    applyTemplate(f, t);
   }
 
   virtual void apply(Vector2D &f) {
