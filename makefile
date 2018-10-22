@@ -85,7 +85,16 @@ locale/%/libbout.po: locale/libbout.pot
 locale/%/LC_MESSAGES/libbout.mo: locale/%/libbout.po
 	msgfmt --output-file=$@ $<
 
-locale-po: locale/fr/libbout.po
+# Shortcut target for building single language
+# Note: invoking make since otherwise the intermediate file is deleted
+locale-po-%:
+	$(MAKE) locale/$*/libbout.po
+locale-mo-%:
+	$(MAKE) locale/$*/LC_MESSAGES/libbout.mo
 
-locale-mo: locale/fr/LC_MESSAGES/libbout.mo
+# Build all locales
+LANGUAGES = fr zh_TW
 
+.PHONY: locale-po locale-mo
+locale-po: $(LANGUAGES:%=locale/%/libbout.po)
+locale-mo: $(LANGUAGES:%=locale/%/LC_MESSAGES/libbout.mo)

@@ -93,7 +93,7 @@ void Options::_set(string val, std::string source, bool force) {
     // Check if current value the same as new value
     if (value.value != val) {
       if (force or value.source != source) {
-        output_warn << "\tOption " << full_name << " = " << value.value << " ("
+        output_warn << _("\tOption ") << full_name << " = " << value.value << " ("
                     << value.source << ") overwritten with:"
                     << "\n"
                     << "\t\t" << full_name << " = " << val << " (" << source << ")\n";
@@ -133,7 +133,7 @@ template <> std::string Options::as<std::string>() const {
   // Mark this option as used
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << value.value;
+  output_info << _("\tOption ") << full_name << " = " << value.value;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -168,7 +168,7 @@ template <> int Options::as<int>() const {
 
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << val;
+  output_info << _("\tOption ") << full_name << " = " << val;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -196,7 +196,7 @@ template <> BoutReal Options::as<BoutReal>() const {
   // Mark this option as used
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << val;
+  output_info << _("\tOption ") << full_name << " = " << val;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -217,10 +217,10 @@ template <> bool Options::as<bool>() const {
   char c = static_cast<char>(toupper((value.value)[0]));
   if ((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
-    output_info << "\tOption " << full_name << " = true";
+    output_info << _("\tOption ") << full_name << " = true";
   } else if ((c == 'N') || (c == 'F') || (c == '0')) {
     val = false;
-    output_info << "\tOption " << full_name << " = false";
+    output_info << _("\tOption ") << full_name << " = false";
   } else {
     throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", full_name.c_str(),
                         value.value.c_str());
