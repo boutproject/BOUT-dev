@@ -291,16 +291,20 @@ Coordinates::Coordinates(Mesh *mesh)
     localmesh->get(zShift, "qinty", 0);
   }
   localmesh->communicate(zShift);
-  // Correct for discontinuity at branch-cut
-  for (int x=0; x<localmesh->LocalNx; x++) {
-    if (localmesh->hasBranchCutDown(x)) {
-      for (int y=0; y<localmesh->ystart; y++) {
-        zShift(x, y) -= ShiftAngle[x];
+
+  // don't extrapolate zShift, set guard cells correctly using ShiftAngle
+  if (!ShiftAngle.empty()) {
+    // Correct for discontinuity at branch-cut
+    for (int x=0; x<localmesh->LocalNx; x++) {
+      if (localmesh->hasBranchCutDown(x)) {
+        for (int y=0; y<localmesh->ystart; y++) {
+          zShift(x, y) -= ShiftAngle[x];
+        }
       }
-    }
-    if (localmesh->hasBranchCutUp(x)) {
-      for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
-        zShift(x, y) += ShiftAngle[x];
+      if (localmesh->hasBranchCutUp(x)) {
+        for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
+          zShift(x, y) += ShiftAngle[x];
+        }
       }
     }
   }
@@ -361,20 +365,21 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   // don't extrapolate zShift, set guard cells correctly using ShiftAngle
   zShift = interpolateAndExtrapolate(coords_in->zShift, location, false);
   localmesh->communicate(zShift);
-  // Correct for discontinuity at branch-cut
-  for (int x=0; x<localmesh->LocalNx; x++) {
-    if (localmesh->hasBranchCutDown(x)) {
-      for (int y=0; y<localmesh->ystart; y++) {
-        zShift(x, y) -= ShiftAngle[x];
+  if (!ShiftAngle.empty()) {
+    // Correct for discontinuity at branch-cut
+    for (int x=0; x<localmesh->LocalNx; x++) {
+      if (localmesh->hasBranchCutDown(x)) {
+        for (int y=0; y<localmesh->ystart; y++) {
+          zShift(x, y) -= ShiftAngle[x];
+        }
       }
-    }
-    if (localmesh->hasBranchCutUp(x)) {
-      for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
-        zShift(x, y) += ShiftAngle[x];
+      if (localmesh->hasBranchCutUp(x)) {
+        for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
+          zShift(x, y) += ShiftAngle[x];
+        }
       }
     }
   }
-
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {

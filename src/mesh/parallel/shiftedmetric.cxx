@@ -26,6 +26,21 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     throw BoutException("ShiftedMetric requires the option TwistShift=false");
   }
 
+  // Check ShiftAngle is set, this is needed for zShift to be set correctly at
+  // branch cuts
+  for (int x=0; x<mesh.LocalNx; x++) {
+    if (mesh.hasBranchCutUp(x) || mesh.hasBranchCutDown(x)) {
+      if (mesh.getCoordinates()->ShiftAngle.empty()) {
+        throw BoutException("Domain has a branch cut: ShiftedMetric requires a "
+            "ShiftAngle to be set, so that zShift can be calculated correctly in "
+            "guard cells.\n"
+            "If your domain should not have a closed field line region, try "
+            "setting ixseps1<MXG and ixseps2<MXG where MXG is the number of "
+            "guard cells in the x-direction.");
+      }
+    }
+  }
+
   //If we wanted to be efficient we could move the following cached phase setup
   //into the relevant shifting routines (with static bool first protection)
   //so that we only calculate the phase if we actually call a relevant shift 
