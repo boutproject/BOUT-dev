@@ -65,29 +65,25 @@ BoutReal BoundaryOpUtilities::calcGridSpacing(Mesh* localmesh, CELL_LOC loc, int
       } else if (by > 0) {
         // Upper y-boundary
         // Evaluate dy at the boundary between y and y-1
-        throw BoutException("need dy at XLOW-YLOW corner");
-        return localmesh->getCoordinates(CELL_YLOW)->dy(x, y);
+        return localmesh->getCoordinatesXYCorner()->dy(x, y);
       } else /*(by < 0)*/ {
         // Lower y-boundary
         // Evaluate dy at the boundary between y and y+1
         // Need to multiply by sign of bx so derivative ends up with correct
         // direction/sign
-        throw BoutException("need dy at XLOW-YLOW corner");
-        return -localmesh->getCoordinates(CELL_YLOW)->dy(x, y+1);
+        return -localmesh->getCoordinatesXYCorner()->dy(x, y+1);
       }
     } else /*if (loc == CELL_YLOW)*/ {
       if (bx > 0) {
         // Outer x-boundary
         // Evaluate dx at the boundary between x and x-1
-        throw BoutException("need dx at XLOW-YLOW corner");
-        return localmesh->getCoordinates(CELL_XLOW)->dx(x, y);
+        return localmesh->getCoordinatesXYCorner()->dx(x, y);
       } else if (bx < 0) {
         // Inner x-boundary
         // Evaluate dx at the boundary between x and x+1
         // Need to multiply by sign of bx so derivative ends up with correct
         // direction/sign
-        throw BoutException("need dx at XLOW-YLOW corner");
-        return -localmesh->getCoordinates(CELL_XLOW)->dx(x+1, y);
+        return -localmesh->getCoordinatesXYCorner()->dx(x+1, y);
       } else if (by > 0) {
         // Upper y-boundary
         // Evaluate dy at the boundary between y and y-1
