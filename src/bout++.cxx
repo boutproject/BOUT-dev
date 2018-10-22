@@ -146,14 +146,14 @@ int BoutInitialise(int &argc, char **&argv) {
 
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
-  // Note: LC_ALL here causes problems, perhaps with reading strings
-  if (!setlocale (LC_MESSAGES, "")) {  // Language-specific messages
+  try {
+    std::locale::global(std::locale(""));
+    bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
+    textdomain ("libbout");
+    fprintf(stderr, "LOCALE_PATH = '%s'", CMDLINE(BOUT_LOCALE_PATH));
+  } catch (const std::runtime_error &e) {
     fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
   }
-  setlocale (LC_CTYPE, "");     // Output utf-8 characters
-  bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
-  fprintf(stderr, "LOCALE_PATH = '%s'", CMDLINE(BOUT_LOCALE_PATH));
-  textdomain ("libbout");
 #endif // BOUT_HAS_GETTEXT
   
   int verbosity=4;
