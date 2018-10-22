@@ -409,6 +409,130 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesStaggered(Mesh *mesh_in,
   return result;
 }
 
+std::shared_ptr<Coordinates> Coordinates::getCoordinatesXYCorner(Mesh *mesh_in) {
+
+  std::shared_ptr<Coordinates> result{new Coordinates(mesh_in)};
+
+  Coordinates* coords_xlow = mesh_in->getCoordinates(CELL_XLOW);
+
+  // hack with setLocation because interp_to doesn't know how to interpolate to
+  // XYCorner, so we pretend that the CELL_XLOW field is at CELL_CENTRE and
+  // interpolate to CELL_YLOW. Finally set location to CELL_CENTRE; these
+  // fields will be used with staggered fields (CELL_XLOW, CELL_YLOW) but
+  // should only be used pointwise (i.e. through operator()); we want
+  // Field2D/Field3D operations to fail, but there is no 'null' CELL_LOC; using
+  // CELL_CENTRE seems OK for now.
+  // Also note that interpolateAndExtrapolate sets the upper/outer boundary
+  // value (which interp_to skips) by interpolating
+  result->dx = coords_xlow->dx;
+  result->dx.setLocation(CELL_CENTRE);
+  result->dx = interpolateAndExtrapolate(result->dx, CELL_YLOW, false);
+  result->dx.setLocation(CELL_CENTRE);
+  result->dy = coords_xlow->dy;
+  result->dy.setLocation(CELL_CENTRE);
+  result->dy = interpolateAndExtrapolate(result->dy, CELL_YLOW, false);
+  result->dy.setLocation(CELL_CENTRE);
+
+  result->nz = mesh_in->LocalNz;
+
+  result->dz = coords_xlow->dz;
+
+  // Diagonal components of metric tensor g^{ij}
+  result->g11 = coords_xlow->g11;
+  result->g11.setLocation(CELL_CENTRE);
+  result->g11 = interpolateAndExtrapolate(result->g11, CELL_YLOW, mesh->hasBranchCut());
+  result->g11.setLocation(CELL_CENTRE);
+  result->g22 = coords_xlow->g22;
+  result->g22.setLocation(CELL_CENTRE);
+  result->g22 = interpolateAndExtrapolate(result->g22, CELL_YLOW, mesh->hasBranchCut());
+  result->g22.setLocation(CELL_CENTRE);
+  result->g33 = coords_xlow->g33;
+  result->g33.setLocation(CELL_CENTRE);
+  result->g33 = interpolateAndExtrapolate(result->g33, CELL_YLOW, mesh->hasBranchCut());
+  result->g33.setLocation(CELL_CENTRE);
+
+  // Off-diagonal elements.
+  result->g12 = coords_xlow->g12;
+  result->g12.setLocation(CELL_CENTRE);
+  result->g12 = interpolateAndExtrapolate(result->g12, CELL_YLOW, mesh->hasBranchCut());
+  result->g12.setLocation(CELL_CENTRE);
+  result->g13 = coords_xlow->g13;
+  result->g13.setLocation(CELL_CENTRE);
+  result->g13 = interpolateAndExtrapolate(result->g13, CELL_YLOW, mesh->hasBranchCut());
+  result->g13.setLocation(CELL_CENTRE);
+  result->g23 = coords_xlow->g23;
+  result->g23.setLocation(CELL_CENTRE);
+  result->g23 = interpolateAndExtrapolate(result->g23, CELL_YLOW, mesh->hasBranchCut());
+  result->g23.setLocation(CELL_CENTRE);
+
+  result->ShiftAngle = coords_xlow->ShiftAngle;
+
+  // don't extrapolate zShift, set guard cells correctly using ShiftAngle
+  result->zShift = coords_xlow->zShift;
+  result->zShift.setLocation(CELL_CENTRE);
+  result->zShift = interpolateAndExtrapolate(result->zShift, CELL_YLOW, false);
+  result->zShift.setLocation(CELL_CENTRE);
+  mesh_in->communicate(result->zShift);
+  // Correct for discontinuity at branch-cut
+  if (!result->ShiftAngle.empty()) {
+    for (int x=0; x<mesh_in->LocalNx; x++) {
+      if (mesh_in->hasBranchCutDown(x)) {
+        for (int y=0; y<mesh_in->ystart; y++) {
+          result->zShift(x, y) -= result->ShiftAngle[x];
+        }
+      }
+      if (mesh_in->hasBranchCutUp(x)) {
+        for (int y=mesh_in->yend+1; y<mesh_in->LocalNy; y++) {
+          result->zShift(x, y) += result->ShiftAngle[x];
+        }
+      }
+    }
+  }
+
+  // Check input metrics
+  if ((!finite(result->g11, RGN_NOBNDRY)) || (!finite(result->g22, RGN_NOBNDRY)) || (!finite(result->g33, RGN_NOBNDRY))) {
+    throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
+  }
+  if ((min(result->g11) <= 0.0) || (min(result->g22) <= 0.0) || (min(result->g33) <= 0.0)) {
+    throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
+  }
+  if ((!finite(result->g12, RGN_NOBNDRY)) || (!finite(result->g13, RGN_NOBNDRY)) || (!finite(result->g23, RGN_NOBNDRY))) {
+    throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
+  }
+
+  /// Always calculate contravariant metric components so that they are
+  /// consistent with the interpolated covariant components
+  if (result->calcCovariant()) {
+    throw BoutException("Error in calcCovariant call");
+  }
+
+  /// Calculate Jacobian and Bxy
+  if (result->jacobian())
+    throw BoutException("Error in jacobian call");
+
+  //////////////////////////////////////////////////////
+  /// Calculate Christoffel symbols. Needs communication
+  if (result->geometry()) {
+    throw BoutException("Differential geometry failed\n");
+  }
+
+  result->ShiftTorsion = coords_xlow->ShiftTorsion;
+  result->ShiftTorsion.setLocation(CELL_CENTRE);
+  result->ShiftTorsion = interpolateAndExtrapolate(result->ShiftTorsion, CELL_YLOW, mesh->hasBranchCut());
+  result->ShiftTorsion.setLocation(CELL_CENTRE);
+
+  //////////////////////////////////////////////////////
+
+  if (mesh_in->IncIntShear) {
+    result->IntShiftTorsion = coords_xlow->IntShiftTorsion;
+    result->IntShiftTorsion.setLocation(CELL_CENTRE);
+    result->IntShiftTorsion = interpolateAndExtrapolate(result->IntShiftTorsion, CELL_YLOW, false);
+    result->IntShiftTorsion.setLocation(CELL_CENTRE);
+  }
+
+  return result;
+}
+
 void Coordinates::outputVars(Datafile &file) {
   file.add(dx, "dx", false);
   file.add(dy, "dy", false);

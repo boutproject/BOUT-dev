@@ -489,6 +489,10 @@ class Mesh {
     }
   }
 
+  /// Special method to get coordinates at XLOW-YLOW corner of cells, needed
+  /// for boundary conditions on staggered fields
+  Coordinates *getCoordinatesXYCorner();
+
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
@@ -753,6 +757,7 @@ class Mesh {
   GridDataSource *source; ///< Source for grid data
   
   std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+  std::shared_ptr<Coordinates> coords_xy_corner;
 
   Options *options; ///< Mesh options section
   

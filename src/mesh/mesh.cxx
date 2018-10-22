@@ -366,6 +366,12 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
     return Coordinates::getCoordinatesStaggered(this, location, getCoordinates(CELL_CENTRE));
 }
 
+Coordinates* Mesh::getCoordinatesXYCorner() {
+  if (coords_xy_corner == nullptr) {
+    coords_xy_corner = Coordinates::getCoordinatesXYCorner(this);
+  }
+  return coords_xy_corner.get();
+}
 
 const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
   const auto found = regionMap3D.find(region_name);

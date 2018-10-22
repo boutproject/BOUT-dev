@@ -54,6 +54,10 @@ public:
   static std::shared_ptr<Coordinates> getCoordinatesStaggered(Mesh *mesh_in, const CELL_LOC loc, const Coordinates* coords_in);
   
   ~Coordinates() {}
+
+  /// Get special coordinates object interpolated to XLOW-YLOW cell corner
+  /// Used for boundary conditions on staggered fields
+  static std::shared_ptr<Coordinates> getCoordinatesXYCorner(Mesh *mesh_in);
   
   /*!
    * Adds variables to the output file, for post-processing
