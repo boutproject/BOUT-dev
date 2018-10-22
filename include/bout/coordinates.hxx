@@ -47,11 +47,11 @@ class Coordinates;
  */ 
 class Coordinates {
 public:
-  /// Standard constructor from input
-  Coordinates(Mesh *mesh);
+  /// Standard Coordinates from input
+  static std::shared_ptr<Coordinates> getCoordinates(Mesh* mesh_in);
 
-  /// Constructor interpolating from another Coordinates object
-  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
+  /// Coordinates interpolating from another Coordinates object
+  static std::shared_ptr<Coordinates> getCoordinatesStaggered(Mesh *mesh_in, const CELL_LOC loc, const Coordinates* coords_in);
   
   ~Coordinates() {}
   
@@ -148,6 +148,18 @@ public:
   const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
 private:
+  /// Basic constructor, initializes fields but does not load values
+  Coordinates(Mesh* mesh)
+    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+      // Identity metric tensor
+      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
+      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
+      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), zShift(mesh), ShiftTorsion(mesh),
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {}
+
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;

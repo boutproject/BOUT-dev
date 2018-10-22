@@ -360,10 +360,10 @@ ParallelTransform& Mesh::getParallelTransform() {
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
   if (location == CELL_CENTRE || location == CELL_DEFAULT)
     // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this);
+    return Coordinates::getCoordinates(this);
   else
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+    return Coordinates::getCoordinatesStaggered(this, location, getCoordinates(CELL_CENTRE));
 }
 
 

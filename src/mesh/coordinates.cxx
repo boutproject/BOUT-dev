@@ -132,34 +132,27 @@ namespace {
   }
 }
 
-Coordinates::Coordinates(Mesh *mesh)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
-      // Identity metric tensor
-      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
-      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
-      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
-      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
-      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), zShift(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+std::shared_ptr<Coordinates> Coordinates::getCoordinates(Mesh *mesh_in) {
 
-  if (localmesh->get(dx, "dx")) {
+  std::shared_ptr<Coordinates> result{new Coordinates(mesh_in)};
+
+  if (mesh_in->get(result->dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
-    dx = 1.0;
+    result->dx = 1.0;
   }
 
-  if (localmesh->periodicX) {
-    localmesh->communicate(dx);
+  if (mesh_in->periodicX) {
+    mesh_in->communicate(result->dx);
   }
 
-  if (localmesh->get(dy, "dy")) {
+  if (mesh_in->get(result->dy, "dy")) {
     output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
-    dy = 1.0;
+    result->dy = 1.0;
   }
 
-  nz = localmesh->LocalNz;
+  result->nz = mesh_in->LocalNz;
 
-  if (localmesh->get(dz, "dz")) {
+  if (mesh_in->get(result->dz, "dz")) {
     // Couldn't read dz from input
     int zperiod;
     BoutReal ZMIN, ZMAX;
@@ -175,45 +168,45 @@ Coordinates::Coordinates(Mesh *mesh)
       zperiod = ROUND(1.0 / (ZMAX - ZMIN));
     }
 
-    dz = (ZMAX - ZMIN) * TWOPI / nz;
+    result->dz = (ZMAX - ZMIN) * TWOPI / result->nz;
   }
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  localmesh->get(g11, "g11", 1.0);
-  localmesh->get(g22, "g22", 1.0);
-  localmesh->get(g33, "g33", 1.0);
+  mesh_in->get(result->g11, "g11", 1.0);
+  mesh_in->get(result->g22, "g22", 1.0);
+  mesh_in->get(result->g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  localmesh->get(g12, "g12", 0.0);
-  localmesh->get(g13, "g13", 0.0);
-  localmesh->get(g23, "g23", 0.0);
+  mesh_in->get(result->g12, "g12", 0.0);
+  mesh_in->get(result->g13, "g13", 0.0);
+  mesh_in->get(result->g23, "g23", 0.0);
 
   // Check input metrics
-  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+  if ((!finite(result->g11)) || (!finite(result->g22)) || (!finite(result->g33))) {
     throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
+  if ((min(result->g11) <= 0.0) || (min(result->g22) <= 0.0) || (min(result->g33) <= 0.0)) {
     throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
-  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+  if ((!finite(result->g12)) || (!finite(result->g13)) || (!finite(result->g23))) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
   /// Find covariant metric components
   // Check if any of the components are present
-  if (localmesh->sourceHasVar("g_11") or localmesh->sourceHasVar("g_22") or
-      localmesh->sourceHasVar("g_33") or localmesh->sourceHasVar("g_12") or
-      localmesh->sourceHasVar("g_13") or localmesh->sourceHasVar("g_23")) {
+  if (mesh_in->sourceHasVar("g_11") or mesh_in->sourceHasVar("g_22") or
+      mesh_in->sourceHasVar("g_33") or mesh_in->sourceHasVar("g_12") or
+      mesh_in->sourceHasVar("g_13") or mesh_in->sourceHasVar("g_23")) {
     // Check that all components are present
-    if (localmesh->sourceHasVar("g_11") and localmesh->sourceHasVar("g_22") and
-        localmesh->sourceHasVar("g_33") and localmesh->sourceHasVar("g_12") and
-        localmesh->sourceHasVar("g_13") and localmesh->sourceHasVar("g_23")) {
-      localmesh->get(g_11, "g_11");
-      localmesh->get(g_22, "g_22");
-      localmesh->get(g_33, "g_33");
-      localmesh->get(g_12, "g_12");
-      localmesh->get(g_13, "g_13");
-      localmesh->get(g_23, "g_23");
+    if (mesh_in->sourceHasVar("g_11") and mesh_in->sourceHasVar("g_22") and
+        mesh_in->sourceHasVar("g_33") and mesh_in->sourceHasVar("g_12") and
+        mesh_in->sourceHasVar("g_13") and mesh_in->sourceHasVar("g_23")) {
+      mesh_in->get(result->g_11, "g_11");
+      mesh_in->get(result->g_22, "g_22");
+      mesh_in->get(result->g_33, "g_33");
+      mesh_in->get(result->g_12, "g_12");
+      mesh_in->get(result->g_13, "g_13");
+      mesh_in->get(result->g_23, "g_23");
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -222,199 +215,198 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant()) {
+      if (result->calcCovariant()) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant()) {
+    if (result->calcCovariant()) {
       throw BoutException("Error in calcCovariant call");
     }
   }
 
   /// Calculate Jacobian and Bxy
-  if (jacobian())
+  if (result->jacobian())
     throw BoutException("Error in jacobian call");
 
   // Attempt to read J from the grid file
-  Field2D Jcalc = J;
-  if (localmesh->get(J, "J")) {
+  Field2D Jcalc = result->J;
+  if (mesh_in->get(result->J, "J")) {
     output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
+    result->J = Jcalc;
   } else {
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is %e\n", max(abs(result->J - Jcalc)));
 
     // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22) / J;
+    result->Bxy = sqrt(result->g_22) / result->J;
   }
 
   // Attempt to read Bxy from the grid file
-  Field2D Bcalc = Bxy;
-  if (localmesh->get(Bxy, "Bxy")) {
+  Field2D Bcalc = result->Bxy;
+  if (mesh_in->get(result->Bxy, "Bxy")) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
-    Bxy = Bcalc;
+    result->Bxy = Bcalc;
   } else {
-    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(result->Bxy - Bcalc)));
     // Check Bxy
-    if (!finite(Bxy)) {
+    if (!finite(result->Bxy)) {
       throw BoutException("\tERROR: Bxy not finite everywhere!\n");
     }
   }
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
+  if (result->geometry()) {
     throw BoutException("Differential geometry failed\n");
   }
 
-  if (localmesh->get(ShiftTorsion, "ShiftTorsion")) {
+  if (mesh_in->get(result->ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
+    result->ShiftTorsion = 0.0;
   }
 
   //////////////////////////////////////////////////////
 
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-  ShiftAngle.resize(localmesh->LocalNx);
-  if (localmesh->get(ShiftAngle, "ShiftAngle", localmesh->LocalNx, localmesh->XGLOBAL(0))) {
+  result->ShiftAngle.resize(mesh_in->LocalNx);
+  if (mesh_in->get(result->ShiftAngle, "ShiftAngle", mesh_in->LocalNx, mesh_in->XGLOBAL(0))) {
     output_warn.write("WARNING: Twist-shift angle 'ShiftAngle' not found.");
-    ShiftAngle.resize(0); // leave ShiftAngle empty
+    result->ShiftAngle.resize(0); // leave ShiftAngle empty
   }
 
   // try to read zShift from grid
-  if(localmesh->get(zShift, "zShift", 0)) {
+  if(mesh_in->get(result->zShift, "zShift", 0)) {
     // No zShift variable. Try qinty in BOUT grid files
-    localmesh->get(zShift, "qinty", 0);
+    mesh_in->get(result->zShift, "qinty", 0);
   }
-  localmesh->communicate(zShift);
+  mesh_in->communicate(result->zShift);
 
   // don't extrapolate zShift, set guard cells correctly using ShiftAngle
-  if (!ShiftAngle.empty()) {
+  if (!result->ShiftAngle.empty()) {
     // Correct for discontinuity at branch-cut
-    for (int x=0; x<localmesh->LocalNx; x++) {
-      if (localmesh->hasBranchCutDown(x)) {
-        for (int y=0; y<localmesh->ystart; y++) {
-          zShift(x, y) -= ShiftAngle[x];
+    for (int x=0; x<mesh_in->LocalNx; x++) {
+      if (mesh_in->hasBranchCutDown(x)) {
+        for (int y=0; y<mesh_in->ystart; y++) {
+          result->zShift(x, y) -= result->ShiftAngle[x];
         }
       }
-      if (localmesh->hasBranchCutUp(x)) {
-        for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
-          zShift(x, y) += ShiftAngle[x];
+      if (mesh_in->hasBranchCutUp(x)) {
+        for (int y=mesh_in->yend+1; y<mesh_in->LocalNy; y++) {
+          result->zShift(x, y) += result->ShiftAngle[x];
         }
       }
     }
   }
 
-  if (localmesh->IncIntShear) {
-    if (localmesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+  if (mesh_in->IncIntShear) {
+    if (mesh_in->get(result->IntShiftTorsion, "IntShiftTorsion")) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
+      result->IntShiftTorsion = 0.0;
     }
   }
+
+  return result;
 }
 
-Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
-      // Identity metric tensor
-      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
-      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
-      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
-      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
-      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), zShift(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+std::shared_ptr<Coordinates> Coordinates::getCoordinatesStaggered(Mesh *mesh_in, const CELL_LOC loc, const Coordinates* coords_in) {
 
-  dx = interpolateAndExtrapolate(coords_in->dx, location, false);
-  dy = interpolateAndExtrapolate(coords_in->dy, location, false);
+  std::shared_ptr<Coordinates> result{new Coordinates(mesh_in)};
 
-  nz = localmesh->LocalNz;
+  result->location = loc;
 
-  dz = coords_in->dz;
+  result->dx = interpolateAndExtrapolate(coords_in->dx, result->location, false);
+  result->dy = interpolateAndExtrapolate(coords_in->dy, result->location, false);
+
+  result->nz = mesh_in->LocalNz;
+
+  result->dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndExtrapolate(coords_in->g11, location, mesh->hasBranchCut());
-  g22 = interpolateAndExtrapolate(coords_in->g22, location, mesh->hasBranchCut());
-  g33 = interpolateAndExtrapolate(coords_in->g33, location, mesh->hasBranchCut());
+  result->g11 = interpolateAndExtrapolate(coords_in->g11, result->location, mesh->hasBranchCut());
+  result->g22 = interpolateAndExtrapolate(coords_in->g22, result->location, mesh->hasBranchCut());
+  result->g33 = interpolateAndExtrapolate(coords_in->g33, result->location, mesh->hasBranchCut());
 
   // Off-diagonal elements.
-  g12 = interpolateAndExtrapolate(coords_in->g12, location, mesh->hasBranchCut());
-  g13 = interpolateAndExtrapolate(coords_in->g13, location, mesh->hasBranchCut());
-  g23 = interpolateAndExtrapolate(coords_in->g23, location, mesh->hasBranchCut());
+  result->g12 = interpolateAndExtrapolate(coords_in->g12, result->location, mesh->hasBranchCut());
+  result->g13 = interpolateAndExtrapolate(coords_in->g13, result->location, mesh->hasBranchCut());
+  result->g23 = interpolateAndExtrapolate(coords_in->g23, result->location, mesh->hasBranchCut());
 
   if (!coords_in->ShiftAngle.empty()) {
-    if (location == CELL_XLOW) {
+    if (result->location == CELL_XLOW) {
       // Need to interpolate ShiftAngle CELL_CENTRE->CELL_XLOW
-      ShiftAngle.resize(localmesh->LocalNx);
+      result->ShiftAngle.resize(mesh_in->LocalNx);
       stencil s;
-      for (int x=localmesh->xstart; x<=localmesh->xend; x++) {
+      for (int x=mesh_in->xstart; x<=mesh_in->xend; x++) {
         s.mm = coords_in->ShiftAngle[x-2];
         s.m = coords_in->ShiftAngle[x-1];
         s.p = coords_in->ShiftAngle[x];
         s.pp = coords_in->ShiftAngle[x+1];
-        ShiftAngle[x] = interp(s);
+        result->ShiftAngle[x] = interp(s);
       }
     } else {
-      ShiftAngle = coords_in->ShiftAngle;
+      result->ShiftAngle = coords_in->ShiftAngle;
     }
   }
 
   // don't extrapolate zShift, set guard cells correctly using ShiftAngle
-  zShift = interpolateAndExtrapolate(coords_in->zShift, location, false);
-  localmesh->communicate(zShift);
-  if (!ShiftAngle.empty()) {
+  result->zShift = interpolateAndExtrapolate(coords_in->zShift, result->location, false);
+  mesh_in->communicate(result->zShift);
+  if (!result->ShiftAngle.empty()) {
     // Correct for discontinuity at branch-cut
-    for (int x=0; x<localmesh->LocalNx; x++) {
-      if (localmesh->hasBranchCutDown(x)) {
-        for (int y=0; y<localmesh->ystart; y++) {
-          zShift(x, y) -= ShiftAngle[x];
+    for (int x=0; x<mesh_in->LocalNx; x++) {
+      if (mesh_in->hasBranchCutDown(x)) {
+        for (int y=0; y<mesh_in->ystart; y++) {
+          result->zShift(x, y) -= result->ShiftAngle[x];
         }
       }
-      if (localmesh->hasBranchCutUp(x)) {
-        for (int y=localmesh->yend+1; y<localmesh->LocalNy; y++) {
-          zShift(x, y) += ShiftAngle[x];
+      if (mesh_in->hasBranchCutUp(x)) {
+        for (int y=mesh_in->yend+1; y<mesh_in->LocalNy; y++) {
+          result->zShift(x, y) += result->ShiftAngle[x];
         }
       }
     }
   }
 
   // Check input metrics
-  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
+  if ((!finite(result->g11, RGN_NOBNDRY)) || (!finite(result->g22, RGN_NOBNDRY)) || (!finite(result->g33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
   }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
+  if ((min(result->g11) <= 0.0) || (min(result->g22) <= 0.0) || (min(result->g33) <= 0.0)) {
     throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
   }
-  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
+  if ((!finite(result->g12, RGN_NOBNDRY)) || (!finite(result->g13, RGN_NOBNDRY)) || (!finite(result->g23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
   }
 
   /// Always calculate contravariant metric components so that they are
   /// consistent with the interpolated covariant components
-  if (calcCovariant()) {
+  if (result->calcCovariant()) {
     throw BoutException("Error in calcCovariant call");
   }
 
   /// Calculate Jacobian and Bxy
-  if (jacobian())
+  if (result->jacobian())
     throw BoutException("Error in jacobian call");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
+  if (result->geometry()) {
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, false);
+  result->ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, result->location, false);
 
   //////////////////////////////////////////////////////
 
-  if (localmesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location, true);
+  if (mesh_in->IncIntShear) {
+    result->IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, result->location, true);
   }
+
+  return result;
 }
 
 void Coordinates::outputVars(Datafile &file) {
