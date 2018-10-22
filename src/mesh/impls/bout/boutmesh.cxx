@@ -830,6 +830,23 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
+  // create coordinates objects if possible
+  createDefaultCoordinates(CELL_CENTRE);
+  if (StaggerGrids) {
+    if (xstart > 1) {
+      // Can interpolate in x-direction
+      createDefaultCoordinates(CELL_XLOW);
+    }
+    if (ystart > 1) {
+      // Can interpolate in y-direction
+      createDefaultCoordinates(CELL_YLOW);
+    }
+    if (xstart > 1 && ystart > 1) {
+      // Can interpolate in x- and y-directions
+      createXYCornerCoordinates();
+    }
+  }
+
   output_info.write("\tdone\n");
 
   return 0;

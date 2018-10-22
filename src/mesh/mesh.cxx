@@ -357,20 +357,25 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+void Mesh::createDefaultCoordinates(const CELL_LOC location) {
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    return Coordinates::getCoordinates(this);
-  else
+    if (!coords_map.count(CELL_CENTRE)) {
+      coords_map.emplace(CELL_CENTRE, Coordinates::getCoordinates(this));
+    }
+  }
+  else {
     // Interpolate coordinates from CELL_CENTRE version
-    return Coordinates::getCoordinatesStaggered(this, location, getCoordinates(CELL_CENTRE));
+    if (!coords_map.count(location)) {
+      coords_map.emplace(location, Coordinates::getCoordinatesStaggered(this, location, getCoordinates(CELL_CENTRE)));
+    }
+  }
 }
 
-Coordinates* Mesh::getCoordinatesXYCorner() {
+void Mesh::createXYCornerCoordinates() {
   if (coords_xy_corner == nullptr) {
     coords_xy_corner = Coordinates::getCoordinatesXYCorner(this);
   }
-  return coords_xy_corner.get();
 }
 
 const Region<> & Mesh::getRegion3D(const std::string &region_name) const {

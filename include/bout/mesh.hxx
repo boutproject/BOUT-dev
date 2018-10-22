@@ -478,20 +478,14 @@ class Mesh {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
-    }
+    return coords_map[location].get();
   }
 
   /// Special method to get coordinates at XLOW-YLOW corner of cells, needed
   /// for boundary conditions on staggered fields
-  Coordinates *getCoordinatesXYCorner();
+  Coordinates *getCoordinatesXYCorner() {
+    return coords_xy_corner.get();
+  }
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
@@ -761,6 +755,11 @@ class Mesh {
 
   Options *options; ///< Mesh options section
   
+  /// Allocates default Coordinates objects
+  void createDefaultCoordinates(const CELL_LOC location);
+
+  /// Allocates XLOW-YLOW corner Coordinates object
+  void createXYCornerCoordinates();
 
   PTptr transform; ///< Handles calculation of yup and ydown
 
@@ -795,9 +794,6 @@ class Mesh {
                            REGION region = RGN_NOBNDRY);
 
 private:
-  /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
-
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
