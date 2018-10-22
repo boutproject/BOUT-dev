@@ -32,6 +32,9 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
+#include <ctime>
+#include <iomanip>
+
 /**************************************************************************
  * String routines
  **************************************************************************/
@@ -128,3 +131,13 @@ std::string trimComments(const std::string &s, const std::string &c) {
   return s.substr(0, s.find_first_of(c));
 }
 
+template <>
+const std::string toString<>(const time_t& time) {
+  // Get local time
+  std::tm tm = *std::localtime(&time);
+  
+  std::stringstream ss;
+  ss << std::put_time(&tm, "%c %Z");
+
+  return ss.str();
+}
