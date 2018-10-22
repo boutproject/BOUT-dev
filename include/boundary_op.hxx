@@ -74,24 +74,32 @@ protected:
   virtual void applyAtPoint(Field2D &UNUSED(f), BoutReal UNUSED(val), int
       UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
       Coordinates* UNUSED(metric)) {
-    ASSERT1(false);
+    throw BoutException("BoundaryOp::applyAtPoint() should never be called. A "
+        "subclass should either override BoundaryOp::apply() or override "
+        "applyAtPoint() and applyAtPointStaggered().");
   }
   virtual void applyAtPoint(Field3D &UNUSED(f), BoutReal UNUSED(val), int
       UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
       Coordinates* UNUSED(metric)) {
-    ASSERT1(false);
+    throw BoutException("BoundaryOp::applyAtPoint() should never be called. A "
+        "subclass should either override BoundaryOp::apply() or override "
+        "applyAtPoint() and applyAtPointStaggered().");
   }
 
   // Apply to staggered grid
   virtual void applyAtPointStaggered(Field2D &UNUSED(f), BoutReal UNUSED(val),
       int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
       UNUSED(z), Coordinates* UNUSED(metric)) {
-    ASSERT1(false);
+    throw BoutException("BoundaryOp::applyAtPointStaggered() should never be "
+        "called. A subclass should either override BoundaryOp::apply() or "
+        "override applyAtPoint() and applyAtPointStaggered().");
   }
   virtual void applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUSED(val),
       int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
       UNUSED(z), Coordinates* UNUSED(metric)) {
-    ASSERT1(false);
+    throw BoutException("BoundaryOp::applyAtPointStaggered() should never be "
+        "called. A subclass should either override BoundaryOp::apply() or "
+        "override applyAtPoint() and applyAtPointStaggered().");
   }
 
   // extrapolate to further guard cells
