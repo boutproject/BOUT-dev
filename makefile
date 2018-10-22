@@ -68,3 +68,24 @@ build-check-integrated-tests: libfast
 
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
+
+######################################################################
+# Internationalisation
+######################################################################
+
+# Create the template file, combining all source files
+locale/libbout.pot: src/bout++.cxx
+	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find src/ -name "*.cxx"`
+
+# Update a .po file
+locale/%/libbout.po: locale/libbout.pot
+	msgmerge --update $@ $<
+
+# Update a .mo file
+locale/%/LC_MESSAGES/libbout.mo: locale/%/libbout.po
+	msgfmt --output-file=$@ $<
+
+locale-po: locale/fr/libbout.po
+
+locale-mo: locale/fr/LC_MESSAGES/libbout.mo
+

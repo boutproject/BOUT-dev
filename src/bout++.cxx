@@ -141,6 +141,16 @@ int BoutInitialise(int &argc, char **&argv) {
   set_file = DEFAULT_SET;
   log_file = DEFAULT_LOG;
 
+#if BOUT_HAS_GETTEXT
+  // Setting the i18n environment
+  // Note: LC_ALL here causes problems, perhaps with reading strings
+  setlocale (LC_MESSAGES, "");  // Language-specific messages
+  setlocale (LC_CTYPE, "");     // Output utf-8 characters
+  //bindtextdomain ("libbout", LOCALE_PATH);
+  bindtextdomain ("libbout", "/home/bd512/BOUT-dev/locale/");
+  textdomain ("libbout");
+#endif // BOUT_HAS_GETTEXT
+  
   int verbosity=4;
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
@@ -235,10 +245,10 @@ int BoutInitialise(int &argc, char **&argv) {
   struct stat test;
   if (stat(data_dir, &test) == 0){
     if (!S_ISDIR(test.st_mode)){
-      throw BoutException("DataDir \"%s\" is not a directory\n",data_dir);
+      throw BoutException(_("DataDir \"%s\" is not a directory\n"),data_dir);
     }
   } else {
-    throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
+    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),data_dir);
   }
   
   // Set options
@@ -332,7 +342,7 @@ int BoutInitialise(int &argc, char **&argv) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: %s\n", CHECKSUM);
 #endif
-  output_progress.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -345,15 +355,15 @@ int BoutInitialise(int &argc, char **&argv) {
   output_info.write("Compile-time options:\n");
 
 #if CHECK > 0
-  output_info.write("\tChecking enabled, level %d\n", CHECK);
+  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
 #else
-  output_info.write("\tChecking disabled\n");
+  output_info.write(_("\tChecking disabled\n"));
 #endif
 
 #ifdef SIGHANDLE
-  output_info.write("\tSignal handling enabled\n");
+  output_info.write(_("\tSignal handling enabled\n"));
 #else
-  output_info.write("\tSignal handling disabled\n");
+  output_info.write(_("\tSignal handling disabled\n"));
 #endif
 
 #ifdef NCDF
@@ -406,7 +416,7 @@ int BoutInitialise(int &argc, char **&argv) {
       reader->write(options, "%s/%s", data_dir, set_file);
     }
   } catch (BoutException &e) {
-    output << "Error encountered during initialisation\n";
+    output << _("Error encountered during initialisation\n");
     output << e.what() << endl;
     return 1;
   }
@@ -451,7 +461,7 @@ int BoutInitialise(int &argc, char **&argv) {
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
-    output_error.write("Error encountered during initialisation: %s\n", e.what());
+    output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
   }
   return 0;

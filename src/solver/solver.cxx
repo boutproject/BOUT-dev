@@ -516,22 +516,22 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }
 
 
-  output_progress.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
+  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
   if (freqDefault > 1)
-    output_progress.write("Solver running for %d outputs with monitor timestep of %e\n",
+    output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
                           NOUT/freqDefault, TIMESTEP*freqDefault);
   
   // Initialise
   if (init(NOUT, TIMESTEP)) {
-    throw BoutException("Failed to initialise solver-> Aborting\n");
+    throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
   initCalled=true;
   
   /// Run the solver
-  output_info.write("Running simulation\n\n");
+  output_info.write(_("Running simulation\n\n"));
 
   time_t start_time = time(nullptr);
-  output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
+  output_progress.write(_("\nRun started at  : %s\n"), ctime(&start_time));
   
   Timer timer("run"); // Start timer
   
@@ -560,8 +560,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     status = run();
 
     time_t end_time = time(nullptr);
-    output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
-    output_progress.write("Run time : ");
+    output_progress.write(_("\nRun finished at  : %s\n"), ctime(&end_time));
+    output_progress.write(_("Run time : "));
 
     int dt = end_time - start_time;
     int i = static_cast<int>(dt / (60. * 60.));

@@ -91,6 +91,8 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(gettext, [AS_HELP_STRING([--enable-gettext],
+        [Enable localisation (i18n) with gettext])],,[enable_gettext=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -1128,6 +1130,15 @@ AS_IF([test "$with_pvode" != "no"], [
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
+])
+
+#############################################################
+# Localisation (i18n) with gettext
+#############################################################
+
+AS_IF([test "$enable_gettext" != "no"  ], [
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
 ])
 
 #############################################################

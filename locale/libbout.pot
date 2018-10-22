@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-21 23:23+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/bout++.cxx:355
+msgid "\tChecking disabled\n"
+msgstr ""
+
+#: src/bout++.cxx:353
+#, c-format
+msgid "\tChecking enabled, level %d\n"
+msgstr ""
+
+#: src/bout++.cxx:361
+msgid "\tSignal handling disabled\n"
+msgstr ""
+
+#: src/bout++.cxx:359
+msgid "\tSignal handling enabled\n"
+msgstr ""
+
+#: src/solver/solver.cxx:563
+#, c-format
+msgid ""
+"\n"
+"Run finished at  : %s\n"
+msgstr ""
+
+#: src/bout++.cxx:340
+#, c-format
+msgid ""
+"Code compiled on %s at %s\n"
+"\n"
+msgstr ""
+
+#: src/bout++.cxx:246
+#, c-format
+msgid "DataDir \"%s\" does not exist or is not accessible\n"
+msgstr ""
+
+#: src/bout++.cxx:243
+#, c-format
+msgid "DataDir \"%s\" is not a directory\n"
+msgstr ""
+
+#: src/bout++.cxx:414
+msgid "Error encountered during initialisation\n"
+msgstr ""
+
+#: src/bout++.cxx:459
+#, c-format
+msgid "Error encountered during initialisation: %s\n"
+msgstr ""
+
+#: src/solver/solver.cxx:526
+msgid "Failed to initialise solver-> Aborting\n"
+msgstr ""
+
+#: src/solver/solver.cxx:564
+msgid "Run time : "
+msgstr ""
+
+#. / Run the solver
+#: src/solver/solver.cxx:531
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+
+#: src/solver/solver.cxx:521
+#, c-format
+msgid "Solver running for %d outputs with monitor timestep of %e\n"
+msgstr ""
+
+#: src/solver/solver.cxx:519
+#, c-format
+msgid "Solver running for %d outputs with output timestep of %e\n"
+msgstr ""
