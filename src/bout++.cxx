@@ -30,6 +30,9 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 const char DEFAULT_SET[] = "BOUT.settings";
 const char DEFAULT_LOG[] = "BOUT.log";
 
+#define CMDLINE1_(x) #x
+#define CMDLINE(x) CMDLINE1_(x)
+
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
 #define CHECKSUM_(x) CHECKSUM1_(x)
@@ -144,10 +147,12 @@ int BoutInitialise(int &argc, char **&argv) {
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
   // Note: LC_ALL here causes problems, perhaps with reading strings
-  setlocale (LC_MESSAGES, "");  // Language-specific messages
+  if (!setlocale (LC_MESSAGES, "")) {  // Language-specific messages
+    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
+  }
   setlocale (LC_CTYPE, "");     // Output utf-8 characters
-  //bindtextdomain ("libbout", LOCALE_PATH);
-  bindtextdomain ("libbout", "/home/bd512/BOUT-dev/locale/");
+  bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
+  fprintf(stderr, "LOCALE_PATH = '%s'", CMDLINE(BOUT_LOCALE_PATH));
   textdomain ("libbout");
 #endif // BOUT_HAS_GETTEXT
   
