@@ -147,7 +147,12 @@ int BoutInitialise(int &argc, char **&argv) {
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
   try {
-    std::locale::global(std::locale(""));
+    // Note: Would like to use std::locale::global
+    //    std::locale::global(std::locale(""));
+    // but the Numeric aspect causes problems parsing input strings
+    std::setlocale(LC_ALL, "");
+    std::setlocale(LC_NUMERIC, "C");
+    
     bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
     textdomain ("libbout");
     fprintf(stderr, "LOCALE_PATH = '%s'", CMDLINE(BOUT_LOCALE_PATH));

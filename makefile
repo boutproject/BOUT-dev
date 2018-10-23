@@ -82,7 +82,9 @@ locale/%/libbout.po: locale/libbout.pot
 	msgmerge --update $@ $<
 
 # Update a .mo file
+# First ensure that the directory exists
 locale/%/LC_MESSAGES/libbout.mo: locale/%/libbout.po
+	@mkdir -p $(@D)
 	msgfmt --output-file=$@ $<
 
 # Shortcut target for building single language
