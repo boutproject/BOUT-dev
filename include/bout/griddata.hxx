@@ -69,8 +69,8 @@ public:
   virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
                    int offset = 0, Direction dir = Direction::X) = 0;
 
-  /// Test if grid data source includes y-boundary guard cells.
-  /// Older grid files may not: this then requires some special handling.
+  /// Test if grid data source includes y-guard cells, including correct
+  //y-guard cells for the core region.
   virtual bool hasYGuards() { return true; }
 };
 
@@ -212,6 +212,13 @@ public:
    */
   bool get(Mesh *mesh, vector<BoutReal> &var, const string &name, int len, int offset = 0,
            Direction dir = Direction::X) override;
+
+  // If options files give expressions for metric coefficients that make the PF
+  // region different from the core (e.g. making zShift continuous in both PF
+  // regions using Heaviside step functions), then the expressions may be
+  // 'wrong' in the guard cells of the core region, where y<0 or y>2pi.
+  // Therefore we cannot treat the guard cells as all being set correctly.
+  bool hasYGuards() override { return false; }
 
 private:
   /// The options section to use. Could be nullptr
