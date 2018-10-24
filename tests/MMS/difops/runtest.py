@@ -32,7 +32,7 @@ if full_test:
 else:
     boundary_conditions = [""]
 
-def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition, mesh_in=None):
+def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition):
 
     testfunc = copy(testfunc) # ensure we don't change global testfunc
     error_list = []
@@ -42,68 +42,65 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
     for n in ngrids:
         if full_test:
             print('n =',n)
-        if mesh_in is not None:
-            mesh = mesh_in
+        # set options
+        # set up mesh input
+        if 'x' in dimensions:
+            this_mxg = mxg
+            nx = n+2*this_mxg
         else:
-            # set options
-            # set up mesh input
-            if 'x' in dimensions:
-                this_mxg = mxg
-                nx = n+2*this_mxg
-            else:
-                this_mxg = 1
-                nx = default_n+2
-            boutcore.setOption('mxg', str(this_mxg), force=True)
-            boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
-            if 'y' in dimensions:
-                this_myg = myg
-                ny = n
-            else:
-                this_myg = 1
-                ny = default_n
-            boutcore.setOption('myg', str(this_myg), force=True)
-            boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
-            if 'z' in dimensions:
-                nz = n
-            else:
-                nz = default_n
-            boutcore.setOption('testmesh:nz', exprToStr(nz), force=True)
+            this_mxg = 1
+            nx = default_n+2
+        boutcore.setOption('mxg', str(this_mxg), force=True)
+        boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
+        if 'y' in dimensions:
+            this_myg = myg
+            ny = n
+        else:
+            this_myg = 1
+            ny = default_n
+        boutcore.setOption('myg', str(this_myg), force=True)
+        boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
+        if 'z' in dimensions:
+            nz = n
+        else:
+            nz = default_n
+        boutcore.setOption('testmesh:nz', exprToStr(nz), force=True)
 
-            boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
-            boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
-            boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
-            boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
-            boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
-            boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
-            boutcore.setOption('testmesh:g12', exprToStr(metric.g12), force=True)
-            boutcore.setOption('testmesh:g13', exprToStr(metric.g13), force=True)
-            boutcore.setOption('testmesh:g23', exprToStr(metric.g23), force=True)
-            boutcore.setOption('testmesh:g_11', exprToStr(metric.g_11), force=True)
-            boutcore.setOption('testmesh:g_22', exprToStr(metric.g_22), force=True)
-            boutcore.setOption('testmesh:g_33', exprToStr(metric.g_33), force=True)
-            boutcore.setOption('testmesh:g_12', exprToStr(metric.g_12), force=True)
-            boutcore.setOption('testmesh:g_13', exprToStr(metric.g_13), force=True)
-            boutcore.setOption('testmesh:g_23', exprToStr(metric.g_23), force=True)
-            tokamak.setNs(nx=nx, ny=ny, nz=nz)
-            boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
-            boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
-            if ny>1:
-                boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
-                boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
-                boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
-                boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
-            else:
-                boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
-                boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
-                boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
-                boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
-            if stagger is None:
-                boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
-            else:
-                boutcore.setOption('testmesh:staggergrids', str('true'), force=True)
+        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
+        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
+        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
+        boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
+        boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
+        boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
+        boutcore.setOption('testmesh:g12', exprToStr(metric.g12), force=True)
+        boutcore.setOption('testmesh:g13', exprToStr(metric.g13), force=True)
+        boutcore.setOption('testmesh:g23', exprToStr(metric.g23), force=True)
+        boutcore.setOption('testmesh:g_11', exprToStr(metric.g_11), force=True)
+        boutcore.setOption('testmesh:g_22', exprToStr(metric.g_22), force=True)
+        boutcore.setOption('testmesh:g_33', exprToStr(metric.g_33), force=True)
+        boutcore.setOption('testmesh:g_12', exprToStr(metric.g_12), force=True)
+        boutcore.setOption('testmesh:g_13', exprToStr(metric.g_13), force=True)
+        boutcore.setOption('testmesh:g_23', exprToStr(metric.g_23), force=True)
+        tokamak.setNs(nx=nx, ny=ny, nz=nz)
+        boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
+        boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
+        if ny>1:
+            boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
+            boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
+            boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
+            boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+        else:
+            boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
+            boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
+            boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
+            boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
+        if stagger is None:
+            boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
+        else:
+            boutcore.setOption('testmesh:staggergrids', str('true'), force=True)
 
-            # create new Mesh object
-            mesh = boutcore.Mesh(section='testmesh')
+        # create new Mesh object
+        mesh = boutcore.Mesh(section='testmesh')
 
         if stagger is None:
             inloc = 'CENTRE'
@@ -243,17 +240,11 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
                     if stagger is not None:
                         index = fail_staggers.index(stagger)
                         del fail_staggers[index]
-                #boutcore.setOption('failmesh:nx', '8', force=True)
-                #boutcore.setOption('failmesh:ny', '4', force=True)
-                #boutcore.setOption('failmesh:nz', '4', force=True)
-                #boutcore.setOption('failmesh:staggergrids', 'true', force=True)
-                #failmesh = boutcore.Mesh(section='failmesh')
                 if boundary_condition is "":
                     # Doesn't add anything to check for all boundary conditions
                     for stagger in fail_staggers:
                         # check that an exception is throw for combinations of directions that we expect to fail
                         try:
-                            #test = test_operator(numpy.array([4, 8]), testfunc, 'xyz', boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition, mesh_in=failmesh)
                             test = test_operator(numpy.array([16, 16]), testfunc, 'xyz', boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition)
                         except RuntimeError:
                             result += ['pass']
@@ -262,7 +253,7 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
 
     return result
 
-def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, symbolic_operator, order, ftypes, method, stagger, mesh_in=None):
+def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, symbolic_operator, order, ftypes, method, stagger):
 
     testfunc1 = copy(testfunc1) # ensure we don't change global testfunc1
     testfunc2 = copy(testfunc2) # ensure we don't change global testfunc2
@@ -272,66 +263,63 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
     for n in ngrids:
         if full_test:
             print('n =',n)
-        if mesh_in is not None:
-            mesh = mesh_in
+        # set options
+        # set up mesh input
+        if 'x' in dimensions:
+            this_mxg = mxg
+            nx = n+2*this_mxg
         else:
-            # set options
-            # set up mesh input
-            if 'x' in dimensions:
-                this_mxg = mxg
-                nx = n+2*this_mxg
-            else:
-                this_mxg = 1
-                nx = default_n+2*this_mxg
-            boutcore.setOption('mxg', str(this_mxg), force=True)
-            boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
-            if 'y' in dimensions:
-                this_myg = myg
-                ny = n
-            else:
-                this_myg = 1
-                ny = default_n
-            boutcore.setOption('myg', str(this_myg), force=True)
-            boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
-            if 'z' in dimensions:
-                nz = n
-            else:
-                nz = default_n
-            boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
-            boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
-            boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
-            boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
-            boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
-            boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
-            boutcore.setOption('testmesh:g12', exprToStr(metric.g12), force=True)
-            boutcore.setOption('testmesh:g13', exprToStr(metric.g13), force=True)
-            boutcore.setOption('testmesh:g23', exprToStr(metric.g23), force=True)
-            boutcore.setOption('testmesh:g_11', exprToStr(metric.g_11), force=True)
-            boutcore.setOption('testmesh:g_22', exprToStr(metric.g_22), force=True)
-            boutcore.setOption('testmesh:g_33', exprToStr(metric.g_33), force=True)
-            boutcore.setOption('testmesh:g_12', exprToStr(metric.g_12), force=True)
-            boutcore.setOption('testmesh:g_13', exprToStr(metric.g_13), force=True)
-            boutcore.setOption('testmesh:g_23', exprToStr(metric.g_23), force=True)
-            tokamak.setNs(nx=nx, ny=ny, nz=nz)
-            boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
-            boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
-            if ny>1:
-                boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
-                boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
-                boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
-                boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
-            else:
-                boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
-                boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
-                boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
-                boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
-            if stagger is None:
-                boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
-            else:
-                boutcore.setOption('testmesh:staggergrids', str('true'), force=True)
+            this_mxg = 1
+            nx = default_n+2*this_mxg
+        boutcore.setOption('mxg', str(this_mxg), force=True)
+        boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
+        if 'y' in dimensions:
+            this_myg = myg
+            ny = n
+        else:
+            this_myg = 1
+            ny = default_n
+        boutcore.setOption('myg', str(this_myg), force=True)
+        boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
+        if 'z' in dimensions:
+            nz = n
+        else:
+            nz = default_n
+        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
+        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
+        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
+        boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
+        boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
+        boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
+        boutcore.setOption('testmesh:g12', exprToStr(metric.g12), force=True)
+        boutcore.setOption('testmesh:g13', exprToStr(metric.g13), force=True)
+        boutcore.setOption('testmesh:g23', exprToStr(metric.g23), force=True)
+        boutcore.setOption('testmesh:g_11', exprToStr(metric.g_11), force=True)
+        boutcore.setOption('testmesh:g_22', exprToStr(metric.g_22), force=True)
+        boutcore.setOption('testmesh:g_33', exprToStr(metric.g_33), force=True)
+        boutcore.setOption('testmesh:g_12', exprToStr(metric.g_12), force=True)
+        boutcore.setOption('testmesh:g_13', exprToStr(metric.g_13), force=True)
+        boutcore.setOption('testmesh:g_23', exprToStr(metric.g_23), force=True)
+        tokamak.setNs(nx=nx, ny=ny, nz=nz)
+        boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
+        boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
+        if ny>1:
+            boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
+            boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
+            boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
+            boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+        else:
+            boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
+            boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
+            boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
+            boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
+        if stagger is None:
+            boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
+        else:
+            boutcore.setOption('testmesh:staggergrids', str('true'), force=True)
 
-            # create new Mesh object
-            mesh = boutcore.Mesh(section='testmesh')
+        # create new Mesh object
+        mesh = boutcore.Mesh(section='testmesh')
 
         if stagger is None:
             vloc = 'CENTRE'
@@ -483,15 +471,9 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
                 if stagger is not None:
                     index = fail_staggers.index(stagger)
                     del fail_staggers[index]
-            #boutcore.setOption('failmesh:nx', '8', force=True)
-            #boutcore.setOption('failmesh:ny', '4', force=True)
-            #boutcore.setOption('failmesh:nz', '4', force=True)
-            #boutcore.setOption('failmesh:staggergrids', 'true', force=True)
-            #failmesh = boutcore.Mesh(section='failmesh')
             for stagger in fail_staggers:
                 # check that an exception is throw for combinations of directions that we expect to fail
                 try:
-                    #test = test_operator2(numpy.array([16, 16]), testfunc1, testfunc2, 'xyz', boutcore_operator, symbolic_operator, order, ftypes, method, stagger, mesh_in=failmesh)
                     test = test_operator2(numpy.array([16, 16]), testfunc1, testfunc2, 'xyz', boutcore_operator, symbolic_operator, order, ftypes, method, stagger)
                 except RuntimeError:
                     result += ['pass']
