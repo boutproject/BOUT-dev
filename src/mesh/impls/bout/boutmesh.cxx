@@ -841,6 +841,8 @@ int BoutMesh::load() {
       // Can interpolate in y-direction
       createDefaultCoordinates(CELL_YLOW);
     }
+    // Can always interpolate in z-direction
+    createDefaultCoordinates(CELL_ZLOW);
     if (xstart > 1 && ystart > 1) {
       // Can interpolate in x- and y-directions
       createXYCornerCoordinates();
