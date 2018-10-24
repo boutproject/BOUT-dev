@@ -372,7 +372,11 @@ const Field2D D2DZDX(const Field2D &f, CELL_LOC UNUSED(outloc),
 const Field3D D2DZDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string UNUSED(boundary_condition)) {
   // Take derivative in X, then take derivative in Z
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(outloc == f.getLocation() || (outloc == CELL_XLOW && f.getLocation() == CELL_CENTRE)
+      || (outloc == CELL_CENTRE && f.getLocation() == CELL_XLOW));
 
   return DDZ(DDX(f, outloc, method, region), outloc, method, region);
 }
@@ -428,7 +432,11 @@ const Field2D D2DZDY(const Field2D &f, CELL_LOC UNUSED(outloc),
 const Field3D D2DZDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                      REGION region, string UNUSED(boundary_condition)) {
   // Take derivative in Y, then take derivative in Z
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(outloc == f.getLocation() || (outloc == CELL_YLOW && f.getLocation() == CELL_CENTRE)
+      || (outloc == CELL_CENTRE && f.getLocation() == CELL_YLOW));
 
   return DDZ(DDY(f, outloc,method, region), outloc, method, region);
 }
