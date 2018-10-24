@@ -95,11 +95,11 @@ namespace {
     if (extrap_at_branch_cut) {
       // Extrapolate into guard cells at branch cuts on core/PF field lines
       // This overwrites any communicated values in the guard cells
-      int firstjup = location==CELL_YLOW ? localmesh->yend+1 : localmesh->yend;
+      int firstjup = location==CELL_YLOW ? localmesh->yend+2 : localmesh->yend+1;
       for (int i=localmesh->xstart; i<=localmesh->xend; i++) {
         // Lower processor boundary
         if (localmesh->hasBranchCutDown(i)) {
-          for (int j=localmesh->ystart-1; j>0; j--) {
+          for (int j=localmesh->ystart-1; j>=0; j--) {
             result(i, j) = 3.0*result(i, j+1) - 3.0*result(i, j+2) + result(i, j+3);
           }
         }
@@ -107,7 +107,7 @@ namespace {
         if (localmesh->hasBranchCutUp(i)) {
           if (location == CELL_YLOW) {
             // interpolate boundary point, to be symmetric with lower boundary
-            int j = localmesh->yend;
+            int j = localmesh->yend+1;
             result(i, j) =
               ( 9.*(f(i, j-1) + f(i, j)) - f(i, j-2) - f(i, j+1))/16.;
           }
