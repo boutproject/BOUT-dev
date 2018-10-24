@@ -148,6 +148,7 @@ namespace {
     // interpolate/communicate/extrapolate them as if they were regular grid
     // cells at the outer boundary
     Field2D temp_for_xguards(0., localmesh);
+    temp_for_xguards.setLocation(CELL_CENTRE); // should be CELL_CENTRE already, but be explicit
     for (auto bndry : localmesh->getBoundaries()) {
       if (bndry->bx > 0) {
         // outer x-boundary
@@ -156,27 +157,13 @@ namespace {
             temp_for_xguards(i-1, bndry->y) = result(i, bndry->y);
           }
         }
-
-        // Set y-guard cells by extrapolation.
-        // This will be overwritten by communicate() unless the guard cells are
-        // at a y-boundary.
-        for (int i = localmesh->xend-2; i<=localmesh->xend; i++) {
-          for (int j = localmesh->ystart-1; j>=0; j--) {
-            temp_for_xguards(i, j) = 3.0*temp_for_xguards(i, j+1) -
-              3.0*temp_for_xguards(i, j+2) + temp_for_xguards(i, j+3);
-          }
-          for (int j = localmesh->yend+1; j<localmesh->LocalNy; j++) {
-            temp_for_xguards(i, j) = 3.0*temp_for_xguards(i, j-1) -
-              3.0*temp_for_xguards(i, j-2) + temp_for_xguards(i, j-3);
-          }
-        }
       }
     }
-    localmesh->communicate(temp_for_xguards);
+    // Set y-guard cells by extrapolation where necessary
+    temp_for_xguards = interpolateAndExtrapolate(temp_for_xguards, CELL_CENTRE, extrap_at_branch_cut);
 
     // pretend f is at CELL_CENTRE to interpolate in y-direction
     result.setLocation(CELL_CENTRE);
-    temp_for_xguards.setLocation(CELL_CENTRE); // should be CELL_CENTRE already, but be explicit
     // interpolate grid points to XY-corner and extrapolate guard cells
     result = interpolateAndExtrapolate(result, CELL_YLOW, extrap_at_branch_cut);
     // Same for upper x-boundary points
