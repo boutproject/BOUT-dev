@@ -235,22 +235,28 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinates(Mesh *mesh_in) {
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh_in->get(result->g11, "g11", 1.0);
+  result->g11 = interpolateAndExtrapolate(result->g11, CELL_CENTRE, mesh_in->hasBranchCut());
   mesh_in->get(result->g22, "g22", 1.0);
+  result->g22 = interpolateAndExtrapolate(result->g22, CELL_CENTRE, mesh_in->hasBranchCut());
   mesh_in->get(result->g33, "g33", 1.0);
+  result->g33 = interpolateAndExtrapolate(result->g33, CELL_CENTRE, mesh_in->hasBranchCut());
 
   // Off-diagonal elements. Default to 0
   mesh_in->get(result->g12, "g12", 0.0);
+  result->g12 = interpolateAndExtrapolate(result->g12, CELL_CENTRE, mesh_in->hasBranchCut());
   mesh_in->get(result->g13, "g13", 0.0);
+  result->g13 = interpolateAndExtrapolate(result->g13, CELL_CENTRE, mesh_in->hasBranchCut());
   mesh_in->get(result->g23, "g23", 0.0);
+  result->g23 = interpolateAndExtrapolate(result->g23, CELL_CENTRE, mesh_in->hasBranchCut());
 
   // Check input metrics
-  if ((!finite(result->g11)) || (!finite(result->g22)) || (!finite(result->g33))) {
+  if ((!finite(result->g11, RGN_NOBNDRY)) || (!finite(result->g22, RGN_NOBNDRY)) || (!finite(result->g33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if ((min(result->g11) <= 0.0) || (min(result->g22) <= 0.0) || (min(result->g33) <= 0.0)) {
     throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
-  if ((!finite(result->g12)) || (!finite(result->g13)) || (!finite(result->g23))) {
+  if ((!finite(result->g12, RGN_NOBNDRY)) || (!finite(result->g13, RGN_NOBNDRY)) || (!finite(result->g23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
@@ -264,11 +270,17 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinates(Mesh *mesh_in) {
         mesh_in->sourceHasVar("g_33") and mesh_in->sourceHasVar("g_12") and
         mesh_in->sourceHasVar("g_13") and mesh_in->sourceHasVar("g_23")) {
       mesh_in->get(result->g_11, "g_11");
+      result->g_11 = interpolateAndExtrapolate(result->g_11, CELL_CENTRE, mesh_in->hasBranchCut());
       mesh_in->get(result->g_22, "g_22");
+      result->g_22 = interpolateAndExtrapolate(result->g_22, CELL_CENTRE, mesh_in->hasBranchCut());
       mesh_in->get(result->g_33, "g_33");
+      result->g_33 = interpolateAndExtrapolate(result->g_33, CELL_CENTRE, mesh_in->hasBranchCut());
       mesh_in->get(result->g_12, "g_12");
+      result->g_12 = interpolateAndExtrapolate(result->g_12, CELL_CENTRE, mesh_in->hasBranchCut());
       mesh_in->get(result->g_13, "g_13");
+      result->g_13 = interpolateAndExtrapolate(result->g_13, CELL_CENTRE, mesh_in->hasBranchCut());
       mesh_in->get(result->g_23, "g_23");
+      result->g_23 = interpolateAndExtrapolate(result->g_23, CELL_CENTRE, mesh_in->hasBranchCut());
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -369,6 +381,7 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinates(Mesh *mesh_in) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       result->IntShiftTorsion = 0.0;
     }
+    result->IntShiftTorsion = interpolateAndExtrapolate(result->IntShiftTorsion, CELL_CENTRE, mesh_in->hasBranchCut());
   }
 
   return result;
