@@ -728,6 +728,12 @@ void BoundaryNeumann::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int
   f(x, y, z) = (4.*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z) + 2.*delta*val)/3.;
 }
 
+void BoundaryNeumann::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
+  extrap3rd(f, x, bx, y, by, z);
+}
+void BoundaryNeumann::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
+  extrap3rd(f, x, bx, y, by, z);
+}
 
 ///////////////////////////////////////////////////////////////
 

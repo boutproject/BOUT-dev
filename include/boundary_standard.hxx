@@ -153,6 +153,8 @@ class BoundaryNeumann : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal delta) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal UNUSED(delta)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal UNUSED(delta)) override;
+  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
