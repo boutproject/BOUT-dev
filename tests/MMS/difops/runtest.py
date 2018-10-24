@@ -210,7 +210,7 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
 
     # all derivatives at same inloc/outloc should work
     dimensions_staggers = [(base_dimensions, None), # no staggering
-                           (base_dimensions+'x', ('CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
+                           (base_dimensions+'', ('CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
                            (base_dimensions+'x', ('XLOW', 'XLOW')),
                            (base_dimensions+'y', ('YLOW', 'YLOW')),
                            (base_dimensions+'z', ('ZLOW', 'ZLOW'))]
@@ -418,7 +418,7 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
 
     # all derivatives at same inloc/outloc should work
     dimensions_staggers = [(base_dimensions, None), # no staggering
-                           (base_dimensions+'x', ('CENTRE', 'CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
+                           (base_dimensions+'', ('CENTRE', 'CENTRE', 'CENTRE')), # include all-centred, but with StaggerGrids=true
                            (base_dimensions+'x', ('XLOW', 'XLOW', 'XLOW')),
                            (base_dimensions+'y', ('YLOW', 'YLOW', 'YLOW')),
                            (base_dimensions+'z', ('ZLOW', 'ZLOW', 'ZLOW'))]
