@@ -130,6 +130,81 @@ namespace {
 
     return result;
   }
+
+  Field2D interpXLOWToXYCorner(const Field2D &f, bool extrap_at_branch_cut) {
+
+    Mesh* localmesh = f.getMesh();
+
+    // Only makes sense to use this routine if we can interpolate (4-point
+    // stencil) in both x- and y-directions
+    ASSERT1(localmesh->xstart > 1 && localmesh->ystart > 1);
+
+    Field2D result = f;
+    result.allocate(); // ensure we don't change f
+
+    ASSERT1(result.getLocation() == CELL_XLOW); // check input f is at XLOW
+
+    // Shift outer x-boundary points from f one grid point inwards to
+    // interpolate/communicate/extrapolate them as if they were regular grid
+    // cells at the outer boundary
+    Field2D temp_for_xguards(0., localmesh);
+    for (auto bndry : localmesh->getBoundaries()) {
+      if (bndry->bx > 0) {
+        // outer x-boundary
+        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+          for (int i = localmesh->xend-1; i<localmesh->LocalNx; i++) {
+            temp_for_xguards(i-1, bndry->y) = result(i, bndry->y);
+          }
+        }
+
+        // Set y-guard cells by extrapolation.
+        // This will be overwritten by communicate() unless the guard cells are
+        // at a y-boundary.
+        for (int i = localmesh->xend-2; i<=localmesh->xend; i++) {
+          for (int j = localmesh->ystart-1; j>=0; j--) {
+            temp_for_xguards(i, j) = 3.0*temp_for_xguards(i, j+1) -
+              3.0*temp_for_xguards(i, j+2) + temp_for_xguards(i, j+3);
+          }
+          for (int j = localmesh->yend+1; j<localmesh->LocalNy; j++) {
+            temp_for_xguards(i, j) = 3.0*temp_for_xguards(i, j-1) -
+              3.0*temp_for_xguards(i, j-2) + temp_for_xguards(i, j-3);
+          }
+        }
+      }
+    }
+    localmesh->communicate(temp_for_xguards);
+
+    // pretend f is at CELL_CENTRE to interpolate in y-direction
+    result.setLocation(CELL_CENTRE);
+    temp_for_xguards.setLocation(CELL_CENTRE); // should be CELL_CENTRE already, but be explicit
+    // interpolate grid points to XY-corner and extrapolate guard cells
+    result = interpolateAndExtrapolate(result, CELL_YLOW, extrap_at_branch_cut);
+    // Same for upper x-boundary points
+    temp_for_xguards = interpolateAndExtrapolate(temp_for_xguards, CELL_YLOW, extrap_at_branch_cut);
+
+    // Copy over outer x-boundary points into guard cells
+    for (auto bndry : localmesh->getBoundaries()) {
+      if (bndry->bx > 0) {
+        // outer x-boundary
+        for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+          for (int i = localmesh->xend-1; i<localmesh->LocalNx; i++) {
+            result(i, bndry->y) = temp_for_xguards(i-1, bndry->y);
+          }
+        }
+      }
+    }
+
+    // Pretend result is at CELL_CENTRE because there is no XY-corner location.
+    // The output from this function is only intended to be used in boundary
+    // conditions where a y-boundary condition is set on a CELL_XLOW field or
+    // an x-boundary condition on a CELL_YLOW field.
+    // The most likely mistake is trying to add this to XLOW or YLOW field (it
+    // should only be used element-wise in boundary condition loops). Setting
+    // CELL_CENTRE will catch such errors.
+    result.setLocation(CELL_CENTRE);
+
+    return result;
+  }
 }
 
 std::shared_ptr<Coordinates> Coordinates::getCoordinates(Mesh *mesh_in) {
@@ -424,54 +499,27 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesXYCorner(Mesh *mesh_in) 
   // CELL_CENTRE seems OK for now.
   // Also note that interpolateAndExtrapolate sets the upper/outer boundary
   // value (which interp_to skips) by interpolating
-  result->dx = coords_xlow->dx;
-  result->dx.setLocation(CELL_CENTRE);
-  result->dx = interpolateAndExtrapolate(result->dx, CELL_YLOW, false);
-  result->dx.setLocation(CELL_CENTRE);
-  result->dy = coords_xlow->dy;
-  result->dy.setLocation(CELL_CENTRE);
-  result->dy = interpolateAndExtrapolate(result->dy, CELL_YLOW, false);
-  result->dy.setLocation(CELL_CENTRE);
+  result->dx = interpXLOWToXYCorner(coords_xlow->dx, false);
+  result->dy = interpXLOWToXYCorner(coords_xlow->dy, false);
 
   result->nz = mesh_in->LocalNz;
 
   result->dz = coords_xlow->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  result->g11 = coords_xlow->g11;
-  result->g11.setLocation(CELL_CENTRE);
-  result->g11 = interpolateAndExtrapolate(result->g11, CELL_YLOW, mesh->hasBranchCut());
-  result->g11.setLocation(CELL_CENTRE);
-  result->g22 = coords_xlow->g22;
-  result->g22.setLocation(CELL_CENTRE);
-  result->g22 = interpolateAndExtrapolate(result->g22, CELL_YLOW, mesh->hasBranchCut());
-  result->g22.setLocation(CELL_CENTRE);
-  result->g33 = coords_xlow->g33;
-  result->g33.setLocation(CELL_CENTRE);
-  result->g33 = interpolateAndExtrapolate(result->g33, CELL_YLOW, mesh->hasBranchCut());
-  result->g33.setLocation(CELL_CENTRE);
+  result->g11 = interpXLOWToXYCorner(coords_xlow->g11, mesh->hasBranchCut());
+  result->g22 = interpXLOWToXYCorner(coords_xlow->g22, mesh->hasBranchCut());
+  result->g33 = interpXLOWToXYCorner(coords_xlow->g33, mesh->hasBranchCut());
 
   // Off-diagonal elements.
-  result->g12 = coords_xlow->g12;
-  result->g12.setLocation(CELL_CENTRE);
-  result->g12 = interpolateAndExtrapolate(result->g12, CELL_YLOW, mesh->hasBranchCut());
-  result->g12.setLocation(CELL_CENTRE);
-  result->g13 = coords_xlow->g13;
-  result->g13.setLocation(CELL_CENTRE);
-  result->g13 = interpolateAndExtrapolate(result->g13, CELL_YLOW, mesh->hasBranchCut());
-  result->g13.setLocation(CELL_CENTRE);
-  result->g23 = coords_xlow->g23;
-  result->g23.setLocation(CELL_CENTRE);
-  result->g23 = interpolateAndExtrapolate(result->g23, CELL_YLOW, mesh->hasBranchCut());
-  result->g23.setLocation(CELL_CENTRE);
+  result->g12 = interpXLOWToXYCorner(coords_xlow->g12, mesh->hasBranchCut());
+  result->g13 = interpXLOWToXYCorner(coords_xlow->g13, mesh->hasBranchCut());
+  result->g23 = interpXLOWToXYCorner(coords_xlow->g23, mesh->hasBranchCut());
 
   result->ShiftAngle = coords_xlow->ShiftAngle;
 
   // don't extrapolate zShift, set guard cells correctly using ShiftAngle
-  result->zShift = coords_xlow->zShift;
-  result->zShift.setLocation(CELL_CENTRE);
-  result->zShift = interpolateAndExtrapolate(result->zShift, CELL_YLOW, false);
-  result->zShift.setLocation(CELL_CENTRE);
+  result->zShift = interpXLOWToXYCorner(coords_xlow->zShift, false);
   mesh_in->communicate(result->zShift);
   // Correct for discontinuity at branch-cut
   if (!result->ShiftAngle.empty()) {
@@ -516,18 +564,12 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesXYCorner(Mesh *mesh_in) 
     throw BoutException("Differential geometry failed\n");
   }
 
-  result->ShiftTorsion = coords_xlow->ShiftTorsion;
-  result->ShiftTorsion.setLocation(CELL_CENTRE);
-  result->ShiftTorsion = interpolateAndExtrapolate(result->ShiftTorsion, CELL_YLOW, mesh->hasBranchCut());
-  result->ShiftTorsion.setLocation(CELL_CENTRE);
+  result->ShiftTorsion = interpXLOWToXYCorner(coords_xlow->ShiftTorsion, mesh->hasBranchCut());
 
   //////////////////////////////////////////////////////
 
   if (mesh_in->IncIntShear) {
-    result->IntShiftTorsion = coords_xlow->IntShiftTorsion;
-    result->IntShiftTorsion.setLocation(CELL_CENTRE);
-    result->IntShiftTorsion = interpolateAndExtrapolate(result->IntShiftTorsion, CELL_YLOW, false);
-    result->IntShiftTorsion.setLocation(CELL_CENTRE);
+    result->IntShiftTorsion = interpXLOWToXYCorner(coords_xlow->IntShiftTorsion, false);
   }
 
   return result;
