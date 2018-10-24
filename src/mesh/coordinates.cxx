@@ -401,14 +401,14 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesStaggered(Mesh *mesh_in,
   result->dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  result->g11 = interpolateAndExtrapolate(coords_in->g11, result->location, mesh->hasBranchCut());
-  result->g22 = interpolateAndExtrapolate(coords_in->g22, result->location, mesh->hasBranchCut());
-  result->g33 = interpolateAndExtrapolate(coords_in->g33, result->location, mesh->hasBranchCut());
+  result->g11 = interpolateAndExtrapolate(coords_in->g11, result->location, mesh_in->hasBranchCut());
+  result->g22 = interpolateAndExtrapolate(coords_in->g22, result->location, mesh_in->hasBranchCut());
+  result->g33 = interpolateAndExtrapolate(coords_in->g33, result->location, mesh_in->hasBranchCut());
 
   // Off-diagonal elements.
-  result->g12 = interpolateAndExtrapolate(coords_in->g12, result->location, mesh->hasBranchCut());
-  result->g13 = interpolateAndExtrapolate(coords_in->g13, result->location, mesh->hasBranchCut());
-  result->g23 = interpolateAndExtrapolate(coords_in->g23, result->location, mesh->hasBranchCut());
+  result->g12 = interpolateAndExtrapolate(coords_in->g12, result->location, mesh_in->hasBranchCut());
+  result->g13 = interpolateAndExtrapolate(coords_in->g13, result->location, mesh_in->hasBranchCut());
+  result->g23 = interpolateAndExtrapolate(coords_in->g23, result->location, mesh_in->hasBranchCut());
 
   if (!coords_in->ShiftAngle.empty()) {
     if (result->location == CELL_XLOW) {
@@ -507,14 +507,14 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesXYCorner(Mesh *mesh_in) 
   result->dz = coords_xlow->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  result->g11 = interpXLOWToXYCorner(coords_xlow->g11, mesh->hasBranchCut());
-  result->g22 = interpXLOWToXYCorner(coords_xlow->g22, mesh->hasBranchCut());
-  result->g33 = interpXLOWToXYCorner(coords_xlow->g33, mesh->hasBranchCut());
+  result->g11 = interpXLOWToXYCorner(coords_xlow->g11, mesh_in->hasBranchCut());
+  result->g22 = interpXLOWToXYCorner(coords_xlow->g22, mesh_in->hasBranchCut());
+  result->g33 = interpXLOWToXYCorner(coords_xlow->g33, mesh_in->hasBranchCut());
 
   // Off-diagonal elements.
-  result->g12 = interpXLOWToXYCorner(coords_xlow->g12, mesh->hasBranchCut());
-  result->g13 = interpXLOWToXYCorner(coords_xlow->g13, mesh->hasBranchCut());
-  result->g23 = interpXLOWToXYCorner(coords_xlow->g23, mesh->hasBranchCut());
+  result->g12 = interpXLOWToXYCorner(coords_xlow->g12, mesh_in->hasBranchCut());
+  result->g13 = interpXLOWToXYCorner(coords_xlow->g13, mesh_in->hasBranchCut());
+  result->g23 = interpXLOWToXYCorner(coords_xlow->g23, mesh_in->hasBranchCut());
 
   result->ShiftAngle = coords_xlow->ShiftAngle;
 
@@ -564,7 +564,7 @@ std::shared_ptr<Coordinates> Coordinates::getCoordinatesXYCorner(Mesh *mesh_in) 
     throw BoutException("Differential geometry failed\n");
   }
 
-  result->ShiftTorsion = interpXLOWToXYCorner(coords_xlow->ShiftTorsion, mesh->hasBranchCut());
+  result->ShiftTorsion = interpXLOWToXYCorner(coords_xlow->ShiftTorsion, mesh_in->hasBranchCut());
 
   //////////////////////////////////////////////////////
 
