@@ -46,18 +46,22 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
             mesh = mesh_in
         else:
             # set options
-            boutcore.setOption('mxg', str(mxg), force=True)
-            boutcore.setOption('myg', str(myg), force=True)
             # set up mesh input
             if 'x' in dimensions:
-                nx = n+2*mxg
+                this_mxg = mxg
+                nx = n+2*this_mxg
             else:
-                nx = default_n+2*mxg
+                this_mxg = 1
+                nx = default_n+2
+            boutcore.setOption('mxg', str(this_mxg), force=True)
             boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
             if 'y' in dimensions:
+                this_myg = myg
                 ny = n
             else:
+                this_myg = 1
                 ny = default_n
+            boutcore.setOption('myg', str(this_myg), force=True)
             boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
             if 'z' in dimensions:
                 nz = n
@@ -83,10 +87,16 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
             tokamak.setNs(nx=nx, ny=ny, nz=nz)
             boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
             boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
-            boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
-            boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
-            boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
-            boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+            if ny>1:
+                boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
+                boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
+                boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
+                boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+            else:
+                boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
+                boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
+                boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
+                boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
             if stagger is None:
                 boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
             else:
@@ -114,15 +124,27 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
         if boundary_condition is "":
             pass
         elif "dirichlet" in boundary_condition:
-            bout_input.applyBoundary("%s(%s)"%(boundary_condition, exprToStr(testfunc)))
+            if nx>3:
+                bout_input.applyBoundary("%s(%s)"%(boundary_condition, exprToStr(testfunc)), region="core")
+                bout_input.applyBoundary("%s(%s)"%(boundary_condition, exprToStr(testfunc)), region="sol")
+            if ny>1:
+                bout_input.applyBoundary("%s(%s)"%(boundary_condition, exprToStr(testfunc)), region="lower_target")
+                bout_input.applyBoundary("%s(%s)"%(boundary_condition, exprToStr(testfunc)), region="upper_target")
         elif "neumann" in boundary_condition:
-            bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDX(testfunc))), region="core")
-            bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDX(testfunc))), region="sol")
-            bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDY(testfunc))), region="lower_target")
-            bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDY(testfunc))), region="upper_target")
+            if nx>3:
+                bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDX(testfunc))), region="core")
+                bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDX(testfunc))), region="sol")
+            if ny>1:
+                bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDY(testfunc))), region="lower_target")
+                bout_input.applyBoundary(boundary="%s(%s)"%(boundary_condition, exprToStr(DDY(testfunc))), region="upper_target")
         else:
             # free boundary, does not need argument
-            bout_input.applyBoundary(boundary_condition)
+            if nx>3:
+                bout_input.applyBoundary(boundary_condition, region="core")
+                bout_input.applyBoundary(boundary_condition, region="sol")
+            if ny>1:
+                bout_input.applyBoundary(boundary_condition, region="lower_target")
+                bout_input.applyBoundary(boundary_condition, region="upper_target")
         if method is None:
             bout_result = boutcore_operator(bout_input, outloc=outloc)
         else:
@@ -139,7 +161,7 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
 
         # calculate max error
         error = bout_result - analytic_result # as Field3D/Field2D
-        error = error.get()[mxg:-mxg, myg:-myg] # numpy array, without guard cells
+        error = error.get()[this_mxg:-this_mxg, this_myg:-this_myg] # numpy array, without guard cells
         error_list.append(numpy.max(numpy.abs(error))) # max error
 
     logerrors = numpy.log(error_list[-2]/error_list[-1])
@@ -221,17 +243,18 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
                     if stagger is not None:
                         index = fail_staggers.index(stagger)
                         del fail_staggers[index]
-                boutcore.setOption('failmesh:nx', '8', force=True)
-                boutcore.setOption('failmesh:ny', '4', force=True)
-                boutcore.setOption('failmesh:nz', '4', force=True)
-                boutcore.setOption('failmesh:staggergrids', 'true', force=True)
-                failmesh = boutcore.Mesh(section='failmesh')
+                #boutcore.setOption('failmesh:nx', '8', force=True)
+                #boutcore.setOption('failmesh:ny', '4', force=True)
+                #boutcore.setOption('failmesh:nz', '4', force=True)
+                #boutcore.setOption('failmesh:staggergrids', 'true', force=True)
+                #failmesh = boutcore.Mesh(section='failmesh')
                 if boundary_condition is "":
                     # Doesn't add anything to check for all boundary conditions
                     for stagger in fail_staggers:
                         # check that an exception is throw for combinations of directions that we expect to fail
                         try:
-                            test = test_operator(numpy.array([4, 8]), testfunc, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition, mesh_in=failmesh)
+                            #test = test_operator(numpy.array([4, 8]), testfunc, 'xyz', boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition, mesh_in=failmesh)
+                            test = test_operator(numpy.array([16, 16]), testfunc, 'xyz', boutcore_operator, symbolic_operator, order, ftype, method, stagger, boundary_condition)
                         except RuntimeError:
                             result += ['pass']
                         else:
@@ -253,18 +276,22 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             mesh = mesh_in
         else:
             # set options
-            boutcore.setOption('mxg', str(mxg), force=True)
-            boutcore.setOption('myg', str(myg), force=True)
             # set up mesh input
             if 'x' in dimensions:
-                nx = n+2*mxg
+                this_mxg = mxg
+                nx = n+2*this_mxg
             else:
-                nx = default_n+2*mxg
+                this_mxg = 1
+                nx = default_n+2*this_mxg
+            boutcore.setOption('mxg', str(this_mxg), force=True)
             boutcore.setOption('testmesh:nx', exprToStr(nx), force=True)
             if 'y' in dimensions:
+                this_myg = myg
                 ny = n
             else:
+                this_myg = 1
                 ny = default_n
+            boutcore.setOption('myg', str(this_myg), force=True)
             boutcore.setOption('testmesh:ny', exprToStr(ny), force=True)
             if 'z' in dimensions:
                 nz = n
@@ -288,10 +315,16 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             tokamak.setNs(nx=nx, ny=ny, nz=nz)
             boutcore.setOption('testmesh:ixseps1', exprToStr(tokamak.ixseps1), force=True)
             boutcore.setOption('testmesh:ixseps2', exprToStr(tokamak.ixseps2), force=True)
-            boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
-            boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
-            boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
-            boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+            if ny>1:
+                boutcore.setOption('testmesh:jyseps1_1', exprToStr(tokamak.jyseps1_1), force=True)
+                boutcore.setOption('testmesh:jyseps1_2', exprToStr(tokamak.jyseps1_2), force=True)
+                boutcore.setOption('testmesh:jyseps2_1', exprToStr(tokamak.jyseps2_1), force=True)
+                boutcore.setOption('testmesh:jyseps2_2', exprToStr(tokamak.jyseps2_2), force=True)
+            else:
+                boutcore.setOption('testmesh:jyseps1_1', exprToStr(-1), force=True)
+                boutcore.setOption('testmesh:jyseps1_2', exprToStr(0), force=True)
+                boutcore.setOption('testmesh:jyseps2_1', exprToStr(0), force=True)
+                boutcore.setOption('testmesh:jyseps2_2', exprToStr(2), force=True)
             if stagger is None:
                 boutcore.setOption('testmesh:staggergrids', str('false'), force=True)
             else:
@@ -340,7 +373,7 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
 
         # calculate max error
         error = bout_result - analytic_result # as Field3D
-        error = error.get()[mxg:-mxg, myg:-myg] # numpy array, without guard cells
+        error = error.get()[this_mxg:-this_mxg, this_myg:-this_myg] # numpy array, without guard cells
         error_list.append(numpy.max(numpy.abs(error))) # max error
 
     logerrors = numpy.log(error_list[-2]/error_list[-1])
@@ -355,7 +388,7 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             pyplot.loglog(1./ngrids, error_list)
             pyplot.show()
             from boututils.showdata import showdata
-            showdata([error, bout_result.get()[mxg:-mxg, myg:-myg], analytic_result.get()[mxg:-mxg, myg:-myg]])
+            showdata([error, bout_result.get()[this_mxg:-this_mxg, this_myg:-this_myg], analytic_result.get()[this_mxg:-this_mxg, this_myg:-this_myg]])
         return [str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftypes)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
 
 def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, symbolic_operator, order, types, method=None):
@@ -450,15 +483,16 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
                 if stagger is not None:
                     index = fail_staggers.index(stagger)
                     del fail_staggers[index]
-            boutcore.setOption('failmesh:nx', '8', force=True)
-            boutcore.setOption('failmesh:ny', '4', force=True)
-            boutcore.setOption('failmesh:nz', '4', force=True)
-            boutcore.setOption('failmesh:staggergrids', 'true', force=True)
-            failmesh = boutcore.Mesh(section='failmesh')
+            #boutcore.setOption('failmesh:nx', '8', force=True)
+            #boutcore.setOption('failmesh:ny', '4', force=True)
+            #boutcore.setOption('failmesh:nz', '4', force=True)
+            #boutcore.setOption('failmesh:staggergrids', 'true', force=True)
+            #failmesh = boutcore.Mesh(section='failmesh')
             for stagger in fail_staggers:
                 # check that an exception is throw for combinations of directions that we expect to fail
                 try:
-                    test = test_operator2(numpy.array([4, 8]), testfunc1, testfunc2, dimensions, boutcore_operator, symbolic_operator, order, ftypes, method, stagger, mesh_in=failmesh)
+                    #test = test_operator2(numpy.array([16, 16]), testfunc1, testfunc2, 'xyz', boutcore_operator, symbolic_operator, order, ftypes, method, stagger, mesh_in=failmesh)
+                    test = test_operator2(numpy.array([16, 16]), testfunc1, testfunc2, 'xyz', boutcore_operator, symbolic_operator, order, ftypes, method, stagger)
                 except RuntimeError:
                     result += ['pass']
                 else:
@@ -466,11 +500,11 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
 
     return result
 
-min_exponent = 7
-max_exponent = 8
+min_exponent = 6
+max_exponent = 7
 ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2).astype(int)
 ngrids_lowres = numpy.logspace(6, 7, num=2, base=2).astype(int)
-default_n = 4
+default_n = 1
 mxg = 2
 myg = 2
 testfunc = cos(2*pi*metric.x+metric.y+metric.z)
