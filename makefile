@@ -95,7 +95,7 @@ locale-mo-%:
 	$(MAKE) locale/$*/LC_MESSAGES/libbout.mo
 
 # Build all locales
-LANGUAGES = fr zh_TW
+LANGUAGES = fr zh_TW zh_CN
 
 .PHONY: locale-po locale-mo
 locale-po: $(LANGUAGES:%=locale/%/libbout.po)

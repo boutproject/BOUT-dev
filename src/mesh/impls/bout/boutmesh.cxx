@@ -88,7 +88,7 @@ BoutMesh::~BoutMesh() {
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
-  output_progress << "Loading mesh" << endl;
+  output_progress << _("Loading mesh") << endl;
 
   // Use root level options
   Options *options = Options::getRoot();
@@ -103,10 +103,10 @@ int BoutMesh::load() {
   // Grid sizes
 
   if (Mesh::get(nx, "nx"))
-    throw BoutException("Mesh must contain nx");
+    throw BoutException(_("Mesh must contain nx"));
 
   if (Mesh::get(ny, "ny"))
-    throw BoutException("Mesh must contain ny");
+    throw BoutException(_("Mesh must contain ny"));
 
   int MZ;
 
@@ -121,10 +121,10 @@ int BoutMesh::load() {
                         MZ);
     }
   } else {
-    output_info.write("\tRead nz from input grid file\n");
+    output_info.write(_("\tRead nz from input grid file\n"));
   }
 
-  output_info << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
@@ -140,11 +140,11 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  output_info << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
+  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException("Error: nx must be greater than 2 times MXG (2 * %d)", MXG);
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
   // Set global grid sizes
@@ -153,7 +153,7 @@ int BoutMesh::load() {
   GlobalNz = MZ;
 
   if (2 * MXG >= nx)
-    throw BoutException("nx must be greater than 2*MXG");
+    throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
   if (Mesh::get(ixseps1, "ixseps1")) {
@@ -231,7 +231,7 @@ int BoutMesh::load() {
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
     if ((NPES % NXPE) != 0) {
       throw BoutException(
-          "Number of processors (%d) not divisible by NPs in x direction (%d)\n", NPES,
+          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
           NXPE);
     }
 
@@ -381,14 +381,14 @@ int BoutMesh::load() {
     }
 
     if (NXPE < 1)
-      throw BoutException(
-          "Could not find a valid value for NXPE. Try a different number of processors.");
+      throw BoutException(_("Could not find a valid value for NXPE. Try a different "
+                            "number of processors."));
 
     NYPE = NPES / NXPE;
 
     output_progress.write(
-        "\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n", NXPE,
-        NYPE, MX / NXPE, ny / NYPE);
+        _("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"),
+        NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
   /// Get X and Y processor indices
@@ -403,7 +403,7 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException("Cannot split %d X points equally between %d processors\n", MX,
+    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
                         NXPE);
   }
 
@@ -412,7 +412,7 @@ int BoutMesh::load() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        "\tERROR: Cannot split %d Y points equally between %d processors\n", MY, NYPE);
+        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
   }
 
   /// Get mesh options
@@ -824,22 +824,22 @@ int BoutMesh::load() {
   }
 
   if (!boundary.empty()) {
-    output_info << "Boundary regions in this processor: ";
+    output_info << _("Boundary regions in this processor: ");
     for (const auto &bndry : boundary) {
       output_info << bndry->label << ", ";
     }
     output_info << endl;
   } else {
-    output_info << "No boundary regions in this processor" << endl;
+    output_info << _("No boundary regions in this processor") << endl;
   }
   
-  output_info << "Constructing default regions" << endl;
+  output_info << _("Constructing default regions") << endl;
   createDefaultRegions();
 
   // Add boundary regions
   addBoundaryRegions();
 
-  output_info.write("\tdone\n");
+  output_info.write(_("\tdone\n"));
 
   return 0;
 }
