@@ -40,6 +40,8 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+#include <vector>
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.
@@ -226,30 +228,42 @@ class Field3D : public Field, public FieldData {
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+    return !yup_fields.empty() and !ydown_fields.empty();
   }
 
   /// Return reference to yup field
-  Field3D& yup() { 
-    ASSERT2(yup_field != nullptr); // Check for communicate
-    return *yup_field; 
+  Field3D &yup(std::vector<Field3D>::size_type index = 0) {
+    if (yup_fields.empty()) {
+      return *this;
+    }
+    ASSERT2(index < yup_fields.size()); // Check for communicate
+    return yup_fields[index];
   }
   /// Return const reference to yup field
-  const Field3D& yup() const { 
-    ASSERT2(yup_field != nullptr);
-    return *yup_field; 
+  const Field3D &yup(std::vector<Field3D>::size_type index = 0) const {
+    if (yup_fields.empty()) {
+      return *this;
+    }
+    ASSERT2(index < yup_fields.size());
+    return yup_fields[index];
   }
-  
+
   /// Return reference to ydown field
-  Field3D& ydown() { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field;
+  Field3D &ydown(std::vector<Field3D>::size_type index = 0) {
+    if (ydown_fields.empty()) {
+      return *this;
+    }
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
   }
-  
+
   /// Return const reference to ydown field
-  const Field3D& ydown() const { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field; 
+  const Field3D &ydown(std::vector<Field3D>::size_type index = 0) const {
+    if (ydown_fields.empty()) {
+      return *this;
+    }
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
   }
 
   /// Return yup if dir=+1, and ydown if dir=-1
@@ -457,8 +471,8 @@ private:
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
-  /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  /// Fields containing values along Y
+  std::vector<Field3D> yup_fields{}, ydown_fields{};
 };
 
 // Non-member overloaded operators

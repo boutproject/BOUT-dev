@@ -243,7 +243,7 @@ TEST_F(Field3DTest, MergeYupYDown) {
 
   field.mergeYupYdown();
 
-  EXPECT_TRUE(field.hasYupYdown());
+  EXPECT_FALSE(field.hasYupYdown());
 
   auto& yup = field.yup();
   EXPECT_EQ(&field, &yup);
@@ -276,6 +276,32 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
   EXPECT_EQ(&field, &yup2);
   auto& ydown2 = field.ydown();
   EXPECT_EQ(&field, &ydown2);
+}
+
+TEST_F(Field3DTest, MultipleYupYdown) {
+  FakeMesh newmesh{3, 5, 7};
+  newmesh.ystart = 2;
+
+  Field3D field{&newmesh};
+
+  field.splitYupYdown();
+
+  EXPECT_TRUE(field.hasYupYdown());
+
+  auto &yup = field.yup();
+  EXPECT_NE(&field, &yup);
+  auto &ydown = field.ydown();
+  EXPECT_NE(&field, &ydown);
+  auto &yup1 = field.yup(1);
+  EXPECT_NE(&field, &yup1);
+  EXPECT_NE(&yup, &yup1);
+  auto &ydown1 = field.ydown(1);
+  EXPECT_NE(&field, &ydown1);
+  EXPECT_NE(&ydown, &ydown1);
+
+#if CHECK > 1
+  EXPECT_THROW(field.yup(2), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, Ynext) {

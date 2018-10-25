@@ -45,8 +45,7 @@
 
 /// Constructor
 Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), background(nullptr), deriv(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -55,6 +54,9 @@ Field3D::Field3D(Mesh *localmesh)
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
+
+    yup_fields.reserve(fieldmesh->ystart);
+    ydown_fields.reserve(fieldmesh->ystart);
   }
 #if CHECK > 0
   else {
@@ -72,7 +74,7 @@ Field3D::Field3D(Mesh *localmesh)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
       background(nullptr), data(f.data), // This handles references to the data array
-      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+      deriv(nullptr) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -84,6 +86,9 @@ Field3D::Field3D(const Field3D &f)
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
+
+    yup_fields.reserve(fieldmesh->ystart);
+    ydown_fields.reserve(fieldmesh->ystart);
   }
 #if CHECK > 0
   else {
@@ -95,13 +100,12 @@ Field3D::Field3D(const Field3D &f)
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-    
+
   boundaryIsSet = false;
 }
 
 Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(f.getMesh()), background(nullptr), deriv(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
 
@@ -118,8 +122,7 @@ Field3D::Field3D(const Field2D &f)
 }
 
 Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), background(nullptr), deriv(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
 
@@ -135,23 +138,8 @@ Field3D::Field3D(const BoutReal val, Mesh *localmesh)
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {
-    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
-    // only delete once
-    // Also need to check that separate yup_field exists
-    if ((yup_field != this) && (yup_field != nullptr))
-      yup_field->deriv = nullptr;
-    if ((ydown_field != this) && (ydown_field != nullptr))
-      ydown_field->deriv = nullptr;
-
-    // Now delete them as part of the deriv vector
     delete deriv;
   }
-  
-  if((yup_field != this) && (yup_field != nullptr))
-    delete yup_field;
-  
-  if((ydown_field != this) && (ydown_field != nullptr))
-    delete ydown_field;
 }
 
 void Field3D::allocate() {
@@ -181,52 +169,51 @@ Field3D* Field3D::timeDeriv() {
 void Field3D::splitYupYdown() {
   TRACE("Field3D::splitYupYdown");
   
-  if((yup_field != this) && (yup_field != nullptr))
+  if (!yup_fields.empty()) {
     return;
+  }
 
-  // yup_field and ydown_field null
-  yup_field = new Field3D(fieldmesh);
-  ydown_field = new Field3D(fieldmesh);
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields.emplace_back(fieldmesh);
+    ydown_fields.emplace_back(fieldmesh);
+  }
 }
 
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
-  
-  if(yup_field == this && ydown_field == this)
+
+  if (yup_fields.empty() && ydown_fields.empty()) {
     return;
-
-  if(yup_field != nullptr){
-    delete yup_field;
   }
 
-  if(ydown_field != nullptr) {
-    delete ydown_field;
-  }
-
-  yup_field = this;
-  ydown_field = this;
-}
-
-Field3D& Field3D::ynext(int dir) {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
-  }
+  yup_fields.clear();
+  ydown_fields.clear();
 }
 
 const Field3D& Field3D::ynext(int dir) const {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  // Asked for more than yguards
+  if (std::abs(dir) > fieldmesh->ystart) {
+    throw BoutException(
+        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
+        fieldmesh->ystart);
   }
+
+  // ynext uses 1-indexing, but yup wants 0-indexing
+  if (dir > 0) {
+    return yup(dir - 1);
+  } else if (dir < 0) {
+    return ydown(std::abs(dir) - 1);
+  } else {
+    return *this;
+  }
+}
+
+Field3D &Field3D::ynext(int dir) {
+  // Call the `const` version: need to add `const` to `this` to call
+  // it, then throw it away after. This is ok because `this` wasn't
+  // `const` to begin with.
+  // See Effective C++, Scott Meyers, p23, for a better explanation
+  return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
 void Field3D::setLocation(CELL_LOC new_location) {
