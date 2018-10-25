@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-23 00:03+0100\n"
+"POT-Creation-Date: 2018-10-25 23:40+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,89 +17,172 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/bout++.cxx:365
+#: ../src/bout++.cxx:370
 msgid "\tChecking disabled\n"
 msgstr ""
 
-#: src/bout++.cxx:363
+#: ../src/bout++.cxx:368
 #, c-format
 msgid "\tChecking enabled, level %d\n"
 msgstr ""
 
-#: src/sys/options.cxx:96 src/sys/options.cxx:136 src/sys/options.cxx:171
-#: src/sys/options.cxx:199 src/sys/options.cxx:220 src/sys/options.cxx:223
+#: ../src/mesh/impls/bout/boutmesh.cxx:390
+#, c-format
+msgid ""
+"\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:415
+#, c-format
+msgid "\tERROR: Cannot split %d Y points equally between %d processors\n"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:127
+msgid "\tGrid size: "
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:143
+msgid "\tGuard cells (x,y): "
+msgstr ""
+
+#. Mark the option as used
+#. Option not found
+#: ../src/sys/options.cxx:96 ../src/sys/options.cxx:136
+#: ../src/sys/options.cxx:171 ../src/sys/options.cxx:199
+#: ../src/sys/options.cxx:220 ../src/sys/options.cxx:223
+#: ../include/options.hxx:298 ../include/options.hxx:319
 msgid "\tOption "
 msgstr ""
 
-#: src/bout++.cxx:371
+#: ../src/mesh/impls/bout/boutmesh.cxx:124
+msgid "\tRead nz from input grid file\n"
+msgstr ""
+
+#: ../src/bout++.cxx:376
 msgid "\tSignal handling disabled\n"
 msgstr ""
 
-#: src/bout++.cxx:369
+#: ../src/bout++.cxx:374
 msgid "\tSignal handling enabled\n"
 msgstr ""
 
-#: src/solver/solver.cxx:563
+#: ../src/mesh/impls/bout/boutmesh.cxx:842
+msgid "\tdone\n"
+msgstr ""
+
+#: ../src/solver/solver.cxx:563
 #, c-format
 msgid ""
 "\n"
 "Run finished at  : %s\n"
 msgstr ""
 
-#: src/solver/solver.cxx:534
+#: ../src/solver/solver.cxx:534
 #, c-format
 msgid ""
 "\n"
 "Run started at  : %s\n"
 msgstr ""
 
-#: src/bout++.cxx:350
+#: ../src/mesh/impls/bout/boutmesh.cxx:827
+msgid "Boundary regions in this processor: "
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:406
+#, c-format
+msgid "Cannot split %d X points equally between %d processors\n"
+msgstr ""
+
+#: ../src/bout++.cxx:355
 #, c-format
 msgid ""
 "Code compiled on %s at %s\n"
 "\n"
 msgstr ""
 
-#: src/bout++.cxx:256
+#: ../src/mesh/impls/bout/boutmesh.cxx:836
+msgid "Constructing default regions"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:384
+msgid ""
+"Could not find a valid value for NXPE. Try a different number of processors."
+msgstr ""
+
+#: ../src/bout++.cxx:261
 #, c-format
 msgid "DataDir \"%s\" does not exist or is not accessible\n"
 msgstr ""
 
-#: src/bout++.cxx:253
+#: ../src/bout++.cxx:258
 #, c-format
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr ""
 
-#: src/bout++.cxx:424
+#: ../src/bout++.cxx:429
 msgid "Error encountered during initialisation\n"
 msgstr ""
 
-#: src/bout++.cxx:469
+#: ../src/bout++.cxx:474
 #, c-format
 msgid "Error encountered during initialisation: %s\n"
 msgstr ""
 
-#: src/solver/solver.cxx:526
+#: ../src/mesh/impls/bout/boutmesh.cxx:147
+#, c-format
+msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
+msgstr ""
+
+#: ../src/solver/solver.cxx:526
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr ""
 
-#: src/solver/solver.cxx:564
+#: ../tests/integrated/test-i18n/test-i18n.cxx:15
+msgid "Hello World\n"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:91
+msgid "Loading mesh"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:106
+msgid "Mesh must contain nx"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:109
+msgid "Mesh must contain ny"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:833
+msgid "No boundary regions in this processor"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:234
+#, c-format
+msgid "Number of processors (%d) not divisible by NPs in x direction (%d)\n"
+msgstr ""
+
+#: ../src/solver/solver.cxx:564
 msgid "Run time : "
 msgstr ""
 
 #. / Run the solver
-#: src/solver/solver.cxx:531
+#: ../src/solver/solver.cxx:531
 msgid ""
 "Running simulation\n"
 "\n"
 msgstr ""
 
-#: src/solver/solver.cxx:521
+#: ../src/solver/solver.cxx:521
 #, c-format
 msgid "Solver running for %d outputs with monitor timestep of %e\n"
 msgstr ""
 
-#: src/solver/solver.cxx:519
+#: ../src/solver/solver.cxx:519
 #, c-format
 msgid "Solver running for %d outputs with output timestep of %e\n"
+msgstr ""
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:156
+msgid "nx must be greater than 2*MXG"
 msgstr ""

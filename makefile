@@ -69,34 +69,7 @@ build-check-integrated-tests: libfast
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
 
-######################################################################
-# Internationalisation
-######################################################################
-
-# Create the template file, combining all source files
-locale/libbout.pot: src/bout++.cxx
-	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find src/ -name "*.cxx"`
-
-# Update a .po file
-locale/%/libbout.po: locale/libbout.pot
-	msgmerge --update $@ $<
-
-# Update a .mo file
-# First ensure that the directory exists
-locale/%/LC_MESSAGES/libbout.mo: locale/%/libbout.po
-	@mkdir -p $(@D)
-	msgfmt --output-file=$@ $<
-
-# Shortcut target for building single language
-# Note: invoking make since otherwise the intermediate file is deleted
-locale-po-%:
-	$(MAKE) locale/$*/libbout.po
-locale-mo-%:
-	$(MAKE) locale/$*/LC_MESSAGES/libbout.mo
-
-# Build all locales
-LANGUAGES = fr zh_TW zh_CN
-
-.PHONY: locale-po locale-mo
-locale-po: $(LANGUAGES:%=locale/%/libbout.po)
-locale-mo: $(LANGUAGES:%=locale/%/LC_MESSAGES/libbout.mo)
+# Build the .mo files needed for Natural Language Support (gettext)
+.PHONY: locale
+locale:
+	$(MAKE) -C locale
