@@ -95,6 +95,7 @@ fi
 if [[ ${UNIT} == 1 ]]
 then
     time make check-unit-tests || exit
+    time pytest tools/pylib/ || exit
 fi
 
 if [[ ${INTEGRATED} == 1 ]]
