@@ -415,6 +415,8 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             nz = n
         else:
             nz = default_n
+        boutcore.setOption('testmesh:nz', exprToStr(nz), force=True)
+
         boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/nx), force=True)
         boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/ny), force=True)
         boutcore.setOption('testmesh:dz', exprToStr(2.*pi/nz), force=True)
