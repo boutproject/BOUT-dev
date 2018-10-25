@@ -286,7 +286,9 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
             pyplot.loglog(1./ngrids, error_list)
             pyplot.show()
             from boututils.showdata import showdata
-            showdata(error)
+            showdata([numpy.atleast_2d(numpy.squeeze(error)),
+                numpy.atleast_2d(numpy.squeeze(bout_result.get()[this_mxg:-this_mxg, this_myg:-this_myg])),
+                numpy.atleast_2d(numpy.squeeze(analytic_result.get()[this_mxg:-this_mxg, this_myg:-this_myg]))])
         print(str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+' '+str(boundary_condition)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.')
         return [str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+' '+str(boundary_condition)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.']
 
@@ -504,7 +506,10 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             pyplot.loglog(1./ngrids, error_list)
             pyplot.show()
             from boututils.showdata import showdata
-            showdata([error, bout_result.get()[this_mxg:-this_mxg, this_myg:-this_myg], analytic_result.get()[this_mxg:-this_mxg, this_myg:-this_myg]])
+            showdata([numpy.atleast_2d(numpy.squeeze(error)),
+                numpy.atleast_2d(numpy.squeeze(bout_result.get()[this_mxg:-this_mxg, this_myg:-this_myg])),
+                numpy.atleast_2d(numpy.squeeze(analytic_result.get()[this_mxg:-this_mxg, this_myg:-this_myg]))])
+        print(str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftypes)+' '+str(method)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.')
         return [str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftypes)+' '+str(method)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.']
 
 def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, testfunc2, boutcore_operator, symbolic_operator, deriv_order, accuracy_order, types, method=None):
