@@ -14,8 +14,24 @@ from sys import exit
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--short', action='store_true', default=False)
+parser.add_argument('--operator', default=None)
 args = parser.parse_args()
 full_test = not args.short
+
+min_exponent = 6
+max_exponent = 7
+ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2).astype(int)
+ngrids_lowres = numpy.logspace(6, 7, num=2, base=2).astype(int)
+default_n = 1
+mxg = 2
+myg = 2
+testfunc = cos(2*pi*metric.x+metric.y+metric.z)
+testfunc2 = sin(4*pi*metric.x+2*metric.y+2*metric.z)+cos(2*pi*metric.x-metric.z)
+accuracy_order = 2
+plot_error = False
+test_deriv_ops = full_test
+tests_3d = full_test
+test_throw = full_test
 
 # geometry for simple circular tokamak
 # Domain in SOL to test y-boundary conditions
@@ -26,6 +42,103 @@ tokamak.set_scalex(1 + .1*sin(2*pi*metric.x+metric.y))
 tokamak.set_scaley(1 + .1*sin(2*pi*metric.x-metric.y))
 # re-calculate metric terms
 tokamak.metric()
+
+# single-argument operators
+all_types = ('2D', '3D') # eventually, should be able to use this when Field2D operators support staggering properly
+type_3d = ('3D',)
+type_2d = ('2D',)
+
+# dict of tuples contaning: (<directions to stagger>, <directions to refine grid>, <array of grid sizes>, <input function>,
+#                            <boutcore operator>, <mms_alternate symbolic operator>, <order of (highest) derivative>,
+#                            <expected order of accuracy>, <tuple of field types to test>, <method [optional])
+single_argument_operators = {
+    'Grad_par': ('y', 'y', ngrids, testfunc, boutcore.Grad_par, Grad_par, 1, accuracy_order, type_3d), # staggering in y-direction allowed
+    'Grad_par_2d': ('', 'y', ngrids, testfunc, boutcore.Grad_par, Grad_par, 1, accuracy_order, type_2d), # no staggering allowed
+    'Div_par': ('y', 'y', ngrids, testfunc, boutcore.Div_par, Div_par, 1, accuracy_order, type_3d), # staggering in y-direction allowed
+    'Div_par_2d': ('', 'y', ngrids, testfunc, boutcore.Div_par, Div_par, 1, accuracy_order, type_2d), # no staggering allowed
+    'Grad2_par2': ('y', 'y', ngrids, testfunc, boutcore.Grad2_par2, Grad2_par2, 2, accuracy_order, type_3d), # staggering in y-direction allowed
+    'Grad2_par2_2d': ('', 'y', ngrids, testfunc, boutcore.Grad2_par2, Grad2_par2, 2, accuracy_order, type_2d), # no staggering allowed
+    'Laplace': ('', 'xyz', ngrids_lowres, testfunc, boutcore.Laplace, Laplace, 2, accuracy_order, all_types), # no staggering allowed
+    'Laplace_par': ('y', 'y', ngrids, testfunc, boutcore.Laplace_par, Laplace_par, 2, accuracy_order, type_3d), # staggering in y-direction allowed
+    'Laplace_par_2d': ('', 'y', ngrids, testfunc, boutcore.Laplace_par, Laplace_par, 2, accuracy_order, type_2d), # no staggering allowed
+    # note Laplace_perp uses Laplace, so needs y-dimension refinement to converge
+    'Laplace_perp': ('', 'xyz', ngrids_lowres, testfunc, boutcore.Laplace_perp, Laplace_perp, 2, accuracy_order, all_types), # no staggering allowed
+    # Delp2 uses the global mesh, which we can't reset, so can't test here
+    #'Delp2': ('x', 'xz', ngrids, testfunc, boutcore.Delp2, Delp2, accuracy_order),
+}
+
+# two-argument operators
+all_types2 = [('2D', '2D'), ('3D', '3D')] # expand this to include mixed 2D/3D types at some point
+types_2d = [('2D', '2D')]
+types_3d = [('3D', '3D')]
+
+# dict of tuples contaning: (<directions to stagger>, <directions to refine grid>, <array of grid sizes>, <first input function>,
+#                            <second input function>, <boutcore operator>, <mms_alternate symbolic operator>, <order of (highest) derivative>,
+#                            <expected order of accuracy>, <tuple of field types to test>, <method [optional]>)
+two_argument_operators = {
+    'Vpar_Grad_par': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, 1, accuracy_order, types_3d), # some staggering in y-direction allowed
+    'Vpar_Grad_par_2d': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, 1, accuracy_order, types_2d), # no staggering allowed
+    'Div_par_K_Grad_par': ('yy', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 1, accuracy_order, types_3d), # any staggering in y-direction allowed
+    'Div_par_K_Grad_par_2d': ('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 1, accuracy_order, types_2d), # no staggering allowed
+    'Div_par_flux': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, 1, types_3d), # some staggering in y-direction allowed
+    'Div_par_flux_2d': ('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, 1, types_2d), # no staggering allowed
+    'Div_par_flux_C2': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, accuracy_order, types_3d, 'C2'), # some staggering in y-direction allowed
+    'Div_par_flux_C2_2d': ('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, accuracy_order, types_2d, 'C2'), # no staggering allowed
+    # note bracket(Field2D, Field2D) is exactly zero, so doesn't make sense to MMS test
+    'bracket_ARAKAWA': ('', 'xz', ngrids, testfunc, testfunc2, boutcore.bracket, bracket, 1, accuracy_order, types_3d, 'BRACKET_ARAKAWA'), # no staggering allowed
+    # Note BRACKET_STD version of bracket includes parallel derivatives, so needs
+    # y-dimension refinement to converge.
+    # Also it converges faster than 2nd order at 64->128, but approaches closer
+    # when resolution is increased. Allow test to pass anyway by increasing
+    # expected order
+    'bracket_STD': ('', 'xyz', ngrids_lowres, testfunc, testfunc2, boutcore.bracket, lambda a,b: b0xGrad_dot_Grad(a,b)/metric.B, 1, 2.6, types_3d, 'BRACKET_STD'), # no staggering allowed
+}
+
+# test derivative operators
+# dict of tuples contaning: (<directions to stagger>, <directions to refine grid>, <array of grid sizes>, <input function>,
+#                            <boutcore operator>, <mms_alternate symbolic operator>, <order of (highest) derivative>,
+#                            <expected order of accuracy>, <tuple of field types to test>, <method [optional])
+single_argument_derivative_operators = {
+    'DDX': ('x', 'x', ngrids, testfunc, boutcore.DDX, DDX, 1, accuracy_order, type_3d),
+    'DDX_2d': ('', 'x', ngrids, testfunc, boutcore.DDX, DDX, 1, accuracy_order, type_2d),
+    'DDY': ('y', 'y', ngrids, testfunc, boutcore.DDY, DDY, 1, accuracy_order, type_3d),
+    'DDY_2d': ('', 'y', ngrids, testfunc, boutcore.DDY, DDY, 1, accuracy_order, type_2d),
+    'DDZ': ('', 'z', ngrids, testfunc, boutcore.DDZ, DDZ, 1, accuracy_order, type_3d, 'C2'),
+    'D2DX2': ('x', 'x', ngrids, testfunc, boutcore.D2DX2, D2DX2, 2, accuracy_order, type_3d),
+    'D2DX2_2d': ('', 'x', ngrids, testfunc, boutcore.D2DX2, D2DX2, 2, accuracy_order, type_2d),
+    'D2DY2': ('y', 'y', ngrids, testfunc, boutcore.D2DY2, D2DY2, 2, accuracy_order, type_3d),
+    'D2DY2_2d': ('', 'y', ngrids, testfunc, boutcore.D2DY2, D2DY2, 2, accuracy_order, type_2d),
+    'D2DZ2': ('', 'z', ngrids, testfunc, boutcore.D2DZ2, D2DZ2, 2, accuracy_order, type_3d, 'C2'),
+    'D4DX4': ('', 'x', ngrids, testfunc, boutcore.D4DX4, D4DX4, 4, accuracy_order, type_3d),
+    'D4DX4_2d': ('', 'x', ngrids, testfunc, boutcore.D4DX4, D4DX4, 4, accuracy_order, type_2d),
+    'D4DY4': ('', 'y', ngrids, testfunc, boutcore.D4DY4, D4DY4, 4, accuracy_order, type_3d),
+    'D4DY4_2d': ('', 'y', ngrids, testfunc, boutcore.D4DY4, D4DY4, 4, accuracy_order, type_2d),
+    'D4DZ4': ('', 'z', ngrids, testfunc, boutcore.D4DZ4, D4DZ4, 4, accuracy_order, type_3d), # D4DZ4 is hard coded to use DIFF_C2
+    'D2DXDY': ('y', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, 2, accuracy_order, type_3d),
+    'D2DXDY_2d': ('', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, 2, accuracy_order, type_2d),
+    'D2DYDX': ('x', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, 2, accuracy_order, type_3d),
+    'D2DYDX_2d': ('', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, 2, accuracy_order, type_2d),
+    'D2DXDZ': ('', 'xz', ngrids, testfunc, boutcore.D2DXDZ, D2DXDZ, 2, accuracy_order, type_3d),
+    'D2DZDX': ('x', 'xz', ngrids, testfunc, boutcore.D2DZDX, D2DZDX, 2, accuracy_order, type_3d),
+    'D2DYDZ': ('', 'yz', ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, 2, accuracy_order, type_3d),
+    'D2DZDY': ('y', 'yz', ngrids, testfunc, boutcore.D2DZDY, D2DZDY, 2, accuracy_order, type_3d),
+}
+
+# dict of tuples contaning: (<directions to stagger>, <directions to refine grid>, <array of grid sizes>, <first input function>,
+#                            <second input function>, <boutcore operator>, <mms_alternate symbolic operator>, <order of (highest) derivative>,
+#                            <expected order of accuracy>, <tuple of field types to test>, <method [optional]>)
+two_argument_derivative_operators = {
+    'VDDX': ('x', 'x', ngrids, testfunc, testfunc2, boutcore.VDDX, lambda v,f: v*DDX(f), 1, accuracy_order, types_3d),
+    'VDDX_2d': ('', 'x', ngrids, testfunc, testfunc2, boutcore.VDDX, lambda v,f: v*DDX(f), 1, accuracy_order, types_2d),
+    'VDDY': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), 1, accuracy_order, types_3d),
+    'VDDY_2d': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), 1, accuracy_order, types_2d),
+    'VDDZ': ('z', 'z', ngrids, testfunc, testfunc2, boutcore.VDDZ, lambda v,f: v*DDZ(f), 1, accuracy_order, types_3d, 'C2'),
+    'FDDX': ('x', 'x', ngrids, testfunc, testfunc2, boutcore.FDDX, lambda v,f: DDX(v*f), 1, 1, types_3d),
+    'FDDX_2d': ('', 'x', ngrids, testfunc, testfunc2, boutcore.FDDX, lambda v,f: DDX(v*f), 1, 1, types_2d),
+    'FDDY': ('y', 'y', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1, 1, types_3d),
+    'FDDY_2d': ('', 'y', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1, 1, types_2d),
+    'FDDZ': ('z', 'z', ngrids, testfunc, testfunc2, boutcore.FDDZ, lambda v,f: DDZ(v*f), 1, 1, types_3d),
+}
 
 if full_test:
     boundary_conditions = ["", "dirichlet_o", "neumann_o", "free_o"]
@@ -241,7 +354,8 @@ def cycle_staggering(stagger_directions, base_dimensions, ngrids, testfunc, bout
                 boundary_condition += '4' # neumann_o4 is highest order available
         for ftype in types:
             for dimensions, stagger in dimensions_staggers:
-                result += test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_operator, accuracy_order, ftype, method, stagger, boundary_condition)
+                if tests_3d or not ('x' in dimensions and 'y' in dimensions and 'z' in dimensions):
+                    result += test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_operator, accuracy_order, ftype, method, stagger, boundary_condition)
 
             if test_throw:
                 # check that unsupported combinations of locations throw an exception
@@ -472,7 +586,8 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
     result = []
     for ftypes in types:
         for dimensions, stagger in dimensions_staggers:
-            result += test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, symbolic_operator, accuracy_order, ftypes, method, stagger)
+            if tests_3d or not ('x' in dimensions and 'y' in dimensions and 'z' in dimensions):
+                result += test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, symbolic_operator, accuracy_order, ftypes, method, stagger)
 
         if test_throw:
             # check that unsupported combinations of locations throw an exception
@@ -496,21 +611,6 @@ def cycle_staggering2(stagger_directions, base_dimensions, ngrids, testfunc1, te
 
     return result
 
-min_exponent = 6
-max_exponent = 7
-ngrids = numpy.logspace(min_exponent, max_exponent, num=max_exponent-min_exponent+1, base=2).astype(int)
-ngrids_lowres = numpy.logspace(6, 7, num=2, base=2).astype(int)
-default_n = 1
-mxg = 2
-myg = 2
-testfunc = cos(2*pi*metric.x+metric.y+metric.z)
-testfunc2 = sin(4*pi*metric.x+2*metric.y+2*metric.z)+cos(2*pi*metric.x-metric.z)
-accuracy_order = 2
-plot_error = False
-test_deriv_ops = full_test
-tests_3d = full_test
-test_throw = full_test
-
 if test_throw:
     if boutcore.bout_CHECK < 1:
         print('Warning: CHECK='+str(boutcore.bout_CHECK)+' so exceptions will '
@@ -522,83 +622,42 @@ boutcore.init('-q -q -q -q')
 
 results = []
 
-# single-argument operators
-all_types = ('2D', '3D') # eventually, should be able to use this when Field2D operators support staggering properly
-type_3d = ('3D',)
-type_2d = ('2D',)
-results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.Grad_par, Grad_par, 1, accuracy_order, type_3d) # staggering in y-direction allowed
-results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.Grad_par, Grad_par, 1, accuracy_order, type_2d) # no staggering allowed
-results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.Div_par, Div_par, 1, accuracy_order, type_3d) # staggering in y-direction allowed
-results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.Div_par, Div_par, 1, accuracy_order, type_2d) # no staggering allowed
-results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.Grad2_par2, Grad2_par2, 2, accuracy_order, type_3d) # staggering in y-direction allowed
-results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.Grad2_par2, Grad2_par2, 2, accuracy_order, type_2d) # no staggering allowed
-if tests_3d:
-    results += cycle_staggering('', 'xyz', ngrids_lowres, testfunc, boutcore.Laplace, Laplace, 2, accuracy_order, all_types) # no staggering allowed
-results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.Laplace_par, Laplace_par, 2, accuracy_order, type_3d) # staggering in y-direction allowed
-results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.Laplace_par, Laplace_par, 2, accuracy_order, type_2d) # no staggering allowed
-# note Laplace_perp uses Laplace, so needs y-dimension refinement to converge
-if tests_3d:
-    results += cycle_staggering('', 'xyz', ngrids_lowres, testfunc, boutcore.Laplace_perp, Laplace_perp, 2, accuracy_order, all_types) # no staggering allowed
-# Delp2 uses the global mesh, which we can't reset, so can't test here
-#results += cycle_staggering('x', 'xz', ngrids, testfunc, boutcore.Delp2, Delp2, accuracy_order)
+if args.operator is not None:
+    # just test the named operator
+    try:
+        arguments = single_argument_operators[args.operator]
+        results += cycle_staggering(*arguments)
+    except KeyError:
+        try:
+            arguments = two_argument_operators[args.operator]
+            results += cycle_staggering2(*arguments)
+        except KeyError:
+            try:
+                arguments = single_argument_derivative_operators[args.operator]
+                results += cycle_staggering(*arguments)
+            except KeyError:
+                try:
+                    arguments = two_argument_derivative_operators[args.operator]
+                    results += cycle_staggering2(*arguments)
+                except KeyError:
+                    raise KeyError("Unrecognized operator: "+args.operator)
+else:
+    # Test all operators
 
-# two-argument operators
-all_types2 = [('2D', '2D'), ('3D', '3D')] # expand this to include mixed 2D/3D types at some point
-types_2d = [('2D', '2D')]
-types_3d = [('3D', '3D')]
-results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, 1, accuracy_order, types_3d) # some staggering in y-direction allowed
-results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.Vpar_Grad_par, Vpar_Grad_par, 1, accuracy_order, types_2d) # no staggering allowed
-results += cycle_staggering2('yy', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 1, accuracy_order, types_3d) # any staggering in y-direction allowed
-results += cycle_staggering2('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 1, accuracy_order, types_2d) # no staggering allowed
-results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, 1, types_3d) # some staggering in y-direction allowed
-results += cycle_staggering2('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, 1, types_2d) # no staggering allowed
-results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, accuracy_order, types_3d, method='C2') # some staggering in y-direction allowed
-results += cycle_staggering2('', 'y', ngrids, testfunc, testfunc2, boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 1, accuracy_order, types_2d, method='C2') # no staggering allowed
-# note bracket(Field2D, Field2D) is exactly zero, so doesn't make sense to MMS test
-results += cycle_staggering2('', 'xz', ngrids, testfunc, testfunc2, boutcore.bracket, bracket, 1, accuracy_order, types_3d, method='BRACKET_ARAKAWA') # no staggering allowed
-# Note BRACKET_STD version of bracket includes parallel derivatives, so needs
-# y-dimension refinement to converge.
-# Also it converges faster than 2nd order at 64->128, but approaches closer
-# when resolution is increased. Allow test to pass anyway by increasing
-# expected order
-if tests_3d:
-    results += cycle_staggering2('', 'xyz', ngrids_lowres, testfunc, testfunc2, boutcore.bracket, lambda a,b: b0xGrad_dot_Grad(a,b)/metric.B, 1, 2.6, types_3d, method='BRACKET_STD') # no staggering allowed
+    # single-argument operators
+    for arguments in single_argument_operators.values():
+        results += cycle_staggering(*arguments)
 
-if test_deriv_ops:
-    # test derivative operators
-    results += cycle_staggering('x', 'x', ngrids, testfunc, boutcore.DDX, DDX, 1, accuracy_order, type_3d)
-    results += cycle_staggering('', 'x', ngrids, testfunc, boutcore.DDX, DDX, 1, accuracy_order, type_2d)
-    results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.DDY, DDY, 1, accuracy_order, type_3d)
-    results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.DDY, DDY, 1, accuracy_order, type_2d)
-    results += cycle_staggering('', 'z', ngrids, testfunc, boutcore.DDZ, DDZ, 1, accuracy_order, type_3d, method='C2')
-    results += cycle_staggering('x', 'x', ngrids, testfunc, boutcore.D2DX2, D2DX2, 2, accuracy_order, type_3d)
-    results += cycle_staggering('', 'x', ngrids, testfunc, boutcore.D2DX2, D2DX2, 2, accuracy_order, type_2d)
-    results += cycle_staggering('y', 'y', ngrids, testfunc, boutcore.D2DY2, D2DY2, 2, accuracy_order, type_3d)
-    results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.D2DY2, D2DY2, 2, accuracy_order, type_2d)
-    results += cycle_staggering('', 'z', ngrids, testfunc, boutcore.D2DZ2, D2DZ2, 2, accuracy_order, type_3d, method='C2')
-    results += cycle_staggering('', 'x', ngrids, testfunc, boutcore.D4DX4, D4DX4, 4, accuracy_order, type_3d)
-    results += cycle_staggering('', 'x', ngrids, testfunc, boutcore.D4DX4, D4DX4, 4, accuracy_order, type_2d)
-    results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.D4DY4, D4DY4, 4, accuracy_order, type_3d)
-    results += cycle_staggering('', 'y', ngrids, testfunc, boutcore.D4DY4, D4DY4, 4, accuracy_order, type_2d)
-    results += cycle_staggering('', 'z', ngrids, testfunc, boutcore.D4DZ4, D4DZ4, 4, accuracy_order, type_3d) # D4DZ4 is hard coded to use DIFF_C2
-    results += cycle_staggering2('x', 'x', ngrids, testfunc, testfunc2, boutcore.VDDX, lambda v,f: v*DDX(f), 1, accuracy_order, types_3d)
-    results += cycle_staggering2('', 'x', ngrids, testfunc, testfunc2, boutcore.VDDX, lambda v,f: v*DDX(f), 1, accuracy_order, types_2d)
-    results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), 1, accuracy_order, types_3d)
-    results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.VDDY, lambda v,f: v*DDY(f), 1, accuracy_order, types_2d)
-    results += cycle_staggering2('z', 'z', ngrids, testfunc, testfunc2, boutcore.VDDZ, lambda v,f: v*DDZ(f), 1, accuracy_order, types_3d, method='C2')
-    results += cycle_staggering2('x', 'x', ngrids, testfunc, testfunc2, boutcore.FDDX, lambda v,f: DDX(v*f), 1, 1, types_3d)
-    results += cycle_staggering2('', 'x', ngrids, testfunc, testfunc2, boutcore.FDDX, lambda v,f: DDX(v*f), 1, 1, types_2d)
-    results += cycle_staggering2('y', 'y', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1, 1, types_3d)
-    results += cycle_staggering2('', 'y', ngrids, testfunc, testfunc2, boutcore.FDDY, lambda v,f: DDY(v*f), 1, 1, types_2d)
-    results += cycle_staggering2('z', 'z', ngrids, testfunc, testfunc2, boutcore.FDDZ, lambda v,f: DDZ(v*f), 1, 1, types_3d)
-    results += cycle_staggering('y', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, 2, accuracy_order, type_3d)
-    results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DXDY, D2DXDY, 2, accuracy_order, type_2d)
-    results += cycle_staggering('x', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, 2, accuracy_order, type_3d)
-    results += cycle_staggering('', 'xy', ngrids, testfunc, boutcore.D2DYDX, D2DYDX, 2, accuracy_order, type_2d)
-    results += cycle_staggering('', 'xz', ngrids, testfunc, boutcore.D2DXDZ, D2DXDZ, 2, accuracy_order, type_3d)
-    results += cycle_staggering('x', 'xz', ngrids, testfunc, boutcore.D2DZDX, D2DZDX, 2, accuracy_order, type_3d)
-    results += cycle_staggering('', 'yz', ngrids, testfunc, boutcore.D2DYDZ, D2DYDZ, 2, accuracy_order, type_3d)
-    results += cycle_staggering('y', 'yz', ngrids, testfunc, boutcore.D2DZDY, D2DZDY, 2, accuracy_order, type_3d)
+    # two-argument operators
+    for arguments in two_argument_operators.values():
+        results += cycle_staggering2(*arguments) # no staggering allowed
+
+    if test_deriv_ops:
+        # test derivative operators
+        for arguments in single_argument_derivative_operators.values():
+            results += cycle_staggering(*arguments)
+        for arguments in two_argument_derivative_operators.values():
+            results += cycle_staggering2(*arguments)
 
 # check results of tests
 fail = False
