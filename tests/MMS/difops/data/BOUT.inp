@@ -15,4 +15,6 @@ upwind = U2
 upwind = U2
 
 [testmesh:ddz]
+first = C2
+second = C2
 upwind = U2
