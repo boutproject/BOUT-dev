@@ -31,7 +31,7 @@ matrix:
   - env: &default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
       - SCRIPT_FLAGS='-uim'
-      - PIP_PACKAGES='netcdf4'
+      - PIP_PACKAGES='netcdf4 sympy'
   - addons:
       apt:
         sources:
