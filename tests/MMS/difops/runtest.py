@@ -179,9 +179,9 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
             nz = default_n
         boutcore.setOption('testmesh:nz', exprToStr(nz), force=True)
 
-        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
-        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
-        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
+        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/nx), force=True)
+        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/ny), force=True)
+        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/nz), force=True)
         boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
         boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
         boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
@@ -413,9 +413,9 @@ def test_operator2(ngrids, testfunc1, testfunc2, dimensions, boutcore_operator, 
             nz = n
         else:
             nz = default_n
-        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/n), force=True)
-        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/n), force=True)
-        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/n), force=True)
+        boutcore.setOption('testmesh:dx', exprToStr(metric.psiwidth*metric.scalex/nx), force=True)
+        boutcore.setOption('testmesh:dy', exprToStr(2.*pi*metric.scaley/ny), force=True)
+        boutcore.setOption('testmesh:dz', exprToStr(2.*pi/nz), force=True)
         boutcore.setOption('testmesh:g11', exprToStr(metric.g11), force=True)
         boutcore.setOption('testmesh:g22', exprToStr(metric.g22), force=True)
         boutcore.setOption('testmesh:g33', exprToStr(metric.g33), force=True)
