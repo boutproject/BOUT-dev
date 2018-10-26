@@ -150,14 +150,6 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   string s = arg.substr(start, arg.length());
   arglist.push_back(trim(s));
 
-  /*
-    list<string> arglist = strsplit(arg, ',');
-    for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
-    // Trim each argument
-    (*it) = trim(*it);
-    }
-  */
-
   // Test if func is a modifier
   BoundaryModifier *mod = findBoundaryMod(func);
   if (mod != nullptr) {
