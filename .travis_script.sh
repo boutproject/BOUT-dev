@@ -95,12 +95,12 @@ fi
 if [[ ${UNIT} == 1 ]]
 then
     time make check-unit-tests || exit
-    time py.test-3 tools/pylib/ || exit
 fi
 
 if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests || exit
+    time py.test-3 tools/pylib/ || exit
 fi
 
 if [[ ${MMS} == 1 ]]
