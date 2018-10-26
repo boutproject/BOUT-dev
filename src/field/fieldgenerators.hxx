@@ -219,7 +219,7 @@ public:
     return std::make_shared<FieldMin>(args);
   }
   BoutReal generate(double x, double y, double z, double t) {
-    list<FieldGeneratorPtr >::iterator it=input.begin();
+    auto it = input.begin();
     BoutReal result = (*it)->generate(x,y,z,t);
     for(;it != input.end(); it++) {
       BoutReal val = (*it)->generate(x,y,z,t);
@@ -244,7 +244,7 @@ public:
     return std::make_shared<FieldMax>(args);
   }
   BoutReal generate(double x, double y, double z, double t) {
-    list<FieldGeneratorPtr >::iterator it=input.begin();
+    auto it = input.begin();
     BoutReal result = (*it)->generate(x,y,z,t);
     for(;it != input.end(); it++) {
       BoutReal val = (*it)->generate(x,y,z,t);

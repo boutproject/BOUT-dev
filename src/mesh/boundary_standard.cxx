@@ -2316,30 +2316,31 @@ void BoundaryNeumannPar::apply(Field3D &f) {
 BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
   verifyNumPoints(region,1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
-  
-  list<string>::const_iterator it = args.begin();
-  
-  if(it != args.end()) {
+
+  auto it = args.begin();
+
+  if (it != args.end()) {
     // First argument is 'a'
     a = stringToReal(*it);
     it++;
-    
-    if(it != args.end()) {
+
+    if (it != args.end()) {
       // Second is 'b'
       b = stringToReal(*it);
       it++;
-      
-      if(it != args.end()) {
-	// Third is 'g'
-	g = stringToReal(*it);
-	it++;
-	if(it != args.end()) {
-	  output << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
-	}
+
+      if (it != args.end()) {
+        // Third is 'g'
+        g = stringToReal(*it);
+        it++;
+        if (it != args.end()) {
+          output
+              << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
+        }
       }
     }
   }
-  
+
   return new BoundaryRobin(region, a, b, g);
 }
 

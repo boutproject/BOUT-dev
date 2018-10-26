@@ -85,7 +85,7 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
 }
 
 FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
-  std::map<BndryLoc, FieldGeneratorPtr>::iterator it = bndry_generator.find(location);
+  auto it = bndry_generator.find(location);
   if(it == bndry_generator.end())
     return nullptr;
 

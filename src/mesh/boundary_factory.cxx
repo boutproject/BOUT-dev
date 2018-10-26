@@ -342,24 +342,21 @@ void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name) {
 }
 
 BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s) {
-  map<string,BoundaryOp*>::iterator it;
-  it = opmap.find(lowercase(s));
+  auto it = opmap.find(lowercase(s));
   if(it == opmap.end())
     return nullptr;
   return it->second;
 }
 
 BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s) {
-  map<string,BoundaryModifier*>::iterator it;
-  it = modmap.find(lowercase(s));
+  auto it = modmap.find(lowercase(s));
   if(it == modmap.end())
     return nullptr;
   return it->second;
 }
 
 BoundaryOpPar* BoundaryFactory::findBoundaryOpPar(const string &s) {
-  map<string,BoundaryOpPar*>::iterator it;
-  it = par_opmap.find(lowercase(s));
+  auto it = par_opmap.find(lowercase(s));
   if(it == par_opmap.end())
     return nullptr;
   return it->second;

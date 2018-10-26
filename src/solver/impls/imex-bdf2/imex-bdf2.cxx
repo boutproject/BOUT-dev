@@ -1311,7 +1311,7 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
   // Loop over 2D variables
-  for(vector< VarStr<Field2D> >::const_iterator it = f2d.begin(); it != f2d.end(); ++it) {
+  for(auto it = f2d.begin(); it != f2d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator
 
     if(it->evolve_bndry) {
@@ -1355,7 +1355,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   }
 
   // Loop over 3D variables
-  for(vector< VarStr<Field3D> >::const_iterator it = f3d.begin(); it != f3d.end(); ++it) {
+  for(auto it = f3d.begin(); it != f3d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator
     if(it->evolve_bndry) {
       // Include boundary regions

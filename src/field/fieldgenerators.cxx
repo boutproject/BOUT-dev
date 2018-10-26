@@ -253,7 +253,7 @@ FieldGeneratorPtr FieldTanhHat::clone(const list<FieldGeneratorPtr> args) {
   // As lists are not meant to be indexed, we may use an iterator to get the
   // input arguments instead
   // Create the iterator
-  list<FieldGeneratorPtr>::const_iterator it = args.begin();
+  auto it = args.begin();
   // Assign the input arguments to the input of the constructor and advance the
   // iterator
   FieldGeneratorPtr xin = *it;
