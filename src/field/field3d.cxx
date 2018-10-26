@@ -423,7 +423,7 @@ void Field3D::applyBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyBoundary(const string &condition) {
+void Field3D::applyBoundary(const std::string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   checkData(*this);
@@ -450,7 +450,7 @@ void Field3D::applyBoundary(const string &condition) {
   //Field2D sets the corners to zero here, should we do the same here?
 }
 
-void Field3D::applyBoundary(const string &region, const string &condition) {
+void Field3D::applyBoundary(const std::string &region, const std::string &condition) {
   TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
@@ -552,7 +552,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(condition)");
 
@@ -576,7 +576,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
@@ -603,7 +603,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 

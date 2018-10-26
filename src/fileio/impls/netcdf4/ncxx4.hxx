@@ -86,10 +86,10 @@ class Ncxx4 : public DataFormat {
   bool setRecord(int t) override; // negative -> latest
 
   // Add a variable to the file
-  bool addVarInt(const string &name, bool repeat) override;
-  bool addVarBoutReal(const string &name, bool repeat) override;
-  bool addVarField2D(const string &name, bool repeat) override;
-  bool addVarField3D(const string &name, bool repeat) override;
+  bool addVarInt(const std::string &name, bool repeat) override;
+  bool addVarBoutReal(const std::string &name, bool repeat) override;
+  bool addVarField2D(const std::string &name, bool repeat) override;
+  bool addVarField3D(const std::string &name, bool repeat) override;
 
   // Read / Write simple variables up to 3D
 

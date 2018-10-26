@@ -206,32 +206,32 @@ void RKScheme::verifyCoeffs(){
   output<<endl;
 
   //Header
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<"RK Coefficients consistency check"<<endl;
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
 
   //Check time and stage coefficients
-  output<<setw(10)<<"TimeCoeff"<<" | "<<setw(10)<<"SumStageCoeff"<<endl;
+  output<<std::setw(10)<<"TimeCoeff"<<" | "<<std::setw(10)<<"SumStageCoeff"<<endl;
   bool warn=false;
   for(int i=0;i<getStageCount();i++){
     BoutReal tmp=0;
     for(int j=0;j<i;j++){
       tmp += stageCoeffs(i, j);
     }
-    output<<setw(10)<<timeCoeffs[i]<<" | "<<setw(10)<<tmp<<endl;
+    output<<std::setw(10)<<timeCoeffs[i]<<" | "<<std::setw(10)<<tmp<<endl;
     if(fabs(timeCoeffs[i]-tmp)>atol) warn=true;
   }
 
   //Optional warning
   if(warn){
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     output<<"WARNING: Stage/Time coefficients not consistent"<<endl;
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     warn=false;
   }
 
   //Check results coefficients
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<"Results coefficients (should be 1)"<<endl;
   for(int j=0;j<getNumOrders();j++){
     BoutReal tmp=0;
@@ -244,13 +244,13 @@ void RKScheme::verifyCoeffs(){
 
   //Optional warning
   if(warn){
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     output<<"WARNING: Result coefficients not consistent"<<endl;
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
   }
 
   //Footer
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<endl;
 }
 
@@ -260,33 +260,33 @@ void RKScheme::printButcherTableau(){
   output<<endl;
   
   //Header
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
   output<<"Butcher Tableau"<<endl;
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
 
   //Time and stage coeffs
   for(int i=0;i<getStageCount();i++){
-    output<<setw(width)<<timeCoeffs[i]<<" | ";
+    output<<std::setw(width)<<timeCoeffs[i]<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output << setw(width) << stageCoeffs(i, j);
+      output << std::setw(width) << stageCoeffs(i, j);
     }
     output<<endl;
   }
 
   //Divider
-  output<<string(width,'-')<<" | "<<string(width*getStageCount(),'-')<<endl;
+  output<<std::string(width,'-')<<" | "<<std::string(width*getStageCount(),'-')<<endl;
 
   //Result coeffs for each order
   for(int i=0;i<getNumOrders();i++){
-    output<<setw(width)<<i<<" | ";
+    output<<std::setw(width)<<i<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output << setw(width) << resultCoeffs(j, i);
+      output << std::setw(width) << resultCoeffs(j, i);
     }
     output<<endl;
   }
 
   //Footer
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
   output<<endl;
 }
 

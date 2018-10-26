@@ -74,7 +74,7 @@
  * o vorticity -> cos(y)
  * 
  */ 
-void initial_profile(const string &name, Field3D &var);
+void initial_profile(const std::string &name, Field3D &var);
 
 /*!
  * Set a Field2D from options
@@ -83,7 +83,7 @@ void initial_profile(const string &name, Field3D &var);
  * 
  * @param[out] var   The field which will be set to a value
  */
-void initial_profile(const string &name, Field2D &var);
+void initial_profile(const std::string &name, Field2D &var);
 
 /*!
  * Set a vector to a value. The options used depend
@@ -95,7 +95,7 @@ void initial_profile(const string &name, Field2D &var);
  * If contravariant, then each component will be initialised
  * by adding "x", "y" and "z" to the name.
  */
-void initial_profile(const string &name, Vector2D &var);
+void initial_profile(const std::string &name, Vector2D &var);
 
 /*!
  * Set a vector to a value. The options used depend
@@ -109,6 +109,6 @@ void initial_profile(const string &name, Vector2D &var);
  *
  * 
  */
-void initial_profile(const string &name, Vector3D &var);
+void initial_profile(const std::string &name, Vector3D &var);
 
 #endif // __INITIALPROF_H__

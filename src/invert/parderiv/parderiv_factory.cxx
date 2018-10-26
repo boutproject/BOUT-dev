@@ -47,7 +47,7 @@ InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {
 }
 
 InvertPar* ParDerivFactory::createInvertPar(Options *opts) {
-  string type;
+  std::string type;
   opts->get("type", type, "cyclic");
   
   return createInvertPar(type.c_str(), opts);

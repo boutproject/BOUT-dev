@@ -78,7 +78,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
 
-  string buffer;
+  std::string buffer;
 
   // Go through command-line arguments
   for (int i=1;i<argc;i++) {
@@ -116,7 +116,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
     
     size_t startpos = buffer.find_first_of('=');
 
-    if (startpos == string::npos) {
+    if (startpos == std::string::npos) {
       // Just set a flag to true
       // e.g. "restart" or "append" on command line
 
@@ -126,13 +126,13 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 
       if(startpos != endpos) throw BoutException("\tMultiple '=' in command-line argument '%s'\n", buffer.c_str());
 
-      string key = trim(buffer.substr(0, startpos));
-      string value = trim(buffer.substr(startpos+1));
+      std::string key = trim(buffer.substr(0, startpos));
+      std::string value = trim(buffer.substr(startpos+1));
       
       size_t scorepos;
-      while((scorepos = key.find_first_of(':')) != string::npos) {
+      while((scorepos = key.find_first_of(':')) != std::string::npos) {
 	// sub-section
-	string section = key.substr(0,scorepos);
+	std::string section = key.substr(0,scorepos);
 	key = trim(key.substr(scorepos+1));
 	options = options->getSection(section);
       }

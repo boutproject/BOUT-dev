@@ -739,7 +739,7 @@ int IMEXBDF2::run() {
   int order = 1;
   int lastOrder = -1;
   BoutReal dt = timestep;
-  vector<BoutReal> lastTimesteps = timesteps;
+  std::vector<BoutReal> lastTimesteps = timesteps;
   BoutReal dtNext = dt; //Timestep to try for next internal iteration
   
   //By default use the main snes object.

@@ -1925,7 +1925,7 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal *buffer) {
 
   int len = 0;
@@ -1958,7 +1958,7 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
   return (len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
                           int ylt, BoutReal *buffer) {
 
   int len = 0;
@@ -2379,9 +2379,9 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 
-vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
+std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;

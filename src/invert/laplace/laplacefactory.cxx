@@ -41,7 +41,7 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc)
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
-  string type;
+  std::string type;
 
   if(mesh->firstX() && mesh->lastX()) {
     // Can use serial algorithm

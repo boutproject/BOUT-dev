@@ -73,8 +73,8 @@ class Datafile {
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
 
-  void setAttribute(const string &varname, const string &attrname, const string &text);
-  void setAttribute(const string &varname, const string &attrname, int value);
+  void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
+  void setAttribute(const std::string &varname, const std::string &attrname, int value);
 
  private:
   bool parallel; // Use parallel formats?
@@ -106,33 +106,33 @@ class Datafile {
   struct VarStr {
     T *ptr;             ///< Pointer to the data.
                         ///< Note that this may be a user object, not a copy, so must not be destroyed
-    string name;        ///< Name as it appears in the output file
+    std::string name;        ///< Name as it appears in the output file
     bool save_repeat;   ///< If true, has a time dimension and is saved every time step
     bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
   };
 
   // one set per variable type
-  vector< VarStr<int> >      int_arr;
-  vector< VarStr<BoutReal> > BoutReal_arr;
-  vector< VarStr<Field2D> >  f2d_arr;
-  vector< VarStr<Field3D> >  f3d_arr;
-  vector< VarStr<Vector2D> > v2d_arr;
-  vector< VarStr<Vector3D> > v3d_arr;
+  std::vector<VarStr<int>> int_arr;
+  std::vector<VarStr<BoutReal>> BoutReal_arr;
+  std::vector<VarStr<Field2D>> f2d_arr;
+  std::vector<VarStr<Field3D>> f3d_arr;
+  std::vector<VarStr<Vector2D>> v2d_arr;
+  std::vector<VarStr<Vector3D>> v3d_arr;
 
-  bool read_f2d(const string &name, Field2D *f, bool save_repeat);
-  bool read_f3d(const string &name, Field3D *f, bool save_repeat);
+  bool read_f2d(const std::string &name, Field2D *f, bool save_repeat);
+  bool read_f3d(const std::string &name, Field3D *f, bool save_repeat);
 
-  bool write_int(const string &name, int *f, bool save_repeat);
-  bool write_real(const string &name, BoutReal *f, bool save_repeat);
-  bool write_f2d(const string &name, Field2D *f, bool save_repeat);
-  bool write_f3d(const string &name, Field3D *f, bool save_repeat);
+  bool write_int(const std::string &name, int *f, bool save_repeat);
+  bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
+  bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
+  bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
 
   /// Check if a variable has already been added
-  bool varAdded(const string &name);
+  bool varAdded(const std::string &name);
 
   /// Get the pointer to the variable, nullptr if not added
   /// This is used to check if the same variable is being added
-  void* varPtr(const string &name);
+  void* varPtr(const std::string &name);
 };
 
 /// Write this variable once to the grid file

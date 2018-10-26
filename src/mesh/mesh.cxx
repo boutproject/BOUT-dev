@@ -49,7 +49,7 @@ Mesh::~Mesh() {
  **************************************************************************/
 
 /// Get an integer
-int Mesh::get(int &ival, const string &name) {
+int Mesh::get(int &ival, const std::string &name) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
 
   if (source == nullptr or !source->get(this, ival, name))
@@ -59,7 +59,7 @@ int Mesh::get(int &ival, const string &name) {
 }
 
 /// A BoutReal number
-int Mesh::get(BoutReal &rval, const string &name) {
+int Mesh::get(BoutReal &rval, const std::string &name) {
   TRACE("Mesh::get(rval, %s)", name.c_str());
 
   if (source == nullptr or !source->get(this, rval, name))
@@ -68,7 +68,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
   return 0;
 }
 
-int Mesh::get(Field2D &var, const string &name, BoutReal def) {
+int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -86,7 +86,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
+int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -110,7 +110,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const string &name) {
+int Mesh::get(Vector2D &var, const std::string &name) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -131,7 +131,7 @@ int Mesh::get(Vector2D &var, const string &name) {
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const string &name) {
+int Mesh::get(Vector3D &var, const std::string &name) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -152,7 +152,7 @@ int Mesh::get(Vector3D &var, const string &name) {
   return 0;
 }
 
-bool Mesh::sourceHasVar(const string &name) {
+bool Mesh::sourceHasVar(const std::string &name) {
   TRACE("Mesh::sourceHasVar(%s)", name.c_str());
   if (source == nullptr)
     return false;
@@ -209,7 +209,7 @@ void Mesh::communicate(FieldPerp &f) {
   wait(recv[1]);
 }
 
-int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
   int len = 0;
 
   /// Loop over variables
@@ -262,7 +262,7 @@ bool Mesh::hasBndryUpperY() {
   return answer;
 }
 
-const vector<int> Mesh::readInts(const string &name, int n) {
+const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   TRACE("Mesh::readInts(%s)", name.c_str());
 
   if (source == nullptr) {
@@ -270,7 +270,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
                         name.c_str());
   }
 
-  vector<int> result;
+  std::vector<int> result;
 
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
@@ -287,7 +287,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
 
 void Mesh::setParallelTransform() {
 
-  string ptstr;
+  std::string ptstr;
   options->get("paralleltransform", ptstr, "identity");
 
   // Convert to lower case for comparison

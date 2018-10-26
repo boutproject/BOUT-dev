@@ -623,7 +623,7 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
     
     if(mms) {
       // Add an error variable
-      outputfile.add(*(f.MMS_err), (string("E_")+f.name).c_str(), save_repeat);
+      outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
     }
   }
 }
@@ -1308,7 +1308,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #endif
 }
 
-bool Solver::varAdded(const string &name) {
+bool Solver::varAdded(const std::string &name) {
   for(const auto& f : f2d) {
     if(f.name == name)
       return true;

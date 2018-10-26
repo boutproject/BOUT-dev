@@ -337,7 +337,7 @@ char* copy_string(const char* s);
  * by writing to a stringstream
  */
 template <class T>
-const string toString(const T& val) {
+const std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
@@ -346,12 +346,12 @@ const string toString(const T& val) {
 /*!
  * Convert a string to lower case
  */
-const string lowercase(const string &str);
+const std::string lowercase(const std::string &str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const string lowercasequote(const string &str);
+const std::string lowercasequote(const std::string &str);
 
 /*!
  * Convert a string to a BoutReal

@@ -51,16 +51,16 @@ char* copy_string(const char* s) {
 }
 
 // Convert a string to lower case
-const string lowercase(const string &str) {
-  string strlow(str);
+const std::string lowercase(const std::string &str) {
+  std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
   return strlow;
 }
 
 // Convert to lowercase, except for inside strings
-const string lowercasequote(const string &str) {
-  string strlow(str);
+const std::string lowercasequote(const std::string &str) {
+  std::string strlow(str);
 
   bool quote = false, dquote = false;
   for (char &i : strlow) {

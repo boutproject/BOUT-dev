@@ -236,11 +236,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
     OPTION(opt, maxits, 100000); // Maximum iterations
     
     // Get KSP Solver Type
-    string ksptype;
+    std::string ksptype;
     opt->get("ksptype", ksptype, "gmres");
     
     // Get PC type
-    string pctype;
+    std::string pctype;
     opt->get("pctype", pctype, "none", true);
 
     KSPSetType( ksp, ksptype.c_str() );

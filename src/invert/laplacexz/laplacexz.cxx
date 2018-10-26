@@ -10,7 +10,7 @@ LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplacexz");
 
-  string type;
+  std::string type;
   options->get("type", type, "cyclic");
 
   if(strcasecmp(type.c_str(), "cyclic") == 0) {

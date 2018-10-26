@@ -431,18 +431,18 @@ class Field3D : public Field, public FieldData {
 
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
 
   void applyParallelBoundary();
   void applyParallelBoundary(BoutReal t);
-  void applyParallelBoundary(const string &condition);
-  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
-  void applyParallelBoundary(const string &region, const string &condition);
-  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
+  void applyParallelBoundary(const std::string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(std::string(condition)); }
+  void applyParallelBoundary(const std::string &region, const std::string &condition);
+  void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
   
 private:
   /// Boundary - add a 2D field

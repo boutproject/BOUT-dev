@@ -88,7 +88,7 @@ template <> void Options::assign<BoutReal>(BoutReal val, const std::string sourc
   _set(ss.str(), source, false);
 }
 
-void Options::_set(string val, std::string source, bool force) {
+void Options::_set(std::string val, std::string source, bool force) {
   if (isSet()) {
     // Check if current value the same as new value
     if (value.value != val) {
@@ -266,8 +266,8 @@ void Options::printUnused() const {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<string, Options::OptionValue> Options::values() const {
-  std::map<string, OptionValue> options;
+std::map<std::string, Options::OptionValue> Options::values() const {
+  std::map<std::string, OptionValue> options;
   for (const auto &it : children) {
     if (it.second.is_value) {
       options[it.first] = it.second.value;
@@ -276,8 +276,8 @@ std::map<string, Options::OptionValue> Options::values() const {
   return options;
 }
 
-std::map<string, const Options *> Options::subsections() const {
-  std::map<string, const Options *> sections;
+std::map<std::string, const Options *> Options::subsections() const {
+  std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
     if (it.second.is_section) {
       sections[it.first] = &it.second;
