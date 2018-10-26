@@ -27,6 +27,10 @@ BoutException::~BoutException() {
     delete[] buffer;
     buffer = nullptr;
   }
+  // If an exception is thrown while a TRACE is active, we won't clear
+  // up the msg_stack. We also won't know how many messages to pop, so
+  // just clear everything
+  msg_stack.clear();
 }
 
 std::string BoutException::getBacktrace() const{
