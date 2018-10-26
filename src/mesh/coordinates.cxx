@@ -367,6 +367,8 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(dx, "dx", false);
   file.add(dy, "dy", false);
   file.add(dz, "dz", false);
+  file.add(d1_dx, "d1_dx", false);
+  file.add(d1_dy, "d1_dy", false);
 
   file.add(g11, "g11", false);
   file.add(g22, "g22", false);
@@ -382,7 +384,36 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(g_13, "g_13", false);
   file.add(g_23, "g_23", false);
 
+  file.add(G1_11, "G1_11", false);
+  file.add(G1_22, "G1_22", false);
+  file.add(G1_33, "G1_33", false);
+  file.add(G1_12, "G1_12", false);
+  file.add(G1_13, "G1_13", false);
+  file.add(G1_23, "G1_23", false);
+  file.add(G2_11, "G2_11", false);
+  file.add(G2_22, "G2_22", false);
+  file.add(G2_33, "G2_33", false);
+  file.add(G2_12, "G2_12", false);
+  file.add(G2_13, "G2_13", false);
+  file.add(G2_23, "G2_23", false);
+  file.add(G3_11, "G3_11", false);
+  file.add(G3_22, "G3_22", false);
+  file.add(G3_33, "G3_33", false);
+  file.add(G3_12, "G3_12", false);
+  file.add(G3_13, "G3_13", false);
+  file.add(G3_23, "G3_23", false);
+
+  file.add(G1, "G1", false);
+  file.add(G2, "G2", false);
+  file.add(G3, "G3", false);
+
   file.add(J, "J", false);
+  file.add(Bxy, "Bxy", false);
+
+  file.add(zShift, "zShift", false);
+
+  file.add(ShiftTorsion, "ShiftTorsion", false);
+  file.add(IntShiftTorsion, "IntShiftTorsion", false);
 }
 
 int Coordinates::geometry() {
