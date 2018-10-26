@@ -91,8 +91,6 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
-AC_ARG_ENABLE(nls, [AS_HELP_STRING([--enable-nls],
-        [Enable Natural Language Support with gettext])],,[enable_nls=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -1137,30 +1135,27 @@ AS_IF([test "$with_pvode" != "no"], [
 #############################################################
 
 HAS_NLS="no"
-AS_IF([test "$enable_nls" != "no"  ], [
-  # Use macro to test if Natural Language Support (gettext) is available.
-  # If available sets:
-  #  - USE_NLS to "yes"
-  #  - LIBINTL to the linker options
-  #  - Modifies CPPFLAGS if needed
-  AM_GNU_GETTEXT([external])
-  AS_IF([test "$USE_NLS" = "yes"], [
-    AC_MSG_NOTICE([Enabling language support with gettext])
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
+AM_GNU_GETTEXT([external])
+AS_IF([test "$USE_NLS" = "yes"], [
+  AC_MSG_NOTICE([Enabling language support with gettext])
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
 
-    # Turn the .po files into .mo files
-    $MAKE -C locale | tee -a config-build.log 2>&1
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
 
-    # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
 
-    EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
-
-    # Set variable substituted into bout-config 
-    HAS_NLS="yes"
-  ],[
-    AC_MSG_NOTICE([Language support with gettext not available])
-  ]) 
-])
+  # Set variable substituted into bout-config 
+  HAS_NLS="yes"
+],[
+  AC_MSG_NOTICE([Language support with gettext not available])
+]) 
 
 #############################################################
 # Check environment

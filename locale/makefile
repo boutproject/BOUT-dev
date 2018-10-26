@@ -2,32 +2,34 @@
 # Internationalisation
 ######################################################################
 
-# List of supported locales
-LANGUAGES = fr zh_TW zh_CN
+# Find all .po files and work out the corresponding .mo file name
+PO_FILES = $(shell ls */libbout.po)
+MO_FILES = $(PO_FILES:%/libbout.po=%/LC_MESSAGES/libbout.mo)
 
 # This target is the most commonly used, to build all the .mo files
 .PHONY: locale
-locale: $(LANGUAGES:%=%/LC_MESSAGES/libbout.mo)
-
-# Update all .po files. Note that they will then need manually
-# editing to fill in (or delete) missing translations.
-.PHONY: po-all
-all-po: $(LANGUAGES:%=%/libbout.po)
+locale: $(MO_FILES)
 
 # Create the template file, combining all source files
 libbout.pot: FORCE
 	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find ../ -name "*.[ch]xx"`
 
 # Update a .po file
+# If it doesn't exist then create; if it exists then update
+# Note that it will need manually editing to translate or delete new entries
 %/libbout.po: libbout.pot
-	msgmerge --update $@ $<
+	@mkdir -p $(@D)
+	@if [ -a $@ ]; then echo "Updating " $@; msgmerge --update $@ $< ; else echo "Creating " $@; msginit --input=libbout.pot --locale=$* --output=$@; fi;
+	@echo "Now edit " $@ " to translate or delete new entries"
+	@echo "then run 'make' to generate the .mo file"
 
 # Update a .mo file, ensuring that the directory exists
 # Note: Because the .po files must be updated manually,
 #       don't automatically generate the .po files
 %/LC_MESSAGES/libbout.mo: FORCE
 	@mkdir -p $(@D)
-	msgfmt --output-file=$@ $*/libbout.po
+	@echo "Building language: " $*
+	@msgfmt --output-file=$@ $*/libbout.po
 
 # Shortcut target for building single language
 # e.g. "make po-fr" 

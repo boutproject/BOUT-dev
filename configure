@@ -815,11 +815,11 @@ enable_shared
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
-enable_nls
 with_gcov
 enable_code_coverage
 with_hdf5
 with_parallelhdf5
+enable_nls
 with_gnu_ld
 enable_rpath
 with_libiconv_prefix
@@ -1479,7 +1479,6 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
-  --enable-nls            Enable Natural Language Support with gettext
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
   --disable-nls           do not use Native Language Support
@@ -2717,13 +2716,6 @@ if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
-fi
-
-# Check whether --enable-nls was given.
-if test "${enable_nls+set}" = set; then :
-  enableval=$enable_nls;
-else
-  enable_nls=no
 fi
 
 
@@ -12142,6 +12134,11 @@ fi
 #############################################################
 
 HAS_NLS="no"
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether NLS is requested" >&5
 $as_echo_n "checking whether NLS is requested... " >&6; }
@@ -13208,13 +13205,6 @@ fi
 
 
 
-if test "$enable_nls" != "no"  ; then :
-
-  # Use macro to test if Natural Language Support (gettext) is available.
-  # If available sets:
-  #  - USE_NLS to "yes"
-  #  - LIBINTL to the linker options
-  #  - Modifies CPPFLAGS if needed
 
 
 
@@ -14307,28 +14297,25 @@ $as_echo "#define HAVE_DCGETTEXT 1" >>confdefs.h
 
 
 
-  if test "$USE_NLS" = "yes"; then :
+if test "$USE_NLS" = "yes"; then :
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling language support with gettext" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling language support with gettext" >&5
 $as_echo "$as_me: Enabling language support with gettext" >&6;}
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
 
-    # Turn the .po files into .mo files
-    $MAKE -C locale | tee -a config-build.log 2>&1
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
 
-    # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
-    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
 
-    EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
-
-    # Set variable substituted into bout-config
-    HAS_NLS="yes"
+  # Set variable substituted into bout-config
+  HAS_NLS="yes"
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Language support with gettext not available" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Language support with gettext not available" >&5
 $as_echo "$as_me: Language support with gettext not available" >&6;}
-
-fi
 
 fi
 
