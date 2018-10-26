@@ -43,9 +43,6 @@
 #include <cmath>
 #include <algorithm>
 
-using std::abs;
-using std::swap;
-
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
@@ -200,6 +197,8 @@ private:
 /// This is ugly but can be used to support some use cases.
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
+
+  using std::abs;
 
   // Calculate the first co-factors
   T A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);

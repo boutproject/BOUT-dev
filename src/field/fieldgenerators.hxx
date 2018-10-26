@@ -13,8 +13,6 @@
 
 #include <cmath>
 
-using std::list;
-
 //////////////////////////////////////////////////////////
 // Generators from values
 
@@ -23,7 +21,9 @@ using std::list;
 class FieldValuePtr : public FieldGenerator {
 public:
   FieldValuePtr(BoutReal *val) : ptr(val) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > UNUSED(args)) { return std::make_shared<FieldValuePtr>(ptr); }
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) {
+    return std::make_shared<FieldValuePtr>(ptr);
+  }
   BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) { return *ptr; }
 private:
   BoutReal *ptr; 
@@ -37,7 +37,7 @@ class FieldSin : public FieldGenerator {
 public:
   FieldSin(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
   const std::string str() {return std::string("sin(")+gen->str()+std::string(")");}
 private:
@@ -49,7 +49,7 @@ class FieldCos : public FieldGenerator {
 public:
   FieldCos(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 
   const std::string str() {return std::string("cos(")+gen->str()+std::string(")");}
@@ -63,7 +63,7 @@ template<single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
   FieldGenOneArg(FieldGeneratorPtr g) : gen(g) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() != 1) {
       throw ParseException("Incorrect number of arguments to function. Expecting 1, got %d", args.size());
     }
@@ -83,7 +83,7 @@ template<double_arg_op Op>
 class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
 public:
   FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b) : A(a), B(b) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() != 2) {
       throw ParseException("Incorrect number of arguments to function. Expecting 2, got %d", args.size());
     }
@@ -101,7 +101,7 @@ private:
 class FieldATan : public FieldGenerator { 
 public:
   FieldATan(FieldGeneratorPtr a, FieldGeneratorPtr b=nullptr) : A(a), B(b) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() == 1) {
       return std::make_shared<FieldATan>(args.front());
     }else if(args.size() == 2) {
@@ -123,7 +123,7 @@ class FieldSinh : public FieldGenerator {
 public:
   FieldSinh(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -134,7 +134,7 @@ class FieldCosh : public FieldGenerator {
 public:
   FieldCosh(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -145,7 +145,7 @@ class FieldTanh : public FieldGenerator {
 public:
   FieldTanh(FieldGeneratorPtr g=nullptr) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -156,7 +156,7 @@ class FieldGaussian : public FieldGenerator {
 public:
   FieldGaussian(FieldGeneratorPtr xin, FieldGeneratorPtr sin) : X(xin), s(sin) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr X, s;
@@ -167,7 +167,7 @@ class FieldAbs : public FieldGenerator {
 public:
   FieldAbs(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -178,7 +178,7 @@ class FieldSqrt : public FieldGenerator {
 public:
   FieldSqrt(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -189,7 +189,7 @@ class FieldHeaviside : public FieldGenerator {
 public:
   FieldHeaviside(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
   const std::string str() {return std::string("H(")+gen->str()+std::string(")");}
 private:
@@ -201,7 +201,7 @@ class FieldErf : public FieldGenerator {
 public:
   FieldErf(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGeneratorPtr gen;
@@ -211,8 +211,8 @@ private:
 class FieldMin : public FieldGenerator {
 public:
   FieldMin() {}
-  FieldMin(const list<FieldGeneratorPtr > args) : input(args) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldMin(const std::list<FieldGeneratorPtr > args) : input(args) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() == 0) {
       throw ParseException("min function must have some inputs");
     }
@@ -229,15 +229,15 @@ public:
     return result;
   }
 private:
-  list<FieldGeneratorPtr > input;
+  std::list<FieldGeneratorPtr > input;
 };
 
 /// Maximum
 class FieldMax : public FieldGenerator {
 public:
   FieldMax() {}
-  FieldMax(const list<FieldGeneratorPtr > args) : input(args) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldMax(const std::list<FieldGeneratorPtr > args) : input(args) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() == 0) {
       throw ParseException("max function must have some inputs");
     }
@@ -254,7 +254,7 @@ public:
     return result;
   }
 private:
-  list<FieldGeneratorPtr > input;
+  std::list<FieldGeneratorPtr > input;
 };
 
 /// Generator to round to the nearest integer
@@ -262,7 +262,7 @@ class FieldRound : public FieldGenerator {
 public:
   FieldRound(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
     if(args.size() != 1)
       throw BoutException("round function must have one input");
     return std::make_shared<FieldRound>(args.front());
@@ -288,7 +288,7 @@ private:
 class FieldBallooning : public FieldGenerator {
 public:
   FieldBallooning(Mesh *m, FieldGeneratorPtr a = nullptr, int n = 3) : mesh(m), arg(a), ball_n(n) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   Mesh *mesh;
@@ -303,7 +303,7 @@ private:
 class FieldMixmode : public FieldGenerator {
 public:
   FieldMixmode(FieldGeneratorPtr a = nullptr, BoutReal seed = 0.5);
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   /// Generate a random number between 0 and 1 (exclusive)
@@ -328,7 +328,7 @@ public:
                FieldGeneratorPtr steepnessin)
         : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args);
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 private:
   // The (x,y,z,t) field
