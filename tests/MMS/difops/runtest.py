@@ -15,6 +15,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--short', action='store_true', default=False)
 parser.add_argument('--operator', default=None)
+parser.add_argument('--plot', action='store_true', default=False)
 args = parser.parse_args()
 full_test = not args.short
 
@@ -28,7 +29,7 @@ myg = 2
 testfunc = cos(2*pi*metric.x+metric.y+metric.z)
 testfunc2 = sin(4*pi*metric.x+2*metric.y+2*metric.z)+cos(2*pi*metric.x-metric.z)
 accuracy_order = 2
-plot_error = False
+plot_error = args.plot
 test_deriv_ops = full_test
 tests_3d = full_test
 test_throw = full_test
@@ -289,6 +290,7 @@ def test_operator(ngrids, testfunc, dimensions, boutcore_operator, symbolic_oper
             showdata([numpy.atleast_2d(numpy.squeeze(error)),
                 numpy.atleast_2d(numpy.squeeze(bout_result.get()[this_mxg:-this_mxg, this_myg:-this_myg])),
                 numpy.atleast_2d(numpy.squeeze(analytic_result.get()[this_mxg:-this_mxg, this_myg:-this_myg]))])
+            showdata([numpy.atleast_2d(numpy.squeeze(bout_input.get()[this_mxg:-this_mxg, :]))], titles=["input"])
         print(str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+' '+str(boundary_condition)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.')
         return [str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+' '+str(boundary_condition)+'. Expected '+str(accuracy_order)+', got '+str(convergence)+'.']
 
