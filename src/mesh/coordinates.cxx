@@ -702,30 +702,25 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
   
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  Field2D Bxy_floc = f.getCoordinates()->Bxy;
-
-  if (!f.hasYupYdown()) {
-    // No yup/ydown fields. The Grad_par operator will
-    // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
-  }
-
-  // Need to modify yup and ydown fields
+  Field2D& Bxy_floc = f.getCoordinates()->Bxy;
   Field3D f_B = f / Bxy_floc;
-  if (&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  } else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy_floc;
-    f_B.ydown() = f.ydown() / Bxy_floc;
-  }
-  return Bxy * Grad_par(f_B, outloc, method);
+
+  if (f.hasYupYdown()) {
+    // Need to modify yup and ydown fields
+    if (&f.yup() == &f) {
+      // Identity, yup and ydown point to same field
+      f_B.mergeYupYdown();
+    } else {
+      // Distinct fields
+      f_B.splitYupYdown();
+      f_B.yup() = f.yup() / Bxy_floc;
+      f_B.ydown() = f.ydown() / Bxy_floc;
+    }
   } else if (f.hasFieldAligned()) {
-    Field3D f_B = f / Bxy;
     f_B.fieldAligned() = f.fieldAligned() / Bxy;
-    return Bxy * Grad_par(f_B, outloc, method);
+  }
+
+  return Bxy * Grad_par(f_B, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
