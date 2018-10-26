@@ -29,35 +29,20 @@ BoutException::~BoutException() {
   }
 }
 
-void BoutException::Backtrace() {
-#if CHECK > 1
-  /// Print out the message stack to help debugging
-  std::string tmp = msg_stack.getDump();
-  message += tmp;
-#else
-  message += "Enable checking (configure with --enable-check or set flag -DCHECK > 1) to "
-             "get a trace\n";
-#endif
-  
+std::string BoutException::getBacktrace() const{
+  std::string backtrace_message;
 #ifdef BACKTRACE
 
-  trace_size = backtrace(trace, TRACE_MAX);
-  messages = backtrace_symbols(trace, trace_size);
+  void *trace[TRACE_MAX];
+  auto trace_size = backtrace(trace, TRACE_MAX);
+  auto **messages = backtrace_symbols(trace, trace_size);
 
-#else // BACKTRACE
-  message += "Stacktrace not enabled.\n";
-#endif
-}
-
-std::string BoutException::BacktraceGenerate() const{
-  std::string message;
-#ifdef BACKTRACE
-    // skip first stack frame (points here)
-  message = ("====== Exception path ======\n");
+  backtrace_message = "====== Exception path ======\n";
   char buf[1024];
+  // skip first stack frame (points here)
   for (int i = 1; i < trace_size; ++i) {
     snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i, messages[i]);
-    message += buf;
+    backtrace_message += buf;
     // find first occurence of '(' or ' ' in message[i] and assume
     // everything before that is the file name. (Don't go beyond 0 though
     // (string terminator)
@@ -93,12 +78,14 @@ std::string BoutException::BacktraceGenerate() const{
       } while (retstr != nullptr);
       int status = pclose(fp);
       if (status == 0) {
-        message += buf;
+        backtrace_message += buf;
       }
     }
   }
+#else
+  backtrace_message = "Stacktrace not enabled.\n";
 #endif
-  return message;
+  return header + message + "\n" + msg_stack.getDump() + backtrace_message;
 }
 
 /// Common set up for exceptions
@@ -126,28 +113,9 @@ std::string BoutException::BacktraceGenerate() const{
       delete[] buffer;                                                                   \
       buffer = nullptr;                                                                  \
     }                                                                                    \
-    message = "====== Exception thrown ======\n" + message + "\n";                       \
-                                                                                         \
-    this->Backtrace();                                                                   \
   }
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }
-
-BoutException::BoutException(const std::string &msg) {
-  message = "====== Exception thrown ======\n" + msg + "\n";
-
-  this->Backtrace();
-}
-
-const char *BoutException::what() const noexcept{
-#ifdef BACKTRACE
-  _tmp=message;
-  _tmp+=BacktraceGenerate();
-  return _tmp.c_str();
-#else
-  return message.c_str();
-#endif
-}
 
 BoutRhsFail::BoutRhsFail(const char *s, ...) : BoutException::BoutException(nullptr) {
   INIT_EXCEPTION(s);
