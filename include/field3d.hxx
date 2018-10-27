@@ -217,21 +217,45 @@ class Field3D : public Field, public FieldData {
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitYupYdown();
+  void splitYupYdown() const;
+
+  /*!
+   * Get mutable version of yup_field or ydown_field (to be called when the
+   * Field3D object is const).
+   * This method is intended *only* be used by calcYUpDown() routines. Other
+   * uses should consider const-correctness carefully.
+   */
+  Field3D& ynextMutable(int dir) const {
+    ASSERT1(dir == 1 || dir == -1);
+    if (dir == 1) {
+      return *yup_field;
+    } else {
+      return *ydown_field;
+    }
+  }
 
   /*!
    * Ensure that yup and ydown refer to this field
    */
-  void mergeYupYdown();
+  void mergeYupYdown() const;
 
   /*!
    * Delete all yup/ydown fields and field_fa
    */
-  void deleteYupYdown();
+  void deleteYupYdown() const;
   
-  /// Check if this field has yup and ydown fields
+  /// Check if this field has valid yup and ydown fields
   bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+    return has_yup_ydown && (yup_field != nullptr) && (ydown_field != nullptr);
+  }
+
+  void setHasYupYdown(bool set) const {
+    if (set) {
+      // Only makes sense to set to true if yup_field and ydown_field are valid
+      ASSERT1(yup_field != nullptr && ydown_field != nullptr);
+    }
+
+    has_yup_ydown = set;
   }
 
   /// Return reference to yup field
@@ -462,8 +486,11 @@ private:
   
   Field3D *deriv; ///< Time derivative (may be NULL)
 
+  /// flag to keep track of whether yup_field and ydown_field are valid
+  mutable bool has_yup_ydown;
+
   /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  mutable Field3D *yup_field, *ydown_field;
 };
 
 // Non-member overloaded operators

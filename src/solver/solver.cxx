@@ -982,7 +982,7 @@ void Solver::load_vars(BoutReal *udata) {
   for(const auto& f : f3d) {
     f.var->allocate();
     f.var->setLocation(f.location);
-    f.var->deleteYupYdown(); // reset yup/ydown fields since f.var is updated
+    f.var->setHasYupYdown(false); // yup/ydown fields need updating
   }
 
   loop_vars(udata, LOAD_VARS);

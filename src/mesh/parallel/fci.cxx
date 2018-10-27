@@ -236,7 +236,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   interp->setMask(boundary_mask);
 }
 
-const Field3D FCIMap::integrate(Field3D &f) const {
+const Field3D FCIMap::integrate(const Field3D &f) const {
   TRACE("FCIMap::integrate");
   
   // Cell centre values
@@ -293,7 +293,7 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
-void FCITransform::calcYUpDown(Field3D &f) {
+void FCITransform::calcYUpDown(const Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
   if (!f.hasYupYdown()) {
@@ -301,12 +301,14 @@ void FCITransform::calcYUpDown(Field3D &f) {
     f.splitYupYdown();
 
     // Interpolate f onto yup and ydown fields
-    f.ynext(forward_map.dir) = forward_map.interpolate(f);
-    f.ynext(backward_map.dir) = backward_map.interpolate(f);
+    f.ynextMutable(forward_map.dir) = forward_map.interpolate(f);
+    f.ynextMutable(backward_map.dir) = backward_map.interpolate(f);
+
+    f.setHasYupYdown(true);
   }
 }
 
-void FCITransform::integrateYUpDown(Field3D &f) {
+void FCITransform::integrateYUpDown(const Field3D &f) {
   TRACE("FCITransform::integrateYUpDown");
   
   if (!f.hasYupYdown()) {
@@ -314,7 +316,9 @@ void FCITransform::integrateYUpDown(Field3D &f) {
     f.splitYupYdown();
 
     // Integrate f onto yup and ydown fields
-    f.ynext(forward_map.dir) = forward_map.integrate(f);
-    f.ynext(backward_map.dir) = backward_map.integrate(f);
+    f.ynextMutable(forward_map.dir) = forward_map.integrate(f);
+    f.ynextMutable(backward_map.dir) = backward_map.integrate(f);
+
+    f.setHasYupYdown(true);
   }
 }

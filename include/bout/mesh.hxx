@@ -611,7 +611,7 @@ class Mesh {
 
   /// Calculate yup/ydown fields in case they can be computed for an
   /// intermediate variable without communicating
-  void calcYUpDown(Field3D &f) {
+  void calcYUpDown(const Field3D &f) {
     getParallelTransform().calcYUpDown(f);
   }
 

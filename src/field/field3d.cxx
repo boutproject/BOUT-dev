@@ -174,7 +174,7 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
+void Field3D::splitYupYdown() const {
   TRACE("Field3D::splitYupYdown");
   
   if((yup_field != this) && (yup_field != nullptr))
@@ -185,7 +185,7 @@ void Field3D::splitYupYdown() {
   ydown_field = new Field3D(fieldmesh);
 }
 
-void Field3D::mergeYupYdown() {
+void Field3D::mergeYupYdown() const {
   TRACE("Field3D::mergeYupYdown");
   
   if(yup_field == this && ydown_field == this)
@@ -193,11 +193,11 @@ void Field3D::mergeYupYdown() {
 
   deleteYupYdown();
 
-  yup_field = this;
-  ydown_field = this;
+  *yup_field = *this;
+  *ydown_field = *this;
 }
 
-void Field3D::deleteYupYdown() {
+void Field3D::deleteYupYdown() const {
   // Delete auxiliary fields if they have been set
   if (yup_field == this && ydown_field == this) {
     return;

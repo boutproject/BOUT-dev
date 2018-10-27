@@ -55,9 +55,9 @@ public:
 
   BoundaryRegionPar* boundary; /**< boundary region */
 
-  const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
+  const Field3D interpolate(const Field3D &f) const { return interp->interpolate(f); }
 
-  const Field3D integrate(Field3D &f) const;
+  const Field3D integrate(const Field3D &f) const;
 };
 
 /*!
@@ -69,9 +69,9 @@ public:
       : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
         zperiodic(zperiodic) {}
 
-  void calcYUpDown(Field3D &f) override;
+  void calcYUpDown(const Field3D &f) override;
   
-  void integrateYUpDown(Field3D &f) override;
+  void integrateYUpDown(const Field3D &f) override;
   
   const Field3D toFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");

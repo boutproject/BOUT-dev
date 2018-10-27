@@ -103,11 +103,12 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
 /*!
  * Calculate the Y up and down fields
  */
-void ShiftedMetric::calcYUpDown(Field3D &f) {
+void ShiftedMetric::calcYUpDown(const Field3D &f) {
   if (!f.hasYupYdown()) {
+
     f.splitYupYdown();
 
-    Field3D& yup = f.yup();
+    Field3D& yup = f.ynextMutable(1);
     yup.allocate();
 
     for(int jx=0;jx<mesh.LocalNx;jx++) {
@@ -116,7 +117,7 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
       }
     }
 
-    Field3D& ydown = f.ydown();
+    Field3D& ydown = f.ynextMutable(-1);
     ydown.allocate();
 
     for(int jx=0;jx<mesh.LocalNx;jx++) {
@@ -124,6 +125,8 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
         shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
       }
     }
+
+    f.setHasYupYdown(true);
   }
 }
   

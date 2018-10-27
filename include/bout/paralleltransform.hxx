@@ -28,11 +28,11 @@ public:
   virtual ~ParallelTransform() {}
 
   /// Given a 3D field, calculate and set the Y up down fields
-  virtual void calcYUpDown(Field3D &f) = 0;
+  virtual void calcYUpDown(const Field3D &f) = 0;
 
   /// Calculate Yup and Ydown fields by integrating over mapped points
   /// This should be used for parallel divergence operators
-  virtual void integrateYUpDown(Field3D &f) {
+  virtual void integrateYUpDown(const Field3D &f) {
     return calcYUpDown(f);
   }
   
@@ -59,7 +59,7 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
+  void calcYUpDown(const Field3D &f) override {f.mergeYupYdown();}
   
   /*!
    * The field is already aligned in Y, so this
@@ -99,7 +99,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by taking FFTs in Z and applying a phase shift.
    */ 
-  void calcYUpDown(Field3D &f) override;
+  void calcYUpDown(const Field3D &f) override;
   
   /*!
    * Uses FFTs and a phase shift to align the grid points
