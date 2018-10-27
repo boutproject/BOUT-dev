@@ -77,8 +77,8 @@ are first read, and then processed afterwards.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
-:ref:`_sec-expressions` and input sources, defining grids
-:ref:`_sec-gridgen` and MMS convergence tests :ref:`_sec-mms`.
+:ref:`sec-expressions` and input sources, defining grids
+:ref:`sec-gridgen` and MMS convergence tests :ref:`sec-mms`.
 
 Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
