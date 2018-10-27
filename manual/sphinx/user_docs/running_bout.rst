@@ -231,9 +231,13 @@ the existing files can be done by:
    where ``ll`` is the language code e.g. ``make locale-de``. This
    will create a file ``libbout.po`` under a ``locale/ll``
    subdirectory.
-2. Edit the ``locale/ll/libbout.po`` file. Each ``msgid`` entry should
-   have a translated ``msgstr`` entry: Either translate each entry or
-   delete the entries you don't translate.
+2. Edit the ``locale/ll/libbout.po`` file. Edit the .po file in de
+   subdirectory (not the .pot file!), adding the translations. Each
+   ``msgid`` entry should have a translated ``msgstr`` entry. If you
+   don't want to translate them all, just delete the ones you don't
+   translate. Any missing will just revert to the version in the
+   code. If you're adding UTF-8 characters, change the content line in
+   the .po file to have charset=UTF-8.
 3. In the ``locale`` directory run ``make``. This should output
    something like::
      
