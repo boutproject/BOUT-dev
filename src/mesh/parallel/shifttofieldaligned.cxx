@@ -230,6 +230,21 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location
   };
 }
 
+/*!
+ * Calculate the field-aligned field
+ */
+void ShiftToFieldAligned::calcYUpDown(Field3D &f) {
+  ASSERT1(&mesh == f.getMesh());
+
+  // We only use methods in ShiftToFieldAligned to get fields for parallel operations
+  // like interp_to or DDY.
+  // Therefore we don't need x-guard cells, so do not set them.
+  // (Note valgrind complains about corner guard cells if we try to loop over
+  // the whole grid, because zShift is not initialized in the corner guard
+  // cells.)
+
+  f.fieldAligned() = toFieldAligned(f, RGN_NOX);
+}
 
 /*!
  * Get the shifted field so that X-Z is not orthogonal,
@@ -237,10 +252,11 @@ Matrix< Array<dcomplex> > ShiftToFieldAligned::getToAlignedPhs(CELL_LOC location
  */
 const Field3D ShiftToFieldAligned::toFieldAligned(const Field3D &f, const REGION region) {
   ASSERT1(region==RGN_NOX || region==RGN_NOBNDRY);
-  if (!f.hasFieldAligned()) {
-    f.fieldAligned() = shiftZ(f, getToAlignedPhs(f.getLocation()), region)
+  if (f.hasFieldAligned()) {
+    return f.fieldAligned();
+  } else {
+    return shiftZ(f, getToAlignedPhs(f.getLocation()), region);
   }
-  return f.fieldAligned();
 }
 
 /*!

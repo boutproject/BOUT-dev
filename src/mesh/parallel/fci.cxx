@@ -293,7 +293,7 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
-void FCITransform::calcYUpDown(Field3D &f, REGION UNUSED(region)) {
+void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
   // Ensure that yup and ydown are different fields

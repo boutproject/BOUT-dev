@@ -611,8 +611,8 @@ class Mesh {
 
   /// Calculate yup/ydown fields in case they can be computed for an
   /// intermediate variable without communicating
-  void calcYUpDown(Field3D &f, REGION region = RGN_NOX) {
-    getParallelTransform().calcYUpDown(f, region);
+  void calcYUpDown(Field3D &f) {
+    getParallelTransform().calcYUpDown(f);
   }
 
   /// Transform a field into field-aligned coordinates
