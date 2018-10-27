@@ -216,8 +216,8 @@ Natural language support
 
 BOUT++ has support for languages other than English, using GNU
 gettext. If you have locales installed, then the ``LANG`` environment
-variable selects the language to use. Currently only limited support
-for ``fr``, ``zh_TW`` and ``zh_CN`` e.g. ::
+variable selects the language to use. Currently BOUT++ only has limited support
+for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
 
     LANG=zh_TW.utf8 ./conduction
 
@@ -242,7 +242,6 @@ the existing files can be done by:
          Building language:  zh_TW
 
 The new language should now be available (no need to recompile BOUT++).
-
 
 Further examples
 ----------------

@@ -395,7 +395,7 @@ int BoutInitialise(int &argc, char **&argv) {
 #endif
 
 #ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n",omp_get_max_threads()));
+  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),omp_get_max_threads());
 #else
   output_info.write(_("\tOpenMP parallelisation disabled\n"));
 #endif
