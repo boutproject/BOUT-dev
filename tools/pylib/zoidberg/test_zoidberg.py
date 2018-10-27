@@ -54,7 +54,7 @@ def test_make_maps_straight_stellarator():
     nz = 7
     
     # Create magnetic field
-    magnetic_field = field.StraightStellarator(radius = 1.0)
+    magnetic_field = field.StraightStellarator(radius = np.sqrt(2.0))
     
     # Create a rectangular grid in (x,y,z)
     rectangle = grid.rectangular_grid(nx,ny,nz,
