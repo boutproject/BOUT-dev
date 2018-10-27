@@ -32,9 +32,9 @@ libbout.pot: FORCE
 	@msgfmt --output-file=$@ $*/libbout.po
 
 # Shortcut target for building single language
-# e.g. "make po-fr" 
+# e.g. "make locale-fr" 
 # Note: invoking make since otherwise the intermediate file is deleted
-po-%:
+locale-%:
 	$(MAKE) $*/libbout.po
 mo-%:
 	$(MAKE) $*/LC_MESSAGES/libbout.mo

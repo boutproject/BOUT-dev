@@ -173,6 +173,9 @@ install: libfast
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
+        $(INSTALL_DATA)  locale/fr/LC_MESSAGES/libbout.mo $(DESTDIR)@localedir@/fr/LC_MESSAGES/
+        $(INSTALL_DATA)  locale/zh_TW/LC_MESSAGES/libbout.mo $(DESTDIR)@localedir@/zh_TW/LC_MESSAGES/
+        $(INSTALL_DATA)  locale/zh_CN/LC_MESSAGES/libbout.mo $(DESTDIR)@localedir@/zh_CN/LC_MESSAGES/
 
 	$(POST_INSTALL)    # Post-install commands follow.
 

@@ -155,7 +155,7 @@ int BoutInitialise(int &argc, char **&argv) {
     
     bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
     textdomain ("libbout");
-    fprintf(stderr, "LOCALE_PATH = '%s'", CMDLINE(BOUT_LOCALE_PATH));
+    fprintf(stderr, "LOCALE_PATH = '%s'\n", CMDLINE(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error &e) {
     fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
   }
