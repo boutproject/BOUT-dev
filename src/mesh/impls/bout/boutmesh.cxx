@@ -116,8 +116,8 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write("WARNING: Number of toroidal points should be 2^n for efficient "
-                        "FFT performance -- consider changing MZ if using FFTs\n",
+      output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
+                          "FFT performance -- consider changing MZ if using FFTs\n"),
                         MZ);
     }
   } else {
@@ -308,7 +308,7 @@ int BoutMesh::load() {
           (MX % i == 0) &&            // Mesh in X divides equally
           (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
-        output_info.write("\tCandidate value: %d\n", i);
+        output_info.write(_("\tCandidate value: %d\n"), i);
 
         int nyp = NPES / i;
         int ysub = ny / nyp;
@@ -373,7 +373,7 @@ int BoutMesh::load() {
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
-        output_info.write("\t -> Good value\n");
+        output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
         if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
           NXPE = i; // Keep value nearest to the ideal

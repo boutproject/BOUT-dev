@@ -594,9 +594,9 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   TRACE("Solver::init()");
 
   if (initialised)
-    throw BoutException("ERROR: Solver is already initialised\n");
+    throw BoutException(_("ERROR: Solver is already initialised\n"));
 
-  output_progress.write("Initialising solver\n");
+  output_progress.write(_("Initialising solver\n"));
 
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
@@ -639,14 +639,14 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
       timestep = mon->timestep;
     }
     if (!isMultiple(timestep,mon->timestep))
-      throw BoutException("Couldn't add Monitor: %g is not a multiple of %g!"
+      throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!")
                           ,timestep,mon->timestep);
     if (mon->timestep > timestep*1.5){
       mon->freq=(mon->timestep/timestep)+.5;
     } else { // mon.timestep is truly smaller
       if (initCalled)
-        throw BoutException("Solver::addMonitor: Cannot reduce timestep \
-(from %g to %g) after init is called!"
+        throw BoutException(_("Solver::addMonitor: Cannot reduce timestep \
+(from %g to %g) after init is called!")
                             ,timestep,mon->timestep);
       int multi = timestep/mon->timestep+.5;
       timestep=mon->timestep;
@@ -693,14 +693,14 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
         // Call each monitor one by one
         int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
         if(ret)
-          throw BoutException("Monitor signalled to quit");
+          throw BoutException(_("Monitor signalled to quit"));
       }
     }
   } catch (BoutException &e) {
     for (const auto &it : monitors){
       it->cleanup();
     }
-    output_error.write("Monitor signalled to quit\n");
+    output_error.write(_("Monitor signalled to quit\n"));
     throw;
   }
 
@@ -1017,11 +1017,11 @@ void Solver::load_derivs(BoutReal *udata) {
 void Solver::save_vars(BoutReal *udata) {
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
-      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
 
   for(const auto& f : f3d) 
     if(!f.var->isAllocated())
-      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
   
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
@@ -1058,7 +1058,7 @@ void Solver::save_derivs(BoutReal *dudata) {
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
     if(f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n",strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
+      throw BoutException(_("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n"),strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
     }
   }
 
@@ -1264,7 +1264,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
-      throw BoutException("Time derivative for '%s' not set", f.name.c_str());
+      throw BoutException(_("Time derivative for variable '%s' not set"), f.name.c_str());
   }
 #endif
   // Make sure vectors in correct basis
