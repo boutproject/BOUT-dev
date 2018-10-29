@@ -126,19 +126,34 @@ namespace {
       + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
       + f(x - 5*bx, y - 5*by, z);
   }
+
+  template<typename T, int numpoints>
+  BoundaryOp* boundaryClone(BoundaryRegion* region, const list<string> &args) {
+    verifyNumPoints(region, numpoints);
+
+    std::shared_ptr<FieldGenerator> newgen = nullptr;
+    if (!args.empty()) {
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+    }
+    return new T(region, newgen);
+  }
+
+  template<typename T, int numpoints>
+  BoundaryOp* boundaryCloneNoArguments(BoundaryRegion* region, const list<string> &args) {
+    verifyNumPoints(region, numpoints);
+
+    if (!args.empty()) {
+      output << "WARNING: Ignoring arguments to BoundaryOp for "<<region->label<<" region\n";
+    }
+    return new T(region);
+  }
 }
 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 1);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet(region, newgen);
+  return boundaryClone<BoundaryDirichlet, 1>(region, args);
 }
 
 // Override apply(), using this private method to provide both Field2D and
@@ -407,14 +422,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 // New implementation, accurate to higher order
 
 BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 2);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet_O3(region, newgen);
+  return boundaryClone<BoundaryDirichlet_O3, 2>(region, args);
 }
 
 void BoundaryDirichlet_O3::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -442,14 +450,7 @@ void BoundaryDirichlet_O3::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 // Extrapolate to calculate boundary cell to 4th-order
 
 BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 3);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet_O4(region, newgen);
+  return boundaryClone<BoundaryDirichlet_O4, 3>(region, args);
 }
 
 void BoundaryDirichlet_O4::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -476,14 +477,7 @@ void BoundaryDirichlet_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_smooth::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 2);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet_smooth(region, newgen);
+  return boundaryClone<BoundaryDirichlet_smooth, 2>(region, args);
 }
 
 void BoundaryDirichlet_smooth::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -510,14 +504,7 @@ void BoundaryDirichlet_smooth::applyAtPointStaggered(Field3D &f, BoutReal val, i
 BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"dirichlet_2ndorder\" is deprecated!\n";
   output << "         Consider using \"dirichlet\" instead\n";
-  verifyNumPoints(region, 2);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet_2ndOrder(region, newgen);
+  return boundaryClone<BoundaryDirichlet_2ndOrder, 2>(region, args);
 }
 
 // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
@@ -539,14 +526,7 @@ void BoundaryDirichlet_2ndOrder::applyAtPointStaggered(Field3D &f, BoutReal val,
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDirichlet_O5::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 4);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichlet_O5(region, newgen);
+  return boundaryClone<BoundaryDirichlet_O5, 4>(region, args);
 }
 
 void BoundaryDirichlet_O5::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -639,13 +619,7 @@ void BoundaryNeumann_NonOrthogonal::applyTemplate(T &f, BoutReal UNUSED(t)) {
 BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"neumann2\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
-  verifyNumPoints(region, 2);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
-  }
-  return new BoundaryNeumann2(region, newgen);
+  return boundaryCloneNoArguments<BoundaryNeumann2, 2>(region, args);
 }
 
 void BoundaryNeumann2::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -667,14 +641,7 @@ void BoundaryNeumann2::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUSED
 BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
   output << "WARNING: Use of boundary condition \"neumann_2ndorder\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
-  verifyNumPoints(region, 1);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumann_2ndOrder(region, newgen);
+  return boundaryClone<BoundaryNeumann_2ndOrder, 1>(region, args);
 }
 
 void BoundaryNeumann_2ndOrder::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -698,14 +665,7 @@ void BoundaryNeumann_2ndOrder::applyAtPointStaggered(Field3D &f, BoutReal val, i
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 1);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumann(region, newgen);
+  return boundaryClone<BoundaryNeumann, 1>(region, args);
 }
 
 void BoundaryNeumann::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -732,14 +692,7 @@ void BoundaryNeumann::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 4);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumann_O4(region, newgen);
+  return boundaryClone<BoundaryNeumann_O4, 4>(region, args);
 }
 
 void BoundaryNeumann_O4::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -778,14 +731,7 @@ void BoundaryNeumann_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, in
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 4);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumann_4thOrder(region, newgen);
+  return boundaryClone<BoundaryNeumann_4thOrder, 4>(region, args);
 }
 
 void BoundaryNeumann_4thOrder::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -822,13 +768,7 @@ void BoundaryNeumann_4thOrder::extrapolateFurther(Field3D &f, int x, int bx, int
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 1);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryNeumannPar\n";
-  }
-  return new BoundaryNeumannPar(region, newgen);
+  return boundaryCloneNoArguments<BoundaryNeumannPar, 1>(region, args);
 }
 
 void BoundaryNeumannPar::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -899,13 +839,7 @@ void BoundaryRobin::applyTemplate(T &f, BoutReal UNUSED(t)) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 2);
-
-  std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
-  }
-  return new BoundaryConstGradient(region, newgen);
+  return boundaryCloneNoArguments<BoundaryConstGradient, 2>(region, args);
 }
 
 void BoundaryConstGradient::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -925,11 +859,7 @@ void BoundaryConstGradient::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal U
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 2);
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
-  }
-  return new BoundaryZeroLaplace(region);
+  return boundaryCloneNoArguments<BoundaryZeroLaplace, 2>(region, args);
 }
 
 void BoundaryZeroLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -1013,11 +943,7 @@ void BoundaryZeroLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
 
 BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
                                         const list<string> &args) {
-  verifyNumPoints(region, 3);
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
-  }
-  return new BoundaryZeroLaplace2(region);
+  return boundaryCloneNoArguments<BoundaryZeroLaplace2, 3>(region, args);
 }
 
 void BoundaryZeroLaplace2::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -1102,11 +1028,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f, BoutReal UNUSED(t)) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region, 2);
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
-  }
-  return new BoundaryConstLaplace(region);
+  return boundaryCloneNoArguments<BoundaryConstLaplace, 2>(region, args);
 }
 
 void BoundaryConstLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -1204,10 +1126,7 @@ void BoundaryConstLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
-  }
-  return new BoundaryDivCurl(region);
+  return boundaryCloneNoArguments<BoundaryDivCurl, 2>(region, args);
 }
 
 void BoundaryDivCurl::apply(Vector2D &UNUSED(f)) {
@@ -1282,8 +1201,8 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &UNUSED(args)) {
-  return new BoundaryFree(region);
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
+  return boundaryCloneNoArguments<BoundaryFree, 0>(region, args);
 }
 
 void BoundaryFree::apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) {
@@ -1310,12 +1229,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 // 2nd order extrapolation:
 
 BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 2);
-
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryFree_O2\n";
-  }
-  return new BoundaryFree_O2(region) ; 
+  return boundaryCloneNoArguments<BoundaryFree_O2, 2>(region, args);
 }
 
 void BoundaryFree_O2::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1336,12 +1250,7 @@ void BoundaryFree_O2::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), in
 // Third order extrapolation:
 //////////////////////////////////
 BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 3);
-
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryFree_O3\n";
-  }
-  return new BoundaryFree_O3(region) ; 
+  return boundaryCloneNoArguments<BoundaryFree_O3, 3>(region, args);
 }
 
 void BoundaryFree_O3::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1367,12 +1276,7 @@ void BoundaryFree_O3::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 
 // Fourth order extrapolation:
 BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 4);
-
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryFree_O4\n";
-  }
-  return new BoundaryFree_O4(region);
+  return boundaryCloneNoArguments<BoundaryFree_O4, 4>(region, args);
 }
 
 void BoundaryFree_O4::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1398,12 +1302,7 @@ void BoundaryFree_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 
 // Fifth order extrapolation:
 BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &args){
-  verifyNumPoints(region, 5);
-
-  if (!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryFree_O5\n";
-  }
-  return new BoundaryFree_O5(region);
+  return boundaryCloneNoArguments<BoundaryFree_O5, 5>(region, args);
 }
 
 void BoundaryFree_O5::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
