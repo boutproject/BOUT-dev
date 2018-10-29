@@ -97,7 +97,7 @@
   }
 
   {% if (out == "Field3D") %}
-    deleteYupYdown();
+    setHasValidYUpDown(false);
   {% endif %}
 
   return *this;

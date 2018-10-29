@@ -231,7 +231,15 @@ class Field3D : public Field, public FieldData {
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+    return hasValidYUpDown && (yup_field != nullptr) && (ydown_field != nullptr);
+  }
+
+  /// Set validity state of yup/ydown fields
+  void setHasValidYUpDown(bool set) {
+    if (set) {
+      ASSERT1(yup_field != nullptr && ydown_field != nullptr);
+    }
+    hasValidYUpDown = set;
   }
 
   /// Return reference to yup field
@@ -461,6 +469,9 @@ private:
   CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
+
+  /// flag to record whether yup_field and ydown_field have been set correctly
+  bool hasValidYUpDown;
 
   /// Pointers to fields containing values along Y
   Field3D *yup_field, *ydown_field;

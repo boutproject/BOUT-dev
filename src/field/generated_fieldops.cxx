@@ -63,7 +63,7 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
     (*this) = (*this) * rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -125,7 +125,7 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
     (*this) = (*this) / rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -187,7 +187,7 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
     (*this) = (*this) + rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -249,7 +249,7 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
     (*this) = (*this) - rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -319,7 +319,7 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
     (*this) = (*this) * rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -391,7 +391,7 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
     (*this) = (*this) / rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -461,7 +461,7 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
     (*this) = (*this) + rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -531,7 +531,7 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
     (*this) = (*this) - rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -571,7 +571,7 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
     (*this) = (*this) * rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -611,7 +611,7 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
     (*this) = (*this) / rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -651,7 +651,7 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
     (*this) = (*this) + rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -691,7 +691,7 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
     (*this) = (*this) - rhs;
   }
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }

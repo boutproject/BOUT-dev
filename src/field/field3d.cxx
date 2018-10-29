@@ -310,7 +310,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   setLocation(rhs.location);
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
   return *this;
 }
 
@@ -333,7 +333,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }
@@ -353,6 +353,8 @@ void Field3D::operator=(const FieldPerp &rhs) {
   BOUT_FOR(i, region_all) {
     (*this)(i, rhs.getIndex()) = rhs[i];
   }
+
+  setHasValidYUpDown(false);
 }
 
 Field3D & Field3D::operator=(const BoutReal val) {
@@ -372,7 +374,7 @@ Field3D & Field3D::operator=(const BoutReal val) {
   //location = CELL_CENTRE;
   // DON'T RE-SET LOCATION
 
-  deleteYupYdown();
+  setHasValidYUpDown(false);
 
   return *this;
 }

@@ -123,6 +123,8 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
       shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
     }
   }
+
+  f.setHasValidYUpDown(true);
 }
   
 /*!

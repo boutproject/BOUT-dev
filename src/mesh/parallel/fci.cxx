@@ -302,6 +302,8 @@ void FCITransform::calcYUpDown(Field3D &f) {
   // Interpolate f onto yup and ydown fields
   f.ynext(forward_map.dir) = forward_map.interpolate(f);
   f.ynext(backward_map.dir) = backward_map.interpolate(f);
+
+  f.setHasValidYUpDown(true);
 }
 
 void FCITransform::integrateYUpDown(Field3D &f) {
@@ -313,4 +315,6 @@ void FCITransform::integrateYUpDown(Field3D &f) {
   // Integrate f onto yup and ydown fields
   f.ynext(forward_map.dir) = forward_map.integrate(f);
   f.ynext(backward_map.dir) = backward_map.integrate(f);
+
+  f.setHasValidYUpDown(true);
 }
