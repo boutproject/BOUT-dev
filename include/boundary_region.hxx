@@ -4,6 +4,8 @@ class BoundaryRegion;
 #ifndef __BNDRY_REGION_H__
 #define __BNDRY_REGION_H__
 
+#include <bout/assert.hxx>
+
 #include <string>
 #include <utility>
 using std::string;
@@ -24,14 +26,14 @@ enum BndryLoc {BNDRY_XIN=1,
 class BoundaryRegion {
 public:
   BoundaryRegion() = delete;
-  BoundaryRegion(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
-      : bx(xd), by(yd), width(2), localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
+      : bx(xd), by(yd), width(2), localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {
+        ASSERT1(!(bx == 0 && by == 0) && !(bx != 0 && by != 0));
+      }
   virtual ~BoundaryRegion() {}
 
   int x,y; ///< Indices of the point in the boundary
-  int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
+  const int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
 
   int width; ///< Width of the boundary
 
