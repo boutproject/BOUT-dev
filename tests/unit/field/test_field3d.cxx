@@ -20,35 +20,8 @@
 /// Global mesh
 extern Mesh *mesh;
 
-/// Test fixture to make sure the global mesh is our fake one
-class Field3DTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int Field3DTest::nx = 3;
-const int Field3DTest::ny = 5;
-const int Field3DTest::nz = 7;
+// Reuse the "standard" fixture for FakeMesh
+using Field3DTest = FakeMeshFixture;
 
 TEST_F(Field3DTest, IsReal) {
   Field3D field;

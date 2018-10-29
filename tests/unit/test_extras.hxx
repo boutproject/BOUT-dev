@@ -162,6 +162,33 @@ private:
   vector<BoundaryRegion *> boundaries;
 };
 
+/// Test fixture to make sure the global mesh is our fake
+/// one. Multiple tests have exactly the same fixture, so use a type
+/// alias to make a new test:
+///
+///     using MyTest = FakeMeshFixture;
+class FakeMeshFixture : public ::testing::Test {
+public:
+  FakeMeshFixture() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+  }
 
+  ~FakeMeshFixture() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+  static constexpr int nx = 3;
+  static constexpr int ny = 5;
+  static constexpr int nz = 7;
+};
 
 #endif //  TEST_EXTRAS_H__
