@@ -215,6 +215,7 @@ TEST_F(Field3DTest, SplitYupYDown) {
   EXPECT_FALSE(field.hasYupYdown());
 
   field.splitYupYdown();
+  field.setHasValidYUpDown(true);
 
   EXPECT_TRUE(field.hasYupYdown());
 
@@ -242,6 +243,7 @@ TEST_F(Field3DTest, MergeYupYDown) {
   EXPECT_FALSE(field.hasYupYdown());
 
   field.mergeYupYdown();
+  field.setHasValidYUpDown(true);
 
   EXPECT_TRUE(field.hasYupYdown());
 
