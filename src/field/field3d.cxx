@@ -193,8 +193,8 @@ void Field3D::mergeYupYdown() const {
 
   deleteYupYdown();
 
-  *yup_field = *this;
-  *ydown_field = *this;
+  yup_field = const_cast<Field3D*>(this);
+  ydown_field = const_cast<Field3D*>(this);
 }
 
 void Field3D::deleteYupYdown() const {
