@@ -18,34 +18,7 @@
 extern Mesh *mesh;
 
 /// Test fixture to make sure the global mesh is our fake one
-class RegionTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int RegionTest::nx = 3;
-const int RegionTest::ny = 5;
-const int RegionTest::nz = 7;
+using RegionTest = FakeMeshFixture;
 
 TEST_F(RegionTest, maxBlockSize) { EXPECT_TRUE(MAXREGIONBLOCKSIZE > 0); }
 
@@ -1684,7 +1657,7 @@ TYPED_TEST(FieldIndexTest, Modulus) {
 /// Test fixture to make sure the global mesh is our fake one
 class IndexOffsetTest : public ::testing::Test {
 protected:
-  static void SetUpTestCase() {
+  IndexOffsetTest() {
     // Delete any existing mesh
     if (mesh != nullptr) {
       delete mesh;
@@ -1696,7 +1669,7 @@ protected:
     output_info.enable();
   }
 
-  static void TearDownTestCase() {
+  ~IndexOffsetTest() {
     delete mesh;
     mesh = nullptr;
   }
