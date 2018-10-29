@@ -37,7 +37,7 @@ Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
   // coordinates
   Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
   localmesh->communicateXZ(fx);
-  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, RGN_ALL);
   localmesh->communicateXZ(fz);
   Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
   localmesh->communicateXZ(fxz);
