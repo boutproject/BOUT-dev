@@ -124,14 +124,14 @@ namespace FV {
 
     bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
 
-    const Field3D& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin);
-    const Field3D& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin);
+    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin);
+    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin);
 
     // K and f fields in yup and ydown directions
-    const Field3D& Kup = use_yup_ydown ? Kin.yup() : K;
-    const Field3D& Kdown = use_yup_ydown ? Kin.ydown() : K;
-    const Field3D& fup = use_yup_ydown ? fin.yup() : f;
-    const Field3D& fdown = use_yup_ydown ? fin.ydown() : f;
+    const auto& Kup = use_yup_ydown ? Kin.yup() : K;
+    const auto& Kdown = use_yup_ydown ? Kin.ydown() : K;
+    const auto& fup = use_yup_ydown ? fin.yup() : f;
+    const auto& fdown = use_yup_ydown ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
     
