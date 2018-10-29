@@ -661,6 +661,9 @@ class Mesh {
 
   template<DIRECTION direction>
   const int getNpoints();
+
+  template<DIRECTION direction>
+  const int getNguard();
   
 private:
   /// Allocates default Coordinates objects
@@ -902,6 +905,20 @@ const int Mesh::getNpoints() {
     return LocalNy;
   case(DIRECTION::Z):
     return LocalNz;
+  }
+};
+
+template<DIRECTION direction>
+const int Mesh::getNguard() {
+  switch(direction) {
+  case(DIRECTION::X):
+    return xstart;
+  case(DIRECTION::Y):
+  case(DIRECTION::YOrthogonal):
+  case(DIRECTION::YAligned):    
+    return ystart;
+  case(DIRECTION::Z):
+    return 2;
   }
 };
 
