@@ -243,6 +243,11 @@ class Field3D : public Field, public FieldData {
    * Delete all yup/ydown fields and field_fa
    */
   void deleteYupYdown() const;
+
+  /*!
+   * Calculate the yup/ydown fields
+   */
+  void calcYUpDown() const;
   
   /// Check if this field has valid yup and ydown fields
   bool hasYupYdown() const {

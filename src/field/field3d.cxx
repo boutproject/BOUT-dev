@@ -221,6 +221,10 @@ Field3D& Field3D::ynext(int dir) {
   }
 }
 
+void Field3D::calcYUpDown() const {
+  fieldmesh->calcYUpDown(*this);
+}
+
 const Field3D& Field3D::ynext(int dir) const {
   switch(dir) {
   case +1:
