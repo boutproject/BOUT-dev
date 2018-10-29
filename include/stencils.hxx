@@ -100,7 +100,7 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
 template<DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1, typename FieldType >
 stencil inline populateStencil(const FieldType& f, const typename FieldType::ind_type i){
   stencil s;
-  populateStencil<FieldType, nGuard, direction, stagger>(s, f, i);
+  populateStencil<direction, stagger, nGuard, FieldType>(s, f, i);
   return s;
 }
 #endif /* __STENCILS_H__ */
