@@ -358,6 +358,22 @@ void Mesh::derivs_init(Options *options) {
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }
 
+
+/*******************************************************************************
+ * Actual derivative operators
+ *******************************************************************************/
+
+/*******************************************************************************
+ * Advection schemes
+ *
+ * Jan 2018  - Re-written to use iterators and handle staggering as different cases
+ * Jan 2009  - Re-written to use Set*Stencil routines
+ *******************************************************************************/
+
+/*******************************************************************************
+ * Flux conserving schemes
+ *******************************************************************************/
+
 /*******************************************************************************
  * Helper routines
  *******************************************************************************/
@@ -377,241 +393,4 @@ const STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, cons
 const STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) {
   ASSERT1(vloc == inloc);
   return getStagger(inloc, outloc, allowedStaggerLoc);
-}
-
-template<DIRECTION direction>
-const CELL_LOC Mesh::getAllowedStaggerLoc() {
-  switch(direction) {
-  case(DIRECTION::X):
-    return CELL_XLOW;
-  case(DIRECTION::Y):
-  case(DIRECTION::YOrthogonal):
-  case(DIRECTION::YAligned):    
-    return CELL_YLOW;
-  case(DIRECTION::Z):
-    return CELL_ZLOW;
-  }
-};
-
-
-template<DIRECTION direction>
-const int Mesh::getNpoints() {
-  switch(direction) {
-  case(DIRECTION::X):
-    return LocalNx;
-  case(DIRECTION::Y):
-  case(DIRECTION::YOrthogonal):
-  case(DIRECTION::YAligned):    
-    return LocalNy;
-  case(DIRECTION::Z):
-    return LocalNz;
-  }
-};
-
-/*******************************************************************************
- * Actual derivative operators
- *******************************************************************************/
-
-template<typename T, DIRECTION direction, int order>
-const T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  // Checks
-  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
-                "indexDDX only works on Field2D or Field3D input");
-  // Check that the mesh is correct
-  ASSERT1(this == f.getMesh());
-  // Check that the input variable has data
-  ASSERT1(f.isAllocated());
-
-  // Define properties of this approach
-  const CELL_LOC allowedStaggerLoc = getAllowedStaggerLoc<direction>();
-
-  // Handle the staggering
-  const CELL_LOC inloc = f.getLocation(); // Input location
-  if (outloc == CELL_DEFAULT)
-    outloc = inloc;
-  const STAGGER stagger = getStagger(inloc, outloc, allowedStaggerLoc);
-
-  // Check for early exit
-  const int nPoint = getNpoints<direction>();
-
-  if (nPoint == 1) {
-    auto tmp = T(0., this);
-    tmp.setLocation(outloc);
-    return tmp;
-  }
-  
-  // Lookup the method
-  auto derivativeStore = DerivativeStore<T>{}.getInstance();
-  typename DerivativeStore<T>::standardFunc derivativeMethod;
-  
-  if (order == 1) {
-    derivativeMethod = derivativeStore.getStandardDerivative(DIFF_METHOD_STRING(method), direction, stagger);
-  } else if (order == 2) {
-    derivativeMethod = derivativeStore.getStandard2ndDerivative(DIFF_METHOD_STRING(method), direction, stagger);
-  } else if (order == 4) {
-    derivativeMethod = derivativeStore.getStandard4thDerivative(DIFF_METHOD_STRING(method), direction, stagger);
-  } else {
-    throw BoutException("Invalid order used in indexStandardDerivative.");
-  }
-  
-  // Create the result field
-  T result(this);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
-
-  // Apply method
-  derivativeMethod(f, result, region);
-
-  return result;
-}
-
-////////////// X DERIVATIVE /////////////////
-
-template<typename T>
-const T Mesh::indexDDX(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::X, 1>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD2DX2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::X, 2>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD4DX4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::X, 4>(f, outloc, method, region);
-}
-
-////////////// Y DERIVATIVE /////////////////
-
-template<typename T>
-const T Mesh::indexDDY(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Y, 1>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD2DY2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Y, 2>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD4DY4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Y, 4>(f, outloc, method, region);
-}
-
-////////////// Z DERIVATIVE /////////////////
-template<typename T>
-const T Mesh::indexDDZ(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Z, 1>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD2DZ2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Z, 2>(f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexD4DZ4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexStandardDerivative<T, DIRECTION::Z, 4>(f, outloc, method, region);
-}
-
-/*******************************************************************************
- * Advection schemes
- *
- * Jan 2018  - Re-written to use iterators and handle staggering as different cases
- * Jan 2009  - Re-written to use Set*Stencil routines
- *******************************************************************************/
-
-/*******************************************************************************
- * Flux conserving schemes
- *******************************************************************************/
-
-
-template<typename T, DIRECTION direction, DERIV derivType>
-const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  // Checks
-  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
-                "indexDDX only works on Field2D or Field3D input");
-  // Check that the mesh is correct
-  ASSERT1(this == f.getMesh());
-  ASSERT1(this == v.getMesh());  
-  // Check that the input variable has data
-  ASSERT1(f.isAllocated());
-  ASSERT1(v.isAllocated());  
-
-  // Define properties of this approach
-  const CELL_LOC allowedStaggerLoc = getAllowedStaggerLoc<direction>();
-
-  // Handle the staggering
-  const CELL_LOC inloc = f.getLocation(); // Input locations
-  const CELL_LOC vloc = vel.getLocation();
-  if (outloc == CELL_DEFAULT)
-    outloc = inloc;
-  const STAGGER stagger = getStagger(vloc, inloc, outloc, allowedStaggerLoc);
-
-  // Check for early exit
-  const int nPoint = getNpoints<direction>();
-
-  if (nPoint == 1) {
-    auto tmp = T(0., this);
-    tmp.setLocation(outloc);
-    return tmp;
-  }
-  
-  // Lookup the method
-  auto derivativeStore = DerivativeStore<T>{}.getInstance();
-  typename DerivativeStore<T>::upwindFunc derivativeMethod;
-  if (derivType == DERIV::Upwind) {
-    derivativeMethod = derivativeStore.getUpwindDerivative(DIFF_METHOD_STRING(method), direction, stagger);
-  } else if (derivType == DERIV::Flux) {
-    derivativeMethod = derivativeStore.getFluxDerivative(DIFF_METHOD_STRING(method), direction, stagger);
-  } else {
-    throw BoutException("Invalid derivative type in call to indexFlowDerivative.");
-  }
-  
-  // Create the result field
-  T result(this);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
-
-  // Apply method
-  derivativeMethod(vel, f, result, region);
-
-  return result;
-}
-
-////////////// X DERIVATIVE /////////////////
-
-template<typename T>
-const T Mesh::indexVDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::X, DERIV::Upwind>(vel, f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexFDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::X, DERIV::Flux>(vel, f, outloc, method, region);
-}
-
-////////////// Y DERIVATIVE /////////////////
-
-template<typename T>
-const T Mesh::indexVDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel, f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexFDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel, f, outloc, method, region);
-}
-
-////////////// Z DERIVATIVE /////////////////
-
-template<typename T>
-const T Mesh::indexVDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::Z, DERIV::Upwind>(vel, f, outloc, method, region);
-}
-
-template<typename T>
-const T Mesh::indexFDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
-  return indexFlowDerivative<T, DIRECTION::Z, DERIV::Flux>(vel, f, outloc, method, region);
 }
