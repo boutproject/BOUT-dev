@@ -61,7 +61,7 @@ using BoundaryRegionOp = typename std::conditional<std::is_same<T, BoundaryRegio
  * Subsequent calls to create() or createFromOptions() can make use
  * of the boundary type "myboundary".
  *
- * BoundaryOp *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
+ * auto *bndry = bf->create("myboundary()", new BoundaryRegionXOut("xout", 0, 10, localmesh));
  * 
  * where the region is defined in boundary_region.hxx
  * 
