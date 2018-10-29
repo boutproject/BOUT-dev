@@ -46,7 +46,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator>  fg = gen;
-  if(!fg) {
+  if (!fg) {
     fg = f.getBndryGenerator(bndry->location);
   }
 
@@ -78,9 +78,10 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
         }
       }
     }
-  } if( loc == CELL_XLOW ) {
+  }
+  else if (loc == CELL_XLOW) {
     // field is shifted in X
-    if(bndry->bx > 0) {
+    if (bndry->bx > 0) {
       // Outer x boundary
       for(; !bndry->isDone(); bndry->next1d()) {
         BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
@@ -89,7 +90,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           applyAtPointStaggered(f, val, bndry->x, bndry->bx, bndry->y, 0, z, metric);
@@ -101,8 +102,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if (bndry->bx < 0){
+    } else if (bndry->bx < 0) {
       // Inner x boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
@@ -112,7 +112,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           // Set one point inwards
@@ -125,8 +125,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->by !=0){
+    } else if (bndry->by !=0) {
       // y boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
         // x norm is shifted by half a grid point because it is staggered.
@@ -136,7 +135,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           applyAtPoint(f, val, bndry->x, 0, bndry->y, bndry->by, z, metric);
@@ -149,16 +148,16 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
         }
       }
     }
-  } else if( loc == CELL_YLOW ) {
+  } else if (loc == CELL_YLOW) {
     // Shifted in Y
-    if(bndry->by > 0) {
+    if (bndry->by > 0) {
       // Upper y boundary boundary
       for(; !bndry->isDone(); bndry->next1d()) {
         BoutReal xnorm = localmesh->GlobalX(bndry->x);
         BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           applyAtPointStaggered(f, val, bndry->x, 0, bndry->y, bndry->by, z, metric);
@@ -170,8 +169,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->by < 0){
+    } else if (bndry->by < 0) {
       // Lower y boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
@@ -180,7 +178,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           applyAtPointStaggered(f, val, bndry->x, 0, bndry->y+1, bndry->by, z, metric);
@@ -192,8 +190,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->bx != 0){
+    } else if (bndry->bx != 0) {
       // x boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
         // x norm is located half way between first grid cell and guard cell.
@@ -203,7 +200,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
 
         for(int z=0; z<f.getNz(); z++) {
           BoutReal znorm = localmesh->GlobalZ(z);
-          if(fg) {
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
 
@@ -217,7 +214,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
         }
       }
     }
-  } else if ( loc == CELL_ZLOW ){
+  } else if (loc == CELL_ZLOW) {
     // Staggered in Z. Note there are no z-boundaries.
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 

@@ -48,14 +48,14 @@ namespace {
       //Work out how many processor local points we have excluding boundaries
       //but including ghost/guard cells
       ptsAvailLocal  = localmesh->LocalNx;
-      if(localmesh->firstX()) ptsAvailLocal -= localmesh->xstart;
-      if(localmesh->lastX())  ptsAvailLocal -= localmesh->xstart;
+      if (localmesh->firstX()) ptsAvailLocal -= localmesh->xstart;
+      if (localmesh->lastX())  ptsAvailLocal -= localmesh->xstart;
 
       //Now decide if it's a local or global limit, prefer global if a tie
-      if(ptsAvailGlobal <= ptsAvailLocal){
+      if (ptsAvailGlobal <= ptsAvailLocal) {
         ptsAvail = ptsAvailGlobal;
         gridType = "global";
-      }else{
+      } else {
         ptsAvail = ptsAvailLocal;
         gridType = "local";
       }
@@ -72,14 +72,14 @@ namespace {
       //Work out how many processor local points we have excluding boundaries
       //but including ghost/guard cells
       ptsAvailLocal  = localmesh->LocalNy;
-      if(localmesh->firstY()) ptsAvailLocal -= localmesh->ystart;
-      if(localmesh->lastY())  ptsAvailLocal -= localmesh->ystart;
+      if (localmesh->firstY()) ptsAvailLocal -= localmesh->ystart;
+      if (localmesh->lastY())  ptsAvailLocal -= localmesh->ystart;
 
       //Now decide if it's a local or global limit, prefer global if a tie
-      if(ptsAvailGlobal <= ptsAvailLocal){
+      if (ptsAvailGlobal <= ptsAvailLocal) {
         ptsAvail = ptsAvailGlobal;
         gridType = "global";
-      }else{
+      } else {
         ptsAvail = ptsAvailLocal;
         gridType = "local";
       }
@@ -94,7 +94,7 @@ namespace {
     }
 
     //Now check we have enough points and if not throw an exception
-    if(ptsAvail < ptsRequired){
+    if (ptsAvail < ptsRequired) {
       throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
                           gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
     }
@@ -136,7 +136,7 @@ BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> 
   verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -161,7 +161,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator>  fg = gen;
-  if(!fg) {
+  if (!fg) {
     fg = f.getBndryGenerator(bndry->location);
   }
 
@@ -179,7 +179,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
       for(int zk=0; zk<f.getNz(); zk++) {
         BoutReal znorm = localmesh->GlobalZ(zk);
-        if(fg){
+        if (fg) {
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
         }
         f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
@@ -222,16 +222,16 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         ynorm = localmesh->GlobalY(yi);
         for(int zk=0; zk<f.getNz() ; zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg) {
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(xi, yi, zk) = val;
         }
       }
     }
-  } else if( loc == CELL_XLOW ) {
+  } else if(loc == CELL_XLOW) {
     // Field is shifted in X
-    if(bndry->bx > 0) {
+    if (bndry->bx > 0) {
       // Outer x boundary
       for(; !bndry->isDone(); bndry->next1d()) {
         BoutReal xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
@@ -240,7 +240,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(bndry->x,bndry->y, zk) = val;
@@ -254,8 +254,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if (bndry->bx < 0){
+    } else if (bndry->bx < 0) {
       // Inner x boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
@@ -265,7 +264,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(bndry->x - bndry->bx,bndry->y, zk) = val;
@@ -279,8 +278,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->by !=0){
+    } else if (bndry->by !=0) {
       // y boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
         // x norm is shifted by half a grid point because it is staggered.
@@ -290,7 +288,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
@@ -305,16 +303,16 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         }
       }
     }
-  } else if( loc == CELL_YLOW ) {
+  } else if (loc == CELL_YLOW) {
     // Shifted in Y
-    if(bndry->by > 0) {
+    if (bndry->by > 0) {
       // Upper y boundary boundary
       for(; !bndry->isDone(); bndry->next1d()) {
         BoutReal xnorm = localmesh->GlobalX(bndry->x);
         BoutReal ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(bndry->x,bndry->y,zk) = val;
@@ -328,8 +326,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->by < 0){
+    } else if (bndry->by < 0) {
       // Lower y boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
@@ -338,7 +335,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg){
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
           f(bndry->x,bndry->y - bndry->by, zk) = val;
@@ -352,8 +349,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
           }
         }
       }
-    }
-    if(bndry->bx != 0){
+    } else if (bndry->bx != 0) {
       // x boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
         // x norm is located half way between first grid cell and guard cell.
@@ -363,7 +359,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
         for(int zk=0; zk<f.getNz(); zk++) {
           BoutReal znorm = localmesh->GlobalZ(zk);
-          if(fg) {
+          if (fg) {
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
           }
 
@@ -392,7 +388,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
       for(int zk=0; zk<f.getNz(); zk++) {
         // It shouldn't matter if znorm<0 because the expression in fg->generate should be periodic in z
         BoutReal znorm = 0.5*( localmesh->GlobalZ(zk) + localmesh->GlobalZ(zk - 1) ); // znorm is shifted by half a grid point because it is staggered
-        if(fg){
+        if (fg) {
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
         }
         f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
@@ -416,7 +412,7 @@ BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<strin
   verifyNumPoints(region, 2);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -451,7 +447,7 @@ BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<strin
   verifyNumPoints(region, 3);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -485,7 +481,7 @@ BoundaryOp* BoundaryDirichlet_smooth::clone(BoundaryRegion *region, const list<s
   verifyNumPoints(region, 2);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -519,7 +515,7 @@ BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list
   verifyNumPoints(region, 2);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -548,7 +544,7 @@ BoundaryOp* BoundaryDirichlet_O5::clone(BoundaryRegion *region, const list<strin
   verifyNumPoints(region, 4);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -585,7 +581,7 @@ void BoundaryDirichlet_O5::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 
 BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args) {
   verifyNumPoints(region, 1);
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: argument is set to BoundaryNeumann_NonOrthogonal\n";
     // First argument should be a value
     val = stringToReal(args.front());
@@ -614,25 +610,25 @@ void BoundaryNeumann_NonOrthogonal::applyTemplate(T &f, BoutReal UNUSED(t)) {
     for(int z=0;z<localmesh->LocalNz;z++) {
       BoutReal xshift = g12shift*dfdy(bndry->x-bndry->bx,bndry->y,z) 
         + g13shift*dfdz(bndry->x-bndry->bx,bndry->y,z);
-      if(bndry->bx != 0 && bndry->by == 0) {
+      if (bndry->bx != 0 && bndry->by == 0) {
         // x boundaries only
         BoutReal delta = bndry->bx*metric->dx(bndry->x, bndry->y);
         f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y, z) + delta/g11shift*(val - xshift);
-        if (bndry->width == 2){
+        if (bndry->width == 2) {
           f(bndry->x + bndry->bx, bndry->y, z) = f(bndry->x - 2*bndry->bx, bndry->y, z) + 3.0*delta/g11shift*(val - xshift);
         }
-      } else if(bndry->by != 0 && bndry->bx == 0) {
+      } else if (bndry->by != 0 && bndry->bx == 0) {
         // y boundaries only
         //   no need to shift this b/c we want parallel nuemann not theta
         BoutReal delta = bndry->by*metric->dy(bndry->x, bndry->y);
         f(bndry->x, bndry->y, z) = f(bndry->x, bndry->y - bndry->by, z) + delta*val;
-        if (bndry->width == 2){
+        if (bndry->width == 2) {
           f(bndry->x, bndry->y + bndry->by, z) = f(bndry->x, bndry->y - 2*bndry->by, z) + 3.0*delta*val;
         }
       } else {
         // set corners to zero
         f(bndry->x, bndry->y, z) = 0.0;
-        if (bndry->width == 2){
+        if (bndry->width == 2) {
           f(bndry->x + bndry->bx, bndry->y + bndry->by, z) = 0.0;
         }
       }
@@ -648,7 +644,7 @@ BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &
   verifyNumPoints(region, 2);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
   }
   return new BoundaryNeumann2(region, newgen);
@@ -676,7 +672,7 @@ BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<s
   verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -707,7 +703,7 @@ BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &a
   verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -741,7 +737,7 @@ BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string>
   verifyNumPoints(region, 4);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -787,7 +783,7 @@ BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<s
   verifyNumPoints(region, 4);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be an expression
     newgen = FieldFactory::get()->parse(args.front());
   }
@@ -831,7 +827,7 @@ BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string>
   verifyNumPoints(region, 1);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumannPar\n";
   }
   return new BoundaryNeumannPar(region, newgen);
@@ -861,21 +857,21 @@ BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &arg
   
   list<string>::const_iterator it = args.begin();
   
-  if(it != args.end()) {
+  if (it != args.end()) {
     // First argument is 'a'
     a = stringToReal(*it);
     it++;
     
-    if(it != args.end()) {
+    if (it != args.end()) {
       // Second is 'b'
       b = stringToReal(*it);
       it++;
       
-      if(it != args.end()) {
+      if (it != args.end()) {
 	// Third is 'g'
 	g = stringToReal(*it);
 	it++;
-	if(it != args.end()) {
+	if (it != args.end()) {
 	  output << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
 	}
       }
@@ -887,7 +883,7 @@ BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &arg
 
 template<typename T>
 void BoundaryRobin::applyTemplate(T &f, BoutReal UNUSED(t)) {
-  if(fabs(bval) < 1.e-12) {
+  if (fabs(bval) < 1.e-12) {
     for(bndry->first(); !bndry->isDone(); bndry->next())
       for(int z=0; z<f.getNz(); z++)
 	f(bndry->x, bndry->y, z) = gval / aval;
@@ -908,7 +904,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
   verifyNumPoints(region, 2);
 
   std::shared_ptr<FieldGenerator> newgen = nullptr;
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
   }
   return new BoundaryConstGradient(region, newgen);
@@ -932,7 +928,7 @@ void BoundaryConstGradient::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal U
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
   verifyNumPoints(region, 2);
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
   }
   return new BoundaryZeroLaplace(region);
@@ -940,7 +936,7 @@ BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string
 
 void BoundaryZeroLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
   Coordinates *metric = f.getCoordinates();
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
@@ -1109,14 +1105,14 @@ void BoundaryZeroLaplace2::apply(Field3D &f, BoutReal UNUSED(t)) {
 
 BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
   verifyNumPoints(region, 2);
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
   return new BoundaryConstLaplace(region);
 }
 
 void BoundaryConstLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
@@ -1134,7 +1130,7 @@ void BoundaryConstLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
     // Loop in X towards edge of domain
     do {
       laplace_tridag_coefs(x-bx, y, 0, la, lb, lc);
-      if(bx < 0) { // Lower X
+      if (bx < 0) { // Lower X
 	f(x,y) = ((val - lb*f(x-bx,y) + lc*f(x-2*bx,y)) / la).real();
       }else  // Upper X
 	f(x,y) = ((val - lb*f(x-bx,y) + la*f(x-2*bx,y)) / lc).real();
@@ -1146,7 +1142,7 @@ void BoundaryConstLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
 }
 
 void BoundaryConstLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
-  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+  if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
@@ -1176,7 +1172,7 @@ void BoundaryConstLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
     for(int jz=0;jz<=ncz/2;jz++) {
       dcomplex la,lb,lc;
       laplace_tridag_coefs(x-2*bx, y, jz, la, lb, lc);
-      if(bx < 0) { // Inner X
+      if (bx < 0) { // Inner X
 	c1[jz] = la*c0[jz] + lb*c1[jz] + lc*c2[jz];
       }else { // Outer X
 	c1[jz] = la*c2[jz] + lb*c1[jz] + lc*c0[jz];
@@ -1210,7 +1206,7 @@ void BoundaryConstLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
   }
   return new BoundaryDivCurl(region);
@@ -1230,12 +1226,12 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   
   int ncz = localmesh->LocalNz;
   
-  if(bndry->location != BNDRY_XOUT) {
+  if (bndry->location != BNDRY_XOUT) {
     throw BoutException("ERROR: DivCurl boundary only works for outer X currently\n");
   }
   var.toCovariant();
   
-  if(localmesh->xstart > 2) {
+  if (localmesh->xstart > 2) {
     throw BoutException("Error: Div = Curl = 0 boundary condition doesn't work for MXG > 2. Sorry\n");
   }
 
@@ -1251,7 +1247,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       tmp = (var.x(jx-1,jy+1,jz) - var.x(jx-1,jy-1,jz)) / (metric->dy(jx-1,jy-1) + metric->dy(jx-1,jy));
       
       var.y(jx,jy,jz) = var.y(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
-      if(localmesh->xstart == 2)
+      if (localmesh->xstart == 2)
 	// 4th order to get last point
 	var.y(jx+1,jy,jz) = var.y(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
       
@@ -1260,7 +1256,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz);
       
       var.z(jx,jy,jz) = var.z(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
-      if(localmesh->xstart == 2)
+      if (localmesh->xstart == 2)
 	var.z(jx+1,jy,jz) = var.z(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
 
       // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z) 
@@ -1279,7 +1275,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       
       var.x(jx,jy,jz) = ( metric->J(jx-2,jy)*metric->g11(jx-2,jy)*var.x(jx-2,jy,jz) + 
 			  (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
-      if(localmesh->xstart == 2)
+      if (localmesh->xstart == 2)
 	var.x(jx+1,jy,jz) = ( metric->J(jx-3,jy)*metric->g11(jx-3,jy)*var.x(jx-3,jy,jz) + 
 			      4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
     }
@@ -1318,7 +1314,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region, 2);
 
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree_O2\n";
   }
   return new BoundaryFree_O2(region) ; 
@@ -1344,7 +1340,7 @@ void BoundaryFree_O2::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), in
 BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region, 3);
 
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree_O3\n";
   }
   return new BoundaryFree_O3(region) ; 
@@ -1375,7 +1371,7 @@ void BoundaryFree_O3::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region, 4);
 
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree_O4\n";
   }
   return new BoundaryFree_O4(region);
@@ -1406,7 +1402,7 @@ void BoundaryFree_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &args){
   verifyNumPoints(region, 5);
 
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree_O5\n";
   }
   return new BoundaryFree_O5(region);
@@ -1438,7 +1434,7 @@ void BoundaryFree_O5::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryRelax* result = new BoundaryRelax(operation, r);
   
-  if(!args.empty()) {
+  if (!args.empty()) {
     // First argument should be the rate
     BoutReal val = stringToReal(args.front());
     val = fabs(val); // Should always be positive
@@ -1495,7 +1491,7 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryWidth* result = new BoundaryWidth(operation, width);
   
-  if(args.empty()) {
+  if (args.empty()) {
     output << "WARNING: BoundaryWidth expected 1 argument\n";
   }else {
     // First argument should be the rate
@@ -1539,7 +1535,7 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
 BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
   
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: BoundaryToFieldAligned expected no argument\n";
     //Shouldn't we throw ?
   }
@@ -1586,7 +1582,7 @@ void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
 BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
   
-  if(!args.empty()) {
+  if (!args.empty()) {
     output << "WARNING: BoundaryFromFieldAligned expected no argument\n";
     //Shouldn't we throw ?
   }
