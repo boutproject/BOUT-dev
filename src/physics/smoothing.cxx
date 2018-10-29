@@ -83,6 +83,7 @@ const Field3D smooth_y(const Field3D &f) {
     }
   
   // Smooth using simple 1-2-1 filter
+  f.calcYUpDown();
 
   for(int jx=0;jx<mesh->LocalNx;jx++)
     for(int jy=1;jy<mesh->LocalNy-1;jy++)

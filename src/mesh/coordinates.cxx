@@ -704,6 +704,8 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
   // Coordinates object
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
+  f.calcYUpDown();
+
   if (!f.hasYupYdown()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates

@@ -972,6 +972,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
   
+  var.calcYUpDown();
+
   Field3D result(this);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
@@ -2119,6 +2121,9 @@ const Field3D Mesh::indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
   /// Convert REGION enum to a Region string identifier
   const auto region_str = REGION_STRING(region);
 
+  v.calcYUpDown();
+  f.calcYUpDown();
+
   if (StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
 
@@ -2756,6 +2761,9 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 
   ASSERT1(this == v.getMesh());
   ASSERT1(this == f.getMesh());
+
+  v.calcYUpDown();
+  f.calcYUpDown();
 
   Field3D result(this);
   result.allocate(); // Make sure data allocated

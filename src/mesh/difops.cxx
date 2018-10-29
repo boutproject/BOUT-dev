@@ -86,6 +86,8 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 
   Coordinates *metric = apar.getCoordinates();
 
+  f.calcYUpDown();
+
   Field3D gys(mesh);
   gys.allocate();
 
@@ -204,6 +206,9 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
   // Note: Not guaranteed to be flux conservative
   Mesh *mesh = f.getMesh();
 
+  f.calcYUpDown();
+  v.calcYUpDown();
+
   Field3D result(mesh);
   result.allocate();
 
@@ -241,6 +246,9 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, 
   Coordinates *metric = f.getCoordinates(outloc);
 
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
+
+  v.calcYUpDown();
+  f.calcYUpDown();
 
   if (!f.hasYupYdown()) {
     return metric->Bxy*FDDY(v, f/Bxy_floc, outloc, method)/sqrt(metric->g_22);
@@ -332,6 +340,9 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
   const auto vMesh = v.getMesh();
   Field3D result(vMesh);
 
+  v.calcYUpDown();
+  f.calcYUpDown();
+
   result.allocate();
 
   bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
@@ -400,6 +411,8 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     ASSERT1(var.getLocation() == CELL_YLOW);
   }
 
+  var.calcYUpDown();
+
   Field3D result(varMesh);
   result.allocate();
 
@@ -446,6 +459,8 @@ const Field2D Div_par_LtoC(const Field2D &var) {
 }
 
 const Field3D Div_par_LtoC(const Field3D &var) {
+  var.calcYUpDown();
+
   Field3D result;
   result.allocate();
 

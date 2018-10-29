@@ -18,6 +18,8 @@ namespace FV {
     result = 0.0;
 
     Coordinates *coord = f.getCoordinates();
+
+    f.calcYUpDown();
     
     // Flux in x
   
@@ -121,6 +123,9 @@ namespace FV {
 
     Mesh *mesh = Kin.getMesh();
     Field3D result(0.0, mesh);
+
+    fin.calcYUpDown();
+    Kin.calcYUpDown();
 
     // K and f fields in yup and ydown directions
     Field3D Kup(mesh), Kdown(mesh);

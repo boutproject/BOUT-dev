@@ -118,6 +118,10 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
         // At least 2 boundary cells needed for interpolation in y-direction
         ASSERT0(fieldmesh->ystart >= 2);
 
+        // Calculate the yup/ydown fields if possible, and if they have not
+        // already been calculated
+        var.calcYUpDown();
+
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
