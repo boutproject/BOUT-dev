@@ -181,10 +181,6 @@ void Mesh::communicate(FieldGroup &g) {
 
   // Wait for data from other processors
   wait(h);
-
-  // Calculate yup and ydown fields for 3D fields
-  for(const auto& fptr : g.field3d())
-    getParallelTransform().calcYUpDown(*fptr);
 }
 
 /// This is a bit of a hack for now to get FieldPerp communications
