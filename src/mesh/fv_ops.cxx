@@ -122,31 +122,16 @@ namespace FV {
     Mesh *mesh = Kin.getMesh();
     Field3D result(0.0, mesh);
 
-    // K and f fields in yup and ydown directions
-    Field3D Kup(mesh), Kdown(mesh);
-    Field3D fup(mesh), fdown(mesh);
-    Field3D f(mesh);
-    Field3D K(mesh);
-    if (Kin.hasYupYdown() && fin.hasYupYdown()) {
-      // Both inputs have yup and ydown
-      f = fin;
-      K = Kin;
+    bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
 
-      Kup = Kin.yup();
-      Kdown = Kin.ydown();
-      
-      fup = fin.yup();
-      fdown = fin.ydown();
-    } else {
-      // At least one input doesn't have yup/ydown fields.
-      // Need to shift to/from field aligned coordinates
-      
-      f = mesh->toFieldAligned(fin);
-      K = mesh->toFieldAligned(Kin);
-      
-      fup = fdown = f;
-      Kup = Kdown = K;
-    }
+    const Field3D& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin);
+    const Field3D& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin);
+
+    // K and f fields in yup and ydown directions
+    const Field3D& Kup = use_yup_ydown ? Kin.yup() : K;
+    const Field3D& Kdown = use_yup_ydown ? Kin.ydown() : K;
+    const Field3D& fup = use_yup_ydown ? fin.yup() : f;
+    const Field3D& fdown = use_yup_ydown ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
     
