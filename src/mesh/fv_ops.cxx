@@ -125,15 +125,18 @@ namespace FV {
     // K and f fields in yup and ydown directions
     Field3D Kup(mesh), Kdown(mesh);
     Field3D fup(mesh), fdown(mesh);
-    Field3D f = fin;
-    Field3D K = Kin;
-    if (K.hasYupYdown() && f.hasYupYdown()) {
+    Field3D f(mesh);
+    Field3D K(mesh);
+    if (Kin.hasYupYdown() && fin.hasYupYdown()) {
       // Both inputs have yup and ydown
-      Kup = K.yup();
-      Kdown = K.ydown();
+      f = fin;
+      K = Kin;
+
+      Kup = Kin.yup();
+      Kdown = Kin.ydown();
       
-      fup = f.yup();
-      fdown = f.ydown();
+      fup = fin.yup();
+      fdown = fin.ydown();
     } else {
       // At least one input doesn't have yup/ydown fields.
       // Need to shift to/from field aligned coordinates
@@ -155,11 +158,11 @@ namespace FV {
 
       if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
 
-        BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
+        BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
         
-        BoutReal gradient = 2.*(f.yup()[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        BoutReal gradient = 2.*(fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
         
         BoutReal flux = c * J * gradient / g_22;
             
@@ -168,12 +171,12 @@ namespace FV {
       
       // Calculate flux at lower surface
       if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
-        BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
+        BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[i]);
         
-        BoutReal gradient = 2.*(f[i] - f.ydown()[iym]) / (coord->dy[i] + coord->dy[iym]);
+        BoutReal gradient = 2.*(f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
         
         BoutReal flux = c * J * gradient / g_22;
         
@@ -181,7 +184,7 @@ namespace FV {
       }
     }
     
-    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+    if (!(Kin.hasYupYdown() && fin.hasYupYdown())) {
       // Shifted to field aligned coordinates, so need to shift back
       result = mesh->fromFieldAligned(result);
     }
