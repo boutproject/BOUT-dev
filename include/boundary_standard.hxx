@@ -41,8 +41,8 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// 4th-order boundary condition
@@ -55,8 +55,8 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// Dirichlet boundary condition, tries to smooth out grid-scale oscillations at the boundary
@@ -93,8 +93,8 @@ class BoundaryDirichlet_O5 : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int UNUSED(bx), int y, int UNUSED(by), int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// Neumann (zero-gradient) boundary condition for non-orthogonal meshes
@@ -165,8 +165,8 @@ class BoundaryNeumann_O4 : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
@@ -179,8 +179,8 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /// NeumannPar (zero-gradient) boundary condition on
@@ -319,8 +319,8 @@ public:
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 // End L.Easy
 
@@ -333,8 +333,8 @@ public:
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 class BoundaryFree_O5 : public BoundaryOp {
@@ -346,8 +346,8 @@ public:
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPointStaggered(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPointStaggered(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
-  void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
-  void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) override;
+  void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) override;
 };
 
 /////////////////////////////////////////////////////////

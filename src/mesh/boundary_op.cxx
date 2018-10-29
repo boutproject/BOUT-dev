@@ -24,10 +24,10 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 
-void BoundaryOp::extrapFurther(Field2D &f, int x, int bx, int y, int by, int z) {
+void BoundaryOp::extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) {
   f(x, y, z) = 2.0*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
 }
-void BoundaryOp::extrapFurther(Field3D &f, int x, int bx, int y, int by, int z) {
+void BoundaryOp::extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) {
   f(x, y, z) = 2.0*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
 }
 
@@ -74,7 +74,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
         for (int i = 1; i < bndry->width; i++) {
           int x = bndry->x + i*bndry->bx;
           int y = bndry->y + i*bndry->by;
-          extrapFurther(f, x, bndry->bx, y, bndry->by, z);
+          extrapolateFurther(f, x, bndry->bx, y, bndry->by, z);
         }
       }
     }
@@ -97,7 +97,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
           for (int i = 1; i < bndry->width; i++) {
             int x = bndry->x + i*bndry->bx;
-            extrapFurther(f, x, bndry->bx, bndry->y, 0, z);
+            extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
           }
         }
       }
@@ -121,7 +121,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second and third guard cells, as may be used for interpolation or upwinding derivatives
           for (int i = 0; i < bndry->width; i++) {
             int x = bndry->x + i*bndry->bx;
-            extrapFurther(f, x, bndry->bx, bndry->y, 0, z);
+            extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
           }
         }
       }
@@ -144,7 +144,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
           for(int i=1;i<bndry->width;i++) {
             int y = bndry->y + i*bndry->by;
-            extrapFurther(f, bndry->x, 0, y, bndry->by, z);
+            extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
           }
         }
       }
@@ -166,7 +166,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
           for(int i=1;i<bndry->width;i++) {
             int y = bndry->y + i*bndry->by;
-            extrapFurther(f, bndry->x, 0, y, bndry->by, z);
+            extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
           }
         }
       }
@@ -188,7 +188,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
           for(int i=0;i<bndry->width;i++) {
             int y = bndry->y + i*bndry->by;
-            extrapFurther(f, bndry->x, 0, y, bndry->by, z);
+            extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
           }
         }
       }
@@ -212,7 +212,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
           // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
           for(int i=1;i<bndry->width;i++) {
             int x = bndry->x + i*bndry->bx;
-            extrapFurther(f, x, bndry->bx, bndry->y, 0, z);
+            extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
           }
         }
       }
@@ -239,7 +239,7 @@ void BoundaryOp::applyTemplate(T &f,BoutReal t) {
         for (int i = 1; i < bndry->width; i++) {
           int x = bndry->x + i*bndry->bx;
           int y = bndry->y + i*bndry->by;
-          extrapFurther(f, x, bndry->bx, y, bndry->by, z);
+          extrapolateFurther(f, x, bndry->bx, y, bndry->by, z);
         }
       }
     }

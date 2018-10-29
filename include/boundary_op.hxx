@@ -103,8 +103,8 @@ protected:
   }
 
   // extrapolate to further guard cells
-  virtual void extrapFurther(Field2D &f, int x, int bx, int y, int by, int z);
-  virtual void extrapFurther(Field3D &f, int x, int bx, int y, int by, int z);
+  virtual void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z);
+  virtual void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z);
 
 private:
   template<typename T>
