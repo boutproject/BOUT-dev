@@ -1950,5 +1950,81 @@ TEST_F(Field3DTest, OpenMPIterator) {
 }
 #endif
 
+TEST_F(Field3DTest, Swap) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field3D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  first.splitYupYdown();
+  first.yup() = 1.5;
+  first.ydown() = 0.5;
+
+  ddt(first) = 1.1;
+
+  // Mesh for second field
+  constexpr int second_nx = Field3DTest::nx + 2;
+  constexpr int second_ny = Field3DTest::ny + 2;
+  constexpr int second_nz = Field3DTest::nz + 2;
+
+  FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.StaggerGrids = false;
+  output_info.disable();
+  second_mesh.createDefaultRegions();
+  output_info.enable();
+
+  // Second field
+  Field3D second(2., &second_mesh);
+
+  second.splitYupYdown();
+  second.yup() = 2.2;
+  second.ydown() = 1.2;
+
+  ddt(second) = 2.4;
+
+  // Basic sanity check
+  EXPECT_TRUE(IsField3DEqualBoutReal(first, 1.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(second, 2.0));
+
+  // swap is marked noexcept, so absolutely should not throw!
+  ASSERT_NO_THROW(swap(first, second));
+
+  // Values
+  EXPECT_TRUE(IsField3DEqualBoutReal(first, 2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(first.yup(), 2.2));
+  EXPECT_TRUE(IsField3DEqualBoutReal(first.ydown(), 1.2));
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(second.yup(), 1.5));
+  EXPECT_TRUE(IsField3DEqualBoutReal(second.ydown(), 0.5));
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(ddt(first), 2.4));
+  EXPECT_TRUE(IsField3DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(first.getMesh(), &second_mesh);
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(first.getNx(), second_nx);
+  EXPECT_EQ(first.getNy(), second_ny);
+  EXPECT_EQ(first.getNz(), second_nz);
+
+  EXPECT_EQ(second.getNx(), Field3DTest::nx);
+  EXPECT_EQ(second.getNy(), Field3DTest::ny);
+  EXPECT_EQ(second.getNz(), Field3DTest::nz);
+
+  EXPECT_EQ(first.getLocation(), CELL_CENTRE);
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop
