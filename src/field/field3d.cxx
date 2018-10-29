@@ -532,6 +532,8 @@ void Field3D::applyParallelBoundary() {
 
   checkData(*this);
 
+  calcYUpDown();
+
   if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
@@ -551,6 +553,8 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 
   checkData(*this);
 
+  calcYUpDown();
+
   if (background != nullptr) {
     // Apply boundary to the total of this and background
     Field3D tot = *this + (*background);
@@ -569,6 +573,8 @@ void Field3D::applyParallelBoundary(const string &condition) {
   TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
+
+  calcYUpDown();
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -593,6 +599,8 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
+
+  calcYUpDown();
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -620,6 +628,8 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
+
+  calcYUpDown();
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
