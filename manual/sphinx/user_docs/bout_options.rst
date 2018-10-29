@@ -105,7 +105,7 @@ use the ``round`` function:
     ok_integer = round(256.4)
 
 Note that it is still possible to read ``bad_integer`` as a real
-number though.
+number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
 
