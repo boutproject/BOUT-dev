@@ -1006,21 +1006,6 @@ bool Datafile::write(const char *format, ...) const {
   return ret;
 }
 
-bool Datafile::writeVar(const int &i, const char *name) {
-  // Should do this a better way...
-  int *i2 = new int;
-  *i2 = i;
-  add(*i2, name);
-  return true;
-}
-
-bool Datafile::writeVar(BoutReal r, const char *name) {
-  BoutReal *r2 = new BoutReal;
-  *r2 = r;
-  add(*r2, name);
-  return true;
-}
-
 void Datafile::setAttribute(const string &varname, const string &attrname, const string &text) {
 
   TRACE("Datafile::setAttribute(string, string, string)");

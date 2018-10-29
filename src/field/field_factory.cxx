@@ -53,7 +53,8 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
 
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
-
+  addGenerator("π", std::make_shared<FieldValue>(PI));
+  
   // Some standard functions
   addGenerator("sin", std::make_shared<FieldSin>(nullptr));
   addGenerator("cos", std::make_shared<FieldCos>(nullptr));

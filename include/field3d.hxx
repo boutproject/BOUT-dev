@@ -33,12 +33,9 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 
-#include "bout/deprecated.hxx"
 #include "bout/assert.hxx"
 
 #include "bout/field_visitor.hxx"
@@ -112,15 +109,6 @@ class Mesh;  // #include "bout/mesh.hxx"
       BoutReal *data = f(0,1);
 
   `data` now points to `f(0,1,0)` and can be incremented to move in Z.
-
-  Indexing can also be done using DataIterator or Indices objects,
-  defined in bout/dataiterator.hxx:
-
-      Indices i = {0,1,0};
-
-      f[i] = 1.0;  // Equivalent to f(0,1,0)
-
-  This is primarily used to allow convenient iteration over fields
 
   Iteration
   ---------
@@ -279,78 +267,27 @@ class Field3D : public Field, public FieldData {
   
   /////////////////////////////////////////////////////////
   // Data access
-  
-  const DataIterator DEPRECATED(iterator() const);
-
-  /*!
-   * These begin and end functions are used to iterate over
-   * the indices of a field. Indices are used rather than
-   * values since this allows expressions involving multiple fields.
-   *
-   * Example
-   * -------
-   *
-   * Field3D objects f and g can be modified by 
-   * 
-   * for(const auto &i : f) {
-   *   f[i] = 2.*f[i] + g[i];
-   * }
-   * 
-   */
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
-  
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   * 
-   * Example
-   * -------
-   * 
-   * This loops over the interior points, not the boundary
-   * and inside the loop the index is used to calculate the difference
-   * between the point one index up in x (i.xp()) and one index down
-   * in x (i.xm()), putting the result into a different field 'g'
-   * 
-   * for(const auto &i : f.region(RGN_NOBNDRY)) {
-   *   g[i] = f[i.xp()] - f[i.xm()];
-   * }
-   * 
-   */
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
-
-  /*!
-   * Like Field3D::region(REGION rgn), but returns range
-   * to iterate over only x-y, not z.
-   * This is useful in the Fourier transform functions
-   * which need an explicit loop in z.
-   *
-   */
-  const IndexRange DEPRECATED(region2D(REGION rgn)) const;
 
   /// Return a Region<Ind3D> reference to use to iterate over this field
+  ///
+  /// Example
+  /// -------
+  /// 
+  /// This loops over the interior points, not the boundary
+  /// and inside the loop the index is used to calculate the difference
+  /// between the point one index up in x (i.xp()) and one index down
+  /// in x (i.xm()), putting the result into a different field 'g'
+  /// 
+  /// for(const auto &i : f.getRegion(RGN_NOBNDRY)) {
+  ///   g[i] = f[i.xp()] - f[i.xm()];
+  /// }
+  /// 
   const Region<Ind3D>& getRegion(REGION region) const;  
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
   
-  /*!
-   * Direct data access using DataIterator object.
-   * This uses operator(x,y,z) so checks will only be
-   * performed if CHECK > 2.
-   */
-  BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.y, d.z);
-  }
-  const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.y, d.z);
-  }
-  BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.y, i.z);
-  }
-  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
-    return operator()(i.x, i.y, i.z);
-  }
+  Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-
   BoutReal& operator[](const Ind3D &d) {
     return data[d.ind];
   }
@@ -437,8 +374,6 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() const {return *this;}
-  
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
@@ -494,7 +429,6 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
-  DEPRECATED(void setBackground(const Field2D &f2d)); ///< Boundary is applied to the total of this and f2d
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const string &condition);

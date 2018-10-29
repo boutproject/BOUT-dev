@@ -107,13 +107,17 @@ public:
   ///  ^     precedence = 30
   ///                        
   void addBinaryOp(char sym, FieldGeneratorPtr b, int precedence);
-  
 protected:
   /// This will be called to resolve any unknown symbols
   virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string &input);
+
+  /// Characters which cannot be used in symbols; all other allowed
+  /// In addition, whitespace cannot be used
+  /// Adding a binary operator adds its symbol to this string
+  std::string reserved_chars = "+-*/^[](){},";
   
 private:
   
@@ -123,13 +127,14 @@ private:
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
-    LexInfo(const std::string &input);
+    LexInfo(const std::string &input, const std::string &reserved_chars="");
     
-    signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
+    signed char curtok = 0;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number
     std::string curident; ///< Identifier, variable or function name
     signed char LastChar;   ///< The last character read from the string
     std::stringstream ss; ///< Used to read values from the input string
+    std::string reserved_chars; ///< Reserved characters, not in symbols
     char nextToken(); ///< Get the next token in the string
   };
   

@@ -106,10 +106,6 @@ class Vector2D : public FieldData {
   /// Divide all components by \p rhs
   Vector2D & operator/=(const Field2D &rhs);
 
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector2D & operator^=(const Vector2D &rhs);)
-
   // Binary operators
   
   const Vector2D operator+(const Vector2D &rhs) const; ///< Addition
@@ -128,13 +124,6 @@ class Vector2D : public FieldData {
 
   const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
-
-  /// Cross product
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector2D operator^(const Vector2D &rhs) const;)
-  /// Cross product
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
 
    /*!
    * Set variable cell location

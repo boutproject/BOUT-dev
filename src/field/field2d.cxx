@@ -133,52 +133,6 @@ Field2D* Field2D::timeDeriv() {
 
 ////////////// Indexing ///////////////////
 
-const DataIterator Field2D::iterator() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0);
-}
-
-const DataIterator Field2D::begin() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0);
-}
-
-const DataIterator Field2D::end() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0, DI_GET_END);
-}
-
-const IndexRange Field2D::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  default: {
-    throw BoutException("Field2D::region() : Requested region not implemented");
-  }
-  };
-}
-
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(REGION_STRING(region));
 };

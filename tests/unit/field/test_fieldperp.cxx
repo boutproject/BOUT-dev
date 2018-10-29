@@ -60,7 +60,7 @@ TEST_F(FieldPerpTest, Allocate) {
   EXPECT_TRUE(field.isAllocated());
 
   int counter = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 1.; // Hits Array bounds checking
     counter++;
   }
@@ -268,7 +268,7 @@ TEST_F(FieldPerpTest, IterateOverWholeField) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -302,10 +302,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_ALL)) {
+  for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -346,10 +346,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOZ)) {
+  for (auto &i : field.getRegion(RGN_NOZ)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -388,10 +388,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOX)) {
+  for (auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -399,20 +399,6 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   EXPECT_EQ(found_sentinels, num_sentinels);
   EXPECT_EQ(sum, ((nz * (nx - 2)) - num_sentinels) + (num_sentinels * sentinel));
   EXPECT_TRUE(region_indices == result_indices);
-}
-
-TEST_F(FieldPerpTest, IterateOverRGN_NOBNDRY) {
-  FieldPerp field(mesh);
-
-  // This is not a valid region for FieldPerp
-  EXPECT_THROW(field.region(RGN_NOBNDRY), BoutException);
-}
-
-TEST_F(FieldPerpTest, IterateOverRGN_NOY) {
-  FieldPerp field(mesh);
-
-  // This is not a valid region for FieldPerp
-  EXPECT_THROW(field.region(RGN_NOY), BoutException);
 }
 
 TEST_F(FieldPerpTest, Indexing) {
@@ -443,26 +429,6 @@ TEST_F(FieldPerpTest, IndexingAs3D) {
   }
 
   EXPECT_DOUBLE_EQ(field(2, 2), 4 + ny - 1);
-}
-
-TEST_F(FieldPerpTest, IndexingWithIndices) {
-  FieldPerp field;
-
-  field.allocate();
-
-  for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < nz; ++j) {
-      field(i, j) = i + j;
-    }
-  }
-  Indices ii{2, -1, 2};
-  EXPECT_DOUBLE_EQ(field[ii], 4);
-}
-
-TEST_F(FieldPerpTest, ConstIndexingWithIndices) {
-  const FieldPerp field = 2.0;
-  const Indices ii{2, -1, 2};
-  EXPECT_DOUBLE_EQ(field[ii], 2.0);
 }
 
 TEST_F(FieldPerpTest, IndexingWithIndPerp) {
@@ -646,7 +612,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   const int nmesh = nx * nz;
 
   int sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -654,7 +620,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.region(RGN_NOX)) {
+  for (const auto &i : field.getRegion(RGN_NOX)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -670,7 +636,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, 0)));
 
   sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     if (!finite(field[i]))
       sum++;
   }

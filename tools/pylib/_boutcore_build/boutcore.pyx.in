@@ -746,7 +746,7 @@ cdef class Mesh:
         Get the Coordinates object of this mesh
         """
         if self._coords is None:
-            self._coords = coordsFromObj(self.cobj.coordinates())
+            self._coords = coordsFromObj(self.cobj.getCoordinates())
         return self._coords
 
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
