@@ -54,6 +54,18 @@ inline const std::string& CELL_LOC_STRING(CELL_LOC location) {
 /// Differential methods. Both central and upwind
 enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
 
+const std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
+  {DIFF_DEFAULT, "C2"},
+  {DIFF_U1, "U1"}, {DIFF_U2, "U2"}, {DIFF_U3, "U3"},
+  {DIFF_C2, "C2"}, {DIFF_C4, "C4"}, {DIFF_S2, "S2"},
+  {DIFF_W2, "W2"}, {DIFF_W3, "W3"}, {DIFF_FFT, "FFT"},
+  {DIFF_SPLIT, "SPLIT"}, {DIFF_NND, "NND"}
+};
+
+inline const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
+  return DIFF_METHODtoString.at(location);
+}
+
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
@@ -98,6 +110,28 @@ const std::map<STAGGER, std::string> STAGGERtoString = {
 inline const std::string& STAGGER_STRING(STAGGER stagger) {
   return STAGGERtoString.at(stagger);
 }
+
+/// To identify types of derivative method combinations
+enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
+		   Upwind = 3, Flux = 4 };
+
+static std::map<DERIV, std::string> derivToString = {
+  {DERIV::Standard, "Standard"},
+  {DERIV::StandardSecond, "Standard -- second order"},
+  {DERIV::StandardFourth, "Standard -- fourth order"},
+  {DERIV::Upwind, "Upwind"},
+  {DERIV::Flux, "Flux"}  
+};
+
+// A small struct that can be used to wrap a specific enum value, giving
+// it a unique type that can be passed as a valid type to templates and
+// which can be inspected to provide the actual value of the enum
+template<typename T, T val>
+struct enumWrapper {
+  using type = T;
+  static const type value = val;
+  T lookup(){return val;};
+};
 
 /// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
