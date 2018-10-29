@@ -15,6 +15,7 @@ class BoundaryModifier;
 #include <cmath>
 #include <string>
 #include <list>
+#include <map>
 using std::string;
 using std::list;
 
@@ -55,6 +56,11 @@ public:
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
     return nullptr;
+  }
+  
+  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args, const std::map<std::string, std::string>& UNUSED(keywords)) {
+    // If not implemented, call two-argument version
+    return clone(region, args);
   }
 
   /// Apply a boundary condition on ddt(f)
