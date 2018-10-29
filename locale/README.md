@@ -19,7 +19,7 @@ Update the template (.pot) file:
 
 Start a new translation:
 
-    make po-XX
+    make locale-XX
 
 where XX is the language e.g. "de" for German, or a language_country code e.g. "de_DE".
 This will update a .po file if it already exists.
