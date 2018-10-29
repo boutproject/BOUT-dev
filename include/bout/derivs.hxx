@@ -44,7 +44,7 @@ public:
     // we comment this out for now.
     //
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond || meta.derivType == DERIV::StandardFourth)
-    ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
     
     BOUT_FOR(i, var.getRegion(region)) {    
       result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
@@ -63,7 +63,7 @@ public:
     // we comment this out for now.
     //
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)    
-    ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
     
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
       BOUT_FOR(i, var.getRegion(region)) {    

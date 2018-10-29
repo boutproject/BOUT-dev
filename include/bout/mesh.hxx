@@ -527,6 +527,9 @@ class Mesh {
   const T indexFDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
                           DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
 
+  template<DIRECTION direction>
+  const int getNguard();
+
   /// Derivative functions of a single field stencil
   typedef BoutReal (*deriv_func)(const stencil &);
   /// Derivative functions of a BoutReal velocity, and field stencil
@@ -661,9 +664,6 @@ class Mesh {
 
   template<DIRECTION direction>
   const int getNpoints();
-
-  template<DIRECTION direction>
-  const int getNguard();
   
 private:
   /// Allocates default Coordinates objects
@@ -775,10 +775,10 @@ const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIF
                 "indexDDX only works on Field2D or Field3D input");
   // Check that the mesh is correct
   ASSERT1(this == f.getMesh());
-  ASSERT1(this == v.getMesh());  
+  ASSERT1(this == vel.getMesh());  
   // Check that the input variable has data
   ASSERT1(f.isAllocated());
-  ASSERT1(v.isAllocated());  
+  ASSERT1(vel.isAllocated());  
 
   // Define properties of this approach
   const CELL_LOC allowedStaggerLoc = getAllowedStaggerLoc<direction>();
