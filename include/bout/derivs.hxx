@@ -4,6 +4,7 @@
 #include <iostream>
 #include <functional>
 
+#include <bout/assert.hxx>
 #include <bout_types.hxx>
 #include <stencils.hxx>
 #include <bout/template_combinations.hxx>
@@ -42,12 +43,12 @@ public:
     // and storing in result -- in this test case we don't have REGION etc. so
     // we comment this out for now.
     //
-    // ASSERT2(meta.derivType is one of Standard, StandardSecond and StandardFourth)
-    // ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
-    //
-    // BOUT_FOR(i, var.getRegion(region)) {    
-    //   result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
-    // }
+    ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond || meta.derivType == DERIV::StandardFourth)
+    ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
+    
+    BOUT_FOR(i, var.getRegion(region)) {    
+      result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
+    }
     //std::cout<<meta<<" acting on "<<demangler(var)<<" on region "<<region<<std::endl;
     //Note the interface here changes for upwind+flux (although they agree)
     //and then the use in the loop changes between upwind/flux
@@ -61,20 +62,22 @@ public:
     // and storing in result -- in this test case we don't have REGION etc. so
     // we comment this out for now.
     //
-    // ASSERT2(meta.derivType is one of Upwind, Flux)    
-    // ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
-    //
-    // if Stagger isn't none or derivType is flux {
-    // BOUT_FOR(i, var.getRegion(region)) {    
-    //   result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
-    //             populateStencil<direction, STAGGER::None, 1>(var, i)
-    //      );
-    // else it's a non-staggered upwind so do
-    // BOUT_FOR(i, var.getRegion(region)) {    
-    //   result[i] = apply(vel[i],
-    //             populateStencil<direction, STAGGER::None, 1>(var, i)
-    //      );
-    // }
+    ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)    
+    ASSERT2(var.getMesh().getNguard<direction>() >= meta.nGuard);
+    
+    if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
+      BOUT_FOR(i, var.getRegion(region)) {    
+	result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
+			  populateStencil<direction, STAGGER::None, 1>(var, i)
+			  );
+      }
+    } else {
+      BOUT_FOR(i, var.getRegion(region)) {    
+	result[i] = apply(vel[i],
+			  populateStencil<direction, STAGGER::None, 1>(var, i)
+			  );
+      }
+    }
     //std::cout<<meta<<" acting on "<<demangler(var)<<" on region "<<region<<std::endl;
     //Note the interface here changes for upwind+flux (although they agree)
     //and then the use in the loop changes between upwind/flux
@@ -101,18 +104,24 @@ public:
   struct name {						\
     BoutReal operator()(const stencil &f) const;	\
     metaData meta = {key, nGuards, type};		\
+    BoutReal operator()(const BoutReal &vc, const stencil &f) const{};\
+    BoutReal operator()(const stencil &v, const stencil &f) const{};  \
   };							\
   BoutReal name::operator()(const stencil &f) const
 
 #define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
   struct name {								\
+    BoutReal operator()(const stencil &f) const{};			\
     BoutReal operator()(const BoutReal &vc, const stencil &f) const;	\
+    BoutReal operator()(const stencil &v, const stencil &f) const{};	\
     metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
   
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
   struct name {								\
+    BoutReal operator()(const stencil &f) const {};			\
+    BoutReal operator()(const BoutReal &vc, const stencil &f) const {};	\
     BoutReal operator()(const stencil &v, const stencil &f) const;	\
     metaData meta = {key, nGuards, type};				\
   };									\
