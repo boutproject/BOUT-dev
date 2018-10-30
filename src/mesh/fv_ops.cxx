@@ -169,7 +169,7 @@ namespace FV {
       }
     }
     
-    if (!(Kin.hasYupYdown() && fin.hasYupYdown())) {
+    if (!use_yup_ydown) {
       // Shifted to field aligned coordinates, so need to shift back
       result = mesh->fromFieldAligned(result);
     }
