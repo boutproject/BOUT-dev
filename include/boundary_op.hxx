@@ -74,7 +74,7 @@ protected:
 };
 
 /// An operation on a boundary
-template<typename Derived>
+template<typename Derived, bool needs_delta = false>
 class BoundaryOpWithApply : public BoundaryOp {
 public:
   using BoundaryOp::BoundaryOp;
