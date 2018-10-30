@@ -33,7 +33,11 @@ BoutException::~BoutException() {
   msg_stack.clear();
 }
 
-std::string BoutException::getBacktrace() const{
+std::string BoutException::getBacktrace() const {
+  return header + message + "\n" + msg_stack.getDump() + backtrace_message;
+}
+
+std::string BoutException::makeBacktrace() const {
   std::string backtrace_message;
 #ifdef BACKTRACE
 
@@ -89,7 +93,7 @@ std::string BoutException::getBacktrace() const{
 #else
   backtrace_message = "Stacktrace not enabled.\n";
 #endif
-  return header + message + "\n" + msg_stack.getDump() + backtrace_message;
+  return backtrace_message;
 }
 
 /// Common set up for exceptions
@@ -117,6 +121,7 @@ std::string BoutException::getBacktrace() const{
       delete[] buffer;                                                                   \
       buffer = nullptr;                                                                  \
     }                                                                                    \
+    backtrace_message = makeBacktrace();                                                 \
   }
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }

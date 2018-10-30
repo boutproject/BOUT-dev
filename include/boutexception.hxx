@@ -17,7 +17,9 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
-  BoutException(std::string msg) : message(std::move(msg)) {}
+  BoutException(std::string msg) : message(std::move(msg)) {
+    backtrace_message = makeBacktrace();
+  }
   ~BoutException() override;
 
   const char* what() const noexcept override {
@@ -29,6 +31,8 @@ public:
   /// backtrace (if available)
   std::string getBacktrace() const;
 
+  std::string makeBacktrace() const;
+
   const std::string header{"====== Exception thrown ======\n"};
 
 protected:
@@ -39,6 +43,7 @@ protected:
 #ifdef BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;
 #endif
+  std::string backtrace_message{};
 };
 
 class BoutRhsFail : public BoutException {
