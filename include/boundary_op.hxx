@@ -41,12 +41,8 @@ public:
 
 
   /// Apply a boundary condition on field f
-  virtual void apply(Field2D &f,BoutReal t = 0.) {
-    applyTemplate(f, t);
-  }
-  virtual void apply(Field3D &f,BoutReal t = 0.) {
-    applyTemplate(f, t);
-  }
+  virtual void apply(Field2D &f, BoutReal t = 0.) = 0;
+  virtual void apply(Field3D &f, BoutReal t = 0.) = 0;
 
   virtual void apply(Vector2D &f) {
     apply(f.x);
@@ -72,46 +68,51 @@ public:
 
   BoundaryRegion *bndry;
   const bool apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
-
 protected:
   std::shared_ptr<FieldGenerator> gen; // Generator
   const int width; // boundary width, stored in case we change it from the default
+};
 
-  // Apply boundary condition at a point
-  virtual void applyAtPoint(Field2D &UNUSED(f), BoutReal UNUSED(val), int
-      UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
-      Coordinates* UNUSED(metric)) {
-    throw BoutException("BoundaryOp::applyAtPoint() should never be called. A "
-        "subclass should either override BoundaryOp::apply() or override "
-        "applyAtPoint() and applyAtPointStaggered().");
-  }
-  virtual void applyAtPoint(Field3D &UNUSED(f), BoutReal UNUSED(val), int
-      UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
-      Coordinates* UNUSED(metric)) {
-    throw BoutException("BoundaryOp::applyAtPoint() should never be called. A "
-        "subclass should either override BoundaryOp::apply() or override "
-        "applyAtPoint() and applyAtPointStaggered().");
+/// An operation on a boundary
+template<typename Derived>
+class BoundaryOpWithApply : public BoundaryOp {
+public:
+  using BoundaryOp::BoundaryOp;
+
+  // Note: All methods must implement clone, except for modifiers (see below)
+  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
+    ASSERT1(false); // this implementation should never get called
+    return nullptr;
   }
 
-  // Apply to staggered grid
-  virtual void applyAtPointStaggered(Field2D &UNUSED(f), BoutReal UNUSED(val),
-      int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
-      UNUSED(z), Coordinates* UNUSED(metric)) {
-    throw BoutException("BoundaryOp::applyAtPointStaggered() should never be "
-        "called. A subclass should either override BoundaryOp::apply() or "
-        "override applyAtPoint() and applyAtPointStaggered().");
+  /// Apply a boundary condition on field f
+  void apply(Field2D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
   }
-  virtual void applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUSED(val),
-      int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
-      UNUSED(z), Coordinates* UNUSED(metric)) {
-    throw BoutException("BoundaryOp::applyAtPointStaggered() should never be "
-        "called. A subclass should either override BoundaryOp::apply() or "
-        "override applyAtPoint() and applyAtPointStaggered().");
+  void apply(Field3D &f, BoutReal t = 0.) override {
+    applyTemplate(f, t);
   }
 
-  // extrapolate to further guard cells
-  virtual void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z);
-  virtual void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z);
+protected:
+  //// Apply boundary condition at a point
+  //virtual void applyAtPoint(Field2D &UNUSED(f), BoutReal UNUSED(val), int
+  //    UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
+  //    Coordinates* UNUSED(metric)) = 0;
+  //virtual void applyAtPoint(Field3D &UNUSED(f), BoutReal UNUSED(val), int
+  //    UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int UNUSED(z),
+  //    Coordinates* UNUSED(metric)) = 0;
+
+  //// Apply to staggered grid
+  //virtual void applyAtPointStaggered(Field2D &UNUSED(f), BoutReal UNUSED(val),
+  //    int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
+  //    UNUSED(z), Coordinates* UNUSED(metric)) = 0;
+  //virtual void applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUSED(val),
+  //    int UNUSED(x), int UNUSED(bx), int UNUSED(y), int UNUSED(by), int
+  //    UNUSED(z), Coordinates* UNUSED(metric)) = 0;
+
+  //// extrapolate to further guard cells
+  //virtual void extrapolateFurther(Field2D &f, int x, int bx, int y, int by, int z) = 0;
+  //virtual void extrapolateFurther(Field3D &f, int x, int bx, int y, int by, int z) = 0;
 
 private:
   template<typename T>
