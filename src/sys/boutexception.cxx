@@ -34,7 +34,7 @@ BoutException::~BoutException() {
 }
 
 std::string BoutException::getBacktrace() const {
-  return header + message + "\n" + msg_stack.getDump() + backtrace_message;
+  return backtrace_message + msg_stack.getDump() + "\n" + header + message + "\n";
 }
 
 std::string BoutException::makeBacktrace() const {
@@ -48,8 +48,8 @@ std::string BoutException::makeBacktrace() const {
   backtrace_message = "====== Exception path ======\n";
   char buf[1024];
   // skip first stack frame (points here)
-  for (int i = 1; i < trace_size; ++i) {
-    snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i, messages[i]);
+  for (int i = trace_size - 1; i > 1; --i) {
+    snprintf(buf, sizeof(buf) - 1, "[bt] #%d %s\n", i - 1, messages[i]);
     backtrace_message += buf;
     // find first occurence of '(' or ' ' in message[i] and assume
     // everything before that is the file name. (Don't go beyond 0 though
