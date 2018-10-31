@@ -11,7 +11,7 @@
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
-#include <unuused.hxx>
+#include <unused.hxx>
 
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 
