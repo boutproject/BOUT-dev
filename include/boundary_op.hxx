@@ -23,12 +23,12 @@ using std::list;
 class BoundaryOp {
 public:
   BoundaryOp(bool apply_ddt = false) : bndry(nullptr), apply_to_ddt(apply_ddt),
-                                       gen(nullptr), width(0) {}
+                                       val(0.), gen(nullptr), width(0) {}
   BoundaryOp(BoundaryRegion *region, int width_in = 0, bool apply_ddt = false)
-    : bndry(region), apply_to_ddt(apply_ddt), gen(nullptr),
+    : bndry(region), apply_to_ddt(apply_ddt), val(0.), gen(nullptr),
       width(width_in ? width_in : region->width) {}
-  BoundaryOp(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g, int width_in = 0)
-    : bndry(region), apply_to_ddt(false), gen(std::move(g)),
+  BoundaryOp(BoundaryRegion *region, BoutReal val_in, std::shared_ptr<FieldGenerator> g, int width_in = 0)
+    : bndry(region), apply_to_ddt(false), val(val_in), gen(std::move(g)),
       width(width_in ? width_in : region->width) {}
   virtual ~BoundaryOp() {}
 
@@ -69,6 +69,7 @@ public:
   BoundaryRegion *bndry;
   const bool apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
 protected:
+  const BoutReal val; // constant value for boundary condition
   std::shared_ptr<FieldGenerator> gen; // Generator
   const int width; // boundary width, stored in case we change it from the default
 };

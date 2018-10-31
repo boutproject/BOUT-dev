@@ -109,9 +109,9 @@ class BoundaryDirichlet_O5 : public BoundaryOpWithApply<BoundaryDirichlet_O5> {
 /// Neumann (zero-gradient) boundary condition for non-orthogonal meshes
 class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
  public:
-  BoundaryNeumann_NonOrthogonal(): val(0.) {}
-  BoundaryNeumann_NonOrthogonal(BoutReal setval ): val(setval) {}
-  BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryNeumann_NonOrthogonal() {}
+  BoundaryNeumann_NonOrthogonal(BoutReal setval): BoundaryOp(nullptr, setval, nullptr, 0) {}
+  BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region, setval, nullptr, 0) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
       const std::map<std::string, std::string> &keywords) override;
 
@@ -122,8 +122,6 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
     applyTemplate(f, t);
   }
  private:
-  BoutReal val;
-
   template<typename T>
   void applyTemplate(T &f, BoutReal t);
 };
@@ -238,7 +236,7 @@ class BoundaryRobin : public BoundaryOp {
     applyTemplate(f, t);
   }
  private:
-  BoutReal aval, bval, gval;
+  const BoutReal aval, bval, gval;
 
   template<typename T>
   void applyTemplate(T &f, BoutReal t);
@@ -317,8 +315,6 @@ class BoundaryFree : public BoundaryOp {
 
   void apply_ddt(Field2D &f) final;
   void apply_ddt(Field3D &f) final;
- private:
-  BoutReal val;
 };
 
 // L. Easy
