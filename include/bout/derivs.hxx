@@ -24,7 +24,7 @@ inline std::ostream &operator<<(std::ostream &out, const metaData &meta){
   out<<", ";    
   out<<"nGuards : "<<meta.nGuards;
   out<<", ";
-  out<<"type : "<<derivToString[meta.derivType];    
+  out<<"type : "<<DERIV_STRING(meta.derivType);    
   return out;
 }
 
@@ -39,29 +39,17 @@ class DerivativeType {
 public:
   template<DIRECTION direction, STAGGER stagger, typename T>
   void standard(const T &var, T &result, const REGION region) const {
-    // A loop over the field setting the stencil, applying the specific method
-    // and storing in result -- in this test case we don't have REGION etc. so
-    // we comment this out for now.
-    //
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
     
     BOUT_FOR(i, var.getRegion(region)) {    
       result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
     }
-    //std::cout<<meta<<" acting on "<<demangler(var)<<" on region "<<region<<std::endl;
-    //Note the interface here changes for upwind+flux (although they agree)
-    //and then the use in the loop changes between upwind/flux
-    //Note also staggered upwind = staggered flux = flux loop
     return;
   }
 
   template<DIRECTION direction, STAGGER stagger, typename T>
   void upwindOrFlux(const T& vel, const T &var, T &result, const REGION region) const {
-    // A loop over the field setting the stencil, applying the specific method
-    // and storing in result -- in this test case we don't have REGION etc. so
-    // we comment this out for now.
-    //
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)    
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
     
@@ -78,10 +66,6 @@ public:
 			  );
       }
     }
-    //std::cout<<meta<<" acting on "<<demangler(var)<<" on region "<<region<<std::endl;
-    //Note the interface here changes for upwind+flux (although they agree)
-    //and then the use in the loop changes between upwind/flux
-    //Note also staggered upwind = staggered flux = flux loop
     return;
   }
 
@@ -462,6 +446,8 @@ struct registerMethod {
 	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
 	break;
       }
+    default:
+      throw BoutException("Unhandled derivative method in registerMethod.");
     };
   }
 };

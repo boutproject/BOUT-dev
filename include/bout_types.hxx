@@ -115,13 +115,17 @@ inline const std::string& STAGGER_STRING(STAGGER stagger) {
 enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
 		   Upwind = 3, Flux = 4 };
 
-static std::map<DERIV, std::string> derivToString = {
+static std::map<DERIV, std::string> DERIVtoString = {
   {DERIV::Standard, "Standard"},
   {DERIV::StandardSecond, "Standard -- second order"},
   {DERIV::StandardFourth, "Standard -- fourth order"},
   {DERIV::Upwind, "Upwind"},
   {DERIV::Flux, "Flux"}  
 };
+
+inline const std::string& DERIV_STRING(DERIV deriv) {
+  return DERIVtoString.at(deriv);
+}
 
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and

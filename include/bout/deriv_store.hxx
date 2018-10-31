@@ -5,6 +5,7 @@
 #include <map>
 
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
 /// for all types of derivatives. It is templated on the FieldType (2D or 3D) as
@@ -43,8 +44,8 @@ struct DerivativeStore{
     case(DERIV::StandardFourth) :
       getInstance().standardFourth[key] = func;
       return;
-      // default:
-      //throw BoutException("Invalid function signature for DerivativeMethod : ...");
+    default:
+      throw BoutException("Invalid function signature in registerDerivative : Function signature 'standard' but derivative type %s passed",DERIV_STRING(derivType));
     };
     return;
   };
@@ -60,8 +61,8 @@ struct DerivativeStore{
     case(DERIV::Flux) :
       getInstance().flux[key] = func;
       return;
-      // default:
-      //throw BoutException("Invalid function signature for DerivativeMethod : ...");
+    default:
+      throw BoutException("Invalid function signature in registerDerivative : Function signature 'upwind/flux' but derivative type %s passed",DERIV_STRING(derivType));
     };
     return;
   };
@@ -76,6 +77,10 @@ struct DerivativeStore{
     registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);    
   };
 
+  std::string getMethodName(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+    return name + " ("+DIRECTION_STRING(direction)+", "+STAGGER_STRING(stagger)+")";
+  };
+  
   /// Routines to return a specific differential operator. Note we have to have a separate routine for different 
   /// methods as they have different return types. As such we choose to use a different name for each of the 
   /// method-classes so everything is consistently treated
@@ -84,35 +89,37 @@ struct DerivativeStore{
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standard.find(key);
     if(resultOfFind != instance.standard.end()) return resultOfFind->second;
-    //throw BoutException("Couldn't find requested method ....");
+    throw BoutException("Couldn't find requested method %s in map for standard derivative.", getMethodName(name, direction, stagger));
   };
+
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standardSecond.find(key);
     if(resultOfFind != instance.standardSecond.end()) return resultOfFind->second;
-    //throw BoutException("Couldn't find requested method ....");
+    throw BoutException("Couldn't find requested method %s in map for standardSecond derivative.", getMethodName(name, direction, stagger));
   };
+  
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standardFourth.find(key);
     if(resultOfFind != instance.standardFourth.end()) return resultOfFind->second;
-    //throw BoutException("Couldn't find requested method ....");
+    throw BoutException("Couldn't find requested method %s in map for standardFourth derivative.", getMethodName(name, direction, stagger));    
   };
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.upwind.find(key);
     if(resultOfFind != instance.upwind.end()) return resultOfFind->second;
-    //throw BoutException("Couldn't find requested method ....");
+    throw BoutException("Couldn't find requested method %s in map for upwind derivative.", getMethodName(name, direction, stagger));
   };
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.flux.find(key);
     if(resultOfFind != instance.flux.end()) return resultOfFind->second;
-    //throw BoutException("Couldn't find requested method ....");
+    throw BoutException("Couldn't find requested method %s in map for flux derivative.", getMethodName(name, direction, stagger));    
   };
   
 private:
