@@ -156,12 +156,15 @@ namespace {
     if (!args.empty()) {
       output << "WARNING: Ignoring arguments to BoundaryOp for "<<region->label<<" region\n";
     }
-    if (!keywords.empty()) {
-      // Given keywords, but not using
-      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+    int width = region->width;
+    for (const auto &it : keywords) {
+      if (it.first == "width") {
+        width = stringToInt(it.second);
+      } else {
+        throw BoutException("Unrecognized boundary condition keyword %s for %s boundary", it.first.c_str(), region->label.c_str());
+      }
     }
-
-    return new T(region);
+    return new T(region, width);
   }
 }
 

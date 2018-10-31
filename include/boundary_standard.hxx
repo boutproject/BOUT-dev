@@ -248,8 +248,7 @@ class BoundaryConstGradient : public BoundaryOp {
 /// Zero Laplacian, decaying solution
 class BoundaryZeroLaplace : public BoundaryOp {
  public:
-  BoundaryZeroLaplace() {}
-  BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp;
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
       const std::map<std::string, std::string> &keywords) override;
 
@@ -261,8 +260,7 @@ class BoundaryZeroLaplace : public BoundaryOp {
 /// Zero Laplacian
 class BoundaryZeroLaplace2 : public BoundaryOp {
  public:
-  BoundaryZeroLaplace2() {}
-  BoundaryZeroLaplace2(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp;
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
       const std::map<std::string, std::string> &keywords) override;
 
@@ -274,8 +272,7 @@ class BoundaryZeroLaplace2 : public BoundaryOp {
 /// Constant Laplacian, decaying solution
 class BoundaryConstLaplace : public BoundaryOp {
  public:
-  BoundaryConstLaplace() {}
-  BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp;
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
       const std::map<std::string, std::string> &keywords) override;
 
@@ -287,8 +284,7 @@ class BoundaryConstLaplace : public BoundaryOp {
 /// Vector boundary condition Div(B) = 0, Curl(B) = 0
 class BoundaryDivCurl : public BoundaryOp {
  public:
-  BoundaryDivCurl() {}
-  BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
+  using BoundaryOp::BoundaryOp;
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
       const std::map<std::string, std::string> &keywords) override;
 
