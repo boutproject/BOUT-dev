@@ -163,7 +163,7 @@ void Mesh::derivs_init(Options *options) {
  * Helper routines
  *******************************************************************************/
 
-const STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) {
+STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
           (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
@@ -175,7 +175,7 @@ const STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, cons
   }
 }
 
-const STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) {
+STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
   ASSERT1(vloc == inloc);
   return getStagger(inloc, outloc, allowedStaggerLoc);
 }
