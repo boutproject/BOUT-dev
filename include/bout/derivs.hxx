@@ -6,8 +6,10 @@
 
 #include <bout/assert.hxx>
 #include <bout/deriv_store.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
 #include <bout_types.hxx>
+#include <msg_stack.hxx>
 #include <stencils.hxx>
 
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
@@ -38,6 +40,8 @@ template <typename FF> class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, typename T>
   void standard(const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
+    throw BoutException("TESTING ERROR TRACE");
     ASSERT2(meta.derivType == DERIV::Standard ||
             meta.derivType == DERIV::StandardSecond ||
             meta.derivType == DERIV::StandardFourth)
@@ -51,6 +55,7 @@ public:
 
   template <DIRECTION direction, STAGGER stagger, typename T>
   void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
 
@@ -75,31 +80,31 @@ public:
   metaData meta = func.meta;
 };
 
-#define DEFINE_STANDARD_DERIV(name, key, nGuards, type)                                  \
-  struct name {                                                                          \
-    BoutReal operator()(const stencil &f) const;                                         \
-    metaData meta = {key, nGuards, type};                                                \
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const {};                  \
-    BoutReal operator()(const stencil &v, const stencil &f) const {};                    \
-  };                                                                                     \
+#define DEFINE_STANDARD_DERIV(name, key, nGuards, type)			\
+  struct name {								\
+    BoutReal operator()(const stencil &f) const;			\
+    metaData meta = {key, nGuards, type};				\
+    BoutReal operator()(const BoutReal &vc, const stencil &f) const {return BoutNaN;}; \
+    BoutReal operator()(const stencil &v, const stencil &f) const {return BoutNaN;};	\
+  };									\
   BoutReal name::operator()(const stencil &f) const
 
-#define DEFINE_UPWIND_DERIV(name, key, nGuards, type)                                    \
-  struct name {                                                                          \
-    BoutReal operator()(const stencil &f) const {};                                      \
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const;                     \
-    BoutReal operator()(const stencil &v, const stencil &f) const {};                    \
-    metaData meta = {key, nGuards, type};                                                \
-  };                                                                                     \
+#define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
+  struct name {								\
+    BoutReal operator()(const stencil &f) const {return BoutNaN;};	\
+    BoutReal operator()(const BoutReal &vc, const stencil &f) const;	\
+    BoutReal operator()(const stencil &v, const stencil &f) const {return BoutNaN;}; \
+    metaData meta = {key, nGuards, type};				\
+  };									\
   BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
 
-#define DEFINE_FLUX_DERIV(name, key, nGuards, type)                                      \
-  struct name {                                                                          \
-    BoutReal operator()(const stencil &f) const {};                                      \
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const {};                  \
-    BoutReal operator()(const stencil &v, const stencil &f) const;                       \
-    metaData meta = {key, nGuards, type};                                                \
-  };                                                                                     \
+#define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
+  struct name {								\
+    BoutReal operator()(const stencil &f) const {return BoutNaN;};	\
+    BoutReal operator()(const BoutReal &vc, const stencil &f) const {return BoutNaN;}; \
+    BoutReal operator()(const stencil &v, const stencil &f) const;	\
+    metaData meta = {key, nGuards, type};				\
+  };									\
   BoutReal name::operator()(const stencil &v, const stencil &f) const
 
 #define DEFINE_STANDARD_DERIV_STAGGERED(name, key, nGuards, type)                        \
@@ -426,6 +431,7 @@ DEFINE_FLUX_DERIV_STAGGERED(FDDX_U1_stag, "U1", 1, DERIV::Flux) {
 struct registerMethod {
   template <typename Direction, typename Stagger, typename FieldType, typename Method>
   void operator()(Direction, Stagger, FieldType, Method) {
+    TRACE("%s", __thefunc__);
     using namespace std::placeholders;
 
     auto derivativeRegister = DerivativeStore<FieldType>{}.getInstance();
