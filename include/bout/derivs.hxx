@@ -41,7 +41,6 @@ public:
   template <DIRECTION direction, STAGGER stagger, typename T>
   void standard(const T &var, T &result, const REGION region) const {
     TRACE("%s",__thefunc__);
-    throw BoutException("TESTING ERROR TRACE");
     ASSERT2(meta.derivType == DERIV::Standard ||
             meta.derivType == DERIV::StandardSecond ||
             meta.derivType == DERIV::StandardFourth)
