@@ -47,7 +47,7 @@ public:
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
 
     BOUT_FOR(i, var.getRegion(region)) {
-      result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
+      result[i] = apply(populateStencil<direction, stagger, 1>(var, i));
     }
     return;
   }
