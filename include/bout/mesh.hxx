@@ -528,7 +528,7 @@ class Mesh {
                           DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
 
   template<DIRECTION direction>
-  const int getNguard();
+  int getNguard() const;
 
   /// Derivative functions of a single field stencil
   typedef BoutReal (*deriv_func)(const stencil &);
@@ -660,10 +660,10 @@ class Mesh {
   void derivs_init(Options* options);
 
   template<DIRECTION direction>
-  const CELL_LOC getAllowedStaggerLoc();
+  CELL_LOC getAllowedStaggerLoc() const;
 
   template<DIRECTION direction>
-  const int getNpoints();
+  int getNpoints() const;
   
 private:
   /// Allocates default Coordinates objects
@@ -880,7 +880,7 @@ const T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD m
  *******************************************************************************/
 
 template<DIRECTION direction>
-const CELL_LOC Mesh::getAllowedStaggerLoc() {
+CELL_LOC Mesh::getAllowedStaggerLoc() const {
   switch(direction) {
   case(DIRECTION::X):
     return CELL_XLOW;
@@ -895,7 +895,7 @@ const CELL_LOC Mesh::getAllowedStaggerLoc() {
 
 
 template<DIRECTION direction>
-const int Mesh::getNpoints() {
+int Mesh::getNpoints() const {
   switch(direction) {
   case(DIRECTION::X):
     return LocalNx;
@@ -909,7 +909,7 @@ const int Mesh::getNpoints() {
 };
 
 template<DIRECTION direction>
-const int Mesh::getNguard() {
+int Mesh::getNguard() const {
   switch(direction) {
   case(DIRECTION::X):
     return xstart;
