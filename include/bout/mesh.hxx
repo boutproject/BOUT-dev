@@ -451,8 +451,8 @@ class Mesh {
 
   BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
 
-  const STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc);
-  const STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc);  
+  STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc) const;
+  STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc) const;  
 
   template<typename T, DIRECTION direction, int order>
   const T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region);
