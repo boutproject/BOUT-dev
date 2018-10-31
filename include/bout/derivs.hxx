@@ -21,10 +21,10 @@ struct metaData{
 /// Provide an easy way to report a Region's statistics
 inline std::ostream &operator<<(std::ostream &out, const metaData &meta){
   out<<"key : "<<meta.key;
-  out<<", ";    
+  out<<", ";
   out<<"nGuards : "<<meta.nGuards;
   out<<", ";
-  out<<"type : "<<DERIV_STRING(meta.derivType);    
+  out<<"type : "<<DERIV_STRING(meta.derivType);
   return out;
 }
 
@@ -41,8 +41,8 @@ public:
   void standard(const T &var, T &result, const REGION region) const {
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
-    
-    BOUT_FOR(i, var.getRegion(region)) {    
+
+    BOUT_FOR(i, var.getRegion(region)) {
       result[i] = apply(populateStencil<direction, STAGGER::None, 1>(var, i));
     }
     return;
@@ -50,17 +50,17 @@ public:
 
   template<DIRECTION direction, STAGGER stagger, typename T>
   void upwindOrFlux(const T& vel, const T &var, T &result, const REGION region) const {
-    ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)    
+    ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
-    
+
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
-      BOUT_FOR(i, var.getRegion(region)) {    
+      BOUT_FOR(i, var.getRegion(region)) {
 	result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
 			  populateStencil<direction, STAGGER::None, 1>(var, i)
 			  );
       }
     } else {
-      BOUT_FOR(i, var.getRegion(region)) {    
+      BOUT_FOR(i, var.getRegion(region)) {
 	result[i] = apply(vel[i],
 			  populateStencil<direction, STAGGER::None, 1>(var, i)
 			  );
@@ -101,7 +101,7 @@ public:
     metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
-  
+
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &f) const {};			\
@@ -110,7 +110,7 @@ public:
     metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const stencil &v, const stencil &f) const
-  
+
 #define DEFINE_STANDARD_DERIV_STAGGERED(name, key, nGuards, type) DEFINE_STANDARD_DERIV(name, key, nGuards, type)
 #define DEFINE_UPWIND_DERIV_STAGGERED(name, key, nGuards, type) DEFINE_FLUX_DERIV(name, key, nGuards, type)
 #define DEFINE_FLUX_DERIV_STAGGERED(name, key, nGuards, type) DEFINE_FLUX_DERIV(name, key, nGuards, type)
@@ -196,18 +196,18 @@ DEFINE_UPWIND_DERIV(VDDX_U1, "U1", 1, DERIV::Upwind) { //No vec
   // Existing form doesn't vectorise due to branching
   return vc >= 0.0 ? vc * (f.c - f.m) : vc * (f.p - f.c);
   // Alternative form would but may involve more operations
-  const auto vSplit = vUpDown(vc); 
+  const auto vSplit = vUpDown(vc);
   return (std::get<0>(vSplit)*(f.p-f.c)
 	  + std::get<1>(vSplit) * (f.c-f.m));
 }
 
 /// upwind, 2nd order
 DEFINE_UPWIND_DERIV(VDDX_U2, "U2", 2, DERIV::Upwind) { //No vec
-  // Existing form doesn't vectorise due to branching  
+  // Existing form doesn't vectorise due to branching
   return vc >= 0.0 ? vc * (1.5 * f.c - 2.0 * f.m + 0.5 * f.mm)
     : vc * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c);
   // Alternative form would but may involve more operations
-  const auto vSplit = vUpDown(vc); 
+  const auto vSplit = vUpDown(vc);
   return (std::get<0>(vSplit) * (1.5 * f.c - 2.0 * f.m + 0.5 * f.mm)
 	  + std::get<1>(vSplit) * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c));
 
@@ -222,19 +222,19 @@ DEFINE_UPWIND_DERIV(VDDX_U3, "U3", 2, DERIV::Upwind) { //No vec
   const auto vSplit = vUpDown(vc);
   return (std::get<0>(vSplit) * (4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)
 	  + std::get<1>(vSplit)*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c))/12.;
-  
+
 }
 
 /// 3rd-order WENO scheme
 DEFINE_UPWIND_DERIV(VDDX_WENO3, "W3", 2, DERIV::Upwind) { //No vec
   BoutReal deriv, w, r;
   // Existing form doesn't vectorise due to branching
-  
+
   if (vc > 0.0) {
     // Left-biased stencil
 
     r = (WENO_SMALL + SQ(f.c - 2.0 * f.m + f.mm)) /
-        (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
+	(WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
 
     deriv = (-f.mm + 3. * f.m - 3. * f.c + f.p);
 
@@ -242,14 +242,14 @@ DEFINE_UPWIND_DERIV(VDDX_WENO3, "W3", 2, DERIV::Upwind) { //No vec
     // Right-biased
 
     r = (WENO_SMALL + SQ(f.pp - 2.0 * f.p + f.c)) /
-        (WENO_SMALL + SQ(f.p  - 2.0 * f.c + f.m));
+	(WENO_SMALL + SQ(f.p  - 2.0 * f.c + f.m));
 
     deriv = (-f.m + 3. * f.c - 3. * f.p + f.pp);
   }
-  
+
   w = 1.0 / (1.0 + 2.0 * r * r);
   deriv = 0.5 * ((f.p - f.m) - w * deriv);
-  
+
   return vc * deriv;
 }
 
@@ -324,7 +324,7 @@ DEFINE_FLUX_DERIV(FDDX_C4, "C4", 2, DERIV::Flux) { return (8. * v.p * f.p - 8. *
 /// Map Centre -> Low or Low -> Centre
 ///
 /// These expect the output grid cell to be at a different location to the input
-/// 
+///
 /// The stencil no longer has a value in 'C' (centre)
 /// instead, points are shifted as follows:
 ///
@@ -340,14 +340,14 @@ DEFINE_FLUX_DERIV(FDDX_C4, "C4", 2, DERIV::Flux) { return (8. * v.p * f.p - 8. *
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Standard methods -- first order
-////////////////////////////////////////////////////////////////////////////////  
+////////////////////////////////////////////////////////////////////////////////
 DEFINE_STANDARD_DERIV_STAGGERED(DDX_C2_stag, "C2", 1, DERIV::Standard) { return f.p - f.m; }
 
 DEFINE_STANDARD_DERIV_STAGGERED(DDX_C4_stag, "C4", 2, DERIV::Standard) { return (27. * (f.p - f.m) - (f.pp - f.mm)) / 24.; }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Standard methods -- second order
-////////////////////////////////////////////////////////////////////////////////  
+////////////////////////////////////////////////////////////////////////////////
 DEFINE_STANDARD_DERIV_STAGGERED(D2DX2_C2_stag, "C2", 2, DERIV::StandardSecond) { return (f.pp + f.mm - f.p - f.m) / 2.; }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -391,7 +391,7 @@ DEFINE_UPWIND_DERIV_STAGGERED(VDDX_C4_stag, "C4", 2, DERIV::Upwind) {
   // Result is needed at location of f: interpolate v to f's location and take an
   // unstaggered derivative of f
   return (9. * (v.m + v.p) - v.mm - v.pp) / 16. * (8. * f.p - 8. * f.m + f.mm - f.pp) /
-         12.;
+	 12.;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -416,7 +416,7 @@ struct registerMethod {
   template<typename Direction, typename Stagger, typename FieldType, typename Method>
   void operator()(Direction, Stagger, FieldType, Method) {
     using namespace std::placeholders;
-    
+
     auto derivativeRegister = DerivativeStore<FieldType>{}.getInstance();
     switch(Method{}.meta.derivType){
     case(DERIV::Standard):
@@ -472,11 +472,11 @@ struct registerMethod {
 #define REGISTER_STAGGERED_DERIVATIVE(name)				\
   namespace {produceCombinations<					\
 		       Set<e(DIRECTION,X), e(DIRECTION,Y), e(DIRECTION,Z)>, \
-         	       Set<e(STAGGER,C2L), e(STAGGER,L2C)>, \
+		       Set<e(STAGGER,C2L), e(STAGGER,L2C)>, \
 		       Set<Field3D, Field2D>,				\
 		       Set<DerivativeType<name>>\
 									> reg(registerMethod{});}
-  
+
 produceCombinations<
   Set<e(DIRECTION,X), e(DIRECTION,Y), e(DIRECTION,Z)>,
   Set<e(STAGGER,None)>,
@@ -488,22 +488,22 @@ produceCombinations<
     DerivativeType<DDX_CWENO2>,
     DerivativeType<DDX_S2>,
     DerivativeType<DDX_CWENO3>,
-    // Standard 2nd order    
+    // Standard 2nd order
     DerivativeType<D2DX2_C2>,
     DerivativeType<D2DX2_C4>,
-    // Standard 4th order    
+    // Standard 4th order
     DerivativeType<D4DX4_C2>,
     // Upwind
     DerivativeType<VDDX_C2>,
     DerivativeType<VDDX_C4>,
     DerivativeType<VDDX_U1>,
     DerivativeType<VDDX_U2>,
-    DerivativeType<VDDX_U3>,        
+    DerivativeType<VDDX_U3>,
     DerivativeType<VDDX_WENO3>,
     // Flux
     DerivativeType<FDDX_U1>,
     DerivativeType<FDDX_C2>,
-    DerivativeType<FDDX_C4>    
+    DerivativeType<FDDX_C4>
     >
   > registerDerivatives(registerMethod{});
 
@@ -515,7 +515,7 @@ produceCombinations<
     // Standard
     DerivativeType<DDX_C2_stag>,
     DerivativeType<DDX_C4_stag>,
-    // Standard 2nd order    
+    // Standard 2nd order
     DerivativeType<D2DX2_C2_stag>,
     // Upwind
     DerivativeType<VDDX_C2_stag>,

@@ -21,8 +21,8 @@ struct DerivativeStore{
   using upwindFunc   = std::function<void(const FieldType&, const FieldType&,
 					  FieldType&, const REGION)>;
   using fluxFunc     = std::function<void(const FieldType&, const FieldType&,
-					  FieldType&, const REGION)>;      
-  
+					  FieldType&, const REGION)>;
+
   // Singleton method
   static DerivativeStore &getInstance() {
     static DerivativeStore instance;
@@ -33,7 +33,7 @@ struct DerivativeStore{
   /// depends on the derivType input.
   void registerDerivative(const standardFunc func, const DERIV derivType, const DIRECTION direction, const STAGGER stagger, const std::string methodName) {
     const auto key = getKey(direction, stagger, methodName);
-    
+
     switch(derivType) {
     case(DERIV::Standard) :
       getInstance().standard[key] = func;
@@ -74,15 +74,15 @@ struct DerivativeStore{
   };
   template<typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func) {
-    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);    
+    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);
   };
 
   std::string getMethodName(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     return name + " ("+DIRECTION_STRING(direction)+", "+STAGGER_STRING(stagger)+")";
   };
-  
-  /// Routines to return a specific differential operator. Note we have to have a separate routine for different 
-  /// methods as they have different return types. As such we choose to use a different name for each of the 
+
+  /// Routines to return a specific differential operator. Note we have to have a separate routine for different
+  /// methods as they have different return types. As such we choose to use a different name for each of the
   /// method-classes so everything is consistently treated
   standardFunc getStandardDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
@@ -99,13 +99,13 @@ struct DerivativeStore{
     if(resultOfFind != instance.standardSecond.end()) return resultOfFind->second;
     throw BoutException("Couldn't find requested method %s in map for standardSecond derivative.", getMethodName(name, direction, stagger));
   };
-  
+
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standardFourth.find(key);
     if(resultOfFind != instance.standardFourth.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for standardFourth derivative.", getMethodName(name, direction, stagger));    
+    throw BoutException("Couldn't find requested method %s in map for standardFourth derivative.", getMethodName(name, direction, stagger));
   };
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
@@ -119,17 +119,17 @@ struct DerivativeStore{
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.flux.find(key);
     if(resultOfFind != instance.flux.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for flux derivative.", getMethodName(name, direction, stagger));    
+    throw BoutException("Couldn't find requested method %s in map for flux derivative.", getMethodName(name, direction, stagger));
   };
-  
+
 private:
   std::map<std::size_t, standardFunc> standard;
   std::map<std::size_t, standardFunc> standardSecond;
-  std::map<std::size_t, standardFunc> standardFourth;    
+  std::map<std::size_t, standardFunc> standardFourth;
   std::map<std::size_t, upwindFunc> upwind;
-  std::map<std::size_t, fluxFunc> flux;  
+  std::map<std::size_t, fluxFunc> flux;
 
-  
+
   /// Provides a routine to produce a unique key given information about the specific type
   /// required. This is templated so requires compile-time information. Need to also supply
   /// a non-templated version to account for run-time choices

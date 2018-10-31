@@ -8,12 +8,12 @@
 template<typename... Ts>
 struct Set{};
 
-/// Define a struct (functor) that we use to build up the final 
-/// collection of template values. Each time we create one of these 
+/// Define a struct (functor) that we use to build up the final
+/// collection of template values. Each time we create one of these
 /// objects we provide one more type to the templatePack. We may call
 /// the operator() method by providing all the required template parameters
-/// for whatever the storedFunc is at that point -- once we have built a 
-/// complete templatePack we don't need to specify any of these template 
+/// for whatever the storedFunc is at that point -- once we have built a
+/// complete templatePack we don't need to specify any of these template
 /// parameters as they can be deduced/inferred.
 template<typename currentFunction, typename currentType>
 struct DeferredFunction {
@@ -101,7 +101,7 @@ void addItemToDeferredFunction(theFunction func, item, nextSet, otherSets...) {
 //--------------------------------------------------------
 
 /// Terminal routine -- the current Set is empty
-/// so nothing left to do. 
+/// so nothing left to do.
 template<typename... Sets, typename theFunction>
 void processSet(theFunction func, Set<>, Sets...){};
 
