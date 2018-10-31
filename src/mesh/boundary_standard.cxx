@@ -1432,50 +1432,6 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &args) {
-  BoundaryWidth* result = new BoundaryWidth(operation, width);
-  
-  if (args.empty()) {
-    output << "WARNING: BoundaryWidth expected 1 argument\n";
-  }else {
-    // First argument should be the rate
-    int val = stringToInt(args.front());
-    result->width = val;
-  }
-  
-  return result;
-}
-
-void BoundaryWidth::apply(Field2D &f, BoutReal t) {
-  // Pointer to boundary region shared between all BoundaryOp, BoundaryModifiers
-  int oldwid = bndry->width;
-  bndry->width = width;
-  op->apply(f, t);
-  bndry->width = oldwid;
-}
-
-void BoundaryWidth::apply(Field3D &f, BoutReal t) {
-  int oldwid = bndry->width;
-  bndry->width = width;
-  op->apply(f, t);
-  bndry->width = oldwid;
-}
-  
-void BoundaryWidth::apply_ddt(Field2D &f) {
-  int oldwid = bndry->width;
-  bndry->width = width;
-  op->apply_ddt(f);
-  bndry->width = oldwid;
-}
-  
-void BoundaryWidth::apply_ddt(Field3D &f) {
-  int oldwid = bndry->width;
-  bndry->width = width;
-  op->apply_ddt(f);
-  bndry->width = oldwid;
-}
-
-///////////////////////////////////////////////////////////////
 BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
   

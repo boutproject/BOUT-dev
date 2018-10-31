@@ -22,9 +22,10 @@ using std::list;
 /// An operation on a boundary
 class BoundaryOp {
 public:
-  BoundaryOp()  : bndry(nullptr), apply_to_ddt(false), gen(nullptr) {}
-  BoundaryOp(BoundaryRegion *region, int width_in = 0)
-    : bndry(region), apply_to_ddt(false), gen(nullptr),
+  BoundaryOp(bool apply_ddt = false) : bndry(nullptr), apply_to_ddt(apply_ddt),
+                                       gen(nullptr), width(0) {}
+  BoundaryOp(BoundaryRegion *region, int width_in = 0, bool apply_ddt = false)
+    : bndry(region), apply_to_ddt(apply_ddt), gen(nullptr),
       width(width_in ? width_in : region->width) {}
   BoundaryOp(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g, int width_in = 0)
     : bndry(region), apply_to_ddt(false), gen(std::move(g)),
@@ -70,7 +71,7 @@ public:
   }
 
   BoundaryRegion *bndry;
-  bool apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
+  const bool apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
 
 protected:
   std::shared_ptr<FieldGenerator> gen; // Generator
@@ -119,8 +120,9 @@ private:
 
 class BoundaryModifier : public BoundaryOp {
 public:
-  BoundaryModifier() : op(nullptr) {}
-  BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
+  BoundaryModifier(bool apply_ddt = false) : BoundaryOp(apply_ddt), op(nullptr) {}
+  BoundaryModifier(BoundaryOp *operation, bool apply_ddt = false)
+    : BoundaryOp(operation->bndry, 0, apply_ddt), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
   virtual BoundaryOpPar* cloneMod(BoundaryOpPar *UNUSED(op), const list<string> &UNUSED(args)) {
     throw BoutException("BoundaryModifier should not be called on a BoundaryOpPar.");

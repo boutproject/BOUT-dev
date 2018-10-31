@@ -379,8 +379,8 @@ public:
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
  public:
-  BoundaryRelax() : r(10.) {apply_to_ddt = true;}  // Set default rate
-  BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate); apply_to_ddt = true;}
+  BoundaryRelax() : BoundaryModifier(true), r(10.) {}  // Set default rate
+  BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation, true) { r = fabs(rate); }
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
 
   using BoundaryModifier::apply;
@@ -399,15 +399,16 @@ class BoundaryWidth : public BoundaryModifier {
 public:
   BoundaryWidth() : width(2) {}
   BoundaryWidth(BoundaryOp *operation, int wid) : BoundaryModifier(operation), width(wid) {}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) override;
+  BoundaryOp* cloneMod(BoundaryOp *UNUSED(op), const list<string> &UNUSED(args)) override {
+    throw BoutException("WARNING: BoundaryWidth modifier is deprecated, use 'width' keyword to boundary conditions instead");
+    return new BoundaryWidth(nullptr, 0);
+  }
 
-  using BoundaryModifier::apply;
-  void apply(Field2D &f, BoutReal t) override;
-  void apply(Field3D &f, BoutReal t) override;
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override {};
+  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) override {};
 
-  using BoundaryModifier::apply_ddt;
-  void apply_ddt(Field2D &f) override;
-  void apply_ddt(Field3D &f) override;
+  void apply_ddt(Field2D &UNUSED(f)) override {};
+  void apply_ddt(Field3D &UNUSED(f)) override {};
 private:
   int width;
 };

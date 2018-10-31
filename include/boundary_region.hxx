@@ -26,16 +26,17 @@ enum BndryLoc {BNDRY_XIN=1,
 class BoundaryRegion {
 public:
   BoundaryRegion() = delete;
-  BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
-      : bx(xd), by(yd), width(2), localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {
-        ASSERT1(!(bx == 0 && by == 0) && !(bx != 0 && by != 0));
-      }
+  BoundaryRegion(std::string name, int xd, int yd, BndryLoc loc, int wid, Mesh *passmesh = nullptr)
+    : bx(xd), by(yd), width(wid), localmesh(passmesh ? passmesh : mesh),
+    label(std::move(name)), location(loc) {
+      ASSERT1(!(bx == 0 && by == 0) && !(bx != 0 && by != 0));
+    }
   virtual ~BoundaryRegion() {}
 
   int x,y; ///< Indices of the point in the boundary
   const int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
 
-  int width; ///< Width of the boundary
+  const int width; ///< Width of the boundary
 
   virtual void next1d() = 0; ///< Loop over the innermost elements
   virtual void nextX() = 0;  ///< Just loop over X
@@ -43,7 +44,7 @@ public:
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
-  string label; ///< Label for this boundary region
+  const string label; ///< Label for this boundary region
 
   BndryLoc location;         ///< Which side of the domain is it on?
 
