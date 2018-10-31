@@ -96,18 +96,20 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       if (pop == nullptr)
         throw BoutException("Could not find parallel boundary condition '%s'",  name.c_str());
 
-      // Clone the boundary operation, passing the region to operate over and an empty args list
+      // Clone the boundary operation, passing the region to operate over,
+      // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(static_cast<BoundaryRegionPar*>(region), args);
+      return pop->clone(static_cast<BoundaryRegionPar*>(region), args, {});
     } else {
       // Perpendicular boundary
       BoundaryOp *op = findBoundaryOp(trim(name));
       if (op == nullptr)
         throw BoutException("Could not find boundary condition '%s'",  name.c_str());
 
-      // Clone the boundary operation, passing the region to operate over and an empty args list
+      // Clone the boundary operation, passing the region to operate over,
+      // an empty args list and empty keyword map
       list<string> args;
-      return op->clone(static_cast<BoundaryRegion*>(region), args);
+      return op->clone(static_cast<BoundaryRegion*>(region), args, {});
     }
   }
   // Contains a bracket. Find the last bracket and remove
@@ -141,12 +143,12 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       break;
     case ',': {
       if (level == 0) {
-        string s = arg.substr(start, i);
+        string s = arg.substr(start, i-start);
 
         // Check if s contains '=', and if so treat as a keyword
         auto poseq = s.find('=');
         if (poseq != string::npos) {
-          keywords[trim(s.substr(0, poseq))] = s.substr(poseq + 1);
+          keywords[trim(s.substr(0, poseq))] = trim(s.substr(poseq + 1));
         } else {
           // No '=', so a positional argument
           arglist.push_back(trim(s));
@@ -157,7 +159,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     }
     };
   }
-  string s = arg.substr(start, arg.length());
+  string s = arg.substr(start);
   auto poseq = s.find('=');
   if (poseq != string::npos) {
     keywords[trim(s.substr(0,poseq))] = trim(s.substr(poseq+1));
