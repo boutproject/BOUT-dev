@@ -20,8 +20,8 @@ public:
   std::list<std::string> args;
   std::map<std::string, std::string> keywords;
 
-  void apply(Field2D &UNUSED(f)) override {}
-  void apply(Field3D &UNUSED(f)) override {}
+  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override {}
+  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) override {}
 };
 
 TEST(BoundaryFactoryTests, IsSingleton) {
@@ -41,7 +41,7 @@ TEST(BoundaryFactoryTests, CreateTestBoundary) {
 
   // Check no brackets
   
-  auto *boundary = fac->create("testboundary", &region);
+  auto *boundary = fac->create<BoundaryRegion>("testboundary", &region);
 
   EXPECT_TRUE( boundary != nullptr );
   
@@ -51,7 +51,7 @@ TEST(BoundaryFactoryTests, CreateTestBoundary) {
   
   // Positional arguments
 
-  boundary = fac->create("testboundary(a, 1)", &region);
+  boundary = fac->create<BoundaryRegion>("testboundary(a, 1)", &region);
   EXPECT_TRUE( boundary != nullptr );
 
   TestBoundary *tb = dynamic_cast<TestBoundary*>(boundary);
@@ -64,7 +64,7 @@ TEST(BoundaryFactoryTests, CreateTestBoundary) {
   delete boundary;
 
   // Test keywords
-  boundary = fac->create("testboundary(key=1, b=value)", &region);
+  boundary = fac->create<BoundaryRegion>("testboundary(key=1, b=value)", &region);
   EXPECT_TRUE( boundary != nullptr );
 
   tb = dynamic_cast<TestBoundary*>(boundary);
@@ -77,7 +77,7 @@ TEST(BoundaryFactoryTests, CreateTestBoundary) {
   delete boundary;
 
   // Mix of positional args and keywords
-  boundary = fac->create("testboundary(0.23, key =1+2 , something(),b=value ,a + sin(1.2))", &region);
+  boundary = fac->create<BoundaryRegion>("testboundary(0.23, key =1+2 , something(),b=value ,a + sin(1.2))", &region);
   EXPECT_TRUE( boundary != nullptr );
 
   tb = dynamic_cast<TestBoundary*>(boundary);
