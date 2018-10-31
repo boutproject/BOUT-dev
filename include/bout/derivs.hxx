@@ -11,6 +11,7 @@
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
+#include <unuused.hxx>
 
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 
@@ -83,24 +84,28 @@ public:
   struct name {								\
     BoutReal operator()(const stencil &f) const;			\
     metaData meta = {key, nGuards, type};				\
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const {return BoutNaN;}; \
-    BoutReal operator()(const stencil &v, const stencil &f) const {return BoutNaN;};	\
+    BoutReal operator()(const BoutReal &UNUSED(vc),\
+			const stencil &UNUSED(f)) const {return BoutNaN;}; \
+    BoutReal operator()(const stencil &UNUSED(v),\
+			const stencil &UNUSED(f)) const {return BoutNaN;}; \
   };									\
   BoutReal name::operator()(const stencil &f) const
 
 #define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
   struct name {								\
-    BoutReal operator()(const stencil &f) const {return BoutNaN;};	\
+    BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const BoutReal &vc, const stencil &f) const;	\
-    BoutReal operator()(const stencil &v, const stencil &f) const {return BoutNaN;}; \
+    BoutReal operator()(const stencil &UNUSED(v),\
+			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
 
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
   struct name {								\
-    BoutReal operator()(const stencil &f) const {return BoutNaN;};	\
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const {return BoutNaN;}; \
+    BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
+    BoutReal operator()(const BoutReal &UNUSED(vc),\
+			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &v, const stencil &f) const;	\
     metaData meta = {key, nGuards, type};				\
   };									\
