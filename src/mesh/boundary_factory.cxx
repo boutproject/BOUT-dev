@@ -5,6 +5,7 @@
 
 #include <list>
 #include <string>
+#include <map>
 using std::list;
 using std::string;
 
@@ -87,7 +88,7 @@ BoundaryRegionOp<T>* BoundaryFactory::create(const string &name, T* region) {
 
   // Search for a string of the form: modifier(operation)
   auto pos = name.find('(');
-  if(pos == string::npos) {
+  if (pos == string::npos) {
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
 
@@ -99,9 +100,10 @@ BoundaryRegionOp<T>* BoundaryFactory::create(const string &name, T* region) {
       throw BoutException("Could not find boundary condition '%s'",  name.c_str());
     }
 
-    // Clone the boundary operation, passing the region to operate over and an empty args list
+    // Clone the boundary operation, passing the region to operate over,
+    // an empty args list and empty keyword map
     list<string> args;
-    return op->clone(region, args);
+    return op->clone(region, args, {});
   }
 
   // Contains a bracket. Find the last bracket and remove
@@ -118,10 +120,11 @@ BoundaryRegionOp<T>* BoundaryFactory::create(const string &name, T* region) {
   // NOTE: Commas could be part of sub-expressions, so
   //       need to take account of brackets
   list<string> arglist;
+  std::map<std::string, std::string> keywords;
   int level = 0;
   int start = 0;
-  for(string::size_type i = 0;i<arg.length();i++) {
-    switch(arg[i]) {
+  for (string::size_type i = 0; i < arg.length(); i++) {
+    switch (arg[i]) {
     case '(':
     case '[':
     case '<':
@@ -133,25 +136,31 @@ BoundaryRegionOp<T>* BoundaryFactory::create(const string &name, T* region) {
       level--;
       break;
     case ',': {
-      if(level == 0) {
-        string s = arg.substr(start, i);
-        arglist.push_back(trim(s));
-        start = i+1;
+      if (level == 0) {
+        string s = arg.substr(start, i-start);
+
+        // Check if s contains '=', and if so treat as a keyword
+        auto poseq = s.find('=');
+        if (poseq != string::npos) {
+          keywords[trim(s.substr(0, poseq))] = trim(s.substr(poseq + 1));
+        } else {
+          // No '=', so a positional argument
+          arglist.push_back(trim(s));
+        }
+        start = i + 1;
       }
       break;
     }
     };
   }
-  string s = arg.substr(start, arg.length());
-  arglist.push_back(trim(s));
-
-  /*
-    list<string> arglist = strsplit(arg, ',');
-    for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
-    // Trim each argument
-    (*it) = trim(*it);
-    }
-  */
+  string s = arg.substr(start);
+  auto poseq = s.find('=');
+  if (poseq != string::npos) {
+    keywords[trim(s.substr(0,poseq))] = trim(s.substr(poseq+1));
+  } else {
+    // No '=', so a positional argument
+    arglist.push_back(trim(s));
+  }
 
   if (std::is_same<BoundaryRegionOp<T>, BoundaryOp>::value) {
     // Test if func is a modifier
@@ -173,14 +182,14 @@ BoundaryRegionOp<T>* BoundaryFactory::create(const string &name, T* region) {
     BoundaryRegionOp<T> *op = findBoundaryOp< BoundaryRegionOp<T> >(trim(func));
     if (op != nullptr) {
       // An operation with arguments
-      return op->clone(region, arglist);
+      return op->clone(region, arglist, keywords);
     }
   } else {
     // Parallel boundary
     BoundaryRegionOp<T> *pop = findBoundaryOp< BoundaryRegionOp<T> >(trim(func));
     if (pop != nullptr) {
       // An operation with arguments
-      return pop->clone(region, arglist);
+      return pop->clone(region, arglist, keywords);
     }
   }
 

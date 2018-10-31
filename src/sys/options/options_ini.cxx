@@ -153,8 +153,7 @@ string OptionINI::getNextLine(ifstream &fin) {
   return line;
 }
 
-void OptionINI::parse(const string &buffer, string &key, string &value)
-{
+void OptionINI::parse(const string &buffer, string &key, string &value) {
    // A key/value pair, separated by a '='
 
   size_t startpos = buffer.find_first_of('=');
@@ -169,8 +168,14 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
 
   key = trim(buffer.substr(0, startpos), " \t\r\n\"");
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
+  
+  if (key.empty()) {
+    throw BoutException("\tEmpty key\n\tLine: %s", buffer.c_str());
+  }
 
-  if(key.empty()) throw BoutException("\tEmpty key\n\tLine: %s", buffer.c_str());
+  if (key.find(':') != std::string::npos) {
+    throw BoutException("\tKey must not contain ':' character\n\tLine: %s", buffer.c_str());
+  }
 }
 
 void OptionINI::writeSection(const Options *options, std::ofstream &fout) {

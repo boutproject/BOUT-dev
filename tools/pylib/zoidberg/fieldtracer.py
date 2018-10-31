@@ -54,12 +54,11 @@ class FieldTracer(object):
 
         """
 
-        if not isinstance(x_values, np.ndarray):
-            x_values = np.array(x_values)
-        if not isinstance(y_values, np.ndarray):
-            y_values = np.array(y_values)
-        if not isinstance(z_values, np.ndarray):
-            z_values = np.array(z_values)
+        # Ensure all inputs are NumPy arrays
+        x_values = np.atleast_1d(x_values)
+        y_values = np.atleast_1d(y_values)
+        z_values = np.atleast_1d(z_values)
+
         if len(y_values) < 2:
             raise ValueError("There must be at least two elements in y_values")
         if len(y_values.shape) > 1:
@@ -203,9 +202,9 @@ class FieldTracerReversible(object):
         nsteps = int(nsteps)
 
         # Ensure all inputs are NumPy arrays
-        x_values = np.asfarray(x_values)
-        y_values = np.asfarray(y_values)
-        z_values = np.asfarray(z_values)
+        x_values = np.atleast_1d(x_values)
+        y_values = np.atleast_1d(y_values)
+        z_values = np.atleast_1d(z_values)
         
         if len(y_values) < 2:
             raise ValueError("There must be at least two elements in y_values")

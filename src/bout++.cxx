@@ -66,7 +66,7 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
-#include <time.h>
+#include <ctime>
 
 #include <strings.h>
 #include <string>
@@ -401,6 +401,18 @@ int BoutInitialise(int &argc, char **&argv) {
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
 
+    // Put some run information in the options.
+    // This is mainly so it can be easily read in post-processing
+    auto &runinfo = Options::root()["run"];
+      
+    // Note: have to force value, since may already be set if a previously
+    // output BOUT.settings file was used as input
+    runinfo["version"].force(BOUT_VERSION_STRING, "");
+    runinfo["revision"].force(REV, "");
+    
+    time_t start_time = time(nullptr);
+    runinfo["started"].force(ctime(&start_time), "");
+    
     // Save settings
     if (BoutComm::rank() == 0) {
       reader->write(options, "%s/%s", data_dir, set_file);
@@ -454,6 +466,7 @@ int BoutInitialise(int &argc, char **&argv) {
     output_error.write("Error encountered during initialisation: %s\n", e.what());
     throw;
   }
+  
   return 0;
 }
 
@@ -479,6 +492,10 @@ int BoutFinalise() {
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, "data");
 
+      // Set the end time in the settings file
+      time_t end_time = time(nullptr);
+      Options::root()["run"]["finished"].force(ctime(&end_time), "");
+      
       OptionsReader *reader = OptionsReader::getInstance();
       std::string settingsfile;
       OPTION(Options::getRoot(), settingsfile, "");

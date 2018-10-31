@@ -31,6 +31,15 @@ public:
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const list<string> &UNUSED(args)) {return nullptr; }
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return nullptr; }
 
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args, const std::map<std::string, std::string>& keywords) {
+    // If not implemented, check if keywords are passed, then call two-argument version
+    if (!keywords.empty()) {
+      // Given keywords, but not using
+      throw BoutException("Keywords ignored in parallel boundary : %s", keywords.begin()->first.c_str());
+    }
+    return clone(region, args);
+  }
+
   /// Apply a boundary condition on field f
   virtual void apply(Field3D &f,BoutReal t = 0.) = 0;
   void apply(Field2D &UNUSED(f), BoutReal UNUSED(t) = 0.) {

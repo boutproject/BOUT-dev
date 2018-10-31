@@ -15,6 +15,7 @@ class BoundaryModifier;
 #include <cmath>
 #include <string>
 #include <list>
+#include <map>
 using std::string;
 using std::list;
 
@@ -30,9 +31,21 @@ public:
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
-    ASSERT1(false); // this implementation should never get called
-    return nullptr;
+    throw BoutException("BoundaryOp::clone not implemented");
   }
+
+  /// Clone using positional args and keywords
+  /// If not implemented, check if keywords are passed, then call two-argument version
+  virtual BoundaryOp *clone(BoundaryRegion *region, const list<string> &args,
+                            const std::map<std::string, std::string> &keywords) {
+    if (!keywords.empty()) {
+      // Given keywords, but not using
+      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+    }
+    
+    return clone(region, args);
+  }
+
 
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f,BoutReal t = 0.) {
@@ -116,7 +129,9 @@ public:
   BoundaryModifier() : op(nullptr) {}
   BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
-  virtual BoundaryOpPar* cloneMod(BoundaryOpPar *UNUSED(op), const list<string> &UNUSED(args)) { throw BoutException("BoundaryModifier should not be called on a BoundaryOpPar."); }
+  virtual BoundaryOpPar* cloneMod(BoundaryOpPar *UNUSED(op), const list<string> &UNUSED(args)) {
+    throw BoutException("BoundaryModifier should not be called on a BoundaryOpPar.");
+  }
 protected:
   BoundaryOp *op;
 };
