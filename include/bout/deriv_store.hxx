@@ -14,14 +14,12 @@
 /// a DIRECTION (e.g. DIRECTION::X) and a STAGGER (e.g. STAGGER::None). There is
 /// one routine for each class of derivative (standard, standard2nd, standard4th,
 /// upwind and flux).
-template<typename FieldType>
-struct DerivativeStore{
-  using standardFunc = std::function<void(const FieldType&,
-					  FieldType&, const REGION)>;
-  using upwindFunc   = std::function<void(const FieldType&, const FieldType&,
-					  FieldType&, const REGION)>;
-  using fluxFunc     = std::function<void(const FieldType&, const FieldType&,
-					  FieldType&, const REGION)>;
+template <typename FieldType> struct DerivativeStore {
+  using standardFunc = std::function<void(const FieldType &, FieldType &, const REGION)>;
+  using upwindFunc = std::function<void(const FieldType &, const FieldType &, FieldType &,
+                                        const REGION)>;
+  using fluxFunc = std::function<void(const FieldType &, const FieldType &, FieldType &,
+                                      const REGION)>;
 
   // Singleton method
   static DerivativeStore &getInstance() {
@@ -31,95 +29,127 @@ struct DerivativeStore{
 
   /// Register a function with standardFunc interface. Which map is used
   /// depends on the derivType input.
-  void registerDerivative(const standardFunc func, const DERIV derivType, const DIRECTION direction, const STAGGER stagger, const std::string methodName) {
+  void registerDerivative(const standardFunc func, const DERIV derivType,
+                          const DIRECTION direction, const STAGGER stagger,
+                          const std::string methodName) {
     const auto key = getKey(direction, stagger, methodName);
 
-    switch(derivType) {
-    case(DERIV::Standard) :
+    switch (derivType) {
+    case (DERIV::Standard):
       getInstance().standard[key] = func;
       return;
-    case(DERIV::StandardSecond) :
+    case (DERIV::StandardSecond):
       getInstance().standardSecond[key] = func;
       return;
-    case(DERIV::StandardFourth) :
+    case (DERIV::StandardFourth):
       getInstance().standardFourth[key] = func;
       return;
     default:
-      throw BoutException("Invalid function signature in registerDerivative : Function signature 'standard' but derivative type %s passed",DERIV_STRING(derivType));
+      throw BoutException("Invalid function signature in registerDerivative : Function "
+                          "signature 'standard' but derivative type %s passed",
+                          DERIV_STRING(derivType));
     };
     return;
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
   /// depends on the derivType input.
-  void registerDerivative(const upwindFunc func, const DERIV derivType, const DIRECTION direction, const STAGGER stagger, const std::string methodName) {
+  void registerDerivative(const upwindFunc func, const DERIV derivType,
+                          const DIRECTION direction, const STAGGER stagger,
+                          const std::string methodName) {
     const auto key = getKey(direction, stagger, methodName);
-    switch(derivType) {
-    case(DERIV::Upwind) :
+    switch (derivType) {
+    case (DERIV::Upwind):
       getInstance().upwind[key] = func;
       return;
-    case(DERIV::Flux) :
+    case (DERIV::Flux):
       getInstance().flux[key] = func;
       return;
     default:
-      throw BoutException("Invalid function signature in registerDerivative : Function signature 'upwind/flux' but derivative type %s passed",DERIV_STRING(derivType));
+      throw BoutException("Invalid function signature in registerDerivative : Function "
+                          "signature 'upwind/flux' but derivative type %s passed",
+                          DERIV_STRING(derivType));
     };
     return;
   };
 
   /// Templated versions of the above registration routines.
-  template<typename Direction, typename Stagger, typename Method>
+  template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(standardFunc func) {
-    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);
+    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(),
+                       Stagger{}.lookup(), Method{}.meta.key);
   };
-  template<typename Direction, typename Stagger, typename Method>
+  template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func) {
-    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);
+    registerDerivative(func, Method{}.meta.derivType, Direction{}.lookup(),
+                       Stagger{}.lookup(), Method{}.meta.key);
   };
 
-  std::string getMethodName(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
-    return name + " ("+DIRECTION_STRING(direction)+", "+STAGGER_STRING(stagger)+")";
+  std::string getMethodName(std::string name, DIRECTION direction,
+                            STAGGER stagger = STAGGER::None) {
+    return name + " (" + DIRECTION_STRING(direction) + ", " + STAGGER_STRING(stagger) +
+           ")";
   };
 
-  /// Routines to return a specific differential operator. Note we have to have a separate routine for different
-  /// methods as they have different return types. As such we choose to use a different name for each of the
+  /// Routines to return a specific differential operator. Note we have to have a separate
+  /// routine for different
+  /// methods as they have different return types. As such we choose to use a different
+  /// name for each of the
   /// method-classes so everything is consistently treated
-  standardFunc getStandardDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  standardFunc getStandardDerivative(std::string name, DIRECTION direction,
+                                     STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standard.find(key);
-    if(resultOfFind != instance.standard.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for standard derivative.", getMethodName(name, direction, stagger));
+    if (resultOfFind != instance.standard.end())
+      return resultOfFind->second;
+    throw BoutException(
+        "Couldn't find requested method %s in map for standard derivative.",
+        getMethodName(name, direction, stagger));
   };
 
-  standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
+                                        STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standardSecond.find(key);
-    if(resultOfFind != instance.standardSecond.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for standardSecond derivative.", getMethodName(name, direction, stagger));
+    if (resultOfFind != instance.standardSecond.end())
+      return resultOfFind->second;
+    throw BoutException(
+        "Couldn't find requested method %s in map for standardSecond derivative.",
+        getMethodName(name, direction, stagger));
   };
 
-  standardFunc getStandard4thDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
+                                        STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.standardFourth.find(key);
-    if(resultOfFind != instance.standardFourth.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for standardFourth derivative.", getMethodName(name, direction, stagger));
+    if (resultOfFind != instance.standardFourth.end())
+      return resultOfFind->second;
+    throw BoutException(
+        "Couldn't find requested method %s in map for standardFourth derivative.",
+        getMethodName(name, direction, stagger));
   };
-  upwindFunc getUpwindDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
+                                 STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.upwind.find(key);
-    if(resultOfFind != instance.upwind.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for upwind derivative.", getMethodName(name, direction, stagger));
+    if (resultOfFind != instance.upwind.end())
+      return resultOfFind->second;
+    throw BoutException("Couldn't find requested method %s in map for upwind derivative.",
+                        getMethodName(name, direction, stagger));
   };
-  fluxFunc getFluxDerivative(std::string name, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
+                             STAGGER stagger = STAGGER::None) {
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
     const auto resultOfFind = instance.flux.find(key);
-    if(resultOfFind != instance.flux.end()) return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for flux derivative.", getMethodName(name, direction, stagger));
+    if (resultOfFind != instance.flux.end())
+      return resultOfFind->second;
+    throw BoutException("Couldn't find requested method %s in map for flux derivative.",
+                        getMethodName(name, direction, stagger));
   };
 
 private:
@@ -129,14 +159,15 @@ private:
   std::map<std::size_t, upwindFunc> upwind;
   std::map<std::size_t, fluxFunc> flux;
 
-
   /// Provides a routine to produce a unique key given information about the specific type
-  /// required. This is templated so requires compile-time information. Need to also supply
+  /// required. This is templated so requires compile-time information. Need to also
+  /// supply
   /// a non-templated version to account for run-time choices
   /// Note : We could include the derivType in the key -- this would allow us to store
   /// all methods with the same function interface in the same map, which might be nice.
   std::size_t getKey(DIRECTION direction, STAGGER stagger, std::string key) {
-    // Note this key is indepedent of the field type (and hence the key is the same for 3D/2D
+    // Note this key is indepedent of the field type (and hence the key is the same for
+    // 3D/2D
     // fields) as we have to use different maps to store the different field types as the
     // signature is different.
     std::size_t result;
@@ -149,9 +180,9 @@ private:
   /// Provides a routine to produce a unique key given information about the specific type
   /// required. This is templated so requires compile-time information. Makes use of
   /// a non-templated version that can be used to account for run-time choices
-  template<typename Direction, typename Stagger, typename Method>
-  std::size_t getKey() {
-    // Note this key is indepedent of the field type (and hence the key is the same for 3D/2D
+  template <typename Direction, typename Stagger, typename Method> std::size_t getKey() {
+    // Note this key is indepedent of the field type (and hence the key is the same for
+    // 3D/2D
     // fields) as we have to use different maps to store the different field types as the
     // signature is different.
     return getKey(Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);

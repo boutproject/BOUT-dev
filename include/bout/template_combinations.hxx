@@ -5,8 +5,7 @@
 /// a collection of arbitrary types. This is useful for passing
 /// template packs (typename...) around whilst being able to
 /// distinguish between different template packs.
-template<typename... Ts>
-struct Set{};
+template <typename... Ts> struct Set {};
 
 /// Define a struct (functor) that we use to build up the final
 /// collection of template values. Each time we create one of these
@@ -15,18 +14,16 @@ struct Set{};
 /// for whatever the storedFunc is at that point -- once we have built a
 /// complete templatePack we don't need to specify any of these template
 /// parameters as they can be deduced/inferred.
-template<typename currentFunction, typename currentType>
-struct DeferredFunction {
+template <typename currentFunction, typename currentType> struct DeferredFunction {
   // Just store the actual function we wish to apply
-  DeferredFunction(currentFunction f): storedFunc(f){};
+  DeferredFunction(currentFunction f) : storedFunc(f){};
 
   // The actual function we wish to apply with the functor
   currentFunction storedFunc;
 
   // Make the struct a functor by defining operator() we use
   // type inference to populate the templatePack/args
-  template<typename... templatePack>
-  void operator()(templatePack... args) {
+  template <typename... templatePack> void operator()(templatePack... args) {
     storedFunc(currentType{}, args...);
   }
 };
@@ -60,7 +57,7 @@ struct DeferredFunction {
 /// combination of template parameters provided to the
 /// DeferredFunction (completed by passing in `item`) and
 /// can therefore invoke this functor.
-template<typename item, typename theFunction>
+template <typename item, typename theFunction>
 void addItemToDeferredFunction(theFunction func, item) {
   // Create a new DeferredFunction building on the passed DeferredFunction (func)
   // and adding the next template parameter, `item`, to the stored pack.
@@ -73,7 +70,7 @@ void addItemToDeferredFunction(theFunction func, item) {
 }
 
 /// One Set left to process so no template pack required
-template<typename item, typename lastSet, typename theFunction>
+template <typename item, typename lastSet, typename theFunction>
 void addItemToDeferredFunction(theFunction func, item, lastSet) {
   // Create a new DeferredFunction building on the passed DeferredFunction (func)
   // and adding the next template parameter, `item`, to the stored pack.
@@ -84,7 +81,7 @@ void addItemToDeferredFunction(theFunction func, item, lastSet) {
 }
 
 /// More than one Set left to process.
-template<typename item, typename nextSet, typename... otherSets, typename theFunction>
+template <typename item, typename nextSet, typename... otherSets, typename theFunction>
 void addItemToDeferredFunction(theFunction func, item, nextSet, otherSets...) {
   // Create a new DeferredFunction building on the passed DeferredFunction (func)
   // and adding the next template parameter, `item`, to the stored pack.
@@ -102,14 +99,16 @@ void addItemToDeferredFunction(theFunction func, item, nextSet, otherSets...) {
 
 /// Terminal routine -- the current Set is empty
 /// so nothing left to do.
-template<typename... Sets, typename theFunction>
+template <typename... Sets, typename theFunction>
 void processSet(theFunction func, Set<>, Sets...){};
 
 /// Here we use type inference to allow us to refer to the firstItem in the first Set
 /// and the otherItems in this Set. We use this to pass the firstItem off to the routines
-/// that will add this to the DeferredFunction. Following this we use recursion to call this
+/// that will add this to the DeferredFunction. Following this we use recursion to call
+/// this
 /// routine again to process the rest of this Set.
-template<typename firstItem, typename... otherItems, typename... otherSets, typename theFunction>
+template <typename firstItem, typename... otherItems, typename... otherSets,
+          typename theFunction>
 void processSet(theFunction func, Set<firstItem, otherItems...>, otherSets... others) {
   // Take the firstItem out of the current (first) Set and add to the DeferredFunction
   addItemToDeferredFunction(func, firstItem{}, others...);
@@ -135,10 +134,8 @@ void processSet(theFunction func, Set<firstItem, otherItems...>, otherSets... ot
 ///
 /// Note we wrap this in a struct such that by declaring a global variable of this
 /// type we trigger the creation of the combinations.
-template<typename FirstSet, typename... otherSets>
-struct produceCombinations{
-  template<typename theFunction>
-  produceCombinations(theFunction func) {
+template <typename FirstSet, typename... otherSets> struct produceCombinations {
+  template <typename theFunction> produceCombinations(theFunction func) {
     processSet(func, FirstSet{}, otherSets{}...);
   };
 };
