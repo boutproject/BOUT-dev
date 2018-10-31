@@ -15,10 +15,7 @@ using std::string;
 using std::map;
 
 template<typename T>
-using BoundaryOpRegion = typename std::conditional<std::is_same<T, BoundaryOpPar>::value, BoundaryRegionPar, BoundaryRegion>::type;
-
-template<typename T>
-using BoundaryRegionOp = typename std::conditional<std::is_same<T, BoundaryRegionPar>::value, BoundaryOpPar, BoundaryOp>::type;
+using BoundaryRegionOp = typename std::conditional<std::is_convertible<T*, BoundaryRegionPar*>::value, BoundaryOpPar, BoundaryOp>::type;
 
 /// Create BoundaryOp objects on demand
 /*!
