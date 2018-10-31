@@ -14,7 +14,8 @@
 class BoundaryDirichlet : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f,BoutReal t = 0.) override {
@@ -35,7 +36,8 @@ BoutReal default_func(BoutReal t, int x, int y, int z);
 class BoundaryDirichlet_O3 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -49,7 +51,8 @@ class BoundaryDirichlet_O3 : public BoundaryOp {
 class BoundaryDirichlet_O4 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -63,7 +66,8 @@ class BoundaryDirichlet_O4 : public BoundaryOp {
 class BoundaryDirichlet_smooth : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -75,7 +79,8 @@ class BoundaryDirichlet_smooth : public BoundaryOp {
 class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -87,7 +92,8 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
 class BoundaryDirichlet_O5 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -103,7 +109,8 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
   BoundaryNeumann_NonOrthogonal(): val(0.) {}
   BoundaryNeumann_NonOrthogonal(BoutReal setval ): val(setval) {}
   BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal t = 0.) override {
@@ -123,7 +130,8 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
 class BoundaryNeumann2 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -135,7 +143,8 @@ class BoundaryNeumann2 : public BoundaryOp {
 class BoundaryNeumann_2ndOrder : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -147,7 +156,8 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 class BoundaryNeumann : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -159,7 +169,8 @@ class BoundaryNeumann : public BoundaryOp {
 class BoundaryNeumann_O4 : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -173,7 +184,8 @@ class BoundaryNeumann_O4 : public BoundaryOp {
 class BoundaryNeumann_4thOrder : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -188,7 +200,8 @@ class BoundaryNeumann_4thOrder : public BoundaryOp {
 class BoundaryNeumannPar : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -202,7 +215,8 @@ class BoundaryRobin : public BoundaryOp {
   BoundaryRobin() : aval(0.), bval(0.), gval(0.) {}
   BoundaryRobin(BoundaryRegion *region, BoutReal a, BoutReal b, BoutReal g)
     : BoundaryOp(region), aval(a), bval(b), gval(g) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal t = 0.) override {
@@ -222,7 +236,8 @@ private:
 class BoundaryConstGradient : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -235,7 +250,8 @@ class BoundaryZeroLaplace : public BoundaryOp {
  public:
   BoundaryZeroLaplace() {}
   BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal UNUSED(t)) override;
@@ -247,7 +263,8 @@ class BoundaryZeroLaplace2 : public BoundaryOp {
  public:
   BoundaryZeroLaplace2() {}
   BoundaryZeroLaplace2(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal t) override;
@@ -259,7 +276,8 @@ class BoundaryConstLaplace : public BoundaryOp {
  public:
   BoundaryConstLaplace() {}
   BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal t) override;
@@ -271,7 +289,8 @@ class BoundaryDivCurl : public BoundaryOp {
  public:
   BoundaryDivCurl() {}
   BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override { throw BoutException("ERROR: DivCurl boundary only for vectors"); }
@@ -284,7 +303,8 @@ class BoundaryDivCurl : public BoundaryOp {
 class BoundaryFree : public BoundaryOp {
  public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f, BoutReal UNUSED(t)) override;
@@ -302,7 +322,8 @@ class BoundaryFree : public BoundaryOp {
 class BoundaryFree_O2 : public BoundaryOp {
 public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) override;
@@ -313,7 +334,8 @@ public:
 class BoundaryFree_O3 : public BoundaryOp {
 public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -327,7 +349,8 @@ public:
 class BoundaryFree_O4 : public BoundaryOp {
 public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
@@ -340,7 +363,8 @@ public:
 class BoundaryFree_O5 : public BoundaryOp {
 public:
   using BoundaryOp::BoundaryOp; // inherit BoundaryOp constructors
-  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) override;
 
   void applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;
   void applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) override;

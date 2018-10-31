@@ -23,27 +23,19 @@ using std::list;
 class BoundaryOp {
 public:
   BoundaryOp()  : bndry(nullptr), apply_to_ddt(false), gen(nullptr) {}
-  BoundaryOp(BoundaryRegion *region)
-    : bndry(region), apply_to_ddt(false), gen(nullptr) {}
-  BoundaryOp(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g)
-    : bndry(region), apply_to_ddt(false), gen(std::move(g)) {}
+  BoundaryOp(BoundaryRegion *region, int width_in = 0)
+    : bndry(region), apply_to_ddt(false), gen(nullptr),
+      width(width_in ? width_in : region->width) {}
+  BoundaryOp(BoundaryRegion *region, std::shared_ptr<FieldGenerator> g, int width_in = 0)
+    : bndry(region), apply_to_ddt(false), gen(std::move(g)),
+      width(width_in ? width_in : region->width) {}
   virtual ~BoundaryOp() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
+  virtual BoundaryOp *clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args),
+                            const std::map<std::string, std::string> &UNUSED(keywords)) {
     throw BoutException("BoundaryOp::clone not implemented");
-  }
-
-  /// Clone using positional args and keywords
-  /// If not implemented, check if keywords are passed, then call two-argument version
-  virtual BoundaryOp *clone(BoundaryRegion *region, const list<string> &args,
-                            const std::map<std::string, std::string> &keywords) {
-    if (!keywords.empty()) {
-      // Given keywords, but not using
-      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
-    }
-    
-    return clone(region, args);
+    return nullptr;
   }
 
 
@@ -82,6 +74,7 @@ public:
 
 protected:
   std::shared_ptr<FieldGenerator> gen; // Generator
+  const int width; // boundary width, stored in case we change it from the default
 
   // Apply boundary condition at a point
   virtual void applyAtPoint(Field2D &UNUSED(f), BoutReal UNUSED(val), int

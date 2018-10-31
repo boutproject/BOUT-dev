@@ -128,7 +128,8 @@ namespace {
   }
 
   template<typename T, int numpoints>
-  BoundaryOp* boundaryClone(BoundaryRegion* region, const list<string> &args) {
+  BoundaryOp* boundaryClone(BoundaryRegion* region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) {
     verifyNumPoints(region, numpoints);
 
     std::shared_ptr<FieldGenerator> newgen = nullptr;
@@ -136,24 +137,39 @@ namespace {
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
     }
-    return new T(region, newgen);
+    int width = region->width;
+    for (const auto &it : keywords) {
+      if (it.first == "width") {
+        width = stringToInt(it.second);
+      } else {
+        throw BoutException("Unrecognized boundary condition keyword %s for %s boundary", it.first.c_str(), region->label.c_str());
+      }
+    }
+    return new T(region, newgen, width);
   }
 
   template<typename T, int numpoints>
-  BoundaryOp* boundaryCloneNoArguments(BoundaryRegion* region, const list<string> &args) {
+  BoundaryOp* boundaryCloneNoArguments(BoundaryRegion* region, const list<string> &args,
+      const std::map<std::string, std::string> &keywords) {
     verifyNumPoints(region, numpoints);
 
     if (!args.empty()) {
       output << "WARNING: Ignoring arguments to BoundaryOp for "<<region->label<<" region\n";
     }
+    if (!keywords.empty()) {
+      // Given keywords, but not using
+      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+    }
+
     return new T(region);
   }
 }
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryDirichlet, 1>(region, args);
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryDirichlet, 1>(region, args, keywords);
 }
 
 // Override apply(), using this private method to provide both Field2D and
@@ -421,8 +437,9 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 ///////////////////////////////////////////////////////////////
 // New implementation, accurate to higher order
 
-BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryDirichlet_O3, 2>(region, args);
+BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryDirichlet_O3, 2>(region, args, keywords);
 }
 
 void BoundaryDirichlet_O3::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -449,8 +466,9 @@ void BoundaryDirichlet_O3::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 ///////////////////////////////////////////////////////////////
 // Extrapolate to calculate boundary cell to 4th-order
 
-BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryDirichlet_O4, 3>(region, args);
+BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryDirichlet_O4, 3>(region, args, keywords);
 }
 
 void BoundaryDirichlet_O4::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -476,8 +494,9 @@ void BoundaryDirichlet_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_smooth::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryDirichlet_smooth, 2>(region, args);
+BoundaryOp* BoundaryDirichlet_smooth::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryDirichlet_smooth, 2>(region, args, keywords);
 }
 
 void BoundaryDirichlet_smooth::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -501,10 +520,11 @@ void BoundaryDirichlet_smooth::applyAtPointStaggered(Field3D &f, BoutReal val, i
 }
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
   output << "WARNING: Use of boundary condition \"dirichlet_2ndorder\" is deprecated!\n";
   output << "         Consider using \"dirichlet\" instead\n";
-  return boundaryClone<BoundaryDirichlet_2ndOrder, 2>(region, args);
+  return boundaryClone<BoundaryDirichlet_2ndOrder, 2>(region, args, keywords);
 }
 
 // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
@@ -525,8 +545,9 @@ void BoundaryDirichlet_2ndOrder::applyAtPointStaggered(Field3D &f, BoutReal val,
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_O5::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryClone<BoundaryDirichlet_O5, 4>(region, args);
+BoundaryOp* BoundaryDirichlet_O5::clone(BoundaryRegion *region, const list<string> &args,
+  const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryDirichlet_O5, 4>(region, args, keywords);
 }
 
 void BoundaryDirichlet_O5::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -557,13 +578,18 @@ void BoundaryDirichlet_O5::extrapolateFurther(Field3D &f, int x, int bx, int y, 
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
   verifyNumPoints(region, 1);
   if (!args.empty()) {
     output << "WARNING: argument is set to BoundaryNeumann_NonOrthogonal\n";
     // First argument should be a value
     val = stringToReal(args.front());
     return new BoundaryNeumann_NonOrthogonal(region, val);
+  }
+  if (!keywords.empty()) {
+    // Given keywords, but not using
+    throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
   }
   return new BoundaryNeumann_NonOrthogonal(region);
 }
@@ -616,10 +642,11 @@ void BoundaryNeumann_NonOrthogonal::applyTemplate(T &f, BoutReal UNUSED(t)) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
   output << "WARNING: Use of boundary condition \"neumann2\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
-  return boundaryCloneNoArguments<BoundaryNeumann2, 2>(region, args);
+  return boundaryCloneNoArguments<BoundaryNeumann2, 2>(region, args, keywords);
 }
 
 void BoundaryNeumann2::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -638,10 +665,11 @@ void BoundaryNeumann2::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUSED
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
   output << "WARNING: Use of boundary condition \"neumann_2ndorder\" is deprecated!\n";
   output << "         Consider using \"neumann\" instead\n";
-  return boundaryClone<BoundaryNeumann_2ndOrder, 1>(region, args);
+  return boundaryClone<BoundaryNeumann_2ndOrder, 1>(region, args, keywords);
 }
 
 void BoundaryNeumann_2ndOrder::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -664,8 +692,9 @@ void BoundaryNeumann_2ndOrder::applyAtPointStaggered(Field3D &f, BoutReal val, i
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryNeumann, 1>(region, args);
+BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryNeumann, 1>(region, args, keywords);
 }
 
 void BoundaryNeumann::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -691,8 +720,9 @@ void BoundaryNeumann::applyAtPointStaggered(Field3D &f, BoutReal val, int x, int
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryClone<BoundaryNeumann_O4, 4>(region, args);
+BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryNeumann_O4, 4>(region, args, keywords);
 }
 
 void BoundaryNeumann_O4::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -730,8 +760,9 @@ void BoundaryNeumann_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, in
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryClone<BoundaryNeumann_4thOrder, 4>(region, args);
+BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryClone<BoundaryNeumann_4thOrder, 4>(region, args, keywords);
 }
 
 void BoundaryNeumann_4thOrder::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -767,8 +798,9 @@ void BoundaryNeumann_4thOrder::extrapolateFurther(Field3D &f, int x, int bx, int
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryNeumannPar, 1>(region, args);
+BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryNeumannPar, 1>(region, args, keywords);
 }
 
 void BoundaryNeumannPar::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* metric) {
@@ -789,12 +821,18 @@ void BoundaryNeumannPar::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal UNUS
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
   verifyNumPoints(region, 1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
   
   list<string>::const_iterator it = args.begin();
   
+  if (!keywords.empty()) {
+    // Given keywords, but not using
+    throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+  }
+
   if (it != args.end()) {
     // First argument is 'a'
     a = stringToReal(*it);
@@ -838,8 +876,9 @@ void BoundaryRobin::applyTemplate(T &f, BoutReal UNUSED(t)) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryConstGradient, 2>(region, args);
+BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryConstGradient, 2>(region, args, keywords);
 }
 
 void BoundaryConstGradient::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -858,8 +897,9 @@ void BoundaryConstGradient::applyAtPointStaggered(Field3D &UNUSED(f), BoutReal U
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryZeroLaplace, 2>(region, args);
+BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryZeroLaplace, 2>(region, args, keywords);
 }
 
 void BoundaryZeroLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -941,9 +981,9 @@ void BoundaryZeroLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
-                                        const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryZeroLaplace2, 3>(region, args);
+BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryZeroLaplace2, 3>(region, args, keywords);
 }
 
 void BoundaryZeroLaplace2::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -1027,8 +1067,9 @@ void BoundaryZeroLaplace2::apply(Field3D &f, BoutReal UNUSED(t)) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryConstLaplace, 2>(region, args);
+BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryConstLaplace, 2>(region, args, keywords);
 }
 
 void BoundaryConstLaplace::apply(Field2D &f, BoutReal UNUSED(t)) {
@@ -1125,8 +1166,9 @@ void BoundaryConstLaplace::apply(Field3D &f, BoutReal UNUSED(t)) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryDivCurl, 2>(region, args);
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryDivCurl, 2>(region, args, keywords);
 }
 
 void BoundaryDivCurl::apply(Vector2D &UNUSED(f)) {
@@ -1201,8 +1243,9 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
-  return boundaryCloneNoArguments<BoundaryFree, 0>(region, args);
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryFree, 0>(region, args, keywords);
 }
 
 void BoundaryFree::apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) {
@@ -1228,8 +1271,9 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 
 // 2nd order extrapolation:
 
-BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryCloneNoArguments<BoundaryFree_O2, 2>(region, args);
+BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryFree_O2, 2>(region, args, keywords);
 }
 
 void BoundaryFree_O2::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1249,8 +1293,9 @@ void BoundaryFree_O2::applyAtPointStaggered(Field3D &f, BoutReal UNUSED(val), in
 //////////////////////////////////
 // Third order extrapolation:
 //////////////////////////////////
-BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryCloneNoArguments<BoundaryFree_O3, 3>(region, args);
+BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryFree_O3, 3>(region, args, keywords);
 }
 
 void BoundaryFree_O3::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1275,8 +1320,9 @@ void BoundaryFree_O3::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 }
 
 // Fourth order extrapolation:
-BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryCloneNoArguments<BoundaryFree_O4, 4>(region, args);
+BoundaryOp* BoundaryFree_O4::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryFree_O4, 4>(region, args, keywords);
 }
 
 void BoundaryFree_O4::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
@@ -1301,8 +1347,9 @@ void BoundaryFree_O4::extrapolateFurther(Field3D &f, int x, int bx, int y, int b
 }
 
 // Fifth order extrapolation:
-BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &args){
-  return boundaryCloneNoArguments<BoundaryFree_O5, 5>(region, args);
+BoundaryOp* BoundaryFree_O5::clone(BoundaryRegion *region, const list<string> &args,
+    const std::map<std::string, std::string> &keywords) {
+  return boundaryCloneNoArguments<BoundaryFree_O5, 5>(region, args, keywords);
 }
 
 void BoundaryFree_O5::applyAtPoint(Field2D &f, BoutReal UNUSED(val), int x, int bx, int y, int by, int z, Coordinates* UNUSED(metric)) {
