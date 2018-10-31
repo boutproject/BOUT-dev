@@ -50,7 +50,7 @@ template <typename FieldType> struct DerivativeStore {
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
 			  "signature 'standard' but derivative type %s passed",
-			  DERIV_STRING(derivType));
+			  DERIV_STRING(derivType).c_str());
     };
     return;
   };
@@ -72,7 +72,7 @@ template <typename FieldType> struct DerivativeStore {
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
 			  "signature 'upwind/flux' but derivative type %s passed",
-			  DERIV_STRING(derivType));
+			  DERIV_STRING(derivType).c_str());
     };
     return;
   };
@@ -113,7 +113,7 @@ template <typename FieldType> struct DerivativeStore {
       return resultOfFind->second;
     throw BoutException(
 	"Couldn't find requested method %s in map for standard derivative.",
-	getMethodName(name, direction, stagger));
+	getMethodName(name, direction, stagger).c_str());
   };
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
@@ -126,7 +126,7 @@ template <typename FieldType> struct DerivativeStore {
       return resultOfFind->second;
     throw BoutException(
 	"Couldn't find requested method %s in map for standardSecond derivative.",
-	getMethodName(name, direction, stagger));
+	getMethodName(name, direction, stagger).c_str());
   };
 
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
@@ -139,7 +139,7 @@ template <typename FieldType> struct DerivativeStore {
       return resultOfFind->second;
     throw BoutException(
 	"Couldn't find requested method %s in map for standardFourth derivative.",
-	getMethodName(name, direction, stagger));
+	getMethodName(name, direction, stagger).c_str());
   };
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
 				 STAGGER stagger = STAGGER::None) {
@@ -150,7 +150,7 @@ template <typename FieldType> struct DerivativeStore {
     if (resultOfFind != instance.upwind.end())
       return resultOfFind->second;
     throw BoutException("Couldn't find requested method %s in map for upwind derivative.",
-			getMethodName(name, direction, stagger));
+			getMethodName(name, direction, stagger).c_str());
   };
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
 			     STAGGER stagger = STAGGER::None) {
@@ -161,7 +161,7 @@ template <typename FieldType> struct DerivativeStore {
     if (resultOfFind != instance.flux.end())
       return resultOfFind->second;
     throw BoutException("Couldn't find requested method %s in map for flux derivative.",
-			getMethodName(name, direction, stagger));
+			getMethodName(name, direction, stagger).c_str());
   };
 
 private:
