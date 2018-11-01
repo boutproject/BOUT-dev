@@ -454,6 +454,15 @@ class Mesh {
   STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc) const;
   STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc) const;  
 
+  template<DIRECTION direction>
+  CELL_LOC getAllowedStaggerLoc() const;
+
+  template<DIRECTION direction>
+  int getNpoints() const;
+
+  template<DIRECTION direction>
+  int getNguard() const;
+  
   template<typename T, DIRECTION direction, int order>
   T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
 
@@ -524,9 +533,6 @@ class Mesh {
   template<typename T>
   T indexFDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
                           DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
-
-  template<DIRECTION direction>
-  int getNguard() const;
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
@@ -649,12 +655,6 @@ class Mesh {
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-
-  template<DIRECTION direction>
-  CELL_LOC getAllowedStaggerLoc() const;
-
-  template<DIRECTION direction>
-  int getNpoints() const;
   
 private:
   /// Allocates default Coordinates objects
