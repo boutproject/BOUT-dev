@@ -759,6 +759,8 @@ T Mesh::indexFDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method,
 
 template<typename T, DIRECTION direction, DERIV derivType>
 T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
+  TRACE("%s", __thefunc__);
+  
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexDDX only works on Field2D or Field3D input");
@@ -768,6 +770,13 @@ T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METH
   // Check that the input variable has data
   ASSERT1(f.isAllocated());
   ASSERT1(vel.isAllocated());  
+  
+  //Check the input data is valid
+  {
+    TRACE("Checking inputs");
+    checkData(f);
+    checkData(vel);    
+  }
 
   // Define properties of this approach
   const CELL_LOC allowedStaggerLoc = getAllowedStaggerLoc<direction>();
@@ -807,11 +816,19 @@ T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METH
   // Apply method
   derivativeMethod(vel, f, result, region);
 
+  //Check the result is valid
+  {
+    TRACE("Checking result");
+    checkData(result);
+  }
+  
   return result;
 }
 
 template<typename T, DIRECTION direction, int order>
 T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
+  TRACE("%s", __thefunc__);
+  
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexDDX only works on Field2D or Field3D input");
@@ -820,6 +837,12 @@ T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method,
   // Check that the input variable has data
   ASSERT1(f.isAllocated());
 
+  //Check the input data is valid
+  {
+    TRACE("Checking input");
+    checkData(f);
+  }
+  
   // Define properties of this approach
   const CELL_LOC allowedStaggerLoc = getAllowedStaggerLoc<direction>();
 
@@ -860,6 +883,12 @@ T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method,
   // Apply method
   derivativeMethod(f, result, region);
 
+  //Check the result is valid
+  {
+    TRACE("Checking result");
+    checkData(result);
+  }
+  
   return result;
 }
 
