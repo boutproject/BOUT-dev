@@ -138,6 +138,10 @@ static DiffNameLookup DiffNameTable[] = {
 /// Initialise the derivative methods. Must be called before any derivatives are used
 void Mesh::derivs_init(Options *options) {
   TRACE("Initialising derivatives");
+  // For each direction need to set what the default method is for each type
+  // of derivative.
+  DerivativeStore<Field3D>::getInstance().initialise(options);
+  DerivativeStore<Field2D>::getInstance().initialise(options);
   // Get the fraction of modes filtered out in FFT derivatives
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }
