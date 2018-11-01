@@ -455,43 +455,43 @@ class Mesh {
   STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedloc) const;  
 
   template<typename T, DIRECTION direction, int order>
-  const T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region);
+  T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
 
   template<typename T, DIRECTION direction, DERIV derivType>
-  const T indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region);
+  T indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
   
   /// Derivatives in X direction, in index space
   template<typename T>
-  const T indexDDX(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexDDX(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD2DX2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD2DX2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD4DX4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD4DX4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   
   /// Derivatives in Y direction, in index space  
   template<typename T>
-  const T indexDDY(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexDDY(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD2DY2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD2DY2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD4DY4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD4DY4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
 
   /// Derivatives in Z direction, in index space
   template<typename T>
-  const T indexDDZ(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexDDZ(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD2DZ2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD2DZ2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexD4DZ4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  T indexD4DZ4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT,
+                         REGION region=RGN_NOBNDRY) const;
 
   /// Advection operator in index space in Y direction
   ///
@@ -505,37 +505,28 @@ class Mesh {
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated.
   template<typename T>
-  const T indexVDDX(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
+  T indexVDDX(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
   template<typename T>  
-  const T indexVDDY(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
+  T indexVDDY(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexVDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
-
-  
+  T indexVDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+		    DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
 
   /// Flux functions
   template<typename T>
-  const T indexFDDX(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
+  T indexFDDX(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexFDDY(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
+  T indexFDDY(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
   template<typename T>
-  const T indexFDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
-                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY);
+  T indexFDDZ(const T &v, const T &f, CELL_LOC outloc = CELL_DEFAULT,
+                          DIFF_METHOD method = DIFF_DEFAULT, REGION region=RGN_NOBNDRY) const;
 
   template<DIRECTION direction>
   int getNguard() const;
-
-  /// Derivative functions of a single field stencil
-  typedef BoutReal (*deriv_func)(const stencil &);
-  /// Derivative functions of a BoutReal velocity, and field stencil
-  typedef BoutReal (*upwind_func)(const BoutReal&, const stencil &);
-  /// Derivative functions of a velocity field, and field stencil v, f
-  typedef BoutReal (*flux_func)(const stencil&, const stencil &);
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
@@ -681,50 +672,50 @@ private:
 ////////////// X DERIVATIVE /////////////////
 
 template<typename T>
-const T Mesh::indexDDX(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexDDX(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::X, 1>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD2DX2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD2DX2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::X, 2>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD4DX4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD4DX4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::X, 4>(f, outloc, method, region);
 }
 
 ////////////// Y DERIVATIVE /////////////////
 
 template<typename T>
-const T Mesh::indexDDY(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexDDY(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Y, 1>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD2DY2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD2DY2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Y, 2>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD4DY4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD4DY4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Y, 4>(f, outloc, method, region);
 }
 
 ////////////// Z DERIVATIVE /////////////////
 template<typename T>
-const T Mesh::indexDDZ(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexDDZ(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Z, 1>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD2DZ2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD2DZ2(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Z, 2>(f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexD4DZ4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexD4DZ4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexStandardDerivative<T, DIRECTION::Z, 4>(f, outloc, method, region);
 }
 
@@ -733,43 +724,41 @@ const T Mesh::indexD4DZ4(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION
 ////////////// X DERIVATIVE /////////////////
 
 template<typename T>
-const T Mesh::indexVDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexVDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::X, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexFDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexFDDX(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::X, DERIV::Flux>(vel, f, outloc, method, region);
 }
 
 ////////////// Y DERIVATIVE /////////////////
 
 template<typename T>
-const T Mesh::indexVDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexVDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexFDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexFDDY(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel, f, outloc, method, region);
 }
 
 ////////////// Z DERIVATIVE /////////////////
 
 template<typename T>
-const T Mesh::indexVDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexVDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::Z, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template<typename T>
-const T Mesh::indexFDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexFDDZ(const T& vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   return indexFlowDerivative<T, DIRECTION::Z, DERIV::Flux>(vel, f, outloc, method, region);
 }
 
-
-
 template<typename T, DIRECTION direction, DERIV derivType>
-const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexDDX only works on Field2D or Field3D input");
@@ -794,7 +783,7 @@ const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIF
   const int nPoint = getNpoints<direction>();
 
   if (nPoint == 1) {
-    auto tmp = T(0., this);
+    auto tmp = T(0., f.getMesh());
     tmp.setLocation(outloc);
     return tmp;
   }
@@ -811,7 +800,7 @@ const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIF
   }
   
   // Create the result field
-  T result(this);
+  T result(f.getMesh());
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
@@ -821,9 +810,8 @@ const T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIF
   return result;
 }
 
-
 template<typename T, DIRECTION direction, int order>
-const T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const {
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexDDX only works on Field2D or Field3D input");
@@ -845,7 +833,7 @@ const T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD m
   const int nPoint = getNpoints<direction>();
 
   if (nPoint == 1) {
-    auto tmp = T(0., this);
+    auto tmp = T(0., f.getMesh());
     tmp.setLocation(outloc);
     return tmp;
   }
@@ -865,7 +853,7 @@ const T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD m
   }
   
   // Create the result field
-  T result(this);
+  T result(f.getMesh());
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
 
