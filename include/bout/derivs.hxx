@@ -526,4 +526,150 @@ produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
                         DerivativeType<FDDX_U1_stag>>>
     registerStaggeredDerivatives(registerMethod{});
 
+
+class FFTDerivativeType {
+public:
+  template <DIRECTION direction, STAGGER stagger, typename T>
+  void standard(const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
+    ASSERT2(meta.derivType == DERIV::Standard)
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(direction == DIRECTION::Z); //Only in Z for now
+    ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
+    ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
+    
+    const auto region_str = REGION_STRING(region);
+
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
+
+    auto *theMesh = var.getMesh();
+    
+    // Calculate how many Z wavenumbers will be removed
+    const int ncz = theMesh->template getNpoints<direction>();
+
+    int kfilter =
+      static_cast<int>(theMesh->fft_derivs_filter * ncz / 2); // truncates, rounding down
+    if (kfilter < 0)
+      kfilter = 0;
+    if (kfilter > (ncz / 2))
+      kfilter = ncz / 2;
+    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+
+    BOUT_OMP(parallel)
+    {
+      Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
+
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, theMesh->getRegion2D(region_str)) {
+        auto i3D = theMesh->ind2Dto3D(i, 0);
+        rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
+
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
+          cv[jz] *= dcomplex(0, kwave);
+        }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
+
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
+      }
+    }
+
+    return;
+  }
+
+  template <DIRECTION direction, STAGGER stagger, typename T>
+  void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
+    throw BoutException("The FFT METHOD isn't available in upwind/Flux");
+    return;
+  }
+  metaData meta{"FFT", 0, DERIV::Standard};
+};
+
+
+class FFT2ndDerivativeType {
+public:
+  template <DIRECTION direction, STAGGER stagger, typename T>
+  void standard(const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
+    ASSERT2(meta.derivType == DERIV::Standard)
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(direction == DIRECTION::Z); //Only in Z for now
+    ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
+    ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
+    
+    const auto region_str = REGION_STRING(region);
+
+    // Only allow a whitelist of regions for now
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
+            region_str == "RGN_NOX" || region_str == "RGN_NOY");
+
+    auto *theMesh = var.getMesh();
+    
+    // Calculate how many Z wavenumbers will be removed
+    const int ncz = theMesh->template getNpoints<direction>();
+    const int kmax  = ncz/2;
+
+    BOUT_OMP(parallel)
+    {
+      Array<dcomplex> cv(ncz / 2 + 1);
+      const BoutReal kwaveFac = TWOPI / ncz;
+
+      // Note we lookup a 2D region here even though we're operating on a Field3D
+      // as we only want to loop over {x, y} and then handle z differently. The
+      // Region<Ind2D> blocks are constructed for elements contiguous assuming nz=1,
+      // as that isn't the case for Field3D (in general) this shouldn't be expected
+      // to vectorise (not that it would anyway) but it should still OpenMP parallelise
+      // ok.
+      // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
+      // here,
+      // but should be ok for now.
+      BOUT_FOR_INNER(i, theMesh->getRegion2D(region_str)) {
+        auto i3D = theMesh->ind2Dto3D(i, 0);
+        rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
+
+        for (int jz = 0; jz <= kmax; jz++) {
+          const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
+          cv[jz] *= -kwave*kwave;
+        }
+        for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
+          cv[jz] = 0.0;
+        }
+
+        irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
+      }
+    }
+
+    return;
+  }
+
+  template <DIRECTION direction, STAGGER stagger, typename T>
+  void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+    TRACE("%s",__thefunc__);
+    throw BoutException("The FFT METHOD isn't available in upwind/Flux");
+    return;
+  }
+  metaData meta{"FFT", 0, DERIV::StandardSecond};
+};
+
+
+produceCombinations<
+  Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>, Set<Field3D>,
+  Set<FFTDerivativeType, FFT2ndDerivativeType>
+  >
+    registerFFTDerivative(registerMethod{});
+
 #endif
