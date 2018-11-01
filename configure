@@ -17107,8 +17107,8 @@ $as_echo "$as_me:   Lapack support          : $HAS_LAPACK" >&6;}
 $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&5
 $as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS" >&5
-$as_echo "$as_me:   Natural language support: $HAS_NLS" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS (path: $localedir)" >&5
+$as_echo "$as_me:   Natural language support: $HAS_NLS (path: $localedir)" >&6;}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}

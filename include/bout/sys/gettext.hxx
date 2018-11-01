@@ -8,7 +8,9 @@
 #include <libintl.h>
 #include <locale.h>
 
-#define _(string) gettext(string)
+#define GETTEXT_PACKAGE "libbout"
+
+#define _(string) dgettext(GETTEXT_PACKAGE, string)
 
 #else
 

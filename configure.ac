@@ -1299,7 +1299,7 @@ AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
-AC_MSG_NOTICE([  Natural language support: $HAS_NLS])
+AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

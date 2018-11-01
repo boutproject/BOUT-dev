@@ -274,6 +274,26 @@ configuration::
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
 
+.. _sec-config-nls:
+
+Natural Language Support
+------------------------
+
+BOUT++ has support for languages other than English, using GNU
+gettext. If you are planning on installing BOUT++ (see
+:ref:`sec-install-bout`) then this should work automatically, but if
+you will be running BOUT++ from the directory you downloaded it into,
+then configure with the option::
+
+  ./configure --localedir=$PWD/locale
+
+This will enable BOUT++ to find the translations. When ``configure``
+finishes, the configuration summary should contain a line like::
+
+  configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
+
+where the ``path`` is the directory containing the translations.
+  
 .. _sec-configanalysis:
 
 Configuring analysis routines

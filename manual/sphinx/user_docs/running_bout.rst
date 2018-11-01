@@ -210,43 +210,27 @@ and to make this a coloured contour plot
 
 The equivalent commands in Python are as follows. 
 
+.. _sec-run-nls:
 
 Natural language support
 ------------------------
 
-BOUT++ has support for languages other than English, using GNU
-gettext. If you have locales installed, then the ``LANG`` environment
+If you have locales installed, and configured the ``locale`` path
+correctly (see :ref:`sec-config-nls`), then the ``LANG`` environment
 variable selects the language to use. Currently BOUT++ only has limited support
 for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
 
     LANG=zh_TW.utf8 ./conduction
 
-Adding support for a new language, or improving the translations in
-the existing files can be done by:
+which should produce an output like::
 
-1. Going to the ``locale`` BOUT++ subdirectory and running::
+  BOUT++ 版 4.2.0
+  版: dc95c252d9447ca72d27d4cc0d30f4d9c8a91a41
+  MD5 checksum: 086b600cc54f9c0eb0ee9338dbba71a6
+  代碼於 Nov  1 2018 17:41:02 编译
+  ...
 
-         make locale-ll
-
-   where ``ll`` is the language code e.g. ``make locale-de``. This
-   will create a file ``libbout.po`` under a ``locale/ll``
-   subdirectory.
-2. Edit the ``locale/ll/libbout.po`` file. Edit the .po file in de
-   subdirectory (not the .pot file!), adding the translations. Each
-   ``msgid`` entry should have a translated ``msgstr`` entry. If you
-   don't want to translate them all, just delete the ones you don't
-   translate. Any missing will just revert to the version in the
-   code. If you're adding UTF-8 characters, change the content line in
-   the .po file to have charset=UTF-8.
-3. In the ``locale`` directory run ``make``. This should output
-   something like::
-     
-         Building language:  fr
-         Building language:  zh_CN
-         Building language:  zh_TW
-
-The new language should now be available (no need to recompile BOUT++).
-
+  
 Further examples
 ----------------
 

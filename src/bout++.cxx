@@ -30,21 +30,12 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 const char DEFAULT_SET[] = "BOUT.settings";
 const char DEFAULT_LOG[] = "BOUT.log";
 
-#define CMDLINE1_(x) #x
-#define CMDLINE(x) CMDLINE1_(x)
-
-// MD5 Checksum passed at compile-time
-#define CHECKSUM1_(x) #x
-#define CHECKSUM_(x) CHECKSUM1_(x)
-#define CHECKSUM CHECKSUM_(MD5SUM)
-
-// Revision passed at compile time
-#define REV1_(x) #x
-#define REV_(x) REV1_(x)
-#define REV REV_(REVISION)
+// Value passed at compile time
+// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
+#define BUILDFLAG1_(x) #x
+#define BUILDFLAG(x) BUILDFLAG1_(x)
 
 #define GLOBALORIGIN
-
 
 #define INDIRECT1_BOUTMAIN(a) #a
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
@@ -146,16 +137,23 @@ int BoutInitialise(int &argc, char **&argv) {
 
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
+  //
+  // For libraries:
+  // https://www.gnu.org/software/gettext/manual/html_node/Libraries.html
+  //
   try {
     // Note: Would like to use std::locale::global
     //    std::locale::global(std::locale(""));
     // but the Numeric aspect causes problems parsing input strings
+    //
+    // Note: Since BOUT++ is a library, it shouldn't really call setlocale;
+    //       that should be part of main().
     std::setlocale(LC_ALL, "");
     std::setlocale(LC_NUMERIC, "C");
     
-    bindtextdomain ("libbout", CMDLINE(BOUT_LOCALE_PATH));
-    textdomain ("libbout");
-    fprintf(stderr, "LOCALE_PATH = '%s'\n", CMDLINE(BOUT_LOCALE_PATH));
+    bindtextdomain (GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
+    
+    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error &e) {
     fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
   }
@@ -349,10 +347,10 @@ int BoutInitialise(int &argc, char **&argv) {
   /// Print intro
   output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
 #ifdef REVISION
-  output_progress.write(_("Revision: %s\n"), REV);
+  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
 #endif
 #ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", CHECKSUM);
+  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
 #endif
   output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");

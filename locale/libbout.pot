@@ -328,10 +328,6 @@ msgstr ""
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr ""
 
-#: ../tests/integrated/test-i18n/test-i18n.cxx:15
-msgid "Hello World\n"
-msgstr ""
-
 #: ../src/solver/solver.cxx:599
 msgid "Initialising solver\n"
 msgstr ""
