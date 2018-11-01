@@ -428,7 +428,7 @@ int BoutInitialise(int &argc, char **&argv) {
     // Note: have to force value, since may already be set if a previously
     // output BOUT.settings file was used as input
     runinfo["version"].force(BOUT_VERSION_STRING, "");
-    runinfo["revision"].force(REV, "");
+    runinfo["revision"].force(BUILDFLAG(REVISION), "");
     
     time_t start_time = time(nullptr);
     runinfo["started"].force(ctime(&start_time), "");
