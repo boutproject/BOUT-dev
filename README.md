@@ -35,8 +35,8 @@ can be written simply as:
 ```cpp
 ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
 ddt(p)   = -V_dot_Grad(v, p) - g*p*Div(v);
-ddt(v)   = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
-ddt(B)   = Curl(v^B);
+ddt(v)   = -V_dot_Grad(v, v) + (cross(Curl(B),B) - Grad(p))/rho;
+ddt(B)   = Curl(cross(v,B));
 ```
 
 The full code for this example can be found in the [orszag-tang

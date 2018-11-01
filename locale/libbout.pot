@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-27 17:37+0100\n"
+"POT-Creation-Date: 2018-11-01 17:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,18 +30,18 @@ msgstr ""
 msgid "\tCandidate value: %d\n"
 msgstr ""
 
-#: ../src/bout++.cxx:372
+#: ../src/bout++.cxx:370
 msgid "\tChecking disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:370
+#: ../src/bout++.cxx:368
 #, c-format
 msgid "\tChecking enabled, level %d\n"
 msgstr ""
 
 #. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
 #. which could cause problems (e.g. terminate strings).
-#: ../src/bout++.cxx:413
+#: ../src/bout++.cxx:411
 #, c-format
 msgid "\tCompiled with flags : %s\n"
 msgstr ""
@@ -77,16 +77,23 @@ msgstr ""
 msgid "\tGuard cells (x,y): "
 msgstr ""
 
+#: ../src/sys/options/options_ini.cxx:177
+#, c-format
+msgid ""
+"\tKey must not contain ':' character\n"
+"\tLine: %s"
+msgstr ""
+
 #: ../src/sys/optionsreader.cxx:127
 #, c-format
 msgid "\tMultiple '=' in command-line argument '%s'\n"
 msgstr ""
 
-#: ../src/bout++.cxx:400
+#: ../src/bout++.cxx:398
 msgid "\tOpenMP parallelisation disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:398
+#: ../src/bout++.cxx:396
 #, c-format
 msgid "\tOpenMP parallelisation enabled, using %d threads\n"
 msgstr ""
@@ -110,11 +117,11 @@ msgstr ""
 msgid "\tOptions file '%s' not found\n"
 msgstr ""
 
-#: ../src/bout++.cxx:394
+#: ../src/bout++.cxx:392
 msgid "\tParallel NetCDF support disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:392
+#: ../src/bout++.cxx:390
 msgid "\tParallel NetCDF support enabled\n"
 msgstr ""
 
@@ -130,11 +137,11 @@ msgstr ""
 msgid "\tReading covariant vector "
 msgstr ""
 
-#: ../src/bout++.cxx:378
+#: ../src/bout++.cxx:376
 msgid "\tSignal handling disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:376
+#: ../src/bout++.cxx:374
 msgid "\tSignal handling enabled\n"
 msgstr ""
 
@@ -142,19 +149,19 @@ msgstr ""
 msgid "\tdone\n"
 msgstr ""
 
-#: ../src/bout++.cxx:387
+#: ../src/bout++.cxx:385
 msgid "\tnetCDF support disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:382
+#: ../src/bout++.cxx:380
 msgid "\tnetCDF support enabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:385
+#: ../src/bout++.cxx:383
 msgid "\tnetCDF4 support enabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:174
+#: ../src/bout++.cxx:172
 #, c-format
 msgid ""
 "\n"
@@ -180,12 +187,12 @@ msgid ""
 "Run started at  : %s\n"
 msgstr ""
 
-#: ../src/bout++.cxx:183
+#: ../src/bout++.cxx:181
 #, c-format
 msgid "  -c, --color\t\tColor output using bout-log-color\n"
 msgstr ""
 
-#: ../src/bout++.cxx:186
+#: ../src/bout++.cxx:184
 #, c-format
 msgid ""
 "  -h, --help\t\tThis message\n"
@@ -206,7 +213,7 @@ msgid "All options used\n"
 msgstr ""
 
 #. / Print intro
-#: ../src/bout++.cxx:350
+#: ../src/bout++.cxx:348
 #, c-format
 msgid "BOUT++ version %s\n"
 msgstr ""
@@ -220,7 +227,7 @@ msgstr ""
 msgid "Cannot split %d X points equally between %d processors\n"
 msgstr ""
 
-#: ../src/bout++.cxx:357
+#: ../src/bout++.cxx:355
 #, c-format
 msgid ""
 "Code compiled on %s at %s\n"
@@ -232,7 +239,7 @@ msgid "Command line"
 msgstr ""
 
 #. / Print compile-time options
-#: ../src/bout++.cxx:367
+#: ../src/bout++.cxx:365
 msgid "Compile-time options:\n"
 msgstr ""
 
@@ -257,7 +264,7 @@ msgid "Could not read integer array '%s'\n"
 msgstr ""
 
 #. Failed . Probably not important enough to stop the simulation
-#: ../src/bout++.cxx:310
+#: ../src/bout++.cxx:308
 #, c-format
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
@@ -292,12 +299,12 @@ msgstr ""
 msgid "Couldn't get integer from option %s = '%s'"
 msgstr ""
 
-#: ../src/bout++.cxx:263
+#: ../src/bout++.cxx:261
 #, c-format
 msgid "DataDir \"%s\" does not exist or is not accessible\n"
 msgstr ""
 
-#: ../src/bout++.cxx:260
+#: ../src/bout++.cxx:258
 #, c-format
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr ""
@@ -306,16 +313,16 @@ msgstr ""
 msgid "ERROR: Solver is already initialised\n"
 msgstr ""
 
-#: ../src/bout++.cxx:431
+#: ../src/bout++.cxx:441
 msgid "Error encountered during initialisation\n"
 msgstr ""
 
-#: ../src/bout++.cxx:476
+#: ../src/bout++.cxx:486
 #, c-format
 msgid "Error encountered during initialisation: %s\n"
 msgstr ""
 
-#: ../src/bout++.cxx:510
+#: ../src/bout++.cxx:525
 msgid "Error whilst writing settings"
 msgstr ""
 
@@ -332,7 +339,7 @@ msgstr ""
 msgid "Initialising solver\n"
 msgstr ""
 
-#: ../src/bout++.cxx:252
+#: ../src/bout++.cxx:250
 msgid ""
 "Input and output file for settings must be different.\n"
 "Provide -o <settings file> to avoid this issue.\n"
@@ -374,7 +381,7 @@ msgid "Number of processors (%d) not divisible by NPs in x direction (%d)\n"
 msgstr ""
 
 #. Less than 1 time-step left
-#: ../src/bout++.cxx:660
+#: ../src/bout++.cxx:675
 #, c-format
 msgid "Only %e seconds left. Quitting\n"
 msgstr ""
@@ -403,7 +410,7 @@ msgid ""
 "was '%s'."
 msgstr ""
 
-#: ../src/bout++.cxx:361
+#: ../src/bout++.cxx:359
 #, c-format
 msgid ""
 "Processor number: %d of %d\n"
@@ -422,7 +429,7 @@ msgstr ""
 msgid "Registered region Perp "
 msgstr ""
 
-#: ../src/bout++.cxx:352
+#: ../src/bout++.cxx:350
 #, c-format
 msgid "Revision: %s\n"
 msgstr ""
@@ -438,13 +445,13 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../src/bout++.cxx:621
+#: ../src/bout++.cxx:636
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
 
-#: ../src/bout++.cxx:624
+#: ../src/bout++.cxx:639
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -505,28 +512,28 @@ msgstr ""
 msgid "Unused options:\n"
 msgstr ""
 
-#: ../src/bout++.cxx:202
+#: ../src/bout++.cxx:200
 #, c-format
 msgid "Usage is %s -d <data directory>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:211
+#: ../src/bout++.cxx:209
 #, c-format
 msgid "Usage is %s -f <options filename>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:228
+#: ../src/bout++.cxx:226
 #, c-format
 msgid "Usage is %s -l <log filename>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:220
+#: ../src/bout++.cxx:218
 #, c-format
 msgid "Usage is %s -o <settings filename>\n"
 msgstr ""
 
 #. Print help message -- note this will be displayed once per processor as we've not started MPI yet.
-#: ../src/bout++.cxx:172
+#: ../src/bout++.cxx:170
 #, c-format
 msgid ""
 "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
