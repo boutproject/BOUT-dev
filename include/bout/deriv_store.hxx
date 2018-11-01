@@ -180,7 +180,7 @@ template <typename FieldType> struct DerivativeStore {
       {DERIV::Upwind, "U1"}, {DERIV::Flux, "U1"}};
     
     std::map<DIRECTION, std::string> directions = {
-      {DIRECTION::X,"ddx"}, {DIRECTION::Y,"ddy"}, {DIRECTION::Z,"ddz"}
+      {DIRECTION::X,"ddx"}, {DIRECTION::Y,"ddy"}, {DIRECTION::YOrthogonal,"ddy"}, {DIRECTION::Z,"ddz"}
     };
 
     std::map<DERIV, std::string> derivTypes = {
