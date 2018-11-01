@@ -456,11 +456,16 @@ DEFINE_FLUX_DERIV_STAGGERED(FDDX_U1_stag, "U1", 1, DERIV::Flux) {
 /////////////////////////////////////////////////////////////////////////////////
 
 struct registerMethod {
-  template <typename Direction, typename Stagger, typename FieldType, typename Method>
-  void operator()(Direction, Stagger, FieldType, Method) {
+  template <typename Direction, typename Stagger, typename FieldTypeContainer, typename Method>
+  void operator()(Direction, Stagger, FieldTypeContainer, Method) {
     TRACE("%s", __thefunc__);
     using namespace std::placeholders;
 
+    // Now we want to get the actual field type out of the TypeContainer
+    // used to pass this around
+    using FieldType = typename FieldTypeContainer::type;
+
+    
     auto derivativeRegister = DerivativeStore<FieldType>::getInstance();
 
     switch (Method{}.meta.derivType) {
@@ -469,7 +474,7 @@ struct registerMethod {
     case (DERIV::StandardFourth): {
       const auto theFunc = std::bind(
           // Method to store in function
-          &Method::template standard<Direction::value, Stagger::value, FieldType>,
+				     &Method::template standard<Direction::value, Stagger::value, FieldType>,
           // Arguments -- first is hidden this of type-bound, others are placeholders
           // for input field, output field, region
           Method{}, _1, _2, _3);
@@ -480,7 +485,7 @@ struct registerMethod {
     case (DERIV::Flux): {
       const auto theFunc = std::bind(
           // Method to store in function
-          &Method::template upwindOrFlux<Direction::value, Stagger::value, FieldType>,
+				     &Method::template upwindOrFlux<Direction::value, Stagger::value, FieldType>,
           // Arguments -- first is hidden this of type-bound, others are placeholders
           // for input field, output field, region
           Method{}, _1, _2, _3, _4);
@@ -503,53 +508,56 @@ struct registerMethod {
 /////////////////////////////////////////////////////////////////////////////////
 
 // Could use Ben's magic macro for thing here to register multiple routines at once
-#define REGISTER_DERIVATIVE(name)                                                        \
-  namespace {                                                                            \
-  produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,            \
-                      Set<e(STAGGER, None)>, Set<Field3D, Field2D>,                      \
-                      Set<DerivativeType<name>>>                                         \
-      reg(registerMethod{});                                                             \
+#define REGISTER_DERIVATIVE(name)					\
+  namespace {								\
+    produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,	\
+			Set<e(STAGGER, None)>,				\
+			Set<TypeContainer<Field3D>, TypeContainer<Field2D>>, \
+			Set<DerivativeType<name>>>			\
+    reg(registerMethod{});						\
   }
-#define REGISTER_STAGGERED_DERIVATIVE(name)                                              \
-  namespace {                                                                            \
-  produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,            \
-                      Set<e(STAGGER, C2L), e(STAGGER, L2C)>, Set<Field3D, Field2D>,      \
-                      Set<DerivativeType<name>>>                                         \
-      reg(registerMethod{});                                                             \
+#define REGISTER_STAGGERED_DERIVATIVE(name)				\
+  namespace {								\
+    produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,	\
+			Set<e(STAGGER, C2L), e(STAGGER, L2C)>,		\
+			Set<TypeContainer<Field3D>, TypeContainer<Field2D>>, \
+			Set<DerivativeType<name>>>			\
+    reg(registerMethod{});						\
   }
 
 produceCombinations<
-    Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
-    Set<Field3D, Field2D>,
-    Set<
-        // Standard
-        DerivativeType<DDX_C2>, DerivativeType<DDX_C4>, DerivativeType<DDX_CWENO2>,
-        DerivativeType<DDX_S2>, DerivativeType<DDX_CWENO3>,
-        // Standard 2nd order
-        DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
-        // Standard 4th order
-        DerivativeType<D4DX4_C2>,
-        // Upwind
-        DerivativeType<VDDX_C2>, DerivativeType<VDDX_C4>, DerivativeType<VDDX_U1>,
-        DerivativeType<VDDX_U2>, DerivativeType<VDDX_U3>, DerivativeType<VDDX_WENO3>,
-        // Flux
-        DerivativeType<FDDX_U1>, DerivativeType<FDDX_C2>, DerivativeType<FDDX_C4>>>
-    registerDerivatives(registerMethod{});
+  Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
+  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+  Set<
+    // Standard
+    DerivativeType<DDX_C2>, DerivativeType<DDX_C4>, DerivativeType<DDX_CWENO2>,
+    DerivativeType<DDX_S2>, DerivativeType<DDX_CWENO3>,
+    // Standard 2nd order
+    DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
+    // Standard 4th order
+    DerivativeType<D4DX4_C2>,
+    // Upwind
+    DerivativeType<VDDX_C2>, DerivativeType<VDDX_C4>, DerivativeType<VDDX_U1>,
+    DerivativeType<VDDX_U2>, DerivativeType<VDDX_U3>, DerivativeType<VDDX_WENO3>,
+    // Flux
+    DerivativeType<FDDX_U1>, DerivativeType<FDDX_C2>, DerivativeType<FDDX_C4>>>
+registerDerivatives(registerMethod{});
 
-produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
-                    Set<e(STAGGER, C2L), e(STAGGER, L2C)>, Set<Field3D, Field2D>,
-                    Set<
-                        // Standard
-                        DerivativeType<DDX_C2_stag>, DerivativeType<DDX_C4_stag>,
-                        // Standard 2nd order
-                        DerivativeType<D2DX2_C2_stag>,
-                        // Upwind
-                        DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_C4_stag>,
-                        DerivativeType<VDDX_U1_stag>, DerivativeType<VDDX_U2_stag>,
-                        // Flux
-                        DerivativeType<FDDX_U1_stag>>>
-    registerStaggeredDerivatives(registerMethod{});
-
+produceCombinations<
+  Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
+  Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
+  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+  Set<
+    // Standard
+    DerivativeType<DDX_C2_stag>, DerivativeType<DDX_C4_stag>,
+    // Standard 2nd order
+    DerivativeType<D2DX2_C2_stag>,
+    // Upwind
+    DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_C4_stag>,
+    DerivativeType<VDDX_U1_stag>, DerivativeType<VDDX_U2_stag>,
+    // Flux
+    DerivativeType<FDDX_U1_stag>>>
+registerStaggeredDerivatives(registerMethod{});
 
 class FFTDerivativeType {
 public:
@@ -691,7 +699,7 @@ public:
 
 
 produceCombinations<
-  Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>, Set<Field3D>,
+  Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>, Set<TypeContainer<Field3D>>,
   Set<FFTDerivativeType, FFT2ndDerivativeType>
   >
     registerFFTDerivative(registerMethod{});
