@@ -47,8 +47,18 @@ public:
             meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
 
-    BOUT_FOR(i, var.getRegion(region)) {
-      result[i] = apply(populateStencil<direction, stagger, 1>(var, i));
+    // For now use a runtime check on the required number of guards to pick
+    // how we call populateStencil. In future it would be nice to be able
+    // to replace 1/2 with a constexpr of some form (can do it now if
+    // meta didn't contain a string).
+    if(meta.nGuards == 1) {
+      BOUT_FOR(i, var.getRegion(region)) {
+	result[i] = apply(populateStencil<direction, stagger, 1>(var, i));
+      }
+    } else {
+      BOUT_FOR(i, var.getRegion(region)) {
+	result[i] = apply(populateStencil<direction, stagger, 2>(var, i));
+      }
     }
     return;
   }
@@ -60,13 +70,26 @@ public:
     ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
 
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
-      BOUT_FOR(i, var.getRegion(region)) {
-        result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
-                          populateStencil<direction, STAGGER::None, 1>(var, i));
+      if(meta.nGuards == 1) {      
+	BOUT_FOR(i, var.getRegion(region)) {
+	  result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
+			    populateStencil<direction, STAGGER::None, 1>(var, i));
+	}
+      } else {
+	BOUT_FOR(i, var.getRegion(region)) {
+	  result[i] = apply(populateStencil<direction, stagger, 2>(vel, i),
+			    populateStencil<direction, STAGGER::None, 2>(var, i));
+	}
       }
     } else {
-      BOUT_FOR(i, var.getRegion(region)) {
-        result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, 1>(var, i));
+      if(meta.nGuards == 1) {      
+	BOUT_FOR(i, var.getRegion(region)) {
+	  result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, 1>(var, i));
+	}
+      } else {
+	BOUT_FOR(i, var.getRegion(region)) {
+	  result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, 2>(var, i));
+	}
       }
     }
     return;
@@ -76,14 +99,14 @@ public:
   BoutReal apply(const BoutReal &v, const stencil &f) const { return func(v, f); }
   BoutReal apply(const stencil &v, const stencil &f) const { return func(v, f); }
 
-  FF func{};
-  metaData meta = func.meta;
+  const FF func{};
+  const metaData meta = func.meta;
 };
 
 #define DEFINE_STANDARD_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &f) const;			\
-    metaData meta = {key, nGuards, type};				\
+    const metaData meta = {key, nGuards, type};				\
     BoutReal operator()(const BoutReal &UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &UNUSED(v),\
@@ -97,7 +120,7 @@ public:
     BoutReal operator()(const BoutReal &vc, const stencil &f) const;	\
     BoutReal operator()(const stencil &UNUSED(v),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    metaData meta = {key, nGuards, type};				\
+    const metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
 
@@ -107,7 +130,7 @@ public:
     BoutReal operator()(const BoutReal &UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &v, const stencil &f) const;	\
-    metaData meta = {key, nGuards, type};				\
+    const metaData meta = {key, nGuards, type};				\
   };									\
   BoutReal name::operator()(const stencil &v, const stencil &f) const
 
@@ -438,7 +461,8 @@ struct registerMethod {
     TRACE("%s", __thefunc__);
     using namespace std::placeholders;
 
-    auto derivativeRegister = DerivativeStore<FieldType>{}.getInstance();
+    auto derivativeRegister = DerivativeStore<FieldType>::getInstance();
+
     switch (Method{}.meta.derivType) {
     case (DERIV::Standard):
     case (DERIV::StandardSecond):
