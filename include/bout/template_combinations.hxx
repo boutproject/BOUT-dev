@@ -9,6 +9,11 @@
 /// distinguish between different template packs.
 template <typename... Ts> struct Set {};
 
+/// Here we provide a container type that can be used to pass around
+/// a type without needing to create instances of the specific type
+/// (instead we create instances of the container type).
+template <typename T> struct TypeContainer{ using type = T; };
+
 /// Define a struct (functor) that we use to build up the final
 /// collection of template values. Each time we create one of these
 /// objects we provide one more type to the templatePack. We may call
