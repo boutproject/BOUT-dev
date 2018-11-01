@@ -91,11 +91,7 @@ template <typename FieldType> struct DerivativeStore {
 		       Stagger{}.lookup(), Method{}.meta.key);
   };
 
-  std::string getMethodName(std::string name, DIRECTION direction,
-			    STAGGER stagger = STAGGER::None) {
     TRACE("%s", __thefunc__);
-    return name + " (" + DIRECTION_STRING(direction) + ", " + STAGGER_STRING(stagger) +
-	   ")";
   };
 
   /// Routines to return a specific differential operator. Note we have to have a separate
@@ -104,7 +100,7 @@ template <typename FieldType> struct DerivativeStore {
   /// name for each of the
   /// method-classes so everything is consistently treated
   standardFunc getStandardDerivative(std::string name, DIRECTION direction,
-				     STAGGER stagger = STAGGER::None) {
+				     STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
@@ -117,7 +113,7 @@ template <typename FieldType> struct DerivativeStore {
   };
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
-					STAGGER stagger = STAGGER::None) {
+					STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
@@ -130,7 +126,7 @@ template <typename FieldType> struct DerivativeStore {
   };
 
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
-					STAGGER stagger = STAGGER::None) {
+					STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
@@ -142,7 +138,7 @@ template <typename FieldType> struct DerivativeStore {
 	getMethodName(name, direction, stagger).c_str());
   };
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
-				 STAGGER stagger = STAGGER::None) {
+				 STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
@@ -153,7 +149,7 @@ template <typename FieldType> struct DerivativeStore {
 			getMethodName(name, direction, stagger).c_str());
   };
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
-			     STAGGER stagger = STAGGER::None) {
+			     STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     const auto instance = getInstance();
     const auto key = getKey(direction, stagger, name);
@@ -171,13 +167,19 @@ private:
   std::map<std::size_t, upwindFunc> upwind;
   std::map<std::size_t, fluxFunc> flux;
 
+  std::string getMethodName(std::string name, DIRECTION direction,
+			    STAGGER stagger = STAGGER::None) const {
+    TRACE("%s", __thefunc__);
+    return name + " (" + DIRECTION_STRING(direction) + ", " + STAGGER_STRING(stagger) +
+	   ")";
+  };
   /// Provides a routine to produce a unique key given information about the specific type
   /// required. This is templated so requires compile-time information. Need to also
   /// supply
   /// a non-templated version to account for run-time choices
   /// Note : We could include the derivType in the key -- this would allow us to store
   /// all methods with the same function interface in the same map, which might be nice.
-  std::size_t getKey(DIRECTION direction, STAGGER stagger, std::string key) {
+  std::size_t getKey(DIRECTION direction, STAGGER stagger, std::string key) const {
     TRACE("%s", __thefunc__);
     // Note this key is indepedent of the field type (and hence the key is the same for
     // 3D/2D
@@ -193,7 +195,8 @@ private:
   /// Provides a routine to produce a unique key given information about the specific type
   /// required. This is templated so requires compile-time information. Makes use of
   /// a non-templated version that can be used to account for run-time choices
-  template <typename Direction, typename Stagger, typename Method> std::size_t getKey() {
+  template <typename Direction, typename Stagger, typename Method>
+  std::size_t getKey() const {
     TRACE("%s", __thefunc__);
     // Note this key is indepedent of the field type (and hence the key is the same for
     // 3D/2D
