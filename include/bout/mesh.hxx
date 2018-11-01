@@ -506,17 +506,38 @@ class Mesh {
 
   template<typename T>
   T indexDDY(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Y, 1>(f, outloc, method, region);
+    if (std::is_base_of<Field3D, T>::value && f.hasYupYdown() &&
+      ((&f.yup() != &f) || (&f.ydown() != &f))) {    
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 1>(f, outloc, method, region);
+    } else {
+      const T f_aligned = f.getMesh()->toFieldAligned(f);
+      T result = indexStandardDerivative<T, DIRECTION::Y, 1>(f, outloc, method, region);
+      return f.getMesh()->fromFieldAligned(result); 
+    }
   }
 
   template<typename T>
   T indexD2DY2(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Y, 2>(f, outloc, method, region);
+    if (std::is_base_of<Field3D, T>::value && f.hasYupYdown() &&
+      ((&f.yup() != &f) || (&f.ydown() != &f))) {    
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 2>(f, outloc, method, region);
+    } else {
+      const T f_aligned = f.getMesh()->toFieldAligned(f);
+      T result = indexStandardDerivative<T, DIRECTION::Y, 2>(f, outloc, method, region);
+      return f.getMesh()->fromFieldAligned(result); 
+    }
   }
 
   template<typename T>
   T indexD4DY4(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Y, 4>(f, outloc, method, region);
+    if (std::is_base_of<Field3D, T>::value && f.hasYupYdown() &&
+      ((&f.yup() != &f) || (&f.ydown() != &f))) {    
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 4>(f, outloc, method, region);  
+    } else {
+      const T f_aligned = f.getMesh()->toFieldAligned(f);
+      T result = indexStandardDerivative<T, DIRECTION::Y, 4>(f, outloc, method, region);
+      return f.getMesh()->fromFieldAligned(result); 
+    }
   }
 
   ////////////// Z DERIVATIVE /////////////////
@@ -569,12 +590,30 @@ class Mesh {
 
   template<typename T>
   T indexVDDY(const T& vel, const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
-    return indexFlowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel, f, outloc, method, region);
+    bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+    bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown() && ((&vel.yup() != &vel) || (&vel.ydown() != &vel)));
+    if (fHasParallelSlices && velHasParallelSlices) {
+      return indexFlowDerivative<T, DIRECTION::YOrthogonal, DERIV::Upwind>(vel, f, outloc, method, region);
+    } else {
+      const T f_aligned = f.getMesh()->toFieldAligned(f);
+      const T vel_aligned = vel.getMesh()->toFieldAligned(vel);      
+      T result = indexFlowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel_aligned, f_aligned, outloc, method, region);
+      return f.getMesh()->fromFieldAligned(result); 
+    }
   }
 
   template<typename T>
   T indexFDDY(const T& vel, const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
-    return indexFlowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel, f, outloc, method, region);
+    bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+    bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown() && ((&vel.yup() != &vel) || (&vel.ydown() != &vel)));
+    if (fHasParallelSlices && velHasParallelSlices) {
+      return indexFlowDerivative<T, DIRECTION::YOrthogonal, DERIV::Flux>(vel, f, outloc, method, region);
+    } else {
+      const T f_aligned = f.getMesh()->toFieldAligned(f);
+      const T vel_aligned = vel.getMesh()->toFieldAligned(vel);      
+      T result = indexFlowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel_aligned, f_aligned, outloc, method, region);
+      return f.getMesh()->fromFieldAligned(result); 
+    }
   }
 
   ////////////// Z DERIVATIVE /////////////////
