@@ -43,9 +43,6 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
   static_assert(nGuard == 1 || nGuard == 2,
 		"populateStencil currently only supports one or two guard cells"
 		);
-  static_assert(direction != DIRECTION::YOrthogonal || nGuard == 1,
-		"Orthogonal Y currently only supports one guard cell"
-		);
   
   switch(stagger) {
   case(STAGGER::None):
