@@ -464,7 +464,6 @@ struct registerMethod {
     // Now we want to get the actual field type out of the TypeContainer
     // used to pass this around
     using FieldType = typename FieldTypeContainer::type;
-
     
     auto derivativeRegister = DerivativeStore<FieldType>::getInstance();
 
@@ -543,6 +542,22 @@ produceCombinations<
     DerivativeType<FDDX_U1>, DerivativeType<FDDX_C2>, DerivativeType<FDDX_C4>>>
 registerDerivatives(registerMethod{});
 
+
+produceCombinations<
+  Set<e(DIRECTION, YOrthogonal)>, Set<e(STAGGER, None)>,
+  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+  Set<
+    // Standard
+    DerivativeType<DDX_C2>, DerivativeType<DDX_CWENO2>,
+    // Standard 2nd order
+    DerivativeType<D2DX2_C2>,
+    // Standard 4th order
+    // Upwind
+    DerivativeType<VDDX_C2>, DerivativeType<VDDX_U1>,
+    // Flux
+    DerivativeType<FDDX_U1>>>
+registerDerivativesYOrtho(registerMethod{});
+
 produceCombinations<
   Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
   Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
@@ -558,6 +573,21 @@ produceCombinations<
     // Flux
     DerivativeType<FDDX_U1_stag>>>
 registerStaggeredDerivatives(registerMethod{});
+
+produceCombinations<
+  Set<e(DIRECTION, YOrthogonal)>,
+  Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
+  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+  Set<
+    // Standard
+    DerivativeType<DDX_C2_stag>,
+    // Standard 2nd order
+    // Upwind
+    DerivativeType<VDDX_C2_stag>, 
+    DerivativeType<VDDX_U1_stag>,
+    // Flux
+    DerivativeType<FDDX_U1_stag>>>
+registerStaggeredDerivativesYOrtho(registerMethod{});
 
 class FFTDerivativeType {
 public:
