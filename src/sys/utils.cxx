@@ -58,6 +58,14 @@ const string lowercase(const string &str) {
   return strlow;
 }
 
+// Convert a string to upper case
+const string uppercase(const string &str) {
+  string strlow(str);
+
+  std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::toupper);
+  return strlow;
+}
+
 // Convert to lowercase, except for inside strings
 const string lowercasequote(const string &str) {
   string strlow(str);
