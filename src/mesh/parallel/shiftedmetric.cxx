@@ -143,11 +143,13 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
   
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
@@ -184,6 +186,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
