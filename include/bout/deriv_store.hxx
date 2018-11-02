@@ -32,9 +32,9 @@ template <typename FieldType> struct DerivativeStore {
 
   /// Register a function with standardFunc interface. Which map is used
   /// depends on the derivType input.
-  void registerDerivative(const standardFunc func, const DERIV derivType,
-			  const DIRECTION direction, const STAGGER stagger,
-			  const std::string methodName) {
+  void registerDerivative(standardFunc func, DERIV derivType,
+			  DIRECTION direction, STAGGER stagger,
+			  std::string methodName) {
     TRACE("%s", __thefunc__);
     const auto key = getKey(direction, stagger, methodName);
 
@@ -58,9 +58,9 @@ template <typename FieldType> struct DerivativeStore {
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
   /// depends on the derivType input.
-  void registerDerivative(const upwindFunc func, const DERIV derivType,
-			  const DIRECTION direction, const STAGGER stagger,
-			  const std::string methodName) {
+  void registerDerivative(upwindFunc func, DERIV derivType,
+			  DIRECTION direction, STAGGER stagger,
+			  std::string methodName) {
     TRACE("%s", __thefunc__);
     const auto key = getKey(direction, stagger, methodName);
     switch (derivType) {

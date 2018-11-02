@@ -45,7 +45,7 @@ inline std::ostream &operator<<(std::ostream &out, const metaData &meta) {
 template <typename FF> class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, const REGION region) const {
+  void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard ||
             meta.derivType == DERIV::StandardSecond ||
@@ -59,7 +59,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
@@ -78,7 +78,7 @@ public:
   }
 
   BoutReal apply(const stencil &f) const { return func(f); }
-  BoutReal apply(const BoutReal v, const stencil &f) const { return func(v, f); }
+  BoutReal apply(BoutReal v, const stencil &f) const { return func(v, f); }
   BoutReal apply(const stencil &v, const stencil &f) const { return func(v, f); }
 
   const FF func{};
@@ -89,7 +89,7 @@ public:
   struct name {								\
     BoutReal operator()(const stencil &f) const;			\
     const metaData meta = {key, nGuards, type};				\
-    BoutReal operator()(const BoutReal UNUSED(vc),\
+    BoutReal operator()(BoutReal UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &UNUSED(v),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
@@ -99,17 +99,17 @@ public:
 #define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const BoutReal vc, const stencil &f) const;	\
+    BoutReal operator()(BoutReal vc, const stencil &f) const;	\
     BoutReal operator()(const stencil &UNUSED(v),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     const metaData meta = {key, nGuards, type};				\
   };									\
-  BoutReal name::operator()(const BoutReal vc, const stencil &f) const
+  BoutReal name::operator()(BoutReal vc, const stencil &f) const
 
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const BoutReal UNUSED(vc),\
+    BoutReal operator()(BoutReal UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &v, const stencil &f) const;	\
     const metaData meta = {key, nGuards, type};				\
@@ -197,7 +197,7 @@ DEFINE_STANDARD_DERIV(D4DX4_C2, "C2", 2, DERIV::StandardFourth) {
 /// Hence convert cell centred values -> centred values, or left -> left
 ///
 ////////////////////////////////////////////////////////////////////////////////
-std::tuple<BoutReal, BoutReal> vUpDown(const BoutReal v) {
+std::tuple<BoutReal, BoutReal> vUpDown(BoutReal v) {
   return std::tuple<BoutReal, BoutReal>{0.5 * (v + fabs(v)), 0.5 * (v - fabs(v))};
 }
 
@@ -575,7 +575,7 @@ registerStaggeredDerivativesYOrtho(registerMethod{});
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, const REGION region) const {
+  void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
@@ -636,7 +636,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
@@ -648,7 +648,7 @@ public:
 class FFT2ndDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, const REGION region) const {
+  void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
@@ -702,7 +702,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, const REGION region) const {
+  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
