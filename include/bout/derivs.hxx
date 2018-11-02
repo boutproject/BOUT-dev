@@ -16,7 +16,12 @@
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 
 struct metaData {
-  const std::string key;
+  // Would rather use a std::string here but this causes the
+  // metaData struct to be non-trivially destrucible which
+  // can prevent using temporary instances of this. Instead
+  // we'll use char* for now.
+  //const std::string key; 
+  const char* key;
   const int nGuards;
   const DERIV derivType; // Can be used to identify the type of the derivative
 };
@@ -39,57 +44,34 @@ inline std::ostream &operator<<(std::ostream &out, const metaData &meta) {
 /// type as well.
 template <typename FF> class DerivativeType {
 public:
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard ||
             meta.derivType == DERIV::StandardSecond ||
             meta.derivType == DERIV::StandardFourth)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
 
-    // For now use a runtime check on the required number of guards to pick
-    // how we call populateStencil. In future it would be nice to be able
-    // to replace 1/2 with a constexpr of some form (can do it now if
-    // meta didn't contain a string).
-    if(meta.nGuards == 1) {
-      BOUT_FOR(i, var.getRegion(region)) {
-	result[i] = apply(populateStencil<direction, stagger, 1>(var, i));
-      }
-    } else {
-      BOUT_FOR(i, var.getRegion(region)) {
-	result[i] = apply(populateStencil<direction, stagger, 2>(var, i));
-      }
+    BOUT_FOR(i, var.getRegion(region)) {
+      result[i] = apply(populateStencil<direction, stagger, nGuards>(var, i));
     }
     return;
   }
 
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
 
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
-      if(meta.nGuards == 1) {      
-	BOUT_FOR(i, var.getRegion(region)) {
-	  result[i] = apply(populateStencil<direction, stagger, 1>(vel, i),
-			    populateStencil<direction, STAGGER::None, 1>(var, i));
-	}
-      } else {
-	BOUT_FOR(i, var.getRegion(region)) {
-	  result[i] = apply(populateStencil<direction, stagger, 2>(vel, i),
-			    populateStencil<direction, STAGGER::None, 2>(var, i));
-	}
+      BOUT_FOR(i, var.getRegion(region)) {
+	result[i] = apply(populateStencil<direction, stagger, nGuards>(vel, i),
+			  populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }
     } else {
-      if(meta.nGuards == 1) {      
-	BOUT_FOR(i, var.getRegion(region)) {
-	  result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, 1>(var, i));
-	}
-      } else {
-	BOUT_FOR(i, var.getRegion(region)) {
-	  result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, 2>(var, i));
-	}
+      BOUT_FOR(i, var.getRegion(region)) {
+	result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }
     }
     return;
@@ -464,6 +446,13 @@ struct registerMethod {
     // Now we want to get the actual field type out of the TypeContainer
     // used to pass this around
     using FieldType = typename FieldTypeContainer::type;
+
+    // Note whilst this should be known at compile time using this directly in the
+    // template parameters below causes problems for old versions of gcc/libstdc++
+    // (tested with 4.8.3) so we currently use a hacky workaround. Once we drop
+    // support for these versions the branching in the case statement below can be
+    // removed and we can use nGuard directly in the template statement.
+    const int nGuards = Method{}.meta.nGuards;
     
     auto derivativeRegister = DerivativeStore<FieldType>::getInstance();
 
@@ -471,24 +460,44 @@ struct registerMethod {
     case (DERIV::Standard):
     case (DERIV::StandardSecond):
     case (DERIV::StandardFourth): {
-      const auto theFunc = std::bind(
-          // Method to store in function
-				     &Method::template standard<Direction::value, Stagger::value, FieldType>,
-          // Arguments -- first is hidden this of type-bound, others are placeholders
-          // for input field, output field, region
-          Method{}, _1, _2, _3);
-      derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+      if(nGuards == 1) {
+	const auto theFunc = std::bind(
+				       // Method to store in function
+				       &Method::template standard<Direction::value, Stagger::value, 1, FieldType>,
+				       // Arguments -- first is hidden this of type-bound, others are placeholders
+				       // for input field, output field, region
+				       Method{}, _1, _2, _3);
+	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);	
+      } else {
+	const auto theFunc = std::bind(
+				       // Method to store in function
+				       &Method::template standard<Direction::value, Stagger::value, 2, FieldType>,
+				       // Arguments -- first is hidden this of type-bound, others are placeholders
+				       // for input field, output field, region
+				       Method{}, _1, _2, _3);
+	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);	
+      }	
       break;
     }
     case (DERIV::Upwind):
     case (DERIV::Flux): {
-      const auto theFunc = std::bind(
-          // Method to store in function
-				     &Method::template upwindOrFlux<Direction::value, Stagger::value, FieldType>,
-          // Arguments -- first is hidden this of type-bound, others are placeholders
-          // for input field, output field, region
-          Method{}, _1, _2, _3, _4);
-      derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+      if(nGuards == 1) {      
+	const auto theFunc = std::bind(
+				       // Method to store in function
+				       &Method::template upwindOrFlux<Direction::value, Stagger::value, 1, FieldType>,
+				       // Arguments -- first is hidden this of type-bound, others are placeholders
+				       // for input field, output field, region
+				       Method{}, _1, _2, _3, _4);
+	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+      } else {
+	const auto theFunc = std::bind(
+				       // Method to store in function
+				       &Method::template upwindOrFlux<Direction::value, Stagger::value, 2, FieldType>,
+				       // Arguments -- first is hidden this of type-bound, others are placeholders
+				       // for input field, output field, region
+				       Method{}, _1, _2, _3, _4);
+	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+      }
       break;
     }
     default:
@@ -591,11 +600,11 @@ registerStaggeredDerivativesYOrtho(registerMethod{});
 
 class FFTDerivativeType {
 public:
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
     ASSERT2(direction == DIRECTION::Z); //Only in Z for now
     ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
     ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
@@ -652,7 +661,7 @@ public:
     return;
   }
 
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
@@ -664,11 +673,11 @@ public:
 
 class FFT2ndDerivativeType {
 public:
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= meta.nGuards);
+    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
     ASSERT2(direction == DIRECTION::Z); //Only in Z for now
     ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
     ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
@@ -718,7 +727,7 @@ public:
     return;
   }
 
-  template <DIRECTION direction, STAGGER stagger, typename T>
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
@@ -726,7 +735,6 @@ public:
   }
   metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
-
 
 produceCombinations<
   Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>, Set<TypeContainer<Field3D>>,
