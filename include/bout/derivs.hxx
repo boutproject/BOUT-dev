@@ -662,7 +662,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
+  void upwindOrFlux(const T &UNUSED(vel), const T &UNUSED(var), T &UNUSED(result), REGION UNUSED(region)) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
@@ -728,7 +728,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
+  void upwindOrFlux(const T &UNUSED(vel), const T &UNUSED(var), T &UNUSED(result), REGION UNUSED(region)) const {
     TRACE("%s",__thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
