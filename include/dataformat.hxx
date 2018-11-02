@@ -133,9 +133,24 @@ class DataFormat {
   ///                        will be added to the file instead of to a
   ///                        variable.
   /// @param[in] attrname    Attribute name
-  /// @param[in] value       A string attribute to attach to the variable
+  /// @param[in] value       An int attribute to attach to the variable
   virtual void setAttribute(const string &varname, const string &attrname,
                             int value) = 0;
+
+  /// Sets a BoutReal attribute
+  ///
+  /// Inputs
+  /// ------
+  ///
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then the attribute
+  ///                        will be added to the file instead of to a
+  ///                        variable.
+  /// @param[in] attrname    Attribute name
+  /// @param[in] value       A BoutReal attribute to attach to the variable
+  virtual void setAttribute(const string &varname, const string &attrname,
+                            BoutReal value) = 0;
+
   /// Gets a string attribute
   ///
   /// Inputs
@@ -152,7 +167,7 @@ class DataFormat {
   /// text                   A string attribute of the variable
   virtual bool getAttribute(const string &varname, const string &attrname, std::string &text) = 0;
 
-  /// Sets an integer attribute
+  /// Gets an integer attribute
   ///
   /// Inputs
   /// ------
@@ -167,6 +182,22 @@ class DataFormat {
   /// -------
   /// value                  An int attribute of the variable
   virtual bool getAttribute(const string &varname, const string &attrname, int &value) = 0;
+
+  /// Gets a BoutReal attribute
+  ///
+  /// Inputs
+  /// ------
+  ///
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then get the
+  ///                        attribute from the top-level of the file instead
+  ///                        of from a variable.
+  /// @param[in] attrname    Attribute name
+  ///
+  /// Returns
+  /// -------
+  /// value                  A BoutReal attribute of the variable
+  virtual bool getAttribute(const string &varname, const string &attrname, BoutReal &value) = 0;
 };
 
 // For backwards compatability. In formatfactory.cxx
