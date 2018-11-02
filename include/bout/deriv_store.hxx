@@ -59,6 +59,33 @@ template <typename FieldType> struct DerivativeStore {
     return instance;
   }
 
+  /// Returns a vector of all registered method names for the
+  /// specified derivative type, direction and stagger.
+  std::vector<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+    TRACE("%s", __thefunc__);
+    // Get the key
+    auto key = getKey(direction, stagger, DERIV_STRING(derivType));
+    return getInstance().registeredMethods.at(key);
+  };
+
+  /// Outputs a list of all registered method names for the
+  /// specified derivative type, direction and stagger.
+  void listAvailableMethods(DERIV derivType, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+    TRACE("%s", __thefunc__);
+    
+    // Introductory information
+    output_info << "Available methods for derivative type '";
+    output_info << DERIV_STRING(derivType);
+    output_info << "' in direction ";
+    output_info << DIRECTION_STRING(direction);
+    output_info << " ( Staggering : ";
+    output_info << STAGGER_STRING(stagger) << " ) : \n";
+
+    for (const auto &i : getInstance().getAvailableMethods(derivType, direction, stagger)) {
+      output_info << "\t" << i << "\n";
+    };
+  };
+  
   /// Register a function with standardFunc interface. Which map is used
   /// depends on the derivType input.
   void registerDerivative(standardFunc func, DERIV derivType,
@@ -67,6 +94,10 @@ template <typename FieldType> struct DerivativeStore {
     TRACE("%s", __thefunc__);
     const auto key = getKey(direction, stagger, methodName);
 
+    // Register this method name in lookup of known methods
+    getInstance().registeredMethods[getKey(direction, stagger,
+			     DERIV_STRING(derivType))].push_back(methodName);
+    
     switch (derivType) {
     case (DERIV::Standard):
       getInstance().standard[key] = func;
@@ -92,6 +123,11 @@ template <typename FieldType> struct DerivativeStore {
 			  std::string methodName) {
     TRACE("%s", __thefunc__);
     const auto key = getKey(direction, stagger, methodName);
+
+    // Register this method name in lookup of known methods
+    getInstance().registeredMethods[getKey(direction, stagger,
+			     DERIV_STRING(derivType))].push_back(methodName);
+
     switch (derivType) {
     case (DERIV::Upwind):
       getInstance().upwind[key] = func;
@@ -277,8 +313,6 @@ template <typename FieldType> struct DerivativeStore {
 	
       }
     }
-   
-      
   }
 
   /// The following stores what actual method to use when DIFF_DEFAULT
@@ -296,6 +330,8 @@ private:
   std::map<std::size_t, upwindFunc> upwind;
   std::map<std::size_t, fluxFunc> flux;
 
+  std::map<std::size_t, std::vector<std::string>> registeredMethods;
+  
   std::string getMethodName(std::string name, DIRECTION direction,
 			    STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
