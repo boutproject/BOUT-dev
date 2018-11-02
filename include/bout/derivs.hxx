@@ -5,13 +5,20 @@
 #include <iostream>
 
 #include <bout/assert.hxx>
+#include <bout/constants.hxx>
 #include <bout/deriv_store.hxx>
+#include <bout/region.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
+
 #include <bout_types.hxx>
+#include <fft.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <unused.hxx>
+
+class Field3D;
+class Field2D;
 
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 

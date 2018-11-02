@@ -44,26 +44,11 @@
  *
  **************************************************************************/
 
-#include <bout/constants.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <bout/constants.hxx>
 #include <bout/derivs.hxx>
-#include <bout/openmpwrap.hxx>
-
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <unused.hxx>
-
-#include <cmath>
-#include <stdlib.h>
-#include <string.h>
-
-#include <output.hxx>
-
-#include <bout/mesh.hxx>
 
 /*******************************************************************************
  * Limiters
@@ -113,27 +98,9 @@ BoutReal DDX_KT(const stencil &f, const stencil &u, const BoutReal Vmax) {
   return Fm - Fp;
 }
 
-/// Translate between short names, long names and DIFF_METHOD codes
-struct DiffNameLookup {
-  DIFF_METHOD method;
-  const char *label; // Short name
-  const char *name;  // Long name
-};
-
-/// Differential function name/code lookup
-static DiffNameLookup DiffNameTable[] = {
-    {DIFF_U1, "U1", "First order upwinding"},
-    {DIFF_U2, "U2", "Second order upwinding"},
-    {DIFF_C2, "C2", "Second order central"},
-    {DIFF_W2, "W2", "Second order WENO"},
-    {DIFF_W3, "W3", "Third order WENO"},
-    {DIFF_C4, "C4", "Fourth order central"},
-    {DIFF_U3, "U3", "Third order upwinding"},
-    {DIFF_U3, "U4", "Third order upwinding (Can't do 4th order yet)."},
-    {DIFF_S2, "S2", "Smoothing 2nd order"},
-    {DIFF_FFT, "FFT", "FFT"},
-    {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
-    {DIFF_DEFAULT, nullptr, nullptr}}; // Use to terminate the list
+/*******************************************************************************
+ * Helper routines
+ *******************************************************************************/
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
 void Mesh::derivs_init(Options *options) {
@@ -146,27 +113,8 @@ void Mesh::derivs_init(Options *options) {
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }
 
-
-/*******************************************************************************
- * Actual derivative operators
- *******************************************************************************/
-
-/*******************************************************************************
- * Advection schemes
- *
- * Jan 2018  - Re-written to use iterators and handle staggering as different cases
- * Jan 2009  - Re-written to use Set*Stencil routines
- *******************************************************************************/
-
-/*******************************************************************************
- * Flux conserving schemes
- *******************************************************************************/
-
-/*******************************************************************************
- * Helper routines
- *******************************************************************************/
-
 STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
+  TRACE("Mesh::getStagger -- three arguments");
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
           (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
@@ -184,6 +132,7 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_L
 STAGGER Mesh::getStagger(const CELL_LOC UNUSED(vloc), const CELL_LOC inloc,
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
 #endif
+  TRACE("Mesh::getStagger -- four arugments");  
   ASSERT1(vloc == inloc);
   return getStagger(inloc, outloc, allowedStaggerLoc);
 }
