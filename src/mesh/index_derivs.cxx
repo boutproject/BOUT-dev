@@ -62,12 +62,6 @@ BoutReal SUPERBEE(BoutReal r) {
   return BOUTMAX(0.0, BOUTMIN(2. * r, 1.0), BOUTMIN(r, 2.));
 }
 
-/*******************************************************************************
- * Basic derivative methods.
- * All expect to have an input grid cell at the same location as the output
- * Hence convert cell centred values -> centred values, or left -> left
- *******************************************************************************/
-
 //////////////////////// MUSCL scheme ///////////////////////
 
 void DDX_KT_LR(const stencil &f, BoutReal &fLp, BoutReal &fRp, BoutReal &fLm,
