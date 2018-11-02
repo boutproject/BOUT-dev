@@ -759,11 +759,6 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
                          const std::string &text) {
   TRACE("Ncxx4::setAttribute(string)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-
   std::string existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (text != existing_att) {
@@ -772,19 +767,25 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     }
   }
   // else: attribute does not exist, so just write it
-  
-  var.putAtt(attrname, text);
+
+  if (varname == "") {
+    // write attribute of file
+    dataFile->putAtt(attrname, text);
+  } else {
+    // write attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var.putAtt(attrname, text);
+  }
 }
 
 void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname,
                          int value) {
   TRACE("Ncxx4::setAttribute(int)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-  
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
@@ -794,46 +795,86 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   }
   // else: attribute does not exist, so just write it
 
-  var.putAtt(attrname, NcType::nc_INT, value);
+  if (varname == "") {
+    // write attribute of file
+    dataFile->putAtt(attrname, NcType::nc_INT, value);
+  } else {
+    // write attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var.putAtt(attrname, NcType::nc_INT, value);
+  }
 }
 
 bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
   TRACE("Ncxx4::getStringAttribute(string)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  if (varname == "") {
+    // attribute of file
+    // Check if attribute exists without throwing exception when it doesn't
+    std::multimap<string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
+      return false;
+    } else {
+      NcGroupAtt fileAtt = dataFile->getAtt(attrname);
+      fileAtt.getValues(text);
 
-  // Check if attribute exists without throwing exception when it doesn't
-  map<string, NcVarAtt> varAtts_list = var.getAtts();
-  if (varAtts_list.find(attrname) == varAtts_list.end()) {
-    return false;
+      return true;
+    }
   } else {
-    NcVarAtt varAtt = var.getAtt(attrname);
-    varAtt.getValues(text);
+    // attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
 
-    return true;
+    // Check if attribute exists without throwing exception when it doesn't
+    map<string, NcVarAtt> varAtts_list = var.getAtts();
+    if (varAtts_list.find(attrname) == varAtts_list.end()) {
+      return false;
+    } else {
+      NcVarAtt varAtt = var.getAtt(attrname);
+      varAtt.getValues(text);
+
+      return true;
+    }
   }
 }
 
 bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
   TRACE("Ncxx4::getIntAttribute(string)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  if (varname == "") {
+    // attribute of file
+    // Check if attribute exists without throwing exception when it doesn't
+    std::multimap<string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
+      return false;
+    } else {
+      NcGroupAtt fileAtt = dataFile->getAtt(attrname);
+      fileAtt.getValues(&value);
 
-  // Check if attribute exists without throwing exception when it doesn't
-  map<string, NcVarAtt> varAtts_list = var.getAtts();
-  if (varAtts_list.find(attrname) == varAtts_list.end()) {
-    return false;
+      return true;
+    }
   } else {
-    NcVarAtt varAtt = var.getAtt(attrname);
-    varAtt.getValues(&value);
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
 
-    return true;
+    // Check if attribute exists without throwing exception when it doesn't
+    map<string, NcVarAtt> varAtts_list = var.getAtts();
+    if (varAtts_list.find(attrname) == varAtts_list.end()) {
+      return false;
+    } else {
+      NcVarAtt varAtt = var.getAtt(attrname);
+      varAtt.getValues(&value);
+
+      return true;
+    }
   }
 }
 

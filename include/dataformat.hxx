@@ -114,7 +114,10 @@ class DataFormat {
   /// Inputs
   /// ------
   ///
-  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then the attribute
+  ///                        will be added to the file instead of to a
+  ///                        variable.
   /// @param[in] attrname    Attribute name
   /// @param[in] text        A string attribute to attach to the variable
   virtual void setAttribute(const string &varname, const string &attrname,
@@ -125,7 +128,10 @@ class DataFormat {
   /// Inputs
   /// ------
   ///
-  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then the attribute
+  ///                        will be added to the file instead of to a
+  ///                        variable.
   /// @param[in] attrname    Attribute name
   /// @param[in] value       A string attribute to attach to the variable
   virtual void setAttribute(const string &varname, const string &attrname,
@@ -135,7 +141,10 @@ class DataFormat {
   /// Inputs
   /// ------
   ///
-  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then get the
+  ///                        attribute from the top-level of the file instead
+  ///                        of from a variable.
   /// @param[in] attrname    Attribute name
   ///
   /// Returns
@@ -148,7 +157,10 @@ class DataFormat {
   /// Inputs
   /// ------
   ///
-  /// @param[in] varname     Variable name. The variable must already exist
+  /// @param[in] varname     Variable name. The variable must already exist. If
+  ///                        varname is the empty string "" then get the
+  ///                        attribute from the top-level of the file instead
+  ///                        of from a variable.
   /// @param[in] attrname    Attribute name
   ///
   /// Returns
