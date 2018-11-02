@@ -146,11 +146,13 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
   ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY); // Never calculate x-guard cells here
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   for (const auto &i : mesh.getRegion2D(REGION_STRING(region))) {
     shiftZ(f(i.x(),i.y()), phs[i.x()][i.y()], result(i.x(),i.y()));
@@ -187,6 +189,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   // We only use methods in ShiftedMetric to get fields for parallel operations
   // like interp_to or DDY.
