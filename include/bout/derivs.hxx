@@ -78,7 +78,7 @@ public:
   }
 
   BoutReal apply(const stencil &f) const { return func(f); }
-  BoutReal apply(const BoutReal &v, const stencil &f) const { return func(v, f); }
+  BoutReal apply(const BoutReal v, const stencil &f) const { return func(v, f); }
   BoutReal apply(const stencil &v, const stencil &f) const { return func(v, f); }
 
   const FF func{};
@@ -89,7 +89,7 @@ public:
   struct name {								\
     BoutReal operator()(const stencil &f) const;			\
     const metaData meta = {key, nGuards, type};				\
-    BoutReal operator()(const BoutReal &UNUSED(vc),\
+    BoutReal operator()(const BoutReal UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &UNUSED(v),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
@@ -99,17 +99,17 @@ public:
 #define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const BoutReal &vc, const stencil &f) const;	\
+    BoutReal operator()(const BoutReal vc, const stencil &f) const;	\
     BoutReal operator()(const stencil &UNUSED(v),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     const metaData meta = {key, nGuards, type};				\
   };									\
-  BoutReal name::operator()(const BoutReal &vc, const stencil &f) const
+  BoutReal name::operator()(const BoutReal vc, const stencil &f) const
 
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
   struct name {								\
     BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const BoutReal &UNUSED(vc),\
+    BoutReal operator()(const BoutReal UNUSED(vc),\
 			const stencil &UNUSED(f)) const {return BoutNaN;}; \
     BoutReal operator()(const stencil &v, const stencil &f) const;	\
     const metaData meta = {key, nGuards, type};				\
