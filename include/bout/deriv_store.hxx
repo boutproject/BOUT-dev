@@ -61,7 +61,8 @@ template <typename FieldType> struct DerivativeStore {
 
   /// Returns a vector of all registered method names for the
   /// specified derivative type, direction and stagger.
-  std::vector<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction, STAGGER stagger = STAGGER::None) {
+  std::vector<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction,
+					       STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
     // Get the key
     auto key = getKey(direction, stagger, DERIV_STRING(derivType));
@@ -71,7 +72,7 @@ template <typename FieldType> struct DerivativeStore {
   /// Outputs a list of all registered method names for the
   /// specified derivative type, direction and stagger.
   void listAvailableMethods(DERIV derivType, DIRECTION direction,
-                            STAGGER stagger = STAGGER::None) {
+                            STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
 
     // Introductory information
