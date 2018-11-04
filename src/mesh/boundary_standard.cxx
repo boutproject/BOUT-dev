@@ -102,26 +102,26 @@ namespace {
 
   // 2nd order extrapolation to a point
   template<typename T>
-  void extrapolate2nd(T &f, int x, int bx, int y, int by, int z) {
+  inline void extrapolate2nd(T &f, int x, int bx, int y, int by, int z) {
     f(x, y, z) = 2*f(x - bx, y - by, z) - f(x - 2*bx, y - 2*by, z);
   }
 
   // 3rd order extrapolation to a point
   template<typename T>
-  void extrapolate3rd(T &f, int x, int bx, int y, int by, int z) {
+  inline void extrapolate3rd(T &f, int x, int bx, int y, int by, int z) {
     f(x, y, z) = 3.0*f(x - bx, y - by, z) - 3.0*f(x - 2*bx, y - 2*by, z) + f(x - 3*bx, y - 3*by, z);
   }
 
   // 4th order extrapolation to a point
   template<typename T>
-  void extrapolate4th(T &f, int x, int bx, int y, int by, int z) {
+  inline void extrapolate4th(T &f, int x, int bx, int y, int by, int z) {
     f(x, y, z) = 4.0*f(x - bx, y - by, z) - 6.0*f(x - 2*bx, y - 2*by, z)
       + 4.0*f(x - 3*bx, y - 3*by, z) - f(x - 4*bx, y - 4*by, z);
   }
 
   // 5th order extrapolation to a point
   template<typename T>
-  void extrapolate5th(T &f, int x, int bx, int y, int by, int z) {
+  inline void extrapolate5th(T &f, int x, int bx, int y, int by, int z) {
     f(x, y, z) = 5.0*f(x - bx, y - by, z) - 10.0*f(x - 2*bx, y - 2*by, z)
       + 10.0*f(x - 3*bx, y - 3*by, z) - 5.0*f(x - 4*bx, y - 4*by, z)
       + f(x - 5*bx, y - 5*by, z);
@@ -833,7 +833,7 @@ BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<strin
 void BoundaryDirichlet_O3::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal UNUSED(delta)) {
   f(x, y, z) = (8./3)*val - 2.*f(x - bx, y - by, z) + f(x - 2*bx, y - 2*by, z)/3.;
 }
-void BoundaryDirichlet_O3::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal UNUSED(delta)) {
+inline void BoundaryDirichlet_O3::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal UNUSED(delta)) {
   f(x, y, z) = (8./3)*val - 2.*f(x - bx, y - by, z) + f(x - 2*bx, y - 2*by, z)/3.;
 }
 
@@ -1114,7 +1114,7 @@ BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &a
 void BoundaryNeumann::applyAtPoint(Field2D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal delta) {
   f(x, y, z) = f(x - bx, y - by, z) + delta*val;
 }
-void BoundaryNeumann::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal delta) {
+inline void BoundaryNeumann::applyAtPoint(Field3D &f, BoutReal val, int x, int bx, int y, int by, int z, BoutReal delta) {
   f(x, y, z) = f(x - bx, y - by, z) + delta*val;
 }
 
