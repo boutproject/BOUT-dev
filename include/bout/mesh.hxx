@@ -806,7 +806,7 @@ T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METH
   }
   
   // Lookup the method
-  auto derivativeStore = DerivativeStore<T>{}.getInstance();
+  auto& derivativeStore = DerivativeStore<T>::getInstance();
   typename DerivativeStore<T>::upwindFunc derivativeMethod;
   if (derivType == DERIV::Upwind) {
     derivativeMethod = derivativeStore.getUpwindDerivative(DIFF_METHOD_STRING(method), direction, stagger);
@@ -870,7 +870,7 @@ T Mesh::indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method,
   }
   
   // Lookup the method
-  auto derivativeStore = DerivativeStore<T>{}.getInstance();
+  auto& derivativeStore = DerivativeStore<T>::getInstance();
   typename DerivativeStore<T>::standardFunc derivativeMethod;
   
   if (order == 1) {

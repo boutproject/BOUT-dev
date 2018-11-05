@@ -31,6 +31,7 @@
 
 #include <functional>
 #include <map>
+#include <unordered_map>
 
 #include <bout/scorepwrapper.hxx>
 
@@ -52,9 +53,17 @@ template <typename FieldType> struct DerivativeStore {
 					const REGION)>;
   using fluxFunc = std::function<void(const FieldType &, const FieldType &, FieldType &,
 				      const REGION)>;
+  
+#ifdef USE_ORDERED_MAP_FOR_DERIVATIVE_STORE
+  template<typename K, typename V>
+  using storageType = std::map<K, V>;
+#else
+  template<typename K, typename V>  
+  using storageType = std::unordered_map<K, V>;
+#endif
 
   // Singleton method
-  static DerivativeStore &getInstance() {
+  static DerivativeStore& getInstance() {
     static DerivativeStore instance;
     return instance;
   }
@@ -66,7 +75,7 @@ template <typename FieldType> struct DerivativeStore {
     TRACE("%s", __thefunc__);
     // Get the key
     auto key = getKey(direction, stagger, DERIV_STRING(derivType));
-    return getInstance().registeredMethods.at(key);
+    return registeredMethods.at(key);
   };
 
   /// Outputs a list of all registered method names for the
@@ -84,7 +93,7 @@ template <typename FieldType> struct DerivativeStore {
     output_info << STAGGER_STRING(stagger) << " ) : \n";
 
     for (const auto &i :
-         getInstance().getAvailableMethods(derivType, direction, stagger)) {
+         getAvailableMethods(derivType, direction, stagger)) {
       output_info << "\t" << i << "\n";
     };
   };
@@ -98,19 +107,18 @@ template <typename FieldType> struct DerivativeStore {
     const auto key = getKey(direction, stagger, methodName);
 
     // Register this method name in lookup of known methods
-    getInstance()
-        .registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))]
-        .push_back(methodName);
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))]
+      .push_back(methodName);
 
     switch (derivType) {
     case (DERIV::Standard):
-      getInstance().standard[key] = func;
+      standard[key] = func;
       return;
     case (DERIV::StandardSecond):
-      getInstance().standardSecond[key] = func;
+      standardSecond[key] = func;
       return;
     case (DERIV::StandardFourth):
-      getInstance().standardFourth[key] = func;
+      standardFourth[key] = func;
       return;
     default:
       throw BoutException(
@@ -129,16 +137,15 @@ template <typename FieldType> struct DerivativeStore {
     const auto key = getKey(direction, stagger, methodName);
 
     // Register this method name in lookup of known methods
-    getInstance()
-        .registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))]
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))]
         .push_back(methodName);
 
     switch (derivType) {
     case (DERIV::Upwind):
-      getInstance().upwind[key] = func;
+      upwind[key] = func;
       return;
     case (DERIV::Flux):
-      getInstance().flux[key] = func;
+      flux[key] = func;
       return;
     default:
       throw BoutException(
@@ -173,14 +180,13 @@ template <typename FieldType> struct DerivativeStore {
   standardFunc getStandardDerivative(std::string name, DIRECTION direction,
                                      STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
-    const auto instance = getInstance();
     const auto realName =
         nameLookup(name,
                    defaultMethods.at(getKey(direction, stagger,
                                             DERIV_STRING(DERIV::Standard))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = instance.standard.find(key);
-    if (resultOfFind != instance.standard.end())
+    const auto resultOfFind = standard.find(key);
+    if (resultOfFind != standard.end())
       return resultOfFind->second;
     throw BoutException(
         "Couldn't find requested method %s in map for standard derivative.",
@@ -190,14 +196,13 @@ template <typename FieldType> struct DerivativeStore {
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
-    const auto instance = getInstance();
     const auto realName = nameLookup(
         name,
         defaultMethods.at(
             getKey(direction, stagger, DERIV_STRING(DERIV::StandardSecond))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = instance.standardSecond.find(key);
-    if (resultOfFind != instance.standardSecond.end())
+    const auto resultOfFind = standardSecond.find(key);
+    if (resultOfFind != standardSecond.end())
       return resultOfFind->second;
     throw BoutException("Couldn't find requested method %s in map for "
                         "standardSecond derivative.",
@@ -207,30 +212,29 @@ template <typename FieldType> struct DerivativeStore {
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
-    const auto instance = getInstance();
     const auto realName = nameLookup(
         name,
         defaultMethods.at(
             getKey(direction, stagger, DERIV_STRING(DERIV::StandardFourth))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = instance.standardFourth.find(key);
-    if (resultOfFind != instance.standardFourth.end())
+    const auto resultOfFind = standardFourth.find(key);
+    if (resultOfFind != standardFourth.end())
       return resultOfFind->second;
     throw BoutException("Couldn't find requested method %s in map for "
                         "standardFourth derivative.",
                         getMethodName(realName, direction, stagger).c_str());
   };
+  
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
                                  STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
-    const auto instance = getInstance();
     const auto realName =
         nameLookup(name,
                    defaultMethods.at(getKey(direction, stagger,
                                             DERIV_STRING(DERIV::Upwind))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = instance.upwind.find(key);
-    if (resultOfFind != instance.upwind.end())
+    const auto resultOfFind = upwind.find(key);
+    if (resultOfFind != upwind.end())
       return resultOfFind->second;
     throw BoutException(
         "Couldn't find requested method %s in map for upwind derivative.",
@@ -239,14 +243,13 @@ template <typename FieldType> struct DerivativeStore {
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
                              STAGGER stagger = STAGGER::None) const {
     TRACE("%s", __thefunc__);
-    const auto instance = getInstance();
     const auto realName =
         nameLookup(name,
                    defaultMethods.at(
                        getKey(direction, stagger, DERIV_STRING(DERIV::Flux))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = instance.flux.find(key);
-    if (resultOfFind != instance.flux.end())
+    const auto resultOfFind = flux.find(key);
+    if (resultOfFind != flux.end())
       return resultOfFind->second;
     throw BoutException(
         "Couldn't find requested method %s in map for flux derivative.",
@@ -352,16 +355,22 @@ template <typename FieldType> struct DerivativeStore {
   /// upwind etc.). Note for now we'll always use STAGGER::None as we
   /// currently assume the default method is independent of staggering --
   /// it might be useful to relax this assumption!
-  std::map<std::size_t, std::string> defaultMethods;
+  storageType<std::size_t, std::string> defaultMethods;
 
 private:
-  std::map<std::size_t, standardFunc> standard;
-  std::map<std::size_t, standardFunc> standardSecond;
-  std::map<std::size_t, standardFunc> standardFourth;
-  std::map<std::size_t, upwindFunc> upwind;
-  std::map<std::size_t, fluxFunc> flux;
+  // Make the constructor private so we can't make instances outside
+  // of the struct
+  DerivativeStore(){};
+  // No copy constructor allowed
+  DerivativeStore(const DerivativeStore &junk) = delete;
 
-  std::map<std::size_t, std::vector<std::string>> registeredMethods;
+  storageType<std::size_t, standardFunc> standard;
+  storageType<std::size_t, standardFunc> standardSecond;
+  storageType<std::size_t, standardFunc> standardFourth;
+  storageType<std::size_t, upwindFunc> upwind;
+  storageType<std::size_t, fluxFunc> flux;
+
+  storageType<std::size_t, std::vector<std::string>> registeredMethods;
 
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
