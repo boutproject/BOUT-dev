@@ -41,6 +41,7 @@
 #include <string>
 #include <list>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
 
 using std::abs;
@@ -337,11 +338,16 @@ char* copy_string(const char* s);
  * by writing to a stringstream
  */
 template <class T>
-const string toString(const T& val) {
+const std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
+
+/// Convert a time stamp to a string
+/// This uses std::localtime and std::put_time
+template <>
+const std::string toString<>(const time_t& time);
 
 /*!
  * Convert a string to lower case

@@ -114,14 +114,14 @@ int Mesh::get(Vector2D &var, const string &name) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
-    output << "\tReading covariant vector " << name << endl;
+    output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name+"_x");
     get(var.y, name+"_y");
     get(var.z, name+"_z");
 
   }else {
-    output << "\tReading contravariant vector " << name << endl;
+    output << _("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name+"x");
     get(var.y, name+"y");
@@ -135,14 +135,14 @@ int Mesh::get(Vector3D &var, const string &name) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
-    output << "\tReading covariant vector " << name << endl;
+    output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name+"_x");
     get(var.y, name+"_y");
     get(var.z, name+"_z");
 
   }else {
-    output << "\tReading contravariant vector " << name << endl;
+    output << ("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name+"x");
     get(var.y, name+"y");
@@ -275,11 +275,11 @@ const vector<int> Mesh::readInts(const string &name, int n) {
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
       // Error reading
-      throw BoutException("Could not read integer array '%s'\n", name.c_str());
+      throw BoutException(_("Could not read integer array '%s'\n"), name.c_str());
     }
   }else {
     // Not found
-    throw BoutException("Missing integer array %s\n", name.c_str());
+    throw BoutException(_("Missing integer array %s\n"), name.c_str());
   }
 
   return result;
@@ -310,8 +310,8 @@ void Mesh::setParallelTransform() {
     transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
       
   }else {
-    throw BoutException("Unrecognised paralleltransform option.\n"
-                        "Valid choices are 'identity', 'shifted', 'fci'");
+    throw BoutException(_("Unrecognised paralleltransform option.\n"
+                          "Valid choices are 'identity', 'shifted', 'fci'"));
   }
 }
 
@@ -338,7 +338,7 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
-    throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
+    throw BoutException(_("Couldn't find region %s in regionMap3D"), region_name.c_str());
   }
   return found->second;
 }
@@ -346,7 +346,7 @@ const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
 const Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name) const {
   const auto found = regionMap2D.find(region_name);
   if (found == end(regionMap2D)) {
-    throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
+    throw BoutException(_("Couldn't find region %s in regionMap2D"), region_name.c_str());
   }
   return found->second;
 }
@@ -354,35 +354,35 @@ const Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name) const {
 const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const {
   const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
-    throw BoutException("Couldn't find region %s in regionMapPerp", region_name.c_str());
+    throw BoutException(_("Couldn't find region %s in regionMapPerp"), region_name.c_str());
   }
   return found->second;
 }
 
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
-    throw BoutException("Trying to add an already existing region %s to regionMap3D");
+    throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
-  output_info << "Registered region 3D " << region_name << ": \n";
+  output_info << _("Registered region 3D ") << region_name << ": \n";
   output_info << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
-    throw BoutException("Trying to add an already existing region %s to regionMap2D");
+    throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
-  output_info << "Registered region 2D " << region_name << ": \n";
+  output_info << _("Registered region 2D ") << region_name << ": \n";
   output_info << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
   if (regionMapPerp.count(region_name)) {
-    throw BoutException("Trying to add an already existing region %s to regionMapPerp");
+    throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
   }
   regionMapPerp[region_name] = region;
-  output_info << "Registered region Perp " << region_name << ": \n";
+  output_info << _("Registered region Perp ") << region_name << ": \n";
   output_info << "\t" << region.getStats() << "\n";
 }
 

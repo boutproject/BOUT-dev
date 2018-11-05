@@ -30,6 +30,9 @@ BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
 
+# This path to the locale (.mo) files is hard-wired into bout++.cxx at compile time
+BOUT_LOCALE_PATH=@localedir@ 
+
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
 BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
@@ -150,6 +153,9 @@ INSTALL_DATA = ${INSTALL} -m 644
 
 INSTALL_INCLUDE_PATH = $(DESTDIR)@includedir@/bout++/
 
+# A list of relative paths e.g. "fr/LC_MESSAGES/libbout.mo zh_CN/LC_MESSAGES/libbout.mo"
+MO_FILES = $(shell cd locale; ls */LC_MESSAGES/libbout.mo)
+
 install: libfast
 	$(PRE_INSTALL)     # Pre-install commands follow.
 
@@ -172,7 +178,7 @@ install: libfast
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
-
+	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
 	@# Modify paths in the bout-config script 
@@ -201,6 +207,7 @@ uninstall:
 	$(RM) $(DESTDIR)@libdir@/libpvode.a
 	$(RM) $(DESTDIR)@libdir@/libpvpre.a
 	$(RM) -r  $(DESTDIR)@includedir@/bout++/
+	$(RM) $(DESTDIR)@localedir@/*/LC_MESSAGES/libbout.mo
 
 	$(POST_UNINSTALL)    # Post-uninstall commands follow.
 
