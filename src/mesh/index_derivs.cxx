@@ -44,7 +44,7 @@
  *
  **************************************************************************/
 
-#include <bout/derivs.hxx>
+#include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>

@@ -1,5 +1,5 @@
 /*!************************************************************************
- * \file derivs.hxx
+ * \file index_derivs.hxx
  *
  * Definition of available derivative methods and registration within store
  *
@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __DERIVS_HXX__
-#define __DERIVS_HXX__
+#ifndef __INDEX_DERIVS_HXX__
+#define __INDEX_DERIVS_HXX__
 
 #include <functional>
 #include <iostream>
