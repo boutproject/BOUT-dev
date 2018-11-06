@@ -199,10 +199,10 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
   BoutReal val = 0.0;
 
+  BoutReal xnorm = 0., ynorm = 0.;
   if (loc == CELL_CENTRE) {
     // no staggering
     for(; !bndry->isDone(); bndry->next1d()) {
-      BoutReal xnorm, ynorm;
       if (fg) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell
         xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
@@ -223,10 +223,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         // Calculate the Z normalized value (at either guard cell or grid cell
         if (fg) {
           BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
         }
         Derived::applyAtPoint(f, val, bndry->x, bndry->bx, bndry->y, bndry->by, z, delta);
       }
@@ -246,7 +243,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
     if (bndry->bx > 0) {
       // Outer x boundary
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
               + localmesh->GlobalX(bndry->x - bndry->bx) );
@@ -263,10 +259,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           Derived::applyAtPointStaggered(f, val, bndry->x, bndry->bx, bndry->y, 0, z, delta);
 
@@ -281,7 +274,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
       // Inner x boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
               + localmesh->GlobalX(bndry->x - bndry->bx) );
@@ -298,10 +290,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           // Set one point inwards
           Derived::applyAtPointStaggered(f, val, bndry->x + 1, bndry->bx, bndry->y, 0, z, delta);
@@ -316,7 +305,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
     } else if (bndry->by !=0) {
       // y boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           // x norm is shifted by half a grid point because it is staggered.
           // y norm is located half way between first grid cell and guard cell.
@@ -334,10 +322,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           Derived::applyAtPoint(f, val, bndry->x, 0, bndry->y, bndry->by, z, delta);
 
@@ -355,7 +340,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
       // Upper y boundary boundary
       for(; !bndry->isDone(); bndry->next1d()) {
 
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = localmesh->GlobalX(bndry->x);
           ynorm = 0.5*(localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by));
@@ -371,10 +355,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           Derived::applyAtPointStaggered(f, val, bndry->x, 0, bndry->y, bndry->by, z, delta);
 
@@ -389,7 +370,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
       // Lower y boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = localmesh->GlobalX(bndry->x);
           ynorm = 0.5*(localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by));
@@ -405,10 +385,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           Derived::applyAtPointStaggered(f, val, bndry->x, 0, bndry->y+1, bndry->by, z, delta);
 
@@ -422,7 +399,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
     } else if (bndry->bx != 0) {
       // x boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           // x norm is located half way between first grid cell and guard cell.
           // y norm is shifted by half a grid point because it is staggered.
@@ -440,10 +416,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         for(int z=0; z<nz; z++) {
           if (fg) {
             BoutReal znorm = BoutReal(z)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
 
           Derived::applyAtPoint(f, val, bndry->x, bndry->bx, bndry->y, 0, z, delta);
@@ -459,7 +432,6 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
   } else if (loc == CELL_ZLOW) {
     // Staggered in Z. Note there are no z-boundaries.
     for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
       if (fg) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell
         xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
@@ -480,10 +452,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
         // It shouldn't matter if znorm<0 because the expression in fg->generate should be periodic in z
         if (fg) {
           BoutReal znorm = (BoutReal(z) - 0.5)/BoutReal(nz); // znorm is shifted by half a grid point because it is staggered
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
         }
         Derived::applyAtPoint(f, val, bndry->x, bndry->bx, bndry->y, bndry->by, z, delta);
 
@@ -531,10 +500,10 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
 
   BoutReal val = 0.0;
 
+  BoutReal xnorm = 0., ynorm = 0.;
   if (loc == CELL_CENTRE) {
     // Unstaggered case
     for(; !bndry->isDone(); bndry->next1d()) {
-      BoutReal xnorm, ynorm;
       if (fg) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
         xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
@@ -547,10 +516,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
       for(int zk=0; zk<nz; zk++) {
         if (fg) {
           BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
         }
         f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 
@@ -595,10 +561,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz ; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(xi, yi, zk) = val;
         }
@@ -609,7 +572,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
     if (bndry->bx > 0) {
       // Outer x boundary
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
               + localmesh->GlobalX(bndry->x - bndry->bx) );
@@ -619,10 +581,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(bndry->x,bndry->y, zk) = val;
 
@@ -639,7 +598,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
       // Inner x boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = 0.5*(   localmesh->GlobalX(bndry->x)
               + localmesh->GlobalX(bndry->x - bndry->bx) );
@@ -649,10 +607,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(bndry->x - bndry->bx,bndry->y, zk) = val;
 
@@ -668,7 +623,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
     } else if (bndry->by !=0) {
       // y boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           // x norm is shifted by half a grid point because it is staggered.
           // y norm is located half way between first grid cell and guard cell.
@@ -679,10 +633,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 
@@ -701,7 +652,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
     if (bndry->by > 0) {
       // Upper y boundary boundary
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = localmesh->GlobalX(bndry->x);
           ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
@@ -709,10 +659,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(bndry->x,bndry->y,zk) = val;
 
@@ -729,7 +676,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
       // Lower y boundary. Set one point inwards
       for(; !bndry->isDone(); bndry->next1d()) {
 
-        BoutReal xnorm, ynorm;
         if (fg) {
           xnorm = localmesh->GlobalX(bndry->x);
           ynorm = 0.5*(   localmesh->GlobalY(bndry->y) + localmesh->GlobalY(bndry->y - bndry->by) );
@@ -738,10 +684,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
           f(bndry->x,bndry->y - bndry->by, zk) = val;
 
@@ -757,7 +700,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
     } else if (bndry->bx != 0) {
       // x boundaries
       for(; !bndry->isDone(); bndry->next1d()) {
-        BoutReal xnorm, ynorm;
         if (fg) {
           // x norm is located half way between first grid cell and guard cell.
           // y norm is shifted by half a grid point because it is staggered.
@@ -768,10 +710,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         for(int zk=0; zk<nz; zk++) {
           if (fg) {
             BoutReal znorm = BoutReal(zk)/BoutReal(nz);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
           }
 
           f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
@@ -789,7 +728,6 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
   } else if (loc == CELL_ZLOW) {
     // Staggered in Z. Note there are no z-boundaries.
     for(; !bndry->isDone(); bndry->next1d()) {
-      BoutReal xnorm, ynorm;
       if (fg) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
         xnorm = 0.5*(   localmesh->GlobalX(bndry->x)  // In the guard cell
@@ -803,10 +741,7 @@ void BoundaryDirichlet::applyTemplate(T &f,BoutReal t) {
         if (fg) {
           // It shouldn't matter if znorm<0 because the expression in fg->generate should be periodic in z
           BoutReal znorm = (BoutReal(zk) - 0.5)/BoutReal(nz); // znorm is shifted by half a grid point because it is staggered
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*znorm, t);
-#pragma GCC diagnostic pop
         }
         f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
 
