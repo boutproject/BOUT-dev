@@ -1,28 +1,4 @@
 /**************************************************************************
- * Basic derivative methods in mesh index space
- *
- *
- * Four kinds of differencing methods:
- *
- * 1. First derivative DD*
- *    Central differencing e.g. Div(f)
- *
- * 2. Second derivatives D2D*2
- *    Central differencing e.g. Delp2(f)
- *
- * 3. Upwinding VDD*
- *    Terms like v*Grad(f)
- *
- * 4. Flux methods FDD* (e.g. flux conserving, limiting)
- *    Div(v*f)
- *
- * Changelog
- * =========
- *
- * 2014-11-22   Ben Dudson  <benjamin.dudson@york.ac.uk>
- *    o Moved here from sys/derivs, made part of Mesh
- *
- **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -47,50 +23,7 @@
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
-#include <stencils.hxx>
 #include <unused.hxx>
-
-/*******************************************************************************
- * Limiters
- *******************************************************************************/
-
-/// Van Leer limiter. Used in TVD code
-BoutReal VANLEER(BoutReal r) { return r + fabs(r) / (1.0 + fabs(r)); }
-
-// Superbee limiter
-BoutReal SUPERBEE(BoutReal r) {
-  return BOUTMAX(0.0, BOUTMIN(2. * r, 1.0), BOUTMIN(r, 2.));
-}
-
-//////////////////////// MUSCL scheme ///////////////////////
-
-void DDX_KT_LR(const stencil &f, BoutReal &fLp, BoutReal &fRp, BoutReal &fLm,
-               BoutReal &fRm) {
-  // Limiter functions
-  BoutReal phi = SUPERBEE((f.c - f.m) / (f.p - f.c));
-  BoutReal phi_m = SUPERBEE((f.m - f.mm) / (f.c - f.m));
-  BoutReal phi_p = SUPERBEE((f.p - f.c) / (f.pp - f.p));
-
-  fLp = f.c + 0.5 * phi * (f.p - f.c);
-  fRp = f.p - 0.5 * phi_p * (f.pp - f.p);
-
-  fLm = f.m + 0.5 * phi_m * (f.c - f.m);
-  fRm = f.c - 0.5 * phi * (f.p - f.c);
-}
-
-// du/dt = d/dx(f)  with maximum local velocity Vmax
-BoutReal DDX_KT(const stencil &f, const stencil &u, const BoutReal Vmax) {
-  BoutReal uLp, uRp, uLm, uRm;
-  BoutReal fLp, fRp, fLm, fRm;
-
-  DDX_KT_LR(u, uLp, uRp, uLm, uRm);
-  DDX_KT_LR(f, fLp, fRp, fLm, fRm);
-
-  BoutReal Fm = 0.5 * (fRm + fLm - Vmax * (uRm - uLm));
-  BoutReal Fp = 0.5 * (fRp + fLp - Vmax * (uRp - uLp));
-
-  return Fm - Fp;
-}
 
 /*******************************************************************************
  * Helper routines
