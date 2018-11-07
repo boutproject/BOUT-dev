@@ -233,35 +233,23 @@ class Field3D : public Field, public FieldData {
 
   /// Return reference to yup field
   Field3D &yup(std::vector<Field3D>::size_type index = 0) {
-    if (yup_fields.empty()) {
-      return *this;
-    }
     ASSERT2(index < yup_fields.size()); // Check for communicate
     return yup_fields[index];
   }
   /// Return const reference to yup field
   const Field3D &yup(std::vector<Field3D>::size_type index = 0) const {
-    if (yup_fields.empty()) {
-      return *this;
-    }
     ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
   Field3D &ydown(std::vector<Field3D>::size_type index = 0) {
-    if (ydown_fields.empty()) {
-      return *this;
-    }
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
   const Field3D &ydown(std::vector<Field3D>::size_type index = 0) const {
-    if (ydown_fields.empty()) {
-      return *this;
-    }
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }

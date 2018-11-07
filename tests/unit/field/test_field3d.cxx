@@ -245,18 +245,11 @@ TEST_F(Field3DTest, MergeYupYDown) {
 
   EXPECT_FALSE(field.hasYupYdown());
 
-  auto& yup = field.yup();
-  EXPECT_EQ(&field, &yup);
-  auto& ydown = field.ydown();
-  EXPECT_EQ(&field, &ydown);
+  EXPECT_THROW(field.yup(), BoutException);
+  EXPECT_THROW(field.ydown(), BoutException);
 
   // Should be able to merge again without any problems
-  field.mergeYupYdown();
-
-  auto& yup2 = field.yup();
-  EXPECT_EQ(&field, &yup2);
-  auto& ydown2 = field.ydown();
-  EXPECT_EQ(&field, &ydown2);
+  EXPECT_NO_THROW(field.mergeYupYdown());
 }
 
 TEST_F(Field3DTest, SplitThenMergeYupYDown) {
@@ -272,10 +265,8 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
 
   field.mergeYupYdown();
 
-  auto& yup2 = field.yup();
-  EXPECT_EQ(&field, &yup2);
-  auto& ydown2 = field.ydown();
-  EXPECT_EQ(&field, &ydown2);
+  EXPECT_THROW(field.yup(), BoutException);
+  EXPECT_THROW(field.ydown(), BoutException);
 }
 
 TEST_F(Field3DTest, MultipleYupYdown) {
