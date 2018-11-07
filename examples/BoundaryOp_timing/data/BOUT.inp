@@ -13,3 +13,21 @@ bndry_all = neumann
 
 [f_dirichlet_o3]
 bndry_all = dirichlet_o3
+
+[f_dirichlet_val]
+bndry_all = dirichlet(42.)
+
+[f_neumann_val]
+bndry_all = neumann(42.)
+
+[f_dirichlet_o3_val]
+bndry_all = dirichlet_o3(42.)
+
+[f_dirichlet_expr]
+bndry_all = dirichlet(x+y+z)
+
+[f_neumann_expr]
+bndry_all = neumann(x+y+z)
+
+[f_dirichlet_o3_expr]
+bndry_all = dirichlet_o3(x+y+z)
