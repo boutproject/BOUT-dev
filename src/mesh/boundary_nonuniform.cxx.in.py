@@ -207,7 +207,7 @@ void {{class}}::calc_interp_to_stencil(
 }
 """
 
-orders=range(1,5)
+orders=range(2,5)
 whats=["Dirichlet","Neumann","Free"]
 
 if __name__ == "__main__":
@@ -215,8 +215,6 @@ if __name__ == "__main__":
 
     for order in orders:
         for what in whats:
-            if what == "Neumann" and order == 1:
-                continue
             if what == "Neumann":
                 mat=sten.neumann
             else:

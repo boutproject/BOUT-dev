@@ -1,42 +1,4 @@
 
-class BoundaryDirichletNonUniform_O1 : public BoundaryOp {
-public:
-  BoundaryDirichletNonUniform_O1() {}
-  BoundaryDirichletNonUniform_O1(BoundaryRegion *region,
-                                 std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
-  BoundaryOp *clone(BoundaryRegion *region, const list<string> &args) override;
-
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override { throw BoutException("Not Implemented"); };
-
-  void apply(Field3D &f) override { apply(f, 0.0); };
-  void apply(Field3D &f, BoutReal t) override;
-
-private:
-  std::shared_ptr<FieldGenerator> gen; // Generator
-  void calc_interp_to_stencil(BoutReal x0, BoutReal &fac0) const;
-};
-
-class BoundaryFreeNonUniform_O1 : public BoundaryOp {
-public:
-  BoundaryFreeNonUniform_O1() {}
-  BoundaryFreeNonUniform_O1(BoundaryRegion *region,
-                            std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
-  BoundaryOp *clone(BoundaryRegion *region, const list<string> &args) override;
-
-  using BoundaryOp::apply;
-  void apply(Field2D &f) override { throw BoutException("Not Implemented"); };
-
-  void apply(Field3D &f) override { apply(f, 0.0); };
-  void apply(Field3D &f, BoutReal t) override;
-
-private:
-  std::shared_ptr<FieldGenerator> gen; // Generator
-  void calc_interp_to_stencil(BoutReal x0, BoutReal &fac0) const;
-};
-
 class BoundaryDirichletNonUniform_O2 : public BoundaryOp {
 public:
   BoundaryDirichletNonUniform_O2() {}
