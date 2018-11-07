@@ -26,14 +26,14 @@
 
 void BoundaryOp::apply_ddt(Field2D &f) {
   Field2D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0; z<f.getNz(); z++)
+  for (bndry->first(); !bndry->isDone(); bndry->next())
+    for (int z = 0; z < f.getNz(); z++)
       (*dt)(bndry->x, bndry->y, z) = 0.; // Set time derivative to zero
 }
 
 void BoundaryOp::apply_ddt(Field3D &f) {
   Field3D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0; z<f.getNz(); z++)
+  for (bndry->first(); !bndry->isDone(); bndry->next())
+    for (int z = 0; z < f.getNz(); z++)
       (*dt)(bndry->x, bndry->y, z) = 0.; // Set time derivative to zero
 }
