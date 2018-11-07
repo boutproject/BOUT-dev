@@ -1862,42 +1862,5 @@ TEST_F(Field3DTest, DC) {
   EXPECT_TRUE(IsField2DEqualBoutReal(DC(field), 3.0));
 }
 
-#ifdef _OPENMP
-// This test may be more of a DataIterator test so should perhaps
-// be migrated to a separate test file.
-TEST_F(Field3DTest, OpenMPIterator) {
-  const int fields = 10;
-  Field3D *d3 = new Field3D[fields];
-  for (int i = 0; i < fields; ++i) {
-    d3[i] = 1;
-  }
-
-  BoutReal expected = 1;
-
-  BOUT_OMP(parallel for)
-  for (int j = 0; j < fields; ++j) {
-    BOUT_OMP(parallel)
-    for (auto i : d3[j]) {
-      EXPECT_DOUBLE_EQ(d3[j][i], expected);
-      d3[j][i] = 2;
-    }
-  }
-
-  expected = 2;
-
-  for (int i = 0; i < fields; ++i) {
-    for (int jx = 0; jx < mesh->LocalNx; ++jx) {
-      for (int jy = 0; jy < mesh->LocalNy; ++jy) {
-        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
-          EXPECT_DOUBLE_EQ(d3[i](jx, jy, jz), expected);
-        }
-      }
-    }
-  }
-
-  delete[] d3;
-}
-#endif
-
 // Restore compiler warnings
 #pragma GCC diagnostic pop
