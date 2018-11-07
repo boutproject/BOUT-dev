@@ -5,11 +5,5 @@ nz = 128
 
 ixseps1 = -1
 
-[f_dirichlet]
-bndry_all = dirichlet
-
-[f_neumann]
-bndry_all = neumann
-
-[f_dirichlet_o3]
-bndry_all = dirichlet_o3
+[f]
+bndry_all = free_nu_o3

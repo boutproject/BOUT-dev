@@ -3,12 +3,14 @@
 
 class BoundaryOp_timing : public PhysicsModel {
   int init(bool restarting);
-  int rhs(BoutReal UNUSED(t)) { return 1; }
-  Field3D f_dirichlet, f_neumann, f_dirichlet_o3;
+  int rhs(BoutReal UNUSED(t)) {
+    ddt(f)=0;
+    return 0; }
+  Field3D f;
 };
 
 int BoundaryOp_timing::init(bool UNUSED(restarting)) {
-  SOLVE_FOR3(f_dirichlet, f_neumann, f_dirichlet_o3);
+  SOLVE_FOR(f);
 
   Options* opt = Options::getRoot();
   int ntests;
@@ -20,36 +22,15 @@ int BoundaryOp_timing::init(bool UNUSED(restarting)) {
   {
     Timer timer("dirichlet_o3");
     for (int i=0; i<ntests; i++) {
-      f_dirichlet_o3.applyBoundary();
+      f.applyBoundary();
     }
   }
 
+  std::string name;
+  opt->getSection("f")->get("bndry_all",name,"error");
+  std::cout<<name<<":\t"<<ntests<<" iterations took "<<Timer::getTime("dirichlet_o3")<<" s"<<endl;
 
-  // test Dirichlet
-
-  {
-    Timer timer("dirichlet");
-    for (int i=0; i<ntests; i++) {
-      f_dirichlet.applyBoundary();
-    }
-  }
-
-
-  // test Neumann
-
-  {
-    Timer timer("neumann");
-    for (int i=0; i<ntests; i++) {
-      f_neumann.applyBoundary();
-    }
-  }
-
-
-  output<<"dirichlet:\t"<<ntests<<" iterations took "<<Timer::getTime("dirichlet")<<" s"<<endl;
-  output<<"neumann:\t"<<ntests<<" iterations took "<<Timer::getTime("neumann")<<" s"<<endl;
-  output<<"dirichlet_o3:\t"<<ntests<<" iterations took "<<Timer::getTime("dirichlet_o3")<<" s"<<endl;
-
-  return 1;
+  return 0;
 }
 
 BOUTMAIN(BoundaryOp_timing);
