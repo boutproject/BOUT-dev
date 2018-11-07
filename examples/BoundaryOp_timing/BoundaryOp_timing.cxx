@@ -49,6 +49,9 @@ int BoundaryOp_timing::init(bool UNUSED(restarting)) {
   output<<"neumann:\t"<<ntests<<" iterations took "<<Timer::getTime("neumann")<<" s"<<endl;
   output<<"dirichlet_o3:\t"<<ntests<<" iterations took "<<Timer::getTime("dirichlet_o3")<<" s"<<endl;
 
+  BoutFinalise();
+  exit(0);
+
   return 1;
 }
 
