@@ -88,7 +88,7 @@ BoutMesh::~BoutMesh() {
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
-  output_progress << "Loading mesh" << endl;
+  output_progress << _("Loading mesh") << endl;
 
   // Use root level options
   Options *options = Options::getRoot();
@@ -103,10 +103,10 @@ int BoutMesh::load() {
   // Grid sizes
 
   if (Mesh::get(nx, "nx"))
-    throw BoutException("Mesh must contain nx");
+    throw BoutException(_("Mesh must contain nx"));
 
   if (Mesh::get(ny, "ny"))
-    throw BoutException("Mesh must contain ny");
+    throw BoutException(_("Mesh must contain ny"));
 
   int MZ;
 
@@ -116,13 +116,15 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write("WARNING: Number of toroidal points should be 2^n\n", MZ);
+      output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
+                          "FFT performance -- consider changing MZ if using FFTs\n"),
+                        MZ);
     }
   } else {
-    output_info.write("\tRead nz from input grid file\n");
+    output_info.write(_("\tRead nz from input grid file\n"));
   }
 
-  output_info << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
@@ -138,11 +140,11 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  output_info << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
+  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException("Error: nx must be greater than 2 times MXG (2 * %d)", MXG);
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
   // Set global grid sizes
@@ -151,7 +153,7 @@ int BoutMesh::load() {
   GlobalNz = MZ;
 
   if (2 * MXG >= nx)
-    throw BoutException("nx must be greater than 2*MXG");
+    throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
   if (Mesh::get(ixseps1, "ixseps1")) {
@@ -229,7 +231,7 @@ int BoutMesh::load() {
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
     if ((NPES % NXPE) != 0) {
       throw BoutException(
-          "Number of processors (%d) not divisible by NPs in x direction (%d)\n", NPES,
+          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
           NXPE);
     }
 
@@ -306,7 +308,7 @@ int BoutMesh::load() {
           (MX % i == 0) &&            // Mesh in X divides equally
           (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
-        output_info.write("\tCandidate value: %d\n", i);
+        output_info.write(_("\tCandidate value: %d\n"), i);
 
         int nyp = NPES / i;
         int ysub = ny / nyp;
@@ -371,7 +373,7 @@ int BoutMesh::load() {
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
-        output_info.write("\t -> Good value\n");
+        output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
         if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
           NXPE = i; // Keep value nearest to the ideal
@@ -379,14 +381,14 @@ int BoutMesh::load() {
     }
 
     if (NXPE < 1)
-      throw BoutException(
-          "Could not find a valid value for NXPE. Try a different number of processors.");
+      throw BoutException(_("Could not find a valid value for NXPE. Try a different "
+                            "number of processors."));
 
     NYPE = NPES / NXPE;
 
     output_progress.write(
-        "\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n", NXPE,
-        NYPE, MX / NXPE, ny / NYPE);
+        _("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"),
+        NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
   /// Get X and Y processor indices
@@ -401,7 +403,7 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException("Cannot split %d X points equally between %d processors\n", MX,
+    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
                         NXPE);
   }
 
@@ -410,7 +412,7 @@ int BoutMesh::load() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        "\tERROR: Cannot split %d Y points equally between %d processors\n", MY, NYPE);
+        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
   }
 
   /// Get mesh options
@@ -794,15 +796,15 @@ int BoutMesh::load() {
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
         // Core
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
       } else {
         // PF region
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
       }
     }
     if (PE_XIND == (NXPE - 1)) {
       // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
     }
   }
 
@@ -810,34 +812,34 @@ int BoutMesh::load() {
     // Need boundaries in Y
 
     if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
     if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
 
     if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1));
+          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
     if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend));
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
   }
 
   if (!boundary.empty()) {
-    output_info << "Boundary regions in this processor: ";
+    output_info << _("Boundary regions in this processor: ");
     for (const auto &bndry : boundary) {
       output_info << bndry->label << ", ";
     }
     output_info << endl;
   } else {
-    output_info << "No boundary regions in this processor" << endl;
+    output_info << _("No boundary regions in this processor") << endl;
   }
   
-  output_info << "Constructing default regions" << endl;
+  output_info << _("Constructing default regions") << endl;
   createDefaultRegions();
 
   // Add boundary regions
   addBoundaryRegions();
 
-  output_info.write("\tdone\n");
+  output_info.write(_("\tdone\n"));
 
   return 0;
 }
@@ -1849,9 +1851,9 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
-    CommHandle *ch = new CommHandle;
-    for (int i = 0; i < 6; i++)
-      ch->request[i] = MPI_REQUEST_NULL;
+    auto *ch = new CommHandle;
+    for (auto &i : ch->request)
+      i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
       ch->umsg_sendbuff = Array<BoutReal>(ylen);
@@ -1933,19 +1935,21 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
     if (var->is3D()) {
       // 3D variable
       ASSERT2(static_cast<Field3D *>(var)->isAllocated());
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = (*static_cast<Field3D *>(var))(jx, jy, jz);
+            buffer[len] = var3d_ref(jx, jy, jz);
           }
         }
       }
     } else {
       // 2D variable
       ASSERT2(static_cast<Field2D *>(var)->isAllocated());
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = (*static_cast<Field2D *>(var))(jx, jy);
+          buffer[len] = var2d_ref(jx, jy);
         }
       }
     }
@@ -1963,18 +1967,20 @@ int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt,
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
+      auto& var3d_ref = *static_cast<Field3D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
-            (*static_cast<Field3D *>(var))(jx, jy, jz) = buffer[len];
+            var3d_ref(jx, jy, jz) = buffer[len];
           }
         }
       }
     } else {
       // 2D variable
+      auto& var2d_ref = *static_cast<Field2D *>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
-          (*static_cast<Field2D *>(var))(jx, jy) = buffer[len];
+          var2d_ref(jx, jy) = buffer[len];
         }
       }
     }
@@ -2082,7 +2088,7 @@ void BoutMesh::addBoundaryRegions() {
   addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
 
-  all_boundaries.push_back("RGN_LOWER_INNER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_INNER_Y");
 
   // Lower Outer Y
   
@@ -2107,7 +2113,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_LOWER_OUTER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_OUTER_Y");
   
   // Lower Y
 
@@ -2127,7 +2133,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_LOWER_Y");
+  all_boundaries.emplace_back("RGN_LOWER_Y");
   
   // Upper Inner Y
 
@@ -2153,7 +2159,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_INNER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
   // Upper Outer Y
   
@@ -2179,7 +2185,7 @@ void BoutMesh::addBoundaryRegions() {
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_OUTER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
   // Upper Y
 
@@ -2199,7 +2205,7 @@ void BoutMesh::addBoundaryRegions() {
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
-  all_boundaries.push_back("RGN_UPPER_Y");
+  all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
   if(mesh->firstX() && !mesh->periodicX) {
@@ -2207,7 +2213,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    all_boundaries.push_back("RGN_INNER_X");
+    all_boundaries.emplace_back("RGN_INNER_X");
     
     output_info.write("\tBoundary region inner X\n");
   } else {
@@ -2224,7 +2230,7 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    all_boundaries.push_back("RGN_OUTER_X");
+    all_boundaries.emplace_back("RGN_OUTER_X");
     
     output_info.write("\tBoundary region outer X\n");
   } else {
@@ -2424,7 +2430,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + XGLOBAL(jx) - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
 }
@@ -2437,7 +2443,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return static_cast<BoutReal>((0.5 + xglo - static_cast<BoutReal>(nx-MX)*0.5)) / static_cast<BoutReal>(MX);
+    return (0.5 + xglo - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
   return xglo / static_cast<BoutReal>(MX);
 }
@@ -2528,24 +2534,24 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", 0);
-  file.add(MXSUB, "MXSUB", 0);
-  file.add(MYSUB, "MYSUB", 0);
-  file.add(MXG, "MXG", 0);
-  file.add(MYG, "MYG", 0);
-  file.add(nx, "nx", 0);
-  file.add(ny, "ny", 0);
-  file.add(LocalNz, "MZ", 0);
-  file.add(NXPE, "NXPE", 0);
-  file.add(NYPE, "NYPE", 0);
-  file.add(ZMAX, "ZMAX", 0);
-  file.add(ZMIN, "ZMIN", 0);
-  file.add(ixseps1, "ixseps1", 0);
-  file.add(ixseps2, "ixseps2", 0);
-  file.add(jyseps1_1, "jyseps1_1", 0);
-  file.add(jyseps1_2, "jyseps1_2", 0);
-  file.add(jyseps2_1, "jyseps2_1", 0);
-  file.add(jyseps2_2, "jyseps2_2", 0);
+  file.add(zperiod, "zperiod", false);
+  file.add(MXSUB, "MXSUB", false);
+  file.add(MYSUB, "MYSUB", false);
+  file.add(MXG, "MXG", false);
+  file.add(MYG, "MYG", false);
+  file.add(nx, "nx", false);
+  file.add(ny, "ny", false);
+  file.add(LocalNz, "MZ", false);
+  file.add(NXPE, "NXPE", false);
+  file.add(NYPE, "NYPE", false);
+  file.add(ZMAX, "ZMAX", false);
+  file.add(ZMIN, "ZMIN", false);
+  file.add(ixseps1, "ixseps1", false);
+  file.add(ixseps2, "ixseps2", false);
+  file.add(jyseps1_1, "jyseps1_1", false);
+  file.add(jyseps1_2, "jyseps1_2", false);
+  file.add(jyseps2_1, "jyseps2_1", false);
+  file.add(jyseps2_2, "jyseps2_2", false);
 
-  coordinates()->outputVars(file);
+  getCoordinates()->outputVars(file);
 }

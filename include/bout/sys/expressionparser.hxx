@@ -107,13 +107,17 @@ public:
   ///  ^     precedence = 30
   ///                        
   void addBinaryOp(char sym, FieldGeneratorPtr b, int precedence);
-  
 protected:
   /// This will be called to resolve any unknown symbols
   virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string &input);
+
+  /// Characters which cannot be used in symbols; all other allowed
+  /// In addition, whitespace cannot be used
+  /// Adding a binary operator adds its symbol to this string
+  std::string reserved_chars = "+-*/^[](){},";
   
 private:
   
@@ -123,13 +127,14 @@ private:
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
     
-    LexInfo(const std::string &input);
+    LexInfo(const std::string &input, const std::string &reserved_chars="");
     
-    signed char curtok;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
+    signed char curtok = 0;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
     double curval; ///< Value if a number
     std::string curident; ///< Identifier, variable or function name
     signed char LastChar;   ///< The last character read from the string
     std::stringstream ss; ///< Used to read values from the input string
+    std::string reserved_chars; ///< Reserved characters, not in symbols
     char nextToken(); ///< Get the next token in the string
   };
   
@@ -153,11 +158,16 @@ private:
 /// Binary operators
 class FieldBinary : public FieldGenerator {
 public:
-  FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o) : lhs(l), rhs(r), op(o) {}
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args);
-  double generate(double x, double y, double z, double t);
+  FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
+      : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
+  double generate(double x, double y, double z, double t) override;
 
-  const std::string str() {return std::string("(")+lhs->str()+std::string(1,op)+rhs->str()+std::string(")");}
+  const std::string str() override {
+    return std::string("(") + lhs->str() + std::string(1, op) + rhs->str() +
+           std::string(")");
+  }
+
 private:
   FieldGeneratorPtr lhs, rhs;
   char op;
@@ -168,15 +178,15 @@ class FieldValue : public FieldGenerator {
 public:
   FieldValue(double val) : value(val) {}
 
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldValue>(value);
   }
 
   double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) {
+                  double UNUSED(t)) override {
     return value;
   }
-  const std::string str() {
+  const std::string str() override {
     std::stringstream ss;
     ss << value;
     return ss.str();
@@ -190,10 +200,10 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  virtual ~ParseException() {}
-  
-  const char* what() const noexcept;
-  
+  ~ParseException() override {}
+
+  const char *what() const noexcept override;
+
 protected:
   std::string message;
 };

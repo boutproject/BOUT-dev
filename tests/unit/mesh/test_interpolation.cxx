@@ -3,6 +3,7 @@
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "interpolation.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 
 ////// delete these
@@ -10,7 +11,6 @@
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field3d.hxx"
-#include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
 #include <cmath>
@@ -48,7 +48,6 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
-    mesh->createDefaultRegions();
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
     mesh->ystart = 2;
@@ -56,6 +55,9 @@ protected:
     mesh->yend = ny - 3;
     mesh->setParallelTransform(
         std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity()));
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {

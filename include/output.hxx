@@ -33,8 +33,11 @@ class Output;
 #include <iostream>
 #include <fstream>
 #include <functional>
+
+#include "bout/assert.hxx"
 #include "boutexception.hxx"
 #include "unused.hxx"
+#include "bout/sys/gettext.hxx"  // for gettext _() macro
 
 using std::endl;
 
@@ -73,7 +76,7 @@ public:
     enable();
     open(fname);
   }
-  virtual ~Output() {
+  ~Output() override {
     close();
     delete[] buffer;
   }
@@ -104,6 +107,11 @@ public:
 
   static Output *getInstance(); ///< Return pointer to instance
 
+protected:
+  friend class ConditionalOutput;
+  virtual Output *getBase() { return this; }
+  virtual bool isEnabled() { return true; }
+
 private:
   std::ofstream file;                 ///< Log file stream
   static const int BUFFER_LEN = 1024; ///< default length
@@ -129,7 +137,7 @@ public:
     if (enable)
       this->enable();
   };
-  bool isEnabled() { return false; }
+  bool isEnabled() override { return false; }
 };
 
 /// Layer on top of Output which passes through calls to write, print etc
@@ -140,14 +148,14 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base) : base(base), enabled(true), base_is_cond(false) {};
+  ConditionalOutput(Output *base) : base(base), enabled(true) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
   /// 
   ConditionalOutput(ConditionalOutput *base)
-      : base(base), enabled(base->enabled), base_is_cond(true) {};
+      : base(base), enabled(base->enabled) {};
 
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite
@@ -155,6 +163,7 @@ public:
   void write(const char *str, ...) override;
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT1(base != nullptr);
       base->vwrite(str, va);
     }
   }
@@ -164,19 +173,17 @@ public:
   void print(const char *str, ...) override;
   void vprint(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT1(base != nullptr);
       base->vprint(str, va);
     }
   }
-  
+
   /// Get the lowest-level Output object which is the base of this ConditionalOutput
-  Output *getBase() {
-    if (base_is_cond) {
-      return dynamic_cast<ConditionalOutput *>(base)->getBase();
-    } else {
-      return base;
-    }
+  Output *getBase() override {
+    ASSERT1(base != nullptr);
+    return base->getBase();
   };
-  
+
   /// Set whether this ConditionalOutput is enabled
   /// If set to false (disabled), then all print and write calls do nothing
   void enable(bool enable_) { enabled = enable_; };
@@ -189,16 +196,16 @@ public:
   void disable() override { enabled = false; };
 
   /// Check if output is enabled
-  bool isEnabled() {
-    return enabled &&
-           (!base_is_cond || (dynamic_cast<ConditionalOutput *>(base))->isEnabled());
+  bool isEnabled() override {
+    ASSERT1(base != nullptr);
+    return enabled && base->isEnabled();
   };
 
-  Output *base;
-
 private:
+  /// The lower-level Output to send output to
+  Output *base;
+  /// Does this instance output anything?
   bool enabled;
-  bool base_is_cond;
 };
 
 /// Catch stream outputs to DummyOutput objects. This is so that

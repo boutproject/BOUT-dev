@@ -646,7 +646,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_f(ts,t, globalin,globalout, (void *)f_data);CHKERRQ(ierr);
+  ierr = solver_f(ts, t, globalin, globalout, f_data); CHKERRQ(ierr);
 
   ierr = VecAYPX(globalout,-1.0,globalindot);CHKERRQ(ierr); // globalout = globalindot + (-1)globalout
   PetscFunctionReturn(0);
@@ -694,7 +694,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_rhsjacobian(ts,t,globalin,J,Jpre,(void *)f_data);CHKERRQ(ierr);
+  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
 
   ////// Save data for preconditioner
   PetscSolver *solver = (PetscSolver*) f_data;
@@ -741,7 +741,7 @@ PetscErrorCode solver_ijacobianfd(TS ts, BoutReal t, Vec globalin,
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_rhsjacobian(ts,t,globalin,J,Jpre,(void *)f_data);CHKERRQ(ierr);
+  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
   //*Jpre + a
   PetscFunctionReturn(0);
 }

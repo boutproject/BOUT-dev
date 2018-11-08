@@ -33,14 +33,14 @@ To specify the location of a variable, use the method
 `Field3D::setLocation` with one of the `CELL_LOC` locations
 `CELL_CENTRE`, `CELL_XLOW`, `CELL_YLOW`, or `CELL_ZLOW`.
 
-The key lines in the **test-staggered** example which specify the
+The key lines in the **staggered_grid** example which specify the
 locations of the evolving variables are::
 
     Field3D n, v;
 
     int init(bool restart) {
       v.setLocation(CELL_YLOW); // Staggered relative to n
-      SOLVE_FOR2(n, v);
+      SOLVE_FOR(n, v);
       ...
 
 which makes the velocity ``v`` staggered to the lower side of the cell

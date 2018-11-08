@@ -3,9 +3,10 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
-#include "vector3d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
+#include "vector3d.hxx"
 
 /// Global mesh
 extern Mesh *mesh;
@@ -13,7 +14,7 @@ extern Mesh *mesh;
 /// Test fixture to make sure the global mesh is our fake one
 class Vector3DTest : public ::testing::Test {
 protected:
-  static void SetUpTestCase() {
+  Vector3DTest() {
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -25,15 +26,17 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
 
-    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2));
-    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2));
-    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2));
-    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2));
+    mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
+    mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
   }
 
-  static void TearDownTestCase() {
+  ~Vector3DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {
@@ -107,6 +110,75 @@ TEST_F(Vector3DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
+TEST_F(Vector3DTest, SetLocationNonStaggered) {
+  Vector3D vector;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_CENTRE));
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+#if CHECK > 0
+  EXPECT_THROW(vector.setLocation(CELL_XLOW), BoutException);
+#endif
+}
+
+TEST_F(Vector3DTest, SetLocationXLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_XLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationYLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_YLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationZLOW) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_ZLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector3DTest, SetLocationVSHIFT) {
+  Vector3D vector;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_VSHIFT));
+  EXPECT_EQ(vector.getLocation(), CELL_VSHIFT);
+  EXPECT_EQ(vector.x.getLocation(), CELL_XLOW);
+  EXPECT_EQ(vector.y.getLocation(), CELL_YLOW);
+  EXPECT_EQ(vector.z.getLocation(), CELL_ZLOW);
+}
+
+TEST_F(Vector3DTest, SetLocationDEFAULT) {
+  Vector3D vector;
+  CELL_LOC targetLoc = CELL_CENTRE;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
 TEST_F(Vector3DTest, AssignFromBoutReal) {
   Vector3D vector;
 
@@ -117,30 +189,59 @@ TEST_F(Vector3DTest, AssignFromBoutReal) {
   EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 0.0));
 }
 
-TEST_F(Vector3DTest, AssignFromVector3D) {
-  Vector3D vector1, vector2;
+TEST_F(Vector3DTest, AssignFromVector2D) {
+  Vector2D vector1;
+  Vector3D vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 1.0;
   vector1.y = 2.0;
   vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
 
   vector2 = vector1;
 
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
+}
+
+TEST_F(Vector3DTest, AssignFromVector3D) {
+  Vector3D vector1, vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
+  vector1.x = 1.0;
+  vector1.y = 2.0;
+  vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
+
+  vector2 = vector1;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector3DTest, CreateFromVector3D) {
   Vector3D vector1;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
+  vector1.setLocation(CELL_YLOW);
 
   Vector3D vector2{vector1};
 
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 4.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 5.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 6.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector3DTest, UnaryMinus) {

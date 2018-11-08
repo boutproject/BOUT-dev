@@ -35,7 +35,7 @@ do
 	    TESTS=1
 	    ;;
     t) ### Set target to build
-        MAIN_TARGET="$OPTARG"
+        MAIN_TARGET+=("$OPTARG")
         ;;
 	*) ### Show usage message
 	    usage
@@ -70,19 +70,22 @@ then
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
-time make $MAIN_TARGET
-make_exit=$?
-if [[ $make_exit -gt 0 ]]; then
-    make clean > /dev/null
-    echo -e $RED_FG
-    echo "**************************************************"
-    echo "Printing make commands:"
-    echo "**************************************************"
-    echo -e $RESET_FG
-    echo
-    make -n $MAIN_TARGET
-    exit $make_exit
-fi
+for target in ${MAIN_TARGET[@]}
+do
+    time make $target
+    make_exit=$?
+    if [[ $make_exit -gt 0 ]]; then
+	make clean > /dev/null
+	echo -e $RED_FG
+	echo "**************************************************"
+	echo "Printing make commands:"
+	echo "**************************************************"
+	echo -e $RESET_FG
+	echo
+	make -n $target
+	exit $make_exit
+    fi
+done
 
 if [[ ${TESTS} == 1 ]]
 then
@@ -97,6 +100,7 @@ fi
 if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests || exit
+    time py.test-3 tools/pylib/ || exit
 fi
 
 if [[ ${MMS} == 1 ]]

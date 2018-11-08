@@ -35,13 +35,13 @@
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
-#include "bout/deprecated.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
 #include <string>
 #include <list>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
 
 using std::abs;
@@ -53,9 +53,11 @@ using std::swap;
 template <typename T>
 class Matrix {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using size_type = int;
+  
   Matrix() : n1(0), n2(0){};
-  Matrix(unsigned int n1, unsigned int n2) : n1(n1), n2(n2) {
+  Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
@@ -72,41 +74,30 @@ public:
     return *this;
   }
   
-  T& operator()(unsigned int i1, unsigned int i2) {
+  inline T& operator()(size_type i1, size_type i2) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
-  const T& operator()(unsigned int i1, unsigned int i2) const {
+  inline const T& operator()(size_type i1, size_type i2) const {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     return data[i1*n2+i2];
   }
 
   Matrix& operator=(const T&val){
-    for(auto &i: data){
+    for (auto &i: data) {
       i = val;
     };
     return *this;
   };
-  
-  // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(T* operator[](unsigned int i1)) {
-    ASSERT2(0<=i1 && i1<n1);
-    return &(data[i1*n2]);
-  }
-  // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(const T* operator[](unsigned int i1) const) {
-    ASSERT2(0<=i1 && i1<n1);
-    return &(data[i1*n2]);
-  }
 
   T* begin() { return std::begin(data);};
   const T* begin() const { return std::begin(data);};
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
 
   bool empty(){
     return n1*n2 == 0;
@@ -122,15 +113,9 @@ public:
   }
   
 private:
-  unsigned int n1, n2;
+  size_type n1, n2;
   Array<T> data;
 };
-
-// For backwards compatibility with old matrix -- to be removed
-template <typename T>
-DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
-template <typename T>
-void free_matrix(Matrix<T> UNUSED(m)) {};
 
 /// Helper class for 3D arrays
 ///
@@ -138,9 +123,11 @@ void free_matrix(Matrix<T> UNUSED(m)) {};
 template <typename T>
 class Tensor {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using size_type = int;
+
   Tensor() : n1(0), n2(0), n3(0) {};
-  Tensor(unsigned int n1, unsigned int n2, unsigned int n3) : n1(n1), n2(n2), n3(n3) {
+  Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     data = Array<T>(n1*n2*n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
@@ -158,13 +145,13 @@ public:
     return *this;
   }
 
-  T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) {
+  T& operator()(size_type i1, size_type i2, size_type i3) {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
     return data[(i1*n2+i2)*n3 + i3];
   }
-  const T& operator()(unsigned int i1, unsigned int i2, unsigned int i3) const {
+  const T& operator()(size_type i1, size_type i2, size_type i3) const {
     ASSERT2(0<=i1 && i1<n1);
     ASSERT2(0<=i2 && i2<n2);
     ASSERT2(0<=i3 && i3<n3);
@@ -183,7 +170,7 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
   
-  std::tuple<unsigned int, unsigned int, unsigned int> shape() { return std::make_tuple(n1, n2, n3);};
+  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
   
   bool empty(){
     return n1*n2*n3 == 0;
@@ -199,7 +186,7 @@ public:
   }
  
 private:
-  unsigned int n1, n2, n3;
+  size_type n1, n2, n3;
   Array<T> data;
 };
 
@@ -254,90 +241,6 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
 
   return 0;
 };
-
-// Give signature here as not able to mark implementation below as DEPRECATED
-template <class T>
-DEPRECATED(T **matrix(int xsize, int ysize));
-
-/*!
- * Create a 2D array of \p xsize by \p ysize 
- * This is allocated as two blocks of data so that
- * the values are in a contiguous array.
- * 
- * Note: This returns C-style pointers, and makes
- * no effort to manage memory. Prefer other methods
- * (like standard containers) over this if possible.
- * 
- * \deprecated
- *
- * Example
- * -------
- * 
- * BoutReal **m = matrix<BoutReal>(nx, ny);
- */
-template <class T>
-T **matrix(int xsize, int ysize) {
-  long i;
-  T **m;
-
-  if(xsize == 0)
-     xsize = 1;
-  if(ysize == 0)
-     ysize = 1;
-
-  if((m = new T*[xsize]) == nullptr)
-    throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  
-  if((m[0] = new T[xsize*ysize]) == nullptr)
-    throw BoutException("Error: could not allocate memory\n");
-
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-  return m;
-}
-
-template <class T>
-DEPRECATED(void free_matrix(T **m));
-/*!
- * Free a matrix, assumed to have been allocated using matrix()
- *
- * @param[in] m  The matrix to free
- * @deprecated
- *
- * Example
- * -------
- *
- *     BoutReal **m = matrix<BoutReal>(nx, ny);
- *     ...
- *     free_matrix(m);
- */ 
-template <class T>
-void free_matrix(T **m) {
-  delete[] m[0];
-  delete[] m;
-}
-
-
-/// Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
-///
-/// \deprecated Prefer other methods like standard containers
-DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
-
-/// Free a 3D BoutReal array, assumed to have been created by r3tensor
-///
-/// \deprecated
-DEPRECATED(void free_r3tensor(BoutReal ***m));
-
-/// Allocate a 3D int array of size \p nrow x \p ncol \p ndep
-///
-/// \deprecated Prefer other methods like standard containers
-DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
-
-/// Free a 3D int array, assumed to have been created by i3tensor()
-///
-/// \deprecated
-DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
  * Get Random number between 0 and 1
@@ -435,11 +338,16 @@ char* copy_string(const char* s);
  * by writing to a stringstream
  */
 template <class T>
-const string toString(const T& val) {
+const std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
+
+/// Convert a time stamp to a string
+/// This uses std::localtime and std::put_time
+template <>
+const std::string toString<>(const time_t& time);
 
 /*!
  * Convert a string to lower case
@@ -536,5 +444,10 @@ std::string trimComments(const std::string &s, const std::string &c="#;");
       va_end(va);                                       \
     }                                                   \
   }
+
+/// Convert pointer or reference to pointer
+/// This allows consistent handling of both in macros, templates
+template <typename T> T *pointer(T *val) { return val; }
+template <typename T> T *pointer(T &val) { return &val; }
 
 #endif // __UTILS_H__

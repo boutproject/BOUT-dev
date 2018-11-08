@@ -47,8 +47,11 @@ class Coordinates;
  */ 
 class Coordinates {
 public:
-  /// Constructor
+  /// Standard constructor from input
   Coordinates(Mesh *mesh);
+
+  /// Constructor interpolating from another Coordinates object
+  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
   
   ~Coordinates() {}
   
@@ -120,28 +123,29 @@ public:
   const Field3D Div_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
   
   // Second derivative along magnetic field
-  const Field2D Grad2_par2(const Field2D &f);
-  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc);
+  const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+  const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  const Field2D Delp2(const Field2D &f);
-  const Field3D Delp2(const Field3D &f);
-  const FieldPerp Delp2(const FieldPerp &f);
+  const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const Field3D Delp2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const FieldPerp Delp2(const FieldPerp &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) ) 
-  const Field2D Laplace_par(const Field2D &f);
-  const Field3D Laplace_par(const Field3D &f);
+  const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  const Field2D Laplace(const Field2D &f);
-  const Field3D Laplace(const Field3D &f);
+  const Field2D Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+  const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
+  CELL_LOC location;
 };
 
 /*

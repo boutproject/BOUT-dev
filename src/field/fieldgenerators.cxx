@@ -160,6 +160,7 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
     throw BoutException("ballooning function ball_n less than 1");
 
   BoutReal ts; // Twist-shift angle
+  Coordinates* coords = mesh->getCoordinates();
 
   // Need to find the nearest flux surface (x index)
   // This assumes that mesh->GlobalX is linear in x index
@@ -173,10 +174,10 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->coordinates()->zlength(),t);
+      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/coords->zlength(),t);
 
       // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->coordinates()->zlength(),t);
+      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/coords->zlength(),t);
     }
     return value;
   }

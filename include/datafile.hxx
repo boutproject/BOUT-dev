@@ -14,13 +14,13 @@ class Datafile;
 #ifndef __DATAFILE_H__
 #define __DATAFILE_H__
 
-#include "bout/deprecated.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 #include "options.hxx"
+#include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
 
@@ -72,17 +72,10 @@ class Datafile {
   bool write(); ///< Write added variables
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
-  
-  // Write a variable to the file now
-  DEPRECATED(bool writeVar(const int &i, const char *name));
-  DEPRECATED(bool writeVar(BoutReal r, const char *name));
 
-  void setAttribute(const string &varname, const string &attrname, const string &text) {
-    attrib_string[varname][attrname] = text;
-  }
-  void setAttribute(const string &varname, const string &attrname, int value) {
-    attrib_int[varname][attrname] = value;
-  }
+  void setAttribute(const string &varname, const string &attrname, const string &text);
+  void setAttribute(const string &varname, const string &attrname, int value);
+
  private:
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
@@ -101,7 +94,9 @@ class Datafile {
   size_t filenamelen;
   static const size_t FILENAMELEN=512;
   char *filename;
+  bool writable; // is file open for writing?
   bool appending;
+  bool first_time; // is this the first time the data will be written?
 
   /// Shallow copy, not including dataformat, therefore private
   Datafile(const Datafile& other);
@@ -138,21 +133,10 @@ class Datafile {
   /// Get the pointer to the variable, nullptr if not added
   /// This is used to check if the same variable is being added
   void* varPtr(const string &name);
-  
-  // Metadata (attributes)
-  // Note: These should be stored with each variable, but this would require
-  // a number of changes to the data storage (maps rather than vectors etc).
-  // For now this is a bit of a hack to see if it works
-
-  /// String attributes. Maps variable name to maps of <string name, string value>
-  std::map<std::string, std::map<std::string, std::string>> attrib_string;
-  
-  /// Integer attributes. Maps variable name to maps <string name, int value>
-  std::map<std::string, std::map<std::string, int>> attrib_int; 
 };
 
 /// Write this variable once to the grid file
-#define SAVE_ONCE(var) dump.add(var, #var, 0)
+#define SAVE_ONCE1(var) dump.add(var, #var, 0);
 #define SAVE_ONCE2(var1, var2) { \
     dump.add(var1, #var1, 0); \
     dump.add(var2, #var2, 0);}
@@ -179,8 +163,11 @@ class Datafile {
     dump.add(var5, #var5, 0); \
     dump.add(var6, #var6, 0);}
 
+#define SAVE_ONCE(...)                          \
+  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
+
 /// Write this variable every timestep
-#define SAVE_REPEAT(var) dump.add(var, #var, 1)
+#define SAVE_REPEAT1(var) dump.add(var, #var, 1);
 #define SAVE_REPEAT2(var1, var2) { \
     dump.add(var1, #var1, 1); \
     dump.add(var2, #var2, 1);}
@@ -206,5 +193,8 @@ class Datafile {
     dump.add(var4, #var4, 1); \
     dump.add(var5, #var5, 1); \
     dump.add(var6, #var6, 1);}
+
+#define SAVE_REPEAT(...)                        \
+  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
 #endif // __DATAFILE_H__

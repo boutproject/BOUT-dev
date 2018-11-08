@@ -23,7 +23,7 @@ const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) 
   Field3D result;
   result.allocate();
   
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
   
   for(int i=mesh->xstart;i<=mesh->xend;i++)
     for(int j=mesh->ystart; j<=mesh->yend; j++)
@@ -52,7 +52,7 @@ private:
 protected:
   int init(bool restarting) {
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     // Get the options
     Options *meshoptions = Options::getRoot()->getSection("mesh");

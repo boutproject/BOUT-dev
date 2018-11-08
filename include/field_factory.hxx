@@ -55,15 +55,15 @@ FieldGeneratorPtr generator(BoutReal *ptr);
 class FieldFactory : public ExpressionParser {
 public:
   FieldFactory(Mesh *m, Options *opt = nullptr);
-  ~FieldFactory();
+  ~FieldFactory() override;
 
-  const Field2D create2D(const std::string &value, Options *opt = nullptr,
+  const Field2D create2D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  const Field3D create3D(const std::string &value, Options *opt = nullptr,
+  const Field3D create3D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   // Parse a string into a tree of generators
-  FieldGeneratorPtr parse(const std::string &input, Options *opt = nullptr);
+  FieldGeneratorPtr parse(const std::string &input, const Options *opt = nullptr);
 
   // Singleton object
   static FieldFactory *get();
@@ -72,18 +72,18 @@ public:
   void cleanCache();
 protected:
   // These functions called by the parser
-  FieldGeneratorPtr resolve(std::string &name);
-  
+  FieldGeneratorPtr resolve(std::string &name) override;
+
 private:
   Mesh *fieldmesh;  
-  Options *options;
+  const Options *options;
 
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
   std::map<std::string, FieldGeneratorPtr > cache;
   
-  Options* findOption(Options *opt, const std::string &name, std::string &val);
+  const Options* findOption(const Options *opt, const std::string &name, std::string &val);
 };
 
 //////////////////////////////////////////////////////////
@@ -91,13 +91,12 @@ private:
 
 class FieldFunction : public FieldGenerator {
 public:
+  FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  double generate(double x, double y, double z, double t) {
+  double generate(double x, double y, double z, double t) override {
     return func(t, x, y, z);
   }
 private:
-  FieldFunction();
-  
   FuncPtr func;
 };
 
@@ -106,10 +105,11 @@ private:
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z), double UNUSED(t)) {
+  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                  double UNUSED(t)) override {
     return 0.0;
   }
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > UNUSED(args)) {
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return get();
   }
   /// Singeton

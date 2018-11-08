@@ -37,12 +37,17 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
-  Laplacian(opt),
+LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc) :
+  Laplacian(opt, loc),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -77,9 +82,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   }
   if ( outer_boundary_flags & ~implemented_boundary_flags ) {
     throw BoutException("Attempted to set Laplacian outer boundary inversion flag that is not implemented in LaplaceMultigrid.");
-  }
-  if (nonuniform) {
-    throw BoutException("nonuniform option is not implemented in LaplaceMultigrid.");
   }
   
   commX = mesh->getXcomm();
@@ -199,15 +201,14 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
-#if CHECK > 2
   checkData(b_in);
   checkData(x0);
-#endif
+  ASSERT3(b_in.getIndex() == x0.getIndex());
 
   Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates(location);
 
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
@@ -424,10 +425,13 @@ BOUT_OMP(for)
 
   FieldPerp result(mesh);
   result.allocate();
+  result.setIndex(yindex);
+
   #if CHECK>2
-    // Make any unused elements NaN so that user does not try to do calculations with them
-  for (const auto &i : result) {
-    result[i] = std::nan("");
+  // Make any unused elements NaN so that user does not try to do calculations with them
+  const auto &region = mesh->getRegionPerp("RGN_ALL");
+  BOUT_FOR(i, region) {
+    result[i] = BoutNaN;
   }
   #endif
   // Copy solution into a FieldPerp to return
@@ -536,7 +540,6 @@ BOUT_OMP(for)
       }
     }
   }
-  result.setIndex(yindex); // Set the index of the FieldPerp to be returned
 
 #if CHECK > 2
   checkData(result);
@@ -551,7 +554,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates(location);
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
@@ -583,6 +586,10 @@ BOUT_OMP(for collapse(2))
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
+      if (nonuniform) {
+        // add correction for non-uniform dx
+        dxd += D(i2, yindex, k2)*coords->d1_dx(i2, yindex);
+      }
       
       BoutReal dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex)
         + coords->g33(i2, yindex)*ddz_C

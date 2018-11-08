@@ -30,20 +30,12 @@ const BoutReal BoutRealTolerance = 1e-15;
 
 
 /// Teach googletest how to print SpecificInds
-inline std::ostream& operator<< (std::ostream &out, const SpecificInd &index) {
+template<IND_TYPE N>
+inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
   return out << index.ind;
 }
 
-/// Teach googletest how to print Ind2D
-inline std::ostream& operator<< (std::ostream &out, const Ind2D &index) {
-  return out << index.ind;
-}
-
-/// Teach googletest how to print Ind3D
-inline std::ostream& operator<< (std::ostream &out, const Ind3D &index) {
-  return out << index.ind;
-}
-
+class Options;
 
 /// FakeMesh has just enough information to create fields
 ///
@@ -73,6 +65,7 @@ public:
     ystart = 1;
     yend = ny - 2;
 
+    StaggerGrids=true;
     // Unused variables
     periodicX = false;
     NXPE = 1;
@@ -160,8 +153,42 @@ public:
   BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
+
+  void initDerivs(Options * opt){
+    StaggerGrids=true;
+    derivs_init(opt);
+  }
 private:
   vector<BoundaryRegion *> boundaries;
+};
+
+/// Test fixture to make sure the global mesh is our fake
+/// one. Multiple tests have exactly the same fixture, so use a type
+/// alias to make a new test:
+///
+///     using MyTest = FakeMeshFixture;
+class FakeMeshFixture : public ::testing::Test {
+public:
+  FakeMeshFixture() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+  }
+
+  ~FakeMeshFixture() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+  static constexpr int nx = 3;
+  static constexpr int ny = 5;
+  static constexpr int nz = 7;
 };
 
 #endif //  TEST_EXTRAS_H__

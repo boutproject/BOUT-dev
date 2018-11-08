@@ -179,9 +179,9 @@ if __name__ == "__main__":
     region_name = '"RGN_ALL"'
     
     if args.noOpenMP:
-        region_loop = 'BLOCK_REGION_LOOP_SERIAL'
+        region_loop = 'BOUT_FOR_SERIAL'
     else:
-        region_loop = 'BLOCK_REGION_LOOP'
+        region_loop = 'BOUT_FOR'
         
     # Declare what fields we currently support:
     # Field perp is currently missing

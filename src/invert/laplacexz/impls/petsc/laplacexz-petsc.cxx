@@ -18,8 +18,8 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
-  : LaplaceXZ(m, opt), mesh(m), coefs_set(false) {
+LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
+  : LaplaceXZ(m, opt, loc), mesh(m), coefs_set(false) {
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
    *              - Setting the solver method
@@ -248,13 +248,13 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
   PetscBool petsc_is_finalised;
   PetscFinalized(&petsc_is_finalised);
 
-  for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
-    MatDestroy(&it->MatA);
-    MatDestroy(&it->MatP);
+  for (auto &it : slice) {
+    MatDestroy(&it.MatA);
+    MatDestroy(&it.MatP);
 
     if (!petsc_is_finalised) {
       // PetscFinalize may already have destroyed this object
-      KSPDestroy(&it->ksp);
+      KSPDestroy(&it.ksp);
     }
   }
 
@@ -293,12 +293,12 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   Field3D B = Bin;
 
   // Each Y slice is handled as a separate set of matrices and KSP context
-  for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+  for (auto &it : slice) {
     // Get Y index
-    int y = it->yindex;
+    int y = it.yindex;
 
     int Istart, Iend;
-    MatGetOwnershipRange( it->MatA, &Istart, &Iend );
+    MatGetOwnershipRange(it.MatA, &Istart, &Iend);
 
     ////////////////////////////////////////////////
     // Inner X boundary (see note about BC in LaplaceXZ constructor)
@@ -311,11 +311,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
          */
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
           val = -1.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -324,11 +324,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Setting BC from x0
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
           val = 0.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -337,11 +337,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Setting BC from b
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
           val = 0.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -353,10 +353,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
          */
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 0.5;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row + (mesh->LocalNz); // +1 in X
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -368,7 +368,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
 
-    Coordinates *coords = mesh->coordinates();
+    Coordinates *coords = mesh->getCoordinates(location);
 
     // NOTE: For now the X-Z terms are omitted, so check that they are small
     ASSERT2(max(abs(coords->g13)) < 1e-5);
@@ -428,29 +428,29 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Now have a 5-point stencil for the Laplacian
 
         // Set the centre (diagonal)
-        MatSetValues(it->MatA,1,&row,1,&row,&c,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
 
         // X + 1
         int col = row + (mesh->LocalNz);
-        MatSetValues(it->MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
 
         // X - 1
         col = row - (mesh->LocalNz);
-        MatSetValues(it->MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
 
         // Z + 1
         col = row + 1;
         if(z == mesh->LocalNz-1) {
           col -= mesh->LocalNz;  // Wrap around
         }
-        MatSetValues(it->MatA,1,&row,1,&col,&zp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
 
         // Z - 1
         col = row - 1;
         if(z == 0) {
           col += mesh->LocalNz;  // Wrap around
         }
-        MatSetValues(it->MatA,1,&row,1,&col,&zm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
 
         row++;
       }
@@ -463,11 +463,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Neumann 0
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row - (mesh->LocalNz); // -1 in X
           val = -1.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -476,11 +476,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Setting BC from x0
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row - (mesh->LocalNz); // -1 in X
           val = 0.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -489,11 +489,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Setting BC from b
         for(int z=0; z < mesh->LocalNz; z++) {
           PetscScalar val = 1.0;
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row - (mesh->LocalNz); // -1 in X
           val = 0.0;
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -503,10 +503,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         PetscScalar val = 0.5;
 
         for(int z=0; z < mesh->LocalNz; z++) {
-          MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row - (mesh->LocalNz); // -1 in X
-          MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
         }
@@ -516,8 +516,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     ASSERT1(row == Iend); // Check that row is currently on the last row
 
     // Assemble Matrix
-    MatAssemblyBegin( it->MatA, MAT_FINAL_ASSEMBLY );
-    MatAssemblyEnd( it->MatA, MAT_FINAL_ASSEMBLY );
+    MatAssemblyBegin(it.MatA, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(it.MatA, MAT_FINAL_ASSEMBLY);
   }
 
   // Increase reuse count
@@ -527,37 +527,33 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     reuse_count = 0;
 
     // Modifying preconditioner matrix
-    for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+    for (auto &it : slice) {
       // Copy matrix into preconditioner
       if(coefs_set) {
         // Preconditioner already set
-        MatDestroy(&it->MatP);
+        MatDestroy(&it.MatP);
       }
-      MatConvert(it->MatA,MATSAME,MAT_INITIAL_MATRIX,&it->MatP);
-
-      // Don't re-use preconditioner
-      //KSPSetReusePreconditioner(it->ksp, PETSC_FALSE); // PETSc >= 3.5
+      MatConvert(it.MatA, MATSAME, MAT_INITIAL_MATRIX, &it.MatP);
     }
 
     // Set operators
-    for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+    for (auto &it : slice) {
 
       // Note: This is a hack to force update of the preconditioner matrix
 #if PETSC_VERSION_GE(3,5,0)
-      KSPSetOperators(it->ksp, it->MatA, it->MatP);
+      KSPSetOperators(it.ksp, it.MatA, it.MatP);
 #else
-      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_NONZERO_PATTERN);
+      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_NONZERO_PATTERN);
 #endif
     }
   }else {
-    for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+    for (auto &it : slice) {
       /// Reuse the preconditioner, even if the operator changes
 
 #if PETSC_VERSION_GE(3,5,0)
-      KSPSetReusePreconditioner(it->ksp, PETSC_TRUE);
-      //KSPSetOperators(it->ksp, it->MatA, it->MatP);
+      KSPSetReusePreconditioner(it.ksp, PETSC_TRUE);
 #else
-      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
+      KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER);
 #endif
     }
   }
@@ -594,17 +590,17 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   Field3D result;
   result.allocate();
 
-  for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+  for (auto &it : slice) {
     /// Get y index
-    int y = it->yindex;
+    int y = it.yindex;
 
     /// Specify non-zero starting guess for solution (from input x0)
-    KSPSetInitialGuessNonzero(it->ksp, PETSC_TRUE);
+    KSPSetInitialGuessNonzero(it.ksp, PETSC_TRUE);
 
     //////////////////////////
     // Load initial guess x0 into xs and rhs into bs
     int Istart, Iend;
-    MatGetOwnershipRange( it->MatA, &Istart, &Iend );
+    MatGetOwnershipRange(it.MatA, &Istart, &Iend);
 
     // Starting index
     int ind = Istart;
@@ -750,11 +746,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     //////////////////////////
     // Solve the system
 
-    KSPSolve( it->ksp, bs, xs );
+    KSPSolve(it.ksp, bs, xs);
 
     // Check if the solve converged
     KSPConvergedReason reason;
-    KSPGetConvergedReason( it->ksp, &reason );
+    KSPGetConvergedReason(it.ksp, &reason);
 
     if(reason <= 0) {
       throw BoutException("LaplaceXZ failed to converge. Reason %d", reason);

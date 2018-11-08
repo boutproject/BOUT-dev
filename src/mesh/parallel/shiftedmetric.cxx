@@ -23,6 +23,15 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     mesh.get(zShift, "qinty");
   }
 
+  // TwistShift needs to be set for derivatives to be correct at the jump where
+  // poloidal angle theta goes 2pi->0
+  bool twistshift = Options::root()["TwistShift"].withDefault(false);
+  bool shift_without_twist = Options::root()["ShiftWithoutTwist"].withDefault(false);
+  if (!twistshift and !shift_without_twist) {
+    throw BoutException("ShiftedMetric usually requires the option TwistShift=true\n"
+        "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
+  }
+
   //If we wanted to be efficient we could move the following cached phase setup
   //into the relevant shifting routines (with static bool first protection)
   //so that we only calculate the phase if we actually call a relevant shift 
@@ -33,7 +42,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //not change once we've been created so precalculate the complex
   //phases used in transformations
   int nmodes = mesh.LocalNz/2 + 1;
-  BoutReal zlength = mesh.coordinates()->zlength();
+  BoutReal zlength = mesh.getCoordinates()->zlength();
 
   //Allocate storage for complex intermediate
   cmplx.resize(nmodes);
@@ -195,7 +204,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   rfft(in, len, &cmplxLoc[0]);
   
   // Apply phase shift
-  BoutReal zlength = mesh.coordinates()->zlength();
+  BoutReal zlength = mesh.getCoordinates()->zlength();
   for(int jz=1;jz<nmodes;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
     cmplxLoc[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));

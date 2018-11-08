@@ -53,7 +53,8 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
 
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
-
+  addGenerator("π", std::make_shared<FieldValue>(PI));
+  
   // Some standard functions
   addGenerator("sin", std::make_shared<FieldSin>(nullptr));
   addGenerator("cos", std::make_shared<FieldCos>(nullptr));
@@ -74,6 +75,7 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   addGenerator("sqrt", std::make_shared<FieldSqrt>(nullptr));
   addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
   addGenerator("erf", std::make_shared<FieldErf>(nullptr));
+  addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
   addGenerator("max", std::make_shared<FieldMax>());
@@ -97,7 +99,7 @@ FieldFactory::~FieldFactory() {
 
 }
 
-const Field2D FieldFactory::create2D(const string &value, Options *opt,
+const Field2D FieldFactory::create2D(const string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
 
@@ -123,31 +125,30 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(auto i : result) {
-      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
-      result[i] = gen->generate(xpos,
-                                TWOPI*localmesh->GlobalY(i.y),
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
+      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
+                                0.0, // Z
+                                t);  // T
     }
     break;
   }
   case CELL_YLOW: {
-    for(auto i : result) {
-      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                ypos,
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      BoutReal ypos =
+          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
+      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
+                                0.0, // Z
+                                t);  // T
     }
     break;
   }
   default: {// CELL_CENTRE or CELL_ZLOW
-    for(auto i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                0.0,  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        0.0, // Z
+                        t);  // T
     }
   }
   };
@@ -157,7 +158,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt,
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value, Options *opt,
+const Field3D FieldFactory::create3D(const string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
 
@@ -182,40 +183,43 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
 
   switch(loc)  {
   case CELL_XLOW: {
-    for(auto i : result) {
-      BoutReal xpos = 0.5*(localmesh->GlobalX(i.x-1) + localmesh->GlobalX(i.x));
-      result[i] = gen->generate(xpos,
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
+      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
+                                TWOPI * static_cast<BoutReal>(i.z()) /
+                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
+                                t);                                            // T
     }
     break;
   }
   case CELL_YLOW: {
-    for(auto i : result) {
-      BoutReal ypos = TWOPI*0.5*(localmesh->GlobalY(i.y-1) + localmesh->GlobalY(i.y));
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                ypos,
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      BoutReal ypos =
+          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
+      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
+                                TWOPI * static_cast<BoutReal>(i.z()) /
+                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
+                                t);                                            // T
     }
     break;
   }
   case CELL_ZLOW: {
-    for(auto i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*(static_cast<BoutReal>(i.z) - 0.5) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
+                            static_cast<BoutReal>(localmesh->LocalNz), // Z
+                        t);                                            // T
     }
     break;
   }
   default: {// CELL_CENTRE
-    for(auto i : result) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x),
-                                TWOPI*localmesh->GlobalY(i.y),
-                                TWOPI*static_cast<BoutReal>(i.z) / static_cast<BoutReal>(localmesh->LocalNz),  // Z
-                                t); // T
+    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
+      result[i] =
+          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
+                        TWOPI * static_cast<BoutReal>(i.z()) /
+                            static_cast<BoutReal>(localmesh->LocalNz), // Z
+                        t);                                            // T
     }
   }
   };
@@ -231,10 +235,10 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt,
   return result;
 }
 
-Options* FieldFactory::findOption(Options *opt, const string &name, string &val) {
+const Options* FieldFactory::findOption(const Options *opt, const string &name, string &val) {
   // Find an Options object which contains the given name
 
-  Options *result = opt;
+  const Options *result = opt;
 
   // Check if name contains a section separator ':'
   size_t pos = name.find(':');
@@ -277,7 +281,7 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
 }
 
 FieldGeneratorPtr FieldFactory::resolve(string &name) {
-  if(options) {
+  if (options) {
     // Check if in cache
     string key;
     if(name.find(':') != string::npos) {
@@ -315,7 +319,7 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
     // Find the option, including traversing sections.
     // Throws exception if not found
     string value;
-    Options *section = findOption(options, name, value);
+    const Options *section = findOption(options, name, value);
 
     // Add to lookup list
     lookup.push_back(key);
@@ -335,24 +339,24 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
   return nullptr;
 }
 
-FieldGeneratorPtr FieldFactory::parse(const string &input, Options *opt) {
+FieldGeneratorPtr FieldFactory::parse(const string &input, const Options *opt) {
 
   // Check if in the cache
   string key = string("#") + input;
-  if(opt)
-    key = opt->str()+key; // Include options context in key
+  if (opt)
+    key = opt->str() + key; // Include options context in key
 
   auto it = cache.find(key);
-  if(it != cache.end()) {
+  if (it != cache.end()) {
     // Found in cache
     return it->second;
   }
 
   // Save the current options
-  Options *oldoptions = options;
+  const Options *oldoptions = options;
 
   // Store the options tree for token lookups
-  if(opt)
+  if (opt)
     options = opt;
 
   // Parse
