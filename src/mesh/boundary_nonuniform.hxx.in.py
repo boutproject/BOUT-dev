@@ -9,6 +9,8 @@ orders=range(2,5)
 whats=["Dirichlet","Neumann","Free"]
 
 class_str="""
+#include "boundary_op.hxx"
+
 class {{class}} : public BoundaryOp {
 public:
   {{class}}() {}

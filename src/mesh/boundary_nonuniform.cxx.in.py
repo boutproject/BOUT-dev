@@ -80,7 +80,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
 
     const Field2D &dy =
-        bndry->by != 0 ? mesh->coordinates()->dy : mesh->coordinates()->dx;
+        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% if what != "Free" %}
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
