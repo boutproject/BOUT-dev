@@ -235,8 +235,24 @@ class Field2D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
-  
- private:
+
+  friend void swap(Field2D& first, Field2D& second) noexcept {
+    using std::swap;
+    swap(first.data, second.data);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.location, second.location);
+    swap(first.deriv, second.deriv);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
+
+private:
   int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
   /// Internal data array. Handles allocation/freeing of memory
