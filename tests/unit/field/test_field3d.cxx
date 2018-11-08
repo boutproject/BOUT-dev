@@ -2026,5 +2026,46 @@ TEST_F(Field3DTest, Swap) {
   mesh->StaggerGrids = backup;
 }
 
+TEST_F(Field3DTest, MoveCtor) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field3D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  first.splitYupYdown();
+  first.yup() = 1.5;
+  first.ydown() = 0.5;
+
+  ddt(first) = 1.1;
+
+  // Second field
+  Field3D second{std::move(first)};
+
+  // Values
+  EXPECT_TRUE(IsField3DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(second.yup(), 1.5));
+  EXPECT_TRUE(IsField3DEqualBoutReal(second.ydown(), 0.5));
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(second.getNx(), Field3DTest::nx);
+  EXPECT_EQ(second.getNy(), Field3DTest::ny);
+  EXPECT_EQ(second.getNz(), Field3DTest::nz);
+
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop

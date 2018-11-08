@@ -171,7 +171,9 @@ class Field3D : public Field, public FieldData {
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /// Move constructor
+  Field3D(Field3D&& f) noexcept : Field3D() { swap(*this, f); }
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
