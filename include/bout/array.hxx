@@ -77,7 +77,7 @@ public:
    * a.empty(); // True
    * 
    */
-  Array() : ptr(nullptr) {}
+  Array() noexcept : ptr(nullptr) {}
   
   /*!
    * Create an array of given length
@@ -89,14 +89,14 @@ public:
   /*!
    * Destructor. Releases the underlying ArrayData
    */
-  ~Array() {
+  ~Array() noexcept {
     release(ptr);
   }
   
   /*!
    * Copy constructor
    */
-  Array(const Array &other) {
+  Array(const Array &other) noexcept {
     ptr = other.ptr; 
   }
 
@@ -106,7 +106,7 @@ public:
    *
    * Uses copy-and-swap idiom
    */
-  Array& operator=(Array other) {
+  Array& operator=(Array other) noexcept {
     swap(*this, other);
     return *this;
   }
@@ -114,7 +114,7 @@ public:
   /*!
    * Move constructor
    */
-  Array(Array&& other) {
+  Array(Array&& other) noexcept {
     swap(*this, other);
   }
 
@@ -127,7 +127,7 @@ public:
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-  static bool useStore( bool keep_using = true ) {
+  static bool useStore( bool keep_using = true ) noexcept {
     static bool value = true;
     if (keep_using) {
       return value; 
@@ -141,7 +141,7 @@ public:
    * Release data. After this the Array is empty and any data access
    * will be invalid
    */
-  void clear() {
+  void clear() noexcept {
     release(ptr);
   }
 
@@ -161,17 +161,19 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const {
+  bool empty() const noexcept {
     return ptr == nullptr;
   }
 
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  int size() const {
+  int size() const noexcept {
     if(!ptr)
       return 0;
 #ifdef BOUT_ARRAY_WITH_VALARRAY
+    // Note: std::valarray::size is not noexcept, so Array::size
+    // shouldn't be either if we're using valarrays
     return ptr->size();
 #else
     return ptr->len;
@@ -182,7 +184,7 @@ public:
    * Returns true if the data is unique to this Array.
    * 
    */
-  bool unique() const {
+  bool unique() const noexcept {
     return ptr.use_count() == 1;
   }
 
@@ -216,20 +218,20 @@ public:
   typedef T* iterator;
   typedef const T* const_iterator;
 #ifndef BOUT_ARRAY_WITH_VALARRAY
-  iterator begin() { 
+  iterator begin() noexcept {
     return (ptr) ? ptr->data : nullptr;
   }
 
-  iterator end() {
+  iterator end() noexcept {
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
 
   // Const iterators  
-  const_iterator begin() const {
+  const_iterator begin() const noexcept {
     return (ptr) ? ptr->data : nullptr;
   }
 
-  const_iterator end() const {
+  const_iterator end() const noexcept {
     return (ptr) ? ptr->data + ptr->len : nullptr;
   }
 #else
@@ -279,7 +281,7 @@ public:
    * Exchange contents with another Array of the same type.
    * Sizes of the arrays may differ.
    */
-  friend void swap(Array<T> &first, Array<T> &second) {
+  friend void swap(Array<T> &first, Array<T> &second) noexcept {
     using std::swap;
     swap(first.ptr, second.ptr);
   }
@@ -391,6 +393,9 @@ private:
       p = st.back();
       st.pop_back();
     } else {
+      // Ensure that when we release the data block later we'll have
+      // enough space to put it in the store
+      st.reserve(1);
       p = std::make_shared<dataBlock>(len);
     }
 
@@ -403,8 +408,13 @@ private:
    * It's important to pass a reference to the pointer, otherwise we get
    * a copy of the shared_ptr, which therefore increases the use count
    * and doesn't allow us to free the pass pointer directly
+   *
+   * Note that this is noexcept only because we've ensure that both a)
+   * store()[<size>] already exists, and b) it has space for at least
+   * one data block. Of course, store() could throw -- in which case
+   * we're doomed anyway, so the only thing we can do is abort
    */
-  void release(dataPtrType &d) {
+  void release(dataPtrType &d) noexcept {
     if (!d)
       return;
     
