@@ -336,8 +336,8 @@ DEFINE_STANDARD_DERIV(DDX_CWENO3, "W3", 2, DERIV::Standard) {
   sm.p = ma - f.p;
   sm.pp = ma - f.pp;
 
-  const DerivativeType<VDDX_WENO3> upwindOp;
-  return upwindOp.apply(0.5, sp) + upwindOp.apply(-0.5, sm);
+  const VDDX_WENO3 upwindOp{};
+  return upwindOp(0.5, sp) + upwindOp(-0.5, sm); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
