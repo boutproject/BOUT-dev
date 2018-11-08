@@ -74,7 +74,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) = default;
+  Field2D(Field2D&& f) noexcept : Field2D() { swap(*this, f); };
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)

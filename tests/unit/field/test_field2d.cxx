@@ -1171,4 +1171,38 @@ TEST_F(Field2DTest, Swap) {
   mesh->StaggerGrids = backup;
 }
 
+TEST_F(Field2DTest, MoveCtor) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Second field
+  Field2D second{std::move(first)};
+
+  // Values
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
 #pragma GCC diagnostic pop
