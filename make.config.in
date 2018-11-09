@@ -30,8 +30,12 @@ BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
 
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
+
 # This path to the locale (.mo) files is hard-wired into bout++.cxx at compile time
-BOUT_LOCALE_PATH=@localedir@ 
+BOUT_LOCALE_PATH=@localedir@
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
@@ -143,9 +147,6 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 # Install header files and libraries
 ####################################################################
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-datarootdir = @datarootdir@
 
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = ${INSTALL}
