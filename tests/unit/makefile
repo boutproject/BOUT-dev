@@ -42,8 +42,8 @@ clean ::
 
 # Download Google Test
 $(GTEST_SENTINEL) :
-	echo "Downloading Google Test"
-	git submodule update --init --recursive
+	@echo "Downloading Google Test"
+	@$(BOUT_TOP)/bin/bout-submodule-helper.sh $(BOUT_TOP)
 
 # For simplicity and to avoid depending on Google Test's
 # implementation details, the dependencies specified below are
