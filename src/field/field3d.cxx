@@ -45,8 +45,8 @@
 
 /// Constructor
 Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), FieldData(localmesh), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -71,10 +71,13 @@ Field3D::Field3D(Mesh *localmesh)
 /// later)
 Field3D::Field3D(const Field3D &f)
     : Field(f.fieldmesh),                // The mesh containing array sizes
+      FieldData(f.fielddatamesh),
       background(nullptr), data(f.data), // This handles references to the data array
       deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D(Field3D&)");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
 #if CHECK > 2
   checkData(f);
@@ -100,10 +103,12 @@ Field3D::Field3D(const Field3D &f)
 }
 
 Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(f.getMesh()), FieldData(f.getDataMesh()), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from Field2D");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
   boundaryIsSet = false;
 
@@ -118,8 +123,8 @@ Field3D::Field3D(const Field2D &f)
 }
 
 Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+    : Field(localmesh), FieldData(localmesh), background(nullptr),
+      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
 
   TRACE("Field3D: Copy constructor from value");
 
@@ -159,6 +164,7 @@ void Field3D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
+      fielddatamesh = mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
       nz = fieldmesh->LocalNz;
@@ -300,7 +306,9 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   checkData(rhs);
   
   // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
+  fieldmesh = rhs.getMesh();
+  fielddatamesh = rhs.getDataMesh();
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
   data = rhs.data;
@@ -312,12 +320,16 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
-  
+
   /// Check that the data is valid
   checkData(rhs);
- 
+
   /// Make sure there's a unique array to copy data into
   allocate();
+
+  ASSERT1(fieldmesh == rhs.getMesh());
+  ASSERT1(fielddatamesh == rhs.getDataMesh());
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
   /// Copy data
   const Region<Ind3D> &region_all = fieldmesh->getRegion3D("RGN_ALL");
@@ -442,7 +454,7 @@ void Field3D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    BoundaryOp* op = bfact->create(condition, reg);
     op->apply(*this);
     delete op;
   }
@@ -462,7 +474,7 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      BoundaryOp *op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
       break;
@@ -569,7 +581,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+      BoundaryOpPar* op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
     }
@@ -594,7 +606,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
-        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        BoundaryOpPar* op = bfact->create(condition, reg);
         op->apply(*this);
         delete op;
         break;
@@ -623,7 +635,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
-        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        BoundaryOpPar* tmp = bfact->create(condition, reg);
         // then clone that with the actual argument
         BoundaryOpPar* op = tmp->clone(reg, f);
         op->apply(*this);

@@ -2533,6 +2533,14 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   return yglo / static_cast<BoutReal>(nycore);
 }
 
+BoutReal BoutMesh::GlobalZ(int jz) const {
+  return static_cast<BoutReal>(jz) / static_cast<BoutReal>(GlobalNz);
+}
+
+BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
+  return jz / static_cast<BoutReal>(GlobalNz);
+}
+
 void BoutMesh::outputVars(Datafile &file) {
   file.add(zperiod, "zperiod", false);
   file.add(MXSUB, "MXSUB", false);

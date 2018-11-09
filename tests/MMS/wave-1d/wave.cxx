@@ -42,7 +42,11 @@ private:
   Field3D f, g; // Evolving variables
   Field3D E_f, E_g; // Error vectors
 
+  bool swap_boundary_conditions;
+
   Coordinates *coord;
+
+  CELL_LOC maybe_xlow = mesh->StaggerGrids ? CELL_XLOW : CELL_CENTRE;
   
   const Field3D solution_f(BoutReal t);
   const Field3D source_f(BoutReal t);
@@ -56,6 +60,8 @@ protected:
     
     // Get the options
     Options *meshoptions = Options::getRoot()->getSection("mesh");
+
+    OPTION(Options::getRoot(), swap_boundary_conditions, false);
     
     meshoptions->get("Lx",Lx,1.0);
     meshoptions->get("Ly",Ly,1.0);
@@ -83,14 +89,29 @@ protected:
     coord->g_23 = 0.0;
     coord->geometry();
 
-    g.setLocation(CELL_XLOW); // g staggered to the left of f
+    g.setLocation(maybe_xlow); // g staggered to the left of f
     
-    //Dirichlet everywhere except inner x-boundary Neumann
-    f.addBndryFunction(MS_f,BNDRY_ALL);
-    f.addBndryFunction(dxMS_f,BNDRY_XIN);
+    // Note, when staggergrids=true, only g's boundary conditions have any effect
 
-    g.addBndryFunction(MS_g,BNDRY_ALL);
-    g.addBndryFunction(dxMS_g,BNDRY_XIN);
+    if (!swap_boundary_conditions) {
+      // Dirichlet at outer x-boundary, Neumann everywhere else
+      f.addBndryFunction(dxMS_f,BNDRY_ALL);
+      f.addBndryFunction(MS_f,BNDRY_XOUT); // note order matters, must add this after BNDRY_ALL
+    } else {
+      // Dirichlet at inner x-boundary, Neumann everywhere else
+      f.addBndryFunction(dxMS_f,BNDRY_ALL);
+      f.addBndryFunction(MS_f,BNDRY_XIN); // note order matters, must add this after BNDRY_ALL
+    }
+
+    if (!swap_boundary_conditions) {
+      // Dirichlet at outer x-boundary, Neumann everywhere else
+      g.addBndryFunction(dxMS_g,BNDRY_ALL);
+      g.addBndryFunction(MS_g,BNDRY_XOUT); // note order matters, must add this after BNDRY_ALL
+    } else {
+      // Dirichlet at inner x-boundary, Neumann everywhere else
+      g.addBndryFunction(dxMS_g,BNDRY_ALL);
+      g.addBndryFunction(MS_g,BNDRY_XIN); // note order matters, must add this after BNDRY_ALL
+    }
     
     // Tell BOUT++ to solve f and g
     bout_solve(f, "f");
@@ -101,8 +122,8 @@ protected:
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
 	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),TWOPI*mesh->GlobalY(yj),TWOPI*coord->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),TWOPI*mesh->GlobalY(yj),TWOPI*coord->dz*zk);
 	  }
 	}
       }
@@ -110,8 +131,8 @@ protected:
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
 	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),TWOPI*mesh->GlobalY(yj),TWOPI*coord->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),TWOPI*mesh->GlobalY(yj),TWOPI*coord->dz*zk);
 	  }
 	}
       }
@@ -135,8 +156,8 @@ protected:
     //ddt(g) = HLL(-f, g, -1.0, 1.0);
 
     // Central differencing
-    ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(coord->dx)*D2DX2(f);
-    ddt(g) = DDX(f, CELL_XLOW);// + 20*SQ(coord->dx)*D2DX2(g);
+    ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(f.getCoordinates()->dx)*D2DX2(f);
+    ddt(g) = DDX(f, maybe_xlow);// + 20*SQ(g.getCoordinates()->dx)*D2DX2(g);
     
     //add MMS source term
     ddt(f) += source_f(t);
@@ -198,10 +219,10 @@ const Field3D Wave1D::solution_f(BoutReal t) {
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       BoutReal x = mesh->GlobalX(xi);
-      BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
+      BoutReal y = mesh->GlobalY(yj);
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         BoutReal z = coord->dz*zk;
-        S(xi, yj, zk) = MS_f(t,x,y,z);
+        S(xi, yj, zk) = MS_f(t,x,TWOPI*y,TWOPI*z);
       }
     }
   }
@@ -249,7 +270,7 @@ const Field3D Wave1D::solution_g(BoutReal t) {
   Field3D S;
   S.allocate();
   
-  S.setLocation(CELL_XLOW);
+  S.setLocation(maybe_xlow);
   
   int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
   int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
@@ -260,10 +281,10 @@ const Field3D Wave1D::solution_g(BoutReal t) {
       if(mesh->StaggerGrids) {
 	x = 0.5*(mesh->GlobalX(xi-1) + mesh->GlobalX(xi));
       }
-      BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
+      BoutReal y = mesh->GlobalY(yj);
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         BoutReal z = coord->dz*zk;
-        S(xi, yj, zk) = MS_g(t,x,y,z);
+        S(xi, yj, zk) = MS_g(t,x,TWOPI*y,TWOPI*z);
       }
     }
   }
@@ -275,7 +296,7 @@ const Field3D Wave1D::source_g(BoutReal t) {
   Field3D result;
   result.allocate();
 
-  result.setLocation(CELL_XLOW);
+  result.setLocation(maybe_xlow);
 
   int xi,yj,zk;
 

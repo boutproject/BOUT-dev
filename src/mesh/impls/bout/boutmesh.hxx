@@ -147,10 +147,12 @@ class BoutMesh : public Mesh {
   int getNx() const {return nx;}
   int getNy() const {return ny;}
 
-  BoutReal GlobalX(int jx) const;
-  BoutReal GlobalY(int jy) const;
-  BoutReal GlobalX(BoutReal jx) const;
-  BoutReal GlobalY(BoutReal jy) const;
+  BoutReal GlobalX(int jx) const override;
+  BoutReal GlobalY(int jy) const override;
+  BoutReal GlobalZ(int jz) const override;
+  BoutReal GlobalX(BoutReal jx) const override;
+  BoutReal GlobalY(BoutReal jy) const override;
+  BoutReal GlobalZ(BoutReal jz) const override;
 
   BoutReal getIxseps1() const {return ixseps1;}
   BoutReal getIxseps2() const {return ixseps2;}

@@ -45,7 +45,8 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh *localmesh) :
+  Field(localmesh), FieldData(localmesh), deriv(nullptr) {
 
   boundaryIsSet = false;
 
@@ -66,9 +67,12 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
+                                     FieldData(f.fielddatamesh),
                                      data(f.data), // This handles references to the data array
                                      deriv(nullptr) {
   TRACE("Field2D(Field2D&)");
+
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
 
 #ifdef TRACK
   name = f.name;
@@ -95,7 +99,9 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh *localmesh) :
+    Field(localmesh), FieldData(localmesh), deriv(nullptr) {
+
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
@@ -114,6 +120,7 @@ void Field2D::allocate() {
     if(!fieldmesh) {
       /// If no mesh, use the global
       fieldmesh = mesh;
+      fielddatamesh = mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
@@ -198,7 +205,9 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 #endif
 
   // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
+  fieldmesh = rhs.getMesh();
+  fielddatamesh = rhs.getDataMesh();
+  ASSERT1(fieldmesh == fielddatamesh); // Check consistency between Field::fieldmesh and FieldData::fielddatamesh
   nx = rhs.nx;
   ny = rhs.ny;
 

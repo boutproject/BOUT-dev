@@ -22,88 +22,104 @@ shell_safe("make > make.log")
 
 # List of NX values to use
 nxlist = [8, 12, 20, 36, 68, 132]
+# switch staggered grids on/off, swap the boundary conditions in<->out
+optslist = [" f:bndry_xout=dirichlet_smooth f:bndry_all=neumann g:bndry_xout=dirichlet_smooth g:bndry_all=neumann",
+            " mesh:staggergrids=false f:bndry_xout=dirichlet_smooth f:bndry_all=neumann g:bndry_xout=dirichlet_smooth g:bndry_all=neumann",
+            " swap_boundary_conditions=true f:bndry_xin=dirichlet_smooth f:bndry_all=neumann g:bndry_xin=dirichlet_smooth g:bndry_all=neumann",
+            " mesh:staggergrids=false, swap_boundary_conditions=true f:bndry_xin=dirichlet_smooth f:bndry_all=neumann g:bndry_xin=dirichlet_smooth g:bndry_all=neumann"]
 
 nout = 1
 timestep = 0.1
 
 nproc = 1
 
-error_2   = []  # The L2 error (RMS)
-error_inf = []  # The maximum error
+results = []
+for iopt,opts in enumerate(optslist):
+    error_2   = []  # The L2 error (RMS)
+    error_inf = []  # The maximum error
 
-for nx in nxlist:
-    args = "mesh:nx="+str(nx)+" nout="+str(nout)+" timestep="+str(timestep)
-    
-    print("Running with " + args)
+    print("opts = '"+opts+"'\n")
 
-    # Delete old data
-    shell("rm data/BOUT.dmp.*.nc")
-    
-    # Command to run
-    cmd = "./wave "+args
-    # Launch using MPI
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    for nx in nxlist:
+        args = "mesh:nx="+str(nx)+" nout="+str(nout)+" timestep="+str(timestep)+opts
 
-    # Save output to log file
-    f = open("run.log."+str(nx), "w")
-    f.write(out)
-    f.close()
+        print("Running with " + args)
 
-    # Collect data
-    E_f = collect("E_f", tind=[nout,nout], path="data", info=False)
-    E_f = E_f[0,:,0,0]
-    
-    E_g = collect("E_g", tind=[nout,nout], path="data", info=False)
-    E_g = E_g[0,:,0,0]
+        # Delete old data
+        shell("rm data/BOUT.dmp.*.nc")
 
-    # Average error over domain, not including guard cells
-    E = concatenate([E_f[1:-1], E_g[2:-1]])
+        # Command to run
+        cmd = "./wave "+args
+        # Launch using MPI
+        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
-    l2 = sqrt(mean(E**2))
-    linf = max(abs(E))
-    
-    error_2.append( l2 )
-    error_inf.append( linf )
+        # Save output to log file
+        f = open("run.log."+str(iopt)+"."+str(nx), "w")
+        f.write(out)
+        f.close()
 
-    print("Error norm: l-2 %f l-inf %f" % (l2, linf))
+        # Collect data
+        E_f = collect("E_f", path="data", info=False)
+        E_f = E_f[-1,:,0,0]
 
-# Calculate grid spacing
-dx = 1. / (array(nxlist) - 2.)
+        E_g = collect("E_g", path="data", info=False)
+        E_g = E_g[-1,:,0,0]
 
-order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
-print("Convergence order = %f" % (order))
+        # Average error over domain, not including guard cells
+        E = concatenate([E_f[1:-1], E_g[2:-1]])
 
-# plot errors
-try:
-  import matplotlib.pyplot as plt
+        l2 = sqrt(mean(E**2))
+        linf = max(abs(E))
 
-  plt.plot(dx, error_2, '-o', label=r'$l^2$')
-  plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-  plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+        error_2.append( l2 )
+        error_inf.append( linf )
 
-  plt.legend(loc="upper left")
-  plt.grid()
+        print("Error norm: l-2 %f l-inf %f" % (l2, linf))
 
-  plt.yscale('log')
-  plt.xscale('log')
+    # Calculate grid spacing
+    dx = 1. / (array(nxlist) - 2.)
 
-  plt.xlabel(r'Mesh spacing $\delta x$')
-  plt.ylabel("Error norm")
+    order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
+    print("Convergence order = %f" % (order))
 
-  plt.savefig("wave_norm.pdf")
+    # plot errors
+    try:
+        import matplotlib.pyplot as plt
 
-  #plt.show()
-  plt.close()
-except:
-  # Plotting could fail for any number of reasons, and the actual
-  # error raised may depend on, among other things, the current
-  # matplotlib backend, so catch everything
-  pass
+        plt.plot(dx, error_2, '-o', label=r'$l^2$')
+        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-if 2.2 > order > 1.8:
-  # test for success
-  print(" => Test passed")
-  exit(0)
+        plt.legend(loc="upper left")
+        plt.grid()
+
+        plt.yscale('log')
+        plt.xscale('log')
+
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
+
+        plt.savefig("wave_norm.pdf")
+
+        #plt.show()
+        plt.close()
+    except:
+       # Plotting could fail for any number of reasons, and the actual
+       # error raised may depend on, among other things, the current
+       # matplotlib backend, so catch everything
+       pass
+
+    if 2.2 > order > 1.8:
+       # test for success
+       results.append(0)
+    else:
+       results.append(1)
+
+    print("")
+
+if all(r == 0 for r in results):
+    print(" => Test passed")
+    exit(0)
 else:
-  print(" => Test failed")
-  exit(1)
+    print(" => Test failed")
+    exit(1)

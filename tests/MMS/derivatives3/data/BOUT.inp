@@ -35,7 +35,8 @@ n=6
 dy=2*Pi/ny
 MXG=0
 MYG=2
-
+ixseps1 = -1
+ixseps2 = -1
 
 [meshx]
 staggergrids=true

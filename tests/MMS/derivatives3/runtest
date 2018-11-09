@@ -16,25 +16,135 @@ boutcore.init("-d data -q -q -q".split(" "))
 def runtests(functions,derivatives,directions,stag,msg):
     global errorlist
     for direction in directions:
-      direction, fac,guards, diff_func = direction
+      direction, fac,guards, diff_func, diff_order = direction
       locations=['CENTRE']
       if stag:
         locations.append(direction.upper()+"LOW")
-      for funcs, derivative , inloc, outloc in itertools.product(functions,
-                                                                 derivatives, locations,locations):
-        infunc, outfunc = funcs
+      for funcs, derivative , inloc, outloc, testBoundaries \
+            in itertools.product(functions, derivatives, locations, locations, [0,1,2]):
+        infunc, outfunc, difffunc = funcs
         order, diff = derivative
+        expected_order = order
 
         errors=[]
+        errors_L2=[]
         for nz in nzs:
+            dirnfac=direction+"*"+fac
+            this_infunc = infunc.replace("%s",dirnfac)
+            this_outfunc = outfunc.replace("%s",dirnfac)
+            this_difffunc = difffunc.replace("%s",dirnfac)
             boutcore.setOption("meshD:nD".replace("D",direction)
                                ,"%d"% (nz+ (2*guards if direction == "x" else 0)),force=True)
             boutcore.setOption("meshD:dD".replace("D",direction,)
                                ,"2*pi/(%d)"%(nz),force=True)
-            dirnfac=direction+"*"+fac
             mesh=boutcore.Mesh(section="mesh"+direction)
-            f=boutcore.create3D(infunc.replace("%s",dirnfac),mesh
+            f=boutcore.create3D(this_infunc,mesh
                                 ,outloc=inloc)
+            if testBoundaries == 0:
+                # test derivative operators without relying on boundary conditions
+                pass
+            if testBoundaries == 1:
+                if diff_order == 1:
+                    if order==2:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o3(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o2(%s)"%(this_difffunc), region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="neumann_o2(%s)"%(this_difffunc), region="lower_target")
+                            f.applyBoundary(boundary="dirichlet_o3(%s)"%(this_infunc), region="upper_target")
+                    elif order==3:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o4(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="lower_target")
+                            f.applyBoundary(boundary="dirichlet_o4(%s)"%(this_infunc), region="upper_target")
+                    elif order==4:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="lower_target")
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="upper_target")
+                elif diff_order == 2:
+                    if order==2:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o4(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="sol") # there is no neumann_o3
+                        if direction == "y":
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="lower_target") # there is no neumann_o3
+                            f.applyBoundary(boundary="dirichlet_o4(%s)"%(this_infunc), region="upper_target")
+                    elif order==3:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="lower_target")
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="upper_target")
+                    elif order==4:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="dirichlet_o5(%s)"%(this_infunc), region="upper_target")
+                            f.applyBoundary(boundary="neumann_o4(%s)"%(this_difffunc), region="lower_target")
+                        # don't have accurate enough boundary conditions, so reduce expected order
+                        expected_order = 3
+                else:
+                    raise ValueError("don't know how to test a derivatives higher than d2/d*2")
+            if testBoundaries == 2:
+                if diff_order == 1:
+                    if order==2:
+                        if direction == "x":
+                            f.applyBoundary(boundary="dirichlet(%s)"%(this_infunc), region="core")
+                            f.applyBoundary(boundary="free_o2", region="sol")
+                            expected_order = 1 # reduce expected order because free_o2 is not accurate enough for order=2
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o3", region="lower_target")
+                            f.applyBoundary(boundary="free_o3", region="upper_target")
+                    elif order==3:
+                        if direction == "x":
+                            f.applyBoundary(boundary="free_o4", region="core")
+                            f.applyBoundary(boundary="free_o4", region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o4", region="lower_target")
+                            f.applyBoundary(boundary="free_o4", region="upper_target")
+                    elif order==4:
+                        if direction == "x":
+                            f.applyBoundary(boundary="free_o4", region="core")
+                            f.applyBoundary(boundary="free_o4", region="sol")
+                            expected_order = 3
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o5", region="lower_target")
+                            f.applyBoundary(boundary="free_o5", region="upper_target")
+                elif diff_order == 2:
+                    if order==2:
+                        if direction == "x":
+                            f.applyBoundary(boundary="free_o4", region="core")
+                            f.applyBoundary(boundary="free_o4", region="sol") # there is no neumann_o3
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o4", region="lower_target") # there is no neumann_o3
+                            f.applyBoundary(boundary="free_o4", region="upper_target")
+                    elif order==3:
+                        if direction == "x":
+                            f.applyBoundary(boundary="free_o5", region="core")
+                            f.applyBoundary(boundary="free_o5", region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o5", region="lower_target")
+                            f.applyBoundary(boundary="free_o5", region="upper_target")
+                    elif order==4:
+                        if direction == "x":
+                            f.applyBoundary(boundary="free_o5", region="core")
+                            f.applyBoundary(boundary="free_o5", region="sol")
+                        if direction == "y":
+                            f.applyBoundary(boundary="free_o5", region="upper_target")
+                            f.applyBoundary(boundary="free_o5", region="lower_target")
+                        # don't have accurate enough boundary conditions, so reduce expected order
+                        expected_order = 3
+                else:
+                    raise ValueError("don't know how to test a derivatives higher than d2/d*2")
+            #endif testBoundaries
+
             sim=diff_func(f,method=diff,outloc=outloc)
             if sim.getLocation() != outloc:
                 cent=['CENTRE','CENTER']
@@ -42,37 +152,50 @@ def runtests(functions,derivatives,directions,stag,msg):
                     pass
                 else:
                     errorlist.append("Location does not match - expected %s but got %s"%(outloc,sim.getLocation()))
-            ana=boutcore.create3D(outfunc.replace("%s",dirnfac),mesh, outloc=outloc)
+            ana=boutcore.create3D(this_outfunc, mesh, outloc=outloc)
             err=sim-ana
             err=err.getAll().flatten()
             if guards:
                 err=err[guards:-guards]
-            err=np.max(np.abs(err))
-            errors.append(err)
+            if ("LOW" in inloc) and ("LOW" in outloc) and guards:
+                # first point is the one where the boundary condition is set on staggered fields
+                # the derivative at this point does not necessarily have to be
+                # accurate, since it is effectively an 'extra' guard cell
+                err=err[1:]
+            err_max=np.max(np.abs(err))
+            errors.append(err_max)
+            err_L2=np.sqrt(np.mean(err**2))
+            errors_L2.append(err_L2)
         errc=np.log(errors[-2]/errors[-1])
         difc=np.log(nzs[-1]/nzs[-2])
         conv=errc/difc
-        if order-.1 < conv < order+.1:
+        errc_L2=np.log(errors_L2[-2]/errors_L2[-1])
+        conv_L2=errc_L2/difc
+        if expected_order-.2 < conv < expected_order+.2:
             pass
         else:
             info="%s - %s - %s - %s -> %s "%(infunc,diff, direction,inloc,outloc)
-            error="%s: %s is not working. Expected %f got %f"%(msg,info,order,conv)
+            error="%s: %s is not working with testBoundaries=%i. Expected %f got max error %f, RMS error %f"%(msg,info,testBoundaries,expected_order,conv,conv_L2)
+            print(error)
             errorlist.append(error)
             if doPlot:
                 from matplotlib import pyplot as plt
                 plt.plot((ana).getAll().flatten())
                 plt.plot((sim).getAll().flatten())
+                plt.figure()
+                plt.legend()
                 plt.show()
 
 
-mmax=7
-start=6
+mmax=8
+start=7
 doPlot=False
 nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
 
+# functions contains list of triples of (function, derivative_operator(function), first_derivative(function)
 functions=[
-    ["sin(%s)","cos(%s)"] ,
-    ["cos(%s)", "-sin(%s)"]
+    ["sin(%s+1.)", "cos(%s+1.)", "cos(%s+1.)"] ,
+    ["cos(%s+1.)", "-sin(%s+1.)", "-sin(%s+1.)"]
 ]
 
 derivatives=[
@@ -84,9 +207,9 @@ derivatives=[
 ]
 
 directions=[
-    ["x","2*pi",2 ,boutcore.DDX],
-    ["y","1"   ,2 ,boutcore.DDY],
-#    ["z","1"   ,0 ,boutcore.DDZ]
+    ["x","2*pi",2 ,boutcore.DDX, 1],
+    ["y","1"   ,2 ,boutcore.DDY, 1],
+#    ["z","1"   ,0 ,boutcore.DDZ, 1]
 ]
 
 runtests(functions,derivatives,directions,stag=False,msg="DD")
@@ -100,8 +223,8 @@ runtests(functions,derivatives,directions,stag=True,msg="DD")
 
 
 functions=[
-    ["sin(%s)","-sin(%s)"],
-    ["cos(%s)" , "-cos(%s)"]
+    ["sin(%s+1.)","-sin(%s+1.)", "cos(%s+1.)"],
+    ["cos(%s+1.)" , "-cos(%s+1.)", "-sin(%s+1.)"]
 ]
 
 derivatives=[
@@ -109,9 +232,9 @@ derivatives=[
     [4,"C4"] ]
 
 directions=[
-    ["x","2*pi",2 ,boutcore.D2DX2],
-    ["y","1"   ,2 ,boutcore.D2DY2],
-#    ["z","1"   ,0 ,boutcore.D2DZ2]
+    ["x","2*pi",2 ,boutcore.D2DX2, 2],
+    ["y","1"   ,2 ,boutcore.D2DY2, 2],
+#    ["z","1"   ,0 ,boutcore.D2DZ2, 2]
 ]
 
 runtests(functions,derivatives,directions,False,"D2D2")

@@ -62,12 +62,23 @@ class FieldVisitor;
 */
 class FieldData {
 public:
-  FieldData();
+  FieldData(Mesh *datamesh = nullptr)
+      : fielddatamesh(datamesh != nullptr ? datamesh : mesh), boundaryIsCopy(false),
+        boundaryIsSet(true) {}
+
   virtual ~FieldData();
 
   // Visitor pattern support
   virtual void accept(FieldVisitor &v) = 0;
-  
+
+  Mesh *getDataMesh() const {
+    if (fielddatamesh != nullptr) {
+      return fielddatamesh;
+    } else {
+      return mesh;
+    }
+  }
+
   // Defines interface which must be implemented
   virtual bool isReal() const = 0; ///< Returns true if field consists of BoutReal values
   virtual bool is3D() const = 0;   ///< True if variable is 3D
@@ -92,6 +103,7 @@ public:
   FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
 protected:
+  Mesh* fielddatamesh;
   vector<BoundaryOp *> bndry_op; ///< Boundary conditions
   bool boundaryIsCopy;           ///< True if bndry_op is a copy
   bool boundaryIsSet;            ///< Set to true when setBoundary called
