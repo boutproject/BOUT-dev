@@ -37,7 +37,9 @@ brackets. Currently implemented boundary conditions are:
 -  ``dirichlet(<number>)`` - Set to some number e.g. ``dirichlet(1)``
    sets the boundary to :math:`1.0`
 
--  ``neumann`` - Zero gradient
+-  ``neumann(<number>)`` - Set gradient to some number (default zero). Gradient
+   is in internal coordinates, i.e. using dx/dy for grid spacing with no metric
+   terms.
 
 -  ``robin`` - A combination of zero-gradient and zero-value
    :math:`a f + b{{\frac{\partial f}{\partial x}}} = g` where the
@@ -53,6 +55,11 @@ brackets. Currently implemented boundary conditions are:
 
 -  ``constlaplace`` - Laplacian = const, decaying solution (X boundaries
    only)
+
+Keyword arguments can also be given. Currently only ``width`` is implemented,
+which reproduces the functionality of the ``width`` boundary modifier described
+below. For example, ``dirichlet(3., width=4)`` is equivalent to
+``width(dirichlet(3.), 4)``.
 
 The zero- or constant-Laplacian boundary conditions works as follows:
 
@@ -75,9 +82,10 @@ which has the solution
 
 Assuming that the solution should decay away from the domain, on the
 inner :math:`x` boundary :math:`B = 0`, and on the outer boundary
-:math:`A = 0`. Boundary modifiers change the behaviour of boundary
-conditions, and more than one modifier can be used. Currently the
-following are available:
+:math:`A = 0`.
+
+Boundary modifiers change the behaviour of boundary conditions, and more than
+one modifier can be used. Currently the following are available:
 
 -  ``relax`` - Relaxing boundaries. Evolve the variable towards the
    given boundary condition at a given rate
@@ -137,10 +145,11 @@ the core boundary.
 Changing the width of boundaries
 --------------------------------
 
-To change the width of a boundary region, the ``width`` modifier changes
-the width of a boundary region before applying the boundary condition,
-then changes the width back afterwards. To use, specify the boundary
-condition and the width, for example
+To change the width of a boundary region, the ``width`` modifier creates a copy
+of the BoundaryRegion object with a different ``width`` parameter. This copy is
+stored in the BoundaryWidth object, and a pointer to the BoundaryRegion passed
+to the BoundaryOp. To use, specify the boundary condition and the width, for
+example
 
 ::
 
@@ -164,9 +173,6 @@ would only apply to the usual 2, since relax didn’t use the updated
 width.
 
 Limitations:
-
-#. Because it modifies then restores a globally-used BoundaryRegion,
-   this code is not thread safe.
 
 #. Boundary conditions can’t be applied across processors, and no checks
    are done that the width asked for fits within a single processor.

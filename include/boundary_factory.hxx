@@ -24,6 +24,10 @@ using BoundaryRegionOp = typename std::conditional<std::is_convertible<T*, Bound
  * 
  * Modifiers: Simple modifications of boundary conditions can be performed,
  * for example transforming the coordinate system
+ *
+ * Keywords can also be passed, e.g. "dirichlet(3., width=4)" will set a
+ * Dirichlet boundary condition to a constant value 3, and force 4 guard cells
+ * to be used (regardless of the values of xstart/ystart/xend/yend).
  * 
  * This is a singleton, so only one instance can exist. This is 
  * enforced by making the constructor private, and having a getInstance() method
