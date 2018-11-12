@@ -6,14 +6,6 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-FieldData::~FieldData() {
-  if(!boundaryIsCopy) {
-    // Delete the boundary operations
-    for(const auto& bndry : bndry_op)
-      delete bndry;
-  }
-}
-
 void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -21,35 +13,29 @@ void FieldData::setBoundary(const string &name) {
   output_info << "Setting boundary for variable " << name << endl;
 
   /// Get rid of existing boundary ops
-  for (auto &op : bndry_op) {
-    delete op;
-  }
   bndry_op.clear();
 
   /// Loop over the mesh boundary regions
   for(const auto& reg : getDataMesh()->getBoundaries()) {
     BoundaryOp* op = bfact->createFromOptions(name, reg.get());
     if (op != nullptr)
-      bndry_op.push_back(op);
+      bndry_op.push_back(std::shared_ptr<BoundaryOp>(op));
     output_info << endl;
   }
 
   /// Get rid of existing parallel boundary ops
-  for (auto &op : bndry_op_par) {
-    delete op;
-  }
   bndry_op_par.clear();
 
   /// Loop over the mesh parallel boundary regions
   for(const auto& reg : getDataMesh()->getBoundariesPar()) {
     BoundaryOpPar* op = bfact->createFromOptions(name, reg.get());
-    if (op != nullptr)
-      bndry_op_par.push_back(op);
+    if (op != nullptr) {
+      bndry_op_par.push_back(std::shared_ptr<BoundaryOpPar>(op));
+    }
     output_info << endl;
   }
 
   boundaryIsSet = true;
-  boundaryIsCopy = false;
 }
 
 void FieldData::setBoundary(const string &region, BoundaryOp *op) {
@@ -71,9 +57,6 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op) {
 
       output << "Replacing " << region_ptr->label<<endl;
 
-      // free the memory pointed to by this element of the vector
-      delete (*it);
-
       // remove this element from the vector
       bndry_op.erase(it);
       break;
@@ -83,13 +66,12 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   /// Create the new BoundaryOp
   BoundaryOp* new_op = op->clone(region_ptr, {}, {});
 
-  bndry_op.push_back(new_op);
+  bndry_op.push_back(std::shared_ptr<BoundaryOp>(new_op));
 }
 
 void FieldData::copyBoundary(const FieldData &f) {
   bndry_op = f.bndry_op;
   bndry_op_par = f.bndry_op_par;
-  boundaryIsCopy = true;
   boundaryIsSet = true;
 }
 

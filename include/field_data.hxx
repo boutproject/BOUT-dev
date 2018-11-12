@@ -63,10 +63,10 @@ class FieldVisitor;
 class FieldData {
 public:
   FieldData(Mesh *datamesh = nullptr)
-      : fielddatamesh(datamesh != nullptr ? datamesh : mesh), boundaryIsCopy(false),
+      : fielddatamesh(datamesh != nullptr ? datamesh : mesh),
         boundaryIsSet(true) {}
 
-  virtual ~FieldData();
+  virtual ~FieldData() {};
 
   // Visitor pattern support
   virtual void accept(FieldVisitor &v) = 0;
@@ -104,11 +104,14 @@ public:
 
 protected:
   Mesh* fielddatamesh;
-  vector<BoundaryOp *> bndry_op; ///< Boundary conditions
-  bool boundaryIsCopy;           ///< True if bndry_op is a copy
+
+  // use shared_ptr for bndry_op because if boundary conditions are copied from
+  // another field we want to share the pointers to the BoundaryOp objects in
+  // that field's bndry_op
+  vector< std::shared_ptr<BoundaryOp> > bndry_op; ///< Boundary conditions
   bool boundaryIsSet;            ///< Set to true when setBoundary called
   // Parallel boundaries
-  vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
+  vector< std::shared_ptr<BoundaryOpPar> > bndry_op_par; ///< Boundary conditions
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };
