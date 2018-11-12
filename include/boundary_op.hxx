@@ -23,14 +23,11 @@ using std::list;
 class BoundaryOp {
 public:
   BoundaryOp(bool apply_ddt = false)
-      : bndry(nullptr), apply_to_ddt(apply_ddt), val(0.), gen(nullptr), width(0) {}
-  BoundaryOp(BoundaryRegion *region, int width_in = 0, bool apply_ddt = false)
-      : bndry(region), apply_to_ddt(apply_ddt), val(0.), gen(nullptr),
-        width(width_in ? width_in : region->width) {}
-  BoundaryOp(BoundaryRegion *region, BoutReal val_in, std::shared_ptr<FieldGenerator> g,
-             int width_in = 0)
-      : bndry(region), apply_to_ddt(false), val(val_in), gen(std::move(g)),
-        width(width_in ? width_in : region->width) {}
+      : bndry(nullptr), apply_to_ddt(apply_ddt), val(0.), gen(nullptr) {}
+  BoundaryOp(BoundaryRegion *region, bool apply_ddt = false)
+      : bndry(region), apply_to_ddt(apply_ddt), val(0.), gen(nullptr) {}
+  BoundaryOp(BoundaryRegion *region, BoutReal val_in, std::shared_ptr<FieldGenerator> g)
+      : bndry(region), apply_to_ddt(false), val(val_in), gen(std::move(g)) {}
   virtual ~BoundaryOp() {}
 
   // Note: All methods must implement clone, except for modifiers (see below)
@@ -70,7 +67,6 @@ public:
 protected:
   const BoutReal val;                  // constant value for boundary condition
   std::shared_ptr<FieldGenerator> gen; // Generator
-  const int width; // boundary width, stored in case we change it from the default
 };
 
 /// An operation on a boundary
@@ -98,7 +94,7 @@ class BoundaryModifier : public BoundaryOp {
 public:
   BoundaryModifier(bool apply_ddt = false) : BoundaryOp(apply_ddt), op(nullptr) {}
   BoundaryModifier(BoundaryOp *operation, bool apply_ddt = false)
-      : BoundaryOp(operation->bndry, 0, apply_ddt), op(operation) {}
+      : BoundaryOp(operation->bndry, apply_ddt), op(operation) {}
   virtual BoundaryOp *cloneMod(BoundaryOp *op, const list<string> &args) = 0;
   virtual BoundaryOpPar *cloneMod(BoundaryOpPar *UNUSED(op),
                                   const list<string> &UNUSED(args)) {

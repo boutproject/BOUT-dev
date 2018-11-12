@@ -135,9 +135,9 @@ class BoundaryNeumann_NonOrthogonal : public BoundaryOp {
 public:
   BoundaryNeumann_NonOrthogonal() {}
   BoundaryNeumann_NonOrthogonal(BoutReal setval)
-      : BoundaryOp(nullptr, setval, nullptr, 0) {}
+      : BoundaryOp(nullptr, setval, nullptr) {}
   BoundaryNeumann_NonOrthogonal(BoundaryRegion *region, BoutReal setval = 0.)
-      : BoundaryOp(region, setval, nullptr, 0) {}
+      : BoundaryOp(region, setval, nullptr) {}
   BoundaryOp *clone(BoundaryRegion *region, const list<string> &args,
                     const std::map<std::string, std::string> &keywords) override;
 
@@ -477,24 +477,27 @@ private:
 /// Increase the width of a boundary
 class BoundaryWidth : public BoundaryModifier {
 public:
-  BoundaryWidth() : width(2) {}
-  BoundaryWidth(BoundaryOp *operation, int wid)
-      : BoundaryModifier(operation), width(wid) {}
-  BoundaryOp *cloneMod(BoundaryOp *UNUSED(op),
-                       const list<string> &UNUSED(args)) override {
-    throw BoutException("WARNING: BoundaryWidth modifier is deprecated, use 'width' "
-                        "keyword to boundary conditions instead");
-    return new BoundaryWidth(nullptr, 0);
+  BoundaryWidth() : bndry(nullptr) {}
+  BoundaryWidth(BoundaryOp *operation, int wid);
+  BoundaryOp *cloneMod(BoundaryOp *op,
+                       const list<string> &args) final;
+
+  void apply(Field2D &f, BoutReal t) final {
+    op->apply(f, t);
+  }
+  void apply(Field3D &f, BoutReal t) final {
+    op->apply(f, t);
   }
 
-  void apply(Field2D &UNUSED(f), BoutReal UNUSED(t)) override{};
-  void apply(Field3D &UNUSED(f), BoutReal UNUSED(t)) override{};
-
-  void apply_ddt(Field2D &UNUSED(f)) override{};
-  void apply_ddt(Field3D &UNUSED(f)) override{};
+  void apply_ddt(Field2D &f) final {
+    op->apply_ddt(f);
+  }
+  void apply_ddt(Field3D &f) final {
+    op->apply_ddt(f);
+  }
 
 private:
-  int width;
+  std::unique_ptr<BoundaryRegion> bndry;
 };
 
 /// Convert input field fromFieldAligned, apply boundary and then convert back

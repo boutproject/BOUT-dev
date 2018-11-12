@@ -33,6 +33,8 @@ public:
     }
   virtual ~BoundaryRegion() {}
 
+  virtual BoundaryRegion* copy(int wid=-1) = 0;
+
   int x,y; ///< Indices of the point in the boundary
   const int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
 
@@ -57,7 +59,9 @@ public:
 
 class BoundaryRegionXIn : public BoundaryRegion {
 public:
-  BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr);
+  BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr, int wid = -1);
+
+  BoundaryRegion* copy(int wid = -1) override;
 
   void first() override;
   void next() override;
@@ -72,7 +76,9 @@ private:
 
 class BoundaryRegionXOut : public BoundaryRegion {
 public:
-  BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr);
+  BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr, int wid = -1);
+
+  BoundaryRegion* copy(int wid = -1) override;
 
   void first() override;
   void next() override;
@@ -87,7 +93,9 @@ private:
 
 class BoundaryRegionYDown : public BoundaryRegion {
 public:
-  BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr);
+  BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr, int wid = -1);
+
+  BoundaryRegion* copy(int wid = -1) override;
 
   void first() override;
   void next() override;
@@ -102,7 +110,9 @@ private:
 
 class BoundaryRegionYUp : public BoundaryRegion {
 public:
-  BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr);
+  BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr, int wid = -1);
+
+  BoundaryRegion* copy(int wid = -1) override;
 
   void first() override;
   void next() override;

@@ -3,14 +3,19 @@
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
-BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
+BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh, int wid)
   : BoundaryRegion(name, -1, 0, BNDRY_XIN,
-      (passmesh == nullptr ? mesh : passmesh)->xstart, passmesh),
+      wid < 0 ? (passmesh == nullptr ? mesh : passmesh)->xstart : wid,
+      passmesh),
     ys(ymin), ye(ymax)
 {
   x = width-1; // First point inside the boundary
   if(ye < ys)
     swap(ys, ye);
+}
+
+BoundaryRegion* BoundaryRegionXIn::copy(int wid) {
+  return new BoundaryRegionXIn(label, ys, ye, localmesh, wid);
 }
 
 void BoundaryRegionXIn::first()
@@ -57,15 +62,19 @@ bool BoundaryRegionXIn::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionXOut::BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh)
+BoundaryRegionXOut::BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh, int wid)
   : BoundaryRegion(name, 1, 0, BNDRY_XOUT,
-      (passmesh == nullptr ? mesh : passmesh)->LocalNx - (passmesh == nullptr ? mesh : passmesh)->xend - 1,
+      wid < 0 ? (passmesh == nullptr ? mesh : passmesh)->LocalNx - (passmesh == nullptr ? mesh : passmesh)->xend - 1 : wid,
       passmesh),
     ys(ymin), ye(ymax)
 {
   x = localmesh->LocalNx - width; // First point inside the boundary
   if(ye < ys)
     swap(ys, ye);
+}
+
+BoundaryRegion* BoundaryRegionXOut::copy(int wid) {
+  return new BoundaryRegionXOut(label, ys, ye, localmesh, wid);
 }
 
 void BoundaryRegionXOut::first()
@@ -112,14 +121,19 @@ bool BoundaryRegionXOut::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYDown::BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh)
+BoundaryRegionYDown::BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh, int wid)
   : BoundaryRegion(name, 0, -1, BNDRY_YDOWN,
-      (passmesh == nullptr ? mesh : passmesh)->ystart, passmesh),
+      wid < 0 ? (passmesh == nullptr ? mesh : passmesh)->ystart : wid,
+      passmesh),
     xs(xmin), xe(xmax)
 {
   y = width-1; // First point inside the boundary
   if(xe < xs)
     swap(xs, xe);
+}
+
+BoundaryRegion* BoundaryRegionYDown::copy(int wid) {
+  return new BoundaryRegionYDown(label, xs, xe, localmesh, wid);
 }
 
 void BoundaryRegionYDown::first()
@@ -167,15 +181,19 @@ bool BoundaryRegionYDown::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYUp::BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh)
+BoundaryRegionYUp::BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh, int wid)
   : BoundaryRegion(name, 0, 1, BNDRY_YUP,
-      (passmesh == nullptr ? mesh : passmesh)->LocalNy - (passmesh == nullptr ? mesh : passmesh)->yend - 1,
+      wid < 0 ? (passmesh == nullptr ? mesh : passmesh)->LocalNy - (passmesh == nullptr ? mesh : passmesh)->yend - 1 : wid,
       passmesh),
     xs(xmin), xe(xmax)
 {
   y = localmesh->LocalNy - width; // First point inside the boundary
   if(xe < xs)
     swap(xs, xe);
+}
+
+BoundaryRegion* BoundaryRegionYUp::copy(int wid) {
+  return new BoundaryRegionYUp(label, xs, xe, localmesh, wid);
 }
 
 void BoundaryRegionYUp::first()

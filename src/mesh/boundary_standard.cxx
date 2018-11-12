@@ -147,16 +147,24 @@ BoundaryOp *boundaryClone(BoundaryRegion *region, const list<string> &args,
       newgen = FieldFactory::get()->parse(expr);
     }
   }
-  int width = region->width;
   for (const auto &it : keywords) {
     if (it.first == "width") {
-      width = stringToInt(it.second);
+      int width = stringToInt(it.second);
+
+      // remove this keyword from keywords that we pass through
+      auto new_keywords = keywords;
+      new_keywords.erase("width");
+
+      // Need to use BoundaryWidth modifier to implement this keyword.
+      // Clone a version of this boundary condition without 'width' and pass
+      // to a BoundaryWidth modifier.
+      return new BoundaryWidth(boundaryClone<T, numpoints>(region, args, new_keywords), width);
     } else {
       throw BoutException("Unrecognized boundary condition keyword %s for %s boundary",
                           it.first.c_str(), region->label.c_str());
     }
   }
-  return new T(region, val, newgen, width);
+  return new T(region, val, newgen);
 }
 
 template <typename T, int numpoints>
@@ -168,16 +176,24 @@ BoundaryOp *boundaryCloneNoArguments(BoundaryRegion *region, const list<string> 
     output << "WARNING: Ignoring arguments to BoundaryOp for " << region->label
            << " region\n";
   }
-  int width = region->width;
   for (const auto &it : keywords) {
     if (it.first == "width") {
-      width = stringToInt(it.second);
+      int width = stringToInt(it.second);
+
+      // remove this keyword from keywords that we pass through
+      auto new_keywords = keywords;
+      new_keywords.erase("width");
+
+      // Need to use BoundaryWidth modifier to implement this keyword.
+      // Clone a version of this boundary condition without 'width' and pass
+      // to a BoundaryWidth modifier.
+      return new BoundaryWidth(boundaryClone<T, numpoints>(region, args, new_keywords), width);
     } else {
       throw BoutException("Unrecognized boundary condition keyword %s for %s boundary",
                           it.first.c_str(), region->label.c_str());
     }
   }
-  return new T(region, width);
+  return new T(region);
 }
 }
 
@@ -241,7 +257,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
         // Need to set second guard cell, as may be used for interpolation or upwinding
         // derivatives
-        for (int i = 1; i < width; i++) {
+        for (int i = 1; i < bndry->width; i++) {
           int x = bndry->x + i * bndry->bx;
           int y = bndry->y + i * bndry->by;
           for (int z = 0; z < nz; z++) {
@@ -275,7 +291,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -307,7 +323,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second and third guard cells, as may be used for interpolation
             // or upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -340,7 +356,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -374,7 +390,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -405,7 +421,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -438,7 +454,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -479,7 +495,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
           // Need to set second guard cell, as may be used for interpolation or upwinding
           // derivatives
-          for (int i = 1; i < width; i++) {
+          for (int i = 1; i < bndry->width; i++) {
             int x = bndry->x + i * bndry->bx;
             int y = bndry->y + i * bndry->by;
             Derived::extrapolateFurther(f, x, bndry->bx, y, bndry->by, z);
@@ -506,7 +522,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
         // Need to set second guard cell, as may be used for interpolation or upwinding
         // derivatives
-        for (int i = 1; i < width; i++) {
+        for (int i = 1; i < bndry->width; i++) {
           int x = bndry->x + i * bndry->bx;
           int y = bndry->y + i * bndry->by;
           for (int z = 0; z < nz; z++) {
@@ -533,7 +549,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -557,7 +573,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second and third guard cells, as may be used for interpolation
             // or upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -579,7 +595,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -606,7 +622,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -629,7 +645,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int y = bndry->y + i * bndry->by;
               Derived::extrapolateFurther(f, bndry->x, 0, y, bndry->by, z);
             }
@@ -651,7 +667,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int x = bndry->x + i * bndry->bx;
               Derived::extrapolateFurther(f, x, bndry->bx, bndry->y, 0, z);
             }
@@ -675,7 +691,7 @@ void BoundaryOpWithApply<Derived, needs_delta>::applyTemplate(T &f, BoutReal t) 
 
           // Need to set second guard cell, as may be used for interpolation or upwinding
           // derivatives
-          for (int i = 1; i < width; i++) {
+          for (int i = 1; i < bndry->width; i++) {
             int x = bndry->x + i * bndry->bx;
             int y = bndry->y + i * bndry->by;
             Derived::extrapolateFurther(f, x, bndry->bx, y, bndry->by, z);
@@ -774,7 +790,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
         // This loop is our alternative approach to setting the rest of the boundary
         // points. Instead of extrapolating we just use the generated values. This
         // can help with the stability of higher order methods.
-        for (int i = 1; i < width; i++) {
+        for (int i = 1; i < bndry->width; i++) {
           // Set any other guard cells using the values on the cells
           int xi = bndry->x + i * bndry->bx;
           int yi = bndry->y + i * bndry->by;
@@ -805,7 +821,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -829,7 +845,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -857,7 +873,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -884,7 +900,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -908,7 +924,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -936,7 +952,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -973,7 +989,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
           // Need to set second guard cell, as may be used for interpolation or upwinding
           // derivatives
-          for (int i = 1; i < width; i++) {
+          for (int i = 1; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y;
 
@@ -1024,7 +1040,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
         // This loop is our alternative approach to setting the rest of the boundary
         // points. Instead of extrapolating we just use the generated values. This
         // can help with the stability of higher order methods.
-        for (int i = 1; i < width; i++) {
+        for (int i = 1; i < bndry->width; i++) {
           // Set any other guard cells using the values on the cells
           int xi = bndry->x + i * bndry->bx;
           int yi = bndry->y + i * bndry->by;
@@ -1043,7 +1059,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -1060,7 +1076,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -1078,7 +1094,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -1098,7 +1114,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -1115,7 +1131,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 0; i < width; i++) {
+            for (int i = 0; i < bndry->width; i++) {
               int xi = bndry->x;
               int yi = bndry->y + i * bndry->by;
 
@@ -1133,7 +1149,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
             // Need to set second guard cell, as may be used for interpolation or
             // upwinding derivatives
-            for (int i = 1; i < width; i++) {
+            for (int i = 1; i < bndry->width; i++) {
               int xi = bndry->x + i * bndry->bx;
               int yi = bndry->y;
 
@@ -1152,7 +1168,7 @@ template <typename T> void BoundaryDirichlet::applyTemplate(T &f, BoutReal t) {
 
           // Need to set second guard cell, as may be used for interpolation or upwinding
           // derivatives
-          for (int i = 1; i < width; i++) {
+          for (int i = 1; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y;
 
@@ -1448,7 +1464,7 @@ void BoundaryNeumann_NonOrthogonal::applyTemplate(T &f, BoutReal UNUSED(t)) {
         BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y);
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y, z) + delta / g11shift * (val - xshift);
-        if (width == 2) {
+        if (bndry->width == 2) {
           f(bndry->x + bndry->bx, bndry->y, z) =
               f(bndry->x - 2 * bndry->bx, bndry->y, z) +
               3.0 * delta / g11shift * (val - xshift);
@@ -1458,14 +1474,14 @@ void BoundaryNeumann_NonOrthogonal::applyTemplate(T &f, BoutReal UNUSED(t)) {
         //   no need to shift this b/c we want parallel nuemann not theta
         BoutReal delta = bndry->by * metric->dy(bndry->x, bndry->y);
         f(bndry->x, bndry->y, z) = f(bndry->x, bndry->y - bndry->by, z) + delta * val;
-        if (width == 2) {
+        if (bndry->width == 2) {
           f(bndry->x, bndry->y + bndry->by, z) =
               f(bndry->x, bndry->y - 2 * bndry->by, z) + 3.0 * delta * val;
         }
       } else {
         // set corners to zero
         f(bndry->x, bndry->y, z) = 0.0;
-        if (width == 2) {
+        if (bndry->width == 2) {
           f(bndry->x + bndry->bx, bndry->y + bndry->by, z) = 0.0;
         }
       }
@@ -2442,6 +2458,32 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
       ddt(f)(bndry->x, bndry->y, z) =
           r * (g(bndry->x, bndry->y, z) - f(bndry->x, bndry->y, z));
     }
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryWidth::BoundaryWidth(BoundaryOp *operation, int width)
+    : BoundaryModifier(operation) {
+
+  // create a new BoundaryRegion, copied from the input one but with a
+  // different width
+  bndry = std::unique_ptr<BoundaryRegion>(op->bndry->copy(width));
+
+  // set BoundaryOp op to use the new bndry
+  op->bndry = bndry.get();
+}
+
+BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation,
+                                    const list<string> &args) {
+  int width = -1;
+  if(args.empty()) {
+    output << "WARNING: BoundaryWidth expected 1 argument\n";
+  }else {
+    // First argument should be the rate
+    width = stringToInt(args.front());
+  }
+
+  return new BoundaryWidth(operation, width);
 }
 
 ///////////////////////////////////////////////////////////////
