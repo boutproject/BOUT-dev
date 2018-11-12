@@ -71,12 +71,6 @@ BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
 
-  // Delete the boundary regions
-  for (const auto &bndry : boundary)
-    delete bndry;
-  for (const auto &bndry : par_boundary)
-    delete bndry;
-
   if (comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
   if (comm_inner != MPI_COMM_NULL)
@@ -796,15 +790,15 @@ int BoutMesh::load() {
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
         // Core
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+        boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionXIn("core", ystart, yend, this)));
       } else {
         // PF region
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+        boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionXIn("pf", ystart, yend, this)));
       }
     }
     if (PE_XIND == (NXPE - 1)) {
       // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+      boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionXOut("sol", ystart, yend, this)));
     }
   }
 
@@ -812,15 +806,15 @@ int BoutMesh::load() {
     // Need boundaries in Y
 
     if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
+      boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this)));
     if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
+      boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this)));
 
     if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
+          std::unique_ptr<BoundaryRegion>(new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this)));
     if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
+      boundary.push_back(std::unique_ptr<BoundaryRegion>(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this)));
   }
 
   if (!boundary.empty()) {
@@ -2379,13 +2373,13 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
+vector< std::unique_ptr<BoundaryRegion> >& BoutMesh::getBoundaries() { return boundary; }
 
-vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
+vector< std::unique_ptr<BoundaryRegionPar> >& BoutMesh::getBoundariesPar() { return par_boundary; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
-  par_boundary.push_back(bndry);
+  par_boundary.push_back(std::unique_ptr<BoundaryRegionPar>(bndry));
 }
 
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {

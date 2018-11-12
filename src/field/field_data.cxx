@@ -28,7 +28,7 @@ void FieldData::setBoundary(const string &name) {
 
   /// Loop over the mesh boundary regions
   for(const auto& reg : getDataMesh()->getBoundaries()) {
-    BoundaryOp* op = bfact->createFromOptions(name, reg);
+    BoundaryOp* op = bfact->createFromOptions(name, reg.get());
     if (op != nullptr)
       bndry_op.push_back(op);
     output_info << endl;
@@ -40,11 +40,9 @@ void FieldData::setBoundary(const string &name) {
   }
   bndry_op_par.clear();
 
-  /// Get the mesh boundary regions
-  vector<BoundaryRegionPar*> par_reg = getDataMesh()->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
   for(const auto& reg : getDataMesh()->getBoundariesPar()) {
-    BoundaryOpPar* op = bfact->createFromOptions(name, reg);
+    BoundaryOpPar* op = bfact->createFromOptions(name, reg.get());
     if (op != nullptr)
       bndry_op_par.push_back(op);
     output_info << endl;
@@ -55,8 +53,9 @@ void FieldData::setBoundary(const string &name) {
 }
 
 void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
+  throw BoutException("FieldData::setBoundary(region, op) is not implemented");
   /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = getDataMesh()->getBoundaries();
+  auto& reg = getDataMesh()->getBoundaries();
  
   /// Find the region
   

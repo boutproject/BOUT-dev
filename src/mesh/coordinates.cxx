@@ -187,7 +187,7 @@ namespace {
     // Note: cannot use applyBoundary("neumann") here because applyBoundary()
     // would try to create a new Coordinates object since we have not finished
     // initializing yet, leading to an infinite recursion
-    for (auto bndry : localmesh->getBoundaries()) {
+    for (auto &bndry : localmesh->getBoundaries()) {
       if (bndry->bx != 0) {
         // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
         for(bndry->first(); !bndry->isDone(); bndry->next1d()) {

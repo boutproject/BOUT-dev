@@ -387,16 +387,20 @@ class Mesh {
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual vector< std::unique_ptr<BoundaryRegion> >& getBoundaries() = 0;
 
   /// Add a boundary region to this processor
-  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
+  virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {
+    throw BoutException("Mesh::addBoundary() is not implemented");
+  }
 
   /// Get all the parallel (Y) boundaries on this processor 
-  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual vector< std::unique_ptr<BoundaryRegionPar> >& getBoundariesPar() = 0;
 
   /// Add a parallel(Y) boundary to this processor 
-  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
+  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {
+    throw BoutException("Mesh::addBoundaryRegionPar() is not implemented");
+  }
   
   /// Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}

@@ -138,8 +138,8 @@ class BoutMesh : public Mesh {
 
 
   // Boundary regions
-  vector<BoundaryRegion*> getBoundaries();
-  vector<BoundaryRegionPar*> getBoundariesPar();
+  vector< std::unique_ptr<BoundaryRegion> >& getBoundaries();
+  vector< std::unique_ptr<BoundaryRegionPar> >& getBoundariesPar();
   void addBoundaryPar(BoundaryRegionPar* bndry);
 
   const Field3D smoothSeparatrix(const Field3D &f);
@@ -221,8 +221,8 @@ class BoutMesh : public Mesh {
   
   void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
   
-  vector<BoundaryRegion*> boundary; // Vector of boundary regions
-  vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
+  vector< std::unique_ptr<BoundaryRegion> > boundary; // Vector of boundary regions
+  vector< std::unique_ptr<BoundaryRegionPar> > par_boundary; // Vector of parallel boundary regions
 
   //////////////////////////////////////////////////
   // Communications
