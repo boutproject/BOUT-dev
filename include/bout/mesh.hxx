@@ -772,6 +772,16 @@ T Mesh::indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METH
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexDDX only works on Field2D or Field3D input");
+
+  // Special handling for SPLIT method
+  if ((derivType == DERIV::Flux) && (method == DIFF_SPLIT)) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    auto tmp = indexFlowDerivative<T, direction, DERIV::Upwind>(vel, f, outloc, DIFF_DEFAULT, region);
+    tmp += indexStandardDerivative<T, direction, 1>(vel, outloc, DIFF_DEFAULT, region) * interp_to(f, tmp.getLocation());
+    return tmp;      
+  }
+  
   // Check that the mesh is correct
   ASSERT1(this == f.getMesh());
   ASSERT1(this == vel.getMesh());  
