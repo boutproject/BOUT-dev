@@ -18,11 +18,6 @@ protected:
   static void SetUpTestCase() {
     // Delete any existing mesh
     if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto &r : mesh->getBoundaries()) {
-        delete r;
-      }
-
       delete mesh;
       mesh = nullptr;
     }
@@ -39,10 +34,6 @@ protected:
 
   static void TearDownTestCase() {
     if (mesh != nullptr) {
-      // Delete boundary regions
-      for (auto &r : mesh->getBoundaries()) {
-        delete r;
-      }
       delete mesh;
       mesh = nullptr;
     }

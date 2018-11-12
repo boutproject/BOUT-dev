@@ -144,9 +144,9 @@ public:
   const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
-  void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
-  vector<BoundaryRegion *> getBoundaries() { return boundaries; }
-  vector<BoundaryRegionPar *> getBoundariesPar() { return vector<BoundaryRegionPar *>(); }
+  void addBoundary(BoundaryRegion* region) {boundaries.push_back(std::unique_ptr<BoundaryRegion>(region));}
+  vector< std::unique_ptr<BoundaryRegion> >& getBoundaries() { return boundaries; }
+  vector< std::unique_ptr<BoundaryRegionPar> >& getBoundariesPar() { return par_boundaries; }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
   BoutReal GlobalZ(int UNUSED(jz)) const { return 0; }
@@ -161,7 +161,8 @@ public:
     derivs_init(opt);
   }
 private:
-  vector<BoundaryRegion *> boundaries;
+  vector< std::unique_ptr<BoundaryRegion> > boundaries;
+  vector< std::unique_ptr<BoundaryRegionPar> > par_boundaries;
 };
 
 
