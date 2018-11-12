@@ -156,6 +156,7 @@ private:
  * } // Scope ends, message popped
  */
 #if CHECK > 0
+
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
    we want to allow TRACE("Message with no args") we have to deal with the case where
@@ -171,5 +172,7 @@ private:
 #else
 #define TRACE(...)
 #endif
+
+#define AUTO_TRACE(...) TRACE("%s", __thefunc__)
 
 #endif // __MSG_STACK_H__
