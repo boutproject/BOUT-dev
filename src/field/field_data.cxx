@@ -52,21 +52,38 @@ void FieldData::setBoundary(const string &name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
-  throw BoutException("FieldData::setBoundary(region, op) is not implemented");
-  /// Get the mesh boundary regions
-  auto& reg = getDataMesh()->getBoundaries();
- 
-  /// Find the region
+void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   
+  output_info << "Setting " << region << " boundary for some variable" << endl;
 
-  /// Find if we're replacing an existing boundary
-  for(const auto& bndry : bndry_op) {
-    if( bndry->bndry == op->bndry ) {
-      // Replacing this boundary
-      output << "Replacing ";
+  /// Find the region
+  BoundaryRegion* region_ptr = nullptr;
+  for (const auto& bndry : getDataMesh()->getBoundaries()) {
+    if (bndry->label == region) {
+      region_ptr = bndry.get();
     }
   }
+
+  /// Find if we're replacing an existing boundary
+  for(auto it = bndry_op.begin(); it != bndry_op.end(); it++) {
+    if( (*it)->bndry == region_ptr ) {
+      // Replacing this boundary
+
+      output << "Replacing " << region_ptr->label<<endl;
+
+      // free the memory pointed to by this element of the vector
+      delete (*it);
+
+      // remove this element from the vector
+      bndry_op.erase(it);
+      break;
+    }
+  }
+
+  /// Create the new BoundaryOp
+  BoundaryOp* new_op = op->clone(region_ptr, {}, {});
+
+  bndry_op.push_back(new_op);
 }
 
 void FieldData::copyBoundary(const FieldData &f) {
