@@ -506,7 +506,7 @@ void Field3D::applyTDerivBoundary() {
 }
 
 void Field3D::setBoundaryTo(const Field3D &f3d) {
-  TRACE("Field3D::setBoundary(const Field3D&)");
+  TRACE("Field3D::setBoundaryTo(const Field3D&)");
   
   checkData(f3d);
 

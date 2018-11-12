@@ -349,7 +349,7 @@ void Field2D::applyTDerivBoundary() {
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
-  TRACE("Field2D::setBoundary(const Field2D&)");
+  TRACE("Field2D::setBoundaryTo(const Field2D&)");
 
   checkData(f2d);
 

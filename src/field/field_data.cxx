@@ -19,6 +19,13 @@ void FieldData::setBoundary(const string &name) {
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
   output_info << "Setting boundary for variable " << name << endl;
+
+  /// Get rid of existing boundary ops
+  for (auto &op : bndry_op) {
+    delete op;
+  }
+  bndry_op.clear();
+
   /// Loop over the mesh boundary regions
   for(const auto& reg : getDataMesh()->getBoundaries()) {
     BoundaryOp* op = bfact->createFromOptions(name, reg);
@@ -26,6 +33,12 @@ void FieldData::setBoundary(const string &name) {
       bndry_op.push_back(op);
     output_info << endl;
   }
+
+  /// Get rid of existing parallel boundary ops
+  for (auto &op : bndry_op_par) {
+    delete op;
+  }
+  bndry_op_par.clear();
 
   /// Get the mesh boundary regions
   vector<BoundaryRegionPar*> par_reg = getDataMesh()->getBoundariesPar();
