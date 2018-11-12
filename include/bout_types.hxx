@@ -52,14 +52,14 @@ inline const std::string& CELL_LOC_STRING(CELL_LOC location) {
 }
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
+enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_S2};
 
 const std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
   {DIFF_DEFAULT, "default"},
   {DIFF_U1, "U1"}, {DIFF_U2, "U2"}, {DIFF_U3, "U3"},
   {DIFF_C2, "C2"}, {DIFF_C4, "C4"}, {DIFF_S2, "S2"},
   {DIFF_W2, "W2"}, {DIFF_W3, "W3"}, {DIFF_FFT, "FFT"},
-  {DIFF_SPLIT, "SPLIT"}, {DIFF_NND, "NND"}
+  {DIFF_SPLIT, "SPLIT"}
 };
 
 inline const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
