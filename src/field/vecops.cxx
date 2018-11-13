@@ -199,10 +199,15 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
+const Field3D Div(const Vector3D &v, const Field3D &f, const std::string &method,
                   CELL_LOC outloc) {
-  TRACE("Div( Vector3D, Field3D )");
+  TRACE("Div( Vector3D, Field3D)");
+  return Div(v, f, outloc, method);
+}
 
+const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, const std::string &method) {
+
+  TRACE("Div( Vector3D, Field3D )");
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
   }
@@ -225,14 +230,9 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method,
   return result;
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
-  TRACE("Div( Vector3D, Field3D)");
-  return Div(v, f, method, outloc);
-}
-
 const Field3D Div(const Vector3D &v, const Field3D &f) {
   TRACE("Div( Vector3D, Field3D)");
-  return Div(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+  return Div(v, f, CELL_DEFAULT, DIFF_DEFAULT);
 }
 
 /**************************************************************************

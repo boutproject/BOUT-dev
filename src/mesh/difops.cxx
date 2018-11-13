@@ -46,19 +46,19 @@
 * The parallel derivative along unperturbed B-field
 *******************************************************************************/
 
-const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, const std::string &method) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
-const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc) {
+const Field2D Grad_par(const Field2D &var, const std::string &method, CELL_LOC outloc) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
-const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, const std::string &method) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
-const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC outloc) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
@@ -167,15 +167,19 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 * vparallel times the parallel derivative along unperturbed B-field
 *******************************************************************************/
 
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc);
-}
-
-const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc, const std::string &method) {
   return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
 }
 
-const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, const std::string &method, CELL_LOC outloc) {
+  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
+}
+
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::string &method) {
+  return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
+}
+
+const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, const std::string &method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
 }
 
@@ -183,16 +187,19 @@ const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD meth
 * Div_par
 * parallel divergence operator B \partial_{||} (F/B)
 *******************************************************************************/
-
-const Field2D Div_par(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Div_par(f, outloc);
-}
-
-const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Div_par(const Field2D &f, CELL_LOC outloc, const std::string &method) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field2D Div_par(const Field2D &f, const std::string &method, CELL_LOC outloc) {
+  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
+}
+
+const Field3D Div_par(const Field3D &f, CELL_LOC outloc, const std::string &method) {
+  return f.getCoordinates(outloc)->Div_par(f, outloc, method);
+}
+
+const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
@@ -237,7 +244,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
 
 //////// Flux methods
 
-const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::string &method) {
   Coordinates *metric = f.getCoordinates(outloc);
 
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
@@ -260,7 +267,7 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, 
   return metric->Bxy*FDDY(v, f_B, outloc, method)/sqrt(metric->g_22);
 }
 
-const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, const std::string &method, CELL_LOC outloc) {
   return Div_par_flux(v,f, outloc, method);
 }
 
@@ -504,11 +511,11 @@ const Field3D Div_par_CtoL(const Field3D &var) {
 * Note: For parallel Laplacian use LaplacePar
 *******************************************************************************/
 
-const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc, const std::string &method) {
   return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
 }
 
-const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc, const std::string &method) {
   return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
 }
 
