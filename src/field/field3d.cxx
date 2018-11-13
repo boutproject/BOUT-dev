@@ -1155,6 +1155,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
   Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   const Region<Ind2D> &region = localmesh->getRegion2D(REGION_STRING(rgn));
 
