@@ -256,8 +256,9 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Mesh *mesh = rhs.getMesh();
   Field3D x(mesh); // Result
   x.allocate();
+  x.setLocation(location);
 
-  Coordinates *coord = mesh->getCoordinates();
+  Coordinates *coord = mesh->getCoordinates(location);
 
   // Get the width of the boundary
 
