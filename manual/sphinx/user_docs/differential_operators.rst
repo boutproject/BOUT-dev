@@ -35,6 +35,8 @@ categories:
    -  ``C4``: 4\ :math:`^{th}` order
       :math:`(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2)/12`
 
+   -  ``S2``: 2\ :math:`^{nd}` order smoothing derivative
+      
    -  ``W2``: 2\ :math:`^{nd}` order CWENO
 
    -  ``W3``: 3\ :math:`^{rd}` order CWENO
@@ -46,7 +48,15 @@ categories:
 
    -  ``U1``: 1\ :math:`^{st}` order upwinding
 
+   -  ``U2``: 2\ :math:`^{nd}` order upwinding
+      
+   -  ``U3``: 3\ :math:`^{rd}` order upwinding
+      
    -  ``U4``: 4\ :math:`^{th}` order upwinding
+
+   -  ``C2``: 2\ :math:`^{nd}` order central
+
+   -  ``C4``: 4\ :math:`^{th}` order central
 
    -  ``W3``: 3\ :math:`^{rd}` order `Weighted Essentially
       Non-Oscillatory (WENO)`_
@@ -54,17 +64,18 @@ categories:
 -  Flux conserving and limiting methods for terms of the form
    :math:`\frac{d}{dx}(v_x f)`
 
+   -  ``U1``: 1\ :math:`^{st}` order upwinding
+
+   -  ``C2``: 2\ :math:`^{nd}` order central
+
+   -  ``C4``: 4\ :math:`^{th}` order central
+
    -  ``SPLIT``: split into upwind and central terms
       :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
 
-   -  ``NND``: `Non-oscillatory, containing No free parameters and
-      Dissipative (NND) scheme`_
-
 .. _Weighted Essentially Non-Oscillatory (WENO): https://doi.org/10.1137/S106482759732455X
 
-.. _Non-oscillatory, containing No free parameters and Dissipative (NND) scheme: https://doi.org/10.1088/0253-6102/54/6/28             
-
-Both of these methods avoid overshoots (Gibbs phenomena) at sharp
+WENO methods avoid overshoots (Gibbs phenomena) at sharp
 gradients such as shocks, but the simple 1st-order method has very large
 artificial diffusion. WENO schemes are a development of the ENO
 reconstruction schemes which combine good handling of sharp-gradient
@@ -93,11 +104,11 @@ top of your physics module::
    +--------------+-----------------------------------------------+
    | D2DZ2(f)     | :math:`\partial^2 f / \partial z^2`           |
    +--------------+-----------------------------------------------+
-   | D2DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
+   | D4DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
    +--------------+-----------------------------------------------+
-   | D2DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
+   | D4DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
    +--------------+-----------------------------------------------+
-   | D2DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
+   | D4DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
    +--------------+-----------------------------------------------+
    | D2DXDZ(f)    | :math:`\partial^2 f / \partial x\partial z`   |
    +--------------+-----------------------------------------------+
@@ -513,6 +524,8 @@ method for every index.
 
 Derivative internals
 --------------------
+
+FOLLOWING NOW OUT OF DATE
 
 This is probably the part of the code most people will want to alter,
 and is in ``bout++/src/sys/derivs.cxx``. The main task of this module is
