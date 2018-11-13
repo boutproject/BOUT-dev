@@ -482,10 +482,6 @@ class Mesh {
   
   ////// STANDARD OPERATORS
 
-  /// The main kernel used for all standard derivatives
-  template<typename T, DIRECTION direction, int order>
-  T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
-
   ////////////// X DERIVATIVE /////////////////
   template<typename T>
   T indexDDX(const T &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY) const {
@@ -557,10 +553,6 @@ class Mesh {
   }
 
   ////// ADVECTION AND FLUX OPERATORS
-
-  /// The main kernel used for all upwind and flux derivatives
-  template<typename T, DIRECTION direction, DERIV derivType>
-  T indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
 
   /// Advection operator in index space in [] direction
   ///
@@ -755,6 +747,15 @@ class Mesh {
   void derivs_init(Options* options);
   
 private:
+  
+  /// The main kernel used for all standard derivatives
+  template<typename T, DIRECTION direction, int order>
+  T indexStandardDerivative(const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
+
+  /// The main kernel used for all upwind and flux derivatives
+  template<typename T, DIRECTION direction, DERIV derivType>
+  T indexFlowDerivative(const T &vel, const T &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) const;
+
   /// Allocates default Coordinates objects
   std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
 
