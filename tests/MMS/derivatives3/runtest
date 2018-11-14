@@ -33,6 +33,8 @@ def runtests(functions,derivatives,directions,stag,msg):
                                ,"2*pi/(%d)"%(nz),force=True)
             dirnfac=direction+"*"+fac
             mesh=boutcore.Mesh(section="mesh"+direction)
+            for loc in locations[1:]:
+                mesh.addCoordinates(loc)
             f=boutcore.create3D(infunc.replace("%s",dirnfac),mesh
                                 ,outloc=inloc)
             sim=diff_func(f,method=diff,outloc=outloc)
