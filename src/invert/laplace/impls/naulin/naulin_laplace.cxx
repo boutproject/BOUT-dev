@@ -135,7 +135,7 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc)
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
-  delp2solver = create(opt->getSection("delp2solver"));
+  delp2solver = create(opt->getSection("delp2solver"), location);
   std::string delp2type;
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
