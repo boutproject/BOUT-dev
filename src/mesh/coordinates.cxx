@@ -151,7 +151,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
+  if (geometryNoRecalculate()) {
     throw BoutException("Differential geometry failed\n");
   }
 
@@ -269,7 +269,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
+  if (geometryNoRecalculate()) {
     throw BoutException("Differential geometry failed\n");
   }
 
@@ -304,7 +304,7 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(J, "J", false);
 }
 
-int Coordinates::geometry() {
+int Coordinates::geometryNoRecalculate() {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -464,6 +464,41 @@ int Coordinates::geometry() {
     d2y = interp_to(d2y, location);
 
     d1_dy = -d2y / (dy * dy);
+  }
+
+  return 0;
+}
+
+int Coordinates::geometry() {
+
+  geometryNoRecalculate();
+
+  if (location != CELL_CENTRE) {
+    throw BoutException("geometry() called from a location other than "
+      "CELL_CENTRE. This is an error as the other Coordinates are calculated "
+      "from the CELL_CENTRE version, so the changes you have made to this "
+      "object would be overwritten.");
+  }
+  // Coordinates objects at staggered location were calculated from
+  // CELL_CENTRE ones. geometry() has been called on the CELL_CENTRE
+  // Coordinates, so they must have changed; we need to re-calculate the
+  // staggered location Coordinates objects.
+
+  if (localmesh->StaggerGrids) {
+    // Replace Coordinates objects at staggered locations, if there are
+    // enough grid points.
+    // This is a temporary workaround. In v4.3 we will users to call
+    // REQUEST_LOCATION(location) for each location that is needed and change
+    // this so that we don't waste memory on unneeded Coordinates.
+    if (localmesh->LocalNx >= 4) {
+      localmesh->addCoordinates(CELL_XLOW, true);
+    }
+    if (localmesh->LocalNy >= 4) {
+      localmesh->addCoordinates(CELL_YLOW, true);
+    }
+    // Can always add ZLOW Coordinates, since z-interpolation on Field2D is a
+    // null operation
+    localmesh->addCoordinates(CELL_ZLOW, true);
   }
 
   return 0;

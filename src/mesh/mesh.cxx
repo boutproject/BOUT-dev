@@ -325,13 +325,38 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
-    // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this);
-  else
-    // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
+  ASSERT1(location != CELL_DEFAULT);
+
+  if (location == CELL_VSHIFT) {
+    // CELL_VSHIFT puts vector components at CELL_XLOW, CELL_YLOW and
+    // CELL_ZLOW, so require Coordinates at all three.
+    addCoordinates(CELL_XLOW, replace_coords);
+    addCoordinates(CELL_YLOW, replace_coords);
+    addCoordinates(CELL_ZLOW, replace_coords);
+  } else {
+    // No coordinate system set. Create default
+    if (location == CELL_CENTRE) {
+      // Initialize coordinates from input
+      if (!coords_map.count(location)) {
+        // location does not exist in coords_map, so create new entry
+        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this)));
+      } else if (replace_coords) {
+        // location does already exists in coords_map, so reset it
+        coords_map.at(location).reset(new Coordinates(this));
+      }
+    } else {
+      // Interpolate coordinates from CELL_CENTRE version
+      ASSERT1(StaggerGrids); // If StaggerGrids==false, it doesn't make sense to have non-CELL_CENTRE Coordinates
+      if (!coords_map.count(location)) {
+        // location does not exist in coords_map, so create new entry
+        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
+      } else if (replace_coords) {
+        // location does already exists in coords_map, so reset it
+        coords_map.at(location).reset(new Coordinates(this, location, getCoordinates(CELL_CENTRE)));
+      }
+    }
+  }
 }
 
 

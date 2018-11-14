@@ -434,20 +434,25 @@ class Mesh {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
+#if CHECK > 0
+    if (!coords_map.count(location)) {
+      throw BoutException("Error: Coordinates for %s have not been added to "
+          "this Mesh. You should use REQUEST_STAGGER(location) before "
+          "initializing fields staggered to 'CELL_LOC location'.",
+          CELL_LOC_STRING(location).c_str());
     }
+#endif
+    return coords_map.at(location).get();
   }
 
   Coordinates *DEPRECATED(coordinates(const CELL_LOC location = CELL_CENTRE)) {
     return getCoordinates(location);
   }
+
+  /// Add Coordinates object at a certain location.
+  /// If replace_coords is set to true, reset the object in coords_map if it
+  /// already exists, otherwise add a new one
+  void addCoordinates(const CELL_LOC location, bool replace_coords = false);
 
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
@@ -712,7 +717,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::unique_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
@@ -751,7 +756,7 @@ class Mesh {
 
 private:
   /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+  std::unique_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
