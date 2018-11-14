@@ -95,8 +95,6 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   FieldPerp x(localmesh); // Result
   x.allocate();
 
-  Coordinates *coord = localmesh->getCoordinates(location);
-
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
 
@@ -142,7 +140,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal zlen = coord->dz * (localmesh->LocalNz - 3);
+        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -210,7 +208,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -258,8 +256,6 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Field3D x(localmesh); // Result
   x.allocate();
   x.setLocation(location);
-
-  Coordinates *coord = rhs.getCoordinates();
 
   // Get the width of the boundary
 
@@ -341,7 +337,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal zlen = coord->dz * (localmesh->LocalNz - 3);
+        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -421,7 +417,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal kwave = kz * 2.0 * PI / (coord->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number

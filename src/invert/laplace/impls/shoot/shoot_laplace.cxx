@@ -77,8 +77,6 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
 
-  Coordinates *coord = localmesh->getCoordinates(location);
-  
   // Get the width of the boundary
   
   int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
@@ -135,7 +133,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     rfft(rhs[ix], localmesh->LocalNz, std::begin(rhsk));
 
     for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength()); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/(coords->zlength()); // wave number is 1/[rad]
       
       // Get the coefficients
       dcomplex a,b,c;

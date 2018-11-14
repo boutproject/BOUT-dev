@@ -229,6 +229,8 @@ protected:
                     bool includeguards=true);
   CELL_LOC location;   ///< staggered grid location of this solver
   Mesh* localmesh;     ///< Mesh object for this solver
+  Coordinates* coords; ///< Coordinates object, so we only have to call
+                       ///  localmesh->getCoordinates(location) once
 private:
   /// Singleton instance
   static Laplacian *instance;

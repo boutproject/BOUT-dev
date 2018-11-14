@@ -209,8 +209,6 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   BoutReal t0,t1;
   
-  Coordinates *coords = localmesh->getCoordinates(location);
-
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
   int lzz = kMG->lnz[level];
@@ -555,7 +553,6 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = localmesh->getCoordinates(location);
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
