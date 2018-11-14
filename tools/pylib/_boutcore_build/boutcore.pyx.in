@@ -627,7 +627,6 @@ cdef class Mesh:
     cdef c.bool isGlobal
     cdef double isNormalised
     cdef FieldFactory factory
-    cdef Coordinates _coords
     #factory=FieldFactory()
     def __init__(self, create=True, section=None, options=None):
         """
@@ -655,7 +654,6 @@ cdef class Mesh:
         self.isGlobal=False
         self.isNormalised=-1
         self.factory = FieldFactory()
-        self._coords = None
         if create:
             if options:
                 opt = (<Options?>options).cobj
@@ -740,14 +738,30 @@ cdef class Mesh:
         del fg
         return self
 
+    def getCoordinates(self, location = "CENTRE"):
+        """
+        Get a Coordinates object from this mesh
+        """
+        # resolve the location string to a CELL_LOC first, to check it is valid
+        loc_ = benum.resolve_cell_loc(location)
+        return coordsFromObj(self.cobj.getCoordinates(loc_))
+
     @property
     def coordinates(self):
         """
-        Get the Coordinates object of this mesh
+        Deprecated version of getCoordinates
         """
-        if self._coords is None:
-            self._coords = coordsFromObj(self.cobj.coordinates())
-        return self._coords
+        print("Warning Mesh.coordinates is deprecated, and does not handle "
+              "staggered grid locations. Use Mesh.getCoordinates(location) "
+              "method instead")
+        return self.getCoordinates()
+
+    def addCoordinates(self, location):
+        """
+        Initialize Coordinates object at location
+        """
+        loc_ = benum.resolve_cell_loc(location)
+        self.cobj.addCoordinates(loc_)
 
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
     coords = Coordinates()

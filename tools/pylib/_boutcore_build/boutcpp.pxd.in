@@ -60,7 +60,8 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
-        Coordinates * coordinates()
+        Coordinates * getCoordinates(benum.CELL_LOC location) except +
+        void addCoordinates(benum.CELL_LOC location) except +
 
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
