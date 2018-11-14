@@ -10,11 +10,12 @@ import itertools
 from sys import exit
 
 errorlist=[]
-
+passlist=[]
 boutcore.init("-d data -q -q -q".split(" "))
 
 def runtests(functions,derivatives,directions,stag,msg):
     global errorlist
+    global passlist    
     for direction in directions:
       direction, fac,guards, diff_func = direction
       locations=['CENTRE']
@@ -56,6 +57,9 @@ def runtests(functions,derivatives,directions,stag,msg):
         conv=errc/difc
         if order-.1 < conv < order+.1:
             pass
+            passMsg="%s: %s is working. Expected %f got %f"%(msg,info,order,conv)
+            passlist.append(passMsg)
+
         else:
             info="%s - %s - %s - %s - %s -> %s "%(vfunc,ffunc,diff,direction,floc,vloc)
             error="%s: %s is not working. Expected %f got %f"%(msg,info,order,conv)
@@ -106,6 +110,9 @@ runtests(functions,derivatives,directions,stag=True,msg="DD")
 if errorlist:
     for error in errorlist:
         print(error)
+    if passlist:
+    for passMsg in passlist:
+        print(passMsg)
     exit(1)
 else:
     print("Pass")
