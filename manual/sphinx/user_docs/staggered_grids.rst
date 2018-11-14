@@ -16,8 +16,9 @@ staggered grids, set::
 
     StaggerGrids = true
 
-in the top section of the ``BOUT.inp`` file. The **test-staggered**
-example illustrates how to use staggered grids in BOUT++.
+in the top section of the ``BOUT.inp`` file and enable the locations you will
+use with a call to mesh->addCoordinates(location) (see below).  The
+**test-staggered** example illustrates how to use staggered grids in BOUT++.
 
 There are four possible locations in a grid cell where a quantity can be
 defined in BOUT++: centre, lower X, lower Y, and lower Z. These are
@@ -29,9 +30,10 @@ illustrated in :numref:`staggergrids-location`.
 
    The four possible cell locations for defining quantities
 
-To specify the location of a variable, use the method
-`Field3D::setLocation` with one of the `CELL_LOC` locations
-`CELL_CENTRE`, `CELL_XLOW`, `CELL_YLOW`, or `CELL_ZLOW`.
+The possible locations are specified with the `CELL_LOC` type, which has the
+possible values `CELL_CENTRE`, `CELL_XLOW`, `CELL_YLOW`, or `CELL_ZLOW`.
+`CELL_CENTRE` is enabled by default, but a call to
+mesh->addCoordinates(location) is required to enable the others.
 
 The key lines in the **staggered_grid** example which specify the
 locations of the evolving variables are::
@@ -39,7 +41,11 @@ locations of the evolving variables are::
     Field3D n, v;
 
     int init(bool restart) {
+
+      mesh->addCoordinates(CELL_YLOW);
+
       v.setLocation(CELL_YLOW); // Staggered relative to n
+
       SOLVE_FOR(n, v);
       ...
 
@@ -61,6 +67,33 @@ in Y, whilst the density :math:`n` remains cell centred.
           `Field3D::setLocation` to silently set the location to
           `CELL_CENTRE` if staggered grids are off, regardless of what
           you pass it.
+
+.. note:: For advanced users:
+          If you change members of the Coordinates object manually, you should
+          change the CELL_CENTRE Coordinates and only call addCoordinates() for
+          other locations after you call Coordinates::geometry() on the
+          CELL_CENTRE Coordinates. Then the Coordinates at staggered locations
+          will be interpolated from the correct, final CELL_CENTRE version.
+
+          The example uses the global Mesh object 'mesh'. If you are using any
+          other Mesh objects, you need to initialize the Coordinates objects in
+          their coords_map members by calling the addCoordinates(CELL_LOC
+          location) method for each location you will use.
+
+          An exception will be thrown if you call Coordinates::geometry() from
+          any Coordinates object at a staggered location, since these are
+          expected to be consistent with (and calculated from) the CELL_CENTRE
+          Coordinates. If you need to change them, you can set the option
+          mesh:allow_geometry_without_recalculate_staggered=true to disable
+          this check; you must then ensure that all the Coordinates objects in
+          Mesh::coords_map are consistent with each other. Setting this option
+          also allows changes to be made and geometry() to be called on the
+          CELL_CENTRE Coordinates after other locations have been added to
+          coords_map; in this case you will need to update the other locations
+          explicitly by calling Mesh::addCoordinates(location, true) - the
+          optional second argument causes addCoordinates to overwrite any
+          existing Coordinates object at location and replace it with one
+          calculated from the current CELL_CENTRE Coordinates.
 
 
 Arithmetic operations can only be performed between variables with the same
