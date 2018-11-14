@@ -60,6 +60,7 @@ class Mesh;
 #include "sys/range.hxx" // RangeIterator
 
 #include <bout/griddata.hxx>
+#include <bout/macro_for_each.hxx>
 
 #include "coordinates.hxx"    // Coordinates class
 
