@@ -4,9 +4,9 @@ timestep = 0.02
 
 MZ = 1
 
+[mesh]
 StaggerGrids = true
 
-[mesh]
 nx = 5
 ny = 16
 
