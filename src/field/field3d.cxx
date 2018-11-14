@@ -1108,6 +1108,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
   Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = 0.0;
