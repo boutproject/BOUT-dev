@@ -410,6 +410,13 @@ int BoutInitialise(int &argc, char **&argv) {
   //which could cause problems (e.g. terminate strings).
   output_info.write(_("\tCompiled with flags : %s\n"),STRINGIFY(BOUT_FLAGS_STRING));
   
+  // Print command line options
+  output_info.write(_("\tCommand line options for this run : "));
+  for (int i=0; i<argc; i++) {
+    output_info.write("%s ", argv[i]);
+  }
+  output_info.write("\n");
+
   /// Get the options tree
   Options *options = Options::getRoot();
 
