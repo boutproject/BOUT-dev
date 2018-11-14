@@ -111,8 +111,8 @@ if errorlist:
     for error in errorlist:
         print(error)
     if passlist:
-    for passMsg in passlist:
-        print(passMsg)
+        for passMsg in passlist:
+            print(passMsg)
     exit(1)
 else:
     print("Pass")
