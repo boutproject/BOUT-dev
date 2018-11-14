@@ -51,7 +51,8 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
+Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
+  : location(loc), localmesh(mesh_in) {
 
   if (options == nullptr) {
     // Use the default options
@@ -69,7 +70,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
 
   BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
   OPTION(options, filter, 0.0);
-  int ncz = mesh->LocalNz;
+  int ncz = localmesh->LocalNz;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
   // Can be overriden by max_mode option
@@ -80,7 +81,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
   OPTION(options, low_mem, false);
 
   OPTION(options, nonuniform,
-         mesh->getCoordinates(location)->non_uniform); // Default is the mesh setting
+         localmesh->getCoordinates(location)->non_uniform); // Default is the mesh setting
 
   OPTION(options, all_terms, true); // Include first derivative terms
 
@@ -103,13 +104,13 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc) : location(loc) {
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
-Laplacian* Laplacian::create(Options *opts, const CELL_LOC location) {
+Laplacian* Laplacian::create(Options *opts, const CELL_LOC location, Mesh *mesh_in) {
   // Factory pattern:
   // 1. getInstance() is making an instance of LaplacianFactory
   // 2. createLaplacian() is accessing this instance and returning a Laplacian
   //    form one of the child classes of the Laplacian (the laplace solver
   //    implementations)
-  return LaplaceFactory::getInstance()->createLaplacian(opts, location);
+  return LaplaceFactory::getInstance()->createLaplacian(opts, location, mesh_in);
 }
 
 Laplacian *Laplacian::instance = nullptr;
@@ -135,26 +136,25 @@ const Field3D Laplacian::solve(const Field3D &b) {
   TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
-
-  Mesh *mesh = b.getMesh();
+  ASSERT1(localmesh = b.getMesh());
 
   Timer timer("invert");
-  int ys = mesh->ystart, ye = mesh->yend;
+  int ys = localmesh->ystart, ye = localmesh->yend;
 
-  if(mesh->hasBndryLowerY()) {
+  if(localmesh->hasBndryLowerY()) {
     if (include_yguards)
       ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
 
     ys += extra_yguards_lower;
   }
-  if(mesh->hasBndryUpperY()) {
+  if(localmesh->hasBndryUpperY()) {
     if (include_yguards)
-      ye = mesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
+      ye = localmesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
 
     ye -= extra_yguards_upper;
   }
 
-  Field3D x(mesh);
+  Field3D x(localmesh);
   x.allocate();
 
   int status = 0;
@@ -198,18 +198,18 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
+  ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
   Timer timer("invert");
 
-  Mesh *mesh = b.getMesh();
   // Setting the start and end range of the y-slices
-  int ys = mesh->ystart, ye = mesh->yend;
-  if(mesh->hasBndryLowerY() && include_yguards)
+  int ys = localmesh->ystart, ye = localmesh->yend;
+  if(localmesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY() && include_yguards)
-    ye = mesh->LocalNy-1; // Contains upper boundary
+  if(localmesh->hasBndryUpperY() && include_yguards)
+    ye = localmesh->LocalNy-1; // Contains upper boundary
 
-  Field3D x(mesh);
+  Field3D x(localmesh);
   x.allocate();
 
   int status = 0;
@@ -249,7 +249,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
 
-  Coordinates *coord = mesh->getCoordinates(loc);
+  Coordinates *coord = localmesh->getCoordinates(loc);
 
   BoutReal kwave=jz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
@@ -275,7 +275,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * Input:
    * jx        - The current x index
    * jy        - The current y index
-   * kwave     - The mode number multiplied with (2*pi)/mesh->zlength(), where
+   * kwave     - The mode number multiplied with (2*pi)/localmesh->zlength(), where
    *             zlength() is the length of the full z domain (usually 2*pi)
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
@@ -296,7 +296,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates *coord = mesh->getCoordinates(loc);
+  Coordinates *coord = localmesh->getCoordinates(loc);
 
   coef1=coord->g11(jx,jy);     ///< X 2nd derivative coefficient
   coef2=coord->g33(jx,jy);     ///< Z 2nd derivative coefficient
@@ -321,18 +321,18 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   if(nonuniform) {
     // non-uniform mesh correction
-    if((jx != 0) && (jx != (mesh->LocalNx-1))) {
+    if((jx != 0) && (jx != (localmesh->LocalNx-1))) {
       coef4 -= 0.5*((coord->dx(jx+1,jy) - coord->dx(jx-1,jy))/SQ(coord->dx(jx,jy)))*coef1;
     }
   }
 
   if (ccoef != nullptr) {
     // A first order derivative term
-    if((jx > 0) && (jx < (mesh->LocalNx-1)))
+    if((jx > 0) && (jx < (localmesh->LocalNx-1)))
       coef4 += coord->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coord->dx(jx,jy)*((*ccoef)(jx,jy)));
   }
 
-  if(mesh->IncIntShear) {
+  if(localmesh->IncIntShear) {
     // d2dz2 term
     coef2 += coord->g11(jx,jy) * coord->IntShiftTorsion(jx,jy) * coord->IntShiftTorsion(jx,jy);
     // Mixed derivative
@@ -361,7 +361,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
   ASSERT1(ccoef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
 
-  Coordinates *coord = mesh->getCoordinates(location);
+  Coordinates *coord = localmesh->getCoordinates(location);
 
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -424,27 +424,27 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   ASSERT1(d->getLocation() == location);
 
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
-  int xe = mesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
+  int xe = localmesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
-  Coordinates *coord = mesh->getCoordinates(location);
+  Coordinates *coord = localmesh->getCoordinates(location);
 
   // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
   // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.
   if(!includeguards) {
-    if(!mesh->firstX() || mesh->periodicX)
-      xs = mesh->xstart; // Inner edge is a guard cell
-    if(!mesh->lastX() || mesh->periodicX)
-      xe = mesh->xend; // Outer edge is a guard cell
+    if(!localmesh->firstX() || localmesh->periodicX)
+      xs = localmesh->xstart; // Inner edge is a guard cell
+    if(!localmesh->lastX() || localmesh->periodicX)
+      xe = localmesh->xend; // Outer edge is a guard cell
   }
 
   int ncx = xe - xs; // Total number of points in x to be used
 
   // Setting the width of the boundary.
-  // NOTE: The default is a width of (mesh->xstart) guard cells
-  int inbndry = mesh->xstart, outbndry=mesh->xstart;
+  // NOTE: The default is a width of (localmesh->xstart) guard cells
+  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -463,8 +463,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   }
 
   // Set the boundary conditions if x is not periodic
-  if(!mesh->periodicX) {
-    if(mesh->firstX()) {
+  if(!localmesh->periodicX) {
+    if(localmesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
 
       // If no user specified value is set on inner boundary, set the first
@@ -627,7 +627,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         }
       }
     }
-    if(mesh->lastX()) {
+    if(localmesh->lastX()) {
       // OUTER BOUNDARY ON THIS PROCESSOR
 
       // If no user specified value is set on outer boundary, set the last

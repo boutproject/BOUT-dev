@@ -51,26 +51,29 @@
 
 #include <cmath>
 
-InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = Matrix<dcomplex>(mesh->LocalNy, (mesh->LocalNz)/2 + 1);
-  rhsk = Array<dcomplex>(mesh->LocalNy-4);
-  xk = Array<dcomplex>(mesh->LocalNy-4);
-  a = Array<dcomplex>(mesh->LocalNy-4);
-  b = Array<dcomplex>(mesh->LocalNy-4);
-  c = Array<dcomplex>(mesh->LocalNy-4);
+InvertParSerial::InvertParSerial(Options *opt, Mesh *mesh_in)
+    : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+  rhs = Matrix<dcomplex>(localmesh->LocalNy, (localmesh->LocalNz)/2 + 1);
+  rhsk = Array<dcomplex>(localmesh->LocalNy-4);
+  xk = Array<dcomplex>(localmesh->LocalNy-4);
+  a = Array<dcomplex>(localmesh->LocalNy-4);
+  b = Array<dcomplex>(localmesh->LocalNy-4);
+  c = Array<dcomplex>(localmesh->LocalNy-4);
 }
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
   TRACE("InvertParSerial::solve(Field3D)");
 
-  Field3D result(f.getMesh());
+  ASSERT1(localmesh == f.getMesh());
+
+  Field3D result(localmesh);
   result.allocate();
   result.setLocation(f.getLocation());
   
   Coordinates *coord = f.getCoordinates();
 
   // Loop over flux-surfaces
-  SurfaceIter surf(mesh);
+  SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {
     int x = surf.xpos;
     BoutReal ts; // Twist-shift angle
@@ -78,20 +81,20 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       throw BoutException("InvertParSerial doesn't handle open surfaces");
     
     // Take Fourier transform 
-    for(int y=0;y<mesh->LocalNy-4;y++)
-      rfft(f(x,y+2), mesh->LocalNz, &rhs(y, 0));
+    for(int y=0;y<localmesh->LocalNy-4;y++)
+      rfft(f(x,y+2), localmesh->LocalNz, &rhs(y, 0));
     
     // Solve cyclic tridiagonal system for each k
-    int nyq = (mesh->LocalNz)/2;
+    int nyq = (localmesh->LocalNz)/2;
     for(int k=0;k<=nyq;k++) {
       // Copy component of rhs into 1D array
-      for(int y=0;y<mesh->LocalNy-4;y++)
+      for(int y=0;y<localmesh->LocalNy-4;y++)
         rhsk[y] = rhs(y, k);
       
       BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
       
       // Set up tridiagonal system
-      for(int y=0;y<mesh->LocalNy-4;y++) {
+      for(int y=0;y<localmesh->LocalNy-4;y++) {
         BoutReal acoef = A(x, y+2);                     // Constant
 	BoutReal bcoef = B(x, y+2) / coord->g_22(x,y+2); // d2dy2
         BoutReal ccoef = C(x, y+2);                     // d2dydz
@@ -113,19 +116,19 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       // Modify coefficients across twist-shift
       dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
       a[0] *= phase;
-      c[mesh->LocalNy-5] /= phase;
+      c[localmesh->LocalNy-5] /= phase;
       
       // Solve cyclic tridiagonal system
-      cyclic_tridag(std::begin(a), std::begin(b), std::begin(c), std::begin(rhsk), std::begin(xk), mesh->LocalNy-4);
+      cyclic_tridag(std::begin(a), std::begin(b), std::begin(c), std::begin(rhsk), std::begin(xk), localmesh->LocalNy-4);
       
       // Put back into rhs array
-      for(int y=0;y<mesh->LocalNy-4;y++)
+      for(int y=0;y<localmesh->LocalNy-4;y++)
         rhs(y, k) = xk[y];
     }
     
     // Inverse Fourier transform 
-    for(int y=0;y<mesh->LocalNy-4;y++)
-      irfft(&rhs(y, 0), mesh->LocalNz, result(x,y+2));
+    for(int y=0;y<localmesh->LocalNy-4;y++)
+      irfft(&rhs(y, 0), localmesh->LocalNz, result(x,y+2));
   }
   
   return result;

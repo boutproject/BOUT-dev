@@ -105,14 +105,14 @@ const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = mesh);
   virtual ~Laplacian() {}
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
   virtual void setCoefA(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefA(f);
   }
@@ -120,7 +120,7 @@ public:
   virtual void setCoefC(const Field2D &val) = 0;
   virtual void setCoefC(const Field3D &val) { setCoefC(DC(val)); }
   virtual void setCoefC(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC(f);
   }
@@ -130,7 +130,7 @@ public:
   }
   virtual void setCoefC1(const Field3D &val) { setCoefC1(DC(val)); }
   virtual void setCoefC1(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC1(f);
   }
@@ -140,7 +140,7 @@ public:
   }
   virtual void setCoefC2(const Field3D &val) { setCoefC2(DC(val)); }
   virtual void setCoefC2(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC2(f);
   }
@@ -148,7 +148,7 @@ public:
   virtual void setCoefD(const Field2D &val) = 0;
   virtual void setCoefD(const Field3D &val) { setCoefD(DC(val)); }
   virtual void setCoefD(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefD(f);
   }
@@ -156,7 +156,7 @@ public:
   virtual void setCoefEx(const Field2D &val) = 0;
   virtual void setCoefEx(const Field3D &val) { setCoefEx(DC(val)); }
   virtual void setCoefEx(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefEx(f);
   }
@@ -164,7 +164,7 @@ public:
   virtual void setCoefEz(const Field2D &val) = 0;
   virtual void setCoefEz(const Field3D &val) { setCoefEz(DC(val)); }
   virtual void setCoefEz(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefEz(f);
   }
@@ -192,7 +192,7 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
@@ -227,7 +227,8 @@ protected:
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,
                     bool includeguards=true);
-  CELL_LOC location;
+  CELL_LOC location;   ///< staggered grid location of this solver
+  Mesh* localmesh;     ///< Mesh object for this solver
 private:
   /// Singleton instance
   static Laplacian *instance;

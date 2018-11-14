@@ -38,40 +38,41 @@
 
 //#define SECONDORDER // Define to use 2nd order differencing
 
-LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc) : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+    : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  if(!mesh->firstX() || !mesh->lastX())
-    throw BoutException("LaplaceSerialBand only works for mesh->NXPE = 1");
-  if(mesh->periodicX) {
-      throw BoutException("LaplaceSerialBand does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+  if(!localmesh->firstX() || !localmesh->lastX())
+    throw BoutException("LaplaceSerialBand only works for localmesh->NXPE = 1");
+  if(localmesh->periodicX) {
+      throw BoutException("LaplaceSerialBand does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
     }
   // Allocate memory
 
-  int ncz = mesh->LocalNz;
-  bk = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-  bk1d = Array<dcomplex>(mesh->LocalNx);
+  int ncz = localmesh->LocalNz;
+  bk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  bk1d = Array<dcomplex>(localmesh->LocalNx);
 
   //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
   for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
+    for (int ix=0; ix<localmesh->LocalNx; ix++){
       bk(ix, kz) = 0.0;
     }
   }
 
-  xk = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-  xk1d = Array<dcomplex>(mesh->LocalNx);
+  xk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+  xk1d = Array<dcomplex>(localmesh->LocalNx);
 
   //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<mesh->LocalNx; ix++){
+    for (int ix=0; ix<localmesh->LocalNx; ix++){
       xk(ix, kz) = 0.0;
     }
   }
 
-  A = Matrix<dcomplex>(mesh->LocalNx, 5);
+  A = Matrix<dcomplex>(localmesh->LocalNx, 5);
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
@@ -79,25 +80,26 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh *mesh = b.getMesh();
-  FieldPerp x(mesh);
+  ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+
+  FieldPerp x(localmesh);
   x.allocate();
 
   int jy = b.getIndex();
   x.setIndex(jy);
 
-  Coordinates *coord = mesh->getCoordinates(location);
+  Coordinates *coord = localmesh->getCoordinates(location);
   
-  int ncz = mesh->LocalNz;
-  int ncx = mesh->LocalNx-1;
+  int ncz = localmesh->LocalNz;
+  int ncx = localmesh->LocalNx-1;
 
-  int xbndry = mesh->xstart; // Width of the x boundary
+  int xbndry = localmesh->xstart; // Width of the x boundary
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))
     xbndry = 1;
 
   BOUT_OMP(parallel for)
-  for(int ix=0;ix<mesh->LocalNx;ix++) {
+  for(int ix=0;ix<localmesh->LocalNx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
     if(((ix < xbndry) && (inner_boundary_flags & INVERT_SET)) ||
@@ -115,7 +117,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     xend = ncx-xbndry;
   }else {
     xstart = 2;
-    xend = mesh->LocalNx-2;
+    xend = localmesh->LocalNx-2;
   }
 
   for(int iz=0;iz<=maxmode;iz++) {
@@ -129,7 +131,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     kwave=iz*2.0*PI/coord->zlength(); // wave number is 1/[rad]
 
     // set bk1d
-    for(int ix=0;ix<mesh->LocalNx;ix++)
+    for(int ix=0;ix<localmesh->LocalNx;ix++)
       bk1d[ix] = bk(ix, iz);
 
     // Fill in interior points
@@ -166,14 +168,14 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       }
 
       if(nonuniform) {
-        // non-uniform mesh correction
+        // non-uniform localmesh correction
         if((ix != 0) && (ix != ncx))
           coef4 += coord->g11(ix,jy)*( (1.0/coord->dx(ix+1,jy)) - (1.0/coord->dx(ix-1,jy)) )/(2.0*coord->dx(ix,jy));
       }
 
       // A first order derivative term (1/c)\nabla_perp c\cdot\nabla_\perp x
     
-      if((ix > 1) && (ix < (mesh->LocalNx-2)))
+      if((ix > 1) && (ix < (localmesh->LocalNx-2)))
         coef4 += coord->g11(ix,jy) * (Ccoef(ix-2,jy) - 8.*Ccoef(ix-1,jy) + 8.*Ccoef(ix+1,jy) - Ccoef(ix+2,jy)) / (12.*coord->dx(ix,jy)*(Ccoef(ix,jy)));
 
       // Put into matrix
@@ -392,7 +394,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     }
     
     // Perform inversion
-    cband_solve(A, mesh->LocalNx, 2, 2, bk1d);
+    cband_solve(A, localmesh->LocalNx, 2, 2, bk1d);
 
     if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
       // Set the Kx = 0, n = 0 component to zero. For now just subtract
