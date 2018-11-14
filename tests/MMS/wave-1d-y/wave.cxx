@@ -9,6 +9,7 @@ private:
 protected:
   int init(bool restarting) {
 
+    mesh->addCoordinates(CELL_YLOW);
     g.setLocation(CELL_YLOW); // g staggered 
     
     // Tell BOUT++ to solve f and g

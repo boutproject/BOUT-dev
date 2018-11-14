@@ -83,6 +83,7 @@ protected:
     coord->g_23 = 0.0;
     coord->geometry();
 
+    mesh->addCoordinates(CELL_XLOW);
     g.setLocation(CELL_XLOW); // g staggered to the left of f
     
     //Dirichlet everywhere except inner x-boundary Neumann

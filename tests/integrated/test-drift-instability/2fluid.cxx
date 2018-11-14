@@ -297,6 +297,7 @@ int physics_init(bool restarting) {
   dump.add(wci,   "wci", 0);
 
   if (mesh->StaggerGrids) {
+    mesh->addCoordinates(CELL_YLOW);
     maybe_ylow = CELL_YLOW;
   } else {
     maybe_ylow = CELL_CENTRE;
