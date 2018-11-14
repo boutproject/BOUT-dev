@@ -56,10 +56,9 @@ def runtests(functions,derivatives,directions,stag,msg):
         difc=np.log(nzs[-1]/nzs[-2])
         conv=errc/difc
         if order-.1 < conv < order+.1:
-            pass
+            info="%s - %s - %s - %s - %s -> %s "%(vfunc,ffunc,diff,direction,floc,vloc)        
             passMsg="%s: %s is working. Expected %f got %f"%(msg,info,order,conv)
             passlist.append(passMsg)
-
         else:
             info="%s - %s - %s - %s - %s -> %s "%(vfunc,ffunc,diff,direction,floc,vloc)
             error="%s: %s is not working. Expected %f got %f"%(msg,info,order,conv)
