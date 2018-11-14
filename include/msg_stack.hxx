@@ -184,6 +184,23 @@ private:
 #define TRACE(...)
 #endif
 
-#define AUTO_TRACE(...) TRACE("%s", __thefunc__)
+/*!
+ * The AUTO_TRACE macro provides a convenient way to put messages onto the msg_stack
+ * It pushes a message onto the stack, and pops it when the scope ends
+ * The message is automatically derived from the function signature
+ * as identified by the compiler. This will be PRETTY_FUNCTION if available
+ * else it will be the mangled form.
+ *
+ * This is implemented as a use of the TRACE macro with specific arguments.
+ *
+ * Example
+ * -------
+ *
+ * {
+ *   AUTO_TRACE();
+ *
+ * } // Scope ends, message popped
+ */
+#define AUTO_TRACE()("%s", __thefunc__)
 
 #endif // __MSG_STACK_H__
