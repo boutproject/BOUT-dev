@@ -59,7 +59,10 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_L
 STAGGER Mesh::getStagger(const CELL_LOC UNUSED(vloc), const CELL_LOC inloc,
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
 #endif
-  TRACE("Mesh::getStagger -- four arugments");  
-  ASSERT1(vloc == inloc);
+  TRACE("Mesh::getStagger -- four arguments");  
+  ASSERT1(vloc == inloc ||
+	  (vloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
+	  (vloc == allowedStaggerLoc && inloc == CELL_CENTRE)	  
+	  );
   return getStagger(inloc, outloc, allowedStaggerLoc);
 }
