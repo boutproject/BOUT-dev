@@ -28,7 +28,8 @@
  *
  **************************************************************************/
 
-#include "petscamg.hxx"
+#include "petsc3damg.hxx"
+#include <boutcomm.hxx>
 
 void LaplacePetsc3DAmg::settingSolver(int kflag){
   //  Timer timer("invert");
@@ -43,7 +44,7 @@ void LaplacePetsc3DAmg::settingSolver(int kflag){
   // Set up KSP
   
   // Declare KSP Context 
-  KSPCreate(commX, &ksp ); 
+  KSPCreate(BoutComm::get(), &ksp ); 
   KSPGetPC(ksp, &pc);
   
   // Configure Linear Solver
@@ -154,7 +155,6 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   if(fcheck) {
     tms = MPI_Wtime();
     tmG = tms - tmss;
-    // output <<"solvs"<<"N="<<yindex<<"(After gen)"<<endl;
   }
 
   settingSolver(diffpre);
@@ -162,42 +162,45 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
     tmf = MPI_Wtime();
     tmS = tmf - tms;
   }
-  //  output <<"solvs"<<"N="<<yindex<<"(After set)"<<endl;
   // MPI_Barrier(MPI_COMM_WORLD);
   
-  int ind,i2,i,k,k2;
+  int ind,i2,i,j,j2,k,k2,nxzt;
   PetscScalar val,area;
+  nxzt = nzt*nxt;
   if(fcheck) tms = MPI_Wtime();
   if ( global_flags & INVERT_START_NEW ) {
     // set initial guess to zero
-    for (i=0; i < Nx_local; i++) {
-      i2 = i + mxstart;
-      area = coords->dx(i2, yindex)*coords->dz;
-      for (k=0; k < Nz_local; k++) {
-        ind = gindices[(i+lxs)*nzt+k+lzs];
-        val = 0.;
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-      
-        val = rhs(i+mxstart,k+mzstart)*area;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-	//        output <<"Set V "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
+    for (k=0; k < Ny_local; k++) {
+      k2 = k + mystart;
+      for (i=0; i < Nx_local; i++) {
+        i2 = i + mxstart;
+        area = coords->dx(i2, k2)*coords->dz;
+        for (j=0; j < Nz_local; j++) {
+          ind = gindices[(k+lys)*nxzt + (i+lxs)*nzt+j+lzs];
+          val = 0.;
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+        
+          val = rhs(i2, k2, j+mzstart)*area;
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        }
       }
     }
   }
   else {
     // Read initial guess into local array, ignoring guard cells
-    for (i=0; i < Nx_local; i++) {
-      i2 = i + mxstart;
-      area = coords->dx(i2, yindex)*coords->dz;
-      for (k=0; k < Nz_local; k++) {
-        ind = gindices[(i+lxs)*nzt+k+lzs];
-        val = x0(i+mxstart,k+mzstart);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-      
-        // output <<"Set V0 "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
-        val = rhs(i+mxstart,k+mzstart)*area;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-        //output <<"Set V1 "<<i<<","<<k<<":"<<ind<<","<<val<<endl;
+    for (k=0; k < Ny_local; k++) {
+      k2 = k + mystart;
+      for (i=0; i < Nx_local; i++) {
+        i2 = i + mxstart;
+        area = coords->dx(i2, k2)*coords->dz;
+        for (j=0; j < Nz_local; j++) {
+          ind = gindices[(k+lys)*nxzt + (i+lxs)*nzt+j+lzs];
+          val = x0(i2, k2, j+mzstart);
+          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+        
+          val = rhs(i2, k2, j+mzstart)*area;
+          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        }
       }
     }
   }
@@ -211,117 +214,125 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   // MPI_Barrier(MPI_COMM_WORLD);
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
   if (mesh->firstX()) {
-    i2 = mxstart;
-    if ( inner_boundary_flags & INVERT_AC_GRAD ) {
-      // Neumann boundary condition
-      //      if ( inner_boundary_flags & INVERT_SET ) {
-        // Set the value of guard cells specify gradient to set at inner boundary
-	// tval = df/dn = (v_ghost - v_in)/distance 
-        for (k = 0; k < nzt; k++) {
-	  tval[k] = -x0(i2-1, k+mzstart-lzs)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
-        }
-	//   }
-	//else {
-        // zero gradient inner boundary condition
-        //for (int k = 0; k<nzt; k++) {
-          // set inner guard cells
-        //  tval[k] = 0.0;
-	// }
-	// }
+    for (k=0; k<Ny_local; k++) {
+      k2 = k + mystart;
+
+      i2 = mxstart;
+      if ( inner_boundary_flags & INVERT_AC_GRAD ) {
+        // Neumann boundary condition
+        //      if ( inner_boundary_flags & INVERT_SET ) {
+          // Set the value of guard cells specify gradient to set at inner boundary
+          // tval = df/dn = (v_ghost - v_in)/distance 
+          for (j = 0; j < nzt; j++) {
+            tval[j] = -x0(i2-1, k2, j+mzstart-lzs)*sqrt(coords->g_11(i2, k2))*coords->dx(i2, k2); 
+          }
+          //   }
+          //else {
+          // zero gradient inner boundary condition
+          //for (int j = 0; j<nzt; j++) {
+            // set inner guard cells
+          //  tval[j] = 0.0;
+          // }
+          // }
+      }
+      else {      // Dirichlet boundary condition
+        // if ( inner_boundary_flags & INVERT_SET ) {
+          // guard cells of x0 specify value to set at inner boundary
+          // tval = f = (v_ghost + v_in)/2.0
+          for (int j = 0; j < nzt; j++) {
+            tval[j] = 2.*x0(i2-1, k2, j+mzstart-lzs); 
+          // this is the value to set at the inner boundary
+          }
+          // }
+          //else {
+          // zero value inner boundary condition
+          // for (int j=0; j < nzt; j++) {
+            // set inner guard cells
+          //  tval[j] = 0.;
+          // }
+          // }
+      }
+      for(j = 0;j < Nz_local;j++) {
+        j2 = j + mzstart;
+        area = coords->dx(i2, k2)*coords->dz;
+        ddx_C = (C2(i2+1, k2, j2) - C2(i2-1, k2, j2))/2./coords->dx(i2, k2)/C1(i2, k2, j2);
+        ddz_C = (C2(i2, k2, (j2+1)%nzt) - C2(i2, k2, (j2-1+nzt)%nzt)) /2./coords->dz/C1(i2, k2, j2);
+        dval = D(i2, k2, j2)*coords->g11(i2, k2)/coords->dx(i2, k2)/coords->dx(i2, k2);
+        dval -= (D(i2, k2, j2)*2.*coords->G1(i2, k2) + coords->g11(i2, k2)*ddx_C
+                 + coords->g13(i2, k2)*ddz_C)/coords->dx(i2, k2)/2.0;
+        dval *= area;
+        val = -tval[j+lzs]*dval;
+        dval = D(i2, k2, j2)*coords->g13(i2, k2)/coords->dx(i2, k2)/coords->dz/8.;
+        dval *= area;
+        if(lzs == 0 && j == 0) val -= dval*tval[nzt-1];
+        else val -= dval*tval[j-1];
+        if(lzs == 0 && j == nzt-1) val += dval*tval[0];
+        else val += dval*tval[j+1];
+        ind = gindices[(k+lys)*nxzt + (0+lxs)*nzt+j+lzs];
+        VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
+      }  
     }
-    else {      // Dirichlet boundary condition
-      // if ( inner_boundary_flags & INVERT_SET ) {
-        // guard cells of x0 specify value to set at inner boundary
-	// tval = f = (v_ghost + v_in)/2.0
-        for (int k = 0; k < nzt; k++) {
-          tval[k] = 2.*x0(i2-1, k+mzstart-lzs); 
-        // this is the value to set at the inner boundary
-        }
-	// }
-	//else {
-        // zero value inner boundary condition
-	// for (int k=0; k < nzt; k++) {
-          // set inner guard cells
-        //  tval[k] = 0.;
-	// }
-	// }
-    }
-    for(k = 0;k < Nz_local;k++) {
-      k2 = k + mzstart;
-      area = coords->dx(i2, yindex)*coords->dz;
-      ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
-      dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
-      dval -= (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
-	       + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
-      dval *= area;
-      val = -tval[k+lzs]*dval;
-      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
-      dval *= area;
-      if(lzs == 0 && k == 0) val -= dval*tval[nzt-1];
-      else val -= dval*tval[k-1];
-      if(lzs == 0 && k == nzt-1) val += dval*tval[0];
-      else val += dval*tval[k+1];
-      ind = gindices[k+lzs];
-      VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
-    }  
   }
   if (mesh->lastX()) {
-    i2 = mesh->xend;
-    if ( outer_boundary_flags & INVERT_AC_GRAD ) {
-      // Neumann boundary condition
-      //      if ( inner_boundary_flags & INVERT_SET ) {
-        // guard cells of x0 specify gradient to set at outer boundary
-	// tval = df/dn = (v_ghost - v_in)/distance 
-        for (k= 0; k < nzt; k++) {
-          tval[k] = x0(i2+1, k+mzstart-lzs)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
-        // this is the value to set the gradient to at the outer boundary
-        }
-	//}
-	//else {
-        // zero gradient outer boundary condition
-        //for (k=0; k<nzt; k++) {
-          // set outer guard cells
-          //tval[k] = 0.;
-        //}
-	//}
+    for (k=0; k<Ny_local; k++) {
+      k2 = k + mystart;
+
+      i2 = mesh->xend;
+      if ( outer_boundary_flags & INVERT_AC_GRAD ) {
+        // Neumann boundary condition
+        //      if ( inner_boundary_flags & INVERT_SET ) {
+          // guard cells of x0 specify gradient to set at outer boundary
+          // tval = df/dn = (v_ghost - v_in)/distance 
+          for (j= 0; j < nzt; j++) {
+            tval[j] = x0(i2+1, k2, j+mzstart-lzs)*sqrt(coords->g_11(i2, k2))*coords->dx(i2, k2); 
+          // this is the value to set the gradient to at the outer boundary
+          }
+          //}
+          //else {
+          // zero gradient outer boundary condition
+          //for (j=0; j<nzt; j++) {
+            // set outer guard cells
+            //tval[j] = 0.;
+          //}
+          //}
+      }
+      else {
+        // Dirichlet boundary condition
+        // if ( outer_boundary_flags & INVERT_SET ) {
+          // guard cells of x0 specify value to set at outer boundary
+          for (j=0; j< nzt; j++) {
+            tval[j]=2.*x0(i2+1, k2, j+mzstart-lzs); 
+            // this is the value to set at the outer boundary
+          }
+          //}
+          //else {
+          // zero value inner boundary condition
+          //for (int j=0; j<nzt; j++) {
+            // set outer guard cells
+            //tval[j] = 0.;
+          //}
+          // }
+      }
+      for(j = 0;j < Nz_local;j++) {
+        j2 = j+mzstart;
+        area = coords->dx(i2, k2)*coords->dz;
+        ddx_C = (C2(i2+1, k2, j2) - C2(i2-1, k2, j2))/2./coords->dx(i2, k2)/C1(i2, k2, j2);
+        ddz_C = (C2(i2, k2, (j2+1)%nzt) - C2(i2, k2, (j2-1+nzt)%nzt)) /2./coords->dz/C1(i2, k2, j2);
+        dval = D(i2, k2, j2)*coords->g11(i2, k2)/coords->dx(i2, k2)/coords->dx(i2, k2);
+        dval += (D(i2, k2, j2)*2.*coords->G1(i2, k2) + coords->g11(i2, k2)*ddx_C
+                     + coords->g13(i2, k2)*ddz_C)/coords->dx(i2, k2)/2.0;
+        dval *= area;
+        val = -tval[j+lzs]*dval;
+        dval = D(i2, k2, j2)*coords->g13(i2, k2)/coords->dx(i2, k2)/coords->dz/8.;
+        dval *= area;
+        if(lzs == 0 && j == 0) val += dval*tval[nzt-1];
+        else val += dval*tval[j-1];
+        if(lzs == 0 && j == nzt-1) val -= dval*tval[0];
+        else val -= dval*tval[j+1];
+        ind = gindices[(k+lys)*nxzt + (nxt-1)*nzt+j+lzs];
+        VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
+      }      
     }
-    else {
-      // Dirichlet boundary condition
-      // if ( outer_boundary_flags & INVERT_SET ) {
-        // guard cells of x0 specify value to set at outer boundary
-        for (k=0; k< nzt; k++) {
-          tval[k]=2.*x0(i2+1, k+mzstart-lzs); 
-          // this is the value to set at the outer boundary
-        }
- 	//}
-	//else {
-        // zero value inner boundary condition
-        //for (int k=0; k<nzt; k++) {
-          // set outer guard cells
-          //tval[k] = 0.;
-        //}
-	// }
-    }
-    for(k = 0;k < Nz_local;k++) {
-      k2 = k+mzstart;
-      area = coords->dx(i2, yindex)*coords->dz;
-      ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      ddz_C = (C2(i2, yindex, (k2+1)%nzt) - C2(i2, yindex, (k2-1+nzt)%nzt)) /2./coords->dz/C1(i2, yindex, k2);
-      dval = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex);
-      dval += (D(i2, yindex, k2)*2.*coords->G1(i2, yindex) + coords->g11(i2, yindex)*ddx_C
-                   + coords->g13(i2, yindex)*ddz_C)/coords->dx(i2, yindex)/2.0;
-      dval *= area;
-      val = -tval[k+lzs]*dval;
-      dval = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/8.;
-      dval *= area;
-      if(lzs == 0 && k == 0) val += dval*tval[nzt-1];
-      else val += dval*tval[k-1];
-      if(lzs == 0 && k == nzt-1) val -= dval*tval[0];
-      else val -= dval*tval[k+1];
-      ind = gindices[(nxt-1)*nzt+k+lzs];
-      VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
-    }      
   }
   
   // Assemble RHS Vector
@@ -344,7 +355,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
     VecDuplicate(xs,&rs);
     MatResidual(MatA,bs,xs,rs);
     VecNorm(rs,NORM_2,&norm);
-    output<<"Norm of rhs "<< (double)norm<< ":: "<<yindex<<":"<<xNP<<endl;
+    output<<"Norm of rhs "<< (double)norm<< ":: "<<yNP<<":"<<xNP<<endl;
     VecDestroy(&rs);
   }
   if(fcheck) tms = MPI_Wtime();
@@ -385,14 +396,18 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   // Copy data into result
   
   //  MPI_Barrier(MPI_COMM_WORLD);
-  FieldPerp result(mesh);
+  Field3D result(mesh);
   result.allocate();
   
-  for(i = 0;i < Nx_local;i++) {
-    for(k= 0;k < Nz_local;k++) {
-      ind = gindices[(i+lxs)*nzt+k+lzs];
-      VecGetValues(xs, 1, &ind, &val );
-      result(i+mxstart,k+mzstart) = val;
+  for (k=0; k<Ny_local; k++) {
+    k2 = k + mystart;
+    for(i = 0;i < Nx_local;i++) {
+      i2 = i+mxstart;
+      for(j= 0;j < Nz_local;j++) {
+        ind = gindices[(k+lys)*nxzt + (i+lxs)*nzt+j+lzs];
+        VecGetValues(xs, 1, &ind, &val );
+        result(i2, k2, j+mzstart) = val;
+      }
     }
   }
   
@@ -400,52 +415,56 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   // Need to modify
   
   if(mesh->firstX()) {
-    i2 = mxstart;
-    if ( inner_boundary_flags & INVERT_AC_GRAD ) {
-      // Set THE VALUE guard cells specify gradient to set at inner boundary
-      // tval = df/dn = (v_ghost - v_in)/distance 
-      for (k = 0; k < Nz_local; k++) {
-	val = -x0(i2-1, k+mzstart)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
-        result(i2-1,k+mzstart) = val + result(i2,k+mzstart);
+    for (k=0; k<Ny_local; k++) {
+      k2 = k + mystart;
+
+      i2 = mxstart;
+      if ( inner_boundary_flags & INVERT_AC_GRAD ) {
+        // Set THE VALUE guard cells specify gradient to set at inner boundary
+        // tval = df/dn = (v_ghost - v_in)/distance 
+        for (j = 0; j < Nz_local; j++) {
+          val = -x0(i2-1, k2, j+mzstart)*sqrt(coords->g_11(i2, k2))*coords->dx(i2, k2); 
+          result(i2-1, k2, j+mzstart) = val + result(i2, k2, j+mzstart);
+        }
       }
-    }
-    else {      // Dirichlet boundary condition
-        // guard cells of x0 specify value to set at inner boundary
-	// tval = f = (v_ghost + v_in)/2.0
-      for (int k = 0; k < Nz_local; k++) {
-          result(i2-1,k+mzstart) = 2.*x0(i2-1, k+mzstart) - result(i2,k+mzstart); 
-        // this is the value to set at the inner boundary
+      else {      // Dirichlet boundary condition
+          // guard cells of x0 specify value to set at inner boundary
+          // tval = f = (v_ghost + v_in)/2.0
+        for (int j = 0; j < Nz_local; j++) {
+            result(i2-1, k2, j+mzstart) = 2.*x0(i2-1, k2, j+mzstart) - result(i2, k2, j+mzstart); 
+          // this is the value to set at the inner boundary
+        }
       }
+      output<<"Put results first "<<reason<<endl;
     }
-    output<<"Put results first "<<reason<<endl;
   }
 
   // Outer X boundary
   if (mesh->lastX()) {
-    i2 = mesh->xend;
-    if ( outer_boundary_flags & INVERT_AC_GRAD ) {
-      // Neumann boundary condition
-        // guard cells of x0 specify gradient to set at outer boundary
-	// tval = df/dn = (v_ghost - v_in)/distance 
-      for (k= 0; k < Nz_local; k++) {
-        val = x0(i2+1, k+mzstart)*sqrt(coords->g_11(i2, yindex))*coords->dx(i2, yindex); 
-        result(i2+1,k+mzstart) = val + result(i2,k+mzstart);
-        // this is the value to set the gradient to at the outer boundary
-        // output <<"Get F "<<i2+1<<","<<k<<":"<<k+mzstart<<","<<val<<":"<<result(i2,k+mzstart)<<endl;
-      }
-    }
-    else {
-      // Dirichlet boundary condition
-      // guard cells of x0 specify value to set at outer boundary
-      for (k=0; k< Nz_local; k++) {
-        result(i2+1,k+mzstart) = 2.*x0(i2+1, k+mzstart) - result(i2,k+mzstart); 
-          // this is the value to set at the outer boundary
-        // output <<"Get FD "<<i2+1<<","<<k<<":"<<k+mzstart<<","<<x0(i2+1, k+mzstart)<<":"<<result(i2,k+mzstart)<<endl;
-      }
+    for (k=0; k<Ny_local; k++) {
+      k2 = k + mystart;
 
+      i2 = mesh->xend;
+      if ( outer_boundary_flags & INVERT_AC_GRAD ) {
+        // Neumann boundary condition
+          // guard cells of x0 specify gradient to set at outer boundary
+          // tval = df/dn = (v_ghost - v_in)/distance 
+        for (j = 0; j < Nz_local; j++) {
+          val = x0(i2+1, k2, j+mzstart)*sqrt(coords->g_11(i2, k2))*coords->dx(i2, k2); 
+          result(i2+1, k2, j+mzstart) = val + result(i2, k2, j+mzstart);
+          // this is the value to set the gradient to at the outer boundary
+        }
+      }
+      else {
+        // Dirichlet boundary condition
+        // guard cells of x0 specify value to set at outer boundary
+        for (j = 0; j < Nz_local; j++) {
+          result(i2+1, k2, j+mzstart) = 2.*x0(i2+1, k2, j+mzstart) - result(i2, k2, j+mzstart); 
+          // this is the value to set at the outer boundary
+        }
+      }
     }
   }
-  result.setIndex(yindex);
   // MPI_Barrier(MPI_COMM_WORLD);
 
   MatDestroy( &MatA );
