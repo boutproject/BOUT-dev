@@ -897,7 +897,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   TRACE("NcFormat::setAttribute(string)");
 
   NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
+  if (var == nullptr || !var->is_valid()) {
     throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
   }
 
@@ -924,7 +924,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   TRACE("NcFormat::setAttribute(int)");
 
   NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
+  if (var == nullptr || !var->is_valid()) {
     throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
   }
   
@@ -950,30 +950,7 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
   TRACE("NcFormat::getStringAttribute(string)");
 
   NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
-
-  NcAtt* varAtt;
-  if (!(varAtt = var->get_att(attrname.c_str())))
-    return false;
-
-  text = varAtt->values()->as_string(0);
-
-  return true;
-}
-
-bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
-  TRACE("NcFormat::getIntAttribute(string)");
-
-  NcVar* var;
-  if (!(var = dataFile->get_var(varname.c_str()))) {
+  if (var == nullptr || !var->is_valid()) {
     throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
   }
 
@@ -984,7 +961,31 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
 #endif
 
   NcAtt* varAtt = var->get_att(attrname.c_str());
-  if (!varAtt->is_valid())
+  if (varAtt == nullptr || !var->is_valid()) {
+    return false;
+  }
+
+  text = varAtt->values()->as_string(0);
+
+  return true;
+}
+
+bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
+  TRACE("NcFormat::getIntAttribute(string)");
+
+  NcVar* var = dataFile->get_var(varname.c_str());
+  if (var == nullptr || !var->is_valid()) {
+    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+  }
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcAtt* varAtt = var->get_att(attrname.c_str());
+  if (varAtt == nullptr || !varAtt->is_valid())
     return false;
 
   value = varAtt->values()->as_int(0);
