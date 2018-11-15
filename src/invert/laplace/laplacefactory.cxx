@@ -16,6 +16,7 @@
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
 #include "impls/petscamg/petscamg.hxx"
+#include "impls/petsc3damg/petsc3damg.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
@@ -28,6 +29,7 @@
 #define LAPLACE_MULTIGRID "multigrid"
 #define LAPLACE_NAULIN "naulin"
 #define LAPLACE_PETSCAMG "petscamg"
+#define LAPLACE_PETSC3DAMG "petsc3damg"
 
 LaplaceFactory *LaplaceFactory::instance = nullptr;
 
@@ -70,6 +72,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
       return new LaplaceNaulin(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
+    }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {
+      return new LaplacePetsc3DAmg(options);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -96,6 +100,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     return new LaplaceNaulin(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
+  }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {
+      return new LaplacePetsc3DAmg(options);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }
