@@ -113,8 +113,17 @@ void OptionINI::read(Options *options, const string &filename) {
         string key, value;
         // Get a key = value pair
         parse(buffer, key, value);
-        // Add this to the current section
-        section->set(key, value, filename);
+	// check for some special entries from the root section
+	if (section == options &&
+	    (key == "datadir" ||
+	     key == "optionfile" ||
+	     key == "settingsfile" )
+	    ) {
+	  // skip these entries
+	} else {
+	  // Add this to the current section
+	  section->set(key, value, filename);
+	}
       } // section test
     } // buffer.empty
   } while(!fin.eof());
