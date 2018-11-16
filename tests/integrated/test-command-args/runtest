@@ -90,6 +90,21 @@ if ! ./command-args -d test 2> stderr.log ; then
     exit 1
 fi
 
+echo
+echo "=========== Running with -d arg -f BOUT.settings in test2 directory =============="
+cp -r test test2
+
+if ! ./command-args -d test2 -f BOUT.settings -o testsettings > stdout.log 2> stderr.log ; then
+    cat stderr.log
+    echo "FAIL: Run fails with '-d test' command-line arg"
+    exit 1
+fi
+
+if ! [ "$(grep datadir test2/testsettings )" == "datadir = test2" ] ; then
+    echo "FAIL: datadir from command line clobbered by BOUT.settings"
+    exit 1
+fi
+
 echo "=> All passed"
 
 exit 0
