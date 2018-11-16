@@ -31,6 +31,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
+  OPTION(options, allow_geometry_without_recalculate_staggered, false);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -342,7 +343,7 @@ void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
         // location does not exist in coords_map, so create new entry
         coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this)));
       } else if (replace_coords) {
-        // location does already exists in coords_map, so reset it
+        // location does already exist in coords_map, so reset it
         coords_map.at(location).reset(new Coordinates(this));
       }
     } else {
@@ -352,8 +353,17 @@ void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
         // location does not exist in coords_map, so create new entry
         coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
       } else if (replace_coords) {
-        // location does already exists in coords_map, so reset it
-        coords_map.at(location).reset(new Coordinates(this, location, getCoordinates(CELL_CENTRE)));
+        // location does already exist in coords_map, so reset it
+
+        // first erase the existing entry to avoid throwing an exception from
+        // Coordinates::geometry().
+        // The check that would throw the exception is not needed because
+        // replacement of the Coordinates object has been explicitly requested.
+        coords_map.erase(location);
+        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
+      } else {
+        throw BoutException("Coordinates at %s already added to Mesh",
+            CELL_LOC_STRING(location).c_str());
       }
     }
   }

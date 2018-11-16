@@ -842,23 +842,6 @@ int BoutMesh::load() {
   // Create CELL_CENTRE Coordinates object
   addCoordinates(CELL_CENTRE);
 
-  if (StaggerGrids) {
-    // Add Coordinates objects at staggered locations, if there are enough grid
-    // points.
-    // This is a temporary workaround. In v4.3 we will users to call
-    // REQUEST_LOCATION(location) for each location that is needed and remove
-    // this so that we don't waste memory on unneeded Coordinates.
-    if (LocalNx >= 4) {
-      addCoordinates(CELL_XLOW);
-    }
-    if (LocalNy >= 4) {
-      addCoordinates(CELL_YLOW);
-    }
-    // Can always add ZLOW Coordinates, since z-interpolation on Field2D is a
-    // null operation
-    addCoordinates(CELL_ZLOW);
-  }
-
   output_info.write("\tdone\n");
 
   return 0;

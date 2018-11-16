@@ -455,6 +455,19 @@ class Mesh {
   /// already exists, otherwise add a new one
   void addCoordinates(const CELL_LOC location, bool replace_coords = false);
 
+  /// Check if Coordinates object at location has been added
+  bool hasCoordinates(const CELL_LOC location) {
+    return coords_map.count(location);
+  }
+
+  /// Count how many Coordinates objects have been added
+  int countCoordinates() {
+    return coords_map.size();
+  }
+
+  /// switch to pass to Coordinates objects
+  bool allow_geometry_without_recalculate_staggered;
+
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 

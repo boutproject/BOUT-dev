@@ -26,7 +26,9 @@ Coordinates::Coordinates(Mesh *mesh)
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE),
+      allow_geometry_without_recalculate_staggered(
+          mesh->allow_geometry_without_recalculate_staggered) {
 
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
@@ -151,7 +153,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometryNoRecalculate()) {
+  if (geometry()) {
     throw BoutException("Differential geometry failed\n");
   }
 
@@ -269,7 +271,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometryNoRecalculate()) {
+  if (geometry()) {
     throw BoutException("Differential geometry failed\n");
   }
 
@@ -304,7 +306,7 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(J, "J", false);
 }
 
-int Coordinates::geometryNoRecalculate() {
+int Coordinates::geometry() {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -466,39 +468,36 @@ int Coordinates::geometryNoRecalculate() {
     d1_dy = -d2y / (dy * dy);
   }
 
-  return 0;
-}
-
-int Coordinates::geometry() {
-
-  geometryNoRecalculate();
-
-  if (location != CELL_CENTRE) {
-    throw BoutException("geometry() called from a location other than "
-      "CELL_CENTRE. This is an error as the other Coordinates are calculated "
-      "from the CELL_CENTRE version, so the changes you have made to this "
-      "object would be overwritten.");
-  }
-  // Coordinates objects at staggered location were calculated from
-  // CELL_CENTRE ones. geometry() has been called on the CELL_CENTRE
-  // Coordinates, so they must have changed; we need to re-calculate the
-  // staggered location Coordinates objects.
-
-  if (localmesh->StaggerGrids) {
-    // Replace Coordinates objects at staggered locations, if there are
-    // enough grid points.
-    // This is a temporary workaround. In v4.3 we will users to call
-    // REQUEST_LOCATION(location) for each location that is needed and change
-    // this so that we don't waste memory on unneeded Coordinates.
-    if (localmesh->LocalNx >= 4) {
-      localmesh->addCoordinates(CELL_XLOW, true);
+  if (!allow_geometry_without_recalculate_staggered) {
+    // Only CELL_CENTRE Coordinates should ever be changed (and therefore need
+    // geometry() calling). If CELL_CENTRE Coordinates are changed they should
+    // be changed before other Coordinates are added to localmesh->coords_map,
+    // since Coordinates at other locations are calculated from the CELL_CENTRE
+    // ones. The allow_geometry_without_recalculate_staggered option overrides
+    // this check, in case for some reason the user does need to call
+    // geometry() in other situations.
+    if ( (localmesh->hasCoordinates(location))                                            // this location already added
+         && !(localmesh->countCoordinates()==1 && localmesh->hasCoordinates(CELL_CENTRE)) // OK to be added already only if CELL_CENTRE and no other locations added
+       ) {
+      if (location == CELL_CENTRE) {
+        throw BoutException("Coordinates::geometry() called at CELL_CENTRE, but "
+          "other locations have already been added to the Mesh. These would "
+          "need recalculating. If possible, call Mesh::addCoordinates() after "
+          "this call to geometry(). To recalculate the other Coordinates objects "
+          "from the CELL_CENTRE Coordinates, pass true for the "
+          "recalculate_staggered argument, e.g.  coords->geometry(true). If you "
+          "need to recalculate multiple Coordinates objects explicitly, set "
+          "mesh:allow_geometry_without_recalculate_staggered=true in the input "
+          "file to disable this check.");
+      } else {
+        throw BoutException("Coordinates::geometry() called at location %s, but "
+          "this location has already been initialized and added to the Mesh. "
+          "If you need to recalculate multiple Coordinates objects explicitly, "
+          "set mesh:allow_geometry_without_recalculate_staggered=true in the "
+          "input file to disable this check.", CELL_LOC_STRING(location).c_str());
+      }
     }
-    if (localmesh->LocalNy >= 4) {
-      localmesh->addCoordinates(CELL_YLOW, true);
-    }
-    // Can always add ZLOW Coordinates, since z-interpolation on Field2D is a
-    // null operation
-    localmesh->addCoordinates(CELL_ZLOW, true);
+
   }
 
   return 0;

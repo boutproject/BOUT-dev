@@ -143,12 +143,10 @@ public:
   const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
 private:
-  // temporary work-around method to allow 'geometry' to be called without
-  // trying to re-calculate the non-CELL_CENTRE fields
-  int geometryNoRecalculate();
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
+  bool allow_geometry_without_recalculate_staggered;
 };
 
 /*
