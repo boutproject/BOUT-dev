@@ -244,6 +244,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   Field3D result(mesh);
   result.allocate();
+  result.setLocation(rhs.getLocation());
 
   ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {

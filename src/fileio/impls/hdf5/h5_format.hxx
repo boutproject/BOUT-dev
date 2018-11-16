@@ -118,8 +118,11 @@ class H5Format : public DataFormat {
                     const std::string &text) override;
   void setAttribute(const std::string &varname, const std::string &attrname,
                     int value) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    BoutReal value) override;
   bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) override;
   bool getAttribute(const std::string &varname, const std::string &attrname, int &value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) override;
 
  private:
 
@@ -149,8 +152,11 @@ class H5Format : public DataFormat {
                     const std::string &text);
   void setAttribute(const hid_t &dataSet, const std::string &attrname,
                     int value);
+  void setAttribute(const hid_t &dataSet, const std::string &attrname,
+                    BoutReal value);
   bool getAttribute(const hid_t &dataSet, const std::string &attrname, std::string &text);
   bool getAttribute(const hid_t &dataSet, const std::string &attrname, int &value);
+  bool getAttribute(const hid_t &dataSet, const std::string &attrname, BoutReal &value);
 };
 
 #endif // __H5FORMAT_H__

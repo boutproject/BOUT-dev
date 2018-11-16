@@ -123,8 +123,11 @@ class Ncxx4 : public DataFormat {
                     const std::string &text) override;
   void setAttribute(const std::string &varname, const std::string &attrname,
                     int value) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    BoutReal value) override;
   bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) override;
   bool getAttribute(const std::string &varname, const std::string &attrname, int &value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) override;
 
 private:
 

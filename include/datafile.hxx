@@ -75,6 +75,7 @@ class Datafile {
 
   void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
   void setAttribute(const std::string &varname, const std::string &attrname, int value);
+  void setAttribute(const std::string &varname, const std::string &attrname, BoutReal value);
 
  private:
   bool parallel; // Use parallel formats?

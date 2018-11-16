@@ -899,11 +899,6 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
                             const std::string &text) {
   TRACE("NcFormat::setAttribute(string)");
 
-  NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
 #else
@@ -918,19 +913,25 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
     }
   }
   // else: attribute does not exist, so just write it
-  
-  var->add_att(attrname.c_str(), text.c_str());
+
+  if (varname == "" ) {
+    // file attribute
+    dataFile->add_att(attrname.c_str(), text.c_str());
+  } else {
+    // variable attribute
+    NcVar* var = dataFile->get_var(varname.c_str());
+    if (!var->is_valid()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var->add_att(attrname.c_str(), text.c_str());
+  }
 }
 
 void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
                             int value) {
   TRACE("NcFormat::setAttribute(int)");
 
-  NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-  
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
 #else
@@ -946,16 +947,55 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   }
   // else: attribute does not exist, so just write it
 
-  var->add_att(attrname.c_str(), value);
+  if (varname == "") {
+    // attribute of file
+    dataFile->add_att(attrname.c_str(), value);
+  } else {
+    // attribute of variable
+    NcVar* var = dataFile->get_var(varname.c_str());
+    if (!var->is_valid()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var->add_att(attrname.c_str(), value);
+  }
+}
+
+void NcFormat::setAttribute(const std::string &varname, const std::string &attrname,
+                            BoutReal value) {
+  TRACE("NcFormat::setAttribute(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  int existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (value != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+          attrname.c_str(), varname.c_str(), value, existing_att);
+    }
+  }
+  // else: attribute does not exist, so just write it
+
+  if (varname == "") {
+    // attribute of file
+    dataFile->add_att(attrname.c_str(), value);
+  } else {
+    // attribute of variable
+    NcVar* var = dataFile->get_var(varname.c_str());
+    if (!var->is_valid()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var->add_att(attrname.c_str(), value);
+  }
 }
 
 bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
-  TRACE("NcFormat::getStringAttribute(string)");
-
-  NcVar* var = dataFile->get_var(varname.c_str());
-  if (!var->is_valid()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  TRACE("NcFormat::getAttribute(string)");
 
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
@@ -963,22 +1003,35 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
   NcError err(NcError::silent_nonfatal);
 #endif
 
-  NcAtt* varAtt;
-  if (!(varAtt = var->get_att(attrname.c_str())))
-    return false;
+  if (varname == "") {
+    // attribute of file
+    NcAtt* fileAtt;
+    if (!(fileAtt = dataFile->get_att(attrname.c_str()))) {
+      return false;
+    }
 
-  text = varAtt->values()->as_string(0);
+    text = fileAtt->values()->as_string(0);
 
-  return true;
+    return true;
+  } else {
+    NcVar* var = dataFile->get_var(varname.c_str());
+    if (!var->is_valid()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    NcAtt* varAtt;
+    if (!(varAtt = var->get_att(attrname.c_str()))) {
+      return false;
+    }
+
+    text = varAtt->values()->as_string(0);
+
+    return true;
+  }
 }
 
 bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
-  TRACE("NcFormat::getIntAttribute(string)");
-
-  NcVar* var;
-  if (!(var = dataFile->get_var(varname.c_str()))) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  TRACE("NcFormat::getAttribute(int)");
 
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
@@ -986,13 +1039,67 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
   NcError err(NcError::silent_nonfatal);
 #endif
 
-  NcAtt* varAtt = var->get_att(attrname.c_str());
-  if (!varAtt->is_valid())
-    return false;
+  if (varname == "") {
+    // attribute of file
+    NcAtt* fileAtt;
+    if (!(fileAtt = dataFile->get_att(attrname.c_str()))) {
+      return false;
+    }
 
-  value = varAtt->values()->as_int(0);
+    value = fileAtt->values()->as_int(0);
 
-  return true;
+    return true;
+  } else {
+    // attribute of variable
+    NcVar* var;
+    if (!(var = dataFile->get_var(varname.c_str()))) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    NcAtt* varAtt;
+    if (!(varAtt = var->get_att(attrname.c_str())))
+      return false;
+
+    value = varAtt->values()->as_int(0);
+
+    return true;
+  }
+}
+
+bool NcFormat::getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) {
+  TRACE("NcFormat::getAttribute(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  if (varname == "") {
+    // attribute of file
+    NcAtt* fileAtt;
+    if (!(fileAtt = dataFile->get_att(attrname.c_str()))) {
+      return false;
+    }
+
+    value = fileAtt->values()->as_double(0);
+
+    return true;
+  } else {
+    // attribute of variable
+    NcVar* var;
+    if (!(var = dataFile->get_var(varname.c_str()))) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    NcAtt* varAtt;
+    if (!(varAtt = var->get_att(attrname.c_str())))
+      return false;
+
+    value = varAtt->values()->as_double(0);
+
+    return true;
+  }
 }
 
 

@@ -41,6 +41,7 @@
 #include <string>
 #include <list>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
 
 /// Helper class for 2D arrays
@@ -341,6 +342,11 @@ const std::string toString(const T& val) {
   ss << val;
   return ss.str();
 }
+
+/// Convert a time stamp to a string
+/// This uses std::localtime and std::put_time
+template <>
+const std::string toString<>(const time_t& time);
 
 /*!
  * Convert a string to lower case

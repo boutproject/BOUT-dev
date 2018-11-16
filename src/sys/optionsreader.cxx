@@ -57,7 +57,7 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   bout_vsnprintf(filename,buf_len, file);
   
-  output_info << "Writing options to file " << filename << "\n";
+  output_info << _("Writing options to file ") << filename << "\n";
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
@@ -124,7 +124,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
     } else {
       size_t endpos = buffer.find_last_of('=');
 
-      if(startpos != endpos) throw BoutException("\tMultiple '=' in command-line argument '%s'\n", buffer.c_str());
+      if(startpos != endpos) throw BoutException(_("\tMultiple '=' in command-line argument '%s'\n"), buffer.c_str());
 
       std::string key = trim(buffer.substr(0, startpos));
       std::string value = trim(buffer.substr(startpos+1));
@@ -137,9 +137,9 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 	options = options->getSection(section);
       }
       
-      if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value in command line '%s'\n", buffer.c_str());
+      if(key.empty() || value.empty()) throw BoutException(_("\tEmpty key or value in command line '%s'\n"), buffer.c_str());
 
-      options->set(key, value, "Command line");
+      options->set(key, value, _("Command line"));
     }
   }
 }
