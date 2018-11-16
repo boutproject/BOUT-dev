@@ -193,6 +193,9 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
   bool color_output = false; // Will be set true if -c is in the options
+  char ** argvcleaned = (char**) malloc(sizeof(char *)*(argc+1));
+  int icleaned=0;
+  argvcleaned[icleaned]=argv[0];
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -243,8 +246,18 @@ int BoutInitialise(int &argc, char **&argv) {
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       color_output = true;
+    } else {
+      output.write("Adding %s to list\n",argv[i]);
+      argvcleaned[++icleaned] = argv[i];
     }
   }
+  output.write("cleaned\n");
+  fprintf(stderr,"cleaning!\n");
+  argvcleaned[++icleaned] = nullptr;
+  char ** argvorg = argv;
+  int argcorg = argc;
+  argv=argvcleaned;
+  argc=icleaned;
   
   if (std::string(set_file) == std::string(opt_file)){
     throw BoutException(_("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n"));
@@ -412,8 +425,8 @@ int BoutInitialise(int &argc, char **&argv) {
   
   // Print command line options
   output_info.write(_("\tCommand line options for this run : "));
-  for (int i=0; i<argc; i++) {
-    output_info.write("%s ", argv[i]);
+  for (int i=0; i<argcorg; i++) {
+    output_info.write("%s ", argvorg[i]);
   }
   output_info.write("\n");
 
