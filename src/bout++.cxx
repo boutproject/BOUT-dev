@@ -193,6 +193,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
   bool color_output = false; // Will be set true if -c is in the options
+  // Remove arguments that are used here
   char ** argvcleaned = (char**) malloc(sizeof(char *)*(argc+1));
   int icleaned=0;
   argvcleaned[icleaned]=argv[0];
@@ -247,13 +248,13 @@ int BoutInitialise(int &argc, char **&argv) {
       // in case -c is set multiple times
       color_output = true;
     } else {
-      output.write("Adding %s to list\n",argv[i]);
       argvcleaned[++icleaned] = argv[i];
     }
   }
-  output.write("cleaned\n");
-  fprintf(stderr,"cleaning!\n");
+  // terminate with nullptr for openmpi
   argvcleaned[++icleaned] = nullptr;
+  // replace the commandline arguments with version where the used
+  // arguments are removed. Retain the original.
   char ** argvorg = argv;
   int argcorg = argc;
   argv=argvcleaned;
