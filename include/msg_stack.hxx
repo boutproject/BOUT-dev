@@ -201,6 +201,6 @@ private:
  *
  * } // Scope ends, message popped
  */
-#define AUTO_TRACE()("%s", __thefunc__)
+#define AUTO_TRACE() TRACE("%s", __thefunc__)
 
 #endif // __MSG_STACK_H__
