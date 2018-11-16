@@ -36,12 +36,16 @@
 /// a collection of arbitrary types. This is useful for passing
 /// template packs (typename...) around whilst being able to
 /// distinguish between different template packs.
-template <typename... Ts> struct Set {};
+template <typename... Ts>
+struct Set {};
 
 /// Here we provide a container type that can be used to pass around
 /// a type without needing to create instances of the specific type
 /// (instead we create instances of the container type).
-template <typename T> struct TypeContainer{ using type = T; };
+template <typename T>
+struct TypeContainer {
+  using type = T;
+};
 
 /// Define a struct (functor) that we use to build up the final
 /// collection of template values. Each time we create one of these
@@ -50,7 +54,8 @@ template <typename T> struct TypeContainer{ using type = T; };
 /// for whatever the storedFunc is at that point -- once we have built a
 /// complete templatePack we don't need to specify any of these template
 /// parameters as they can be deduced/inferred.
-template <typename currentFunction, typename currentType> struct DeferredFunction {
+template <typename currentFunction, typename currentType>
+struct DeferredFunction {
   // Just store the actual function we wish to apply
   DeferredFunction(currentFunction f) : storedFunc(f){};
 
@@ -59,7 +64,8 @@ template <typename currentFunction, typename currentType> struct DeferredFunctio
 
   // Make the struct a functor by defining operator() we use
   // type inference to populate the templatePack/args
-  template <typename... templatePack> void operator()(templatePack... args) {
+  template <typename... templatePack>
+  void operator()(templatePack... args) {
     storedFunc(currentType{}, args...);
   }
 };
@@ -170,8 +176,10 @@ void processSet(theFunction func, Set<firstItem, otherItems...>, otherSets... ot
 ///
 /// Note we wrap this in a struct such that by declaring a global variable of this
 /// type we trigger the creation of the combinations.
-template <typename FirstSet, typename... otherSets> struct produceCombinations {
-  template <typename theFunction> produceCombinations(theFunction func) {
+template <typename FirstSet, typename... otherSets>
+struct produceCombinations {
+  template <typename theFunction>
+  produceCombinations(theFunction func) {
     processSet(func, FirstSet{}, otherSets{}...);
   };
 };

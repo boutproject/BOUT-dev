@@ -30,7 +30,7 @@
  *******************************************************************************/
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
-void Mesh::derivs_init(Options *options) {
+void Mesh::derivs_init(Options* options) {
   TRACE("Initialising derivatives");
   // For each direction need to set what the default method is for each type
   // of derivative.
@@ -40,12 +40,14 @@ void Mesh::derivs_init(Options *options) {
   options->getSection("ddz")->get("fft_filter", fft_derivs_filter, 0.0);
 }
 
-STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
+STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
+                         const CELL_LOC allowedStaggerLoc) const {
   TRACE("Mesh::getStagger -- three arguments");
-  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
-          (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
+  ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc)
+          || (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
-  if ( (!StaggerGrids) || outloc == inloc) return STAGGER::None;
+  if ((!StaggerGrids) || outloc == inloc)
+    return STAGGER::None;
   if (outloc == allowedStaggerLoc) {
     return STAGGER::C2L;
   } else {
@@ -54,15 +56,14 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc, const CELL
 }
 
 #if CHECK > 0
-STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
+STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc,
+                         const CELL_LOC allowedStaggerLoc) const {
 #else
 STAGGER Mesh::getStagger(const CELL_LOC vloc, const CELL_LOC UNUSED(inloc),
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
 #endif
-  TRACE("Mesh::getStagger -- four arguments");  
-  ASSERT1(vloc == inloc ||
-	  (vloc == CELL_CENTRE && inloc == allowedStaggerLoc) ||
-	  (vloc == allowedStaggerLoc && inloc == CELL_CENTRE)	  
-	  );
+  TRACE("Mesh::getStagger -- four arguments");
+  ASSERT1(vloc == inloc || (vloc == CELL_CENTRE && inloc == allowedStaggerLoc)
+          || (vloc == allowedStaggerLoc && inloc == CELL_CENTRE));
   return getStagger(vloc, outloc, allowedStaggerLoc);
 }

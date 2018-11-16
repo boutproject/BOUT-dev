@@ -55,14 +55,14 @@ struct metaData {
   // metaData struct to be non-trivially destrucible which
   // can prevent using temporary instances of this. Instead
   // we'll use char* for now.
-  //const std::string key; 
+  // const std::string key;
   const char* key;
   const int nGuards;
   const DERIV derivType; // Can be used to identify the type of the derivative
 };
 
 /// Provide an easy way to report a Region's statistics
-inline std::ostream &operator<<(std::ostream &out, const metaData &meta) {
+inline std::ostream& operator<<(std::ostream& out, const metaData& meta) {
   out << "key : " << meta.key;
   out << ", ";
   out << "nGuards : " << meta.nGuards;
@@ -77,14 +77,14 @@ inline std::ostream &operator<<(std::ostream &out, const metaData &meta) {
 /// to avoid needing different classes to represent the different operations
 /// The use of a functor here makes it possible to wrap up metaData into the
 /// type as well.
-template <typename FF> class DerivativeType {
+template <typename FF>
+class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, REGION region) const {
-    TRACE("%s",__thefunc__);
-    ASSERT2(meta.derivType == DERIV::Standard ||
-            meta.derivType == DERIV::StandardSecond ||
-            meta.derivType == DERIV::StandardFourth)
+  void standard(const T& var, T& result, REGION region) const {
+    TRACE("%s", __thefunc__);
+    ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
+            || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
 
     BOUT_FOR(i, var.getRegion(region)) {
@@ -94,68 +94,73 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &vel, const T &var, T &result, REGION region) const {
-    TRACE("%s",__thefunc__);
+  void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
+    TRACE("%s", __thefunc__);
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
 
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
       BOUT_FOR(i, var.getRegion(region)) {
-	result[i] = apply(populateStencil<direction, stagger, nGuards>(vel, i),
-			  populateStencil<direction, STAGGER::None, nGuards>(var, i));
+        result[i] = apply(populateStencil<direction, stagger, nGuards>(vel, i),
+                          populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }
     } else {
       BOUT_FOR(i, var.getRegion(region)) {
-	result[i] = apply(vel[i], populateStencil<direction, STAGGER::None, nGuards>(var, i));
+        result[i] =
+            apply(vel[i], populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }
     }
     return;
   }
 
-  BoutReal apply(const stencil &f) const { return func(f); }
-  BoutReal apply(BoutReal v, const stencil &f) const { return func(v, f); }
-  BoutReal apply(const stencil &v, const stencil &f) const { return func(v, f); }
+  BoutReal apply(const stencil& f) const { return func(f); }
+  BoutReal apply(BoutReal v, const stencil& f) const { return func(v, f); }
+  BoutReal apply(const stencil& v, const stencil& f) const { return func(v, f); }
 
   const FF func{};
   const metaData meta = func.meta;
 };
 
-#define DEFINE_STANDARD_DERIV(name, key, nGuards, type)			\
-  struct name {								\
-    BoutReal operator()(const stencil &f) const;			\
-    const metaData meta = {key, nGuards, type};				\
-    BoutReal operator()(BoutReal UNUSED(vc),\
-			const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const stencil &UNUSED(v),\
-			const stencil &UNUSED(f)) const {return BoutNaN;}; \
-  };									\
-  BoutReal name::operator()(const stencil &f) const
+#define DEFINE_STANDARD_DERIV(name, key, nGuards, type)                             \
+  struct name {                                                                     \
+    BoutReal operator()(const stencil& f) const;                                    \
+    const metaData meta = {key, nGuards, type};                                     \
+    BoutReal operator()(BoutReal UNUSED(vc), const stencil& UNUSED(f)) const {      \
+      return BoutNaN;                                                               \
+    };                                                                              \
+    BoutReal operator()(const stencil& UNUSED(v), const stencil& UNUSED(f)) const { \
+      return BoutNaN;                                                               \
+    };                                                                              \
+  };                                                                                \
+  BoutReal name::operator()(const stencil& f) const
 
-#define DEFINE_UPWIND_DERIV(name, key, nGuards, type)			\
-  struct name {								\
-    BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(BoutReal vc, const stencil &f) const;	\
-    BoutReal operator()(const stencil &UNUSED(v),\
-			const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    const metaData meta = {key, nGuards, type};				\
-  };									\
-  BoutReal name::operator()(BoutReal vc, const stencil &f) const
+#define DEFINE_UPWIND_DERIV(name, key, nGuards, type)                               \
+  struct name {                                                                     \
+    BoutReal operator()(const stencil& UNUSED(f)) const { return BoutNaN; };        \
+    BoutReal operator()(BoutReal vc, const stencil& f) const;                       \
+    BoutReal operator()(const stencil& UNUSED(v), const stencil& UNUSED(f)) const { \
+      return BoutNaN;                                                               \
+    };                                                                              \
+    const metaData meta = {key, nGuards, type};                                     \
+  };                                                                                \
+  BoutReal name::operator()(BoutReal vc, const stencil& f) const
 
-#define DEFINE_FLUX_DERIV(name, key, nGuards, type)			\
-  struct name {								\
-    BoutReal operator()(const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(BoutReal UNUSED(vc),\
-			const stencil &UNUSED(f)) const {return BoutNaN;}; \
-    BoutReal operator()(const stencil &v, const stencil &f) const;	\
-    const metaData meta = {key, nGuards, type};				\
-  };									\
-  BoutReal name::operator()(const stencil &v, const stencil &f) const
+#define DEFINE_FLUX_DERIV(name, key, nGuards, type)                            \
+  struct name {                                                                \
+    BoutReal operator()(const stencil& UNUSED(f)) const { return BoutNaN; };   \
+    BoutReal operator()(BoutReal UNUSED(vc), const stencil& UNUSED(f)) const { \
+      return BoutNaN;                                                          \
+    };                                                                         \
+    BoutReal operator()(const stencil& v, const stencil& f) const;             \
+    const metaData meta = {key, nGuards, type};                                \
+  };                                                                           \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
 
-#define DEFINE_STANDARD_DERIV_STAGGERED(name, key, nGuards, type)                        \
+#define DEFINE_STANDARD_DERIV_STAGGERED(name, key, nGuards, type) \
   DEFINE_STANDARD_DERIV(name, key, nGuards, type)
-#define DEFINE_UPWIND_DERIV_STAGGERED(name, key, nGuards, type)                          \
+#define DEFINE_UPWIND_DERIV_STAGGERED(name, key, nGuards, type) \
   DEFINE_FLUX_DERIV(name, key, nGuards, type)
-#define DEFINE_FLUX_DERIV_STAGGERED(name, key, nGuards, type)                            \
+#define DEFINE_FLUX_DERIV_STAGGERED(name, key, nGuards, type) \
   DEFINE_FLUX_DERIV(name, key, nGuards, type)
 
 ////////////////////// FIRST DERIVATIVES /////////////////////
@@ -260,8 +265,8 @@ DEFINE_UPWIND_DERIV(VDDX_U2, "U2", 2, DERIV::Upwind) { // No vec
                    : vc * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c);
   // Alternative form would but may involve more operations
   const auto vSplit = vUpDown(vc);
-  return (std::get<0>(vSplit) * (1.5 * f.c - 2.0 * f.m + 0.5 * f.mm) +
-          std::get<1>(vSplit) * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c));
+  return (std::get<0>(vSplit) * (1.5 * f.c - 2.0 * f.m + 0.5 * f.mm)
+          + std::get<1>(vSplit) * (-0.5 * f.pp + 2.0 * f.p - 1.5 * f.c));
 }
 
 /// upwind, 3rd order
@@ -271,9 +276,9 @@ DEFINE_UPWIND_DERIV(VDDX_U3, "U3", 2, DERIV::Upwind) { // No vec
                    : vc * (-4. * f.m + 12. * f.p - 2. * f.pp - 6. * f.c) / 12.;
   // Alternative form would but may involve more operations
   const auto vSplit = vUpDown(vc);
-  return (std::get<0>(vSplit) * (4. * f.p - 12. * f.m + 2. * f.mm + 6. * f.c) +
-          std::get<1>(vSplit) * (-4. * f.m + 12. * f.p - 2. * f.pp - 6. * f.c)) /
-         12.;
+  return (std::get<0>(vSplit) * (4. * f.p - 12. * f.m + 2. * f.mm + 6. * f.c)
+          + std::get<1>(vSplit) * (-4. * f.m + 12. * f.p - 2. * f.pp - 6. * f.c))
+         / 12.;
 }
 
 /// 3rd-order WENO scheme
@@ -284,16 +289,16 @@ DEFINE_UPWIND_DERIV(VDDX_WENO3, "W3", 2, DERIV::Upwind) { // No vec
   if (vc > 0.0) {
     // Left-biased stencil
 
-    r = (WENO_SMALL + SQ(f.c - 2.0 * f.m + f.mm)) /
-        (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
+    r = (WENO_SMALL + SQ(f.c - 2.0 * f.m + f.mm))
+        / (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
 
     deriv = (-f.mm + 3. * f.m - 3. * f.c + f.p);
 
   } else {
     // Right-biased
 
-    r = (WENO_SMALL + SQ(f.pp - 2.0 * f.p + f.c)) /
-        (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
+    r = (WENO_SMALL + SQ(f.pp - 2.0 * f.p + f.c))
+        / (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
 
     deriv = (-f.m + 3. * f.c - 3. * f.p + f.pp);
   }
@@ -337,7 +342,7 @@ DEFINE_STANDARD_DERIV(DDX_CWENO3, "W3", 2, DERIV::Standard) {
   sm.pp = ma - f.pp;
 
   const VDDX_WENO3 upwindOp{};
-  return upwindOp(0.5, sp) + upwindOp(-0.5, sm); 
+  return upwindOp(0.5, sp) + upwindOp(-0.5, sm);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -450,8 +455,8 @@ DEFINE_UPWIND_DERIV_STAGGERED(VDDX_C2_stag, "C2", 1, DERIV::Upwind) {
 DEFINE_UPWIND_DERIV_STAGGERED(VDDX_C4_stag, "C4", 2, DERIV::Upwind) {
   // Result is needed at location of f: interpolate v to f's location and take an
   // unstaggered derivative of f
-  return (9. * (v.m + v.p) - v.mm - v.pp) / 16. * (8. * f.p - 8. * f.m + f.mm - f.pp) /
-         12.;
+  return (9. * (v.m + v.p) - v.mm - v.pp) / 16. * (8. * f.p - 8. * f.m + f.mm - f.pp)
+         / 12.;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -473,7 +478,8 @@ DEFINE_FLUX_DERIV_STAGGERED(FDDX_U1_stag, "U1", 1, DERIV::Flux) {
 /////////////////////////////////////////////////////////////////////////////////
 
 struct registerMethod {
-  template <typename Direction, typename Stagger, typename FieldTypeContainer, typename Method>
+  template <typename Direction, typename Stagger, typename FieldTypeContainer,
+            typename Method>
   void operator()(Direction, Stagger, FieldTypeContainer, Method) {
     TRACE("%s", __thefunc__);
     using namespace std::placeholders;
@@ -488,50 +494,56 @@ struct registerMethod {
     // support for these versions the branching in the case statement below can be
     // removed and we can use nGuard directly in the template statement.
     const int nGuards = Method{}.meta.nGuards;
-    
+
     auto& derivativeRegister = DerivativeStore<FieldType>::getInstance();
 
     switch (Method{}.meta.derivType) {
     case (DERIV::Standard):
     case (DERIV::StandardSecond):
     case (DERIV::StandardFourth): {
-      if(nGuards == 1) {
-	const auto theFunc = std::bind(
-				       // Method to store in function
-				       &Method::template standard<Direction::value, Stagger::value, 1, FieldType>,
-				       // Arguments -- first is hidden this of type-bound, others are placeholders
-				       // for input field, output field, region
-				       Method{}, _1, _2, _3);
-	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);	
+      if (nGuards == 1) {
+        const auto theFunc = std::bind(
+            // Method to store in function
+            &Method::template standard<Direction::value, Stagger::value, 1, FieldType>,
+            // Arguments -- first is hidden this of type-bound, others are placeholders
+            // for input field, output field, region
+            Method{}, _1, _2, _3);
+        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
+            theFunc);
       } else {
-	const auto theFunc = std::bind(
-				       // Method to store in function
-				       &Method::template standard<Direction::value, Stagger::value, 2, FieldType>,
-				       // Arguments -- first is hidden this of type-bound, others are placeholders
-				       // for input field, output field, region
-				       Method{}, _1, _2, _3);
-	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);	
-      }	
+        const auto theFunc = std::bind(
+            // Method to store in function
+            &Method::template standard<Direction::value, Stagger::value, 2, FieldType>,
+            // Arguments -- first is hidden this of type-bound, others are placeholders
+            // for input field, output field, region
+            Method{}, _1, _2, _3);
+        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
+            theFunc);
+      }
       break;
     }
     case (DERIV::Upwind):
     case (DERIV::Flux): {
-      if(nGuards == 1) {      
-	const auto theFunc = std::bind(
-				       // Method to store in function
-				       &Method::template upwindOrFlux<Direction::value, Stagger::value, 1, FieldType>,
-				       // Arguments -- first is hidden this of type-bound, others are placeholders
-				       // for input field, output field, region
-				       Method{}, _1, _2, _3, _4);
-	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+      if (nGuards == 1) {
+        const auto theFunc = std::bind(
+            // Method to store in function
+            &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
+                                           FieldType>,
+            // Arguments -- first is hidden this of type-bound, others are placeholders
+            // for input field, output field, region
+            Method{}, _1, _2, _3, _4);
+        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
+            theFunc);
       } else {
-	const auto theFunc = std::bind(
-				       // Method to store in function
-				       &Method::template upwindOrFlux<Direction::value, Stagger::value, 2, FieldType>,
-				       // Arguments -- first is hidden this of type-bound, others are placeholders
-				       // for input field, output field, region
-				       Method{}, _1, _2, _3, _4);
-	derivativeRegister.template registerDerivative<Direction, Stagger, Method>(theFunc);
+        const auto theFunc = std::bind(
+            // Method to store in function
+            &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
+                                           FieldType>,
+            // Arguments -- first is hidden this of type-bound, others are placeholders
+            // for input field, output field, region
+            Method{}, _1, _2, _3, _4);
+        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
+            theFunc);
       }
       break;
     }
@@ -551,120 +563,117 @@ struct registerMethod {
 /////////////////////////////////////////////////////////////////////////////////
 
 // Could use Ben's magic macro for thing here to register multiple routines at once
-#define REGISTER_DERIVATIVE(name)					\
-  namespace {								\
-    produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,	\
-			Set<e(STAGGER, None)>,				\
-			Set<TypeContainer<Field3D>, TypeContainer<Field2D>>, \
-			Set<DerivativeType<name>>>			\
-    reg(registerMethod{});						\
+#define REGISTER_DERIVATIVE(name)                                             \
+  namespace {                                                                 \
+  produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, \
+                      Set<e(STAGGER, None)>,                                  \
+                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,    \
+                      Set<DerivativeType<name>>>                              \
+      reg(registerMethod{});                                                  \
   }
-#define REGISTER_STAGGERED_DERIVATIVE(name)				\
-  namespace {								\
-    produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,	\
-			Set<e(STAGGER, C2L), e(STAGGER, L2C)>,		\
-			Set<TypeContainer<Field3D>, TypeContainer<Field2D>>, \
-			Set<DerivativeType<name>>>			\
-    reg(registerMethod{});						\
+#define REGISTER_STAGGERED_DERIVATIVE(name)                                   \
+  namespace {                                                                 \
+  produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, \
+                      Set<e(STAGGER, C2L), e(STAGGER, L2C)>,                  \
+                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,    \
+                      Set<DerivativeType<name>>>                              \
+      reg(registerMethod{});                                                  \
   }
 
-produceCombinations<
-  Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
-  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-  Set<
-    // Standard
-    DerivativeType<DDX_C2>, DerivativeType<DDX_C4>, DerivativeType<DDX_CWENO2>,
-    DerivativeType<DDX_S2>, DerivativeType<DDX_CWENO3>,
-    // Standard 2nd order
-    DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
-    // Standard 4th order
-    DerivativeType<D4DX4_C2>,
-    // Upwind
-    DerivativeType<VDDX_C2>, DerivativeType<VDDX_C4>, DerivativeType<VDDX_U1>,
-    DerivativeType<VDDX_U2>, DerivativeType<VDDX_U3>, DerivativeType<VDDX_WENO3>,
-    // Flux
-    DerivativeType<FDDX_U1>, DerivativeType<FDDX_C2>, DerivativeType<FDDX_C4>>>
-registerDerivatives(registerMethod{});
+produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
+                    Set<e(STAGGER, None)>,
+                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+                    Set<
+                        // Standard
+                        DerivativeType<DDX_C2>, DerivativeType<DDX_C4>,
+                        DerivativeType<DDX_CWENO2>, DerivativeType<DDX_S2>,
+                        DerivativeType<DDX_CWENO3>,
+                        // Standard 2nd order
+                        DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
+                        // Standard 4th order
+                        DerivativeType<D4DX4_C2>,
+                        // Upwind
+                        DerivativeType<VDDX_C2>, DerivativeType<VDDX_C4>,
+                        DerivativeType<VDDX_U1>, DerivativeType<VDDX_U2>,
+                        DerivativeType<VDDX_U3>, DerivativeType<VDDX_WENO3>,
+                        // Flux
+                        DerivativeType<FDDX_U1>, DerivativeType<FDDX_C2>,
+                        DerivativeType<FDDX_C4>>>
+    registerDerivatives(registerMethod{});
 
+produceCombinations<Set<e(DIRECTION, YOrthogonal)>, Set<e(STAGGER, None)>,
+                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+                    Set<
+                        // Standard
+                        DerivativeType<DDX_C2>, DerivativeType<DDX_CWENO2>,
+                        // Standard 2nd order
+                        DerivativeType<D2DX2_C2>,
+                        // Standard 4th order
+                        // Upwind
+                        DerivativeType<VDDX_C2>, DerivativeType<VDDX_U1>,
+                        // Flux
+                        DerivativeType<FDDX_U1>>>
+    registerDerivativesYOrtho(registerMethod{});
 
-produceCombinations<
-  Set<e(DIRECTION, YOrthogonal)>, Set<e(STAGGER, None)>,
-  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-  Set<
-    // Standard
-    DerivativeType<DDX_C2>, DerivativeType<DDX_CWENO2>,
-    // Standard 2nd order
-    DerivativeType<D2DX2_C2>,
-    // Standard 4th order
-    // Upwind
-    DerivativeType<VDDX_C2>, DerivativeType<VDDX_U1>,
-    // Flux
-    DerivativeType<FDDX_U1>>>
-registerDerivativesYOrtho(registerMethod{});
+produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
+                    Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
+                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+                    Set<
+                        // Standard
+                        DerivativeType<DDX_C2_stag>, DerivativeType<DDX_C4_stag>,
+                        // Standard 2nd order
+                        DerivativeType<D2DX2_C2_stag>,
+                        // Upwind
+                        DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_C4_stag>,
+                        DerivativeType<VDDX_U1_stag>, DerivativeType<VDDX_U2_stag>,
+                        // Flux
+                        DerivativeType<FDDX_U1_stag>>>
+    registerStaggeredDerivatives(registerMethod{});
 
-produceCombinations<
-  Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
-  Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
-  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-  Set<
-    // Standard
-    DerivativeType<DDX_C2_stag>, DerivativeType<DDX_C4_stag>,
-    // Standard 2nd order
-    DerivativeType<D2DX2_C2_stag>,
-    // Upwind
-    DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_C4_stag>,
-    DerivativeType<VDDX_U1_stag>, DerivativeType<VDDX_U2_stag>,
-    // Flux
-    DerivativeType<FDDX_U1_stag>>>
-registerStaggeredDerivatives(registerMethod{});
-
-produceCombinations<
-  Set<e(DIRECTION, YOrthogonal)>,
-  Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
-  Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-  Set<
-    // Standard
-    DerivativeType<DDX_C2_stag>,
-    // Standard 2nd order
-    // Upwind
-    DerivativeType<VDDX_C2_stag>, 
-    DerivativeType<VDDX_U1_stag>,
-    // Flux
-    DerivativeType<FDDX_U1_stag>>>
-registerStaggeredDerivativesYOrtho(registerMethod{});
+produceCombinations<Set<e(DIRECTION, YOrthogonal)>, Set<e(STAGGER, C2L), e(STAGGER, L2C)>,
+                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+                    Set<
+                        // Standard
+                        DerivativeType<DDX_C2_stag>,
+                        // Standard 2nd order
+                        // Upwind
+                        DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_U1_stag>,
+                        // Flux
+                        DerivativeType<FDDX_U1_stag>>>
+    registerStaggeredDerivativesYOrtho(registerMethod{});
 
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, REGION region) const {
-    TRACE("%s",__thefunc__);
+  void standard(const T& var, T& result, REGION region) const {
+    TRACE("%s", __thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); //Only in Z for now
-    ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
-    
+    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
+    ASSERT2((std::is_base_of<Field3D,
+                             T>::value)); // Should never need to call this with Field2D
+
     const auto region_str = REGION_STRING(region);
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
-            region_str == "RGN_NOX" || region_str == "RGN_NOY");
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
+            || region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-    auto *theMesh = var.getMesh();
-    
+    auto* theMesh = var.getMesh();
+
     // Calculate how many Z wavenumbers will be removed
     const int ncz = theMesh->template getNpoints<direction>();
 
-    int kfilter =
-      static_cast<int>(theMesh->fft_derivs_filter * ncz / 2); // truncates, rounding down
+    int kfilter = static_cast<int>(theMesh->fft_derivs_filter * ncz
+                                   / 2); // truncates, rounding down
     if (kfilter < 0)
       kfilter = 0;
     if (kfilter > (ncz / 2))
       kfilter = ncz / 2;
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-    BOUT_OMP(parallel)
-    {
+    BOUT_OMP(parallel) {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
@@ -697,40 +706,40 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &UNUSED(vel), const T &UNUSED(var), T &UNUSED(result), REGION UNUSED(region)) const {
-    TRACE("%s",__thefunc__);
+  void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
+                    REGION UNUSED(region)) const {
+    TRACE("%s", __thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
   }
   metaData meta{"FFT", 0, DERIV::Standard};
 };
 
-
 class FFT2ndDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T &var, T &result, REGION region) const {
-    TRACE("%s",__thefunc__);
+  void standard(const T& var, T& result, REGION region) const {
+    TRACE("%s", __thefunc__);
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); //Only in Z for now
-    ASSERT2(stagger == STAGGER::None); //Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D, T>::value)); //Should never need to call this with Field2D
-    
+    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
+    ASSERT2((std::is_base_of<Field3D,
+                             T>::value)); // Should never need to call this with Field2D
+
     const auto region_str = REGION_STRING(region);
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
-            region_str == "RGN_NOX" || region_str == "RGN_NOY");
+    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
+            || region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-    auto *theMesh = var.getMesh();
-    
+    auto* theMesh = var.getMesh();
+
     // Calculate how many Z wavenumbers will be removed
     const int ncz = theMesh->template getNpoints<direction>();
-    const int kmax  = ncz/2;
+    const int kmax = ncz / 2;
 
-    BOUT_OMP(parallel)
-    {
+    BOUT_OMP(parallel) {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
@@ -749,7 +758,7 @@ public:
 
         for (int jz = 0; jz <= kmax; jz++) {
           const BoutReal kwave = jz * kwaveFac; // wave number is 1/[rad]
-          cv[jz] *= -kwave*kwave;
+          cv[jz] *= -kwave * kwave;
         }
         for (int jz = kmax + 1; jz <= ncz / 2; jz++) {
           cv[jz] = 0.0;
@@ -763,18 +772,18 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T &UNUSED(vel), const T &UNUSED(var), T &UNUSED(result), REGION UNUSED(region)) const {
-    TRACE("%s",__thefunc__);
+  void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
+                    REGION UNUSED(region)) const {
+    TRACE("%s", __thefunc__);
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
   }
   metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
 
-produceCombinations<
-  Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>, Set<TypeContainer<Field3D>>,
-  Set<FFTDerivativeType, FFT2ndDerivativeType>
-  >
+produceCombinations<Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
+                    Set<TypeContainer<Field3D>>,
+                    Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
 
 #endif
