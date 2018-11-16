@@ -82,9 +82,9 @@ void Vector3D::toCovariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
-	x[i] = metric_x->g_11[i]*x[i] + metric_x->g_12[i]*y_at_x[i] + metric_x->g_13[i]*z_at_x[i];
-	y[i] = metric_y->g_22[i]*y[i] + metric_y->g_12[i]*x_at_y[i] + metric_y->g_23[i]*z_at_y[i];
-	z[i] = metric_z->g_33[i]*z[i] + metric_z->g_13[i]*x_at_z[i] + metric_z->g_23[i]*y_at_z[i];
+        x[i] = metric_x->g_11[i]*x[i] + metric_x->g_12[i]*y_at_x[i] + metric_x->g_13[i]*z_at_x[i];
+        y[i] = metric_y->g_22[i]*y[i] + metric_y->g_12[i]*x_at_y[i] + metric_y->g_23[i]*z_at_y[i];
+        z[i] = metric_z->g_33[i]*z[i] + metric_z->g_13[i]*x_at_z[i] + metric_z->g_23[i]*y_at_z[i];
       };
     } else {
       const auto metric = localmesh->getCoordinates(location);
@@ -94,9 +94,9 @@ void Vector3D::toCovariant() {
       gx.allocate(); gy.allocate(); gz.allocate();
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
-	gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
-	gy[i] = metric->g_22[i]*y[i] + metric->g_12[i]*x[i] + metric->g_23[i]*z[i];
-	gz[i] = metric->g_33[i]*z[i] + metric->g_13[i]*x[i] + metric->g_23[i]*y[i];
+        gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
+        gy[i] = metric->g_22[i]*y[i] + metric->g_12[i]*x[i] + metric->g_23[i]*z[i];
+        gz[i] = metric->g_33[i]*z[i] + metric->g_13[i]*x[i] + metric->g_23[i]*y[i];
       };
 
       x = gx;
@@ -135,9 +135,9 @@ void Vector3D::toContravariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
-	x[i] = metric_x->g11[i]*x[i] + metric_x->g12[i]*y_at_x[i] + metric_x->g13[i]*z_at_x[i];
-	y[i] = metric_y->g22[i]*y[i] + metric_y->g12[i]*x_at_y[i] + metric_y->g23[i]*z_at_y[i];
-	z[i] = metric_z->g33[i]*z[i] + metric_z->g13[i]*x_at_z[i] + metric_z->g23[i]*y_at_z[i];
+        x[i] = metric_x->g11[i]*x[i] + metric_x->g12[i]*y_at_x[i] + metric_x->g13[i]*z_at_x[i];
+        y[i] = metric_y->g22[i]*y[i] + metric_y->g12[i]*x_at_y[i] + metric_y->g23[i]*z_at_y[i];
+        z[i] = metric_z->g33[i]*z[i] + metric_z->g13[i]*x_at_z[i] + metric_z->g23[i]*y_at_z[i];
       };
 
     } else {
@@ -148,9 +148,9 @@ void Vector3D::toContravariant() {
       gx.allocate(); gy.allocate(); gz.allocate();
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
-	gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
-	gy[i] = metric->g22[i]*y[i] + metric->g12[i]*x[i] + metric->g23[i]*z[i];
-	gz[i] = metric->g33[i]*z[i] + metric->g13[i]*x[i] + metric->g23[i]*y[i];
+        gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
+        gy[i] = metric->g22[i]*y[i] + metric->g12[i]*x[i] + metric->g23[i]*z[i];
+        gz[i] = metric->g33[i]*z[i] + metric->g13[i]*x[i] + metric->g23[i]*y[i];
       };
 
       x = gx;
@@ -487,14 +487,14 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
       result += (x*rhs.y + y*rhs.x)*metric->g12
-	+ (x*rhs.z + z*rhs.x)*metric->g13
-	+ (y*rhs.z + z*rhs.y)*metric->g23;
+        + (x*rhs.z + z*rhs.x)*metric->g13
+        + (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
       result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
       result += (x*rhs.y + y*rhs.x)*metric->g_12
-	+ (x*rhs.z + z*rhs.x)*metric->g_13
-	+ (y*rhs.z + z*rhs.y)*metric->g_23;
+        + (x*rhs.z + z*rhs.x)*metric->g_13
+        + (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
   
@@ -518,14 +518,14 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
       result += (x*rhs.y + y*rhs.x)*metric->g12
-	+ (x*rhs.z + z*rhs.x)*metric->g13
-	+ (y*rhs.z + z*rhs.y)*metric->g23;
+        + (x*rhs.z + z*rhs.x)*metric->g13
+        + (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
       result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
       result += (x*rhs.y + y*rhs.x)*metric->g_12
-	+ (x*rhs.z + z*rhs.x)*metric->g_13
-	+ (y*rhs.z + z*rhs.y)*metric->g_23;
+        + (x*rhs.z + z*rhs.x)*metric->g_13
+        + (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
 
