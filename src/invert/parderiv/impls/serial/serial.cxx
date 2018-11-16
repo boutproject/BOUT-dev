@@ -67,7 +67,7 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
   result.allocate();
   result.setLocation(f.getLocation());
   
-  Coordinates *coord = mesh->getCoordinates(f.getLocation());
+  Coordinates *coord = f.getCoordinates();
 
   // Loop over flux-surfaces
   SurfaceIter surf(mesh);

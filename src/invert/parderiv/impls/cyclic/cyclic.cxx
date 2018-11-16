@@ -89,7 +89,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   result.allocate();
   result.setLocation(f.getLocation());
   
-  Coordinates *coord = mesh->getCoordinates(f.getLocation());
+  Coordinates *coord = f.getCoordinates();
   
   // Create cyclic reduction object
   CyclicReduce<dcomplex> *cr = 

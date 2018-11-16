@@ -634,6 +634,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   
   Field2D result;
   result.allocate();
+  result.setLocation(rhs.getLocation());
   
   for(int x=mesh->xstart;x<= mesh->xend;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
