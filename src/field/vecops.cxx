@@ -329,7 +329,7 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
 }
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
-  TRACE("V_dot_Grad( Vector3D , Field3D )");
+  TRACE("V_dot_Grad( Vector3D , Field2D )");
   SCOREP0();
   Field3D result(f.getMesh());
 
