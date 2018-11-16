@@ -261,11 +261,6 @@ int BoutInitialise(int &argc, char **&argv) {
     throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),data_dir);
   }
   
-  // Set options
-  Options::getRoot()->set("datadir", string(data_dir));
-  Options::getRoot()->set("optionfile", string(opt_file));
-  Options::getRoot()->set("settingsfile", string(set_file));
-
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
@@ -427,6 +422,11 @@ int BoutInitialise(int &argc, char **&argv) {
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
+
+    // Override options set from short option from the command-line
+    Options::root()["datadir"] = data_dir;
+    Options::root()["optionfile"] = opt_file;
+    Options::root()["settingsfile"] = set_file;
 
     // Put some run information in the options.
     // This is mainly so it can be easily read in post-processing
