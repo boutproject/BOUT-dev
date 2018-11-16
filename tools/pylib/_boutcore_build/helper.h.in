@@ -1,3 +1,5 @@
+. common.sh
+
 cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
@@ -33,6 +35,17 @@ do
     fi
 done
     echo "$ftype c_minus($ftype a){return -a;};"
+done
+for vec in $vecs
+do
+    setvars $vec
+    #if [ $vec = "Vector2D" ]; then field=Field2D
+    #elif [ $vec = "Vector3D" ]; then field=Field2D
+    #else echo "$vec - Not implemented" ; exit 2
+    #fi
+    cat <<EOF
+$field c_mul_${vec}_${vec}(const $vec * a, const $vec * b){ return (*a) * (*b) ;};
+EOF
 done
 cat <<EOF
 void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);

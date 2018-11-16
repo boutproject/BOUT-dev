@@ -56,6 +56,9 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 /// @param[in] outloc  The cell location where the result is desired
 ///
 const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
+inline const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method){
+  return Grad_perp(f,outloc);
+}
 
 /// Divergence of a vector \p v, returning a scalar
 ///

@@ -1,4 +1,7 @@
 #!/bin/bash
+
+. common.sh
+
 cat <<EOF
 # distutils: language=c++
 
@@ -40,6 +43,21 @@ cat <<EOF
     double min($ftype)
     $ftype pow($ftype,double)
     $ftype & ddt($ftype)
+EOF
+done
+
+for vec in $vecs
+do
+    setvars $vec
+
+    cat <<EOF
+cdef extern from "$fheader.hxx":
+     cppclass $vec:
+         $vec()
+         $vec(const $vec &)
+         $field x
+         $field y
+         $field z
 EOF
 done
 cat <<EOF
@@ -105,6 +123,7 @@ cdef extern from "invert_laplace.hxx":
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
+    Vector3D Grad_perp(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D Laplace(Field3D)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
