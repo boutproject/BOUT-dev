@@ -393,11 +393,6 @@ cat <<EOF
         """
         Get or set the time derivative
 
-        Returns
-        -------
-        $ftype
-            the $ftype's time derivative
-
         Parameters
         ----------
         val : $ftype, optional
@@ -650,7 +645,7 @@ cdef class Mesh:
             The Option which to use. Can be specified together with
             section, in which case the subsection from the current
             Options object is used. If nether section nor
-            options is given, the default section ([mesh]) fromt the
+            options is given, the default section (mesh) from the
             global Options object is used.
         """
         checkInit()
