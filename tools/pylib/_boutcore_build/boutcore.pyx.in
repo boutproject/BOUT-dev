@@ -1421,6 +1421,20 @@ cdef class Options:
     cdef c.bool isSelfOwned
 
     def __init__(self,name=""):
+        """
+	Get a section from the global options tree
+
+	Parameters
+	----------
+	name : string
+	    The name of the section. Can contain ':' to specify subsections.
+	    Defaults to the root section ''.
+
+	Returns
+	-------
+	Options
+	    The Options object
+	"""
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
