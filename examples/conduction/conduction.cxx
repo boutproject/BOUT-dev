@@ -18,7 +18,7 @@ protected:
   int init(bool restarting) override {
     
     // Get the options
-    Options *options = Options::getRoot()->getSection("conduction");
+    auto options = Options::root()["conduction"];
     
     // Read from BOUT.inp, setting default to 1.0
     OPTION(options, chi, 1.0);

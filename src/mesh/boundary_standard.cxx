@@ -1506,7 +1506,7 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const l
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
   Field2D dfdy = DDY(f);
@@ -1546,7 +1546,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
   Field3D dfdy = DDY(f);
@@ -1632,7 +1632,7 @@ BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<s
 }
 
 void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   
   // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
@@ -1648,7 +1648,7 @@ void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   // N.B. Only first guard cells (closest to the grid) should ever be used
@@ -1698,7 +1698,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   
   bndry->first();
   
@@ -1895,7 +1895,7 @@ void BoundaryNeumann::apply(Field3D &f) {
 
 
 void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   
   bndry->first();
   
@@ -2140,7 +2140,7 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   else {
     // Non-staggered, standard case
     
-    Coordinates *coords = mesh->coordinates();
+    Coordinates *coords = f.getCoordinates();
 
     for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
       BoutReal delta = bndry->bx*coords->dx(bndry->x,bndry->y)+bndry->by*coords->dy(bndry->x,bndry->y);
@@ -2192,7 +2192,7 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
     throw BoutException("neumann_o4 not implemented with staggered grid yet");
   }
   else {
-    Coordinates *coords = mesh->coordinates();
+    Coordinates *coords = f.getCoordinates();
     for(; !bndry->isDone(); bndry->next1d()) {
       // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
       BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
@@ -2251,7 +2251,7 @@ BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<s
 }
 
 void BoundaryNeumann_4thOrder::apply(Field2D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
@@ -2262,7 +2262,7 @@ void BoundaryNeumann_4thOrder::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_4thOrder::apply(Field3D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
@@ -2298,14 +2298,14 @@ BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string>
 
 
 void BoundaryNeumannPar::apply(Field2D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
 }
 
 void BoundaryNeumannPar::apply(Field3D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x,bndry->y,z) = f(bndry->x - bndry->bx,bndry->y - bndry->by,z)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
@@ -2407,7 +2407,7 @@ BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string
 }
 
 void BoundaryZeroLaplace::apply(Field2D &f) {
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
@@ -2431,7 +2431,7 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 void BoundaryZeroLaplace::apply(Field3D &f) {
   int ncz = mesh->LocalNz;
 
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
 
   Array<dcomplex> c0(ncz / 2 + 1);
   Array<dcomplex> c1(ncz / 2 + 1);
@@ -2499,7 +2499,7 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
         "ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
 
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
 
   // Constant X derivative
   int bx = bndry->bx;
@@ -2615,7 +2615,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
   
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = f.getCoordinates();
   
   int ncz = mesh->LocalNz;
 
@@ -2686,7 +2686,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = mesh->getCoordinates(var.getLocation());
   
   int ncz = mesh->LocalNz;
   

@@ -22,9 +22,20 @@ public:
 
 TEST_F(OptionsTest, IsSet) {
   Options options;
+
+  ASSERT_FALSE(options.isSet("int_key"));
+  
   options.set("int_key", 42, "code");
 
   ASSERT_TRUE(options.isSet("int_key"));
+}
+
+TEST_F(OptionsTest, IsSetDefault) {
+  Options options;
+  int value;
+  ASSERT_FALSE(options.isSet("default_value"));
+  options.get("default_value", value, 42);
+  ASSERT_FALSE(options.isSet("default_value"));
 }
 
 TEST_F(OptionsTest, SetGetInt) {
@@ -52,9 +63,9 @@ TEST_F(OptionsTest, SetGetIntFromReal) {
 
   options.set("int_key2", 12.5, "code");
   EXPECT_THROW(options.get("int_key2", value, 99, false), BoutException);
-  // Note we expect to get the rounded value despite the throw as we
-  // pass by reference and modify the passed variable in options.get.
-  EXPECT_EQ(value, 13);
+  
+  // value is not changed
+  EXPECT_EQ(value, 42);
 }
 
 TEST_F(OptionsTest, DefaultValueInt) {
@@ -360,3 +371,109 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
   EXPECT_NO_THROW(options.set("key", "value", "code",true));
   output_warn.enable();
 }
+
+/// New interface
+
+
+TEST_F(OptionsTest, NewIsSet) {
+  Options options;
+
+  ASSERT_FALSE(options["int_key"].isSet());
+  
+  options["int_key"].assign(42, "code");
+
+  ASSERT_TRUE(options["int_key"].isSet());
+}
+
+TEST_F(OptionsTest, NewSubSection) {
+  Options options;
+  
+  options["sub-section"]["int_key"].assign(42, "code");
+  
+  ASSERT_FALSE(options["int_key"].isSet());
+  ASSERT_TRUE(options["sub-section"]["int_key"].isSet());
+  
+  int value = options["sub-section"]["int_key"].withDefault(99);
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, NewIsSetDefault) {
+  Options options;
+  ASSERT_FALSE(options.isSet());
+  int value = options.withDefault(42);
+  ASSERT_EQ(value, 42);
+  ASSERT_FALSE(options.isSet());
+}
+
+TEST_F(OptionsTest, NewSetGetInt) {
+  Options options;
+  options.assign(42, "code");
+
+  ASSERT_TRUE(options.isSet());
+
+  int value = options.withDefault(99);
+
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, NewSetGetIntFromReal) {
+  Options options;
+  options["key1"] = 42.00001;
+
+  ASSERT_TRUE(options["key1"].isSet());
+
+  int value = options["key1"].withDefault(99);
+
+  EXPECT_EQ(value, 42);
+
+  options["key2"] = 12.5;
+  EXPECT_THROW(options["key2"].as<int>(), BoutException);
+}
+
+TEST_F(OptionsTest, NewDefaultValueInt) {
+  Options options;
+
+  int value = options.withDefault(99);
+  EXPECT_EQ(value, 99);
+}
+
+TEST_F(OptionsTest, OptionsMacroPointer) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(&options, val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroConstPointer) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(const_cast<const Options*>(&options), val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroReference) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(options, val, 3);
+  EXPECT_EQ(val, 42);
+}
+
+TEST_F(OptionsTest, OptionsMacroConstReference) {
+  Options options;
+
+  options["val"] = 42;
+
+  int val{0};
+  OPTION(const_cast<const Options&>(options), val, 3);
+  EXPECT_EQ(val, 42);
+}
+

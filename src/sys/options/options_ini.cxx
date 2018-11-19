@@ -71,7 +71,7 @@ void OptionINI::read(Options *options, const string &filename) {
   fin.open(filename.c_str());
 
   if (!fin.good()) {
-    throw BoutException("\tOptions file '%s' not found\n", filename.c_str());
+    throw BoutException(_("\tOptions file '%s' not found\n"), filename.c_str());
   }
 
   Options *section = options; // Current section
@@ -129,7 +129,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   fout.open(filename, ios::out | ios::trunc);
 
   if (!fout.good()) {
-    throw BoutException("Could not open output file '%s'\n", filename.c_str());
+    throw BoutException(_("Could not open output file '%s'\n"), filename.c_str());
   }
   
   // Call recursive function to write to file
@@ -153,8 +153,7 @@ string OptionINI::getNextLine(ifstream &fin) {
   return line;
 }
 
-void OptionINI::parse(const string &buffer, string &key, string &value)
-{
+void OptionINI::parse(const string &buffer, string &key, string &value) {
    // A key/value pair, separated by a '='
 
   size_t startpos = buffer.find_first_of('=');
@@ -169,11 +168,17 @@ void OptionINI::parse(const string &buffer, string &key, string &value)
 
   key = trim(buffer.substr(0, startpos), " \t\r\n\"");
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
+  
+  if (key.empty()) {
+    throw BoutException(_("\tEmpty key\n\tLine: %s"), buffer.c_str());
+  }
 
-  if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
+  if (key.find(':') != std::string::npos) {
+    throw BoutException(_("\tKey must not contain ':' character\n\tLine: %s"), buffer.c_str());
+  }
 }
 
-void OptionINI::writeSection(Options *options, std::ofstream &fout) {
+void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
   string section_name = options->str();
 
   if (section_name.length() > 0) {
@@ -183,6 +188,10 @@ void OptionINI::writeSection(Options *options, std::ofstream &fout) {
   // Iterate over all values
   for(const auto& it : options->values()) {
     fout << it.first << " = " << it.second.value;
+    if (it.second.value.empty()) {
+      // Print an empty string as ""
+      fout << "\"\""; 
+    }
     if (! it.second.used ) {
       fout << "  # not used , from: "
 	   << it.second.source;

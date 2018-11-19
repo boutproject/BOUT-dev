@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -73,6 +71,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     from zoidberg import progress as bar
     import numpy
     import os
+    import gc
     import tempfile
     import shutil
     import glob
@@ -142,6 +141,17 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             kwargs['complevel'] = complevel
     if append:
         old = DataFile(oldfile)
+        # Check if dump on restart was enabled
+        # If so, we want to drop the duplicated entry
+        cropnew = 0
+        if old['t_array'][-1] == outputs['t_array'][0]:
+            cropnew = 1
+        # Make sure we don't end up with duplicated data:
+        for ot in old['t_array']:
+            if ot in outputs['t_array'][cropnew:]:
+                raise RuntimeError(
+                    "For some reason t_array has some duplicated entries in the new and old file.")
+
     create = True
     if docontinue:
         create = False
@@ -160,8 +170,9 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             var = outputs[varname]
             if append:
-                dims = old.dimensions(varname)
+                dims = outputs.dimensions[varname]
                 if 't' in dims:
+                    var = var[cropnew:, ...]
                     varold = old[varname]
                     var = BoutArray(numpy.append(
                         varold, var, axis=0), var.attributes)
@@ -174,6 +185,11 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             if progress:
                 done += sizes[varname]
                 bar.update_progress(done / total, zoidberg=True)
+
+            # Write changes, free memory
+            f.sync()
+            var = None
+            gc.collect()
 
     if delete:
         if append:

@@ -48,9 +48,6 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
     mesh->ystart = 2;
@@ -58,6 +55,9 @@ protected:
     mesh->yend = ny - 3;
     mesh->setParallelTransform(
         std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity()));
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
   }
 
   static void TearDownTestCase() {

@@ -20,7 +20,7 @@
 
 int GBS::init(bool restarting) {
   Options *opt = Options::getRoot();
-  coords = mesh->coordinates();
+  coords = mesh->getCoordinates();
 
   // Switches in model section
   Options *optgbs = opt->getSection("GBS");

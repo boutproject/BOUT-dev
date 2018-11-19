@@ -10,7 +10,7 @@ zmin = 0.0
 zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
-MYG = 2
+MYG = 0
 MXG = 1
 
 [output]
@@ -24,7 +24,7 @@ ixseps2 = -1             # Set x location of separatrix 2
 nx = 4
 
 #ny = internal gridpoints
-ny = 3
+ny = 1
 
 Lx = 1. 
 Ly = 1.
@@ -65,7 +65,7 @@ mms = true
 mms_initialise = false
 
 atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+rtol = 1.0e-8  # relative tolerance
 mxstep = 100000000
 
 [cyto]

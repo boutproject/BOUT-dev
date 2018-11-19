@@ -81,7 +81,7 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), coords(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -430,15 +430,19 @@ class Mesh {
   bool IncIntShear; ///< Include integrated shear (if shifting X)
 
   /// Coordinate system
-  Coordinates *coordinates() {
-    if (coords) { // True branch most common, returns immediately
-      return coords;
+  Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    if (coords_map.count(location)) { // True branch most common, returns immediately
+      return coords_map[location].get();
+    } else {
+      // No coordinate system set. Create default
+      // Note that this can't be allocated here due to incomplete type
+      // (circular dependency between Mesh and Coordinates)
+      coords_map.emplace(location, createDefaultCoordinates(location));
+      return coords_map[location].get();
     }
-    // No coordinate system set. Create default
-    // Note that this can't be allocated here due to incomplete type
-    // (circular dependency between Mesh and Coordinates)
-    coords = createDefaultCoordinates();
-    return coords;
   }
 
   // First derivatives in index space
@@ -647,11 +651,12 @@ class Mesh {
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
-  Region<> &getRegion(const std::string &region_name){
+  const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
-  Region<Ind3D> &getRegion3D(const std::string &region_name);
-  Region<Ind2D> &getRegion2D(const std::string &region_name);
+  const Region<Ind3D> &getRegion3D(const std::string &region_name) const;
+  const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
+  const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
   /// Add a new region to the region_map for the data iterator
   ///
@@ -662,8 +667,12 @@ class Mesh {
   void addRegion(const std::string &region_name, const Region<Ind2D> &region) {
     return addRegion2D(region_name, region);
   }
+  void addRegion(const std::string &region_name, const Region<IndPerp> &region) {
+    return addRegionPerp(region_name, region);
+  }
   void addRegion3D(const std::string &region_name, const Region<Ind3D> &region);
   void addRegion2D(const std::string &region_name, const Region<Ind2D> &region);
+  void addRegionPerp(const std::string &region_name, const Region<IndPerp> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
   Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0) { return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz}; }
@@ -671,7 +680,16 @@ class Mesh {
   /// Converts an Ind3D to an Ind2D using calculation
   Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
 
-  /// Converts an Ind3D to a raw int representing a 2D index using a lookup -- to be used with care
+  /// Converts an Ind3D to an IndPerp using calculation
+  IndPerp ind3DtoPerp(const Ind3D &ind3D) { return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz}; }
+
+  /// Converts an IndPerp to an Ind3D using calculation
+  Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
+    int jz = indPerp.z();
+    return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
+  }
+  
+  /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   Ind2D map3Dto2D(const Ind3D &ind3D){
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
@@ -690,7 +708,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  Coordinates *coords;    ///< Coordinate system. Initialised to Null
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
@@ -728,12 +746,13 @@ class Mesh {
                            REGION region = RGN_NOBNDRY);
 
 private:
-  /// Allocates a default Coordinates object
-  Coordinates *createDefaultCoordinates();
+  /// Allocates default Coordinates objects
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
+  std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
 };
 

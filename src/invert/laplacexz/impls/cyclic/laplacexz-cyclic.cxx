@@ -8,7 +8,7 @@
 
 #include <output.hxx>
 
-LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), mesh(m) {
 
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;
@@ -62,7 +62,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   
   // Set coefficients
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates(location);
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
   ASSERT2(max(abs(coord->g13)) < 1e-5);
@@ -244,6 +244,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   Field3D result(mesh);
   result.allocate();
+  result.setLocation(rhs.getLocation());
 
   ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {

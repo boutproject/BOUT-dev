@@ -43,10 +43,12 @@
 #define __REGION_H__
 
 #include <algorithm>
+#include <ostream>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
@@ -122,13 +124,13 @@
 #endif
 
 #define BOUT_FOR(index, region)                                                          \
-  BOUT_FOR_OMP(index, region, parallel for schedule(guided))
+  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
 
 #define BOUT_FOR_INNER(index, region)                                                    \
-  BOUT_FOR_OMP(index, region, for schedule(guided) nowait)
+  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
 
 
-enum class IND_TYPE { IND_3D = 0, IND_2D = 1};
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///
@@ -240,17 +242,24 @@ public:
   /// The index one point -1 in y
   const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
+  /// An alternative, non-branching calculation is :
+  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
+  /// but this appears no faster (and perhaps slower).  
   const inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
+  /// An alternative, non-branching calculation is :
+  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
+  /// but this appears no faster (and perhaps slower).
   const inline SpecificInd zm(int dz = 1) const {
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    ASSERT3(dz <= nz);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
+
   // and for 2 cells
   const inline SpecificInd xpp() const { return xp(2); }
   const inline SpecificInd xmm() const { return xm(2); }
@@ -260,7 +269,7 @@ public:
   const inline SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  const inline SpecificInd offset(int dx, int dy, int dz) {
+  const inline SpecificInd offset(int dx, int dy, int dz) const {
     auto temp = (dz > 0) ? zp(dz) : zm(-dz);
     return temp.yp(dy).xp(dx);
   }
@@ -316,6 +325,7 @@ inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) {
 /// Define aliases for global indices in 3D and 2D 
 using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
+using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
@@ -402,8 +412,8 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
-                "Region must be templated with either Ind2D or Ind3D");
+  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   typedef T data_type;
@@ -432,10 +442,26 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of<Ind2D, T>::value and nz != 1) {
-      throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+    if (std::is_base_of<Ind2D, T>::value) {
+      if (nz != 1)
+	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
+
+    }
+
+    if (std::is_base_of<IndPerp, T>::value) {
+      if (ny != 1)
+	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
     }
 #endif
+    
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
@@ -457,8 +483,10 @@ public:
   /// Note that if the indices are altered using these iterators, the
   /// blocks may become out of sync and will need to manually updated
   typename RegionIndices::iterator begin() { return std::begin(indices); };
+  typename RegionIndices::const_iterator begin() const { return std::begin(indices); };
   typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
   typename RegionIndices::iterator end() { return std::end(indices); };
+  typename RegionIndices::const_iterator end() const { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
   const ContiguousBlocks &getBlocks() const { return blocks; };
@@ -640,16 +668,6 @@ public:
     return result;
   }
 
-  // TODO: Should be able to add regions (would just require extending
-  // indices and recalculating blocks). This raises question of should
-  // we be able to subtract regions, and if so what does that mean.
-  // Addition could be simple and just extend or we could seek to
-  // remove duplicate points. Former probably mostly ok. Note we do
-  // want to allow duplicate points (one reason we use vector and
-  // not set) but what if we add a region that has some duplicates?
-  // We could retain them but common usage would probably not want
-  // the duplicates.
-
   // We could sort indices (either forcibly or on request) to try
   // to ensure most contiguous+ordered access. Probably ok in common
   // use but would cause problems if order is important, for example
@@ -783,6 +801,13 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce
 /// any sorting etc. but could be done if desired.
+/// -
+/// Addition is currently simple and just extends. Probably mostly ok 
+/// but we could seek to remove duplicate points. Note we do
+/// want to allow duplicate points (one reason we use vector and
+/// not set) but what if we add a region that has some duplicates?
+/// We could retain them but common usage would probably not want
+/// the duplicates.
 template<typename T>
 Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   auto indices = lhs.getIndices(); // Indices is a copy of the indices

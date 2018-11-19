@@ -36,13 +36,10 @@ class Field;
 #include <bout/rvec.hxx>
 #include "boutexception.hxx"
 
-#include "bout/deprecated.hxx"
-
-#include "bout/dataiterator.hxx"
-
 #include "unused.hxx"
 
 class Mesh;
+class Coordinates;
 extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
@@ -60,9 +57,6 @@ class Field {
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  // Data access
-  virtual const BoutReal& operator[](const Indices &i) const = 0;
-
   virtual void setLocation(CELL_LOC loc) {
     if (loc != CELL_CENTRE)
       throw BoutException("not implemented!");
@@ -71,13 +65,6 @@ class Field {
     return CELL_CENTRE;
   }
 
-#ifdef TRACK
-  std::string getName() const { return name; }
-  void setName(std::string s) { name = s; }
-#else
-  std::string getName() const { return ""; }
-  void setName(std::string UNUSED(s)) {}
-#endif
   std::string name;
 
 #if CHECK > 0
@@ -105,6 +92,16 @@ class Field {
       return mesh;
     }
   }
+
+  /// Returns a pointer to the coordinates object at this field's
+  /// location from the mesh this field is on.
+  virtual Coordinates *getCoordinates() const;
+  
+  /// Returns a pointer to the coordinates object at the requested
+  /// location from the mesh this field is on. If location is CELL_DEFAULT
+  /// then return coordinates at field location
+  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
+  
   /*!
    * Return the number of nx points
    */
@@ -118,13 +115,13 @@ class Field {
    */
   virtual int getNz() const;
 
-  /// Make region mendatory for all fields
-  virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
-  /// Supplies an error method. Currently just prints and exits, but
-  /// should do something more cunning...
-  DEPRECATED(void error(const char *s, ...) const);
+  mutable Coordinates * fieldCoordinates = nullptr;
 };
+
+/// Unary + operator. This doesn't do anything
+template<typename T>
+T operator+(const T& f) {return f;}
 
 #endif /* __FIELD_H__ */

@@ -10,12 +10,14 @@ namespace FV {
 
   // Div ( a Laplace_perp(f) )  -- Vorticity
   const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
+    ASSERT2(a.getLocation() == f.getLocation());
+
     Mesh *mesh = a.getMesh();
 
     Field3D result(mesh);
     result = 0.0;
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f.getCoordinates();
     
     // Flux in x
   
@@ -115,47 +117,37 @@ namespace FV {
   const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
     TRACE("FV::Div_par_K_Grad_par");
 
+    ASSERT2(Kin.getLocation() == fin.getLocation());
+
     Mesh *mesh = Kin.getMesh();
     Field3D result(0.0, mesh);
 
+    bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
+
+    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin);
+    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin);
+
     // K and f fields in yup and ydown directions
-    Field3D Kup(mesh), Kdown(mesh);
-    Field3D fup(mesh), fdown(mesh);
-    Field3D f = fin;
-    Field3D K = Kin;
-    if (K.hasYupYdown() && f.hasYupYdown()) {
-      // Both inputs have yup and ydown
-      Kup = K.yup();
-      Kdown = K.ydown();
-      
-      fup = f.yup();
-      fdown = f.ydown();
-    } else {
-      // At least one input doesn't have yup/ydown fields.
-      // Need to shift to/from field aligned coordinates
-      
-      f = mesh->toFieldAligned(fin);
-      K = mesh->toFieldAligned(Kin);
-      
-      fup = fdown = f;
-      Kup = Kdown = K;
-    }
+    const auto& Kup = use_yup_ydown ? Kin.yup() : K;
+    const auto& Kdown = use_yup_ydown ? Kin.ydown() : K;
+    const auto& fup = use_yup_ydown ? fin.yup() : f;
+    const auto& fdown = use_yup_ydown ? fin.ydown() : f;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = fin.getCoordinates();
     
-    for( const auto &i: result ) {
+    BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
       // Calculate flux at upper surface
       
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if(bndry_flux || !mesh->lastY() || (i.y != mesh->yend)) {
-        
-        BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
+      if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
+
+        BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
         
-        BoutReal gradient = 2.*(f.yup()[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        BoutReal gradient = 2.*(fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
         
         BoutReal flux = c * J * gradient / g_22;
             
@@ -163,13 +155,13 @@ namespace FV {
       }
       
       // Calculate flux at lower surface
-      if(bndry_flux || !mesh->firstY() || (i.y != mesh->ystart)) {
-        BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
+      if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
+        BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[i]);
         
-        BoutReal gradient = 2.*(f[i] - f.ydown()[iym]) / (coord->dy[i] + coord->dy[iym]);
+        BoutReal gradient = 2.*(f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
         
         BoutReal flux = c * J * gradient / g_22;
         
@@ -177,7 +169,7 @@ namespace FV {
       }
     }
     
-    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+    if (!use_yup_ydown) {
       // Shifted to field aligned coordinates, so need to shift back
       result = mesh->fromFieldAligned(result);
     }
@@ -186,9 +178,12 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
+    ASSERT2(d_in.getLocation() == f_in.getLocation());
+
     Field3D result = 0.0;
+    result.setLocation(f_in.getLocation());
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
     Field3D d = mesh->toFieldAligned(d_in);
@@ -236,11 +231,12 @@ namespace FV {
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
     Field3D result = 0.0;
+    result.setLocation(f_in.getLocation());
     
     // Convert to field aligned coordinates
     Field3D f = mesh->toFieldAligned(f_in);
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f_in.getCoordinates();
     
     for(int i=mesh->xstart;i<=mesh->xend;i++) {
       bool yperiodic = mesh->periodicY(i);

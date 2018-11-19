@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.1.2],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -65,6 +65,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
+AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
+        [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
@@ -85,6 +87,8 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
+AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
+        [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
 
@@ -178,6 +182,11 @@ AC_FUNC_VPRINTF
 AC_OPENMP
 HAS_OPENMP=$enable_openmp
 
+AS_IF([test "x$enable_openmp" = "xyes"], [
+  OPENMP_SCHEDULE=$with_openmp_schedule
+  OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
+])
+
 #############################################################
 # Code coverage using gcov
 #
@@ -202,6 +211,35 @@ AC_SUBST([COVERAGE_FLAGS])
 #############################################################
 # General Options
 #############################################################
+
+# Always pass -Werror=unknown-warning-option to get Clang to fail on bad
+# flags, otherwise they are always appended to the warn_cxxflags variable,
+# and Clang warns on them for every compilation unit.
+# If this is passed to GCC, it will explode, so the flag must be enabled
+# conditionally.
+# This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
+  extra_compiler_flags_test="-Werror=unknown-warning-option"
+],[
+  extra_compiler_flags_test=""
+])
+
+
+AS_IF([test "x$enable_warnings" != "xno"], [
+# Some hopefully sensible default compiler warning flags
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wall dnl
+     -Wextra dnl
+     -Wnull-dereference dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test])
+], [
+  AC_MSG_NOTICE([Compiler warnings disabled])
+])
 
 OPT_FLAGS=""
 AS_IF([test "$enable_debug" != ""], [
@@ -235,16 +273,10 @@ AS_IF([test "$enable_debug" != ""], [
   ], [OPT_FLAGS=""])
 ])
 
-for flag in $OPT_FLAGS
-do
-  CXXFLAGS_save=$CXXFLAGS
-  CXXFLAGS="$CXXFLAGS $flag"
-  AC_MSG_CHECKING([flag $flag is supported])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-    [AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)
-     CXXFLAGS=$CXXFLAGS_save])
-done
+# Append optimisation/debug flags if they work with this compiler
+AX_APPEND_COMPILE_FLAGS([ dnl
+    $OPT_FLAGS dnl
+], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
 AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
@@ -1099,6 +1131,33 @@ AS_IF([test "$with_pvode" != "no"], [
 ])
 
 #############################################################
+# Localisation (i18n) with gettext
+#############################################################
+
+HAS_NLS="no"
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
+AM_GNU_GETTEXT([external])
+AS_IF([test "$USE_NLS" = "yes"], [
+  AC_MSG_NOTICE([Enabling language support with gettext])
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
+
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
+
+  # Set variable substituted into bout-config 
+  HAS_NLS="yes"
+],[
+  AC_MSG_NOTICE([Language support with gettext not available])
+]) 
+
+#############################################################
 # Check environment
 #############################################################
 
@@ -1214,6 +1273,7 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_NLS)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
@@ -1238,6 +1298,8 @@ AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
 AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
+AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
+AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

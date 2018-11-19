@@ -57,13 +57,13 @@ public:
   FieldFactory(Mesh *m, Options *opt = nullptr);
   ~FieldFactory() override;
 
-  const Field2D create2D(const std::string &value, Options *opt = nullptr,
+  const Field2D create2D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  const Field3D create3D(const std::string &value, Options *opt = nullptr,
+  const Field3D create3D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   // Parse a string into a tree of generators
-  FieldGeneratorPtr parse(const std::string &input, Options *opt = nullptr);
+  FieldGeneratorPtr parse(const std::string &input, const Options *opt = nullptr);
 
   // Singleton object
   static FieldFactory *get();
@@ -76,14 +76,14 @@ protected:
 
 private:
   Mesh *fieldmesh;  
-  Options *options;
+  const Options *options;
 
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
   std::map<std::string, FieldGeneratorPtr > cache;
   
-  Options* findOption(Options *opt, const std::string &name, std::string &val);
+  const Options* findOption(const Options *opt, const std::string &name, std::string &val);
 };
 
 //////////////////////////////////////////////////////////

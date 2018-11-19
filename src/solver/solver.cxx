@@ -122,15 +122,15 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const char* name) {
-  TRACE("Adding 2D field: Solver::add(%s)", name);
-  
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+void Solver::add(Field2D &v, const std::string name) {
+  TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
-  if(initialised)
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+
+  if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
-  
+
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
@@ -142,7 +142,7 @@ void Solver::add(Field2D &v, const char* name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.covariant = false;
-  d.name = string(name);
+  d.name = name;
   
 #ifdef TRACK
   v.name = name;
@@ -153,17 +153,17 @@ void Solver::add(Field2D &v, const char* name) {
   ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
-  if(mms_initialise) {
+  if (mms_initialise) {
     // Load solution at t = 0
     
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
-  }else {
+  } else {
     initial_profile(name, v);
   }
   
-  if(mms) {
+  if (mms) {
     // Allocate storage for error variable
     d.MMS_err = new Field2D(0.0);
   } else {
@@ -181,23 +181,23 @@ void Solver::add(Field2D &v, const char* name) {
   f2d.push_back(d);
 }
 
-void Solver::add(Field3D &v, const char* name) {
-  TRACE("Adding 3D field: Solver::add(%s)", name);
+void Solver::add(Field3D &v, const std::string name) {
+  TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0  
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 #endif
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
 
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
-  if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
+  if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
+    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), strLocation(v.getLocation()));
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -208,23 +208,23 @@ void Solver::add(Field3D &v, const char* name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.covariant = false;
-  d.name = string(name);
+  d.name = name;
   
 #ifdef TRACK
   v.name = name;
 #endif
 
-  if(mms_initialise) {
+  if (mms_initialise) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
     
-  }else {
+  } else {
     initial_profile(name, v);
   }
   
-  if(mms) {
+  if (mms) {
     d.MMS_err = new Field3D(v.getMesh());
     (*d.MMS_err) = 0.0;
   } else {
@@ -243,13 +243,13 @@ void Solver::add(Field3D &v, const char* name) {
   f3d.push_back(d);
 }
 
-void Solver::add(Vector2D &v, const char* name) {
-  TRACE("Adding 2D vector: Solver::add(%s)", name);
+void Solver::add(Vector2D &v, const std::string name) {
+  TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
   
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
 
   // Set boundary conditions
@@ -263,7 +263,7 @@ void Solver::add(Vector2D &v, const char* name) {
   d.F_var = &ddt(v);
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
-  d.name = string(name);
+  d.name = name;
   // MMS errors set on individual components
   d.MMS_err = nullptr;
 
@@ -273,27 +273,27 @@ void Solver::add(Vector2D &v, const char* name) {
   ///       component individually.
   
   /// Add suffix, depending on co- /contravariance
-  if(v.covariant) {
-    add(v.x, (d.name+"_x").c_str());
-    add(v.y, (d.name+"_y").c_str());
-    add(v.z, (d.name+"_z").c_str());
-  }else {
-    add(v.x, (d.name+"x").c_str());
-    add(v.y, (d.name+"y").c_str());
-    add(v.z, (d.name+"z").c_str());
+  if (v.covariant) {
+    add(v.x, d.name+"_x");
+    add(v.y, d.name+"_y");
+    add(v.z, d.name+"_z");
+  } else {
+    add(v.x, d.name+"x");
+    add(v.y, d.name+"y");
+    add(v.z, d.name+"z");
   }
   
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
 }
 
-void Solver::add(Vector3D &v, const char* name) {
-  TRACE("Adding 3D vector: Solver::add(%s)", name);
+void Solver::add(Vector3D &v, const std::string name) {
+  TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
   
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
   
   // Set boundary conditions
@@ -307,21 +307,21 @@ void Solver::add(Vector3D &v, const char* name) {
   d.F_var = &ddt(v);
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
-  d.name = string(name);
+  d.name = name;
   // MMS errors set on individual components
   d.MMS_err = nullptr;
   
   v3d.push_back(d);
 
   // Add suffix, depending on co- /contravariance
-  if(v.covariant) {
-    add(v.x, (d.name+"_x").c_str());
-    add(v.y, (d.name+"_y").c_str());
-    add(v.z, (d.name+"_z").c_str());
-  }else {
-    add(v.x, (d.name+"x").c_str());
-    add(v.y, (d.name+"y").c_str());
-    add(v.z, (d.name+"z").c_str());
+  if (v.covariant) {
+    add(v.x, d.name+"_x");
+    add(v.y, d.name+"_y");
+    add(v.z, d.name+"_z");
+  } else {
+    add(v.x, d.name+"x");
+    add(v.y, d.name+"y");
+    add(v.z, d.name+"z");
   }
 
   v.applyBoundary(true);
@@ -331,23 +331,23 @@ void Solver::add(Vector3D &v, const char* name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
+void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
 
-  if (name == nullptr) {
-    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  if (name.empty()) {
+    throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
 
-  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name);
+  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 #endif
 
-  if(!has_constraints)
+  if (!has_constraints)
     throw BoutException("ERROR: This solver doesn't support constraints\n");
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   VarStr<Field2D> d;
@@ -355,28 +355,28 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const char* name) {
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
-  d.name = string(name);
+  d.name = name;
 
   f2d.push_back(d);
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
+void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
 
-  if (name == nullptr) {
-    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  if (name.empty()) {
+    throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
 
-  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name);
+  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 #endif
 
-  if(!has_constraints)
+  if (!has_constraints)
     throw BoutException("ERROR: This solver doesn't support constraints\n");
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   VarStr<Field3D> d;
@@ -385,28 +385,28 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const char* name) {
   d.var = &v;
   d.F_var = &C_v;
   d.location = v.getLocation();
-  d.name = string(name);
+  d.name = name;
   
   f3d.push_back(d);
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
+void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
 
-  if (name == nullptr) {
-    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  if (name.empty()) {
+    throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
 
-  TRACE("Constrain 2D vector: Solver::constraint(%s)", name);
+  TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 #endif
 
-  if(!has_constraints)
+  if (!has_constraints)
     throw BoutException("ERROR: This solver doesn't support constraints\n");
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   VarStr<Vector2D> d;
@@ -415,39 +415,39 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name) {
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = string(name);
+  d.name = name;
   
   v2d.push_back(d);
 
   // Add suffix, depending on co- /contravariance
-  if(v.covariant) {
-    constraint(v.x, C_v.x, (d.name+"_x").c_str());
-    constraint(v.y, C_v.y, (d.name+"_x").c_str());
-    constraint(v.z, C_v.z, (d.name+"_x").c_str());
-  }else {
-    constraint(v.x, C_v.x, (d.name+"x").c_str());
-    constraint(v.y, C_v.y, (d.name+"x").c_str());
-    constraint(v.z, C_v.z, (d.name+"x").c_str());
+  if (v.covariant) {
+    constraint(v.x, C_v.x, d.name+"_x");
+    constraint(v.y, C_v.y, d.name+"_x");
+    constraint(v.z, C_v.z, d.name+"_x");
+  } else {
+    constraint(v.x, C_v.x, d.name+"x");
+    constraint(v.y, C_v.y, d.name+"x");
+    constraint(v.z, C_v.z, d.name+"x");
   }
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
+void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
 
-  if (name == nullptr) {
-    throw BoutException("ERROR: Constraint requested for variable with NULL name\n");
+  if (name.empty()) {
+    throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
 
-  TRACE("Constrain 3D vector: Solver::constraint(%s)", name);
+  TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
-  if(varAdded(string(name)))
-    throw BoutException("Variable '%s' already added to Solver", name);
+  if (varAdded(name))
+    throw BoutException("Variable '%s' already added to Solver", name.c_str());
 #endif
 
-  if(!has_constraints)
+  if (!has_constraints)
     throw BoutException("ERROR: This solver doesn't support constraints\n");
 
-  if(initialised)
+  if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
   VarStr<Vector3D> d;
@@ -456,19 +456,19 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = string(name);
+  d.name = name;
   
   v3d.push_back(d);
 
   // Add suffix, depending on co- /contravariance
-  if(v.covariant) {
-    constraint(v.x, C_v.x, (d.name+"_x").c_str());
-    constraint(v.y, C_v.y, (d.name+"_x").c_str());
-    constraint(v.z, C_v.z, (d.name+"_x").c_str());
-  }else {
-    constraint(v.x, C_v.x, (d.name+"x").c_str());
-    constraint(v.y, C_v.y, (d.name+"x").c_str());
-    constraint(v.z, C_v.z, (d.name+"x").c_str());
+  if (v.covariant) {
+    constraint(v.x, C_v.x, d.name+"_x");
+    constraint(v.y, C_v.y, d.name+"_x");
+    constraint(v.z, C_v.z, d.name+"_x");
+  } else {
+    constraint(v.x, C_v.x, d.name+"x");
+    constraint(v.y, C_v.y, d.name+"x");
+    constraint(v.z, C_v.z, d.name+"x");
   }
 }
 
@@ -516,22 +516,22 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }
 
 
-  output_progress.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
+  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
   if (freqDefault > 1)
-    output_progress.write("Solver running for %d outputs with monitor timestep of %e\n",
+    output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
                           NOUT/freqDefault, TIMESTEP*freqDefault);
   
   // Initialise
   if (init(NOUT, TIMESTEP)) {
-    throw BoutException("Failed to initialise solver-> Aborting\n");
+    throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
   initCalled=true;
   
   /// Run the solver
-  output_info.write("Running simulation\n\n");
+  output_info.write(_("Running simulation\n\n"));
 
-  time_t start_time = time((time_t *)nullptr);
-  output_progress.write("\nRun started at  : %s\n", ctime(&start_time));
+  time_t start_time = time(nullptr);
+  output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
   
   Timer timer("run"); // Start timer
   
@@ -559,9 +559,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   try {
     status = run();
 
-    time_t end_time = time((time_t *)nullptr);
-    output_progress.write("\nRun finished at  : %s\n", ctime(&end_time));
-    output_progress.write("Run time : ");
+    time_t end_time = time(nullptr);
+    output_progress.write(_("\nRun finished at  : %s\n"), toString(end_time).c_str());
+    output_progress.write(_("Run time : "));
 
     int dt = end_time - start_time;
     int i = static_cast<int>(dt / (60. * 60.));
@@ -594,9 +594,9 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   TRACE("Solver::init()");
 
   if (initialised)
-    throw BoutException("ERROR: Solver is already initialised\n");
+    throw BoutException(_("ERROR: Solver is already initialised\n"));
 
-  output_progress.write("Initialising solver\n");
+  output_progress.write(_("Initialising solver\n"));
 
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
@@ -639,20 +639,24 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
       timestep = mon->timestep;
     }
     if (!isMultiple(timestep,mon->timestep))
-      throw BoutException("Couldn't add Monitor: %g is not a multiple of %g!"
+      throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!")
                           ,timestep,mon->timestep);
     if (mon->timestep > timestep*1.5){
       mon->freq=(mon->timestep/timestep)+.5;
     } else { // mon.timestep is truly smaller
       if (initCalled)
-        throw BoutException("Solver::addMonitor: Cannot reduce timestep \
-(from %g to %g) after init is called!"
+        throw BoutException(_("Solver::addMonitor: Cannot reduce timestep \
+(from %g to %g) after init is called!")
                             ,timestep,mon->timestep);
       int multi = timestep/mon->timestep+.5;
       timestep=mon->timestep;
       for (const auto &i: monitors){
         i->freq=i->freq*multi;
       }
+      // update freqDefault so that monitors with no timestep are called at the
+      // output frequency
+      freqDefault *= multi;
+
       mon->freq=1;
     }
   } else {
@@ -683,26 +687,20 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   
   ++iter;
   try {
-    // Call physics model monitor
-    if(model) {
-      if(model->runOutputMonitor(simtime, iter-1, NOUT))
-        throw BoutException("Monitor signalled to quit");
-    }
-    
     // Call monitors
     for (const auto &it : monitors){
       if ((iter % it->freq)==0){
         // Call each monitor one by one
         int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
         if(ret)
-          throw BoutException("Monitor signalled to quit");
+          throw BoutException(_("Monitor signalled to quit"));
       }
     }
   } catch (BoutException &e) {
     for (const auto &it : monitors){
       it->cleanup();
     }
-    output_error.write("Monitor signalled to quit\n");
+    output_error.write(_("Monitor signalled to quit\n"));
     throw;
   }
 
@@ -1019,11 +1017,11 @@ void Solver::load_derivs(BoutReal *udata) {
 void Solver::save_vars(BoutReal *udata) {
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
-      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
 
   for(const auto& f : f3d) 
     if(!f.var->isAllocated())
-      throw BoutException("Variable '%s' not initialised", f.name.c_str());
+      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
   
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
@@ -1060,7 +1058,7 @@ void Solver::save_derivs(BoutReal *dudata) {
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
     if(f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n",strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
+      throw BoutException(_("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n"),strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
     }
   }
 
@@ -1266,7 +1264,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
-      throw BoutException("Time derivative for '%s' not set", f.name.c_str());
+      throw BoutException(_("Time derivative for variable '%s' not set"), f.name.c_str());
   }
 #endif
   // Make sure vectors in correct basis

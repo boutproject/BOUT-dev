@@ -32,66 +32,8 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
-
-BoutReal ***r3tensor(int nrow, int ncol, int ndep) {
-  int i,j;
-  BoutReal ***t;
-
-  /* allocate pointers to pointers to rows */
-  t=(BoutReal ***) malloc((size_t)(nrow*sizeof(BoutReal**)));
-
-  /* allocate pointers to rows and set pointers to them */
-  t[0]=(BoutReal **) malloc((size_t)(nrow*ncol*sizeof(BoutReal*)));
-
-  /* allocate rows and set pointers to them */
-  t[0][0]=(BoutReal *) malloc((size_t)(nrow*ncol*ndep*sizeof(BoutReal)));
-
-  for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
-  for(i=1;i!=nrow;i++) {
-    t[i]=t[i-1]+ncol;
-    t[i][0]=t[i-1][0]+ncol*ndep;
-    for(j=1;j!=ncol;j++) t[i][j]=t[i][j-1]+ndep;
-  }
-
-  /* return pointer to array of pointers to rows */
-  return t;
-}
-
-void free_r3tensor(BoutReal ***m) {
-  free(m[0][0]);
-  free(m[0]);
-  free(m);
-}
-
-int ***i3tensor(int nrow, int ncol, int ndep) {
-  int i,j;
-  int ***t;
-
-  /* allocate pointers to pointers to rows */
-  t=(int ***) malloc((size_t)(nrow*sizeof(int**)));
-
-  /* allocate pointers to rows and set pointers to them */
-  t[0]=(int **) malloc((size_t)(nrow*ncol*sizeof(int*)));
-
-  /* allocate rows and set pointers to them */
-  t[0][0]=(int *) malloc((size_t)(nrow*ncol*ndep*sizeof(int)));
-
-  for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
-  for(i=1;i!=nrow;i++) {
-    t[i]=t[i-1]+ncol;
-    t[i][0]=t[i-1][0]+ncol*ndep;
-    for(j=1;j!=ncol;j++) t[i][j]=t[i][j-1]+ndep;
-  }
-
-  /* return pointer to array of pointers to rows */
-  return t;
-}
-
-void free_i3tensor(int ***m) {
-  free(m[0][0]);
-  free(m[0]);
-  free(m);
-}
+#include <ctime>
+#include <iomanip>
 
 /**************************************************************************
  * String routines
@@ -106,7 +48,7 @@ char* copy_string(const char* s) {
     return nullptr;
 
   n = strlen(s);
-  s2 = (char*) malloc(n+1);
+  s2 = static_cast<char *>(malloc(n + 1));
   strcpy(s2, s);
   return s2;
 }
@@ -189,3 +131,18 @@ std::string trimComments(const std::string &s, const std::string &c) {
   return s.substr(0, s.find_first_of(c));
 }
 
+template <>
+const std::string toString<>(const time_t& time) {
+  // Get local time
+  std::tm *tm = std::localtime(&time);
+
+  // Note: With GCC >= 5 `put_time` becomes available
+  // std::stringstream ss;
+  // ss << std::put_time(tm, "%c %Z");
+  // return ss.str();
+
+  // Older compilers
+  char buffer[80];
+  strftime(buffer, 80, "%Ec %Z", tm);
+  return std::string(buffer);
+}

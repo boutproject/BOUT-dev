@@ -25,7 +25,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
+LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -291,7 +291,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates(location);
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -634,6 +634,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   
   Field2D result;
   result.allocate();
+  result.setLocation(rhs.getLocation());
   
   for(int x=mesh->xstart;x<= mesh->xend;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {

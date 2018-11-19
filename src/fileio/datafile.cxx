@@ -412,6 +412,8 @@ void Datafile::setLowPrecision() {
 
 void Datafile::add(int &i, const char *name, bool save_repeat) {
   TRACE("DataFile::add(int)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&i == varPtr(string(name))) {
@@ -460,6 +462,8 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
 
 void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   TRACE("DataFile::add(BoutReal)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&r == varPtr(string(name))) {
@@ -510,6 +514,8 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
 
 void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Field2D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -560,6 +566,8 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Field3D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -610,6 +618,8 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Vector2D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -666,6 +676,8 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
 
 void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Vector3D)");
+  if (!enabled)
+    return;
   if (varAdded(string(name))) {
     // Check if it's the same variable
     if (&f == varPtr(string(name))) {
@@ -994,21 +1006,6 @@ bool Datafile::write(const char *format, ...) const {
   return ret;
 }
 
-bool Datafile::writeVar(const int &i, const char *name) {
-  // Should do this a better way...
-  int *i2 = new int;
-  *i2 = i;
-  add(*i2, name);
-  return true;
-}
-
-bool Datafile::writeVar(BoutReal r, const char *name) {
-  BoutReal *r2 = new BoutReal;
-  *r2 = r;
-  add(*r2, name);
-  return true;
-}
-
 void Datafile::setAttribute(const string &varname, const string &attrname, const string &text) {
 
   TRACE("Datafile::setAttribute(string, string, string)");
@@ -1041,6 +1038,35 @@ void Datafile::setAttribute(const string &varname, const string &attrname, const
 void Datafile::setAttribute(const string &varname, const string &attrname, int value) {
 
   TRACE("Datafile::setAttribute(string, string, int)");
+
+  Timer timer("io");
+
+  if(!file)
+    throw BoutException("Datafile::write: File is not valid!");
+
+  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openw(filename, MYPE, appending))
+      throw BoutException("Datafile::write: Failed to open file!");
+    appending = true;
+    flushFrequencyCounter = 0;
+  }
+
+  if(!file->is_valid())
+    throw BoutException("Datafile::setAttribute: File is not valid!");
+
+  file->setAttribute(varname, attrname, value);
+
+  if (openclose) {
+    file->close();
+  }
+}
+
+void Datafile::setAttribute(const string &varname, const string &attrname, BoutReal value) {
+
+  TRACE("Datafile::setAttribute(string, string, BoutReal)");
 
   Timer timer("io");
 

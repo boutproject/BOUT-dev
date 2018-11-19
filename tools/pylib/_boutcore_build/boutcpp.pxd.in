@@ -6,11 +6,20 @@ from libcpp cimport bool
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
+EOF
+for ftype in "Field3D" "Field2D"
+do
+  if [ $ftype = "Field3D" ]; then fheader="field3d";
+  elif [ $ftype = "Field2D" ]; then fheader="field2d";
+  else
+    echo "Error, unimplemented ftype"; exit 1
+  fi
+cat <<EOF
 
-cdef extern from "field3d.hxx":
-    cppclass Field3D:
-        Field3D(Mesh * mesh);
-        Field3D(const Field3D &)
+cdef extern from "$fheader.hxx":
+    cppclass $ftype:
+        $ftype(Mesh * mesh);
+        $ftype(const $ftype &)
         double & operator()(int,int,int)
         int getNx()
         int getNy()
@@ -24,13 +33,16 @@ cdef extern from "field3d.hxx":
 EOF
 for f in sqrt exp log sin cos abs
 do
-    echo "    Field3D $f(Field3D)"
+    echo "    $ftype $f($ftype)"
 done
 cat <<EOF
-    double max(Field3D)
-    double min(Field3D)
-    Field3D pow(Field3D,double)
-    Field3D & ddt(Field3D)
+    double max($ftype)
+    double min($ftype)
+    $ftype pow($ftype,double)
+    $ftype & ddt($ftype)
+EOF
+done
+cat <<EOF
 
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
@@ -48,6 +60,27 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
+        Coordinates * getCoordinates()
+
+cdef extern from "bout/coordinates.hxx":
+    cppclass Coordinates:
+        Coordinates()
+        Field2D dx, dy
+        double dz
+        Field2D J
+        Field2D Bxy
+        Field2D g11, g22, g33, g12, g13, g23
+        Field2D g_11, g_22, g_33, g_12, g_13, g_23
+        Field2D G1_11, G1_22, G1_33, G1_12, G1_13, G1_23
+        Field2D G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
+        Field2D G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
+        Field2D G1, G2, G3
+        Field2D ShiftTorsion
+        Field2D IntShiftTorsion
+        int geometry()
+        int calcCovariant()
+        int calcContravariant()
+        int jacobian()
 
 cdef extern from "bout/fieldgroup.hxx":
     cppclass FieldGroup:

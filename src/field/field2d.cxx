@@ -77,7 +77,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
-
+                                       
   if(fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -89,6 +89,9 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
   }
 #endif
 
+  location = f.location;
+  fieldCoordinates = f.fieldCoordinates;
+  
   boundaryIsSet = false;
 }
 
@@ -130,48 +133,44 @@ Field2D* Field2D::timeDeriv() {
 
 ////////////// Indexing ///////////////////
 
-const DataIterator Field2D::iterator() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0);
+const Region<Ind2D> &Field2D::getRegion(REGION region) const {
+  return fieldmesh->getRegion2D(REGION_STRING(region));
+};
+const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegion2D(region_name);
+};
+
+void Field2D::setLocation(CELL_LOC new_location) {
+  if (getMesh()->StaggerGrids) {
+    if (new_location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field2D: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    if (new_location == CELL_DEFAULT) {
+      new_location = CELL_CENTRE;
+    }
+    location = new_location;
+
+    // Invalidate the coordinates pointer
+    if (new_location != location)
+      fieldCoordinates = nullptr;
+
+  } else {
+#if CHECK > 0
+    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
+      throw BoutException("Field2D: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggerGrids?");
+    }
+#endif
+    location = CELL_CENTRE;
+  }
+
+
 }
 
-const DataIterator Field2D::begin() const {
-  return Field2D::iterator();
-}
-
-const DataIterator Field2D::end() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0, DI_GET_END);
-}
-
-const IndexRange Field2D::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  default: {
-    throw BoutException("Field2D::region() : Requested region not implemented");
-  }
-  };
+CELL_LOC Field2D::getLocation() const {
+  return location;
 }
 
 // Not in header because we need to access fieldmesh
@@ -206,6 +205,9 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   // Copy reference to data
   data = rhs.data;
 
+  // Copy location
+  setLocation(rhs.location);
+
   return *this;
 }
 
@@ -221,8 +223,11 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   if (!finite(rhs))
     throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
 #endif
-  for (const auto &i : (*this))
+
+  const Region<Ind2D> &region_all = fieldmesh->getRegion2D("RGN_ALL");
+  BOUT_FOR(i, region_all) {
     (*this)[i] = rhs;
+  }
 
   return *this;
 }
@@ -240,7 +245,7 @@ void Field2D::applyBoundary(bool init) {
   }
 #endif
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
@@ -250,7 +255,7 @@ void Field2D::applyBoundary(bool init) {
 void Field2D::applyBoundary(const string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -282,19 +287,26 @@ void Field2D::applyBoundary(const string &condition) {
 }
 
 void Field2D::applyBoundary(const string &region, const string &condition) {
-  ASSERT1(isAllocated());
+  TRACE("Field2D::applyBoundary(string, string)");
+  checkData(*this);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
 
+  bool region_found = false;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
-    if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+  for (const auto &reg : fieldmesh->getBoundaries()) {
+    if (reg->label.compare(region) == 0) {
+      region_found = true;
+      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
     }
+  }
+
+  if (!region_found) {
+    throw BoutException("Region '%s' not found", region.c_str());
   }
 
   // Set the corners to zero
@@ -319,9 +331,9 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 void Field2D::applyTDerivBoundary() {
   TRACE("Field2D::applyTDerivBoundary()");
 
-  ASSERT1(isAllocated());
+  checkData(*this);
   ASSERT1(deriv != nullptr);
-  ASSERT1(deriv->isAllocated());
+  checkData(*deriv);
 
   for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
@@ -329,9 +341,10 @@ void Field2D::applyTDerivBoundary() {
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
   TRACE("Field2D::setBoundary(const Field2D&)");
-  allocate(); // Make sure data allocated
 
-  ASSERT0(f2d.isAllocated());
+  checkData(f2d);
+
+  allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
@@ -355,13 +368,17 @@ Field2D operator-(const Field2D &f) { return -1.0 * f; }
 BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
   TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
-  for(const auto& i : f.region(rgn))
-    if(f[i] < result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
+    if (f[i] < result) {
       result = f[i];
+    }
+  }
 
   if(allpe) {
     // MPI reduce
@@ -375,13 +392,17 @@ BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
 BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
   TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
 
-  ASSERT2(f.isAllocated());
+  checkData(f);
 
-  BoutReal result = f[f.region(rgn).begin()];
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
 
-  for(const auto& i : f.region(rgn))
-    if(f[i] > result)
+  BoutReal result = f[*region.cbegin()];
+
+  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+    if (f[i] > result) {
       result = f[i];
+    }
+  }
 
   if(allpe) {
     // MPI reduce
@@ -399,7 +420,9 @@ bool finite(const Field2D &f, REGION rgn) {
     return false;
   }
 
-  for (const auto &i : f.region(rgn)) {
+  const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR_SERIAL(i, region) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -431,14 +454,15 @@ bool finite(const Field2D &f, REGION rgn) {
   const Field2D name(const Field2D &f, REGION rgn) {                                     \
     TRACE(#name "(Field2D)");                                                            \
     /* Check if the input is allocated */                                                \
-    ASSERT1(f.isAllocated());                                                            \
+    checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
     result.allocate();                                                                   \
-    /* Loop over domain */                                                               \
-    for (const auto &d : result.region(rgn)) {                                           \
+    const Region<Ind2D> &region = f.getMesh()->getRegion2D(REGION_STRING(rgn));          \
+    BOUT_FOR(d, region) {                                                                \
       result[d] = func(f[d]);                                                            \
     }                                                                                    \
+    result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -465,11 +489,17 @@ const Field2D copy(const Field2D &f) {
 }
 
 const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
+  checkData(var);
+
   Field2D result = copy(var);
 
-  for(const auto& d : result.region(rgn))
-    if(result[d] < f)
+  const Region<Ind2D> &region = var.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(d, region) {
+    if (result[d] < f) {
       result[d] = f;
+    }
+  }
 
   return result;
 }
@@ -477,18 +507,22 @@ const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
 Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(Field2D, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
+  ASSERT1(lhs.getLocation() == rhs.getLocation());
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs[i]);
   }
+
+  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
@@ -497,16 +531,20 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
 Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   TRACE("pow(Field2D, BoutReal)");
   // Check if the inputs are allocated
-  ASSERT1(lhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(lhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = lhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs[i], rhs);
   }
+
+  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
@@ -515,69 +553,64 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
 Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   TRACE("pow(lhs, Field2D)");
   // Check if the inputs are allocated
-  ASSERT1(rhs.isAllocated());
+  checkData(lhs);
+  checkData(rhs);
 
   // Define and allocate the output result
   Field2D result(rhs.getMesh());
   result.allocate();
 
-  // Loop over domain
-  for(const auto& i: result.region(rgn)) {
+  const Region<Ind2D> &region = rhs.getMesh()->getRegion2D(REGION_STRING(rgn));
+
+  BOUT_FOR(i, region) {
     result[i] = ::pow(lhs, rhs[i]);
   }
+
+  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
+namespace {
+  // Internal routine to avoid ugliness with interactions between CHECK
+  // levels and UNUSED parameters
+#if CHECK > 2
+  void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
+    const Region<Ind2D> &new_region = f.getMesh()->getRegion2D(REGION_STRING(region));
+    
+    // Do full checks
+    BOUT_FOR_SERIAL (i, new_region) {
+      if (!::finite(f[i])) {
+	throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
+			    i.y());
+      }
+    }
+  }
+#else
+  void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+#endif
+}
+
 #if CHECK > 0
 /// Check if the data is valid
 void checkData(const Field2D &f, REGION region) {
-  if(!f.isAllocated()) {
+  if (!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
 
-#if CHECK > 2
-  // Do full checks
-  for(const auto& i : f.region(region)){
-    if(!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x, i.y);
-    }
-  }
-#endif
+  checkDataIsFiniteOnRegion(f, region);
 }
 #endif
 
-void invalidateGuards(Field2D &var){
 #if CHECK > 2
+void invalidateGuards(Field2D &var) {
   Mesh *localmesh = var.getMesh();
 
-  // Inner x -- all y and all z
-  for (int ix = 0; ix < localmesh->xstart; ix++) {
-    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
-      var(ix, iy) = std::nan("");
-    }
-  }
+  const Region<Ind2D> &region_guards = localmesh->getRegion2D("RGN_GUARDS");
 
-  // Outer x -- all y and all z
-  for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-    for (int iy = 0; iy < localmesh->LocalNy; iy++) {
-      var(ix, iy) = std::nan("");
-    }
+  BOUT_FOR(i, region_guards) {
+    var[i] = BoutNaN;
   }
-
-  // Remaining boundary point
-  for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-    // Lower y -- non-boundary x and all z (could be all x but already set)
-    for (int iy = 0; iy < localmesh->ystart; iy++) {
-      var(ix, iy) = std::nan("");
-    }
-
-    // Lower y -- non-boundary x and all z (could be all x but already set)
-    for (int iy = localmesh->yend + 1; iy < localmesh->LocalNy; iy++) {
-      var(ix, iy) = std::nan("");
-    }
-  }
-#endif  
-  return;
 }
+#endif

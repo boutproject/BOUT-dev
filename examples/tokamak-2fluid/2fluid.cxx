@@ -101,7 +101,7 @@ private:
     Field2D I; // Shear factor 
 
     // Get the coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     output.write("Solving 6-variable 2-fluid equations\n");
     

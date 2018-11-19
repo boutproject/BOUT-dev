@@ -3,14 +3,6 @@
 
 #include <string>
 
-TEST(OldMatrixTest, CreateAndFree) {
-  BoutReal **test_matrix = matrix<BoutReal>(5, 10);
-
-  EXPECT_NE(nullptr, test_matrix);
-
-  free_matrix(test_matrix);
-}
-
 TEST(MatrixTest, DefaultShape) {
   Matrix<int> matrix;
 

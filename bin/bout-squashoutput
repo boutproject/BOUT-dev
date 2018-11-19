@@ -9,37 +9,42 @@ from sys import exit
 try:
     import argcomplete
 except ImportError:
-    argcomplete=None
+    argcomplete = None
 import boutdata.squashoutput as squash
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(squash.__doc__+"\n\n"+squash.squashoutput.__doc__)
+parser = argparse.ArgumentParser(
+    squash.__doc__ + "\n\n" + squash.squashoutput.__doc__)
+
 
 def str_to_bool(string):
-    return string.lower()=="true" or string.lower()=="t"
+    return string.lower() == "true" or string.lower() == "t"
+
 
 def int_or_none(string):
     try:
         return int(string)
     except ValueError:
-        if string.lower()=='none' or string.lower()=='n':
+        if string.lower() == 'none' or string.lower() == 'n':
             return None
         else:
             raise
 
 parser.add_argument("datadir", nargs='?', default=".")
-parser.add_argument("--outputname",default="BOUT.dmp.nc")
+parser.add_argument("--outputname", default="BOUT.dmp.nc")
 parser.add_argument("--tind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
-parser.add_argument("-s","--singleprecision", action="store_true", default=False)
-parser.add_argument("-c","--compress", action="store_true", default=False)
-parser.add_argument("-l","--complevel", type=int_or_none, default=None)
-parser.add_argument("-i","--least-significant-digit", type=int_or_none, default=None)
-parser.add_argument("-q","--quiet", action="store_true", default=False)
-parser.add_argument("-a","--append", action="store_true", default=False)
-parser.add_argument("-d","--delete", action="store_true", default=False)
+parser.add_argument("-s", "--singleprecision",
+                    action="store_true", default=False)
+parser.add_argument("-c", "--compress", action="store_true", default=False)
+parser.add_argument("-l", "--complevel", type=int_or_none, default=None)
+parser.add_argument("-i", "--least-significant-digit",
+                    type=int_or_none, default=None)
+parser.add_argument("-q", "--quiet", action="store_true", default=False)
+parser.add_argument("-a", "--append", action="store_true", default=False)
+parser.add_argument("-d", "--delete", action="store_true", default=False)
 parser.add_argument("-p","--progress", action="store_true", default=False)
 parser.add_argument("-C","--docontinue", action="store_true", default=False)
 
@@ -51,7 +56,7 @@ args = parser.parse_args()
 # Late imports to not slow down bash completion
 
 for ind in "txyz":
-    args.__dict__[ind+"ind"]=slice(*args.__dict__[ind+"ind"])
+    args.__dict__[ind + "ind"] = slice(*args.__dict__[ind + "ind"])
 # Call the function, using command line arguments
 squash.squashoutput(**args.__dict__)
 

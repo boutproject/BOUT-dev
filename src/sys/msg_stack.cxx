@@ -65,7 +65,7 @@ void MsgStack::pop(int id) {
   if (id < 0)
     id = 0;
 
-  if (id > position)
+  if (id > static_cast<int>(position))
     return;
 
   position = id;

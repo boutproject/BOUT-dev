@@ -18,8 +18,8 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
-  : LaplaceXZ(m, opt), mesh(m), coefs_set(false) {
+LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
+  : LaplaceXZ(m, opt, loc), mesh(m), coefs_set(false) {
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
    *              - Setting the solver method
@@ -368,7 +368,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
 
-    Coordinates *coords = mesh->coordinates();
+    Coordinates *coords = mesh->getCoordinates(location);
 
     // NOTE: For now the X-Z terms are omitted, so check that they are small
     ASSERT2(max(abs(coords->g13)) < 1e-5);
@@ -589,6 +589,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   Field3D result;
   result.allocate();
+  result.setLocation(bin.getLocation());
 
   for (auto &it : slice) {
     /// Get y index
