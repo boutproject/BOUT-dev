@@ -74,7 +74,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) noexcept : Field2D() { swap(*this, f); };
+  Field2D(Field2D&& f) noexcept { swap(*this, f); };
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
@@ -260,7 +260,7 @@ private:
   
   CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
 
-  Field2D *deriv; ///< Time-derivative, can be NULL
+  Field2D *deriv{nullptr}; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators

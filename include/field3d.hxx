@@ -173,7 +173,7 @@ class Field3D : public Field, public FieldData {
   Field3D(const Field3D& f);
 
   /// Move constructor
-  Field3D(Field3D&& f) noexcept : Field3D() { swap(*this, f); }
+  Field3D(Field3D&& f) noexcept { swap(*this, f); }
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -468,7 +468,7 @@ class Field3D : public Field, public FieldData {
   
 private:
   /// Boundary - add a 2D field
-  const Field2D *background;
+  const Field2D *background{nullptr};
 
   int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   
@@ -477,10 +477,10 @@ private:
 
   CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
   
-  Field3D *deriv; ///< Time derivative (may be NULL)
+  Field3D *deriv{nullptr}; ///< Time derivative (may be NULL)
 
   /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  Field3D *yup_field{nullptr}, *ydown_field{nullptr};
 };
 
 // Non-member overloaded operators

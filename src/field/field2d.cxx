@@ -45,18 +45,18 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 
   boundaryIsSet = false;
 
-  if(fieldmesh) {
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
 #if CHECK > 0
   else {
-    nx=-1;
-    ny=-1;
+    nx = -1;
+    ny = -1;
   }
 #endif
 
@@ -65,9 +65,7 @@ Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
-                                     data(f.data), // This handles references to the data array
-                                     deriv(nullptr) {
+Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
 #ifdef TRACK
@@ -77,25 +75,25 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
-                                       
-  if(fieldmesh) {
+
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
 #if CHECK > 0
   else {
-    nx=-1;
-    ny=-1;
+    nx = -1;
+    ny = -1;
   }
 #endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-  
+
   boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field(localmesh) {
   boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
