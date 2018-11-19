@@ -86,24 +86,6 @@ int main(int argc, char **argv) {
     }
     );
 
-  // Range based for DataIterator with indices
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for (omp)",
-    BOUT_OMP(parallel)
-    for(auto i : result.region(RGN_NOY)){
-      result(i.x,i.y,i.z) = (a(i.x,i.y+1,i.z) - a(i.x,i.y-1,i.z));
-    }
-    );
-
-  // Range based DataIterator
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] (omp)",
-    BOUT_OMP(parallel)
-    for(const auto &i : result.region(RGN_NOY)){
-      result[i] = (a[i.yp()] - a[i.ym()]);
-    }
-    );
-
   ITERATOR_TEST_BLOCK(
     "C++11 range-based for over Region [i] (omp)",
     BOUT_OMP(parallel)
@@ -114,35 +96,7 @@ int main(int argc, char **argv) {
     }
     );
 
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] with stencil (omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      for(const auto &i : result.region(RGN_NOY)){
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-        result[i] = (s.p - s.m);
-      }
-    }
-    );
 #endif
-
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] with stencil (serial)",
-    stencil s;
-    for(const auto &i : result.region(RGN_NOY)){
-      s.mm = nan("");
-      s.m = a[i.ym()];
-      s.c = a[i];
-      s.p = a[i.yp()];
-      s.pp = nan("");
-      result[i] = (s.p - s.m);
-    }
-    );
 
   // Region macro
   ITERATOR_TEST_BLOCK(
