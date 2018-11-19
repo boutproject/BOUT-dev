@@ -360,7 +360,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
 // operation (addition) between the two input types.
 template<typename T, typename F, typename R = decltype(T{}+F{})>
 R V_dot_Grad(const T &v, const F &a) {
-  TRACE("%s", __thefunc__);
+  AUTO_TRACE();
   SCOREP0();
   ASSERT1(v.getLocation() == a.getLocation());
   ASSERT1(v.getLocation() != CELL_VSHIFT);

@@ -82,7 +82,7 @@ class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, REGION region) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
             || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
@@ -95,7 +95,7 @@ public:
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
 
@@ -481,7 +481,7 @@ struct registerMethod {
   template <typename Direction, typename Stagger, typename FieldTypeContainer,
             typename Method>
   void operator()(Direction, Stagger, FieldTypeContainer, Method) {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     using namespace std::placeholders;
 
     // Now we want to get the actual field type out of the TypeContainer
@@ -646,7 +646,7 @@ class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, REGION region) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
@@ -708,7 +708,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
                     REGION UNUSED(region)) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
   }
@@ -719,7 +719,7 @@ class FFT2ndDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, REGION region) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
@@ -774,7 +774,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
                     REGION UNUSED(region)) const {
-    TRACE("%s", __thefunc__);
+    AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
     return;
   }

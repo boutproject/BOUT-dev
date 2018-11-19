@@ -803,7 +803,7 @@ private:
 template <typename T, DIRECTION direction, DERIV derivType>
 T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
                             const std::string& method, REGION region) const {
-  TRACE("%s", __thefunc__);
+  AUTO_TRACE();
 
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
@@ -884,7 +884,7 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
 template <typename T, DIRECTION direction, int order>
 T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
                                 REGION region) const {
-  TRACE("%s", __thefunc__);
+  AUTO_TRACE();
 
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
