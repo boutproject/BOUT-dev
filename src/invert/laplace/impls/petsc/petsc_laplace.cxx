@@ -275,7 +275,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   KSPCreate( comm, &ksp );
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  string type;
+  std::string type;
   opts->get("ksptype", ksptype, KSP_GMRES);
   
   // Get preconditioner type

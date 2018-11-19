@@ -44,9 +44,6 @@
 #include <ctime>
 #include <algorithm>
 
-using std::abs;
-using std::swap;
-
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
@@ -202,6 +199,8 @@ private:
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 
+  using std::abs;
+
   // Calculate the first co-factors
   T A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
   T B = a(1, 2) * a(2, 0) - a(1, 0) * a(2, 2);
@@ -352,7 +351,7 @@ const std::string toString<>(const time_t& time);
 /*!
  * Convert a string to lower case
  */
-const string lowercase(const string &str);
+const std::string lowercase(const std::string &str);
 
 /*!
  * Convert a string to upper case
@@ -362,7 +361,7 @@ const string uppercase(const string &str);
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const string lowercasequote(const string &str);
+const std::string lowercasequote(const std::string &str);
 
 /*!
  * Convert a string to a BoutReal

@@ -31,6 +31,9 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
+using std::string;
+using std::vector;
+
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 

@@ -48,7 +48,6 @@ class IdaSolver;
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
-using std::vector;
 
 #include <bout/solverfactory.hxx>
 namespace {
