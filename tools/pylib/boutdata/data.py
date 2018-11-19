@@ -529,6 +529,8 @@ class BoutOutputs(object):
         if suffix == None:
             temp_file_list = glob.glob(
                 os.path.join(self._path, self._prefix + "*"))
+            if len(temp_file_list) == 0:
+                raise ValueError("ERROR: No data files found in %s"%path)
             latest_file = max(temp_file_list, key=os.path.getctime)
             self._suffix = latest_file.split(".")[-1]
         else:
