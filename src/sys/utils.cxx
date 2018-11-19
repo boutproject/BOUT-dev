@@ -62,8 +62,8 @@ const std::string lowercase(const std::string &str) {
 }
 
 // Convert a string to upper case
-const string uppercase(const string &str) {
-  string strlow(str);
+const std::string uppercase(const std::string& str) {
+  std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::toupper);
   return strlow;

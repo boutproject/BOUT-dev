@@ -356,7 +356,7 @@ const std::string lowercase(const std::string &str);
 /*!
  * Convert a string to upper case
  */
-const string uppercase(const string &str);
+const std::string uppercase(const std::string &str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
