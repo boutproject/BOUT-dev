@@ -267,13 +267,13 @@ void Ncxx4::close() {
 void Ncxx4::flush() {
 }
 
-const vector<int> Ncxx4::getSize(const char *name) {
+const std::vector<int> Ncxx4::getSize(const char *name) {
   TRACE("Ncxx4::getSize");
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: getSize(%s)\n", name); 
 #endif
-  vector<int> size;
+  std::vector<int> size;
 
   if(!is_valid())
     return size;
@@ -437,9 +437,9 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
   
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
   
   var.getVar(start, counts, data);
@@ -469,9 +469,9 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
   
   var.getVar(start, counts, data);
@@ -505,9 +505,9 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   output.write("Ncxx4:: write { Writing Variable } \n");
 #endif
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
 
   var.putVar(start, counts, data);
@@ -541,9 +541,9 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
 
   if(lowPrecision) {
@@ -594,9 +594,9 @@ bool Ncxx4::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   
   // NOTE: Probably should do something here to check t0
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
   
   var.getVar(start, counts, data);
@@ -625,9 +625,9 @@ bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   // NOTE: Probably should do something here to check t0
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
   
   var.getVar(start, counts, data);
@@ -662,9 +662,9 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
     }
   }
   
-  vector<size_t> start(1);
+  std::vector<size_t> start(1);
   start[0] = rec_nr[name];
-  vector<size_t> counts(1);
+  std::vector<size_t> counts(1);
   counts[0] = 1;
 
 #ifdef NCDF_VERBOSE
@@ -732,9 +732,9 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
       data[i] = 0.0;
   }
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
 
   // Add the record
@@ -842,7 +842,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
   if (varname == "") {
     // attribute of file
     // Check if attribute exists without throwing exception when it doesn't
-    std::multimap<string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    std::multimap<std::string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
     if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
       return false;
     } else {
@@ -859,7 +859,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
     }
 
     // Check if attribute exists without throwing exception when it doesn't
-    map<string, NcVarAtt> varAtts_list = var.getAtts();
+    auto varAtts_list = var.getAtts();
     if (varAtts_list.find(attrname) == varAtts_list.end()) {
       return false;
     } else {
@@ -893,7 +893,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
     }
 
     // Check if attribute exists without throwing exception when it doesn't
-    map<string, NcVarAtt> varAtts_list = var.getAtts();
+    auto varAtts_list = var.getAtts();
     if (varAtts_list.find(attrname) == varAtts_list.end()) {
       return false;
     } else {
@@ -911,7 +911,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
   if (varname == "") {
     // attribute of file
     // Check if attribute exists without throwing exception when it doesn't
-    std::multimap<string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    std::multimap<std::string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
     if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
       return false;
     } else {
@@ -927,7 +927,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
     }
 
     // Check if attribute exists without throwing exception when it doesn't
-    map<string, NcVarAtt> varAtts_list = var.getAtts();
+    auto varAtts_list = var.getAtts();
     if (varAtts_list.find(attrname) == varAtts_list.end()) {
       return false;
     } else {
@@ -944,15 +944,15 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
  * Private functions
  ***************************************************************************/
 
-vector<NcDim> Ncxx4::getDimVec(int nd) {
-  vector<NcDim> vec(nd);
+std::vector<NcDim> Ncxx4::getDimVec(int nd) {
+  std::vector<NcDim> vec(nd);
   for(int i=0;i<nd;i++)
     vec[i] = *dimList[i];
   return vec;
 }
 
-vector<NcDim> Ncxx4::getRecDimVec(int nd) {
-  vector<NcDim> vec(nd);
+std::vector<NcDim> Ncxx4::getRecDimVec(int nd) {
+  std::vector<NcDim> vec(nd);
   for(int i=0;i<nd;i++)
     vec[i] = *recDimList[i];
   return vec;

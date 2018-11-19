@@ -11,11 +11,11 @@
 
 #include <unused.hxx>
 
-bool GridFromOptions::hasVar(const string &name) {
+bool GridFromOptions::hasVar(const std::string &name) {
   return options->isSet(name);
 }
 
-bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
+bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
   if(!hasVar(name)) {
     ival = 0;
     return false;
@@ -25,7 +25,7 @@ bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
   return true;
 }
 
-bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
+bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
   if(!hasVar(name)) {
     rval = 0.0;
     return false;
@@ -42,7 +42,7 @@ bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal def) {
+bool GridFromOptions::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def) {
   if (!hasVar(name)) {
     output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(), def);
     var = def;
@@ -53,7 +53,7 @@ bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal de
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal def) {
+bool GridFromOptions::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def) {
   if(!hasVar(name)) {
     var = def;
     return false;
@@ -63,7 +63,7 @@ bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal de
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len,
+bool GridFromOptions::get(Mesh *m, std::vector<int> &var, const std::string &name, int len,
                           int UNUSED(offset), GridDataSource::Direction UNUSED(dir)) {
   // Integers not expressions yet
 
@@ -76,7 +76,7 @@ bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
+bool GridFromOptions::get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,
                           int offset, GridDataSource::Direction dir) {
 
   if(!hasVar(name)) {

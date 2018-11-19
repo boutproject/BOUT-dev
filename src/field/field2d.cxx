@@ -252,7 +252,7 @@ void Field2D::applyBoundary(bool init) {
       bndry->apply(*this);
 }
 
-void Field2D::applyBoundary(const string &condition) {
+void Field2D::applyBoundary(const std::string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
   checkData(*this);
@@ -286,7 +286,7 @@ void Field2D::applyBoundary(const string &condition) {
   }
 }
 
-void Field2D::applyBoundary(const string &region, const string &condition) {
+void Field2D::applyBoundary(const std::string &region, const std::string &condition) {
   TRACE("Field2D::applyBoundary(string, string)");
   checkData(*this);
 

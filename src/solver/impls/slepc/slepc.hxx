@@ -55,8 +55,6 @@ namespace {
 RegisterSolver<SlepcSolver> registersolverslepc("slepc");
 }
 
-using std::vector;
-
 class SlepcSolver : public Solver {
 public:
   SlepcSolver(Options *options);
