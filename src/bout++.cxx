@@ -424,9 +424,9 @@ int BoutInitialise(int &argc, char **&argv) {
     reader->parseCommandLine(options, argc, argv);
 
     // Override options set from short option from the command-line
-    Options::root()["datadir"] = data_dir;
-    Options::root()["optionfile"] = opt_file;
-    Options::root()["settingsfile"] = set_file;
+    Options::root()["datadir"].force(data_dir);
+    Options::root()["optionfile"].force(opt_file);
+    Options::root()["settingsfile"].force(set_file);
 
     // Put some run information in the options.
     // This is mainly so it can be easily read in post-processing
