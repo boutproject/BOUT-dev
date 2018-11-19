@@ -29,12 +29,11 @@
 #ifndef __DERIVS_H__
 #define __DERIVS_H__
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 // Feel free to edit this file (derivs.hxx) rather then the generating
 // files. If this is easier then changing derivx.hxx.in.py or

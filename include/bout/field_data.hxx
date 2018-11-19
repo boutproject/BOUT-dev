@@ -30,8 +30,8 @@ class FieldData;
 #ifndef __FIELD_DATA_H__
 #define __FIELD_DATA_H__
 
-#include "bout_types.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
 
 #include <map>
 #include <memory>
@@ -43,9 +43,8 @@ class FieldData;
 class BoundaryOp;
 class BoundaryOpPar;
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
-
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/sys/expressionparser.hxx"
 
 class FieldVisitor;

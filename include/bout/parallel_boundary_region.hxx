@@ -1,8 +1,8 @@
 #ifndef __PAR_BNDRY_H__
 #define __PAR_BNDRY_H__
 
-#include "boundary_region.hxx"
-#include "bout_types.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/bout_types.hxx"
 #include <vector>
 
 /**

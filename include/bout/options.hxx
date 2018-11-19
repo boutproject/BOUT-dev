@@ -39,10 +39,10 @@ class Options;
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
-#include "bout_types.hxx"
-#include "unused.hxx"
-#include "output.hxx"
-#include "utils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <map>
 #include <string>

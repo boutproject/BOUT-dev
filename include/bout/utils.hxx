@@ -29,14 +29,13 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#include "bout_types.hxx"
-#include "dcomplex.hxx"
-#include "boutexception.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
-#include "msg_stack.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/unused.hxx"
 
 #include <string>
 #include <list>

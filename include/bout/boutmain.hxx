@@ -17,10 +17,10 @@
 #ifndef __BOUTMAIN_H__
 #define __BOUTMAIN_H__
 
-#include <bout.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
+#include <bout/bout.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
 #include <bout/physicsmodel.hxx>
 
 #ifndef GLOBALORIGIN

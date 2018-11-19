@@ -28,7 +28,7 @@
 #ifndef __SMOOTHING_H__
 #define __SMOOTHING_H__
 
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 
 /// Smooth in X using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f);

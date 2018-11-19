@@ -33,8 +33,8 @@ class DataFormat;
 #ifndef __DATAFORMAT_H__
 #define __DATAFORMAT_H__
 
-#include "bout_types.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
 
 #include <string>
 #include <memory>

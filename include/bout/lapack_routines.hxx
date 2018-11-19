@@ -23,7 +23,7 @@
 #ifndef __LAPACK_ROUTINES_H__
 #define __LAPACK_ROUTINES_H__
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 /* Tridiagonal inversion
  *

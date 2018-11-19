@@ -28,8 +28,8 @@
 #ifndef __WHERE_H__
 #define __WHERE_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 
 /// For each point, choose between two inputs based on a third input
 ///

@@ -29,15 +29,15 @@ class Output;
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
-#include "multiostream.hxx"
 #include <iostream>
 #include <fstream>
 #include <functional>
 
 #include "bout/assert.hxx"
-#include "boutexception.hxx"
-#include "unused.hxx"
-#include "bout/sys/gettext.hxx"  // for gettext _() macro
+#include "bout/boutexception.hxx"
+#include "bout/multiostream.hxx"
+#include "bout/sys/gettext.hxx" // for gettext _() macro
+#include "bout/unused.hxx"
 
 using std::endl;
 

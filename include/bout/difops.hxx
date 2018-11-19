@@ -36,11 +36,9 @@
 #ifndef __DIFOPS_H__
 #define __DIFOPS_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
-
-#include "bout_types.hxx"
-
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/solver.hxx"
 
 /*!

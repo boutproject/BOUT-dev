@@ -43,16 +43,13 @@
 //#define DIAGNOSE 1
 
 #include "mpi.h"
-#include "utils.hxx"
-#include "msg_stack.hxx"
-#include <lapack_routines.hxx>
-
 #include "bout/assert.hxx"
-#include "boutexception.hxx"
-
-#include "output.hxx"
-
+#include "bout/boutexception.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/output.hxx"
+#include "bout/utils.hxx"
+#include <bout/lapack_routines.hxx>
 
 template <class T> class CyclicReduce {
 public:

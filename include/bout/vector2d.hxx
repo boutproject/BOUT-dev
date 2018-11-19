@@ -37,7 +37,7 @@ class Vector2D;
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
-#include "field2d.hxx"
+#include "bout/field2d.hxx"
 class Field3D;  //#include "field3d.hxx"
 class Vector3D; //#include "vector3d.hxx"
 

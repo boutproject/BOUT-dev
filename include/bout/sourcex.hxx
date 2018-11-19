@@ -5,7 +5,7 @@
 #ifndef __MASKX_H__
 #define __MASKX_H__
 
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 
 // create a radial buffer zone to set jpar zero near radial boundary
 const Field3D mask_x(const Field3D &f, bool BoutRealspace = true);

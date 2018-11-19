@@ -27,9 +27,9 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "bout/mesh.hxx"
-#include "datafile.hxx"
+#include "bout/datafile.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/mesh.hxx"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern

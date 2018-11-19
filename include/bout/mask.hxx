@@ -24,9 +24,9 @@
 
 #include <vector>
 
+#include "bout/boutexception.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "globals.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds

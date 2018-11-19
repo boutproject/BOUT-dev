@@ -31,12 +31,11 @@ class Field;
 
 #include <stdio.h>
 
-#include "bout_types.hxx"
-#include "stencils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/stencils.hxx"
+#include "bout/unused.hxx"
 #include <bout/rvec.hxx>
-#include "boutexception.hxx"
-
-#include "unused.hxx"
 
 class Mesh;
 class Coordinates;

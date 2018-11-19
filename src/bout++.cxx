@@ -43,22 +43,18 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #include "mpi.h"
 
-#include <boutcomm.hxx>
-#include <bout.hxx>
-#include <datafile.hxx>
-#include <bout/solver.hxx>
-#include <boutexception.hxx>
-#include <optionsreader.hxx>
-#include <msg_stack.hxx>
-
-#include <bout/sys/timer.hxx>
-
-#include <boundary_factory.hxx>
-
-#include <invert_laplace.hxx>
-
-#include <bout/slepclib.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/bout.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/datafile.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/optionsreader.hxx>
 #include <bout/petsclib.hxx>
+#include <bout/slepclib.hxx>
+#include <bout/solver.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <ctime>
 
@@ -80,8 +76,7 @@ void bout_signal_handler(int sig);  // Handles signals
 #include <fenv.h>
 #endif
 
-
-#include <output.hxx>
+#include <bout/output.hxx>
 
 BoutReal simtime;
 int iteration;

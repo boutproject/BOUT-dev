@@ -29,7 +29,7 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <exception>
 #include <stdarg.h>

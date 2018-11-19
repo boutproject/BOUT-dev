@@ -31,10 +31,10 @@
 #ifndef __INV_PAR_H__
 #define __INV_PAR_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 // Parderiv implementations
 #define PARDERIVSERIAL "serial"

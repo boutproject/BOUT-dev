@@ -5,12 +5,12 @@ class BoundaryModifier;
 #ifndef __BNDRY_OP__
 #define __BNDRY_OP__
 
-#include "boundary_region.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-#include "unused.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/unused.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #include <cmath>
 #include <string>

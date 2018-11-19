@@ -26,10 +26,10 @@
 #ifndef __INITIALPROF_H__
 #define __INITIALPROF_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 /*!
  * Set a field from options

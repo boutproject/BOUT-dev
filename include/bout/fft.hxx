@@ -28,7 +28,7 @@
 #ifndef __FFT_H__
 #define __FFT_H__
 
-#include "dcomplex.hxx"
+#include "bout/dcomplex.hxx"
 
 /*!
  * Returns the fft of a real signal using fftw_forward

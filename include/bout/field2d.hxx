@@ -31,18 +31,16 @@ class Field2D;
 #define __FIELD2D_H__
 
 class Mesh;
-#include "field.hxx"
-#include "field_data.hxx"
 class Field3D; //#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "stencils.hxx"
-
-#include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
+#include "bout/field.hxx"
+#include "bout/field_data.hxx"
+#include "bout/field_visitor.hxx"
+#include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
-
-#include "unused.hxx"
+#include "bout/stencils.hxx"
+#include "bout/unused.hxx"
 
 /*!
  * \brief 2D X-Y scalar fields

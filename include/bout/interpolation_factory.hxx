@@ -1,8 +1,8 @@
 #ifndef __INTERP_FACTORY_H__
 #define __INTERP_FACTORY_H__
 
-#include "interpolation.hxx"
-#include "options.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/options.hxx"
 
 #include <map>
 #include <string>

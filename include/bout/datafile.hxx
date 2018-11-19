@@ -14,15 +14,14 @@ class Datafile;
 #ifndef __DATAFILE_H__
 #define __DATAFILE_H__
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-#include "options.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/dataformat.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/macro_for_each.hxx"
-
-#include "dataformat.hxx"
+#include "bout/options.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #include <stdarg.h>
 #include <stdio.h>
