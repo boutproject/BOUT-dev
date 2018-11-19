@@ -231,21 +231,29 @@ FUNCTION newton_Bt, psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh
   RETURN, fxy / Rxy
 END
 
-function intx, Rxy, data
+function intx, Rxy, data, simple=simple
 
-	nx = size(data,/dimensions)
-	ny = nx[1]
-	nx = nx[0]
+  nx = size(data,/dimensions)
+  ny = nx[1]
+  nx = nx[0]
 
-	result = dblarr(nx,ny)
-	result[*,*] = 0.0
-	for i=0, ny-1 do begin
-		for j=1, nx-1 do begin
-			result[j,i] = int_tabulated(Rxy[0:j,i],data[0:j,i])
-		endfor
-	endfor
-	
-	return, result
+  result = dblarr(nx,ny)
+  result[*,*] = 0.0
+  if keyword_set(simple) then begin
+    for i=0, ny-1 do begin
+      for j=1, nx-1 do begin
+        result[j, i] = result[j-1, i] + 0.5*(Rxy[j, i] - Rxy[j-1, i])*(data[j, i] + data[j-1, i])
+      endfor
+    endfor
+  endif else begin
+    for i=0, ny-1 do begin
+      for j=1, nx-1 do begin
+        result[j,i] = int_tabulated(Rxy[0:j,i],data[0:j,i])
+      endfor
+    endfor
+  endelse
+
+  return, result
 end
 
 function inty, Zxy, data, simple=simple
@@ -920,7 +928,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     pres = FLTARR(nx, ny)
     ; Integrate to get pressure
     FOR i=0, ny-1 DO BEGIN
-      pres[*,i] = int_func(psixy[*,i], dpdx2[*,i])
+      pres[*,i] = int_func(psixy[*,i], dpdx2[*,i], /simple)
       pres[*,i] = pres[*,i] - pres[nx-1,i]
     ENDFOR
     
@@ -1098,7 +1106,7 @@ retrybetacalc:
 
   ; Calculate eta (poloidal non-orthogonality parameter)
   eta = sin(beta) ; from geometry
-  yshift = intx(hrad, eta) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
+  yshift = intx(hrad, eta, /simple) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
   thetaxy = yxy + yshift
 
   G = 1. - dfdy_seps(yshift,thetaxy,mesh)
