@@ -54,13 +54,6 @@ Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
@@ -78,13 +71,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;

@@ -53,7 +53,7 @@ extern Mesh * mesh; ///< Global mesh
  */
 class Field {
  public:
-  Field();
+  Field() = default;
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
@@ -82,9 +82,10 @@ class Field {
     return true;
   }
   
-  // Status of the 4 boundaries
-  bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
+  /// Status of the 4 boundaries
+  bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
+
   virtual Mesh * getMesh() const{
     if (fieldmesh){
       return fieldmesh;

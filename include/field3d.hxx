@@ -470,8 +470,9 @@ private:
   /// Boundary - add a 2D field
   const Field2D *background{nullptr};
 
-  int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1}, nz{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 

@@ -51,12 +51,6 @@ Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-  }
-#endif
 
 #ifdef TRACK
   name = "<F2D>";
@@ -78,12 +72,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-  }
-#endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
