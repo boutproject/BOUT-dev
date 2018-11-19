@@ -248,21 +248,29 @@ function intx, Rxy, data
 	return, result
 end
 
-function inty, Zxy, data
+function inty, Zxy, data, simple=simple
 
-	nx = size(data,/dimensions)
-	ny = nx[1]
-	nx = nx[0]
+  nx = size(data,/dimensions)
+  ny = nx[1]
+  nx = nx[0]
 
-	result = dblarr(nx,ny)
-	result[*,*] = 0.0
-	for i=1, ny-1 do begin
-		for j=0, nx-1 do begin
-			result[j,i] = int_tabulated(Zxy[j,0:i],data[j,0:i])
-		endfor
-	endfor
-	
-	return, result
+  result = dblarr(nx,ny)
+  result[*,*] = 0.0
+  if keyword_set(simple) then begin
+    for i=1, ny-1 do begin
+      for j=0, nx-1 do begin
+        result[j, i] = result[j, i-1] + 0.5*(Zxy[j, i] - Zxy[j, i-1])*(data[j, i] + data[j, i-1])
+      endfor
+    endfor
+  endif else begin
+    for i=1, ny-1 do begin
+      for j=0, nx-1 do begin
+        result[j,i] = int_tabulated(Zxy[j,0:i],data[j,0:i])
+      endfor
+    endfor
+  endelse
+
+  return, result
 end
 
 ; Integrate a function over y
@@ -277,7 +285,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   REPEAT BEGIN
     yi = gen_surface(last=last, xi=xi, period=period)
     
-    f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi])
+    f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi], /simple)
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
       f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
     ENDIF
