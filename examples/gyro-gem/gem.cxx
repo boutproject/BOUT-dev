@@ -330,7 +330,7 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Metric tensor components
 
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     // Normalise
     hthe /= Lbar; // parallel derivatives normalised to Lperp

@@ -60,7 +60,7 @@ int physics_init(bool restarting)
   GRID_LOAD(Rxy);         // Major radius [m]
   GRID_LOAD2(Bpxy, Btxy); // Poloidal, Toroidal B field [T]
   GRID_LOAD(hthe);        // Poloidal arc length [m / radian]
-  mesh->get(mesh->dx,   "dpsi");
+  mesh->get(mesh->getCoordinates()->dx,   "dpsi");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -107,6 +107,7 @@ int physics_init(bool restarting)
 
   output.write("\tNormalising to rho_s = %e\n", rho_s);
 
+  auto * coords = mesh->getCoordinates();
   // Normalise profiles
   Ni0 /= Ni_x/1.0e14;
   Ti0 /= Te_x;
@@ -116,12 +117,12 @@ int physics_init(bool restarting)
    // Normalise geometry 
   Rxy /= rho_s;
   hthe /= rho_s;
-  mesh->dx /= rho_s*rho_s*(bmag/1e4);
+  coords->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1e4);
   Btxy /= (bmag/1e4);
-  mesh->Bxy  /= (bmag/1e4);
+  coords->Bxy  /= (bmag/1e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -141,23 +142,23 @@ int physics_init(bool restarting)
 
   /////////////// CALCULATE METRICS /////////////////
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (mesh->Bxy^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = 0.0;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+  coords->g11 = pow(Rxy*Bpxy,2.0);
+  coords->g22 = 1.0 / pow(hthe,2.0);
+  coords->g33 = pow(coords->Bxy,2.0)/coords->g11;
+  coords->g12 = 0.0;
+  coords->g13 = 0.0;
+  coords->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
+  coords->J = hthe / Bpxy;
   
-  mesh->g_11 = 1.0/mesh->g11;
-  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = 0.0;
-  mesh->g_13 = 0.0;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  coords->g_11 = 1.0/coords->g11;
+  coords->g_22 = pow(coords->Bxy*hthe/Bpxy,2.0);
+  coords->g_33 = Rxy*Rxy;
+  coords->g_12 = 0.0;
+  coords->g_13 = 0.0;
+  coords->g_23 = Btxy*hthe*Rxy/Bpxy;
   
-  mesh->geometry(); // Calculate other metrics
+  coords->geometry(); // Calculate other metrics
   
   //////////////// BOUNDARIES ///////////////////////
   // 
@@ -168,9 +169,9 @@ int physics_init(bool restarting)
   Te0.applyBoundary("neumann");
   Ti0.applyBoundary("neumann");
 
-  Ni.setBackground(Ni0);
-  Te.setBackground(Te0);
-  Ti.setBackground(Ti0);
+  setBackground(Ni,Ni0);
+  setBackground(Te,Te0);
+  setBackground(Ti,Ti0);
   
   ///////////// SET EVOLVING VARIABLES //////////////
   //
@@ -212,7 +213,7 @@ Field3D Div_X_K_Grad_X(const Field3D &difFi, const Field3D &Fi)
 {
   Field3D result;
   
-  result = difFi * ( (Rxy*Bpxy)^2 ) * D2DX2(Fi) 
+  result = difFi * ( pow(Rxy*Bpxy,2.0) ) * D2DX2(Fi) 
     + (Bpxy / hthe) * DDX( difFi * Rxy * Rxy * Bpxy * hthe ) * DDX(Fi);
 
   return result;
@@ -224,14 +225,14 @@ int physics_run(BoutReal t)
   mesh->communicate(Ni, Vi, Te, Ti);
 
   // Update profiles
-  Nit = Ni0  + Ni.DC();
-  Tit = Ti0  + Ti.DC();
-  Tet = Te0  + Te.DC();
-  Vit = Vi0  + Vi.DC();
+  Nit = Ni0  + DC(Ni);
+  Tit = Ti0  + DC(Ti);
+  Tet = Te0  + DC(Te);
+  Vit = Vi0  + DC(Vi);
 
   // Update non-linear coefficients on the mesh
-  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
-  kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
+  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
+  kapa_Ti = 3.9*(wci/nuiix)*pow(Tit,2.5);
   
   peit = (Tet+Tit)*Nit;
 
