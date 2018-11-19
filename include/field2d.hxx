@@ -259,9 +259,11 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
 
-  Field2D *deriv{nullptr}; ///< Time-derivative, can be NULL
+  /// Time-derivative, can be nullptr
+  Field2D *deriv{nullptr};
 };
 
 // Non-member overloaded operators

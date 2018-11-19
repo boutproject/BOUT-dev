@@ -172,8 +172,9 @@ public:
     if(!ptr)
       return 0;
 #ifdef BOUT_ARRAY_WITH_VALARRAY
-    // Note: std::valarray::size is not noexcept, so Array::size
-    // shouldn't be either if we're using valarrays
+    // Note: std::valarray::size is technically not noexcept, so
+    // Array::size shouldn't be either if we're using valarrays -- in
+    // practice, it is so this shouldn't matter
     return ptr->size();
 #else
     return ptr->len;
@@ -394,16 +395,17 @@ private:
       st.pop_back();
     } else {
       // Ensure that when we release the data block later we'll have
-      // enough space to put it in the store
+      // enough space to put it in the store so that `release` can be
+      // noexcept
       st.reserve(1);
       p = std::make_shared<dataBlock>(len);
     }
 
     return p;
   }
-  
+
   /*!
-   * Release an ArrayData object, reducing its reference count by one. 
+   * Release an ArrayData object, reducing its reference count by one.
    * If no more references, then put back into the store.
    * It's important to pass a reference to the pointer, otherwise we get
    * a copy of the shared_ptr, which therefore increases the use count
@@ -414,27 +416,26 @@ private:
    * one data block. Of course, store() could throw -- in which case
    * we're doomed anyway, so the only thing we can do is abort
    */
-  void release(dataPtrType &d) noexcept {
+  void release(dataPtrType& d) noexcept {
     if (!d)
       return;
-    
+
     // Reduce reference count, and if zero return to store
-    if(d.use_count()==1) {
+    if (d.use_count() == 1) {
       if (useStore()) {
-	// Put back into store
+        // Put back into store
 #ifdef BOUT_ARRAY_WITH_VALARRAY
-	store()[d->size()].push_back(std::move(d));
-#else	  
-	store()[d->len   ].push_back(std::move(d));
+        store()[d->size()].push_back(std::move(d));
+#else
+        store()[d->len].push_back(std::move(d));
 #endif
-	//Could return here but seems to slow things down a lot
+        // Could return here but seems to slow things down a lot
       }
     }
 
-    //Finish by setting pointer to nullptr if not putting on store
-    d=nullptr;
+    // Finish by setting pointer to nullptr if not putting on store
+    d = nullptr;
   }
-  
 };
 
 /*!

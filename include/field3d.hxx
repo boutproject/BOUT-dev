@@ -476,9 +476,11 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
   
-  Field3D *deriv{nullptr}; ///< Time derivative (may be NULL)
+  /// Time derivative (may be nullptr)
+  Field3D *deriv{nullptr};
 
   /// Pointers to fields containing values along Y
   Field3D *yup_field{nullptr}, *ydown_field{nullptr};
