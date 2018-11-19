@@ -20,35 +20,7 @@
 extern Mesh *mesh;
 
 /// Test fixture to make sure the global mesh is our fake one
-class FieldPerpTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int FieldPerpTest::nx = 3;
-const int FieldPerpTest::ny = 5;
-const int FieldPerpTest::nz = 7;
+using FieldPerpTest = FakeMeshFixture;
 
 TEST_F(FieldPerpTest, Allocate) {
   FieldPerp field;

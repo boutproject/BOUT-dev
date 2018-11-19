@@ -48,7 +48,6 @@ class CvodeSolver;
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
-using std::vector;
 
 #include <bout/solverfactory.hxx>
 namespace {
@@ -88,9 +87,12 @@ class CvodeSolver : public Solver {
 
     BoutReal pre_Wtime; // Time in preconditioner
     BoutReal pre_ncalls; // Number of calls to preconditioner
-    
-    void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
+
+    void set_abstol_values(BoutReal *abstolvec_data, std::vector<BoutReal> &f2dtols,
+                           std::vector<BoutReal> &f3dtols);
+    void loop_abstol_values_op(Ind2D i2d, BoutReal *abstolvec_data, int &p,
+                               std::vector<BoutReal> &f2dtols,
+                               std::vector<BoutReal> &f3dtols, bool bndry);
 };
 
 #endif // __SUNDIAL_SOLVER_H__

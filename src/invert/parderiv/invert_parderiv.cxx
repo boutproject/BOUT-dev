@@ -30,8 +30,8 @@
 #include <invert_parderiv.hxx>
 #include "parderiv_factory.hxx"
 
-InvertPar* InvertPar::Create() {
-  return ParDerivFactory::getInstance()->createInvertPar();
+InvertPar* InvertPar::Create(Mesh* mesh_in) {
+  return ParDerivFactory::getInstance()->createInvertPar(mesh_in);
 }
 
 const Field2D InvertPar::solve(const Field2D &f) {

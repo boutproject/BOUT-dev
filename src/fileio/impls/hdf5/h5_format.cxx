@@ -169,10 +169,10 @@ void H5Format::flush() {
   }
 }
 
-const vector<int> H5Format::getSize(const char *name) {
+const std::vector<int> H5Format::getSize(const char *name) {
   TRACE("H5Format::getSize");
 
-  vector<int> size;
+  std::vector<int> size;
 
   if(!is_valid())
     return size;
@@ -220,7 +220,7 @@ const vector<int> H5Format::getSize(const char *name) {
   return size;
 }
 
-const vector<int> H5Format::getSize(const string &var) {
+const std::vector<int> H5Format::getSize(const std::string &var) {
   return getSize(var.c_str());
 }
 
@@ -254,7 +254,7 @@ bool H5Format::setRecord(int t) {
 }
 
 // Add a variable to the file
-bool H5Format::addVar(const string &name, bool repeat, hid_t write_hdf5_type, int nd) {
+bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, int nd) {
   hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet >= 0) { // >=0 means variable already exists, so return.
     if (H5Dclose(dataSet) < 0)
@@ -374,21 +374,21 @@ bool H5Format::addVar(const string &name, bool repeat, hid_t write_hdf5_type, in
   return true;
 }
 
-bool H5Format::addVarInt(const string &name, bool repeat) {
+bool H5Format::addVarInt(const std::string &name, bool repeat) {
   return addVar(name, repeat, H5T_NATIVE_INT, 0);
 }
 
-bool H5Format::addVarBoutReal(const string &name, bool repeat) {
+bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 0);
 }
 
-bool H5Format::addVarField2D(const string &name, bool repeat) {
+bool H5Format::addVarField2D(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 2);
 }
 
-bool H5Format::addVarField3D(const string &name, bool repeat) {
+bool H5Format::addVarField3D(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, 3);
 }
@@ -397,7 +397,7 @@ bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {
   return read(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
-bool H5Format::read(int *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::read(int *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
@@ -405,7 +405,7 @@ bool H5Format::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   return read(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
 }
 
-bool H5Format::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::read(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
@@ -468,7 +468,7 @@ bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
   return write(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
-bool H5Format::write(int *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::write(int *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -498,7 +498,7 @@ bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
 }
 
-bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::write(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -580,7 +580,7 @@ bool H5Format::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   return read_rec(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
-bool H5Format::read_rec(int *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::read_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -590,7 +590,7 @@ bool H5Format::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz
   
 }
 
-bool H5Format::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::read_rec(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -674,7 +674,7 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   return write_rec(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
-bool H5Format::write_rec(int *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::write_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -701,7 +701,7 @@ bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   return write_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
 }
 
-bool H5Format::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
+bool H5Format::write_rec(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
@@ -819,16 +819,23 @@ void H5Format::setAttribute(const std::string &varname, const std::string &attrn
   }
   // else: attribute does not exist, so just write it
 
-  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
-  if (dataSet < 0) {
-    // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to create attribute for variable that does not exist");
+  if (varname == "") {
+    // attribute of file
+    setAttribute(dataFile, attrname, text);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to create attribute for variable that does not exist");
+    }
+
+    setAttribute(dataSet, attrname, text);
+
+    if (H5Dclose(dataSet) < 0) {
+      throw BoutException("Failed to close dataSet");
+    }
   }
-
-  setAttribute(dataSet, attrname, text);
-
-  if (H5Dclose(dataSet) < 0)
-    throw BoutException("Failed to close dataSet");
 }
 
 void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
@@ -844,16 +851,55 @@ void H5Format::setAttribute(const std::string &varname, const std::string &attrn
   }
   // else: attribute does not exist, so just write it
 
-  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
-  if (dataSet < 0) {
-    // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to create attribute for variable that does not exist");
+  if (varname == "") {
+    // attribute of file
+    setAttribute(dataFile, attrname, value);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to create attribute for variable that does not exist");
+    }
+
+    setAttribute(dataSet, attrname, value);
+
+    if (H5Dclose(dataSet) < 0) {
+      throw BoutException("Failed to close dataSet");
+    }
   }
+}
 
-  setAttribute(dataSet, attrname, value);
+void H5Format::setAttribute(const std::string &varname, const std::string &attrname,
+                         BoutReal value) {
+  TRACE("H5Format::setAttribute(varname, attrname, BoutReal)");
 
-  if (H5Dclose(dataSet) < 0)
-    throw BoutException("Failed to close dataSet");
+  BoutReal existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (value != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+          attrname.c_str(), varname.c_str(), value, existing_att);
+    }
+  }
+  // else: attribute does not exist, so just write it
+
+  if (varname == "") {
+    // attribute of file
+    setAttribute(dataFile, attrname, value);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to create attribute for variable that does not exist");
+    }
+
+    setAttribute(dataSet, attrname, value);
+
+    if (H5Dclose(dataSet) < 0) {
+      throw BoutException("Failed to close dataSet");
+    }
+  }
 }
 
 void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
@@ -913,38 +959,95 @@ void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
     throw BoutException("Failed to close myatt_in");
 }
 
+void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
+                         BoutReal value) {
+  TRACE("H5Format::setAttribute(dataSet, attrname, BoutReal)");
+
+  // Create new dataspace for attribute
+  hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+  if (attribute_dataspace < 0)
+    throw BoutException("Failed to create attribute_dataspace");
+
+  // Create attribute and write to it
+  hid_t myatt_in = H5Acreate(dataSet, attrname.c_str(), H5T_NATIVE_DOUBLE, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+  if (myatt_in < 0)
+    throw BoutException("Failed to create attribute");
+  if (H5Awrite(myatt_in, H5T_NATIVE_DOUBLE, &value) < 0)
+    throw BoutException("Failed to write attribute");
+
+  if (H5Sclose(attribute_dataspace) < 0)
+    throw BoutException("Failed to close attribute_dataspace");
+  if (H5Aclose(myatt_in) < 0)
+    throw BoutException("Failed to close myatt_in");
+}
+
 bool H5Format::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
   TRACE("H5Format::getAttribute(varname, attrname, string)");
 
-  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
-  if (dataSet < 0) {
-    // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to read attribute for variable that does not exist");
+  if (varname == "") {
+    // attribute of file
+    return getAttribute(dataFile, attrname, text);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to read attribute for variable that does not exist");
+    }
+
+    bool result = getAttribute(dataSet, attrname, text);
+
+    if (H5Dclose(dataSet) < 0)
+      throw BoutException("Failed to close dataSet");
+
+    return result;
   }
-
-  bool result = getAttribute(dataSet, attrname, text);
-
-  if (H5Dclose(dataSet) < 0)
-    throw BoutException("Failed to close dataSet");
-
-  return result;
 }
 
 bool H5Format::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
   TRACE("H5Format::getAttribute(varname, attrname, int)");
 
-  hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
-  if (dataSet < 0) {
-    // Negative value indicates error, i.e. variable does not exist
-    throw BoutException("Trying to read attribute for variable that does not exist");
+  if (varname == "") {
+    // attribute of file
+    return getAttribute(dataFile, attrname, value);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to read attribute for variable that does not exist");
+    }
+
+    bool result = getAttribute(dataSet, attrname, value);
+
+    if (H5Dclose(dataSet) < 0)
+      throw BoutException("Failed to close dataSet");
+
+    return result;
   }
+}
 
-  bool result = getAttribute(dataSet, attrname, value);
+bool H5Format::getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) {
+  TRACE("H5Format::getAttribute(varname, attrname, BoutReal)");
 
-  if (H5Dclose(dataSet) < 0)
-    throw BoutException("Failed to close dataSet");
+  if (varname == "") {
+    // attribute of file
+    return getAttribute(dataFile, attrname, value);
+  } else {
+    // attribute of variable
+    hid_t dataSet = H5Dopen(dataFile, varname.c_str(), H5P_DEFAULT);
+    if (dataSet < 0) {
+      // Negative value indicates error, i.e. variable does not exist
+      throw BoutException("Trying to read attribute for variable that does not exist");
+    }
 
-  return result;
+    bool result = getAttribute(dataSet, attrname, value);
+
+    if (H5Dclose(dataSet) < 0)
+      throw BoutException("Failed to close dataSet");
+
+    return result;
+  }
 }
 
 bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, std::string &text) {
@@ -986,6 +1089,25 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, i
 
   // Read attribute
   if (H5Aread(myatt, H5T_NATIVE_INT, &value) < 0)
+    throw BoutException("Failed to read attribute");
+
+  if (H5Aclose(myatt) < 0)
+    throw BoutException("Failed to close myatt_in");
+
+  return true;
+}
+
+bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, BoutReal &value) {
+  TRACE("H5Format::getAttribute(hid_t, attrname, BoutReal)");
+
+  // Open attribute
+  hid_t myatt = H5Aopen(dataSet, attrname.c_str(), H5P_DEFAULT);
+  if (myatt < 0) {
+    return false;
+  }
+
+  // Read attribute
+  if (H5Aread(myatt, H5T_NATIVE_DOUBLE, &value) < 0)
     throw BoutException("Failed to read attribute");
 
   if (H5Aclose(myatt) < 0)

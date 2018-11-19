@@ -230,9 +230,9 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
 

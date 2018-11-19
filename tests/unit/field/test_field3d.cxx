@@ -20,35 +20,8 @@
 /// Global mesh
 extern Mesh *mesh;
 
-/// Test fixture to make sure the global mesh is our fake one
-class Field3DTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int Field3DTest::nx = 3;
-const int Field3DTest::ny = 5;
-const int Field3DTest::nz = 7;
+// Reuse the "standard" fixture for FakeMesh
+using Field3DTest = FakeMeshFixture;
 
 TEST_F(Field3DTest, IsReal) {
   Field3D field;
@@ -1127,7 +1100,6 @@ TEST_F(Field3DTest, AddEqualsField3D) {
 }
 
 TEST_F(Field3DTest, AddEqualsField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b;
@@ -1144,8 +1116,6 @@ TEST_F(Field3DTest, AddEqualsField3DField3DStagger) {
 #else
   EXPECT_NO_THROW(a += b);
 #endif
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, AddField3DBoutReal) {
@@ -1199,7 +1169,6 @@ TEST_F(Field3DTest, AddField3DField3D) {
 }
 
 TEST_F(Field3DTest, AddField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b, c;
@@ -1224,8 +1193,6 @@ TEST_F(Field3DTest, AddField3DField3DStagger) {
 
   // Hence the first case should now not throw
   EXPECT_NO_THROW(c = a + b);
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, MultiplyEqualsBoutReal) {
@@ -1280,7 +1247,6 @@ TEST_F(Field3DTest, MultiplyEqualsField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b;
@@ -1297,8 +1263,6 @@ TEST_F(Field3DTest, MultiplyEqualsField3DField3DStagger) {
 #else
   EXPECT_NO_THROW(a *= b);
 #endif
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, MultiplyField3DBoutReal) {
@@ -1352,7 +1316,6 @@ TEST_F(Field3DTest, MultiplyField3DField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b, c;
@@ -1377,8 +1340,6 @@ TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
 
   // Hence the first case should now not throw
   EXPECT_NO_THROW(c = a * b);
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, SubtractEqualsBoutReal) {
@@ -1433,7 +1394,6 @@ TEST_F(Field3DTest, SubtractEqualsField3D) {
 }
 
 TEST_F(Field3DTest, SubtractEqualsField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b;
@@ -1450,8 +1410,6 @@ TEST_F(Field3DTest, SubtractEqualsField3DField3DStagger) {
 #else
   EXPECT_NO_THROW(a -= b);
 #endif
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, SubtractField3DBoutReal) {
@@ -1505,7 +1463,6 @@ TEST_F(Field3DTest, SubtractField3DField3D) {
 }
 
 TEST_F(Field3DTest, SubtractField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b, c;
@@ -1530,8 +1487,6 @@ TEST_F(Field3DTest, SubtractField3DField3DStagger) {
 
   // Hence the first case should now not throw
   EXPECT_NO_THROW(c = a - b);
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, DivideEqualsBoutReal) {
@@ -1586,7 +1541,6 @@ TEST_F(Field3DTest, DivideEqualsField3D) {
 }
 
 TEST_F(Field3DTest, DivideEqualsField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b;
@@ -1603,8 +1557,6 @@ TEST_F(Field3DTest, DivideEqualsField3DField3DStagger) {
 #else
   EXPECT_NO_THROW(a /= b);
 #endif
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, DivideField3DBoutReal) {
@@ -1658,7 +1610,6 @@ TEST_F(Field3DTest, DivideField3DField3D) {
 }
 
 TEST_F(Field3DTest, DivideField3DField3DStagger) {
-  auto backup = mesh->StaggerGrids;
   mesh->StaggerGrids = true; // Force staggering
 
   Field3D a, b, c;
@@ -1683,8 +1634,6 @@ TEST_F(Field3DTest, DivideField3DField3DStagger) {
 
   // Hence the first case should now not throw
   EXPECT_NO_THROW(c = a / b);
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, PowBoutRealField3D) {
