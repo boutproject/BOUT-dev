@@ -78,6 +78,13 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
     fullpath = os.path.join(datadir, outputname)
 
+    if docontinue:
+        if append:
+            raise NotImplementedError("append & docontinue: Case not handled")
+        # move temporary to subdir, so that when the BoutOutputs
+        # caches the file list, this file is not found
+        datadirtmp = tempfile.mkdtemp(dir=datadir)
+        shutil.move(fullpath, datadirtmp)
     if append:
         datadirnew = tempfile.mkdtemp(dir=datadir)
         for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
@@ -86,13 +93,6 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             shutil.move(f, datadirnew)
         oldfile = datadirnew + "/" + outputname
         datadir = datadirnew
-    if docontinue:
-        if append:
-            raise NotImplementedError("append & docontinue: Case not handled")
-        # move temporary to subdir, so that when the BoutOutputs
-        # caches the file list, this file is not found
-        datadirtmp = tempfile.mkdtemp(dir=datadir)
-        shutil.move(fullpath, datadirtmp)
 
     if os.path.isfile(fullpath) and not append:
         raise ValueError(
