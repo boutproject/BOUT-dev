@@ -35,12 +35,12 @@
 
 class Solver;
 
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
+#include "bout/datafile.hxx"
 #include "bout/monitor.hxx"
-#include "options.hxx"
-#include "datafile.hxx"
+#include "bout/options.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/unused.hxx>
 
 ///////////////////////////////////////////////////////////////////
 
@@ -66,12 +66,11 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 
 
 //#include "globals.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
-#include "physicsmodel.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/physicsmodel.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #include <string>
 #include <list>

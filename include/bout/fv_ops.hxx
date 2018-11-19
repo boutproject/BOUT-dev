@@ -5,11 +5,10 @@
 #ifndef __FV_OPS_H__
 #define __FV_OPS_H__
 
-#include "../globals.hxx"
-#include "../field3d.hxx"
-#include "../vector2d.hxx"
-
-#include "../utils.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globals.hxx"
+#include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
 
 namespace FV {
   /*!

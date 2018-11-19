@@ -6,7 +6,7 @@
 #ifndef __CONSTANTS_H__
 #define __CONSTANTS_H__
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
 /// Mathematical constant pi
 const BoutReal PI = 3.141592653589793;

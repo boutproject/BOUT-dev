@@ -1,7 +1,7 @@
 #ifndef __BOUT_SCOREP_H__
 #define __BOUT_SCOREP_H__
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
 #ifdef BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>
