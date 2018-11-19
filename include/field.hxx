@@ -115,9 +115,9 @@ class Field {
    */
   virtual int getNz() const;
 
- protected:
-  Mesh * fieldmesh;
-  mutable Coordinates * fieldCoordinates = nullptr;
+protected:
+  Mesh* fieldmesh{nullptr};
+  mutable Coordinates* fieldCoordinates{nullptr};
 };
 
 /// Unary + operator. This doesn't do anything

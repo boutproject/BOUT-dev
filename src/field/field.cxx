@@ -34,13 +34,13 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
+Field::Field() {
 #if CHECK > 0
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
 }
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
+Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }

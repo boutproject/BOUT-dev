@@ -6,10 +6,6 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
-  
-}
-
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations

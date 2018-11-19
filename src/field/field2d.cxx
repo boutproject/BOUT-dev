@@ -47,8 +47,6 @@
 
 Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 
-  boundaryIsSet = false;
-
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -89,13 +87,9 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-
-  boundaryIsSet = false;
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field(localmesh) {
-  boundaryIsSet = false;
-
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
 
