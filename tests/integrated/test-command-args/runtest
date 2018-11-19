@@ -72,8 +72,16 @@ class TestCommandLineArgs(unittest.TestCase):
         shell_safe(self.command + " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
         with open("test_copy/testsettings") as f:
-            contents = f.read()
-            self.assertIn("datadir = test_copy", contents,
+            contents = f.readlines()
+
+            datadir = ""
+            for line in contents:
+                if line.startswith("datadir"):
+                    # Assuming that this line looks like "datadir = <something> # comment"
+                    datadir = line.split()[2]
+                    break
+
+            self.assertIn("test_copy", datadir,
                           msg="FAIL: datadir from command line clobbered by BOUT.settings")
 
 
