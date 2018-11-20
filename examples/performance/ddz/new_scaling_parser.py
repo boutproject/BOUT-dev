@@ -28,10 +28,9 @@ def read_file(filename):
     axis = cases_weak['Local grid']
     data = [cases_weak[x] for x in case_lines]
     labels = [case_lines[x] for x in case_lines]
-    
     return {'axis':axis, 'data':data, 'labels':labels}
 
-def getScan(baseName = "timing_{n}.txt", nthreads = [1,2,4,8,16,32]):
+def getScan(baseName = "timing_{n}.txt", nthreads = (1,2,4,8,16,32)):
     from numpy import zeros
 
     dataS = []
