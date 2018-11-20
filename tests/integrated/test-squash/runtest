@@ -7,7 +7,6 @@ import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe
 from boutdata.squashoutput import squashoutput
 
-#requires: all_tests
 #requires: netcdf
 
 
