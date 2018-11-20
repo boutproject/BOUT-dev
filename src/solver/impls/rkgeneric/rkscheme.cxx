@@ -71,7 +71,7 @@ void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
   
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
-    if (abs(stageCoeffs(curStage, j)) < atol)
+    if (std::abs(stageCoeffs(curStage, j)) < atol)
       continue;
     BoutReal fac = stageCoeffs(curStage, j) * dt;
 
@@ -219,7 +219,7 @@ void RKScheme::verifyCoeffs(){
       tmp += stageCoeffs(i, j);
     }
     output<<std::setw(10)<<timeCoeffs[i]<<" | "<<std::setw(10)<<tmp<<endl;
-    if(fabs(timeCoeffs[i]-tmp)>atol) warn=true;
+    if(std::abs(timeCoeffs[i]-tmp)>atol) warn=true;
   }
 
   //Optional warning
@@ -239,7 +239,7 @@ void RKScheme::verifyCoeffs(){
       tmp += resultCoeffs(i, j);
     }
     output<<"Order : "<<j<<" = "<<tmp<<endl;
-    if(fabs(1.0-tmp)>atol) warn=true;
+    if(std::abs(1.0-tmp)>atol) warn=true;
   }
 
   //Optional warning
