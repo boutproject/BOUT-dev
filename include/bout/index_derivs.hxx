@@ -710,7 +710,6 @@ public:
                     REGION UNUSED(region)) const {
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
-    return;
   }
   metaData meta{"FFT", 0, DERIV::Standard};
 };
@@ -776,7 +775,6 @@ public:
                     REGION UNUSED(region)) const {
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
-    return;
   }
   metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
