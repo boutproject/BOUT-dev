@@ -67,6 +67,8 @@ timed_shell_safe("make")
 # Run once to get normal data
 timed_shell_safe("./squash -q -q -q nout=4")
 timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
+timed_shell_safe("rm -f data/f2.nc")
+timed_shell_safe("ln -s ../f2.nc data")
 
 # Parallel test
 timed_shell_safe("rm -f f2.nc")
