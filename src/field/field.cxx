@@ -25,8 +25,6 @@
 
 //#include <globals.hxx>
 
-#include <stdarg.h>
-
 #include <field.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>

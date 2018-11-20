@@ -4,7 +4,6 @@
 #include <iostream>
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <stdarg.h>
 
 #ifdef BACKTRACE
 #include <execinfo.h>

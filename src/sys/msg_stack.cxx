@@ -26,7 +26,7 @@
 
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <stdarg.h>
+#include <cstdarg>
 #include <string>
 
 #if CHECK > 1

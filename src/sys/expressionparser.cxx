@@ -26,14 +26,9 @@
 
 #include <utils.hxx> // for lowercase
 
-#include <stdarg.h>
-#include <stdio.h>
-
 using std::string;
 using std::list;
 using std::stringstream;
-
-#include <stdlib.h>
 
 /////////////////////////////////////////////
 namespace { // These classes only visible in this file

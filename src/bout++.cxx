@@ -74,7 +74,7 @@ using std::string;
 #include <omp.h>
 #endif
 
-#include <signal.h>
+#include <csignal>
 void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
