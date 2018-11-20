@@ -57,7 +57,7 @@ struct TypeContainer {
 template <typename currentFunction, typename currentType>
 struct DeferredFunction {
   // Just store the actual function we wish to apply
-  DeferredFunction(currentFunction f) : storedFunc(f){};
+  explicit DeferredFunction(currentFunction f) : storedFunc(f){};
 
   // The actual function we wish to apply with the functor
   currentFunction storedFunc;
@@ -179,7 +179,7 @@ void processSet(theFunction func, Set<firstItem, otherItems...>, otherSets... ot
 template <typename FirstSet, typename... otherSets>
 struct produceCombinations {
   template <typename theFunction>
-  produceCombinations(theFunction func) {
+  explicit produceCombinations(theFunction func) {
     processSet(func, FirstSet{}, otherSets{}...);
   };
 };
