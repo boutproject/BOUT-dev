@@ -100,10 +100,6 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     # Read a value to cache the files
     outputs[outputvars[0]]
 
-    #?if append:
-    #?    # move only after the file list is cached
-    #?    shutil.move(fullpath, oldfile)
-
     if docontinue or append:
         shutil.move(os.path.join(datadirtmp, outputname.split("/")[-1]), datadir)
         os.rmdir(datadirtmp)
@@ -160,7 +156,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
 
             if varname in f.keys():
                 # Ether not evolved, or already fully read
-                if 't' not in dims or f.getRealTlength(varname) == tmax:# and varname != 'tt':
+                if 't' not in dims or f.getRealTlength(varname) == tmax:
                     if progress:
                         done += sizes[varname]
                         bar.update_progress(done / total, zoidberg=True)
@@ -190,8 +186,6 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             if earlyExit is not None:
                 if earlyExit == varname:
                     return
-                    #sys.exit(1)
-                    #raise RuntimeError("Trigger error!")
 
     if delete:
         for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
