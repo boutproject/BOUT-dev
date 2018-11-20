@@ -32,8 +32,8 @@ class LaplacePetsc;
 
 #ifndef BOUT_HAS_PETSC
 
-#include <boutexception.hxx>
-#include <invert_laplace.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/invert_laplace.hxx>
 
 class LaplacePetsc : public Laplacian {
 public:

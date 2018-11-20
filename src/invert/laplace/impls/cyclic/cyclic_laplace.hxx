@@ -31,12 +31,11 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include <invert_laplace.hxx>
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-
-#include "utils.hxx"
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
 
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!

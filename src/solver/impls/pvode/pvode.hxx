@@ -31,8 +31,8 @@ class PvodeSolver;
 #ifndef __PVODE_SOLVER_H__
 #define __PVODE_SOLVER_H__
 
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
-#include <bout_types.hxx>
 
 #include <pvode/nvector.h>
 #include <pvode/cvode.h>     // main CVODE header file

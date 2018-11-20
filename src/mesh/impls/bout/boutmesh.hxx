@@ -4,8 +4,8 @@
 
 #include "mpi.h"
 
+#include "bout/unused.hxx"
 #include <bout/mesh.hxx>
-#include "unused.hxx"
 
 #include <list>
 #include <vector>

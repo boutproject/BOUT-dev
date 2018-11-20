@@ -7,9 +7,9 @@
 #ifndef __FIELDGENERATORS_H__
 #define __FIELDGENERATORS_H__
 
-#include <field_factory.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/unused.hxx>
 
 #include <cmath>
 

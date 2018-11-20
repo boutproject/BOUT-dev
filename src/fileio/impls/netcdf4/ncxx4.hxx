@@ -45,8 +45,8 @@ class Ncxx4;
 #ifndef __NCFORMAT4_H__
 #define __NCFORMAT4_H__
 
-#include "dataformat.hxx"
-#include "unused.hxx"
+#include "bout/dataformat.hxx"
+#include "bout/unused.hxx"
 
 #include <netcdf>
 

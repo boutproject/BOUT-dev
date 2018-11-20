@@ -41,9 +41,9 @@
 #ifndef __INV_PAR_SERIAL_H__
 #define __INV_PAR_SERIAL_H__
 
-#include "invert_parderiv.hxx"
-#include "dcomplex.hxx"
-#include "utils.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/invert_parderiv.hxx"
+#include "bout/utils.hxx"
 
 class InvertParSerial : public InvertPar {
 public:

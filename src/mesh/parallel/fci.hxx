@@ -26,11 +26,11 @@
 #ifndef __FCITRANSFORM_H__
 #define __FCITRANSFORM_H__
 
+#include <bout/interpolation.hxx>
+#include <bout/mask.hxx>
+#include <bout/parallel_boundary_region.hxx>
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
-#include <mask.hxx>
-#include <parallel_boundary_region.hxx>
-#include <unused.hxx>
+#include <bout/unused.hxx>
 
 /*!
  * Field line map - contains the coefficients for interpolation
