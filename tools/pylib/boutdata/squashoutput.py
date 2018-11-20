@@ -13,7 +13,7 @@ and because single files are quicker to download.
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
                  xind=None, yind=None, zind=None, singleprecision=False, compress=False,
                  least_significant_digit=None, quiet=False, complevel=None, append=False,
-                 delete=False, progress=False, docontinue=False):
+                 delete=False, progress=False, docontinue=False, earlyExit=None):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -63,6 +63,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         Print a progress bar
     docontinue : bool
         Try to progress a previously interrupted squash
+    earlyExit : string
+        Exit after variable earlyExit is processed. Mostly for testing.
     """
 
     from boutdata.data import BoutOutputs
@@ -184,6 +186,12 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             f.sync()
             var = None
             gc.collect()
+
+            if earlyExit is not None:
+                if earlyExit == varname:
+                    return
+                    #sys.exit(1)
+                    #raise RuntimeError("Trigger error!")
 
     if delete:
         for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
