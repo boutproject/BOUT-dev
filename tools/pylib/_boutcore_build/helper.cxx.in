@@ -1,9 +1,9 @@
 cat <<EOF
-#include <field3d.hxx>
-#include <globals.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <invert_laplace.hxx>
+#include <bout/field3d.hxx>
+#include <bout/globals.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/invert_laplace.hxx>
 EOF
 for ftype in "Field3D" "Field2D"
 do

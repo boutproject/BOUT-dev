@@ -1,6 +1,6 @@
 cat <<EOF
-#include <field3d.hxx>
-#include <bout_types.hxx>
+#include <bout/field3d.hxx>
+#include <bout/bout_types.hxx>
 
 EOF
 for ftype in "Field3D" "Field2D"
