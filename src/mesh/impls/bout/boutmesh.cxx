@@ -2208,7 +2208,7 @@ void BoutMesh::addBoundaryRegions() {
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2225,7 +2225,7 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   // Outer X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
