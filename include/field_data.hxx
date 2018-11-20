@@ -57,7 +57,7 @@ class FieldVisitor;
 */
 class FieldData {
 public:
-  FieldData();
+  FieldData() = default;
   virtual ~FieldData();
 
   // Visitor pattern support
@@ -88,8 +88,9 @@ public:
 
 protected:
   std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
-  bool boundaryIsCopy;           ///< True if bndry_op is a copy
-  bool boundaryIsSet;            ///< Set to true when setBoundary called
+  bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
+  bool boundaryIsSet{false};          ///< Set to true when setBoundary called
+
   // Parallel boundaries
   std::vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
