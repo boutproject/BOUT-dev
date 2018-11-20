@@ -76,27 +76,20 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     import shutil
     import glob
 
+    if "/" in outputname:
+        raise ValueError("only simple filenames are supported for outputname")
+
     fullpath = os.path.join(datadir, outputname)
 
-    if docontinue:
-        if append:
-            raise NotImplementedError("append & docontinue: Case not handled")
+    if os.path.isfile(fullpath) and not (append or docontinue):
+        raise ValueError(
+            fullpath + " already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
+
+    if docontinue or append:
         # move temporary to subdir, so that when the BoutOutputs
         # caches the file list, this file is not found
         datadirtmp = tempfile.mkdtemp(dir=datadir)
         shutil.move(fullpath, datadirtmp)
-    if append:
-        datadirnew = tempfile.mkdtemp(dir=datadir)
-        for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
-            if not quiet:
-                print("moving", f)
-            shutil.move(f, datadirnew)
-        oldfile = datadirnew + "/" + outputname
-        datadir = datadirnew
-
-    if os.path.isfile(fullpath) and not append:
-        raise ValueError(
-            fullpath + " already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
     # useful object from BOUT pylib to access output data
     outputs = BoutOutputs(datadir, info=False, xguards=True,
@@ -105,16 +98,16 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     # Read a value to cache the files
     outputs[outputvars[0]]
 
-    if append:
-        # move only after the file list is cached
-        shutil.move(fullpath, oldfile)
+    #?if append:
+    #?    # move only after the file list is cached
+    #?    shutil.move(fullpath, oldfile)
 
-    if docontinue:
-        shutil.move(os.path.join(datadirtmp, outputname), datadir)
+    if docontinue or append:
+        shutil.move(os.path.join(datadirtmp, outputname.split("/")[-1]), datadir)
         os.rmdir(datadirtmp)
 
     t_array_index = outputvars.index("t_array")
-    outputvars.append(outputvars.pop(t_array_index))
+    outputvars.insert(0,outputvars.pop(t_array_index))
 
     if progress:
         # outputs.sizes() returns for each variable a list with the
@@ -139,49 +132,50 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             kwargs['least_significant_digit'] = least_significant_digit
         if complevel is not None:
             kwargs['complevel'] = complevel
-    if append:
-        old = DataFile(oldfile)
+    # Determine where we want to write the data
+    toffset = 0
+    if append or docontinue:
+        # We might be in continue mode
+        told = DataFile(fullpath)['t_array'][:]
         # Check if dump on restart was enabled
         # If so, we want to drop the duplicated entry
-        cropnew = 0
-        if old['t_array'][-1] == outputs['t_array'][0]:
-            cropnew = 1
-        # Make sure we don't end up with duplicated data:
-        for ot in old['t_array']:
-            if ot in outputs['t_array'][cropnew:]:
-                raise RuntimeError(
-                    "For some reason t_array has some duplicated entries in the new and old file.")
+        toffset = len(told)
+        if outputs['t_array'][0] in told:
+            toffset = list(told[:]).index(outputs['t_array'][0])
+        # Try to cleanup DataFile - is not threadsafe
+        gc.collect()
+    tmax = toffset + len(outputs['t_array'])
 
-    create = True
-    if docontinue:
-        create = False
-    # Create single file for output and write data
-    with DataFile(fullpath, create=create, write=True, format=format, **kwargs) as f:
+    # Only if nether continue or append mode
+    create = not (docontinue or append)
+
+    with DataFile(fullpath, create=create, write=True, **kwargs) as f:
         for varname in outputvars:
             if not quiet:
                 print(varname)
 
-            if docontinue:
-                if varname in f.keys():
+            dims = outputs.dimensions[varname]
+
+            if varname in f.keys():
+                # Ether not evolved, or already fully read
+                if 't' not in dims or f.getRealTlength(varname) == tmax:# and varname != 'tt':
                     if progress:
                         done += sizes[varname]
                         bar.update_progress(done / total, zoidberg=True)
                     continue
 
             var = outputs[varname]
-            if append:
-                dims = outputs.dimensions[varname]
-                if 't' in dims:
-                    var = var[cropnew:, ...]
-                    varold = old[varname]
-                    var = BoutArray(numpy.append(
-                        varold, var, axis=0), var.attributes)
+            if 't' in dims:
+                ranges=[slice(toffset,tmax),...]
+            else:
+                ranges=[...] if len(dims) else None
 
             if singleprecision:
                 if not isinstance(var, int):
                     var = BoutArray(numpy.float32(var), var.attributes)
 
-            f.write(varname, var)
+            f.write(varname, var, ranges=ranges)
+
             if progress:
                 done += sizes[varname]
                 bar.update_progress(done / total, zoidberg=True)
@@ -192,11 +186,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             gc.collect()
 
     if delete:
-        if append:
-            os.remove(oldfile)
         for f in glob.glob(datadir + "/BOUT.dmp.*.*"):
             if not quiet:
                 print("Deleting", f)
             os.remove(f)
-        if append:
-            os.rmdir(datadir)

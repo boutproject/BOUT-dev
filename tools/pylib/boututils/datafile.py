@@ -301,7 +301,18 @@ class DataFile(object):
         """
         return self.attributes(varname)["bout_type"]
 
-    def write(self, name, data, info=False):
+    def getRealTlength(self, var):
+        """Get the number of time slices which contain data
+
+        As the data might be filled with filldata, the length may be
+        shorther than the t-index might suggest.
+
+        This assumes that all time slices are ether completely filled
+        or completely empty.
+        """
+        return self.impl.getRealTlength(var)
+
+    def write(self, name, data, info=False, ranges=None):
         """Write a variable to file
 
         If the variable is not a :py:obj:`~boututils.boutarray.BoutArray` with
@@ -317,13 +328,16 @@ class DataFile(object):
         info : bool, optional
             If True, print information about what is being written to
             file
+        ranges : None or list of slices
+            If set write to the specified array in the datafile. Only
+            works if the variable already exists.
 
         Returns
         -------
         None
 
         """
-        return self.impl.write(name, data, info)
+        return self.impl.write(name, data, info, ranges)
 
     def __getitem__(self, name):
         return self.impl.__getitem__(name)
@@ -530,10 +544,42 @@ class DataFile_netCDF(DataFile):
 
         return dims_dict.get(dims, None)
 
-    def write(self, name, data, info=False):
+    def getRealTlength(self, var):
+        dims=self.dimensions(var)
+        if 't' in dims:
+            self.handle.set_auto_mask(True)
+            #self.handle.set_always_mask(True)
+            slicer=[slice(None)]
+            for i in range(1,len(dims)):
+                slicer.append(slice(-1,None,None))
+            data=self.handle[var][slicer]
+            self.handle.set_auto_mask(False)
+            try:
+                return data.mask.count(False)
+            except AttributeError:
+                #print("with mask?",slicer,data.shape, data)
+                #print(self.handle[var])
+                # Check if close to default fill value
+                return sum(1 for d in data if not np.isclose(d, 9.96920997e+36))
+        else:
+            return 0
+
+    def dontcreatewrite(self, name, data, info, ranges):
+        if ranges is None:
+            self.handle[name][...] = data
+        else:
+            self.handle[name][ranges] = data
+
+    def write(self, name, data, info=False, ranges=None):
+
+        #import sys
+        #print("sdf:",ranges, file=sys.stderr)
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
+
+        if name in self.keys():
+            return self.dontcreatewrite(name,data,info,ranges)
 
         s = np.shape(data)
 
@@ -920,7 +966,16 @@ class DataFile_HDF5(DataFile):
             return None
         return var.shape
 
-    def write(self, name, data, info=False):
+    def getRealTlength(self, var):
+        raise NotImplemented("Use netcdf")
+
+    def dontcreatewrite(self, name, data, info, ranges):
+        if ranges is None:
+            self.handle[name][...] = data
+        else:
+            self.handle[name][ranges] = data
+
+    def write(self, name, data, info=False, ranges=None):
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
