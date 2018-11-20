@@ -558,7 +558,7 @@ void derivs_set(std::vector<Options *> options, DiffLookup *table, DiffLookup *s
                 bool staggerGrids) {
   TRACE("derivs_set()");
   output_info.write("\t%-12s: ", name.c_str());
-  string label = def;
+  std::string label = def;
   for (auto &opts : options) {
     if (opts->isSet(name)) {
       opts->get(name, label, "");

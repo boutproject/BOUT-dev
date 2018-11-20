@@ -12,7 +12,7 @@ TOGEN=setup.py boutcore.pyx resolve_enum.pxd helper.cxx helper.h boutcpp.pxd
 $(TOGEN): Makefile $(BOUT_TOP)/make.config
 	@echo "  Generating $@"
 	@PATH=$(BOUT_TOP)/bin:$$PATH PY=$(PY) bash $@.in > $@.tmp \
-		|| (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
+		|| (fail=$$?; echo "touch $@ to ignore failed generation" ; exit $$fail)
 	@mv $@.tmp $@
 
 boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)

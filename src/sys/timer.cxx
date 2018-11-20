@@ -69,7 +69,7 @@ void Timer::cleanup() {
 map<std::string, Timer::timer_info*> Timer::info;
 
 Timer::timer_info* Timer::getInfo(const std::string &label) {
-  map<string, timer_info*>::iterator it(info.find(label));
+ auto it = info.find(label);
   if(it == info.end()) {
     // Not in map, so create it
     timer_info *t = new timer_info;

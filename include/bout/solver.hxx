@@ -75,7 +75,6 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 
 #include <string>
 #include <list>
-using std::string;
 
 typedef std::string SolverType;
 #define SOLVERCVODE       "cvode"
@@ -330,24 +329,24 @@ protected:
   
   /// A structure to hold an evolving variable
   template <class T>
-    struct VarStr {
-      bool constraint;
-      T *var;
-      T *F_var;
-      T *MMS_err;        // Error for MMS
-      CELL_LOC location; // For fields and vector components
-      bool covariant; // For vectors
-      bool evolve_bndry; // Are the boundary regions being evolved?
+  struct VarStr {
+    bool constraint;
+    T *var;
+    T *F_var;
+    T *MMS_err;        // Error for MMS
+    CELL_LOC location; // For fields and vector components
+    bool covariant;    // For vectors
+    bool evolve_bndry; // Are the boundary regions being evolved?
 
-      string name;    // Name of the variable
-    };
-  
+    std::string name; // Name of the variable
+  };
+
   /// Vectors of variables to evolve
-  vector< VarStr<Field2D> > f2d;
-  vector< VarStr<Field3D> > f3d;
-  vector< VarStr<Vector2D> > v2d;
-  vector< VarStr<Vector3D> > v3d;
-  
+  std::vector<VarStr<Field2D>> f2d;
+  std::vector<VarStr<Field3D>> f3d;
+  std::vector<VarStr<Vector2D>> v2d;
+  std::vector<VarStr<Vector3D>> v3d;
+
   bool has_constraints; ///< Can this solver.hxxandle constraints? Set to true if so.
   bool initialised; ///< Has init been called yet?
 
@@ -406,7 +405,7 @@ private:
   void loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
-  bool varAdded(const string &name); // Check if a variable has already been added
+  bool varAdded(const std::string &name); // Check if a variable has already been added
 };
 
 #endif // __SOLVER_H__

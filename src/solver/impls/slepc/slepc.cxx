@@ -37,7 +37,7 @@
 #include <output.hxx>
 #include <boutcomm.hxx>
 
-string formatEig(BoutReal reEig, BoutReal imEig);
+std::string formatEig(BoutReal reEig, BoutReal imEig);
 
 //The callback function for the shell matrix-multiply operation
 //A simple wrapper around the SlepcSolver advanceStep routine
@@ -117,8 +117,8 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar *eigr,
 
 
 //Helper function
-string formatEig(BoutReal reEig, BoutReal imEig){
-  string rePad, imPad;
+std::string formatEig(BoutReal reEig, BoutReal imEig){
+  std::string rePad, imPad;
 
   if(reEig<0){
     rePad="-";
@@ -584,7 +584,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
 
-  string joinNum, joinNumSlepc;
+  std::string joinNum, joinNumSlepc;
   if(imEigBout<0){
     joinNum="";
   }else{

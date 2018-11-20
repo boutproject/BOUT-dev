@@ -44,9 +44,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -56,23 +54,11 @@ Field3D::Field3D(Mesh *localmesh)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
-
-  boundaryIsSet = false;
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D &f)
-    : Field(f.fieldmesh),                // The mesh containing array sizes
-      background(nullptr), data(f.data), // This handles references to the data array
-      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -85,27 +71,14 @@ Field3D::Field3D(const Field3D &f)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-    
-  boundaryIsSet = false;
 }
 
-Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
 
   TRACE("Field3D: Copy constructor from Field2D");
-
-  boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -113,17 +86,13 @@ Field3D::Field3D(const Field2D &f)
 
   location = f.getLocation();
   fieldCoordinates = nullptr;
-    
+
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
 
   TRACE("Field3D: Copy constructor from value");
-
-  boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -423,7 +392,7 @@ void Field3D::applyBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyBoundary(const string &condition) {
+void Field3D::applyBoundary(const std::string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   checkData(*this);
@@ -450,7 +419,7 @@ void Field3D::applyBoundary(const string &condition) {
   //Field2D sets the corners to zero here, should we do the same here?
 }
 
-void Field3D::applyBoundary(const string &region, const string &condition) {
+void Field3D::applyBoundary(const std::string &region, const std::string &condition) {
   TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
@@ -552,7 +521,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(condition)");
 
@@ -576,7 +545,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
@@ -603,7 +572,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
@@ -1155,6 +1124,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
   Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   const Region<Ind2D> &region = localmesh->getRegion2D(REGION_STRING(rgn));
 
