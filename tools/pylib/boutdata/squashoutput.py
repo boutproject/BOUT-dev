@@ -70,7 +70,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     from boutdata.data import BoutOutputs
     from boututils.datafile import DataFile
     from boututils.boutarray import BoutArray
-    from zoidberg import progress as bar
+    if progress:
+        from zoidberg import progress as bar
     import numpy
     import os
     import gc
@@ -130,6 +131,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             kwargs['least_significant_digit'] = least_significant_digit
         if complevel is not None:
             kwargs['complevel'] = complevel
+
     # Determine where we want to write the data
     toffset = 0
     if append or docontinue:
@@ -142,6 +144,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             toffset = list(told[:]).index(outputs['t_array'][0])
         # Try to cleanup DataFile - is not threadsafe
         gc.collect()
+
     tmax = toffset + len(outputs['t_array'])
 
     # Only if nether continue or append mode

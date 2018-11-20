@@ -548,19 +548,23 @@ class DataFile_netCDF(DataFile):
         dims=self.dimensions(var)
         if 't' in dims:
             self.handle.set_auto_mask(True)
-            #self.handle.set_always_mask(True)
             slicer=[slice(None)]
             for i in range(1,len(dims)):
-                slicer.append(slice(-1,None,None))
-            data=self.handle[var][slicer]
+                slicer.append(1)
+            data=self.handle[var][tuple(slicer)]
             self.handle.set_auto_mask(False)
             try:
-                return data.mask.count(False)
+                mask=data.mask
             except AttributeError:
-                #print("with mask?",slicer,data.shape, data)
-                #print(self.handle[var])
                 # Check if close to default fill value
                 return sum(1 for d in data if not np.isclose(d, 9.96920997e+36))
+            else:
+                s=0
+                mask=mask.flatten()
+                for i in range(len(mask)):
+                    if mask[i] == False:
+                        s+=1
+                return s
         else:
             return 0
 
@@ -571,9 +575,6 @@ class DataFile_netCDF(DataFile):
             self.handle[name][ranges] = data
 
     def write(self, name, data, info=False, ranges=None):
-
-        #import sys
-        #print("sdf:",ranges, file=sys.stderr)
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")

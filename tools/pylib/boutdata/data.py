@@ -545,6 +545,7 @@ class BoutOutputs(object):
 
         self._file_list = glob.glob(os.path.join(
             path, self._prefix + "*" + self._suffix))
+
         if not suffix == None:
             latest_file = max(self._file_list, key=os.path.getctime)
             # if suffix==None we already found latest_file
