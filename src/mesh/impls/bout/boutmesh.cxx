@@ -37,15 +37,15 @@
 
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <dcomplex.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE

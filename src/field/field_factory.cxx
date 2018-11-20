@@ -19,19 +19,16 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include <globals.hxx>
-
-#include <field_factory.hxx>
-
-#include <cmath>
-
-#include <output.hxx>
-#include <bout/constants.hxx>
-#include <utils.hxx>
 
 #include "bout/constants.hxx"
-
 #include "fieldgenerators.hxx"
+#include <bout/constants.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
+
+#include <cmath>
 
 /// Helper function to create a FieldValue generator from a BoutReal
 FieldGeneratorPtr generator(BoutReal value) {

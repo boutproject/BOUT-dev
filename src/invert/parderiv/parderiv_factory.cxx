@@ -1,7 +1,7 @@
 
-#include <boutcomm.hxx>
-#include <invert_parderiv.hxx>
-#include <boutexception.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/boutexception.hxx>
 
 #include <strings.h>
 

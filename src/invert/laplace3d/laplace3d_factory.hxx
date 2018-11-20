@@ -5,7 +5,7 @@ class Laplace3DFactory;
 #define __LAPLACE3D_FACTORY_H__
 
 #include <bout/invert/laplace3d.hxx>
-#include <options.hxx>
+#include <bout/options.hxx>
 
 class Laplace3DFactory {
  public:

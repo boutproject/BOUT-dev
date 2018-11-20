@@ -26,11 +26,11 @@
 
 #include <bout/scorepwrapper.hxx>
 
-#include <globals.hxx>
-#include <vecops.hxx>
-#include <derivs.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
+#include <bout/globals.hxx>
+#include <bout/vecops.hxx>
+#include <bout/derivs.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
 
 /**************************************************************************
  * Gradient operators

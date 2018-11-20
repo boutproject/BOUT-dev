@@ -45,17 +45,17 @@ class Mesh;
 
 #include "mpi.h"
 
-#include "field_data.hxx"
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "datafile.hxx"
-#include "options.hxx"
+#include "bout/field_data.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/datafile.hxx"
+#include "bout/options.hxx"
 
 #include "fieldgroup.hxx"
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include "sys/range.hxx" // RangeIterator
 
@@ -65,7 +65,7 @@ class Mesh;
 
 #include "paralleltransform.hxx" // ParallelTransform class
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <bout/region.hxx>
 

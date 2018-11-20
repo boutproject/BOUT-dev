@@ -20,19 +20,19 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 #include "h5_format.hxx"
 
 #ifdef HDF5
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
 #include <string>
 #include <mpi.h>
 
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <boutcomm.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/boutcomm.hxx>
 
 H5Format::H5Format(bool parallel_in) {
   parallel = parallel_in;

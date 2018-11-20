@@ -31,7 +31,7 @@ class Field2D;
 #define __FIELD2D_H__
 
 class Mesh;
-class Field3D; //#include "field3d.hxx"
+class Field3D; //#include "bout/field3d.hxx"
 
 #include "bout/array.hxx"
 #include "bout/field.hxx"

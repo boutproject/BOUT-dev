@@ -38,13 +38,13 @@
  *
  ************************************************************************/
 
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 #include "serial.hxx"
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/constants.hxx>
 
 #include <bout/surfaceiter.hxx>

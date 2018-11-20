@@ -1,10 +1,10 @@
 
-#include <globals.hxx>
-#include <field_data.hxx>
-#include <boundary_factory.hxx>
-#include <output.hxx>
-#include <field_factory.hxx>
-#include "unused.hxx"
+#include "bout/unused.hxx"
+#include <bout/boundary_factory.hxx>
+#include <bout/field_data.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
 
 FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
   

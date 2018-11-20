@@ -1,4 +1,4 @@
-#include "parallel_boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 void BoundaryRegionPar::add_point(const int jx, const int jy, const int jz,
                                   const BoutReal x, const BoutReal y, const BoutReal z,

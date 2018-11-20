@@ -65,7 +65,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 
 
 
-//#include "globals.hxx"
+//#include "bout/globals.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/physicsmodel.hxx"

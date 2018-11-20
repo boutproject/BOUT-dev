@@ -28,14 +28,14 @@
 
 #include "slepc.hxx"
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <stdlib.h>
 
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <boutcomm.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/boutcomm.hxx>
 
 std::string formatEig(BoutReal reEig, BoutReal imEig);
 

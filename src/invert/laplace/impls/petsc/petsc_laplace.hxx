@@ -58,13 +58,13 @@ public:
 
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
 #include <petscksp.h>
-#include <options.hxx>
-#include <invert_laplace.hxx>
+#include <bout/options.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/petsclib.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 class LaplacePetsc : public Laplacian {
 public:

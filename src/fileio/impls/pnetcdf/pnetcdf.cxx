@@ -20,8 +20,8 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/boutcomm.hxx>
 
 #include "pnetcdf.hxx"
 
@@ -30,11 +30,11 @@
 
 #include <pnetcdf.h> // Parallel NetCDF library
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
 
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 
 #define CHKERR(ret) { if( ret != NC_NOERR ) throw BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
 

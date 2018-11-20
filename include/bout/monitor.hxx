@@ -1,9 +1,9 @@
 #ifndef __MONITOR_H__
 #define __MONITOR_H__
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/assert.hxx"
-#include "utils.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 

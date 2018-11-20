@@ -105,7 +105,7 @@ private:
 
 #else // BOUT_HAS_PETSC
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 class PetscLib {
 public:

@@ -1,17 +1,17 @@
 #include <mpi.h>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <iostream>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
+
 #include <stdarg.h>
+#include <iostream>
 
 #ifdef BACKTRACE
 #include <execinfo.h>
 #include <dlfcn.h>
 #endif
-
-#include <utils.hxx>
 
 void BoutParallelThrowRhsFail(int status, const char *message) {
   int allstatus;

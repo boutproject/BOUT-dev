@@ -4,7 +4,7 @@
 #ifndef __BOUT_GENERIC_FACTORY_H__
 #define __BOUT_GENERIC_FACTORY_H__
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 
 #include <functional>
 #include <iostream>

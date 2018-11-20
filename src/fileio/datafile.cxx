@@ -35,16 +35,18 @@
  *********************************************************/
 //#include "mpi.h" // For MPI_Wtime()
 
-#include <globals.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/datafile.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <datafile.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <msg_stack.hxx>
-#include <cstring>
+#include <bout/utils.hxx>
+
 #include "formatfactory.hxx"
+
+#include <cstring>
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true),
   floats(false), openclose(true), enabled(true), shiftOutput(false),

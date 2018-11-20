@@ -24,13 +24,13 @@
  * 
  ***********************************************************************/
 
-#include <comm_group.hxx>
+#include <bout/comm_group.hxx>
 #include <string.h>
 #include <stdlib.h>
 
-#include <output.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/options.hxx>
+#include <bout/msg_stack.hxx>
 
 namespace comm_group {
 

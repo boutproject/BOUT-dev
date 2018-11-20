@@ -23,16 +23,15 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/fieldperp.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <stdlib.h>
 #include <math.h>
-
-#include <fieldperp.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
   if (fieldmesh) {

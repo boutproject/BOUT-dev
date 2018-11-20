@@ -23,20 +23,18 @@
 * 
 **************************************************************************/
 
-#include <globals.hxx>
-#include <bout.hxx>
-#include <difops.hxx>
-#include <vecops.hxx>
-#include <utils.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
 #include <bout/assert.hxx>
-
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-
-#include <interpolation.hxx>
-#include <unused.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+#include <bout/vecops.hxx>
 
 #include <math.h>
 #include <stdlib.h>

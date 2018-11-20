@@ -7,11 +7,11 @@
 
 #include <bout/assert.hxx>
 
-#include <boutcomm.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/utils.hxx>
 #include <bout/sys/timer.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"

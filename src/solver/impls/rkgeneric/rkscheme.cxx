@@ -1,9 +1,9 @@
 #include "rkschemefactory.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 #include <bout/rkscheme.hxx>
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 #include <cmath>
-#include <output.hxx>
+#include <bout/output.hxx>
 
 ////////////////////
 // PUBLIC

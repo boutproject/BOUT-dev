@@ -38,20 +38,20 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <derivs.hxx>
-#include <stencils.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
 #include <bout/constants.hxx>
-#include <msg_stack.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/stencils.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 #include <string.h>
 #include <stdlib.h>
 
-#include <output.hxx>
 
 /*******************************************************************************
  * First central derivatives

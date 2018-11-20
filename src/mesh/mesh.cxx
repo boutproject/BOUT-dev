@@ -1,16 +1,16 @@
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
-#include <utils.hxx>
-#include <derivs.hxx>
-#include <msg_stack.hxx>
+#include <bout/utils.hxx>
+#include <bout/derivs.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <cmath>
 
 #include "meshfactory.hxx"
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include "parallel/fci.hxx"
 

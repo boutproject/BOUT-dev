@@ -23,7 +23,7 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

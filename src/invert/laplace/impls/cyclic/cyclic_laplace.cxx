@@ -33,13 +33,13 @@
  *
  */
 
-#include <globals.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <bout/sys/timer.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
-#include <output.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
+#include <bout/utils.hxx>
 
 #include "cyclic_laplace.hxx"
 

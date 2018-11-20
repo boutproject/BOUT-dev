@@ -36,14 +36,14 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <initialprofiles.hxx>
-#include <boutexception.hxx>
-#include <field_factory.hxx>
-#include <output.hxx>
+#include <bout/globals.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/output.hxx>
 #include <bout/constants.hxx>
-#include <msg_stack.hxx>
-#include "unused.hxx"
+#include <bout/msg_stack.hxx>
+#include "bout/unused.hxx"
 
 #include <math.h>
 #include <string.h>

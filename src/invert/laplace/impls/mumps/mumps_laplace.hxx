@@ -59,10 +59,10 @@ public:
  
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
+#include <bout/options.hxx>
+#include <bout/boutexception.hxx>
 #include "dmumps_c.h"
 
 #define MUMPS_JOB_INIT -1

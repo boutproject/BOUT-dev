@@ -23,8 +23,7 @@
  **************************************************************************/
 
 #include <bout/sys/expressionparser.hxx>
-
-#include <utils.hxx> // for lowercase
+#include <bout/utils.hxx> // for lowercase
 
 #include <stdarg.h>
 #include <stdio.h>

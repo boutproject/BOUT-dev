@@ -29,20 +29,20 @@
 
 #ifdef BOUT_HAS_ARKODE
 
-#include <boutcomm.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
 
 #include <arkode/arkode.h>
 #include <arkode/arkode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
-#include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
+#include <sundials/sundials_types.h>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)

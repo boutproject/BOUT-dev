@@ -3,7 +3,7 @@
 #define __EMPTYLAPLACE3D_H__
 
 #include <bout/invert/laplace3d.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 class EmptyLaplace3D : public Laplace3D {
 public:

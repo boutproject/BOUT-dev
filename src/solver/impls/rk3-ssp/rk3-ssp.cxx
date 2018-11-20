@@ -1,14 +1,14 @@
 
 #include "rk3-ssp.hxx"
 
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 RK3SSP::RK3SSP(Options *opt) : Solver(opt) {}
 

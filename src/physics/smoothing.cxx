@@ -32,12 +32,12 @@
 
 #include <math.h>
 
-#include <globals.hxx>
-#include <smoothing.hxx>
-#include <bout_types.hxx>
-#include <msg_stack.hxx>
+#include <bout/globals.hxx>
+#include <bout/smoothing.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/msg_stack.hxx>
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <bout/constants.hxx>
 
 // Smooth using simple 1-2-1 filter

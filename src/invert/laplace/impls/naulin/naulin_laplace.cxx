@@ -109,14 +109,14 @@
  *              * Stop: Function returns phiNext
  */
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/sys/timer.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
-#include <output.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
 
 #include "naulin_laplace.hxx"
 

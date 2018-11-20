@@ -30,8 +30,8 @@
 
 // #include "mpi.h"
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/msg_stack.hxx>
 #include <cmath>
 
 LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mesh) : 

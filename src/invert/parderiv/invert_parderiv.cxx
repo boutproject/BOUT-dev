@@ -27,7 +27,7 @@
  *
  ************************************************************************/
 
-#include <invert_parderiv.hxx>
+#include <bout/invert_parderiv.hxx>
 #include "parderiv_factory.hxx"
 
 InvertPar* InvertPar::Create(Mesh* mesh_in) {

@@ -23,16 +23,16 @@
  *
  **************************************************************************/
 
-//#include <globals.hxx>
+//#include <bout/globals.hxx>
 
 #include <stdarg.h>
 
-#include <field.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field.hxx>
 #include <bout/mesh.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
 #if CHECK > 0

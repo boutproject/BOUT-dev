@@ -27,13 +27,13 @@
 
 #ifdef BOUT_HAS_PVODE
 
-#include <boutcomm.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <pvode/iterativ.h>  // contains the enum for types of preconditioning
 #include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step

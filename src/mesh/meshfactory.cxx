@@ -1,11 +1,11 @@
 
 #include "meshfactory.hxx"
 
-#include <options.hxx>
+#include <bout/options.hxx>
 #include <strings.h>
-#include <output.hxx>
-#include <dataformat.hxx>
-#include <boutexception.hxx>
+#include <bout/output.hxx>
+#include <bout/dataformat.hxx>
+#include <bout/boutexception.hxx>
 
 #include "impls/bout/boutmesh.hxx"
 

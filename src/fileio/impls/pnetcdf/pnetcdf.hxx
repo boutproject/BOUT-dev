@@ -45,7 +45,7 @@ class PncFormat;
 #ifndef __PNCFORMAT_H__
 #define __PNCFORMAT_H__
 
-#include "dataformat.hxx"
+#include "bout/dataformat.hxx"
 
 #include <map>
 #include <string>

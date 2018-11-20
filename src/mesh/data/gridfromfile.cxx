@@ -1,20 +1,20 @@
 
 #include <bout/griddata.hxx>
 
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/sys/timer.hxx>
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include <bout/constants.hxx>
 
-#include <utils.hxx>  // for ROUND function
+#include <bout/utils.hxx>  // for ROUND function
 
-#include <fft.hxx>
+#include <bout/fft.hxx>
 
-#include <unused.hxx>
+#include <bout/unused.hxx>
 
 #include <utility>
 

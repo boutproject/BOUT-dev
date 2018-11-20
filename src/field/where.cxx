@@ -24,7 +24,7 @@
  **************************************************************************/
 
 #include <bout/mesh.hxx>
-#include <where.hxx>
+#include <bout/where.hxx>
 
 //////////////////////////////////////////////////////////////////////////////////
 // Versions taking Field2D and returning Field3D

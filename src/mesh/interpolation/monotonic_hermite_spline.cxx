@@ -22,9 +22,9 @@
 
 
 #include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "interpolation.hxx"
-#include "output.hxx"
+#include "bout/globals.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/output.hxx"
 
 #include <vector>
 

@@ -39,7 +39,7 @@ class FieldData;
 #include <vector>
 
 // Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
+//#include "bout/boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 

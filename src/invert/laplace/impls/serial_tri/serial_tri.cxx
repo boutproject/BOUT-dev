@@ -24,18 +24,18 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
+#include "bout/globals.hxx"
 #include "serial_tri.hxx"
 
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {

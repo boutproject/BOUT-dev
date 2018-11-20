@@ -20,16 +20,16 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 #include "nc_format.hxx"
 
 #ifdef NCDF
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
 
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/msg_stack.hxx>
 
 using std::string;
 using std::vector;

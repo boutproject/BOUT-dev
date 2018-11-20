@@ -1,7 +1,7 @@
 
-#include <globals.hxx>
-#include <boundary_region.hxx>
-#include <utils.hxx>
+#include <bout/boundary_region.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 
 using std::swap;
 

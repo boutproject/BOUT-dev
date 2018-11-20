@@ -30,11 +30,11 @@
  **************************************************************************/
 
 #include <bout/constants.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/lapack_routines.hxx>
+#include <bout/utils.hxx>
 
 #include "pdd.hxx"
 

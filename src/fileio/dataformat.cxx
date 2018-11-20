@@ -1,7 +1,7 @@
 
-#include <globals.hxx>
-#include <dataformat.hxx>
-#include <utils.hxx>
+#include <bout/dataformat.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 
 bool DataFormat::openr(const std::string &name, int mype) {
   // Split into base name and extension
