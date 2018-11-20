@@ -9,13 +9,16 @@ orders=range(2,5)
 whats=["Dirichlet","Neumann","Free"]
 
 class_str="""
+
+#include <utility>
+
 #include "boundary_op.hxx"
 
 class {{class}} : public BoundaryOp {
 public:
   {{class}}() {}
   {{class}}(BoundaryRegion *region, std::shared_ptr<FieldGenerator> gen = nullptr) : BoundaryOp(region), gen(gen) {}
-  BoundaryOp *clone(BoundaryRegion *region, const list<string> &args) override;
+  BoundaryOp *clone(BoundaryRegion *region, const std::list<std::string> &args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D &f) override {

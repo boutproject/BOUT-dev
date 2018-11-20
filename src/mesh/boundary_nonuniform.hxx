@@ -1,5 +1,8 @@
 
+
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryDirichletNonUniform_O2 : public BoundaryOp {
 public:
@@ -7,7 +10,7 @@ public:
   BoundaryDirichletNonUniform_O2(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -22,6 +25,8 @@ private:
 };
 
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryNeumannNonUniform_O2 : public BoundaryOp {
 public:
@@ -29,7 +34,7 @@ public:
   BoundaryNeumannNonUniform_O2(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -44,6 +49,8 @@ private:
 };
 
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryFreeNonUniform_O2 : public BoundaryOp {
 public:
@@ -51,7 +58,7 @@ public:
   BoundaryFreeNonUniform_O2(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -67,13 +74,15 @@ private:
 
 #include "boundary_op.hxx"
 
+#include <utility>
+
 class BoundaryDirichletNonUniform_O3 : public BoundaryOp {
 public:
   BoundaryDirichletNonUniform_O3() {}
   BoundaryDirichletNonUniform_O3(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -88,6 +97,8 @@ private:
 };
 
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryNeumannNonUniform_O3 : public BoundaryOp {
 public:
@@ -95,7 +106,7 @@ public:
   BoundaryNeumannNonUniform_O3(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -110,6 +121,8 @@ private:
 };
 
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryFreeNonUniform_O3 : public BoundaryOp {
 public:
@@ -117,7 +130,7 @@ public:
   BoundaryFreeNonUniform_O3(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -133,13 +146,15 @@ private:
 
 #include "boundary_op.hxx"
 
+#include <utility>
+
 class BoundaryDirichletNonUniform_O4 : public BoundaryOp {
 public:
   BoundaryDirichletNonUniform_O4() {}
   BoundaryDirichletNonUniform_O4(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -155,6 +170,8 @@ private:
 };
 
 #include "boundary_op.hxx"
+
+#include <utility>
 
 class BoundaryNeumannNonUniform_O4 : public BoundaryOp {
 public:
@@ -162,7 +179,7 @@ public:
   BoundaryNeumannNonUniform_O4(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
@@ -179,13 +196,15 @@ private:
 
 #include "boundary_op.hxx"
 
+#include <utility>
+
 class BoundaryFreeNonUniform_O4 : public BoundaryOp {
 public:
   BoundaryFreeNonUniform_O4() {}
   BoundaryFreeNonUniform_O4(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
       : BoundaryOp(region), gen(gen) {}
-  BoundaryOp* clone(BoundaryRegion* region, const list<string>& args) override;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
   void apply(Field2D& f) override { throw BoutException("Not Implemented"); };

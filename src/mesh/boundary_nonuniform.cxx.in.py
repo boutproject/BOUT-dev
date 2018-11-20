@@ -187,7 +187,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 """
 clone_str="""
 BoundaryOp * {{class}}::clone(BoundaryRegion *region,
-   const list<string> &args) {
+   const std::list<std::string> &args) {
   // verifyNumPoints(region, 3);
 
   std::shared_ptr<FieldGenerator> newgen;
