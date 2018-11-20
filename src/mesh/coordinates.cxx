@@ -442,13 +442,16 @@ int Coordinates::geometry() {
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Field2D d2x, d2y; // d^2 x / d i^2
+  Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = localmesh->indexDDX(1. / dx); // d/di(1/dx)
   } else {
+    // Shift d2x to our location
+    d2x = interp_to(d2x, location);
+
     d1_dx = -d2x / (dx * dx);
   }
 
@@ -457,6 +460,9 @@ int Coordinates::geometry() {
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
     d1_dy = localmesh->indexDDY(1. / dy); // d/di(1/dy)
   } else {
+    // Shift d2y to our location
+    d2y = interp_to(d2y, location);
+
     d1_dy = -d2y / (dy * dy);
   }
 
