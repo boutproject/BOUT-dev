@@ -199,8 +199,6 @@ private:
 template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 
-  using std::abs;
-
   // Calculate the first co-factors
   T A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
   T B = a(1, 2) * a(2, 0) - a(1, 0) * a(2, 2);
@@ -209,7 +207,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   // Calculate the determinant
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
-  if (abs(det) < abs(small)) {
+  if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
       throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
     } else {
@@ -312,7 +310,7 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
  * if |a| < |b| then return a, otherwise return b
  */
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
+  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
 }
 
 #if CHECK > 0
