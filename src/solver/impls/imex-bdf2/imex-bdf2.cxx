@@ -874,9 +874,9 @@ int IMEXBDF2::run() {
 
 	  //Find local data
 	  for(int i=0;i<nlocal;i++){
-	    errTot[0] += abs(err[i]-u[i]);
-	    errTot[1] += abs(u[i]);
-	    errTot[2] += abs(err[i]);
+	    errTot[0] += std::abs(err[i]-u[i]);
+	    errTot[1] += std::abs(u[i]);
+	    errTot[2] += std::abs(err[i]);
 	  };
 
 	  //Now reduce across procs
