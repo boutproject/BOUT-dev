@@ -5,6 +5,7 @@ import itertools
 import time
 import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe
+from boutdata.squashoutput import squashoutput
 
 #requires: all_tests
 #requires: netcdf
@@ -41,7 +42,7 @@ def timed_launch_safe(cmd, *args, **kwargs):
         launch_safe(cmd, *args, **kwargs)
 
 
-def verify(f1, f2):
+def verify(f1, f2, msg=""):
     """Verifies that two BOUT++ files are identical
 
     """
@@ -50,8 +51,8 @@ def verify(f1, f2):
         d2 = DataFile(f2)
         for v in d1.keys():
             if d1[v].shape != d2[v].shape:
-                raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
-            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration"]:
+                raise RuntimeError(msg, "shape mismatch in ", v, d1[v], d2[v])
+            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration", "tt", "hist_hi"]:
                 continue
             if not np.allclose(d1[v], d2[v]):
                 err = ""
@@ -59,43 +60,67 @@ def verify(f1, f2):
                 for i in itertools.product(*dimensions):
                     if d1[v][i] != d2[v][i]:
                         err += "{}: {} != {}\n".format(i, d1[v][i], d2[v][i])
-                raise RuntimeError("data mismatch in ", v, err, d1[v], d2[v])
+                raise RuntimeError(msg, "data mismatch in ", v, err, d1[v], d2[v])
 
 
 timed_shell_safe("make")
 
 # Run once to get normal data
-timed_shell_safe("./squash -q -q -q nout=2")
+timed_shell_safe("./squash -q -q -q nout=4")
 timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
 # Parallel test
 timed_shell_safe("rm -f f2.nc")
-timed_launch_safe("./squash -q -q -q nout=2", nproc=4, mthread=1)
-timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_launch_safe("./squash -q -q -q nout=4", nproc=4, mthread=1)
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname f2.nc")
 
 verify("f1.nc", "f2.nc")
 
 # Parallel and in two pieces
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname f2.nc")
 timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
-timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname f2.nc")
 
-verify("f1.nc", "f2.nc")
+verify("f1.nc", "f2.nc", "parallel with append")
 
 # Parallel and in two pieces without dump_on_restart
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname f2.nc")
 timed_launch_safe("./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1)
-timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname ../f2.nc")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcal 9 data --outputname f2.nc")
 
-verify("f1.nc", "f2.nc")
+verify("f1.nc", "f2.nc", "parallel with append, without dump_on_restart")
 
 # Sequential test
 timed_shell_safe("rm -f f2.nc")
-timed_shell_safe("./squash -q -q -q nout=2")
-timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname ../f2.nc")
+timed_shell_safe("./squash -q -q -q nout=4")
+timed_shell_safe("../../../bin/bout-squashoutput -qdcl 9 data --outputname f2.nc")
 
-verify("f1.nc", "f2.nc")
+verify("f1.nc", "f2.nc", "Sequential test")
+
+# Append test
+timed_shell_safe("rm -f f2.nc")
+timed_shell_safe("./squash -q -q -q nout=4")
+squashoutput(datadir="data",outputname="f2.nc",earlyExit="f2",quiet=True)
+#print([f for f in os.listdir('.') if os.path.isfile(f)]
+import os
+print(os.listdir('.'))
+print(os.listdir('data'))
+
+timed_shell_safe("../../../bin/bout-squashoutput -qdCcl 9 data --outputname f2.nc")
+
+verify("f1.nc", "f2.nc", "Continue test")
+
+# Append test
+timed_shell_safe("rm -f f2.nc")
+timed_shell_safe("./squash -q -q -q")
+squashoutput(datadir="data",outputname="f2.nc",earlyExit="f2")
+timed_shell_safe("../../../bin/bout-squashoutput -qdCcl 9 data --outputname f2.nc")
+timed_shell_safe("./squash -q -q -q restart")
+squashoutput(datadir="data",outputname="f2.nc",append=True,quiet=True,earlyExit="f2")
+timed_shell_safe("../../../bin/bout-squashoutput -qadCcl 9 data --outputname f2.nc")
+
+verify("f1.nc", "f2.nc", "Continue and append test")
