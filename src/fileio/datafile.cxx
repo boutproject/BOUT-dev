@@ -1064,6 +1064,35 @@ void Datafile::setAttribute(const string &varname, const string &attrname, int v
   }
 }
 
+void Datafile::setAttribute(const string &varname, const string &attrname, BoutReal value) {
+
+  TRACE("Datafile::setAttribute(string, string, BoutReal)");
+
+  Timer timer("io");
+
+  if(!file)
+    throw BoutException("Datafile::write: File is not valid!");
+
+  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openw(filename, MYPE, appending))
+      throw BoutException("Datafile::write: Failed to open file!");
+    appending = true;
+    flushFrequencyCounter = 0;
+  }
+
+  if(!file->is_valid())
+    throw BoutException("Datafile::setAttribute: File is not valid!");
+
+  file->setAttribute(varname, attrname, value);
+
+  if (openclose) {
+    file->close();
+  }
+}
+
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const string &name, Field2D *f, bool save_repeat) {
