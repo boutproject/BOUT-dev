@@ -633,7 +633,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
