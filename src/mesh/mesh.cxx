@@ -349,22 +349,19 @@ void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
     } else {
       // Interpolate coordinates from CELL_CENTRE version
       ASSERT1(StaggerGrids); // If StaggerGrids==false, it doesn't make sense to have non-CELL_CENTRE Coordinates
-      if (!coords_map.count(location)) {
-        // location does not exist in coords_map, so create new entry
-        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
-      } else if (replace_coords) {
-        // location does already exist in coords_map, so reset it
 
-        // first erase the existing entry to avoid throwing an exception from
-        // Coordinates::geometry().
-        // The check that would throw the exception is not needed because
-        // replacement of the Coordinates object has been explicitly requested.
-        coords_map.erase(location);
-        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
-      } else {
+      if (!replace_coords and (coords_map.count(location) > 0)) {
         throw BoutException("Coordinates at %s already added to Mesh",
             CELL_LOC_STRING(location).c_str());
       }
+      if (replace_coords) {
+        // first erase the existing entry to avoid throwing an exception from
+        // Coordinates::geometry(): replacement of the Coordinates object has
+        // been explicitly requested.
+        coords_map.erase(location);
+      }
+
+      coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
     }
   }
 }
