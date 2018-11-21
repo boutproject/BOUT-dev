@@ -218,8 +218,10 @@ TEST_F(Field3DTest, MergeYupYDown) {
 
   EXPECT_FALSE(field.hasYupYdown());
 
+#if CHECK > 2
   EXPECT_THROW(field.yup(), BoutException);
   EXPECT_THROW(field.ydown(), BoutException);
+#endif
 
   // Should be able to merge again without any problems
   EXPECT_NO_THROW(field.mergeYupYdown());
@@ -238,8 +240,10 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
 
   field.mergeYupYdown();
 
+#if CHECK > 2
   EXPECT_THROW(field.yup(), BoutException);
   EXPECT_THROW(field.ydown(), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, MultipleYupYdown) {
