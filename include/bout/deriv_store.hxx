@@ -31,6 +31,7 @@
 
 #include <functional>
 #include <map>
+#include <set>
 #include <unordered_map>
 
 #include <bout/scorepwrapper.hxx>
@@ -69,14 +70,41 @@ struct DerivativeStore {
     return instance;
   }
 
-  /// Returns a vector of all registered method names for the
-  /// specified derivative type, direction and stagger.
-  std::vector<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction,
-                                               STAGGER stagger = STAGGER::None) const {
+  /// Report if store has any registered methods
+  bool isEmpty() const {
     AUTO_TRACE();
+    return registeredMethods.empty();
+  };
+
+  /// Report if store has any registered methods for specific type determined by key
+  bool isEmpty(std::size_t key) const {
+    AUTO_TRACE();
+    return registeredMethods.count(key) == 0;
+  }
+
+  /// Report if store has any registered methods for specific type
+  bool isEmpty(DERIV derivType, DIRECTION direction,
+               STAGGER stagger = STAGGER::None) const {
+    AUTO_TRACE();
+
     // Get the key
     auto key = getKey(direction, stagger, DERIV_STRING(derivType));
-    return registeredMethods.at(key);
+    return isEmpty(key);
+  }
+
+  /// Returns a vector of all registered method names for the
+  /// specified derivative type, direction and stagger.
+  std::set<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction,
+                                            STAGGER stagger = STAGGER::None) const {
+    AUTO_TRACE();
+
+    // Get the key
+    auto key = getKey(direction, stagger, DERIV_STRING(derivType));
+    if (isEmpty(key)) {
+      return std::set<std::string>{};
+    } else {
+      return registeredMethods.at(key);
+    }
   };
 
   /// Outputs a list of all registered method names for the
@@ -106,7 +134,7 @@ struct DerivativeStore {
     const auto key = getKey(direction, stagger, methodName);
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].push_back(
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
         methodName);
 
     switch (derivType) {
@@ -135,7 +163,7 @@ struct DerivativeStore {
     const auto key = getKey(direction, stagger, methodName);
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].push_back(
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
         methodName);
 
     switch (derivType) {
@@ -343,6 +371,24 @@ struct DerivativeStore {
   /// it might be useful to relax this assumption!
   storageType<std::size_t, std::string> defaultMethods;
 
+  /// Provide a method to override/force a specific default method
+  void forceDefaultMethod(std::string methodName, DERIV deriv, DIRECTION direction,
+                          STAGGER stagger = STAGGER::None) {
+    const auto key = getKey(direction, stagger, DERIV_STRING(deriv));
+    defaultMethods[key] = uppercase(methodName);
+  }
+
+  /// Empty all member storage
+  void reset() {
+    defaultMethods.clear();
+    standard.clear();
+    standardSecond.clear();
+    standardFourth.clear();
+    upwind.clear();
+    flux.clear();
+    registeredMethods.clear();
+  }
+
 private:
   // Make the constructor private so we can't make instances outside
   // of the struct
@@ -356,7 +402,7 @@ private:
   storageType<std::size_t, upwindFunc> upwind;
   storageType<std::size_t, fluxFunc> flux;
 
-  storageType<std::size_t, std::vector<std::string>> registeredMethods;
+  storageType<std::size_t, std::set<std::string>> registeredMethods;
 
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
