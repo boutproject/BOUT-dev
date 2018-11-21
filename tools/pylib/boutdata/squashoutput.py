@@ -165,6 +165,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
                         bar.update_progress(done / total, zoidberg=True)
                     continue
 
+            if not quiet:
+                print("reading ...")
             var = outputs[varname]
             if 't' in dims:
                 ranges=[slice(toffset,tmax),...]
@@ -175,6 +177,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
                 if not isinstance(var, int):
                     var = BoutArray(numpy.float32(var), var.attributes)
 
+            if not quiet:
+                print("writing ...")
             f.write(varname, var, ranges=ranges)
 
             if progress:

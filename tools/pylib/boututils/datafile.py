@@ -555,16 +555,21 @@ class DataFile_netCDF(DataFile):
             self.handle.set_auto_mask(False)
             try:
                 mask=data.mask
+                if isinstance(mask, np.ndarray):
+                    mask=mask.flatten()
+                    s=0
+                    for i in range(len(mask)):
+                        if mask[i] == False:
+                            s+=1
+                    return s
+                else:
+                    if mask:
+                        return 0
+                    else:
+                        return len(data)
             except AttributeError:
                 # Check if close to default fill value
                 return sum(1 for d in data if not np.isclose(d, 9.96920997e+36))
-            else:
-                s=0
-                mask=mask.flatten()
-                for i in range(len(mask)):
-                    if mask[i] == False:
-                        s+=1
-                return s
         else:
             return 0
 
