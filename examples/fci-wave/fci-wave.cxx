@@ -40,14 +40,14 @@ private:
     Field3D result;
     result.allocate();
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
-    for (auto i : result.region(RGN_NOBNDRY)) {
+    for (auto i : result.getRegion(RGN_NOBNDRY)) {
       result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()]) /
                   (2. * coord->dy[i] * sqrt(coord->g_22[i]));
 
       if (!finite(result[i])) {
-        output.write("[%d,%d,%d]: %e, %e -> %e\n", i.x, i.y, i.z, f_B.yup()[i.yp()],
+        output.write("[%d,%d,%d]: %e, %e -> %e\n", i.x(), i.y(), i.z(), f_B.yup()[i.yp()],
                      f_B.ydown()[i.ym()], result[i]);
       }
     }
@@ -159,7 +159,7 @@ protected:
 
       // Apply a soft floor to the density
       // Hard floors (setting ddt = 0) can slow convergence of solver
-      for (auto i : logn.region(RGN_NOBNDRY)) {
+      for (auto i : logn.getRegion(RGN_NOBNDRY)) {
         if (ddt(logn)[i] < 0.0) {
           ddt(logn)[i] *= (1. - exp(log_background - logn[i]));
         }

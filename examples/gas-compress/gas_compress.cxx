@@ -60,9 +60,9 @@ int GasCompress::rhs(BoutReal t) {
   
   if(sub_initial) {
     // Subtract force balance of initial profiles
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_DEFAULT, CELL_YLOW)/N;
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_VSHIFT)/N;
   }else {
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_DEFAULT, CELL_YLOW)/N + g;
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_VSHIFT)/N + g;
   }
 
   if(include_viscosity) {

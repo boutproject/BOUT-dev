@@ -240,11 +240,11 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
     //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
     
     for(auto i : result) {
-      BoutReal mgx = mesh->GlobalX(i.x);
+      BoutReal mgx = mesh->GlobalX(i.x());
       BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
       //output.write("mgx = %e xgrid_num = %e\n", mgx);
       
-      int globaly = mesh->YGLOBAL(i.y);
+      int globaly = mesh->YGLOBAL(i.y());
       //output.write("local y = %i;   global y: %i\n", i.y, globaly);
       if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
         mgx = xgrid_num;
@@ -255,7 +255,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
     }
   } else { //circular geometry
     for(auto i : result) {
-      BoutReal mgx = mesh->GlobalX(i.x);
+      BoutReal mgx = mesh->GlobalX(i.x());
       BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
       if (mgx > xgrid_num)
         mgx = xgrid_num;
@@ -290,7 +290,7 @@ const Field3D Grad2_par2new(const Field3D &f) {
 int physics_init(bool restarting) {
   bool noshear;
   
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = mesh->getCoordinates();
 
   output.write("Solving high-beta flute reduced equations\n");
   output.write("\tFile    : %s\n", __FILE__);
@@ -576,7 +576,7 @@ int physics_init(bool restarting) {
 	    for(int jy=0;jy<mesh->LocalNy;jy++)
 	      for(int jz=0;jz<mesh->LocalNz;jz++) {
 	      
-	        BoutReal angle = rmp_m * pol_angle(jx,jy) + rmp_n * ((BoutReal) jz) * mesh->coordinates()->dz;
+	        BoutReal angle = rmp_m * pol_angle(jx,jy) + rmp_n * ((BoutReal) jz) * mesh->getCoordinates()->dz;
 	        rmp_Psi0(jx,jy,jz) = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5))) * rmp_factor * cos(angle);
                 if(rmp_polwid > 0.0) {
                   // Multiply by a Gaussian in poloidal angle
@@ -1093,7 +1093,7 @@ int physics_run(BoutReal t) {
   // Perform communications
   mesh->communicate(comms);
   
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = mesh->getCoordinates();
 
   ////////////////////////////////////////////
   // Transitions from 0 in core to 1 in vacuum

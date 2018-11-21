@@ -166,7 +166,7 @@ protected:
       return 1;
     }
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // SHIFTED RADIAL COORDINATES
 
