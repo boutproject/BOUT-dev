@@ -126,7 +126,7 @@ class Mesh {
   /// @param[in] name   The name of the variable to read
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const string &name);
+  int get(int &ival, const std::string &name);
 
   /// Get a BoutReal from the input source
   /// 
@@ -134,7 +134,7 @@ class Mesh {
   /// @param[in] name   The name of the variable to read
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(BoutReal &rval, const string &name); 
+  int get(BoutReal &rval, const std::string &name);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -144,7 +144,7 @@ class Mesh {
   /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const string &name, BoutReal def=0.0);
+  int get(Field2D &var, const std::string &name, BoutReal def=0.0);
 
   /// Get a Field3D from the input source
   ///
@@ -154,7 +154,7 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const string &name, BoutReal def=0.0, bool communicate=true);
+  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
@@ -167,7 +167,7 @@ class Mesh {
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
   ///
   /// @returns zero always. 
-  int get(Vector2D &var, const string &name);
+  int get(Vector2D &var, const std::string &name);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -180,10 +180,10 @@ class Mesh {
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
   ///
   /// @returns zero always. 
-  int get(Vector3D &var, const string &name);
+  int get(Vector3D &var, const std::string &name);
 
   /// Wrapper for GridDataSource::hasVar
-  bool sourceHasVar(const string &name);
+  bool sourceHasVar(const std::string &name);
   
   // Communications
   /*!
@@ -387,13 +387,13 @@ class Mesh {
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
 
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
   /// Get all the parallel (Y) boundaries on this processor 
-  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual std::vector<BoundaryRegionPar*> getBoundariesPar() = 0;
 
   /// Add a parallel(Y) boundary to this processor 
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
@@ -716,10 +716,10 @@ class Mesh {
   PTptr transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers
-  const vector<int> readInts(const string &name, int n);
+  const std::vector<int> readInts(const std::string &name, int n);
   
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
+  int msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
   /// Initialise derivatives
   void derivs_init(Options* options);

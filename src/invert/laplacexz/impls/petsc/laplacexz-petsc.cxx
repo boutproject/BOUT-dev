@@ -130,14 +130,14 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   OPTION(opt, maxits, 100000); // Maximum iterations
 
   // Get KSP Solver Type
-  string ksptype;
+  std::string ksptype;
   opt->get("ksptype", ksptype, "gmres");
 
   // Get PC type
-  string pctype;
+  std::string pctype;
   opt->get("pctype", pctype, "lu", true);
 
-  string factor_package;
+  std::string factor_package;
   opt->get("factor_package", factor_package, "petsc", true);
 
   // Get MPI communicator
@@ -589,6 +589,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   Field3D result;
   result.allocate();
+  result.setLocation(bin.getLocation());
 
   for (auto &it : slice) {
     /// Get y index

@@ -6,10 +6,6 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
-FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
-  
-}
-
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations
@@ -18,7 +14,7 @@ FieldData::~FieldData() {
   }
 }
 
-void FieldData::setBoundary(const string &name) {
+void FieldData::setBoundary(const std::string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
@@ -32,7 +28,7 @@ void FieldData::setBoundary(const string &name) {
   }
 
   /// Get the mesh boundary regions
-  vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
+  std::vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
   for(const auto& reg : mesh->getBoundariesPar()) {
     BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
@@ -45,9 +41,9 @@ void FieldData::setBoundary(const string &name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const string &UNUSED(region), BoundaryOp *op) {
+void FieldData::setBoundary(const std::string &UNUSED(region), BoundaryOp *op) {
   /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  std::vector<BoundaryRegion*> reg = mesh->getBoundaries();
  
   /// Find the region
   
@@ -85,7 +81,7 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
 }
 
 FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
-  std::map<BndryLoc, FieldGeneratorPtr>::iterator it = bndry_generator.find(location);
+  auto it = bndry_generator.find(location);
   if(it == bndry_generator.end())
     return nullptr;
 

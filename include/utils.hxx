@@ -41,10 +41,8 @@
 #include <string>
 #include <list>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
-
-using std::abs;
-using std::swap;
 
 /// Helper class for 2D arrays
 ///
@@ -209,7 +207,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   // Calculate the determinant
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
-  if (abs(det) < abs(small)) {
+  if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
       throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
     } else {
@@ -312,7 +310,7 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
  * if |a| < |b| then return a, otherwise return b
  */
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
+  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
 }
 
 #if CHECK > 0
@@ -337,21 +335,26 @@ char* copy_string(const char* s);
  * by writing to a stringstream
  */
 template <class T>
-const string toString(const T& val) {
+const std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
 
+/// Convert a time stamp to a string
+/// This uses std::localtime and std::put_time
+template <>
+const std::string toString<>(const time_t& time);
+
 /*!
  * Convert a string to lower case
  */
-const string lowercase(const string &str);
+const std::string lowercase(const std::string &str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const string lowercasequote(const string &str);
+const std::string lowercasequote(const std::string &str);
 
 /*!
  * Convert a string to a BoutReal

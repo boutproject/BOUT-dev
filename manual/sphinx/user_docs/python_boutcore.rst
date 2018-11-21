@@ -43,16 +43,12 @@ configured with something like:
 ``--enable-shared`` is required, so that pvode etc. is compiles as position
 independent code.
 
-To only build the python2 module, run ``make python2``.
-
-To build both, run ``make python-all``
-
 If you are running fedora - you can install pre-build binaries:
 
 .. code-block:: bash
 
    sudo dnf copr enable davidsch/bout
-   sudo dnf install python3-bout++-nightly-mpich
+   sudo dnf install python3-bout++-mpich
    module load mpi/mpich-$(arch)
 
 
@@ -64,18 +60,16 @@ It allows to calculate e.g. BOUT++ derivatives in python.
 
 State
 -----
-This is still in early development, and things might change.
-However, it should still be useful.
-
-Field3D is working. The other fields are not exposed.
-Field3D can be accessed directly using the [] operators, and give a list of slice objects.
+Field3D and Field2D are working. If other fields are needed, please open an issue.
+Fields can be accessed directly using the [] operators, and give a list of slice objects.
 The get all data, ``f3d.getAll()`` is equivalent to ``f3d[:,:,]`` and returns a numpy array.
 This array can be addressed with
 e.g. ``[]`` operators, and then the field can be set again with
 ``f3d.setAll(numpyarray)``.
 It is also possible to set a part of an Field3D with the ``[]`` operators.
-Addition, multiplication etc. should all be available.
-Most of the derivatives are available, if something is missing open a bug.
+Addition, multiplication etc. are all available.
+The derivatives should all be working, if find a missing one, please open an issue.
+Vectors are not exposed yet.
 
 Functions
 ---------

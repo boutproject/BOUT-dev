@@ -739,7 +739,7 @@ int IMEXBDF2::run() {
   int order = 1;
   int lastOrder = -1;
   BoutReal dt = timestep;
-  vector<BoutReal> lastTimesteps = timesteps;
+  std::vector<BoutReal> lastTimesteps = timesteps;
   BoutReal dtNext = dt; //Timestep to try for next internal iteration
   
   //By default use the main snes object.
@@ -874,9 +874,9 @@ int IMEXBDF2::run() {
 
 	  //Find local data
 	  for(int i=0;i<nlocal;i++){
-	    errTot[0] += abs(err[i]-u[i]);
-	    errTot[1] += abs(u[i]);
-	    errTot[2] += abs(err[i]);
+	    errTot[0] += std::abs(err[i]-u[i]);
+	    errTot[1] += std::abs(u[i]);
+	    errTot[2] += std::abs(err[i]);
 	  };
 
 	  //Now reduce across procs
@@ -1311,7 +1311,7 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
   // Loop over 2D variables
-  for(vector< VarStr<Field2D> >::const_iterator it = f2d.begin(); it != f2d.end(); ++it) {
+  for(auto it = f2d.begin(); it != f2d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator
 
     if(it->evolve_bndry) {
@@ -1355,7 +1355,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   }
 
   // Loop over 3D variables
-  for(vector< VarStr<Field3D> >::const_iterator it = f3d.begin(); it != f3d.end(); ++it) {
+  for(auto it = f3d.begin(); it != f3d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator
     if(it->evolve_bndry) {
       // Include boundary regions

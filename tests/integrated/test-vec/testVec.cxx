@@ -10,7 +10,7 @@ protected:
 public:
   Field3D n;
   Vector3D gradPerpN;
-  string ownOpType;
+  std::string ownOpType;
 };
 
 

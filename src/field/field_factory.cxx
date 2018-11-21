@@ -99,7 +99,7 @@ FieldFactory::~FieldFactory() {
 
 }
 
-const Field2D FieldFactory::create2D(const string &value, const Options *opt,
+const Field2D FieldFactory::create2D(const std::string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
 
@@ -158,7 +158,7 @@ const Field2D FieldFactory::create2D(const string &value, const Options *opt,
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value, const Options *opt,
+const Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
 
@@ -235,14 +235,14 @@ const Field3D FieldFactory::create3D(const string &value, const Options *opt,
   return result;
 }
 
-const Options* FieldFactory::findOption(const Options *opt, const string &name, string &val) {
+const Options* FieldFactory::findOption(const Options *opt, const std::string &name, std::string &val) {
   // Find an Options object which contains the given name
 
   const Options *result = opt;
 
   // Check if name contains a section separator ':'
   size_t pos = name.find(':');
-  if(pos == string::npos) {
+  if(pos == std::string::npos) {
     // No separator. Try this section, and then go through parents
 
     while(!result->isSet(name)) {
@@ -257,8 +257,8 @@ const Options* FieldFactory::findOption(const Options *opt, const string &name, 
     result = Options::getRoot();
 
     size_t lastpos = 0;
-    while(pos != string::npos) {
-      string sectionname = name.substr(lastpos,pos);
+    while(pos != std::string::npos) {
+      std::string sectionname = name.substr(lastpos,pos);
       if( sectionname.length() > 0 ) {
         result = result->getSection(sectionname);
       }
@@ -267,7 +267,7 @@ const Options* FieldFactory::findOption(const Options *opt, const string &name, 
     }
     // Now look for the name in this section
 
-    string varname = name.substr(lastpos);
+    std::string varname = name.substr(lastpos);
 
     if(!result->isSet(varname)) {
       // Not in this section
@@ -280,17 +280,17 @@ const Options* FieldFactory::findOption(const Options *opt, const string &name, 
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(string &name) {
+FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
   if (options) {
     // Check if in cache
-    string key;
-    if(name.find(':') != string::npos) {
+    std::string key;
+    if(name.find(':') != std::string::npos) {
       // Already has section
       key = name;
     }else {
       key = options->str();
       if(key.length() > 0)
-        key += string(":");
+        key += ":";
       key += name;
     }
 
@@ -318,7 +318,7 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
 
     // Find the option, including traversing sections.
     // Throws exception if not found
-    string value;
+    std::string value;
     const Options *section = findOption(options, name, value);
 
     // Add to lookup list
@@ -339,10 +339,10 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
   return nullptr;
 }
 
-FieldGeneratorPtr FieldFactory::parse(const string &input, const Options *opt) {
+FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *opt) {
 
   // Check if in the cache
-  string key = string("#") + input;
+  std::string key = "#" + input;
   if (opt)
     key = opt->str() + key; // Include options context in key
 
