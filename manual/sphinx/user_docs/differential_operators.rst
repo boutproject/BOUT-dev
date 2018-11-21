@@ -470,45 +470,6 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   default.
 
 
-Operators on a single index
----------------------------
-
-**Note: Experimental**
-
-The standard functions implemented in BOUT++ (such as ``DDX``, or
-``bracket``) typically operate on a whole field, internally iterating
-over the entire mesh. This is convenient, but leads to many loops over
-the mesh, which can be inefficient due to cache misses. One way to try
-to improve efficiency is to move to a single loop over the mesh. To do
-this, some operators are implemented in ``bout/operators_di.hxx``
-which have the same (or similar) names as the standard operators but
-an additional `DataIterator` index.
-
-For example, in ``examples/blob2d.cxx``
-
-::
-
-   ddt(n) = - bracket(phi,n,BRACKET_ARAKAWA)
-            + 2 * DDZ(n) * (rho_s / R_c)
-            ;
-
-which in ``examples/blob2d-outerloop.cxx`` becomes::
-
-   for(auto &i : n.region(RGN_NOBNDRY)) {
-     ...
-     ddt(n)[i] = - bracket_arakawa(phi, n, i)
-                 + 2 * DDZ_C2(n, i) * (rho_s / R_c)
-                 ;
-   }
-
-Note that in addition to providing an index ``i`` which is of type
-`DataIterator`, the function name includes the method (``arakawa`` or
-``C2``).  This is so that the function call does not have to contain
-logic to decide the method to use at runtime. The standard operators
-only have to decide which method to use once, then loop over the
-entire mesh, but these indexed functions would have to decide the
-method for every index.
-
 .. _sec-derivatives:
 
 Derivative internals

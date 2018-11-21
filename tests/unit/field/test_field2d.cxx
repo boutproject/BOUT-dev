@@ -20,35 +20,8 @@
 /// Global mesh
 extern Mesh *mesh;
 
-/// Test fixture to make sure the global mesh is our fake one
-class Field2DTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int Field2DTest::nx = 3;
-const int Field2DTest::ny = 5;
-const int Field2DTest::nz = 7;
+// Reuse the "standard" fixture for FakeMesh
+using Field2DTest = FakeMeshFixture;
 
 TEST_F(Field2DTest, IsReal) {
   Field2D field;
@@ -1107,6 +1080,102 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(Field2DTest, Swap) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Mesh for second field
+  constexpr int second_nx = Field2DTest::nx + 2;
+  constexpr int second_ny = Field2DTest::ny + 2;
+  constexpr int second_nz = Field2DTest::nz + 2;
+
+  FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.StaggerGrids = false;
+  output_info.disable();
+  second_mesh.createDefaultRegions();
+  output_info.enable();
+
+  // Second field
+  Field2D second(2., &second_mesh);
+
+  ddt(second) = 2.4;
+
+  // Basic sanity check
+  EXPECT_TRUE(IsField2DEqualBoutReal(first, 1.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 2.0));
+
+  // swap is marked noexcept, so absolutely should not throw!
+  ASSERT_NO_THROW(swap(first, second));
+
+  // Values
+  EXPECT_TRUE(IsField2DEqualBoutReal(first, 2.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(first), 2.4));
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(first.getMesh(), &second_mesh);
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(first.getNx(), second_nx);
+  EXPECT_EQ(first.getNy(), second_ny);
+  EXPECT_EQ(first.getNz(), 1);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(first.getLocation(), CELL_CENTRE);
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
+TEST_F(Field2DTest, MoveCtor) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Second field
+  Field2D second{std::move(first)};
+
+  // Values
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
 }
 
 #pragma GCC diagnostic pop

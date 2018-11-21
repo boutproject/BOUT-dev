@@ -7,8 +7,6 @@ class BoutException;
 #include <exception>
 #include <string>
 
-using std::string;
-
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status
 void BoutParallelThrowRhsFail(int status, const char* message);
@@ -25,7 +23,7 @@ protected:
   char *buffer = nullptr;
   static const int BUFFER_LEN = 1024; // Length of char buffer for printing
   int buflen; // Length of char buffer for printing
-  string message;
+  std::string message;
 #ifdef BACKTRACE
   static const unsigned int TRACE_MAX = 128;
   void *trace[TRACE_MAX];

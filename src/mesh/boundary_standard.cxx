@@ -31,7 +31,7 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 #else
 
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
-  string side, gridType;
+  std::string side, gridType;
   
   //Initialise var in case of no match and CHECK<=2
   ptsAvail = ptsRequired; //Ensures test passes without exception
@@ -103,7 +103,7 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,1);
 
   std::shared_ptr<FieldGenerator> newgen;
@@ -556,7 +556,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 // New implementation, accurate to higher order
 
-BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,2);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -971,7 +971,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 // Extrapolate to calculate boundary cell to 4th-order
 
-BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,3);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -1398,7 +1398,8 @@ void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion* region,
+                                              const std::list<std::string>& args) {
   verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
@@ -1440,7 +1441,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,1); 
   if(!args.empty()) {
     output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
@@ -1537,7 +1538,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryNeumann::clone(BoundaryRegion* region,
+                                   const std::list<std::string>& args) {
   verifyNumPoints(region,1);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -1964,7 +1966,7 @@ void BoundaryNeumann::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const std::list<std::string> &args){
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
@@ -2098,7 +2100,7 @@ void BoundaryNeumann_O4::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
@@ -2146,7 +2148,7 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,1);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
@@ -2171,33 +2173,35 @@ void BoundaryNeumannPar::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,1);
+BoundaryOp *BoundaryRobin::clone(BoundaryRegion *region,
+                                 const std::list<std::string> &args) {
+  verifyNumPoints(region, 1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
-  
-  list<string>::const_iterator it = args.begin();
-  
-  if(it != args.end()) {
+
+  auto it = args.begin();
+
+  if (it != args.end()) {
     // First argument is 'a'
     a = stringToReal(*it);
     it++;
-    
-    if(it != args.end()) {
+
+    if (it != args.end()) {
       // Second is 'b'
       b = stringToReal(*it);
       it++;
-      
-      if(it != args.end()) {
-	// Third is 'g'
-	g = stringToReal(*it);
-	it++;
-	if(it != args.end()) {
-	  output << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
-	}
+
+      if (it != args.end()) {
+        // Third is 'g'
+        g = stringToReal(*it);
+        it++;
+        if (it != args.end()) {
+          output
+              << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
+        }
       }
     }
   }
-  
+
   return new BoundaryRobin(region, a, b, g);
 }
 
@@ -2246,7 +2250,7 @@ void BoundaryConstGradient::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
@@ -2256,7 +2260,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
@@ -2342,7 +2346,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
-                                        const list<string> &args) {
+                                        const std::list<std::string> &args) {
   verifyNumPoints(region, 3);
   if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
@@ -2429,7 +2433,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
@@ -2529,7 +2533,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
   }
@@ -2606,7 +2610,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -2637,7 +2641,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 
 // 2nd order extrapolation:
 
-BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree\n";
@@ -2875,7 +2879,7 @@ void BoundaryFree_O2::apply_ddt(Field3D &f) {
 //////////////////////////////////
 // Third order extrapolation:
 //////////////////////////////////
-BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,3);
 
   if(!args.empty()) {
@@ -3120,7 +3124,7 @@ void BoundaryFree_O3::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
+BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
   BoundaryRelax* result = new BoundaryRelax(operation, r);
   
   if(!args.empty()) {
@@ -3175,7 +3179,7 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &args) {
+BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
   BoundaryWidth* result = new BoundaryWidth(operation, width);
   
   if(args.empty()) {
@@ -3219,7 +3223,7 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
 }
 
 ///////////////////////////////////////////////////////////////
-BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
   BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
   
   if(!args.empty()) {
@@ -3262,7 +3266,7 @@ void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
 
 
 ///////////////////////////////////////////////////////////////
-BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
+BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
   BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
   
   if(!args.empty()) {

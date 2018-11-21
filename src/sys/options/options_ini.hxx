@@ -59,7 +59,7 @@ private:
 
   // Helper functions for reading
   void parse(const std::string &, std::string &, std::string &);
-  string getNextLine(std::ifstream &fin);
+  std::string getNextLine(std::ifstream &fin);
 
   // Helper functions for writing
   void writeSection(const Options *options, std::ofstream &fout);

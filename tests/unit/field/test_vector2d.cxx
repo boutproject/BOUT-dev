@@ -15,7 +15,7 @@ extern Mesh *mesh;
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {
 protected:
-  static void SetUpTestCase() {
+  Vector2DTest() {
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -37,7 +37,7 @@ protected:
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
   }
 
-  static void TearDownTestCase() {
+  ~Vector2DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {
@@ -49,14 +49,14 @@ protected:
   }
 
 public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
+  static constexpr int nx = 5;
+  static constexpr int ny = 5;
+  static constexpr int nz = 1;
 };
 
-const int Vector2DTest::nx = 5;
-const int Vector2DTest::ny = 5;
-const int Vector2DTest::nz = 1;
+constexpr int Vector2DTest::nx;
+constexpr int Vector2DTest::ny;
+constexpr int Vector2DTest::nz;
 
 TEST_F(Vector2DTest, ApplyBoundaryString) {
   Vector2D v;
