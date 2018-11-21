@@ -550,7 +550,7 @@ class DataFile_netCDF(DataFile):
             self.handle.set_auto_mask(True)
             slicer=[slice(None)]
             for i in range(1,len(dims)):
-                slicer.append(1)
+                slicer.append(0)
             data=self.handle[var][tuple(slicer)]
             self.handle.set_auto_mask(False)
             try:
