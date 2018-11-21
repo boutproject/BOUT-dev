@@ -26,9 +26,7 @@ Coordinates::Coordinates(Mesh *mesh)
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE),
-      allow_geometry_without_recalculate_staggered(
-          mesh->allow_geometry_without_recalculate_staggered) {
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
@@ -306,7 +304,7 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(J, "J", false);
 }
 
-int Coordinates::geometry() {
+int Coordinates::geometry(bool allow_geometry_without_recalculate_staggered) {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -482,19 +480,18 @@ int Coordinates::geometry() {
       if (location == CELL_CENTRE) {
         throw BoutException("Coordinates::geometry() called at CELL_CENTRE, but "
           "other locations have already been added to the Mesh. These would "
-          "need recalculating. If possible, call Mesh::addCoordinates() after "
-          "this call to geometry(). To recalculate the other Coordinates objects "
-          "from the CELL_CENTRE Coordinates, pass true for the "
-          "recalculate_staggered argument, e.g.  coords->geometry(true). If you "
-          "need to recalculate multiple Coordinates objects explicitly, set "
-          "mesh:allow_geometry_without_recalculate_staggered=true in the input "
-          "file to disable this check.");
+          "need recalculating. If possible call Mesh::addCoordinates() after "
+          "this call to geometry(). If you need to recalculate multiple "
+          "Coordinates objects explicitly, call geometry(true) [i.e. setting the "
+          "argument allow_geometry_without_recalculate_staggered=true] file to "
+          "disable this check.");
       } else {
         throw BoutException("Coordinates::geometry() called at location %s, but "
           "this location has already been initialized and added to the Mesh. "
           "If you need to recalculate multiple Coordinates objects explicitly, "
-          "set mesh:allow_geometry_without_recalculate_staggered=true in the "
-          "input file to disable this check.", CELL_LOC_STRING(location).c_str());
+          "call geometry(true) [i.e. setting the argument "
+          "allow_geometry_without_recalculate_staggered=true] input file to "
+          "disable this check.", CELL_LOC_STRING(location).c_str());
       }
     }
 

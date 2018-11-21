@@ -93,7 +93,7 @@ public:
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry();
+  int geometry(bool allow_geometry_without_recalculate_staggered = false);
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
@@ -146,7 +146,6 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
-  bool allow_geometry_without_recalculate_staggered;
 };
 
 /*

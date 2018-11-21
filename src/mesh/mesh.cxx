@@ -31,7 +31,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, allow_geometry_without_recalculate_staggered, false);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
