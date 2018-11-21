@@ -555,7 +555,9 @@ struct registerMethod {
 
 /// Some helper defines for now that allow us to wrap up enums
 /// and the specific methods.
-#define e(family, value) enumWrapper<family, family::value>
+#define WRAP_ENUM(family, value) enumWrapper<family, family::value>
+/// Temporary short hand
+#define e(family, value) WRAP_ENUM(family, value)
 
 /////////////////////////////////////////////////////////////////////////////////
 /// Here's an example of registering a couple of DerivativeType methods
@@ -784,4 +786,5 @@ produceCombinations<Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
                     Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
 
+#undef e
 #endif
