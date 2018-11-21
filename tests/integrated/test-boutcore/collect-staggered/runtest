@@ -6,6 +6,8 @@ import boutcore as bc
 
 bc.init("-q -q -q")
 
+bc.Mesh().getGlobal().addCoordinates('YLOW')
+
 fail=0
 f=bc.create3D("sin(y)",outloc='YLOW')
 
