@@ -53,9 +53,6 @@ Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
-
-    yup_fields.reserve(fieldmesh->ystart);
-    ydown_fields.reserve(fieldmesh->ystart);
   }
 }
 
@@ -73,9 +70,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
-
-    yup_fields.reserve(fieldmesh->ystart);
-    ydown_fields.reserve(fieldmesh->ystart);
   }
 
   location = f.location;
