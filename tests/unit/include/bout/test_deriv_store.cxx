@@ -79,9 +79,10 @@ TEST(DerivativeStoreTest, RegisterMatchingMethodStandardMethodTwice) {
   EXPECT_EQ(methods.size(), 1);
   EXPECT_NE(methods.find("FirstStandard"), methods.end());
 
-  // Register another method with the same key
-  store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X, STAGGER::None,
-                           "FirstStandard");
+  // Try to register another method with the same key
+  EXPECT_THROW(store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X,
+                                        STAGGER::None, "FirstStandard"),
+               BoutException);
 
   methods = store.getAvailableMethods(DERIV::Standard, DIRECTION::X);
   EXPECT_EQ(methods.size(), 1);
