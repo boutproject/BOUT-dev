@@ -59,6 +59,7 @@ cimport numpy as np
 #import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
+from boututils.boutwarnings import defaultwarn
 import copy
 EOF
 
@@ -751,9 +752,9 @@ cdef class Mesh:
         """
         Deprecated version of getCoordinates
         """
-        print("Warning Mesh.coordinates is deprecated, and does not handle "
-              "staggered grid locations. Use Mesh.getCoordinates(location) "
-              "method instead")
+        defaultwarn("Mesh.coordinates is deprecated, and does not handle "
+                    "staggered grid locations. Use "
+                    "Mesh.getCoordinates(location) method instead")
         return self.getCoordinates()
 
     def addCoordinates(self, location):
