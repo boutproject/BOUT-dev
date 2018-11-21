@@ -37,7 +37,10 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  ShiftedMetric s(*mesh);
+  Field2D zShift{mesh};
+  mesh->get(zShift, "zShift");
+
+  ShiftedMetric s(*mesh, zShift);
 
   // Read variable from mesh
   Field3D var;

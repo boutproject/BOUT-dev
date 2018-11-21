@@ -292,24 +292,44 @@ void Mesh::setParallelTransform() {
 
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
-    
-  if(ptstr == "identity") {
+
+  if (ptstr == "identity") {
     // Identity method i.e. no transform needed
     transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
-      
-  }else if(ptstr == "shifted") {
-    // Shifted metric method
-    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
-      
-  }else if(ptstr == "fci") {
 
-    Options *fci_options = Options::getRoot()->getSection("fci");
+  } else if (ptstr == "shifted") {
+    // Shifted metric method
+
+    Field2D zShift{this};
+
+    // Read the zShift angle from the mesh
+    if (get(zShift, "zShift")) {
+      // No zShift variable. Try qinty in BOUT grid files
+      get(zShift, "qinty");
+    }
+
+    // TwistShift needs to be set for derivatives to be correct at the jump where
+    // poloidal angle theta goes 2pi->0
+    bool twistshift = Options::root()["TwistShift"].withDefault(false);
+    bool shift_without_twist = Options::root()["ShiftWithoutTwist"].withDefault(false);
+    if (!twistshift and !shift_without_twist) {
+      throw BoutException(
+          "ShiftedMetric usually requires the option TwistShift=true\n"
+          "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
+    }
+
+    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this, zShift));
+
+  } else if (ptstr == "fci") {
+
+    Options* fci_options = Options::getRoot()->getSection("fci");
     // Flux Coordinate Independent method
     bool fci_zperiodic;
     fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
-      
-  }else {
+    transform =
+        std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
+
+  } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
                           "Valid choices are 'identity', 'shifted', 'fci'"));
   }

@@ -93,7 +93,7 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  ShiftedMetric(Mesh &mesh);
+  ShiftedMetric(Mesh &mesh, Field2D zShift);
   
   /*!
    * Calculates the yup() and ydown() fields of f
