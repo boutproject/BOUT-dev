@@ -246,7 +246,6 @@ cdef class $ftype:
         kwargs = outputs._kwargs
         kwargs['xguards']=True
         kwargs['yguards']=True
-        kwargs['tind']=tind
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
@@ -265,8 +264,21 @@ cdef class $ftype:
             ny_=ny-2*nyg
             ystart=ny_*nyi
             kwargs['yind']=[ystart,ystart+ny]
-        data=outputs[name]
         dims=outputs.dimensions[name]
+        if outputs._caching:
+            # if BoutOutputs object is caching the arrays, let it collect all
+            # time points, then slice here
+            if dims[0] == 't':
+                # Use slice with one element here so shape of 'data' is as if
+                # we had passed argument 'tind=tind' to collect (with
+                # one-element t-dimension)
+                data=outputs[name][tind:tind+1]
+            else:
+                data=outputs[name]
+        else:
+            # otherwise only collect data for tind
+            kwargs['tind']=tind
+            data=outputs[name]
         # restore original _kwargs
         outputs._kwargs=orig_kwargs
         if dims[0] == 't':
