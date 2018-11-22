@@ -9,7 +9,7 @@ rm -rf test
 
 # Run without any directory, check that an exception is thrown
 echo "=========== Running without input directory =============="
-if ./command-args 2> stderr.log; then
+if ./command-args > stdout.log  2> stderr.log; then
     cat stderr.log
     echo "FAIL: Run should fail when no input directory"
     exit 1
@@ -28,7 +28,7 @@ echo "=========== Running without args in data directory =============="
 
 mkdir -p data
 cp BOUT.inp data
-./command-args 
+./command-args > stdout.log 2> stderr.log
 
 # Check that we have a BOUT.settings and BOUT.log.0 file
 
@@ -48,7 +48,7 @@ echo "=========== Running with -l arg in data directory =============="
 rm -r data
 mkdir -p data
 cp BOUT.inp data
-./command-args -l different.log
+./command-args -l different.log > stdout.log 2> stderr.log
 
 if [ -f "data/BOUT.log.0" ] ; then
     echo "FAIL: BOUT.log.0 file in data directory"
@@ -66,7 +66,7 @@ echo "=========== Running with --log arg in data directory =============="
 rm -r data
 mkdir -p data
 cp BOUT.inp data
-./command-args --log log
+./command-args --log log > stdout.log 2> stderr.log
 
 if [ -f "data/BOUT.log.0" ] ; then
     echo "FAIL: BOUT.log.0 file in data directory"
@@ -84,9 +84,24 @@ rm -r data
 mkdir -p test
 cp BOUT.inp test
 
-if ! ./command-args -d test 2> stderr.log ; then
+if ! ./command-args -d test > stdout.log 2> stderr.log ; then
     cat stderr.log
     echo "FAIL: Run fails with '-d test' command-line arg"
+    exit 1
+fi
+
+echo
+echo "=========== Running with -d arg -f BOUT.settings in test2 directory =============="
+cp -r test test2
+
+if ! ./command-args -d test2 -f BOUT.settings -o testsettings > stdout.log 2> stderr.log ; then
+    cat stderr.log
+    echo "FAIL: Run fails with '-d test' command-line arg"
+    exit 1
+fi
+
+if ! [ "$(grep datadir test2/testsettings )" == "datadir = test2" ] ; then
+    echo "FAIL: datadir from command line clobbered by BOUT.settings"
     exit 1
 fi
 

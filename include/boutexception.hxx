@@ -8,7 +8,6 @@ class BoutException;
 #include <string>
 
 #include "bout/deprecated.hxx"
-using std::string;
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status

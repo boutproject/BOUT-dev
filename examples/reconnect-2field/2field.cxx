@@ -64,7 +64,7 @@ protected:
     Ni0 *= 1e20; // To m^-3
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);

@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
   // Get options
   Options *options = Options::getRoot();
-  string acoef, bcoef, func;
+  std::string acoef, bcoef, func;
   options->get("acoef", acoef, "1.0");
   options->get("bcoef", bcoef, "-1.0");
   options->get("input", func, "sin(2*y)");

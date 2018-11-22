@@ -545,7 +545,7 @@ private:
 
       for (int i = nloc - 3; i >= 0; i--) {
         // Check for zero pivot
-        if (abs(ifc(j, 1)) < 1e-10)
+        if (std::abs(ifc(j, 1)) < 1e-10)
           throw BoutException("Zero pivot in CyclicReduce::reduce");
 
         // beta <- v_{i,i+1} / v_u,i
@@ -571,7 +571,7 @@ private:
 
       for (int i = 2; i < nloc; i++) {
 
-        if (abs(ifc(j, 4 + 1)) < 1e-10)
+        if (std::abs(ifc(j, 4 + 1)) < 1e-10)
           throw BoutException("Zero pivot in CyclicReduce::reduce");
 
         // alpha <- v_{i,i-1} / v_l,i-1

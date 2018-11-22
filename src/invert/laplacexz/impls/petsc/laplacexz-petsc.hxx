@@ -71,7 +71,7 @@ private:
     Mat MatP;  ///< Matrix for preconditioner
     KSP ksp;   ///< Krylov Subspace solver context
   };
-  vector<YSlice> slice;
+  std::vector<YSlice> slice;
 
   Vec xs, bs;        ///< Solution and RHS vectors
 

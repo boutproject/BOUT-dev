@@ -6,7 +6,7 @@
 
 //////////////////////////////////////////////////////////
 
-FieldGeneratorPtr FieldSin::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldSin::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sin function. Expecting 1, got %d", args.size());
   }
@@ -18,7 +18,7 @@ BoutReal FieldSin::generate(double x, double y, double z, double t) {
   return sin(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldCos::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to cos function. Expecting 1, got %d", args.size());
   }
@@ -30,7 +30,7 @@ BoutReal FieldCos::generate(double x, double y, double z, double t) {
   return cos(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldSinh::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
   }
@@ -42,7 +42,7 @@ BoutReal FieldSinh::generate(double x, double y, double z, double t) {
   return sinh(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldCosh::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to cosh function. Expecting 1, got %d", args.size());
   }
@@ -54,7 +54,7 @@ BoutReal FieldCosh::generate(double x, double y, double z, double t) {
   return cosh(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldTanh::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to tanh function. Expecting 1, got ", args.size());
   }
@@ -65,7 +65,7 @@ BoutReal FieldTanh::generate(double x, double y, double z, double t) {
   return tanh(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldGaussian::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
   if((args.size() < 1) || (args.size() > 2)) {
     throw ParseException("Incorrect number of arguments to gaussian function. Expecting 1 or 2, got ", args.size());
   }
@@ -85,7 +85,7 @@ BoutReal FieldGaussian::generate(double x, double y, double z, double t) {
   return exp(-SQ(X->generate(x,y,z,t)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
-FieldGeneratorPtr FieldAbs::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to abs function. Expecting 1, got %d", args.size());
   }
@@ -94,10 +94,10 @@ FieldGeneratorPtr FieldAbs::clone(const list<FieldGeneratorPtr> args) {
 }
 
 BoutReal FieldAbs::generate(double x, double y, double z, double t) {
-  return fabs(gen->generate(x,y,z,t));
+  return std::abs(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldSqrt::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to sqrt function. Expecting 1, got %d", args.size());
   }
@@ -109,7 +109,7 @@ BoutReal FieldSqrt::generate(double x, double y, double z, double t) {
   return sqrt(gen->generate(x,y,z,t));
 }
 
-FieldGeneratorPtr FieldHeaviside::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to heaviside function. Expecting 1, got %d", args.size());
   }
@@ -121,7 +121,7 @@ BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
   return (gen->generate(x,y,z,t) > 0.0) ? 1.0 : 0.0;
 }
 
-FieldGeneratorPtr FieldErf::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 1) {
     throw ParseException("Incorrect number of arguments to erf function. Expecting 1, got %d", args.size());
   }
@@ -137,7 +137,7 @@ BoutReal FieldErf::generate(double x, double y, double z, double t) {
 // Ballooning transform
 // Use a truncated Ballooning transform to enforce periodicity in y and z
 
-FieldGeneratorPtr FieldBallooning::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args) {
   int n = ball_n;
   switch(args.size()) {
   case 2: {
@@ -196,7 +196,7 @@ FieldMixmode::FieldMixmode(FieldGeneratorPtr a, BoutReal seed) : arg(std::move(a
     phase[i] = PI * (2.*genRand(seed + i) - 1.);
 }
 
-FieldGeneratorPtr FieldMixmode::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   BoutReal seed = 0.5;
   switch(args.size()) {
   case 2: {
@@ -217,7 +217,7 @@ BoutReal FieldMixmode::generate(double x, double y, double z, double t) {
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
-    result += ( 1./SQ(1. + abs(i - 4)) ) *
+    result += ( 1./SQ(1. + std::abs(i - 4)) ) *
       cos(i * arg->generate(x,y,z,t) + phase[i]);
   }
 
@@ -245,7 +245,7 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
 
 //////////////////////////////////////////////////////////
 // TanhHat
-FieldGeneratorPtr FieldTanhHat::clone(const list<FieldGeneratorPtr> args) {
+FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   if(args.size() != 4) {
     throw ParseException("Incorrect number of arguments to TanhHat function. Expecting 4, got %d", args.size());
   }
@@ -253,7 +253,7 @@ FieldGeneratorPtr FieldTanhHat::clone(const list<FieldGeneratorPtr> args) {
   // As lists are not meant to be indexed, we may use an iterator to get the
   // input arguments instead
   // Create the iterator
-  list<FieldGeneratorPtr>::const_iterator it = args.begin();
+  auto it = args.begin();
   // Assign the input arguments to the input of the constructor and advance the
   // iterator
   FieldGeneratorPtr xin = *it;

@@ -217,7 +217,7 @@ public:
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
-  void force(T val, const string source = "") {
+  void force(T val, const std::string source = "") {
     is_value = false; // Invalidates any existing setting
     assign(val, source);
   }
@@ -295,7 +295,7 @@ public:
       assign(def, DEFAULT_SOURCE);
       value.used = true; // Mark the option as used
 
-      output_info << "\tOption " << full_name << " = " << def << " (" << DEFAULT_SOURCE
+      output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
       return def;
     }
@@ -316,7 +316,7 @@ public:
   template <typename T> T withDefault(T def) const {
     if (!is_value) {
       // Option not found
-      output_info << "\tOption " << full_name << " = " << def << " (" << DEFAULT_SOURCE
+      output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
       return def;
     }

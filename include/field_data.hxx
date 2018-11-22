@@ -33,20 +33,15 @@ class FieldData;
 #include "bout_types.hxx"
 #include "unused.hxx"
 
+#include <map>
 #include <memory>
 #include <string>
-using std::string;
+#include <vector>
 
 // Including the next line leads to compiler errors
 //#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
-
-#include <vector>
-using std::vector;
-
-#include <map>
-using std::map;
 
 #include "boundary_region.hxx"
 #include "parallel_boundary_region.hxx"
@@ -62,7 +57,7 @@ class FieldVisitor;
 */
 class FieldData {
 public:
-  FieldData();
+  FieldData() = default;
   virtual ~FieldData();
 
   // Visitor pattern support
@@ -78,8 +73,8 @@ public:
   virtual void doneComms() { }; // Notifies that communications done
   
   // Boundary conditions
-  void setBoundary(const string &name); ///< Set the boundary conditions
-  void setBoundary(const string &region, BoundaryOp *op); ///< Manually set
+  void setBoundary(const std::string &name); ///< Set the boundary conditions
+  void setBoundary(const std::string &region, BoundaryOp *op); ///< Manually set
 
   void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
 
@@ -92,11 +87,12 @@ public:
   FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
 protected:
-  vector<BoundaryOp *> bndry_op; ///< Boundary conditions
-  bool boundaryIsCopy;           ///< True if bndry_op is a copy
-  bool boundaryIsSet;            ///< Set to true when setBoundary called
+  std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
+  bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
+  bool boundaryIsSet{false};          ///< Set to true when setBoundary called
+
   // Parallel boundaries
-  vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
+  std::vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };

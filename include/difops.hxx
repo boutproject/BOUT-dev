@@ -79,7 +79,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
  * @param[in] f  The scalar field to be differentiated
  * 
  */
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f);
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 /*!
  * vpar times parallel derivative along unperturbed B-field (upwinding)
