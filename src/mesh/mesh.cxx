@@ -287,10 +287,6 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
 
 void Mesh::setParallelTransform() {
 
-#ifdef __cpp_lib_make_unique
-  using std::make_unique;
-#endif
-
   std::string ptstr;
   options->get("paralleltransform", ptstr, "identity");
 
@@ -299,11 +295,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>();
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = make_unique<ShiftedMetric>(*this);
+  transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -311,7 +307,7 @@ void Mesh::setParallelTransform() {
     // Flux Coordinate Independent method
     bool fci_zperiodic;
     fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = make_unique<FCITransform>(*this, fci_zperiodic);
+    transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
       
   }else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"

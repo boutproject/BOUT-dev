@@ -45,41 +45,45 @@
 #include <algorithm>
 #include <memory>
 
+namespace bout {
+namespace utils {
 #ifndef __cpp_lib_make_unique
 // Provide our own make_unique if the stl doesn't give us one
 // Implementation from https://isocpp.org/files/papers/N3656.txt
 // i.e. what's already in the stl
-
-template<class T> struct _Unique_if {
+template <class T>
+struct _Unique_if {
   using _Single_object = std::unique_ptr<T>;
 };
 
-template<class T> struct _Unique_if<T[]> {
+template <class T>
+struct _Unique_if<T[]> {
   using _Unknown_bound = std::unique_ptr<T[]>;
 };
 
-template<class T, size_t N> struct _Unique_if<T[N]> {
+template <class T, size_t N>
+struct _Unique_if<T[N]> {
   using _Known_bound = void;
 };
 
-template<class T, class... Args>
-typename _Unique_if<T>::_Single_object
-make_unique(Args&&... args) {
+template <class T, class... Args>
+typename _Unique_if<T>::_Single_object make_unique(Args&&... args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-template<class T>
-typename _Unique_if<T>::_Unknown_bound
-make_unique(size_t n) {
+template <class T>
+typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
   using U = typename std::remove_extent<T>::type;
   return std::unique_ptr<T>(new U[n]());
 }
 
-template<class T, class... Args>
-typename _Unique_if<T>::_Known_bound
-make_unique(Args&&...) = delete;
-
+template <class T, class... Args>
+typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
+#else
+using std::make_unique;
 #endif
+} // namespace utils
+} // namespace bout
 
 /// Helper class for 2D arrays
 ///

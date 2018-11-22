@@ -92,7 +92,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
   bvals = Matrix<BoutReal>(nsys, nloc);
 
   // Create a cyclic reduction object
-  cr = make_unique<CyclicReduce<BoutReal>>(mesh->getXcomm(), nloc);
+  cr = bout::utils::make_unique<CyclicReduce<BoutReal>>(mesh->getXcomm(), nloc);
 
   //////////////////////////////////////////////////
   // Pre-allocate PETSc storage

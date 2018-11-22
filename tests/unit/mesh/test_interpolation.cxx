@@ -42,9 +42,6 @@ protected:
   }
 
   static void SetUpTestCase() {
-#ifdef __cpp_lib_make_unique
-    using std::make_unique;
-#endif
 
     // Delete any existing mesh
     if (mesh != nullptr) {
@@ -57,7 +54,7 @@ protected:
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
-    mesh->setParallelTransform(make_unique<ParallelTransformIdentity>());
+    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>());
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();

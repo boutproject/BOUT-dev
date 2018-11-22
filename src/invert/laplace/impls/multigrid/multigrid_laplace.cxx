@@ -41,10 +41,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
-#ifdef __cpp_lib_make_unique
-  using std::make_unique;
-#endif
-
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
   A.setLocation(location);
@@ -163,8 +159,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi,
-                                  commX, pcheck);
+  kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
+                                               adlevel, mgmpi, commX, pcheck);
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
