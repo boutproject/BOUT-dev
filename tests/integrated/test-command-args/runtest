@@ -76,7 +76,8 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("test")
         shell_safe(self.command + " -d test", pipe=True)
         shutil.copytree("test", "test_copy")
-        shell_safe(self.command + " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
         with open("test_copy/testsettings") as f:
             contents = f.readlines()
@@ -95,12 +96,31 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("test")
         shell_safe(self.command + " -d test", pipe=True)
         shutil.copytree("test", "test_copy")
-        shell_safe(self.command + " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
         with open("test_copy/testsettings") as f:
             contents = f.read()
             self.assertNotIn("Command line", contents,
                              msg="FAIL: command line short options written to BOUT.settings")
+
+    def testCommandLineOptionsArePrinted(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        extra_options = ["-d", "test_copy", "-f", "BOUT.settings", "-o",
+                         "testsettings", "-l", "bout.log", "--foo_flag", "some:option=value"]
+        _, out = shell_safe(self.command + " " + " ".join(extra_options), pipe=True)
+
+        command_line_options = None
+        for line in out.splitlines():
+            if line.lstrip().startswith("Command line"):
+                command_line_options = line
+
+        for option in extra_options:
+            self.assertIn(option, command_line_options,
+                          msg="FAIL: option {} not printed out".format(option))
+
 
 if __name__ == "__main__":
     shell_safe("make")

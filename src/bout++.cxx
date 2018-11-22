@@ -189,6 +189,11 @@ int BoutInitialise(int &argc, char **&argv) {
 
   bool color_output = false; // Will be set true if -c is in the options
   std::vector<std::string> original_argv;
+  original_argv.reserve(argc);
+
+  for (int i = 0; i < argc; i++) {
+    original_argv.emplace_back(argv[i]);
+  }
 
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
@@ -199,9 +204,6 @@ int BoutInitialise(int &argc, char **&argv) {
       }
 
       data_dir = argv[++i];
-
-      original_argv.push_back(argv[i - 1]);
-      original_argv.push_back(argv[i]);
 
       argv[i - 1][0] = 0;
       argv[i][0] = 0;
@@ -215,9 +217,6 @@ int BoutInitialise(int &argc, char **&argv) {
 
       opt_file = argv[++i];
 
-      original_argv.push_back(argv[i - 1]);
-      original_argv.push_back(argv[i]);
-
       argv[i - 1][0] = 0;
       argv[i][0] = 0;
       
@@ -230,9 +229,6 @@ int BoutInitialise(int &argc, char **&argv) {
 
       set_file = argv[++i];
 
-      original_argv.push_back(argv[i - 1]);
-      original_argv.push_back(argv[i]);
-
       argv[i - 1][0] = 0;
       argv[i][0] = 0;
 
@@ -244,9 +240,6 @@ int BoutInitialise(int &argc, char **&argv) {
 
       log_file = argv[++i];
 
-      original_argv.push_back(argv[i - 1]);
-      original_argv.push_back(argv[i]);
-
       argv[i - 1][0] = 0;
       argv[i][0] = 0;
 
@@ -254,14 +247,12 @@ int BoutInitialise(int &argc, char **&argv) {
                 (string(argv[i]) == "--verbose") ){
       verbosity++;
 
-      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-q") ||
                 (string(argv[i]) == "--quiet")) {
       verbosity--;
 
-      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-c") ||
@@ -271,7 +262,6 @@ int BoutInitialise(int &argc, char **&argv) {
       // in case -c is set multiple times
       color_output = true;
 
-      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
     }
   }
