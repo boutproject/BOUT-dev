@@ -29,7 +29,7 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "bout_types.hxx"
 #include "stencils.hxx"

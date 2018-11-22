@@ -48,8 +48,6 @@
 #include <msg_stack.hxx>
 
 #include <cmath>
-#include <string.h>
-#include <stdlib.h>
 
 #include <output.hxx>
 

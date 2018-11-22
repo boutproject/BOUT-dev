@@ -315,9 +315,9 @@ private:
       delete model;                                   \
       delete solver;                                  \
       delete bout_monitor;                            \
-    }catch (BoutException &e) {                       \
+    } catch (const BoutException &e) {                \
       output << "Error encountered\n";                \
-      output << e.what() << endl;                     \
+      output << e.getBacktrace() << endl;             \
       MPI_Abort(BoutComm::get(), 1);                  \
     }                                                 \
     BoutFinalise();                                   \

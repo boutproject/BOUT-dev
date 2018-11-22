@@ -26,8 +26,7 @@
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <fieldperp.hxx>
 #include <utils.hxx>

@@ -3,7 +3,7 @@
  **************************************************************/
 
 #include <globals.hxx>
-#include <math.h>
+#include <cmath>
 
 #include <sourcex.hxx>
 #include <msg_stack.hxx>

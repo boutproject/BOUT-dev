@@ -38,8 +38,7 @@
 #include <interpolation.hxx>
 #include <unused.hxx>
 
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
 
 /*******************************************************************************
 * Grad_par

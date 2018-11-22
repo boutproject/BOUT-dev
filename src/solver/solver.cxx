@@ -22,8 +22,8 @@
 
 #include <boutcomm.hxx>
 #include <bout/solver.hxx>
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
 #include <initialprofiles.hxx>
 #include <interpolation.hxx>

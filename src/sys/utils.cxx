@@ -24,10 +24,9 @@
  **************************************************************************/
 
 #include <utils.hxx>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
 #include <vector>
 #include <algorithm>
 #include <sstream>
