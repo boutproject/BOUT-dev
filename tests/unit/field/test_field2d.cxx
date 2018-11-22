@@ -1178,4 +1178,20 @@ TEST_F(Field2DTest, MoveCtor) {
   mesh->StaggerGrids = backup;
 }
 
+TEST_F(Field2DTest, FillField) {
+  Field2D f{mesh};
+
+  fillField(f, {{1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}});
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(f, 1.));
+
+  fillField(f, {{0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}});
+
+  Field2D g{mesh};
+  g.allocate();
+  BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.y(); }
+
+  EXPECT_TRUE(IsField2DEqualField2D(f, g));
+}
+
 #pragma GCC diagnostic pop

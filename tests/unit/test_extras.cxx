@@ -58,3 +58,27 @@ constexpr int FakeMeshFixture::nz;
 
   return ::testing::AssertionSuccess();
 }
+
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values) {
+  f.allocate();
+  Ind3D i{0};
+  for (auto& x : values) {
+    for (auto& y : x) {
+      for (auto& z : y) {
+        f[i] = z;
+        ++i;
+      }
+    }
+  }
+}
+
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values) {
+  f.allocate();
+  Ind2D i{0};
+  for (auto& x : values) {
+    for (auto& y : x) {
+      f[i] = y;
+      ++i;
+    }
+  }
+}

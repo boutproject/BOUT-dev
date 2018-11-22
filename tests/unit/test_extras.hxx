@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <mpi.h>
+#include <vector>
 
 #include "bout/mesh.hxx"
 #include "bout/coordinates.hxx"
@@ -29,6 +30,8 @@ const BoutReal BoutRealTolerance = 1e-15;
 ::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
 
 /// Teach googletest how to print SpecificInds
 template<IND_TYPE N>
