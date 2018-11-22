@@ -189,7 +189,7 @@ int BoutInitialise(int &argc, char **&argv) {
                 "physics model source (e.g. %s.cxx)\n"),
               argv[0]);
 
-      return -1;
+      std::exit(EXIT_SUCCESS);
     }
   }
   bool color_output = false; // Will be set true if -c is in the options

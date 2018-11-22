@@ -33,6 +33,13 @@ class TestCommandLineArgs(unittest.TestCase):
             self.assertIn('"data" does not exist', contents,
                           msg="FAIL: Error message not printed when missing input directory")
 
+    def testHelpArgument(self):
+        self.makeDirAndCopyInput("data")
+        _, out = shell_safe(self.command + " --help", pipe=True)
+        # Not a great test!
+        self.assertNotIn("Writing options", out,
+                         msg="FAIL: Attempting to write options")
+
     def testNoArgumentsDefaultDirectory(self):
         self.makeDirAndCopyInput("data")
         shell_safe(self.command, pipe=True)
