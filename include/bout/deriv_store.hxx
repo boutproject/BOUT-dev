@@ -142,26 +142,29 @@ struct DerivativeStore {
 
     switch (derivType) {
     case (DERIV::Standard):
-      if(standard.count(key) != 0) {
+      if (standard.count(key) != 0) {
         throw BoutException("Trying to override standard derivative : "
                             "direction %s, stagger %s, key %s",
-                            DIRECTION_STRING(direction).c_str(), STAGGER_STRING(stagger).c_str(), methodName.c_str());
+                            DIRECTION_STRING(direction).c_str(),
+                            STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standard[key] = func;
       return;
     case (DERIV::StandardSecond):
-      if(standardSecond.count(key) != 0) {
+      if (standardSecond.count(key) != 0) {
         throw BoutException("Trying to override standardSecond derivative : "
                             "direction %s, stagger %s, key %s",
-                            DIRECTION_STRING(direction).c_str(), STAGGER_STRING(stagger).c_str(), methodName.c_str());
+                            DIRECTION_STRING(direction).c_str(),
+                            STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardSecond[key] = func;
       return;
     case (DERIV::StandardFourth):
-      if(standardFourth.count(key) != 0) {
+      if (standardFourth.count(key) != 0) {
         throw BoutException("Trying to override standardFourth derivative : "
                             "direction %s, stagger %s, key %s",
-                            DIRECTION_STRING(direction).c_str(), STAGGER_STRING(stagger).c_str(), methodName.c_str());
+                            DIRECTION_STRING(direction).c_str(),
+                            STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardFourth[key] = func;
       return;
@@ -186,18 +189,20 @@ struct DerivativeStore {
 
     switch (derivType) {
     case (DERIV::Upwind):
-      if(upwind.count(key) != 0) {
+      if (upwind.count(key) != 0) {
         throw BoutException("Trying to override upwind derivative : "
                             "direction %s, stagger %s, key %s",
-                            DIRECTION_STRING(direction).c_str(), STAGGER_STRING(stagger).c_str(), methodName.c_str());
+                            DIRECTION_STRING(direction).c_str(),
+                            STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       upwind[key] = func;
       return;
     case (DERIV::Flux):
-      if(flux.count(key) != 0) {
+      if (flux.count(key) != 0) {
         throw BoutException("Trying to override flux derivative : "
                             "direction %s, stagger %s, key %s",
-                            DIRECTION_STRING(direction).c_str(), STAGGER_STRING(stagger).c_str(), methodName.c_str());
+                            DIRECTION_STRING(direction).c_str(),
+                            STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       flux[key] = func;
       return;
