@@ -52,32 +52,6 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
-
-  rhs = Matrix<dcomplex>(localmesh->LocalNy, nsys);
-  
-  // Find out if we are on a boundary
-  int size = localmesh->LocalNy - 2 * localmesh->ystart;
-  SurfaceIter surf(localmesh);
-  for(surf.first(); !surf.isDone(); surf.next()) {
-    BoutReal ts;
-    int n = localmesh->LocalNy - 2 * localmesh->ystart;
-    if(!surf.closed(ts)) {
-      // Open field line
-      if(surf.firstY())
-        n += localmesh->ystart;
-      if(surf.lastY())
-        n += localmesh->ystart;
-
-      if(n > size)
-        size = n; // Maximum size
-    }
-  }
-  
-  rhsk = Matrix<dcomplex>(nsys, size);
-  xk = Matrix<dcomplex>(nsys, size);
-  a = Matrix<dcomplex>(nsys, size);
-  b = Matrix<dcomplex>(nsys, size);
-  c = Matrix<dcomplex>(nsys, size);
 }
 
 InvertParCR::~InvertParCR() {
@@ -98,10 +72,34 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   // Create cyclic reduction object
   CyclicReduce<dcomplex> *cr = 
     new CyclicReduce<dcomplex>();
-  
-  // Loop over flux-surfaces
+
+  // Find out if we are on a boundary
+  int size = localmesh->LocalNy - 2 * localmesh->ystart;
   SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {
+    BoutReal ts;
+    int n = localmesh->LocalNy - 2 * localmesh->ystart;
+    if (!surf.closed(ts)) {
+      // Open field line
+      if (surf.firstY())
+        n += localmesh->ystart;
+      if (surf.lastY())
+        n += localmesh->ystart;
+
+      if (n > size)
+        size = n; // Maximum size
+    }
+  }
+
+  auto rhs = Matrix<dcomplex>(localmesh->LocalNy, nsys);
+  auto rhsk = Matrix<dcomplex>(nsys, size);
+  auto xk = Matrix<dcomplex>(nsys, size);
+  auto a = Matrix<dcomplex>(nsys, size);
+  auto b = Matrix<dcomplex>(nsys, size);
+  auto c = Matrix<dcomplex>(nsys, size);
+
+  // Loop over flux-surfaces
+  for (surf.first(); !surf.isDone(); surf.next()) {
     int x = surf.xpos;
     
     // Test if open or closed field-lines
@@ -109,7 +107,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     bool closed = surf.closed(ts);
 
     // Number of rows
-    int y0 = 0, size = localmesh->LocalNy - 2 * localmesh->ystart; // If no boundaries
+    int y0 = 0;
+    size = localmesh->LocalNy - 2 * localmesh->ystart; // If no boundaries
     if(!closed) {
       if(surf.firstY()) {
         y0 += localmesh->ystart;
