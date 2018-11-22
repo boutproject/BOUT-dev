@@ -91,6 +91,16 @@ class TestCommandLineArgs(unittest.TestCase):
             self.assertIn("test_copy", datadir,
                           msg="FAIL: datadir from command line clobbered by BOUT.settings")
 
+    def testShortOptionsAreCleaned(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        shell_safe(self.command + " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+
+        with open("test_copy/testsettings") as f:
+            contents = f.read()
+            self.assertNotIn("Command line", contents,
+                             msg="FAIL: command line short options written to BOUT.settings")
 
 if __name__ == "__main__":
     shell_safe("make")
