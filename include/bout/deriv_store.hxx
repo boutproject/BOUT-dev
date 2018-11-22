@@ -64,6 +64,9 @@ struct DerivativeStore {
   using storageType = std::unordered_map<K, V>;
 #endif
 
+  // No copy constructor allowed
+  DerivativeStore(const DerivativeStore& junk) = delete;
+
   // Singleton method
   static DerivativeStore& getInstance() {
     static DerivativeStore instance;
@@ -220,13 +223,11 @@ struct DerivativeStore {
                        Stagger{}.lookup(), Method{}.meta.key);
   };
 
-  /// Routines to return a specific differential operator. Note we have to have
-  /// a separate
-  /// routine for different
-  /// methods as they have different return types. As such we choose to use a
-  /// different
-  /// name for each of the
-  /// method-classes so everything is consistently treated
+  /// Routines to return a specific differential operator. Note we
+  /// have to have a separate routine for different methods as they
+  /// have different return types. As such we choose to use a
+  /// different name for each of the method-classes so everything is
+  /// consistently treated
   standardFunc getStandardDerivative(std::string name, DIRECTION direction,
                                      STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
@@ -415,11 +416,9 @@ struct DerivativeStore {
   }
 
 private:
-  // Make the constructor private so we can't make instances outside
+  // Make empty constructor private so we can't make instances outside
   // of the struct
-  DerivativeStore(){};
-  // No copy constructor allowed
-  DerivativeStore(const DerivativeStore& junk) = delete;
+  DerivativeStore() = default;
 
   storageType<std::size_t, standardFunc> standard;
   storageType<std::size_t, standardFunc> standardSecond;
@@ -440,24 +439,19 @@ private:
     return name != DIFF_METHOD_STRING(DIFF_DEFAULT) ? name : defaultName;
   }
 
-  /// Provides a routine to produce a unique key given information about the
-  /// specific type
-  /// required. This is templated so requires compile-time information. Need to
-  /// also
-  /// supply
-  /// a non-templated version to account for run-time choices
-  /// Note : We could include the derivType in the key -- this would allow us to
-  /// store
-  /// all methods with the same function interface in the same map, which might
-  /// be nice.
+  /// Provides a routine to produce a unique key given information
+  /// about the specific type required. This is templated so requires
+  /// compile-time information. Need to also supply a non-templated
+  /// version to account for run-time choices Note : We could include
+  /// the derivType in the key -- this would allow us to store all
+  /// methods with the same function interface in the same map, which
+  /// might be nice.
   std::size_t getKey(DIRECTION direction, STAGGER stagger, std::string key) const {
     AUTO_TRACE();
-    // Note this key is indepedent of the field type (and hence the key is the
-    // same for
-    // 3D/2D
-    // fields) as we have to use different maps to store the different field
-    // types as the
-    // signature is different.
+    // Note this key is indepedent of the field type (and hence the
+    // key is the same for 3D/2D fields) as we have to use different
+    // maps to store the different field types as the signature is
+    // different.
     std::size_t result;
     result = std::hash<std::string>{}(DIRECTION_STRING(direction));
     result = result ^ std::hash<std::string>{}(STAGGER_STRING(stagger));
@@ -465,20 +459,17 @@ private:
     return result;
   }
 
-  /// Provides a routine to produce a unique key given information about the
-  /// specific type
-  /// required. This is templated so requires compile-time information. Makes
-  /// use of
-  /// a non-templated version that can be used to account for run-time choices
+  /// Provides a routine to produce a unique key given information
+  /// about the specific type required. This is templated so requires
+  /// compile-time information. Makes use of a non-templated version
+  /// that can be used to account for run-time choices
   template <typename Direction, typename Stagger, typename Method>
   std::size_t getKey() const {
     AUTO_TRACE();
-    // Note this key is indepedent of the field type (and hence the key is the
-    // same for
-    // 3D/2D
-    // fields) as we have to use different maps to store the different field
-    // types as the
-    // signature is different.
+    // Note this key is indepedent of the field type (and hence the
+    // key is the same for 3D/2D fields) as we have to use different
+    // maps to store the different field types as the signature is
+    // different.
     return getKey(Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);
   }
 };
