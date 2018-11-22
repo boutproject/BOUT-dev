@@ -113,22 +113,22 @@ public:
    * Set the D2DYDZ coefficient C
    */
   virtual void setCoefC(const Field2D &f) = 0;
-  virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefC(BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefC(const Field3D &f) {setCoefC(DC(f));}
+  virtual void setCoefC(BoutReal f) {setCoefC(Field2D(f));}
   
   /*!
    * Set the D2DZ2 coefficient D
    */ 
   virtual void setCoefD(const Field2D &f) = 0;
-  virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefD(BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefD(const Field3D &f) {setCoefD(DC(f));}
+  virtual void setCoefD(BoutReal f) {setCoefD(Field2D(f));}
   
   /*!
    * Set the DDY coefficient E
    */
   virtual void setCoefE(const Field2D &f) = 0;
-  virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefE(BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefE(const Field3D &f) {setCoefE(DC(f));}
+  virtual void setCoefE(BoutReal f) {setCoefE(Field2D(f));}
   
 private:
 };
