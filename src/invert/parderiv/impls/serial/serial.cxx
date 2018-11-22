@@ -75,6 +75,9 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
   auto a = Array<dcomplex>(ny);
   auto b = Array<dcomplex>(ny);
   auto c = Array<dcomplex>(ny);
+
+  Field3D alignedField = localmesh->toFieldAligned(f);
+
   // Loop over flux-surfaces
   SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {
@@ -135,5 +138,7 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
   }
   
   return result;
+
+  return localmesh->fromFieldAligned(result);
 }
 
