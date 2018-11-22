@@ -269,6 +269,9 @@ cdef class $ftype:
             # if BoutOutputs object is caching the arrays, let it collect all
             # time points, then slice here
             if dims[0] == 't':
+                # Use slice with one element here so shape of 'data' is as if
+                # we had passed argument 'tind=tind' to collect (with
+                # one-element t-dimension)
                 data=outputs[name][tind:tind+1]
             else:
                 data=outputs[name]
