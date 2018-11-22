@@ -89,9 +89,8 @@ protected:
     solver->addMonitor(slow);
     // the derived monitor Monitor1dData can dump 1d data, which we can
     // now add:
-    Indices start{mesh->xstart,mesh->ystart,0};
-    probes->add(n[start],"n_up");
-    probes->add(T[start],"T_up");
+    probes->add(n(mesh->xstart,mesh->ystart,0),"n_up");
+    probes->add(T(mesh->xstart,mesh->ystart,0),"T_up");
     // add the corner value
     slow->add(T(0,0,0),"T"); // T is already present in BOUT.dmp - but
                              // as it is a differnt file, this doesn't

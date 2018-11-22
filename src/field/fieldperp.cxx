@@ -39,13 +39,6 @@ FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
   }
-  
-#if CHECK > 0
-  else {
-    nx=-1;
-    nz=-1;
-  }
-#endif
 }
 
 FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {

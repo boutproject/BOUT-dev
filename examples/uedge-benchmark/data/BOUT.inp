@@ -5,8 +5,6 @@
 
 NOUT = 400       # number of time-steps
 TIMESTEP = 1e3   # time between outputs
-#NOUT = 10
-#TIMESTEP  = 1
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
@@ -21,8 +19,6 @@ MXG = 2
 MYG = 2
 
 grid="uedge.grd_Up_Ni_Tei_2d.nc"
-
-NXPE = 1   # X parallelised if > 1
 
 dump_format = "nc"  # NetCDF format
 

@@ -94,7 +94,7 @@ FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
 }
 
 BoutReal FieldAbs::generate(double x, double y, double z, double t) {
-  return fabs(gen->generate(x,y,z,t));
+  return std::abs(gen->generate(x,y,z,t));
 }
 
 FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
@@ -217,7 +217,7 @@ BoutReal FieldMixmode::generate(double x, double y, double z, double t) {
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
-    result += ( 1./SQ(1. + abs(i - 4)) ) *
+    result += ( 1./SQ(1. + std::abs(i - 4)) ) *
       cos(i * arg->generate(x,y,z,t) + phase[i]);
   }
 

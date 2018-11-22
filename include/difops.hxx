@@ -96,6 +96,7 @@ const Field3D Grad_parP(const Field3D& apar, const Field3D& f);
  * \f[
  *    v\mathbf{b}_0 \cdot \nabla f
  * \f]
+ * 
  *
  * @param[in] v  The velocity in y direction
  * @param[in] f  The scalar field to be differentiated

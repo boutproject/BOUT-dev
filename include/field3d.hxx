@@ -171,7 +171,9 @@ class Field3D : public Field, public FieldData {
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /// Move constructor
+  Field3D(Field3D&& f) noexcept { swap(*this, f); }
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -443,22 +445,45 @@ class Field3D : public Field, public FieldData {
   void applyParallelBoundary(const char* condition) { applyParallelBoundary(std::string(condition)); }
   void applyParallelBoundary(const std::string &region, const std::string &condition);
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
+
+  friend void swap(Field3D& first, Field3D& second) noexcept {
+    using std::swap;
+    swap(first.data, second.data);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.background, second.background);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.nz, second.nz);
+    swap(first.location, second.location);
+    swap(first.deriv, second.deriv);
+    swap(first.yup_field, second.yup_field);
+    swap(first.ydown_field, second.ydown_field);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
   
 private:
   /// Boundary - add a 2D field
-  const Field2D *background;
+  const Field2D *background{nullptr};
 
-  int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1}, nz{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
   
-  Field3D *deriv; ///< Time derivative (may be NULL)
+  /// Time derivative (may be nullptr)
+  Field3D *deriv{nullptr};
 
   /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  Field3D *yup_field{nullptr}, *ydown_field{nullptr};
 };
 
 // Non-member overloaded operators
