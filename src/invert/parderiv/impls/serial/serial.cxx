@@ -98,7 +98,7 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       for (int y = 0; y < ny; y++)
         rhsk[y] = rhs(y, k);
 
-      BoutReal kwave = k * waveFace; // wave number is 1/[rad]
+      BoutReal kwave = k * waveFac; // wave number is 1/[rad]
 
       // Set up tridiagonal system
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
