@@ -53,12 +53,6 @@
 
 InvertParSerial::InvertParSerial(Options *opt, Mesh *mesh_in)
     : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  rhs = Matrix<dcomplex>(localmesh->LocalNy, (localmesh->LocalNz)/2 + 1);
-  rhsk = Array<dcomplex>(localmesh->LocalNy-4);
-  xk = Array<dcomplex>(localmesh->LocalNy-4);
-  a = Array<dcomplex>(localmesh->LocalNy-4);
-  b = Array<dcomplex>(localmesh->LocalNy-4);
-  c = Array<dcomplex>(localmesh->LocalNy-4);
 }
 
 const Field3D InvertParSerial::solve(const Field3D &f) {
@@ -72,6 +66,15 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
   
   Coordinates *coord = f.getCoordinates();
 
+  // The following is the number of nonguard points
+  const int ny = localmesh->LocalNy - 2 * localmesh->ystart;
+
+  auto rhs = Matrix<dcomplex>(localmesh->LocalNy, (localmesh->LocalNz) / 2 + 1);
+  auto rhsk = Array<dcomplex>(ny);
+  auto xk = Array<dcomplex>(ny);
+  auto a = Array<dcomplex>(ny);
+  auto b = Array<dcomplex>(ny);
+  auto c = Array<dcomplex>(ny);
   // Loop over flux-surfaces
   SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {

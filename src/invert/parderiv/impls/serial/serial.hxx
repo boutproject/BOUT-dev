@@ -81,11 +81,6 @@ public:
 
 private:
   Field2D A, B, C, D, E;
-  
-  Matrix<dcomplex> rhs;
-  Array<dcomplex> rhsk;
-  Array<dcomplex> xk;
-  Array<dcomplex> a, b, c; // Matrix coefficients
 };
 
 
