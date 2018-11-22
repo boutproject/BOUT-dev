@@ -32,7 +32,7 @@ class MsgStack;
 #include "unused.hxx"
 
 #include <exception>
-#include <stdarg.h>
+#include <cstdarg>
 #include <string>
 #include <vector>
 

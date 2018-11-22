@@ -12,7 +12,7 @@
 
 #include <boutexception.hxx>
 #include <output.hxx>
-#include <string.h>
+#include <cstring>
 
 FormatFactory *FormatFactory::instance = nullptr;
 

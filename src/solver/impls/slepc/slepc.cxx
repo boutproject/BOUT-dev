@@ -30,7 +30,7 @@
 
 #include <globals.hxx>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>

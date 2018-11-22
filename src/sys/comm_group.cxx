@@ -25,8 +25,8 @@
  ***********************************************************************/
 
 #include <comm_group.hxx>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #include <output.hxx>
 #include <options.hxx>

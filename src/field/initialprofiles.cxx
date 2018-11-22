@@ -45,9 +45,6 @@
 #include <msg_stack.hxx>
 #include "unused.hxx"
 
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
 
 void initial_profile(const std::string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");

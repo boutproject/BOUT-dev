@@ -24,8 +24,8 @@ class Datafile;
 
 #include "dataformat.hxx"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include <vector>
 #include <string>

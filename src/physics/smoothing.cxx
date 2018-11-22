@@ -30,7 +30,7 @@
  *
  **************************************************************/
 
-#include <math.h>
+#include <cmath>
 
 #include <globals.hxx>
 #include <smoothing.hxx>
