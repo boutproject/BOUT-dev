@@ -42,7 +42,7 @@ cat <<EOF
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
-# distutils: sources = helper.cxx
+# distutils: sources = helper.cxx boutexception_helper.cxx
 # distutils: extra_compile_args = $flags
 EOF
 if test ".${ldflags}" != "."
@@ -60,6 +60,9 @@ cimport numpy as np
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
+
+cdef extern from "boutexception_helper.hxx":
+     cdef void raise_bout_py_error()
 EOF
 
 # make a list of the format "nx, ny, nz" or something similar
@@ -108,15 +111,15 @@ EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
-    echo "    c.$ftype * f$n( c.$ftype*, c.$ftype*) except +"
-    echo "    c.$ftype * f$n( c.$ftype*, double) except +"
-    echo "    c.$ftype * f$n( double, c.$ftype*) except +"
-    echo "    void fi$n( c.$ftype*, c.$ftype*) except +"
-    echo "    void fi$n( c.$ftype*, double) except +"
+    echo "    c.$ftype * f$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
+    echo "    c.$ftype * f$n( c.$ftype*, double) except +raise_bout_py_error"
+    echo "    c.$ftype * f$n( double, c.$ftype*) except +raise_bout_py_error"
+    echo "    void fi$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
+    echo "    void fi$n( c.$ftype*, double) except +raise_bout_py_error"
     if [ $ftype = "Field3D" ]; then
-        echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +"
-        echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +"
-        echo "    void fi$n( c.Field3D*, c.Field2D*) except +"
+        echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +raise_bout_py_error"
+        echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
+        echo "    void fi$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
     fi
 done
 cat <<EOF
@@ -1024,7 +1027,7 @@ class PhysicsModel(PhysicsModelBase):
         pass
 
 cdef extern from "bout.hxx":
-    int BoutInitialise(int&, char **&)
+    int BoutInitialise(int&, char **&) except +raise_bout_py_error
     void BoutFinalise()
 
 cdef extern from "boutcore_openmpi_compat.hxx":
