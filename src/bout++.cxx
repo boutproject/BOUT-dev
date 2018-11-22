@@ -64,7 +64,7 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #include <strings.h>
 #include <string>
-#include <list>
+#include <vector>
 using std::string;
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -186,7 +186,10 @@ int BoutInitialise(int &argc, char **&argv) {
       std::exit(EXIT_SUCCESS);
     }
   }
+
   bool color_output = false; // Will be set true if -c is in the options
+  std::vector<std::string> original_argv;
+
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -194,8 +197,13 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -d <data directory>\n"), argv[0]);
         return 1;
       }
-      argv[i][0] = 0;
+
       data_dir = argv[++i];
+
+      original_argv.push_back(argv[i - 1]);
+      original_argv.push_back(argv[i]);
+
+      argv[i - 1][0] = 0;
       argv[i][0] = 0;
 
     } else if (string(argv[i]) == "-f") {
@@ -204,8 +212,13 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -f <options filename>\n"), argv[0]);
         return 1;
       }
-      argv[i][0] = 0;
+
       opt_file = argv[++i];
+
+      original_argv.push_back(argv[i - 1]);
+      original_argv.push_back(argv[i]);
+
+      argv[i - 1][0] = 0;
       argv[i][0] = 0;
       
     } else if (string(argv[i]) == "-o") {
@@ -214,8 +227,13 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -o <settings filename>\n"), argv[0]);
         return 1;
       }
-      argv[i][0] = 0;
+
       set_file = argv[++i];
+
+      original_argv.push_back(argv[i - 1]);
+      original_argv.push_back(argv[i]);
+
+      argv[i - 1][0] = 0;
       argv[i][0] = 0;
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
@@ -223,18 +241,27 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -l <log filename>\n"), argv[0]);
         return 1;
       }
-      argv[i][0] = 0;
+
       log_file = argv[++i];
+
+      original_argv.push_back(argv[i - 1]);
+      original_argv.push_back(argv[i]);
+
+      argv[i - 1][0] = 0;
       argv[i][0] = 0;
 
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
       verbosity++;
+
+      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-q") ||
                 (string(argv[i]) == "--quiet")) {
       verbosity--;
+
+      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-c") ||
@@ -243,6 +270,8 @@ int BoutInitialise(int &argc, char **&argv) {
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       color_output = true;
+
+      original_argv.push_back(argv[i]);
       argv[i][0] = 0;
     }
   }
@@ -409,8 +438,8 @@ int BoutInitialise(int &argc, char **&argv) {
   
   // Print command line options
   output_info.write(_("\tCommand line options for this run : "));
-  for (int i=0; i<argc; i++) {
-    output_info.write("%s ", argv[i]);
+  for (auto& arg : original_argv) {
+    output_info << arg << " ";
   }
   output_info.write("\n");
 
