@@ -86,58 +86,59 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     if(!surf.closed(ts))
       throw BoutException("InvertParSerial doesn't handle open surfaces");
     
-    // Take Fourier transform 
-    for(int y=0;y<localmesh->LocalNy-4;y++)
-      rfft(f(x,y+2), localmesh->LocalNz, &rhs(y, 0));
-    
+    // Take Fourier transform
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++)
+      rfft(alignedField(x, y), localmesh->LocalNz, &rhs(y - localmesh->ystart, 0));
+
     // Solve cyclic tridiagonal system for each k
-    int nyq = (localmesh->LocalNz)/2;
+    const int nyq = (localmesh->LocalNz) / 2;
+    const BoutReal waveFac = TWOPI / coord->zlength();
     for(int k=0;k<=nyq;k++) {
       // Copy component of rhs into 1D array
-      for(int y=0;y<localmesh->LocalNy-4;y++)
+      for (int y = 0; y < ny; y++)
         rhsk[y] = rhs(y, k);
-      
-      BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-      
+
+      BoutReal kwave = k * waveFace; // wave number is 1/[rad]
+
       // Set up tridiagonal system
-      for(int y=0;y<localmesh->LocalNy-4;y++) {
-        BoutReal acoef = A(x, y+2);                     // Constant
-	BoutReal bcoef = B(x, y+2) / coord->g_22(x,y+2); // d2dy2
-        BoutReal ccoef = C(x, y+2);                     // d2dydz
-        BoutReal dcoef = D(x, y+2);                     // d2dz2
-        BoutReal ecoef = E(x, y+2);                     // ddy
-	
-        bcoef /= SQ(coord->dy(x, y+2));
-        ccoef /= coord->dy(x,y+2)*coord->dz;
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        BoutReal acoef = A(x, y);                     // Constant
+        BoutReal bcoef = B(x, y) / coord->g_22(x, y); // d2dy2
+        BoutReal ccoef = C(x, y);                     // d2dydz
+        BoutReal dcoef = D(x, y);                     // d2dz2
+        BoutReal ecoef = E(x, y);                     // ddy
+
+        bcoef /= SQ(coord->dy(x, y));
+        ccoef /= coord->dy(x, y) * coord->dz;
         dcoef /= SQ(coord->dz);
-        ecoef /= coord->dy(x,y+2);
-        
-        //     const     d2dy2        d2dydz             d2dz2           ddy
-        //     -----     -----        ------             -----           ---
-	a[y] =            bcoef - 0.5*Im*kwave*ccoef                  -0.5*ecoef;
-	b[y] = acoef - 2.*bcoef                     - SQ(kwave)*dcoef;
-	c[y] =            bcoef + 0.5*Im*kwave*ccoef                  +0.5*ecoef;
+        ecoef /= coord->dy(x, y);
+
+        //                       const     d2dy2        d2dydz             d2dz2 ddy
+        //                       -----     -----        ------             ----- ---
+        a[y - localmesh->ystart] = bcoef - 0.5 * Im * kwave * ccoef - 0.5 * ecoef;
+        b[y - localmesh->ystart] = acoef - 2. * bcoef - SQ(kwave) * dcoef;
+        c[y - localmesh->ystart] = bcoef + 0.5 * Im * kwave * ccoef + 0.5 * ecoef;
       }
-      
-      // Modify coefficients across twist-shift
+
+      // Modify coefficients across twist-shift -- accounts for pseudo-periodicity
+      // across y-boundary to produce periodic value
       dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
       a[0] *= phase;
-      c[localmesh->LocalNy-5] /= phase;
-      
+      c[ny - 1] /= phase;
+
       // Solve cyclic tridiagonal system
-      cyclic_tridag(std::begin(a), std::begin(b), std::begin(c), std::begin(rhsk), std::begin(xk), localmesh->LocalNy-4);
-      
+      cyclic_tridag(std::begin(a), std::begin(b), std::begin(c), std::begin(rhsk),
+                    std::begin(xk), ny);
+
       // Put back into rhs array
-      for(int y=0;y<localmesh->LocalNy-4;y++)
+      for (int y = 0; y < ny; y++)
         rhs(y, k) = xk[y];
     }
     
-    // Inverse Fourier transform 
-    for(int y=0;y<localmesh->LocalNy-4;y++)
-      irfft(&rhs(y, 0), localmesh->LocalNz, result(x,y+2));
+    // Inverse Fourier transform
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++)
+      irfft(&rhs(y - localmesh->ystart, 0), localmesh->LocalNz, result(x, y));
   }
-  
-  return result;
 
   return localmesh->fromFieldAligned(result);
 }
