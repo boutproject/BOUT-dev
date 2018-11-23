@@ -435,7 +435,12 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary() override;
-  void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+  
+  /// Copy the boundary values half-way between cells
+  /// This uses 2nd order central differences to set the value
+  /// on the boundary to the value on the boundary in field \p f3d.
+  /// Note: does not just copy values in boundary region.
+  void setBoundaryTo(const Field3D &f3d); 
 
   void applyParallelBoundary();
   void applyParallelBoundary(BoutReal t);
