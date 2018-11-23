@@ -64,7 +64,7 @@ Coordinates *coord; // Coordinate system
 
 CELL_LOC maybe_ylow;
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   Field2D I; // Shear factor 
   
   output.write("Solving 6-variable 2-fluid equations\n");
@@ -311,7 +311,7 @@ int physics_init(bool restarting) {
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Solve EM fields
 
   solve_phi_tridag(rho, phi, phi_flags);

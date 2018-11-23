@@ -1085,7 +1085,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
