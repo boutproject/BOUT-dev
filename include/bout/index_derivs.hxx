@@ -623,8 +623,9 @@ produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<
                         // Standard
-                        DerivativeType<DDX_C4>, DerivativeType<DDX_CWENO2>,
-                        DerivativeType<DDX_S2>, DerivativeType<DDX_CWENO3>,
+                        DerivativeType<DDX_C2>, DerivativeType<DDX_C4>,
+                        DerivativeType<DDX_CWENO2>, DerivativeType<DDX_S2>,
+                        DerivativeType<DDX_CWENO3>,
                         // Standard 2nd order
                         DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
                         // Standard 4th order
