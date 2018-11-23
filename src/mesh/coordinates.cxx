@@ -25,7 +25,8 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE) {}
+      g_13(std::move(g_13)), g_23(std::move(g_23)), nz(mesh->LocalNz), localmesh(mesh),
+      location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
