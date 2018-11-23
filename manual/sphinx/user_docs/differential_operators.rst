@@ -23,8 +23,8 @@ central differencing), and differential operators (such as
 Differencing methods
 --------------------
 
-Methods are implemented on 5-point stencils, and are divided into three
-categories:
+Methods are typically implemented on *5-point* stencils (although
+exceptions are possible) and are divided into three categories:
 
 -  Central-differencing methods, for diffusion operators
    :math:`\frac{df}{dx}`, :math:`\frac{d^2f}{dx^2}`. Each method has a
@@ -40,9 +40,6 @@ categories:
    -  ``W2``: 2\ :math:`^{nd}` order CWENO
 
    -  ``W3``: 3\ :math:`^{rd}` order CWENO
-
-   -  ``FFT``: Fourier Transform method in Z (axisymmetric) direction
-      only
 
 -  Upwinding methods for advection operators :math:`v_x\frac{df}{dx}`
 
@@ -70,8 +67,15 @@ categories:
 
    -  ``C4``: 4\ :math:`^{th}` order central
 
-   -  ``SPLIT``: split into upwind and central terms
-      :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
+Special methods :
+
+- ``FFT``: Classed as a central method, Fourier Transform method in Z
+   (axisymmetric) direction only. Currently available for ``first``
+   and ``second`` order central difference
+
+- ``SPLIT``: A flux method that splits into upwind and central terms
+   :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
+  
 
 .. _Weighted Essentially Non-Oscillatory (WENO): https://doi.org/10.1137/S106482759732455X
 
@@ -81,10 +85,27 @@ artificial diffusion. WENO schemes are a development of the ENO
 reconstruction schemes which combine good handling of sharp-gradient
 regions with high accuracy in smooth regions.
 
-To use these differencing operators directly, add the following to the
-top of your physics module::
+The stencil based methods are based by a kernel that combines the data
+in a stencil to produce a single BoutReal (note upwind/flux methods
+take extra information about the flow, either a ``BoutReal`` or
+another ``stencil``). It is not anticipated that the user would wish
+to apply one of these kernels directly so documentation is not
+provided here for how to do so. If this is of interest please look at
+``include/bout/index_derivs.hxx``. Internally, these kernel routines
+are combined within a functor struct that uses a ``BOUT_FOR`` loop
+over the domain to provide a routine that will apply the kernel to
+every point, calculating the derivative everywhere. These routines are
+registered in the appropriate ``DerivativeStore`` and identified by
+the direction of differential, the staggering, the type
+(central/upwind/flux) and a key such as "C2". The typical user does
+not need to interact with this store, instead one can add the
+following to the top of your physics module::
 
     #include <derivs.hxx>
+
+to provide access to the following routines. These take care of
+selecting the appropriate method from the store and ensuring the
+input/output field locations are compatible.
 
 .. _tab-coordinate-derivatives:
 .. table:: Coordinate derivatives
@@ -129,8 +150,93 @@ top of your physics module::
 
 By default the method used will be the one specified in the options
 input file (see :ref:`sec-diffmethodoptions`), but most of these
-methods can take an optional `DIFF_METHOD` argument, specifying
-exactly which method to use.
+methods can take an optional `std::string` argument (or a
+`DIFF_METHOD` argument - to be deprecated), specifying exactly which
+method to use.
+
+.. _sec-diffmethod-userregistration:
+
+User registered methods
+-----------------------
+
+_Advanced_ It is possible for the user to define their own
+differencing routines, either by supplying a stencil using kernel or
+writing their own functor that calculates the differential
+everywhere. It is then possible to register these methods with the
+derivative store (for any direction, staggering etc.). For examples
+please look at ``include/bout/index_derivs.hxx`` to see how these
+approaches work.
+
+Here is a verbose example showing how the ``C2`` method is
+implemented.
+
+::
+
+   DEFINE_STANDARD_DERIV(DDX_C2, "C2", 1, DERIV::Stanard) {
+       return 0.5*(f.p - f.m);
+   };
+
+   
+Here `DEFINE_STANARD_DERIV` is a macro that acts on the kernel `return
+0.5*(f.p - f.m);` and produces the functor that will apply the
+differencing method over an entire field.  The macro takes several
+arguments;
+
+- the first (`DDX_C2`) is the name of the generated functor -- this
+  needs to be unique and allows advanced users to refer to a specific
+  derivative functor without having to go through the derivative store
+  if desired.
+
+- the second (`"C2"`) is the string key that is used to refer to this
+  specific method when registering/retrieving the method from the
+  derivative store.
+
+- the third (`1`) is the number of guard cells required to be able to
+  use this method (i.e. here the stencil will consist of three values
+  -- the field at the current point and one point either side). This
+  can be 1 or 2.
+
+- the fourth (`DERIV::Standard`) identifies the type of method - here
+  a central method.
+
+Alongside `DEFINE_STANDARD_DERIV` there's also `DEFINE_UPWIND_DERIV`,
+`DEFINE_FLUX_DERIV` and the staggered versions
+`DEFINE_STANDARD_DERIV_STAGGERED`, `DEFINE_UPWIND_DERIV_STAGGERED` and
+`DEFINE_FLUX_DERIV_STAGGERED`.
+
+To register this method with the derivative store in `X` and `Z` with
+no staggering for both field types we can then use the following code:
+
+::
+
+   produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Z)>,
+                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<TypeContainer<Field2D, Field3D>>,
+                    Set<DDX_C2>>
+    someUniqueNameForDerivativeRegistration(registerMethod{});
+
+
+For the common case where the user wishes to register the method in
+`X`, `Y` and `Z` and for both field types we provide the helper
+macros, `REGISTER_DERIVATIVE` and `REGISTER_STAGGERED_DERIVATIVE`
+which could be used as `REGISTER_DERIVATIVE(DDX_C2)`.
+
+To simplify matters further we provide `REGISTER_STANDARD_DERIVATIVE`,
+`REGISTER_UPWIND_DERIVATIVE`, `REGISTER_FLUX_DERIVATIVE`,
+`REGISTER_STANDARD_STAGGERED_DERIVATIVE`,
+`REGISTER_UPWIND_STAGGERED_DERIVATIVE` and
+`REGISTER_FLUX_STAGGERED_DERIVATIVE` macros that can define and
+register a stencil using kernel in a single step. For example:
+
+::
+
+   REGISTER_STANDARD_DERIVATIVE(DDX_C2, "C2", 1, DERIV::Standard) { return 0.5*(f.p-f.m);};
+
+
+Will define the `DDX_C2` functor and register it with the derivative
+store using key `"C2"` for all three directions and both fields with
+no staggering.
+
 
 .. _sec-diffmethod-nonuniform:
 
