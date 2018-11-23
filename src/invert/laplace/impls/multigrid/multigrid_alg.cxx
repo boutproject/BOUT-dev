@@ -29,6 +29,7 @@
 
 #include "multigrid_laplace.hxx"
 #include <bout/openmpwrap.hxx>
+#include "unused.hxx"
 
 // Define basic multigrid algorithm
 
@@ -611,9 +612,10 @@ BOUT_OMP(for collapse(2))
 }
 
 void MultigridAlg::communications(BoutReal* x, int level) {
- 
-  MPI_Status  status[4];
-  int stag,rtag,ierr;
+
+  MPI_Status status[4];
+  int stag, rtag;
+  MAYBE_UNUSED(int ierr);
 
   if(zNP > 1) {
     MPI_Datatype xvector;
