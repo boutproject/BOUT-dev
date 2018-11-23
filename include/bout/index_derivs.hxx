@@ -121,7 +121,7 @@ public:
   const metaData meta = func.meta;
 };
 
-#define DEFINE_STANDARD_DERIV(name, key, nGuards, type)                             \
+#define DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)                        \
   struct name {                                                                     \
     BoutReal operator()(const stencil& f) const;                                    \
     const metaData meta = {key, nGuards, type};                                     \
@@ -131,10 +131,12 @@ public:
     BoutReal operator()(const stencil& UNUSED(v), const stencil& UNUSED(f)) const { \
       return BoutNaN;                                                               \
     };                                                                              \
-  };                                                                                \
+  };
+#define DEFINE_STANDARD_DERIV(name, key, nGuards, type) \
+  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)  \
   BoutReal name::operator()(const stencil& f) const
 
-#define DEFINE_UPWIND_DERIV(name, key, nGuards, type)                               \
+#define DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)                          \
   struct name {                                                                     \
     BoutReal operator()(const stencil& UNUSED(f)) const { return BoutNaN; };        \
     BoutReal operator()(BoutReal vc, const stencil& f) const;                       \
@@ -142,10 +144,12 @@ public:
       return BoutNaN;                                                               \
     };                                                                              \
     const metaData meta = {key, nGuards, type};                                     \
-  };                                                                                \
+  };
+#define DEFINE_UPWIND_DERIV(name, key, nGuards, type) \
+  DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)  \
   BoutReal name::operator()(BoutReal vc, const stencil& f) const
 
-#define DEFINE_FLUX_DERIV(name, key, nGuards, type)                            \
+#define DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                       \
   struct name {                                                                \
     BoutReal operator()(const stencil& UNUSED(f)) const { return BoutNaN; };   \
     BoutReal operator()(BoutReal UNUSED(vc), const stencil& UNUSED(f)) const { \
@@ -153,7 +157,9 @@ public:
     };                                                                         \
     BoutReal operator()(const stencil& v, const stencil& f) const;             \
     const metaData meta = {key, nGuards, type};                                \
-  };                                                                           \
+  };
+#define DEFINE_FLUX_DERIV(name, key, nGuards, type) \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)  \
   BoutReal name::operator()(const stencil& v, const stencil& f) const
 
 #define DEFINE_STANDARD_DERIV_STAGGERED(name, key, nGuards, type) \
@@ -559,12 +565,6 @@ struct registerMethod {
 /// Temporary short hand
 #define e(family, value) WRAP_ENUM(family, value)
 
-/////////////////////////////////////////////////////////////////////////////////
-/// Here's an example of registering a couple of DerivativeType methods
-/// at once for no staggering
-/////////////////////////////////////////////////////////////////////////////////
-
-// Could use Ben's magic macro for thing here to register multiple routines at once
 #define REGISTER_DERIVATIVE(name)                                             \
   namespace {                                                                 \
   produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>, \
@@ -582,14 +582,49 @@ struct registerMethod {
       reg(registerMethod{});                                                  \
   }
 
+#define REGISTER_STANDARD_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                    \
+  BoutReal name::operator()(const stencil& f) const
+
+#define REGISTER_UPWIND_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                  \
+  BoutReal name::operator()(BoutReal vc, const stencil& f) const
+
+#define REGISTER_FLUX_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
+#define REGISTER_STANDARD_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)                   \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                    \
+  BoutReal name::operator()(const stencil& f) const
+
+#define REGISTER_UPWIND_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  /*Note staggered upwind looks like flux*/                            \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                     \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                  \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
+#define REGISTER_FLUX_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                   \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
+/////////////////////////////////////////////////////////////////////////////////
+/// Here's an example of registering a couple of DerivativeType methods
+/// at once for no staggering
+/////////////////////////////////////////////////////////////////////////////////
+
 produceCombinations<Set<e(DIRECTION, X), e(DIRECTION, Y), e(DIRECTION, Z)>,
                     Set<e(STAGGER, None)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<
                         // Standard
-                        DerivativeType<DDX_C2>, DerivativeType<DDX_C4>,
-                        DerivativeType<DDX_CWENO2>, DerivativeType<DDX_S2>,
-                        DerivativeType<DDX_CWENO3>,
+                        DerivativeType<DDX_C4>, DerivativeType<DDX_CWENO2>,
+                        DerivativeType<DDX_S2>, DerivativeType<DDX_CWENO3>,
                         // Standard 2nd order
                         DerivativeType<D2DX2_C2>, DerivativeType<D2DX2_C4>,
                         // Standard 4th order
