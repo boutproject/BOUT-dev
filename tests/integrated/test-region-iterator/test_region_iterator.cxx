@@ -6,7 +6,7 @@
 
 Field3D n;
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
 
   Field3D a=1.0, b=1.0, c=2.0;
 
@@ -55,7 +55,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   ddt(n) = 0.;
   return 0;
 }
