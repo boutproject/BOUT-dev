@@ -33,6 +33,13 @@ class TestCommandLineArgs(unittest.TestCase):
             self.assertIn('"data" does not exist', contents,
                           msg="FAIL: Error message not printed when missing input directory")
 
+    def testHelpArgument(self):
+        self.makeDirAndCopyInput("data")
+        _, out = shell_safe(self.command + " --help", pipe=True)
+        # Not a great test!
+        self.assertNotIn("Writing options", out,
+                         msg="FAIL: Attempting to write options")
+
     def testNoArgumentsDefaultDirectory(self):
         self.makeDirAndCopyInput("data")
         shell_safe(self.command, pipe=True)
@@ -69,7 +76,8 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("test")
         shell_safe(self.command + " -d test", pipe=True)
         shutil.copytree("test", "test_copy")
-        shell_safe(self.command + " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
         with open("test_copy/testsettings") as f:
             contents = f.readlines()
@@ -83,6 +91,35 @@ class TestCommandLineArgs(unittest.TestCase):
 
             self.assertIn("test_copy", datadir,
                           msg="FAIL: datadir from command line clobbered by BOUT.settings")
+
+    def testShortOptionsAreCleaned(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+
+        with open("test_copy/testsettings") as f:
+            contents = f.read()
+            self.assertNotIn("Command line", contents,
+                             msg="FAIL: command line short options written to BOUT.settings")
+
+    def testCommandLineOptionsArePrinted(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        extra_options = ["-d", "test_copy", "-f", "BOUT.settings", "-o",
+                         "testsettings", "-l", "bout.log", "--foo_flag", "some:option=value"]
+        _, out = shell_safe(self.command + " " + " ".join(extra_options), pipe=True)
+
+        command_line_options = None
+        for line in out.splitlines():
+            if line.lstrip().startswith("Command line"):
+                command_line_options = line
+
+        for option in extra_options:
+            self.assertIn(option, command_line_options,
+                          msg="FAIL: option {} not printed out".format(option))
 
 
 if __name__ == "__main__":
