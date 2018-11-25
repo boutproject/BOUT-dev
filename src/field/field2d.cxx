@@ -45,29 +45,19 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
+Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 
-  boundaryIsSet = false;
-
-  if(fieldmesh) {
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-#if CHECK > 0
-  else {
-    nx=-1;
-    ny=-1;
-  }
-#endif
 
 #ifdef TRACK
   name = "<F2D>";
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing array sizes
-                                     data(f.data), // This handles references to the data array
-                                     deriv(nullptr) {
+Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
 #ifdef TRACK
@@ -77,27 +67,17 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), // The mesh containing 
 #if CHECK > 2
   checkData(f);
 #endif
-                                       
-  if(fieldmesh) {
+
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-#if CHECK > 0
-  else {
-    nx=-1;
-    ny=-1;
-  }
-#endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-  
-  boundaryIsSet = false;
 }
 
-Field2D::Field2D(BoutReal val, Mesh *localmesh) : Field(localmesh), deriv(nullptr) {
-  boundaryIsSet = false;
-
+Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field(localmesh) {
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
 
@@ -133,52 +113,6 @@ Field2D* Field2D::timeDeriv() {
 
 ////////////// Indexing ///////////////////
 
-const DataIterator Field2D::iterator() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0);
-}
-
-const DataIterator Field2D::begin() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0);
-}
-
-const DataIterator Field2D::end() const {
-  return DataIterator(0, nx-1,
-                      0, ny-1,
-                      0, 0, DI_GET_END);
-}
-
-const IndexRange Field2D::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  default: {
-    throw BoutException("Field2D::region() : Requested region not implemented");
-  }
-  };
-}
-
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(REGION_STRING(region));
 };
@@ -195,11 +129,13 @@ void Field2D::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-    location = new_location;
 
     // Invalidate the coordinates pointer
-    if (new_location != location)
+    if (new_location != location) {
       fieldCoordinates = nullptr;
+    }
+
+    location = new_location;
 
   } else {
 #if CHECK > 0
@@ -211,8 +147,6 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
-
-
 }
 
 CELL_LOC Field2D::getLocation() const {
@@ -298,7 +232,7 @@ void Field2D::applyBoundary(bool init) {
       bndry->apply(*this);
 }
 
-void Field2D::applyBoundary(const string &condition) {
+void Field2D::applyBoundary(const std::string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
   checkData(*this);
@@ -332,7 +266,7 @@ void Field2D::applyBoundary(const string &condition) {
   }
 }
 
-void Field2D::applyBoundary(const string &region, const string &condition) {
+void Field2D::applyBoundary(const std::string &region, const std::string &condition) {
   TRACE("Field2D::applyBoundary(string, string)");
   checkData(*this);
 
@@ -633,7 +567,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }

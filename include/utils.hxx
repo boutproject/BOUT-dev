@@ -35,17 +35,55 @@
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
-#include "bout/deprecated.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
 #include <string>
 #include <list>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
+#include <memory>
 
-using std::abs;
-using std::swap;
+namespace bout {
+namespace utils {
+#ifndef __cpp_lib_make_unique
+// Provide our own make_unique if the stl doesn't give us one
+// Implementation from https://isocpp.org/files/papers/N3656.txt
+// i.e. what's already in the stl
+template <class T>
+struct _Unique_if {
+  using _Single_object = std::unique_ptr<T>;
+};
+
+template <class T>
+struct _Unique_if<T[]> {
+  using _Unknown_bound = std::unique_ptr<T[]>;
+};
+
+template <class T, size_t N>
+struct _Unique_if<T[N]> {
+  using _Known_bound = void;
+};
+
+template <class T, class... Args>
+typename _Unique_if<T>::_Single_object make_unique(Args&&... args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+template <class T>
+typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
+  using U = typename std::remove_extent<T>::type;
+  return std::unique_ptr<T>(new U[n]());
+}
+
+template <class T, class... Args>
+typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
+#else
+using std::make_unique;
+#endif
+} // namespace utils
+} // namespace bout
 
 /// Helper class for 2D arrays
 ///
@@ -91,17 +129,6 @@ public:
     };
     return *this;
   };
-  
-  // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(T* operator[](size_type i1)) {
-    ASSERT2(0<=i1 && i1<n1);
-    return &(data[i1*n2]);
-  }
-  // To provide backwards compatibility with matrix to be removed
-  DEPRECATED(const T* operator[](size_type i1) const) {
-    ASSERT2(0<=i1 && i1<n1);
-    return &(data[i1*n2]);
-  }
 
   T* begin() { return std::begin(data);};
   const T* begin() const { return std::begin(data);};
@@ -127,12 +154,6 @@ private:
   size_type n1, n2;
   Array<T> data;
 };
-
-// For backwards compatibility with old matrix -- to be removed
-template <typename T>
-DEPRECATED(void free_matrix(Matrix<T> UNUSED(m)));
-template <typename T>
-void free_matrix(Matrix<T> UNUSED(m)) {};
 
 /// Helper class for 3D arrays
 ///
@@ -227,7 +248,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   // Calculate the determinant
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
-  if (abs(det) < abs(small)) {
+  if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
       throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
     } else {
@@ -258,90 +279,6 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
 
   return 0;
 };
-
-// Give signature here as not able to mark implementation below as DEPRECATED
-template <class T>
-DEPRECATED(T **matrix(int xsize, int ysize));
-
-/*!
- * Create a 2D array of \p xsize by \p ysize 
- * This is allocated as two blocks of data so that
- * the values are in a contiguous array.
- * 
- * Note: This returns C-style pointers, and makes
- * no effort to manage memory. Prefer other methods
- * (like standard containers) over this if possible.
- * 
- * \deprecated
- *
- * Example
- * -------
- * 
- * BoutReal **m = matrix<BoutReal>(nx, ny);
- */
-template <class T>
-T **matrix(int xsize, int ysize) {
-  long i;
-  T **m;
-
-  if(xsize == 0)
-     xsize = 1;
-  if(ysize == 0)
-     ysize = 1;
-
-  if((m = new T*[xsize]) == nullptr)
-    throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  
-  if((m[0] = new T[xsize*ysize]) == nullptr)
-    throw BoutException("Error: could not allocate memory\n");
-
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-  return m;
-}
-
-template <class T>
-DEPRECATED(void free_matrix(T **m));
-/*!
- * Free a matrix, assumed to have been allocated using matrix()
- *
- * @param[in] m  The matrix to free
- * @deprecated
- *
- * Example
- * -------
- *
- *     BoutReal **m = matrix<BoutReal>(nx, ny);
- *     ...
- *     free_matrix(m);
- */ 
-template <class T>
-void free_matrix(T **m) {
-  delete[] m[0];
-  delete[] m;
-}
-
-
-/// Allocate a 3D BoutReal array of size \p nrow x \p ncol \p ndep
-///
-/// \deprecated Prefer other methods like standard containers
-DEPRECATED(BoutReal ***r3tensor(int nrow, int ncol, int ndep));
-
-/// Free a 3D BoutReal array, assumed to have been created by r3tensor
-///
-/// \deprecated
-DEPRECATED(void free_r3tensor(BoutReal ***m));
-
-/// Allocate a 3D int array of size \p nrow x \p ncol \p ndep
-///
-/// \deprecated Prefer other methods like standard containers
-DEPRECATED(int ***i3tensor(int nrow, int ncol, int ndep));
-
-/// Free a 3D int array, assumed to have been created by i3tensor()
-///
-/// \deprecated
-DEPRECATED(void free_i3tensor(int ***m));
 
 /*!
  * Get Random number between 0 and 1
@@ -414,7 +351,7 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
  * if |a| < |b| then return a, otherwise return b
  */
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
+  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
 }
 
 #if CHECK > 0
@@ -439,21 +376,26 @@ char* copy_string(const char* s);
  * by writing to a stringstream
  */
 template <class T>
-const string toString(const T& val) {
+const std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
 
+/// Convert a time stamp to a string
+/// This uses std::localtime and std::put_time
+template <>
+const std::string toString<>(const time_t& time);
+
 /*!
  * Convert a string to lower case
  */
-const string lowercase(const string &str);
+const std::string lowercase(const std::string &str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const string lowercasequote(const string &str);
+const std::string lowercasequote(const std::string &str);
 
 /*!
  * Convert a string to a BoutReal

@@ -22,6 +22,35 @@ public:
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
 };
 
+/// For testing, a generator function of two inputs
+class BinaryGenerator : public FieldGenerator {
+public:
+  BinaryGenerator(std::shared_ptr<FieldGenerator> a = nullptr,
+                  std::shared_ptr<FieldGenerator> b = nullptr)
+      : a(a), b(b) {}
+
+  std::shared_ptr<FieldGenerator>
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+    if (args.size() != 2) {
+      throw ParseException(
+          "Incorrect number of arguments to increment function. Expecting 2, got %d",
+          args.size());
+    }
+
+    return std::make_shared<BinaryGenerator>(args.front(), args.back());
+  }
+
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+    return a->generate(x, y, z, t) + b->generate(x, y, z, t);
+  }
+  const std::string str() {
+    return std::string{"add(" + a->str() + ", " + b->str() + ")"};
+  }
+
+private:
+  std::shared_ptr<FieldGenerator> a, b;
+};
+
 class IncrementGenerator : public FieldGenerator {
 public:
   IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr) : gen(gen) {}
@@ -211,8 +240,8 @@ TEST_F(ExpressionParserTest, BadNumbers) {
   EXPECT_THROW(parser.parseString("1.1.4"), ParseException);
   EXPECT_THROW(parser.parseString("2.1e4.5."), ParseException);
   EXPECT_THROW(parser.parseString("3.e8e4"), ParseException);
-  EXPECT_THROW(parser.parseString("4ee"), ParseException);
-  EXPECT_THROW(parser.parseString("5G"), ParseException);
+  EXPECT_THROW(parser.parseString("4()"), ParseException);
+  EXPECT_THROW(parser.parseString("5_000"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, BadFunctions) {
@@ -351,4 +380,123 @@ TEST(ParseExceptionTest, WhatTest) {
     std::string message{e.what()};
     EXPECT_NE(message.find("test message"), std::string::npos);
   }
+}
+
+TEST_F(ExpressionParserTest, EscapeSymbol) {
+  auto fieldgen = parser.parseString("`x`");
+  EXPECT_EQ(fieldgen->str(), "x");
+  
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+        }
+      }
+    }
+  }
+}
+
+// Backslash can be used to escape a single character
+TEST_F(ExpressionParserTest, GeneratorNameEscape) {
+  parser.addGenerator("one+", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("one\\+(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+// Back-ticks can be used to escape sequences of characters
+TEST_F(ExpressionParserTest, GeneratorNameLongEscape) {
+  parser.addGenerator("++", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("`++`(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+// Back-ticks can be used for part of a symbol
+TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
+  parser.addGenerator("one+this", std::make_shared<IncrementGenerator>());
+
+  auto fieldgen = parser.parseString("one`+`this(x)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, AddBinaryGenerator) {
+  parser.addGenerator("add", std::make_shared<BinaryGenerator>());
+
+  auto fieldgen = parser.parseString("add(x,y)");
+  EXPECT_EQ(fieldgen->str(), "add(x, y)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + y);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, ImplicitMultiply) {
+
+  auto fieldgen = parser.parseString("2x + 3y");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*x + 3*y);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, ImplicitMultiplyBracket) {
+
+  auto fieldgen = parser.parseString("2(x + 3y)");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*(x + 3*y));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, BadImplicitMultiply) {
+  EXPECT_THROW(parser.parseString("x2"), ParseException);
+  EXPECT_THROW(parser.parseString("(1+x)2"), ParseException);
+  EXPECT_THROW(parser.parseString("2 2"), ParseException);
 }

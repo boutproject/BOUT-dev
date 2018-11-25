@@ -50,10 +50,6 @@ int main(int argc, char** argv) {
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
-  // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-  BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
-  BoutReal nz = mesh->GlobalNz;
-
   dump.add(mesh->getCoordinates()->G1,"G1");
   dump.add(mesh->getCoordinates()->G3,"G3");
 

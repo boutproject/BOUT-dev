@@ -150,8 +150,8 @@ public:
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
-  vector<BoundaryRegion *> getBoundaries() { return boundaries; }
-  vector<BoundaryRegionPar *> getBoundariesPar() { return vector<BoundaryRegionPar *>(); }
+  std::vector<BoundaryRegion *> getBoundaries() { return boundaries; }
+  std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
   BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
@@ -164,9 +164,36 @@ public:
     derivs_init(opt);
   }
 private:
-  vector<BoundaryRegion *> boundaries;
+  std::vector<BoundaryRegion *> boundaries;
 };
 
+/// Test fixture to make sure the global mesh is our fake
+/// one. Multiple tests have exactly the same fixture, so use a type
+/// alias to make a new test:
+///
+///     using MyTest = FakeMeshFixture;
+class FakeMeshFixture : public ::testing::Test {
+public:
+  FakeMeshFixture() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+  }
 
+  ~FakeMeshFixture() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+  static constexpr int nx = 3;
+  static constexpr int ny = 5;
+  static constexpr int nz = 7;
+};
 
 #endif //  TEST_EXTRAS_H__

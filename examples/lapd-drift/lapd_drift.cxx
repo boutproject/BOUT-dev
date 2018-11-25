@@ -133,7 +133,7 @@ protected:
     b0xcv.covariant = false; // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Load metrics
     mesh->get(Rxy,  "Rxy");
@@ -431,7 +431,7 @@ protected:
   /// Time derivatives calculated here
   int rhs(BoutReal t) {
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Invert vorticity to get phi
     
@@ -727,7 +727,7 @@ protected:
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
   const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
     
-    return DDX(p)*DDX(f)*mesh->coordinates()->g11;
+    return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
   
@@ -743,13 +743,13 @@ protected:
     } else {
       // Use full expression with all terms
       
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
 
   const Field3D vE_Grad(const Field2D &f, const Field3D &p) {
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     Field3D result;
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
@@ -803,7 +803,7 @@ protected:
       result = VDDZ(-DDX(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
@@ -811,7 +811,7 @@ protected:
   const Field3D vE_Grad(const Field3D &f, const Field3D &p) {
     Field3D result;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
       

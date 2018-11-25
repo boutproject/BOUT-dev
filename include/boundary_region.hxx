@@ -6,7 +6,6 @@ class BoundaryRegion;
 
 #include <string>
 #include <utility>
-using std::string;
 
 class Mesh;
 extern Mesh* mesh;
@@ -33,7 +32,7 @@ public:
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
-  string label; ///< Label for this boundary region
+  std::string label; ///< Label for this boundary region
 
   BndryLoc location;         ///< Which side of the domain is it on?
   bool isParallel = false;   ///< Is this a parallel boundary?

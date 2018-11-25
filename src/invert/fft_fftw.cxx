@@ -32,7 +32,7 @@
 #include <bout/openmpwrap.hxx>
 
 #include <fftw3.h>
-#include <math.h>
+#include <cmath>
 
 #ifdef _OPENMP
 #include <omp.h>

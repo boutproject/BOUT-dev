@@ -26,8 +26,7 @@
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <fieldperp.hxx>
 #include <utils.hxx>
@@ -39,13 +38,6 @@ FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
   }
-  
-#if CHECK > 0
-  else {
-    nx=-1;
-    nz=-1;
-  }
-#endif
 }
 
 FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {
@@ -104,23 +96,6 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
   return *this;
 }
-
-/***************************************************************
- *                         ITERATORS
- ***************************************************************/
-
-const DataIterator FieldPerp::begin() const {
-  return DataIterator( 0, nx-1,
-                      yindex, yindex,
-                      0, nz-1);
-}
-
-const DataIterator FieldPerp::end() const {
-  return DataIterator( 0, nx-1,
-                      yindex, yindex,
-		       0, nz-1,DI_GET_END);
-}
-
 
 /***************************************************************
  *                         OPERATORS 
@@ -199,21 +174,6 @@ FPERP_OP_REAL(+=, +);
 FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
-
-const IndexRange FieldPerp::region(REGION rgn) const {
-  switch (rgn) {
-  case RGN_ALL:
-  case RGN_NOZ:
-    return IndexRange{0, nx - 1, 0, 0, 0, nz - 1};
-    break;
-  case RGN_NOX:
-    return IndexRange{getMesh()->xstart, getMesh()->xend, 0, 0, 0, nz - 1};
-    break;
-  default:
-    throw BoutException("FieldPerp::region() : Requested region not implemented");
-    break;
-  };
-}
 
 const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
   return fieldmesh->getRegionPerp(REGION_STRING(region));

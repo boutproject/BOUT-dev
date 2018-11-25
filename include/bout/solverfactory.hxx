@@ -28,10 +28,14 @@ class SolverFactory : public Factory<Solver, std::function<Solver*(Options*)>> {
 
   Solver* createSolver(Options *options = nullptr);
   Solver* createSolver(SolverType &name) {
-    return create(name, Options::getRoot()->getSection("solver"));
+    return createSolver(name, Options::getRoot()->getSection("solver"));
   }
   Solver* createSolver(SolverType &name, Options *options) {
-    return create(name, options);
+    try {
+      return create(name, options);
+    } catch (const BoutException &e) {
+      throw BoutException("Error when trying to create a Solver: %s", e.what());
+    }
   }
 private:
   SolverFactory() {}

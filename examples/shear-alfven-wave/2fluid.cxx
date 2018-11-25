@@ -65,7 +65,7 @@ protected:
     GRID_LOAD(Ajpar0);
 
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load magnetic curvature term
     b0xcv.covariant = false;  // Read contravariant components

@@ -44,9 +44,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -56,23 +54,11 @@ Field3D::Field3D(Mesh *localmesh)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
-
-  boundaryIsSet = false;
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D &f)
-    : Field(f.fieldmesh),                // The mesh containing array sizes
-      background(nullptr), data(f.data), // This handles references to the data array
-      deriv(nullptr), yup_field(nullptr), ydown_field(nullptr) {
+Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -85,27 +71,14 @@ Field3D::Field3D(const Field3D &f)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-#if CHECK > 0
-  else {
-    nx = -1;
-    ny = -1;
-    nz = -1;
-  }
-#endif
 
   location = f.location;
   fieldCoordinates = f.fieldCoordinates;
-    
-  boundaryIsSet = false;
 }
 
-Field3D::Field3D(const Field2D &f)
-    : Field(f.getMesh()), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
 
   TRACE("Field3D: Copy constructor from Field2D");
-
-  boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -113,17 +86,13 @@ Field3D::Field3D(const Field2D &f)
 
   location = f.getLocation();
   fieldCoordinates = nullptr;
-    
+
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh *localmesh)
-    : Field(localmesh), background(nullptr), deriv(nullptr), yup_field(nullptr),
-      ydown_field(nullptr) {
+Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
 
   TRACE("Field3D: Copy constructor from value");
-
-  boundaryIsSet = false;
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -238,7 +207,6 @@ void Field3D::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-    location = new_location;
 
 #if CHECK > 1
     // Check Coordinates for location have been added
@@ -247,8 +215,12 @@ void Field3D::setLocation(CELL_LOC new_location) {
 #endif
 
     // Invalidate the coordinates pointer
-    if (new_location != location)
+    if (new_location != location) {
       fieldCoordinates = nullptr;
+    }
+
+    location = new_location;
+
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -282,91 +254,16 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
   return operator[](fieldmesh->ind2Dto3D(d, jz));
 }
 
-/***************************************************************
- *                         OPERATORS 
- ***************************************************************/
-
-const DataIterator Field3D::iterator() const {
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1);
-}
-
-const DataIterator Field3D::begin() const {
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1);
-}
-
-const DataIterator Field3D::end() const {
-  // end() iterator should be one past the last element
-  return DataIterator(0, nx-1, 
-                      0, ny-1,
-                      0, nz-1,DI_GET_END);
-}
-
-const IndexRange Field3D::region(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, nz-1};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, nz-1};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, nz-1};
-  }
-  default: {
-    throw BoutException("Field3D::region() : Requested region not implemented");
-  }
-  };
-}
-
-const IndexRange Field3D::region2D(REGION rgn) const {
-  switch(rgn) {
-  case RGN_ALL: {
-    return IndexRange{0, nx-1,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOBNDRY: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  case RGN_NOX: {
-    return IndexRange{fieldmesh->xstart, fieldmesh->xend,
-        0, ny-1,
-        0, 0};
-  }
-  case RGN_NOY: {
-    return IndexRange{0, nx-1,
-        fieldmesh->ystart, fieldmesh->yend,
-        0, 0};
-  }
-  default: {
-    throw BoutException("Field3D::region() : Requested region not implemented");
-  }
-  };
-}
-
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(REGION_STRING(region));
 };
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
 };
+
+/***************************************************************
+ *                         OPERATORS 
+ ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
 
@@ -452,10 +349,6 @@ Field3D & Field3D::operator=(const BoutReal val) {
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Field3D::setBackground(const Field2D &f2d) {
-  background = &f2d;
-}
-
 void Field3D::applyBoundary(bool init) {
   TRACE("Field3D::applyBoundary()");
 
@@ -508,7 +401,7 @@ void Field3D::applyBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyBoundary(const string &condition) {
+void Field3D::applyBoundary(const std::string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   checkData(*this);
@@ -535,7 +428,7 @@ void Field3D::applyBoundary(const string &condition) {
   //Field2D sets the corners to zero here, should we do the same here?
 }
 
-void Field3D::applyBoundary(const string &region, const string &condition) {
+void Field3D::applyBoundary(const std::string &region, const std::string &condition) {
   TRACE("Field3D::applyBoundary(string, string)");
   checkData(*this);
 
@@ -637,7 +530,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(condition)");
 
@@ -661,7 +554,7 @@ void Field3D::applyParallelBoundary(const string &condition) {
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
@@ -688,7 +581,7 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
   }
 }
 
-void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+void Field3D::applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f) {
 
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
@@ -1198,7 +1091,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
@@ -1240,6 +1134,7 @@ Field2D DC(const Field3D &f, REGION rgn) {
   Mesh *localmesh = f.getMesh();
   Field2D result(localmesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   const Region<Ind2D> &region = localmesh->getRegion2D(REGION_STRING(rgn));
 

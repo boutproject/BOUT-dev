@@ -210,6 +210,27 @@ and to make this a coloured contour plot
 
 The equivalent commands in Python are as follows. 
 
+.. _sec-run-nls:
+
+Natural language support
+------------------------
+
+If you have locales installed, and configured the ``locale`` path
+correctly (see :ref:`sec-config-nls`), then the ``LANG`` environment
+variable selects the language to use. Currently BOUT++ only has limited support
+for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
+
+    LANG=zh_TW.utf8 ./conduction
+
+which should produce an output like::
+
+  BOUT++ 版 4.2.0
+  版: dc95c252d9447ca72d27d4cc0d30f4d9c8a91a41
+  MD5 checksum: 086b600cc54f9c0eb0ee9338dbba71a6
+  代碼於 Nov  1 2018 17:41:02 编译
+  ...
+
+  
 Further examples
 ----------------
 

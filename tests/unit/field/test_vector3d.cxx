@@ -14,7 +14,7 @@ extern Mesh *mesh;
 /// Test fixture to make sure the global mesh is our fake one
 class Vector3DTest : public ::testing::Test {
 protected:
-  static void SetUpTestCase() {
+  Vector3DTest() {
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -36,7 +36,7 @@ protected:
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
   }
 
-  static void TearDownTestCase() {
+  ~Vector3DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {

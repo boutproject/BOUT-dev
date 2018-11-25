@@ -29,6 +29,7 @@
 
 #include <bout/constants.hxx>
 #include <bout.hxx>
+#include <bout_types.hxx>
 #include <derivs.hxx>
 #include <cmath>
 

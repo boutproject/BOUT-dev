@@ -37,8 +37,6 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
@@ -76,7 +74,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) = default;
+  Field2D(Field2D&& f) noexcept { swap(*this, f); };
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
@@ -114,7 +112,7 @@ class Field2D : public Field, public FieldData {
   int getNz() const override {return 1;};
 
   // Operators
-
+  
   /*!
    * Assignment from Field2D. After this both fields will
    * share the same underlying data. To make a true copy,
@@ -142,21 +140,12 @@ class Field2D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
 
-  /// Iterator over the Field2D indices
-  const DataIterator DEPRECATED(iterator() const);
-
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
-  
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   */
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
-
   /// Return a Region<Ind2D> reference to use to iterate over this field
   const Region<Ind2D>& getRegion(REGION region) const;  
   const Region<Ind2D>& getRegion(const std::string &region_name) const;
+
+  Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
@@ -166,29 +155,6 @@ class Field2D : public Field, public FieldData {
   }
   BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
-
-  /*!
-   * Direct access to the data array. Since operator() is used
-   * to implement this, no checks are performed if CHECK <= 2
-   */
-  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.y);
-  }
-
-  /// Const access to data array
-  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.y);
-  }
-
-  /// Indices are also used as a lightweight way to specify indexing
-  /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.y);
-  }
-  /// const Indices data access
-  inline const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
-    return operator()(i.x, i.y);
-  }
 
   /*!
    * Access to the underlying data array. 
@@ -264,21 +230,40 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
-  
- private:
-  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+
+  friend void swap(Field2D& first, Field2D& second) noexcept {
+    using std::swap;
+    swap(first.data, second.data);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.location, second.location);
+    swap(first.deriv, second.deriv);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
+
+private:
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
   
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
 
-  Field2D *deriv; ///< Time-derivative, can be NULL
+  /// Time-derivative, can be nullptr
+  Field2D *deriv{nullptr};
 };
 
 // Non-member overloaded operators
