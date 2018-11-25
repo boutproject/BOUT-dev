@@ -243,7 +243,7 @@ void Field3D::setLocation(CELL_LOC new_location) {
 #if CHECK > 1
     // Check Coordinates for location have been added
     // For CHECK > 0, getCoordinates will throw if location has not been added.
-    fieldmesh->getCoordinates(location);
+    getMesh()->getCoordinates(location);
 #endif
 
     // Invalidate the coordinates pointer
