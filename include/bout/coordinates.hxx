@@ -52,15 +52,9 @@ public:
 
   /// Constructor interpolating from another Coordinates object
   Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
-  
-  /// Standard constructor from input
-  Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J, Field2D Bxy,
-              Field2D g11, Field2D g22, Field2D g33, Field2D g12, Field2D g13,
-              Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
-              Field2D g_13, Field2D g_23);
 
-  ~Coordinates() {}
-  
+  ~Coordinates() = default;
+
   /*!
    * Adds variables to the output file, for post-processing
    * 
@@ -152,6 +146,16 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
+
+protected:
+  /// A constructor useful for testing purposes. To use it, inherit
+  /// from Coordinates. Note: makes a partially constructed
+  /// object. Non-uniform variables, Christoffel symbols, and
+  /// shift-torsion variables are not defined.
+  Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J, Field2D Bxy,
+              Field2D g11, Field2D g22, Field2D g33, Field2D g12, Field2D g13,
+              Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
+              Field2D g_13, Field2D g_23);
 };
 
 /*

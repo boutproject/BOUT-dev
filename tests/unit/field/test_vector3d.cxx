@@ -35,13 +35,11 @@ protected:
     mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
-    auto coords = std::make_shared<Coordinates>(
+    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
-        Field2D{5.0}, Field2D{6.0});
-
-    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(coords);
+        Field2D{5.0}, Field2D{6.0}));
   }
 
   ~Vector3DTest() {
@@ -526,13 +524,6 @@ TEST_F(Vector3DTest, DivideVector3DField3D) {
 }
 
 TEST_F(Vector3DTest, ToCovariant) {
-  auto coords = std::make_shared<Coordinates>(
-      mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0}, Field2D{6.0},
-      Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0}, Field2D{6.0});
-
-  dynamic_cast<FakeMesh*>(mesh)->setCoordinates(coords);
-
   Vector3D vector;
   vector.covariant = false;
   vector.x = 2.0;
@@ -547,13 +538,6 @@ TEST_F(Vector3DTest, ToCovariant) {
 }
 
 TEST_F(Vector3DTest, ToContravariant) {
-  auto coords = std::make_shared<Coordinates>(
-      mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0}, Field2D{6.0},
-      Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0}, Field2D{6.0});
-
-  dynamic_cast<FakeMesh*>(mesh)->setCoordinates(coords);
-
   Vector3D vector;
   vector.covariant = true;
   vector.x = 2.0;
