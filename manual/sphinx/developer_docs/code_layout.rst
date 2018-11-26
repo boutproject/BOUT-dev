@@ -345,8 +345,6 @@ The current source code files are:
 
 - sys
 
-   - :doc:`boutcomm.cxx<../_breathe_autogen/file/boutcomm_8cxx>`
-
    - :doc:`boutexception.cxx<../_breathe_autogen/file/boutexception_8cxx>`
      is an exception class which are used for error handling
 
