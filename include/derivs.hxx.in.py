@@ -115,41 +115,6 @@ funcs=[first,
                 desc="for terms of form div(v * f)",
                 latex="\partial (v f) / \partial $d_lower")]
 
-deprecated_methods="""
-// Deprecated methods
-//
-// Calculate first partial derivative in Z
-//
-//   \f$\partial / \partial z\f$
-//
-// @param[in] f       The field to be differentiated
-// @param[in] outloc  The cell location where the result is desired.
-//                    If staggered grids is not enabled then this has no effect
-// @param[in] method  Differencing method to use. This overrides the default
-// @param[in] inc_xbndry  DEPRECATED: use REGION flags
-//                    Determines whether the derivative should be calculated in
-//                    the X boundaries. This allows mixed operators (e.g.
-//                    D2DXDZ) without additional communication
-
-
-inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-"""
-
 end_of_file="#endif // __DERIVS_H__"
 
 if __name__ == "__main__":
@@ -197,7 +162,5 @@ if __name__ == "__main__":
     cur=upwind.set('Z','Field2D')
     cur.in_sig="const Field3D &v, const Field2D &f"
     cur.render()
-
-    print(deprecated_methods)
 
     print(end_of_file)
