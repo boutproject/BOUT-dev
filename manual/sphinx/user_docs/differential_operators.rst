@@ -159,7 +159,9 @@ method to use.
 User registered methods
 -----------------------
 
-_Advanced_ It is possible for the user to define their own
+.. note:: The following may be considered advanced usage.
+
+It is possible for the user to define their own
 differencing routines, either by supplying a stencil using kernel or
 writing their own functor that calculates the differential
 everywhere. It is then possible to register these methods with the
