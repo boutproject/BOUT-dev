@@ -207,11 +207,14 @@ void Field3D::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-    location = new_location;
 
     // Invalidate the coordinates pointer
-    if (new_location != location)
+    if (new_location != location) {
       fieldCoordinates = nullptr;
+    }
+
+    location = new_location;
+
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -1036,7 +1039,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }

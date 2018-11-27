@@ -160,7 +160,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
 
 const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
   const auto testMesh = test.getMesh();
-  Field2D result(test.getMesh());
+  Field2D result(testMesh);
   result.allocate();
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {

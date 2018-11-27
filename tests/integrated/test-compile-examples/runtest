@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#requires: all_tests
+#requires: not make
+
+BOUT_TOP=../../..
+export PATH=$BOUT_TOP/bin:$PATH
+
+error=0
+
+failed=
+for target in $(find $BOUT_TOP/examples/ -name makefile)
+do
+    dir=$(dirname ${target})
+    echo "Trying to compile ${dir}"
+
+    (cd ${dir} && make 2>&1)
+    ex=$?
+    
+    if test $ex -gt 0
+    then
+        echo $(basename $dir) failed
+        error=1
+	failed="$failed\n$(basename $dir) failed"
+    fi
+
+done
+
+echo -e $failed
+
+exit $error

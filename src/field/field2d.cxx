@@ -129,11 +129,13 @@ void Field2D::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-    location = new_location;
 
     // Invalidate the coordinates pointer
-    if (new_location != location)
+    if (new_location != location) {
       fieldCoordinates = nullptr;
+    }
+
+    location = new_location;
 
   } else {
 #if CHECK > 0
@@ -145,8 +147,6 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
-
-
 }
 
 CELL_LOC Field2D::getLocation() const {
@@ -541,7 +541,8 @@ namespace {
       }
     }
   }
-#else
+#elif CHECK > 1
+  // No-op for no checking
   void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
