@@ -765,9 +765,6 @@ class Mesh {
                            REGION region = RGN_NOBNDRY);
 
 private:
-  /// Allocates default Coordinates objects
-  std::unique_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
-
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;

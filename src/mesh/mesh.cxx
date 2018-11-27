@@ -340,7 +340,7 @@ void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
       // Initialize coordinates from input
       if (!coords_map.count(location)) {
         // location does not exist in coords_map, so create new entry
-        coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this)));
+        coords_map.emplace(location, bout::utils::make_unique<Coordinates>(this));
       } else if (replace_coords) {
         // location does already exist in coords_map, so reset it
         coords_map.at(location).reset(new Coordinates(this));
@@ -360,7 +360,7 @@ void Mesh::addCoordinates(const CELL_LOC location, bool replace_coords) {
         coords_map.erase(location);
       }
 
-      coords_map.emplace(location, std::unique_ptr<Coordinates>(new Coordinates(this, location, getCoordinates(CELL_CENTRE))));
+      coords_map.emplace(location, bout::utils::make_unique<Coordinates>(this, location, getCoordinates(CELL_CENTRE)));
     }
   }
 }
