@@ -1500,7 +1500,7 @@ Optional Packages:
   --with-mumps            Link with MUMPS library for direct matrix inversions
   --with-arkode           Use the SUNDIALS ARKODE solver
   --with-scorep           Enable support for scorep based instrumentation
-  --with-openmp-schedule=static
+  --with-openmp-schedule=static/dynamic/guided/auto
                           Set OpenMP schedule (default: static)
   --with-gcov=GCOV        use given GCOV for coverage (GCOV=gcov).
   --with-hdf5=yes/no/PATH location of h5cc for serial HDF5 configuration
