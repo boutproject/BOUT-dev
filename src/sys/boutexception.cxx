@@ -33,17 +33,8 @@ BoutException::~BoutException() {
 }
 
 std::string BoutException::getBacktrace() const {
-  return backtrace_message + msg_stack.getDump() + "\n" + header + message + "\n";
-}
-
-std::string BoutException::makeBacktrace() const {
   std::string backtrace_message;
 #ifdef BACKTRACE
-
-  void *trace[TRACE_MAX];
-  auto trace_size = backtrace(trace, TRACE_MAX);
-  auto **messages = backtrace_symbols(trace, trace_size);
-
   backtrace_message = "====== Exception path ======\n";
   char buf[1024];
   // skip first stack frame (points here)
@@ -92,7 +83,15 @@ std::string BoutException::makeBacktrace() const {
 #else
   backtrace_message = "Stacktrace not enabled.\n";
 #endif
-  return backtrace_message;
+
+  return backtrace_message + msg_stack.getDump() + "\n" + header + message + "\n";
+}
+
+void BoutException::makeBacktrace() {
+#ifdef BACKTRACE
+  trace_size = backtrace(trace, TRACE_MAX);
+  messages = backtrace_symbols(trace, trace_size);
+#endif
 }
 
 /// Common set up for exceptions
@@ -120,7 +119,7 @@ std::string BoutException::makeBacktrace() const {
       delete[] buffer;                                                                   \
       buffer = nullptr;                                                                  \
     }                                                                                    \
-    backtrace_message = makeBacktrace();                                                 \
+    makeBacktrace();                                                                     \
   }
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }
