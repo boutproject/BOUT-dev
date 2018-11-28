@@ -17,7 +17,7 @@ class BoutException : public std::exception {
 public:
   BoutException(const char *, ...);
   BoutException(std::string msg) : message(std::move(msg)) {
-    backtrace_message = makeBacktrace();
+    makeBacktrace();
   }
   ~BoutException() override;
 
@@ -30,8 +30,6 @@ public:
   /// backtrace (if available)
   std::string getBacktrace() const;
 
-  std::string makeBacktrace() const;
-
   const std::string header{"====== Exception thrown ======\n"};
 
 protected:
@@ -41,8 +39,13 @@ protected:
   std::string message;
 #ifdef BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;
+  void* trace[TRACE_MAX];
+  int trace_size;
+  char** messages;
 #endif
   std::string backtrace_message{};
+
+  void makeBacktrace();
 };
 
 class BoutRhsFail : public BoutException {
