@@ -167,16 +167,6 @@ private:
   std::vector<BoundaryRegion *> boundaries;
 };
 
-class FakeCoordinates : public Coordinates {
-public:
-  FakeCoordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J, Field2D Bxy,
-                  Field2D g11, Field2D g22, Field2D g33, Field2D g12, Field2D g13,
-                  Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
-                  Field2D g_13, Field2D g_23)
-      : Coordinates(mesh, dx, dy, dz, J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22,
-                    g_33, g_12, g_13, g_23) {}
-};
-
 /// Test fixture to make sure the global mesh is our fake
 /// one. Multiple tests have exactly the same fixture, so use a type
 /// alias to make a new test:
