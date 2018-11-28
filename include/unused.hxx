@@ -47,7 +47,7 @@
 #endif
 #ifndef MAYBE_UNUSED
 #if defined(__GNUC__)
-# define MAYBE_UNUSED(x) x __attribute__((unused))
+# define MAYBE_UNUSED(x) [[gnu::unused]] x
 #else
 # define MAYBE_UNUSED(x) x
 #endif
