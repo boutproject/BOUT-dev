@@ -32,8 +32,12 @@
 
 class Options;
 
+namespace bout {
+namespace fft {
 void fft_init(bool fft_measure);
 void fft_init(Options* options = nullptr);
+} // namespace fft
+} // namespace bout
 
 /*!
  * Returns the fft of a real signal using fftw_forward

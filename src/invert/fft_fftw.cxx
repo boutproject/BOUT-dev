@@ -42,8 +42,6 @@ namespace bout {
 namespace fft {
 bool fft_initialised = false;
 bool fft_measure;
-} // namespace fft
-} // namespace bout
 
 void fft_init(Options* options) {
   if (bout::fft::fft_initialised) {
@@ -59,6 +57,9 @@ void fft_init(bool fft_measure) {
   bout::fft::fft_measure = fft_measure;
   bout::fft::fft_initialised = true;
 }
+
+} // namespace fft
+} // namespace bout
 
 /***********************************************************
  * Real FFTs
@@ -83,7 +84,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
       fftw_free(fout);
     }
 
-    fft_init();
+    bout::fft::fft_init();
 
     // Initialize the input for the fourier transformation
     fin = (double*) fftw_malloc(sizeof(double) * length);
@@ -152,7 +153,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       fftw_free(fout);
     }
 
-    fft_init();
+    bout::fft::fft_init();
 
     // Initilaize the input for the inverse fourier transformation
     /* NOTE: Only the non-redundant input is given
@@ -225,7 +226,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
         fftw_free(foutall);
       }
 
-      fft_init();
+      bout::fft::fft_init();
 
       finall = static_cast<double *>(fftw_malloc(sizeof(double) * length * n_th));
       foutall = static_cast<fftw_complex *>(
@@ -296,7 +297,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
         fftw_free(foutall);
       }
 
-      fft_init();
+      bout::fft::fft_init();
 
       finall = static_cast<fftw_complex *>(
           fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));

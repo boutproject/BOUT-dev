@@ -13,7 +13,7 @@
 TEST(FFTTest, rfft) {
 
   // Make sure fft functions are quiet by setting fft_measure to false
-  fft_init(false);
+  bout::fft::fft_init(false);
 
   constexpr int size{8};
 
@@ -51,7 +51,7 @@ TEST(FFTTest, rfft) {
 TEST(FFTTest, irfft) {
 
   // Make sure fft functions are quiet by setting fft_measure to false
-  fft_init(false);
+  bout::fft::fft_init(false);
 
   constexpr int size{8};
 
