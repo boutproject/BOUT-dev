@@ -5,19 +5,43 @@
 
 extern Mesh* mesh;
 
-using ShiftedMetricTest = FakeMeshFixture;
+class ShiftedMetricTest : public ::testing::Test {
+public:
+  ShiftedMetricTest() {
+    // Delete any existing mesh
+    if (mesh != nullptr) {
+      delete mesh;
+      mesh = nullptr;
+    }
+    mesh = new FakeMesh(nx, ny, nz);
+    output_info.disable();
+    mesh->createDefaultRegions();
+    output_info.enable();
+
+    zShift = Field2D{mesh};
+
+    fillField(zShift, {{1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}});
+
+    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}));
+  }
+
+  ~ShiftedMetricTest() {
+    delete mesh;
+    mesh = nullptr;
+  }
+
+  static constexpr int nx = 3;
+  static constexpr int ny = 5;
+  static constexpr int nz = 7;
+
+  Field2D zShift;
+};
 
 TEST_F(ShiftedMetricTest, ToFieldAligned) {
-  Field2D zShift{mesh};
-
-  fillField(zShift, {{1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}});
-
-  dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
-      mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}));
-
   ShiftedMetric shifted{*mesh, zShift};
 
   Field3D input{mesh};
@@ -64,16 +88,6 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
-  Field2D zShift{mesh};
-
-  fillField(zShift, {{1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}});
-
-  dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
-      mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}));
-
   ShiftedMetric shifted{*mesh, zShift};
 
   Field3D input{mesh};
@@ -122,16 +136,6 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
-  Field2D zShift{mesh};
-
-  fillField(zShift, {{1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}});
-
-  dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
-      mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}));
-
   output_info.disable();
   auto region_yup = mesh->getRegion("RGN_NOY");
   region_yup.periodicShift(ShiftedMetricTest::nz,
