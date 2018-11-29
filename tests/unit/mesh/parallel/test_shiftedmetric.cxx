@@ -22,11 +22,11 @@ public:
 
     fillField(zShift, {{1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}, {1., 2., 3., 4., 5.}});
 
-    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<FakeCoordinates>(
+    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}));
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
   }
 
   ~ShiftedMetricTest() {
