@@ -30,6 +30,11 @@
 
 #include "dcomplex.hxx"
 
+class Options;
+
+void fft_init(bool fft_measure);
+void fft_init(Options* options = nullptr);
+
 /*!
  * Returns the fft of a real signal using fftw_forward
  *

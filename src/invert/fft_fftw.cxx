@@ -38,20 +38,26 @@
 #include <omp.h>
 #endif
 
-bool fft_options = false;
+namespace bout {
+namespace fft {
+bool fft_initialised = false;
 bool fft_measure;
+} // namespace fft
+} // namespace bout
 
-void fft_init()
-{
-  if(fft_options)
+void fft_init(Options* options) {
+  if (bout::fft::fft_initialised) {
     return;
-  //BOUT_OMP(critical)
-  {
-    Options *opt = Options::getRoot();
-    opt = opt->getSection("fft");
-    opt->get("fft_measure", fft_measure, false);
-    fft_options = true;
   }
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("fft");
+  }
+  fft_init((*options)["fft_measure"].withDefault(false));
+}
+
+void fft_init(bool fft_measure) {
+  bout::fft::fft_measure = fft_measure;
+  bout::fft::fft_initialised = true;
 }
 
 /***********************************************************
@@ -89,8 +95,9 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (bout::fft::fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     /* fftw call
      * Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -157,8 +164,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (bout::fft::fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     /* fftw call
      * Plan a complex-input/real-output discrete Fourier transform (DFT)
@@ -225,8 +233,9 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
       p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if(fft_measure)
+      if (bout::fft::fft_measure) {
         flags = FFTW_MEASURE;
+      }
 
       for(int i=0;i<n_th;i++)
         // fftw call
@@ -296,8 +305,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       p = new fftw_plan[n_th]; // Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure)
+      if (bout::fft::fft_measure) {
         flags = FFTW_MEASURE;
+      }
 
       for (int i = 0; i < n_th; i++)
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
@@ -350,8 +360,9 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (bout::fft::fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     // fftw call
     // Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -404,8 +415,9 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (bout::fft::fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
 
