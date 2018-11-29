@@ -93,7 +93,10 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
+  /// Read zShift from the mesh
   ShiftedMetric(Mesh &mesh);
+  /// Use an existing zShift
+  ShiftedMetric(Mesh &mesh, Field2D zShift);
   
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -182,6 +185,10 @@ private:
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
+
+  /// Calculate and store the phases for to/from field aligned and for
+  /// the parallel slices using zShift
+  void cachePhases();
 };
 
 
