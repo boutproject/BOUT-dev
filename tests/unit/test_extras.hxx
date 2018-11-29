@@ -22,9 +22,17 @@ const BoutReal BoutRealTolerance = 1e-15;
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+::testing::AssertionResult IsField3DEqualField3D(const Field3D &lhs, const Field3D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
+
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
+
+::testing::AssertionResult IsField2DEqualField2D(const Field2D &lhs, const Field2D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
 
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
