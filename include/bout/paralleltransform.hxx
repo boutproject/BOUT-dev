@@ -125,7 +125,7 @@ public:
   }
 
   /// A 3D array, implemented as nested vectors
-  typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
+  using arr3Dvec = std::vector<std::vector<std::vector<dcomplex>>>;
 private:
   Mesh &mesh; ///< The mesh this paralleltransform is part of
 
