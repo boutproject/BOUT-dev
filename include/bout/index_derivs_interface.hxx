@@ -84,10 +84,8 @@ T indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   }
 
   // Lookup the method
-  auto& derivativeStore = DerivativeStore<T>::getInstance();
-  typename DerivativeStore<T>::upwindFunc derivativeMethod;
-  derivativeMethod =
-      derivativeStore.getFlowDerivative(method, direction, stagger, derivType);
+  auto derivativeMethod = DerivativeStore<T>::getInstance().getFlowDerivative(
+      method, direction, stagger, derivType);
 
   // Create the result field
   T result(localmesh);
@@ -152,11 +150,8 @@ T indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method
   }
 
   // Lookup the method
-  auto& derivativeStore = DerivativeStore<T>::getInstance();
-  typename DerivativeStore<T>::standardFunc derivativeMethod;
-
-  derivativeMethod =
-      derivativeStore.getStandardDerivative(method, direction, stagger, derivType);
+  auto derivativeMethod = DerivativeStore<T>::getInstance().getStandardDerivative(
+      method, direction, stagger, derivType);
 
   // Create the result field
   T result(localmesh);
