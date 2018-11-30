@@ -820,7 +820,7 @@ public:
   metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
 
-produceCombinations<Set<e(DIRECTION, Z)>, Set<e(STAGGER, None)>,
+produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
                     Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
