@@ -514,8 +514,7 @@ struct registerMethod {
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
             Method{}, _1, _2, _3);
-        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
-            theFunc);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
       } else {
         const auto theFunc = std::bind(
             // Method to store in function
@@ -523,8 +522,7 @@ struct registerMethod {
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
             Method{}, _1, _2, _3);
-        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
-            theFunc);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
       }
       break;
     }
@@ -538,8 +536,7 @@ struct registerMethod {
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
             Method{}, _1, _2, _3, _4);
-        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
-            theFunc);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
       } else {
         const auto theFunc = std::bind(
             // Method to store in function
@@ -548,8 +545,7 @@ struct registerMethod {
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
             Method{}, _1, _2, _3, _4);
-        derivativeRegister.template registerDerivative<Direction, Stagger, Method>(
-            theFunc);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
       }
       break;
     }
