@@ -258,8 +258,8 @@ struct DerivativeStore {
                           DERIV_STRING(derivType).c_str());
     };
 
-    const auto resultOfFind = (*theMap).find(key);
-    if (resultOfFind != (*theMap).end())
+    const auto resultOfFind = theMap->find(key);
+    if (resultOfFind != theMap->end())
       return resultOfFind->second;
 
     throw BoutException(
@@ -300,8 +300,8 @@ struct DerivativeStore {
           DERIV_STRING(derivType).c_str());
     };
 
-    const auto resultOfFind = (*theMap).find(key);
-    if (resultOfFind != (*theMap).end())
+    const auto resultOfFind = theMap->find(key);
+    if (resultOfFind != theMap->end())
       return resultOfFind->second;
 
     throw BoutException(
