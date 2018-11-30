@@ -488,19 +488,22 @@ class Mesh {
   template <typename T>
   T indexDDX(const T& f, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::X, 1>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::X, DERIV::Standard>(f, outloc, method,
+                                                                     region);
   }
 
   template <typename T>
   T indexD2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::X, 2>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::X, DERIV::StandardSecond>(
+        f, outloc, method, region);
   }
 
   template <typename T>
   T indexD4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::X, 4>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::X, DERIV::StandardFourth>(
+        f, outloc, method, region);
   }
 
   ////////////// Y DERIVATIVE /////////////////
@@ -510,11 +513,12 @@ class Mesh {
              const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
     if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()
         && ((&f.yup() != &f) || (&f.ydown() != &f))) {
-      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 1>(f, outloc, method,
-                                                                   region);
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(
+          f, outloc, method, region);
     } else {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
-      T result = indexStandardDerivative<T, DIRECTION::Y, 1>(f, outloc, method, region);
+      T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::Standard>(
+          f, outloc, method, region);
       return f.getMesh()->fromFieldAligned(result);
     }
   }
@@ -524,11 +528,12 @@ class Mesh {
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
     if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()
         && ((&f.yup() != &f) || (&f.ydown() != &f))) {
-      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 2>(f, outloc, method,
-                                                                   region);
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
+          f, outloc, method, region);
     } else {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
-      T result = indexStandardDerivative<T, DIRECTION::Y, 2>(f, outloc, method, region);
+      T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(
+          f, outloc, method, region);
       return f.getMesh()->fromFieldAligned(result);
     }
   }
@@ -538,11 +543,12 @@ class Mesh {
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
     if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()
         && ((&f.yup() != &f) || (&f.ydown() != &f))) {
-      return indexStandardDerivative<T, DIRECTION::YOrthogonal, 4>(f, outloc, method,
-                                                                   region);
+      return indexStandardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
+          f, outloc, method, region);
     } else {
       const T f_aligned = f.getMesh()->toFieldAligned(f);
-      T result = indexStandardDerivative<T, DIRECTION::Y, 4>(f, outloc, method, region);
+      T result = indexStandardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(
+          f, outloc, method, region);
       return f.getMesh()->fromFieldAligned(result);
     }
   }
@@ -551,19 +557,22 @@ class Mesh {
   template <typename T>
   T indexDDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT,
              const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Z, 1>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::Z, DERIV::Standard>(f, outloc, method,
+                                                                     region);
   }
 
   template <typename T>
   T indexD2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Z, 2>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::Z, DERIV::StandardSecond>(
+        f, outloc, method, region);
   }
 
   template <typename T>
   T indexD4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
                const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) const {
-    return indexStandardDerivative<T, DIRECTION::Z, 4>(f, outloc, method, region);
+    return indexStandardDerivative<T, DIRECTION::Z, DERIV::StandardFourth>(
+        f, outloc, method, region);
   }
 
   ////// ADVECTION AND FLUX OPERATORS
@@ -781,7 +790,7 @@ class Mesh {
   
 private:
   /// The main kernel used for all standard derivatives
-  template <typename T, DIRECTION direction, int order>
+  template <typename T, DIRECTION direction, DERIV derivType>
   T indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
                             REGION region) const;
 
@@ -818,7 +827,8 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     auto tmp = indexFlowDerivative<T, direction, DERIV::Upwind>(vel, f, outloc, "DEFAULT",
                                                                 region);
-    tmp += indexStandardDerivative<T, direction, 1>(vel, outloc, "DEFAULT", region)
+    tmp += indexStandardDerivative<T, direction, DERIV::Standard>(vel, outloc, "DEFAULT",
+                                                                  region)
            * interp_to(f, tmp.getLocation());
     return tmp;
   }
@@ -860,11 +870,8 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   // Lookup the method
   auto& derivativeStore = DerivativeStore<T>::getInstance();
   typename DerivativeStore<T>::upwindFunc derivativeMethod;
-  if (derivType == DERIV::Upwind) {
-    derivativeMethod = derivativeStore.getUpwindDerivative(method, direction, stagger);
-  } else {
-    derivativeMethod = derivativeStore.getFluxDerivative(method, direction, stagger);
-  }
+  derivativeMethod =
+      derivativeStore.getFlowDerivative(method, direction, stagger, derivType);
 
   // Create the result field
   T result(f.getMesh());
@@ -883,7 +890,7 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   return result;
 }
 
-template <typename T, DIRECTION direction, int order>
+template <typename T, DIRECTION direction, DERIV derivType>
 T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
                                 REGION region) const {
   AUTO_TRACE();
@@ -892,8 +899,10 @@ T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& 
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "indexStandardDerivative only works on Field2D or Field3D input");
 
-  static_assert(order == 1 || order == 2 || order == 4,
-                "indexStandardDerivative only works for order in {1, 2, 4}");
+  static_assert(derivType == DERIV::Standard || derivType == DERIV::StandardSecond
+                    || derivType == DERIV::StandardFourth,
+                "indexStandardDerivative only works for derivType in {Standard, "
+                "StandardSecond, StandardFourth}");
 
   // Check that the mesh is correct
   ASSERT1(this == f.getMesh());
@@ -929,15 +938,8 @@ T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& 
   auto& derivativeStore = DerivativeStore<T>::getInstance();
   typename DerivativeStore<T>::standardFunc derivativeMethod;
 
-  if (order == 1) {
-    derivativeMethod = derivativeStore.getStandardDerivative(method, direction, stagger);
-  } else if (order == 2) {
-    derivativeMethod =
-        derivativeStore.getStandard2ndDerivative(method, direction, stagger);
-  } else {
-    derivativeMethod =
-        derivativeStore.getStandard4thDerivative(method, direction, stagger);
-  }
+  derivativeMethod =
+      derivativeStore.getStandardDerivative(method, direction, stagger, derivType);
 
   // Create the result field
   T result(f.getMesh());

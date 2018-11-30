@@ -51,10 +51,10 @@
 template <typename FieldType>
 struct DerivativeStore {
   using standardFunc = std::function<void(const FieldType&, FieldType&, const REGION)>;
-  using upwindFunc =
+  using flowFunc =
       std::function<void(const FieldType&, const FieldType&, FieldType&, const REGION)>;
-  using fluxFunc =
-      std::function<void(const FieldType&, const FieldType&, FieldType&, const REGION)>;
+  using upwindFunc = flowFunc;
+  using fluxFunc = flowFunc;
 
 #ifdef USE_ORDERED_MAP_FOR_DERIVATIVE_STORE
   template <typename K, typename V>
@@ -236,75 +236,90 @@ struct DerivativeStore {
   /// different name for each of the method-classes so everything is
   /// consistently treated
   standardFunc getStandardDerivative(std::string name, DIRECTION direction,
-                                     STAGGER stagger = STAGGER::None) const {
+                                     STAGGER stagger = STAGGER::None,
+                                     DERIV derivType = DERIV::Standard) const {
+
     AUTO_TRACE();
     const auto realName = nameLookup(
-        name,
-        defaultMethods.at(getKey(direction, stagger, DERIV_STRING(DERIV::Standard))));
+        name, defaultMethods.at(getKey(direction, stagger, DERIV_STRING(derivType))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = standard.find(key);
-    if (resultOfFind != standard.end())
+
+    const storageType<std::size_t, standardFunc>* theMap = nullptr;
+
+    if (derivType == DERIV::Standard) {
+      theMap = &standard;
+    } else if (derivType == DERIV::StandardSecond) {
+      theMap = &standardSecond;
+    } else if (derivType == DERIV::StandardFourth) {
+      theMap = &standardFourth;
+    } else {
+      throw BoutException("getStandardDerivative only works for derivType in {Standard, "
+                          "StandardSecond, StandardFourth} but receieved %s",
+                          DERIV_STRING(derivType).c_str());
+    };
+
+    const auto resultOfFind = (*theMap).find(key);
+    if (resultOfFind != (*theMap).end())
       return resultOfFind->second;
+
     throw BoutException(
-        "Couldn't find requested method %s in map for standard derivative.",
-        getMethodName(realName, direction, stagger).c_str());
+        "Couldn't find requested method %s in map for standard derivative of type %s.",
+        getMethodName(realName, direction, stagger).c_str(),
+        DERIV_STRING(derivType).c_str());
   };
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
-    const auto realName =
-        nameLookup(name,
-                   defaultMethods.at(
-                       getKey(direction, stagger, DERIV_STRING(DERIV::StandardSecond))));
-    const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = standardSecond.find(key);
-    if (resultOfFind != standardSecond.end())
-      return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for "
-                        "standardSecond derivative.",
-                        getMethodName(realName, direction, stagger).c_str());
+    return getStandardDerivative(name, direction, stagger, DERIV::StandardSecond);
   };
 
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
-    const auto realName =
-        nameLookup(name,
-                   defaultMethods.at(
-                       getKey(direction, stagger, DERIV_STRING(DERIV::StandardFourth))));
-    const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = standardFourth.find(key);
-    if (resultOfFind != standardFourth.end())
-      return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for "
-                        "standardFourth derivative.",
-                        getMethodName(realName, direction, stagger).c_str());
+    return getStandardDerivative(name, direction, stagger, DERIV::StandardFourth);
   };
 
-  upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
-                                 STAGGER stagger = STAGGER::None) const {
+  flowFunc getFlowDerivative(std::string name, DIRECTION direction,
+                             STAGGER stagger = STAGGER::None,
+                             DERIV derivType = DERIV::Upwind) const {
     AUTO_TRACE();
     const auto realName = nameLookup(
         name, defaultMethods.at(getKey(direction, stagger, DERIV_STRING(DERIV::Upwind))));
     const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = upwind.find(key);
-    if (resultOfFind != upwind.end())
+
+    const storageType<std::size_t, flowFunc>* theMap = nullptr;
+
+    if (derivType == DERIV::Upwind) {
+      theMap = &upwind;
+    } else if (derivType == DERIV::Flux) {
+      theMap = &flux;
+    } else {
+      throw BoutException(
+          "getFlowDerivative only works for derivType in {Upwind, Flux} but receieved %s",
+          DERIV_STRING(derivType).c_str());
+    };
+
+    const auto resultOfFind = (*theMap).find(key);
+    if (resultOfFind != (*theMap).end())
       return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for upwind derivative.",
-                        getMethodName(realName, direction, stagger).c_str());
+
+    throw BoutException(
+        "Couldn't find requested method %s in map for standard flow of type %s.",
+        getMethodName(realName, direction, stagger).c_str(),
+        DERIV_STRING(derivType).c_str());
+  }
+
+  upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
+                                 STAGGER stagger = STAGGER::None) const {
+    AUTO_TRACE();
+    return getFlowDerivative(name, direction, stagger, DERIV::Upwind);
   };
+
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
                              STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
-    const auto realName = nameLookup(
-        name, defaultMethods.at(getKey(direction, stagger, DERIV_STRING(DERIV::Flux))));
-    const auto key = getKey(direction, stagger, realName);
-    const auto resultOfFind = flux.find(key);
-    if (resultOfFind != flux.end())
-      return resultOfFind->second;
-    throw BoutException("Couldn't find requested method %s in map for flux derivative.",
-                        getMethodName(realName, direction, stagger).c_str());
+    return getFlowDerivative(name, direction, stagger, DERIV::Flux);
   };
 
   void initialise(Options* options) {
