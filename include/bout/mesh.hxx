@@ -450,18 +450,48 @@ class Mesh {
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  template <DIRECTION direction>
-  CELL_LOC getAllowedStaggerLoc() const;
+  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+    switch (direction) {
+    case (DIRECTION::X):
+      return CELL_XLOW;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return CELL_YLOW;
+    case (DIRECTION::Z):
+      return CELL_ZLOW;
+    }
+  };
 
   /// Returns the number of grid points in the
   /// particular direction
-  template <DIRECTION direction>
-  int getNpoints() const;
+  int getNpoints(DIRECTION direction) const {
+    switch (direction) {
+    case (DIRECTION::X):
+      return LocalNx;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return LocalNy;
+    case (DIRECTION::Z):
+      return LocalNz;
+    }
+  };
 
   /// Returns the number of guard points in the
   /// particular direction
-  template <DIRECTION direction>
-  int getNguard() const;
+  int getNguard(DIRECTION direction) const {
+    switch (direction) {
+    case (DIRECTION::X):
+      return xstart;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return ystart;
+    case (DIRECTION::Z):
+      return 2;
+    }
+  };
 
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS
@@ -483,6 +513,10 @@ class Mesh {
   /// the location of a second input field (velocity) is consistent.
   STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc,
                      const CELL_LOC allowedloc) const;
+
+  // All of these derivative routines should probably be moved out of mesh to become
+  // free functions. As an intermediate step the member routines could just call the
+  // free functions.
 
   ////// STANDARD OPERATORS
 
@@ -791,15 +825,6 @@ class Mesh {
   void derivs_init(Options* options);
   
 private:
-  // /// The main kernel used for all standard derivatives
-  // template <typename T, DIRECTION direction, DERIV derivType>
-  // T indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
-  //                           REGION region) const;
-
-  // /// The main kernel used for all upwind and flux derivatives
-  // template <typename T, DIRECTION direction, DERIV derivType>
-  // T indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
-  //                       const std::string& method, REGION region) const;
 
   /// Allocates default Coordinates objects
   std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
@@ -809,52 +834,6 @@ private:
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
-};
-
-/*******************************************************************************
- * Helper routines
- *******************************************************************************/
-
-template <DIRECTION direction>
-CELL_LOC Mesh::getAllowedStaggerLoc() const {
-  switch (direction) {
-  case (DIRECTION::X):
-    return CELL_XLOW;
-  case (DIRECTION::Y):
-  case (DIRECTION::YOrthogonal):
-  case (DIRECTION::YAligned):
-    return CELL_YLOW;
-  case (DIRECTION::Z):
-    return CELL_ZLOW;
-  }
-};
-
-template <DIRECTION direction>
-int Mesh::getNpoints() const {
-  switch (direction) {
-  case (DIRECTION::X):
-    return LocalNx;
-  case (DIRECTION::Y):
-  case (DIRECTION::YOrthogonal):
-  case (DIRECTION::YAligned):
-    return LocalNy;
-  case (DIRECTION::Z):
-    return LocalNz;
-  }
-};
-
-template <DIRECTION direction>
-int Mesh::getNguard() const {
-  switch (direction) {
-  case (DIRECTION::X):
-    return xstart;
-  case (DIRECTION::Y):
-  case (DIRECTION::YOrthogonal):
-  case (DIRECTION::YAligned):
-    return ystart;
-  case (DIRECTION::Z):
-    return 2;
-  }
 };
 
 #endif // __MESH_H__

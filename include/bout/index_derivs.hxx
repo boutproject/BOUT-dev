@@ -87,7 +87,7 @@ public:
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
             || meta.derivType == DERIV::StandardFourth)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
+    ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
     BOUT_FOR(i, var.getRegion(region)) {
       result[i] = apply(populateStencil<direction, stagger, nGuards>(var, i));
@@ -99,7 +99,7 @@ public:
   void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
+    ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
       BOUT_FOR(i, var.getRegion(region)) {
@@ -687,7 +687,7 @@ public:
   void standard(const T& var, T& result, REGION region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
+    ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2((std::is_base_of<Field3D,
@@ -702,7 +702,7 @@ public:
     auto* theMesh = var.getMesh();
 
     // Calculate how many Z wavenumbers will be removed
-    const int ncz = theMesh->template getNpoints<direction>();
+    const int ncz = theMesh->getNpoints(direction);
 
     int kfilter = static_cast<int>(theMesh->fft_derivs_filter * ncz
                                    / 2); // truncates, rounding down
@@ -759,7 +759,7 @@ public:
   void standard(const T& var, T& result, REGION region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
-    ASSERT2(var.getMesh()->template getNguard<direction>() >= nGuards);
+    ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2((std::is_base_of<Field3D,
@@ -774,7 +774,7 @@ public:
     auto* theMesh = var.getMesh();
 
     // Calculate how many Z wavenumbers will be removed
-    const int ncz = theMesh->template getNpoints<direction>();
+    const int ncz = theMesh->getNpoints(direction);
     const int kmax = ncz / 2;
 
     BOUT_OMP(parallel) {

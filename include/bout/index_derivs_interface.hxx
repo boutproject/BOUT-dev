@@ -64,8 +64,7 @@ T indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   }
 
   // Define properties of this approach
-  const CELL_LOC allowedStaggerLoc =
-      localmesh->template getAllowedStaggerLoc<direction>();
+  const CELL_LOC allowedStaggerLoc = localmesh->getAllowedStaggerLoc(direction);
 
   // Handle the staggering
   const CELL_LOC inloc = f.getLocation(); // Input locations
@@ -76,7 +75,7 @@ T indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   const STAGGER stagger = localmesh->getStagger(vloc, inloc, outloc, allowedStaggerLoc);
 
   // Check for early exit
-  const int nPoint = localmesh->template getNpoints<direction>();
+  const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
     auto tmp = T(0., localmesh);
@@ -134,8 +133,7 @@ T indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method
   }
 
   // Define properties of this approach
-  const CELL_LOC allowedStaggerLoc =
-      localmesh->template getAllowedStaggerLoc<direction>();
+  const CELL_LOC allowedStaggerLoc = localmesh->getAllowedStaggerLoc(direction);
 
   // Handle the staggering
   const CELL_LOC inloc = f.getLocation(); // Input location
@@ -145,7 +143,7 @@ T indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& method
   const STAGGER stagger = localmesh->getStagger(inloc, outloc, allowedStaggerLoc);
 
   // Check for early exit
-  const int nPoint = localmesh->template getNpoints<direction>();
+  const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
     auto tmp = T(0., localmesh);
