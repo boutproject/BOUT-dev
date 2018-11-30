@@ -231,6 +231,9 @@ public:
   /// to the `dd` template argument.
   template<int dd, DIRECTION dir>
   const inline SpecificInd plus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::plus");
     switch(dir) {
     case(DIRECTION::X):
       return xp(dd);
@@ -240,9 +243,6 @@ public:
       return yp(dd);
     case(DIRECTION::Z):
       return zp(dd);
-#if CHECK > 2      
-    default: throw BoutException("Invalid direction passed to SpecificInd.plus<int, direction>");
-#endif      
     }
   }
 
@@ -251,6 +251,9 @@ public:
   /// to the `dd` template argument.
   template<int dd, DIRECTION dir>
   const inline SpecificInd minus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::minus");
     switch(dir) {
     case(DIRECTION::X):
       return xm(dd);
@@ -260,9 +263,6 @@ public:
       return ym(dd);
     case(DIRECTION::Z):
       return zm(dd);
-#if CHECK > 2
-    default: throw BoutException("Invalid direction passed to SpecificInd.minus<int, direction>");
-#endif      
     }
   }
 

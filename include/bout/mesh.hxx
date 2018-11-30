@@ -807,7 +807,10 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
 
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
-                "indexDDX only works on Field2D or Field3D input");
+                "indexFlowDerivative only works on Field2D or Field3D input");
+
+  static_assert(derivType == DERIV::Upwind || derivType == DERIV::Flux,
+                "indexFlowDerivative only works for derivType in {Upwind, Flux}.");
 
   // Special handling for SPLIT method
   if ((derivType == DERIV::Flux) && (method == DIFF_METHOD_STRING(DIFF_SPLIT))) {
@@ -859,10 +862,8 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   typename DerivativeStore<T>::upwindFunc derivativeMethod;
   if (derivType == DERIV::Upwind) {
     derivativeMethod = derivativeStore.getUpwindDerivative(method, direction, stagger);
-  } else if (derivType == DERIV::Flux) {
-    derivativeMethod = derivativeStore.getFluxDerivative(method, direction, stagger);
   } else {
-    throw BoutException("Invalid derivative type in call to indexFlowDerivative.");
+    derivativeMethod = derivativeStore.getFluxDerivative(method, direction, stagger);
   }
 
   // Create the result field
@@ -889,7 +890,11 @@ T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& 
 
   // Checks
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
-                "indexDDX only works on Field2D or Field3D input");
+                "indexStandardDerivative only works on Field2D or Field3D input");
+
+  static_assert(order == 1 || order == 2 || order == 4,
+                "indexStandardDerivative only works for order in {1, 2, 4}");
+
   // Check that the mesh is correct
   ASSERT1(this == f.getMesh());
   // Check that the input variable has data
@@ -929,11 +934,9 @@ T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& 
   } else if (order == 2) {
     derivativeMethod =
         derivativeStore.getStandard2ndDerivative(method, direction, stagger);
-  } else if (order == 4) {
+  } else {
     derivativeMethod =
         derivativeStore.getStandard4thDerivative(method, direction, stagger);
-  } else {
-    throw BoutException("Invalid order used in indexStandardDerivative.");
   }
 
   // Create the result field
