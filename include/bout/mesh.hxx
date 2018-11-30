@@ -840,8 +840,9 @@ T Mesh::indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
   // Handle the staggering
   const CELL_LOC inloc = f.getLocation(); // Input locations
   const CELL_LOC vloc = vel.getLocation();
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = inloc;
+  }
   const STAGGER stagger = getStagger(vloc, inloc, outloc, allowedStaggerLoc);
 
   // Check for early exit
@@ -905,8 +906,9 @@ T Mesh::indexStandardDerivative(const T& f, CELL_LOC outloc, const std::string& 
 
   // Handle the staggering
   const CELL_LOC inloc = f.getLocation(); // Input location
-  if (outloc == CELL_DEFAULT)
+  if (outloc == CELL_DEFAULT) {
     outloc = inloc;
+  }
   const STAGGER stagger = getStagger(inloc, outloc, allowedStaggerLoc);
 
   // Check for early exit
