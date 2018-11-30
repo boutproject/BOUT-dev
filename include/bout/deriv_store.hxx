@@ -396,14 +396,6 @@ struct DerivativeStore {
     }
   }
 
-  /// The following stores what actual method to use when DIFF_DEFAULT
-  /// is passed. The key is determined using the getKey routine here,
-  /// where the name we pass is determined by the type of method (standard,
-  /// upwind etc.). Note for now we'll always use STAGGER::None as we
-  /// currently assume the default method is independent of staggering --
-  /// it might be useful to relax this assumption!
-  storageType<std::size_t, std::string> defaultMethods;
-
   /// Provide a method to override/force a specific default method
   void forceDefaultMethod(std::string methodName, DERIV deriv, DIRECTION direction,
                           STAGGER stagger = STAGGER::None) {
@@ -434,6 +426,14 @@ private:
   storageType<std::size_t, fluxFunc> flux;
 
   storageType<std::size_t, std::set<std::string>> registeredMethods;
+
+  /// The following stores what actual method to use when DIFF_DEFAULT
+  /// is passed. The key is determined using the getKey routine here,
+  /// where the name we pass is determined by the type of method (standard,
+  /// upwind etc.). Note for now we'll always use STAGGER::None as we
+  /// currently assume the default method is independent of staggering --
+  /// it might be useful to relax this assumption!
+  storageType<std::size_t, std::string> defaultMethods;
 
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
