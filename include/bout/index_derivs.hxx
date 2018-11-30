@@ -35,12 +35,14 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/deriv_store.hxx>
+#include <bout/index_derivs_interface.hxx>
 #include <bout/region.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
 
 #include <bout_types.hxx>
 #include <fft.hxx>
+#include <interpolation.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <unused.hxx>
@@ -821,5 +823,34 @@ produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
 
-#undef e
+class SplitFluxDerivativeType {
+public:
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
+  void standard(const T&, T&, REGION) const {
+    AUTO_TRACE();
+    throw BoutException("The SPLIT method isn't available for standard");
+  }
+
+  template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
+  void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
+    AUTO_TRACE();
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    result = indexFlowDerivative<T, direction, DERIV::Upwind>(
+        vel, var, result.getLocation(), "DEFAULT", region);
+    result += indexStandardDerivative<T, direction, DERIV::Standard>(
+                  vel, result.getLocation(), "DEFAULT", region)
+              * interp_to(var, result.getLocation());
+    return;
+  }
+  metaData meta{"SPLIT", 2, DERIV::Flux};
+};
+
+produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
+                        WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
+                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
+                    Set<SplitFluxDerivativeType>>
+    registerSplitDerivative(registerMethod{});
+
 #endif
