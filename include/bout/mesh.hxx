@@ -527,7 +527,7 @@ class Mesh {
                         const std::string& method = "DEFAULT",
                         REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexDDX(f, outloc, method, region);
+    return bout::derivatives::index::DDX(f, outloc, method, region);
   }
 
   template <typename T>
@@ -535,7 +535,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD2DX2(f, outloc, method, region);
+    return bout::derivatives::index::D2DX2(f, outloc, method, region);
   }
 
   template <typename T>
@@ -543,7 +543,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD4DX4(f, outloc, method, region);
+    return bout::derivatives::index::D4DX4(f, outloc, method, region);
   }
 
   ////////////// Y DERIVATIVE /////////////////
@@ -553,7 +553,7 @@ class Mesh {
                         const std::string& method = "DEFAULT",
                         REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexDDY(f, outloc, method, region);
+    return bout::derivatives::index::DDY(f, outloc, method, region);
   }
 
   template <typename T>
@@ -561,7 +561,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD2DY2(f, outloc, method, region);
+    return bout::derivatives::index::D2DY2(f, outloc, method, region);
   }
 
   template <typename T>
@@ -569,7 +569,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD4DY4(f, outloc, method, region);
+    return bout::derivatives::index::D4DY4(f, outloc, method, region);
   }
 
   ////////////// Z DERIVATIVE /////////////////
@@ -578,7 +578,7 @@ class Mesh {
                         const std::string& method = "DEFAULT",
                         REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexDDZ(f, outloc, method, region);
+    return bout::derivatives::index::DDZ(f, outloc, method, region);
   }
 
   template <typename T>
@@ -586,7 +586,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD2DZ2(f, outloc, method, region);
+    return bout::derivatives::index::D2DZ2(f, outloc, method, region);
   }
 
   template <typename T>
@@ -594,7 +594,7 @@ class Mesh {
                           const std::string& method = "DEFAULT",
                           REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexD4DZ4(f, outloc, method, region);
+    return bout::derivatives::index::D4DZ4(f, outloc, method, region);
   }
 
   ////// ADVECTION AND FLUX OPERATORS
@@ -619,7 +619,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexVDDX(vel, f, outloc, method, region);
+    return bout::derivatives::index::VDDX(vel, f, outloc, method, region);
   }
 
   template <typename T>
@@ -627,7 +627,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexFDDX(vel, f, outloc, method, region);
+    return bout::derivatives::index::FDDX(vel, f, outloc, method, region);
   }
 
   ////////////// Y DERIVATIVE /////////////////
@@ -637,7 +637,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexVDDY(vel, f, outloc, method, region);
+    return bout::derivatives::index::VDDY(vel, f, outloc, method, region);
   }
 
   template <typename T>
@@ -645,7 +645,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexFDDY(vel, f, outloc, method, region);
+    return bout::derivatives::index::FDDY(vel, f, outloc, method, region);
   }
 
   ////////////// Z DERIVATIVE /////////////////
@@ -655,7 +655,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexVDDZ(vel, f, outloc, method, region);
+    return bout::derivatives::index::VDDZ(vel, f, outloc, method, region);
   }
 
   template <typename T>
@@ -663,7 +663,7 @@ class Mesh {
                          const std::string& method = "DEFAULT",
                          REGION region = RGN_NOBNDRY) const) {
     AUTO_TRACE();
-    return bout::derivatives::index::indexFDDZ(vel, f, outloc, method, region);
+    return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
   ///////////////////////////////////////////////////////////
