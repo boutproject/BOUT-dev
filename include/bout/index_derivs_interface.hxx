@@ -35,6 +35,10 @@
 class Field3D;
 class Field2D;
 
+namespace bout {
+namespace derivatives {
+namespace index {
+
 /// The main kernel used for all upwind and flux derivatives
 template <typename T, DIRECTION direction, DERIV derivType>
 T indexFlowDerivative(const T& vel, const T& f, CELL_LOC outloc,
@@ -364,4 +368,8 @@ T indexFDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
   return indexFlowDerivative<T, DIRECTION::Z, DERIV::Flux>(vel, f, outloc, method,
                                                            region);
 }
+
+} // Namespace index
+} // Namespace derivatives
+} // Namespace bout
 #endif
