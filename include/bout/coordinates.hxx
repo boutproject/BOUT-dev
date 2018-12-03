@@ -35,8 +35,17 @@ class Coordinates;
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#define METRIC_FIELD_TYPE Field2D
-//#define METRIC_FIELD_TYPE Field3D
+#define COORDINATES_USE_3D 1
+
+#ifdef COORDINATES_USE_3D
+#define COORDINATES_FIELD_TYPE Field3D
+#define COORDINATES_VECTOR_TYPE Vector3D
+#else
+#define COORDINATES_FIELD_TYPE Field2D
+#define COORDINATES_VECTOR_TYPE Vector2D
+#endif
+
+//
 
 #include "mesh.hxx"
 #include "datafile.hxx"
@@ -50,7 +59,8 @@ class Coordinates;
  */ 
 class Coordinates {
 public:
-  using metric_type = METRIC_FIELD_TYPE;
+  using metric_field_type = COORDINATES_FIELD_TYPE;
+  using metric_vector_type = COORDINATES_VECTOR_TYPE;
 
   /// Standard constructor from input
   Coordinates(Mesh *mesh);
@@ -67,37 +77,37 @@ public:
    */
   void outputVars(Datafile &file);
 
-  metric_type dx, dy; ///< Mesh spacing in x and y
+  metric_field_type dx, dy; ///< Mesh spacing in x and y
   BoutReal dz; ///< Mesh spacing in Z
 
   BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
-  metric_type d1_dx,
+  metric_field_type d1_dx,
       d1_dy; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
 
-  metric_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
+  metric_field_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 
-  metric_type Bxy; ///< Magnitude of B = nabla z times nabla x
+  metric_field_type Bxy; ///< Magnitude of B = nabla z times nabla x
 
   /// Contravariant metric tensor (g^{ij})
-  metric_type g11, g22, g33, g12, g13, g23;
+  metric_field_type g11, g22, g33, g12, g13, g23;
 
   /// Covariant metric tensor
-  metric_type g_11, g_22, g_33, g_12, g_13, g_23;
+  metric_field_type g_11, g_22, g_33, g_12, g_13, g_23;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  metric_type G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  metric_type G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  metric_type G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
+  metric_field_type G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
+  metric_field_type G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
+  metric_field_type G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
 
-  metric_type G1, G2, G3;
+  metric_field_type G1, G2, G3;
 
-  metric_type
+  metric_field_type
       ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
 
-  metric_type IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
+  metric_field_type IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry();
@@ -107,34 +117,35 @@ public:
 
   // Operators
 
-  const metric_type DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY);
-  const metric_type DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                        REGION region = RGN_NOBNDRY) {
+  const metric_field_type DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                              const std::string& method = "DEFAULT",
+                              REGION region = RGN_NOBNDRY);
+  const metric_field_type DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
+                              REGION region = RGN_NOBNDRY) {
     return DDX(f, outloc, DIFF_METHOD_STRING(method), region);
   };
 
-  const metric_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY);
-  const metric_type DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                        REGION region = RGN_NOBNDRY) {
+  const metric_field_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                              const std::string& method = "DEFAULT",
+                              REGION region = RGN_NOBNDRY);
+  const metric_field_type DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
+                              REGION region = RGN_NOBNDRY) {
     return DDY(f, outloc, DIFF_METHOD_STRING(method), region);
   };
 
-  const metric_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY);
-  const metric_type DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                        REGION region = RGN_NOBNDRY) {
+  const metric_field_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                              const std::string& method = "DEFAULT",
+                              REGION region = RGN_NOBNDRY);
+  const metric_field_type DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
+                              REGION region = RGN_NOBNDRY) {
     return DDZ(f, outloc, DIFF_METHOD_STRING(method), region);
   };
 
   /// Gradient along magnetic field  b.Grad(f)
-  const metric_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-                             const std::string& method = "DEFAULT");
-  const metric_type Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
+  const metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+                                   const std::string& method = "DEFAULT");
+  const metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc,
+                                   DIFF_METHOD method) {
     return Grad_par(var, outloc, DIFF_METHOD_STRING(method));
   };
 
@@ -145,11 +156,11 @@ public:
   };
 
   /// Advection along magnetic field V*b.Grad(f)
-  const metric_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                  CELL_LOC outloc = CELL_DEFAULT,
-                                  const std::string& method = "DEFAULT");
-  const metric_type Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                                  DIFF_METHOD method) {
+  const metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                        CELL_LOC outloc = CELL_DEFAULT,
+                                        const std::string& method = "DEFAULT");
+  const metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                        CELL_LOC outloc, DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, DIFF_METHOD_STRING(method));
   };
 
@@ -162,9 +173,9 @@ public:
   };
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
-  const metric_type Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& method = "DEFAULT");
-  const metric_type Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  const metric_field_type Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                  const std::string& method = "DEFAULT");
+  const metric_field_type Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
     return Div_par(f, outloc, DIFF_METHOD_STRING(method));
   };
 
@@ -175,9 +186,10 @@ public:
   };
 
   // Second derivative along magnetic field
-  const metric_type Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                               const std::string& method = "DEFAULT");
-  const metric_type Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  const metric_field_type Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                     const std::string& method = "DEFAULT");
+  const metric_field_type Grad2_par2(const Field2D& f, CELL_LOC outloc,
+                                     DIFF_METHOD method) {
     return Grad2_par2(f, outloc, DIFF_METHOD_STRING(method));
   };
 
@@ -190,17 +202,17 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  const metric_type Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+  const metric_field_type Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
   const Field3D Delp2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   const FieldPerp Delp2(const FieldPerp &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
-  const metric_type Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+  const metric_field_type Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
   const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  const metric_type Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+  const metric_field_type Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
   const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
 private:
