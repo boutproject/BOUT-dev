@@ -29,6 +29,7 @@
 #ifndef __INDEX_DERIVS_INTERFACE_HXX__
 #define __INDEX_DERIVS_INTERFACE_HXX__
 
+#include <bout/deriv_store.hxx>
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 
