@@ -815,6 +815,7 @@ enable_shared
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
+enable_metric_3d
 with_gcov
 enable_code_coverage
 with_hdf5
@@ -1479,6 +1480,7 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
+  --metric-3D=no/yes      If yes use Field3D to store coordinates metric data
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
   --disable-nls           do not use Native Language Support
@@ -2716,6 +2718,13 @@ if test "${enable_pvode_openmp+set}" = set; then :
   enableval=$enable_pvode_openmp;
 else
   enable_pvode_openmp=no
+fi
+
+# Check whether --enable-metric_3d was given.
+if test "${enable_metric_3d+set}" = set; then :
+  enableval=$enable_metric_3d;
+else
+  metric_3d=no
 fi
 
 
@@ -6078,6 +6087,19 @@ $as_echo "$as_me: WARNING: Native backtrace disabled" >&2;}
 fi
 
 fi
+
+fi
+
+if test "x$metric_3d" != "xno"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using Field3D to store coordinates data" >&5
+$as_echo "$as_me: Using Field3D to store coordinates data" >&6;}
+       CXXFLAGS="$CXXFLAGS -DCOORDINATES_USE_3D=yes"
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using Field2D to store coordinates data" >&5
+$as_echo "$as_me: Using Field2D to store coordinates data" >&6;}
 
 fi
 
@@ -13348,21 +13370,16 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern int *_nl_domain_bindings;
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_domain_bindings)
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_domain_bindings
 
   ;
   return 0;
@@ -14115,25 +14132,20 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -14152,25 +14164,20 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
