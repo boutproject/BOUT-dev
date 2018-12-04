@@ -179,6 +179,7 @@ namespace {
   /// Corner guard cells are set to BoutNaN
 Coordinates::metric_field_type
 interpolateAndNeumann(const Coordinates::metric_field_type& f, CELL_LOC location) {
+#ifndef COORDINATES_USE_3D
   Mesh* localmesh = f.getMesh();
   auto result = interp_to(f, location, RGN_NOBNDRY);
   localmesh->communicate(result);
@@ -218,6 +219,10 @@ interpolateAndNeumann(const Coordinates::metric_field_type& f, CELL_LOC location
   }
 
   return result;
+#else
+  throw BoutException(
+      "Staggered coordinates locations not currently supported with 3D metrics.");
+#endif
   }
 }
 
@@ -491,29 +496,37 @@ int Coordinates::calcCovariant() {
 
   for (int jx = 0; jx < localmesh->LocalNx; jx++) {
     for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g11(jx, jy);
-      a(1, 1) = g22(jx, jy);
-      a(2, 2) = g33(jx, jy);
+#ifndef COORDINATES_USE_3D
+      {
+        int jz = 0;
+#else
+      for (int jz = 0; jz < localmesh->LocalNz; jz++) { // Inefficient for 2D metric type
+#endif
+        // set elements of g
+        a(0, 0) = g11(jx, jy, jz);
+        a(1, 1) = g22(jx, jy, jz);
+        a(2, 2) = g33(jx, jy, jz);
 
-      a(0, 1) = a(1, 0) = g12(jx, jy);
-      a(1, 2) = a(2, 1) = g23(jx, jy);
-      a(0, 2) = a(2, 0) = g13(jx, jy);
+        a(0, 1) = a(1, 0) = g12(jx, jy, jz);
+        a(1, 2) = a(2, 1) = g23(jx, jy, jz);
+        a(0, 2) = a(2, 0) = g13(jx, jy, jz);
 
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
+        // invert
+        if (invert3x3(a)) {
+          output_error.write("\tERROR: metric tensor is singular at (%d, %d, %d)\n", jx,
+                             jy, jz);
+          return 1;
+        }
+
+        // put elements into g_{ij}
+        g_11(jx, jy, jz) = a(0, 0);
+        g_22(jx, jy, jz) = a(1, 1);
+        g_33(jx, jy, jz) = a(2, 2);
+
+        g_12(jx, jy, jz) = a(0, 1);
+        g_13(jx, jy, jz) = a(0, 2);
+        g_23(jx, jy, jz) = a(1, 2);
       }
-
-      // put elements into g_{ij}
-      g_11(jx, jy) = a(0, 0);
-      g_22(jx, jy) = a(1, 1);
-      g_33(jx, jy) = a(2, 2);
-
-      g_12(jx, jy) = a(0, 1);
-      g_13(jx, jy) = a(0, 2);
-      g_23(jx, jy) = a(1, 2);
     }
   }
 
@@ -551,29 +564,37 @@ int Coordinates::calcContravariant() {
 
   for (int jx = 0; jx < localmesh->LocalNx; jx++) {
     for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g_11(jx, jy);
-      a(1, 1) = g_22(jx, jy);
-      a(2, 2) = g_33(jx, jy);
+#ifndef COORDINATES_USE_3D
+      {
+        int jz = 0;
+#else
+      for (int jz = 0; jz < localmesh->LocalNz; jz++) { // Inefficient for 2D metric type
+#endif
+        // set elements of g
+        a(0, 0) = g_11(jx, jy, jz);
+        a(1, 1) = g_22(jx, jy, jz);
+        a(2, 2) = g_33(jx, jy, jz);
 
-      a(0, 1) = a(1, 0) = g_12(jx, jy);
-      a(1, 2) = a(2, 1) = g_23(jx, jy);
-      a(0, 2) = a(2, 0) = g_13(jx, jy);
+        a(0, 1) = a(1, 0) = g_12(jx, jy, jz);
+        a(1, 2) = a(2, 1) = g_23(jx, jy, jz);
+        a(0, 2) = a(2, 0) = g_13(jx, jy, jz);
 
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
+        // invert
+        if (invert3x3(a)) {
+          output_error.write("\tERROR: metric tensor is singular at (%d, %d, %d)\n", jx,
+                             jy, jz);
+          return 1;
+        }
+
+        // put elements into g_{ij}
+        g11(jx, jy, jz) = a(0, 0);
+        g22(jx, jy, jz) = a(1, 1);
+        g33(jx, jy, jz) = a(2, 2);
+
+        g12(jx, jy, jz) = a(0, 1);
+        g13(jx, jy, jz) = a(0, 2);
+        g23(jx, jy, jz) = a(1, 2);
       }
-
-      // put elements into g_{ij}
-      g11(jx, jy) = a(0, 0);
-      g22(jx, jy) = a(1, 1);
-      g33(jx, jy) = a(2, 2);
-
-      g12(jx, jy) = a(0, 1);
-      g13(jx, jy) = a(0, 2);
-      g23(jx, jy) = a(1, 2);
     }
   }
 
@@ -632,6 +653,10 @@ const Coordinates::metric_field_type Coordinates::DDX(const Field2D& f, CELL_LOC
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
+const Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc,
+                               const std::string& method, REGION region) {
+  return ::DDX(f, outloc, method, region);
+};
 
 const Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                                       const std::string& method,
@@ -639,6 +664,10 @@ const Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
+const Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc,
+                               const std::string& method, REGION region) {
+  return ::DDY(f, outloc, method, region);
+};
 
 const Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f),
                                                       CELL_LOC loc,
@@ -650,8 +679,10 @@ const Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D
   result.setLocation(location);
   return result;
 }
-
-#include <derivs.hxx>
+const Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc,
+                               const std::string& method, REGION region) {
+  return ::DDZ(f, outloc, method, region);
+};
 
 /////////////////////////////////////////////////////////
 // Parallel gradient

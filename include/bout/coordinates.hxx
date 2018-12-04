@@ -35,6 +35,9 @@ class Coordinates;
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
+#include "field2d.hxx"
+#include "field3d.hxx"
+
 #ifdef COORDINATES_USE_3D
 #define COORDINATES_FIELD_TYPE Field3D
 #define COORDINATES_VECTOR_TYPE Vector3D
@@ -121,6 +124,8 @@ public:
                               REGION region = RGN_NOBNDRY) {
     return DDX(f, outloc, DIFF_METHOD_STRING(method), region);
   };
+  const Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
 
   const metric_field_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                               const std::string& method = "DEFAULT",
@@ -129,6 +134,8 @@ public:
                               REGION region = RGN_NOBNDRY) {
     return DDY(f, outloc, DIFF_METHOD_STRING(method), region);
   };
+  const Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
 
   const metric_field_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                               const std::string& method = "DEFAULT",
@@ -137,6 +144,8 @@ public:
                               REGION region = RGN_NOBNDRY) {
     return DDZ(f, outloc, DIFF_METHOD_STRING(method), region);
   };
+  const Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
 
   /// Gradient along magnetic field  b.Grad(f)
   const metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
