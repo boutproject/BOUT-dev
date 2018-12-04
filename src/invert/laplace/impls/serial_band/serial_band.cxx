@@ -40,6 +40,7 @@
 
 LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  ASSERT1((std::same<A.getCoordinates()::metric_field_type, Field2D>::value));
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
@@ -80,6 +81,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
+#ifndef COORDINATES_USE_3D
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
   FieldPerp x(localmesh);
@@ -419,6 +421,8 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
 
     irfft(&xk(ix, 0), ncz, x[ix]);
   }
-
   return x;
+#else
+  return FieldPerp{};
+#endif
 }

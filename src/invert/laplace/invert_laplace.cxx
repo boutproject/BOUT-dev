@@ -262,6 +262,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d,
                             CELL_LOC loc) {
+#ifndef COORDINATES_USE_3D
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -344,6 +345,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
   c = dcomplex(coef1 + coef4,kwave*coef3);
+#endif
 }
 
 /// Sets the coefficients for parallel tridiagonal matrix inversion
@@ -414,7 +416,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
-
+#ifndef COORDINATES_USE_3D
   ASSERT1(a->getLocation() == location);
   ASSERT1(ccoef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
@@ -729,6 +731,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
   }
+#endif
 }
 
 /**********************************************************************************

@@ -40,7 +40,7 @@ BoutReal soltime=0.0,settime=0.0;
 LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
-
+  ASSERT1((std::same<A.getCoordinates()::metric_field_type, Field2D>::value));
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
   A.setLocation(location);
@@ -198,7 +198,7 @@ BOUT_OMP(master)
 }
 
 const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
-
+#ifndef COORDINATES_USE_3D
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
@@ -543,10 +543,13 @@ BOUT_OMP(for)
 #endif
 
   return result;
+#else
+  return FieldPerp{};
+#endif
 }
 
 void LaplaceMultigrid::generateMatrixF(int level) {
-
+#ifndef COORDINATES_USE_3D
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
   // Set (fine-level) matrix entries
@@ -679,5 +682,6 @@ BOUT_OMP(for)
       }
     }
   }
+#endif
 }
 

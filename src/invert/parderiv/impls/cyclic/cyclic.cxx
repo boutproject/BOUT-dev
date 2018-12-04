@@ -50,6 +50,7 @@
 
 InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+  ASSERT1((std::same<A.getCoordinates()::metric_field_type, Field2D>::value));
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
 }
@@ -58,6 +59,7 @@ InvertParCR::~InvertParCR() {
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
+#ifndef COORDINATES_USE_3D
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
 
@@ -217,5 +219,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   delete cr;
 
   return localmesh->fromFieldAligned(result);
+#else
+  return Field3D{};
+#endif
 }
 

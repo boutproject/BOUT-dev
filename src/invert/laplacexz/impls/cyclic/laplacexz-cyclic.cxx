@@ -9,7 +9,7 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), mesh(m) {
-
+  ASSERT1((std::same<m.getCoordinates()::metric_field_type, Field2D>::value));
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;
 
@@ -57,6 +57,7 @@ LaplaceXZcyclic::~LaplaceXZcyclic() {
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
+#ifndef COORDINATES_USE_3D
   TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
   
@@ -152,9 +153,11 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   }
   // Set coefficients in tridiagonal solver
   cr->setCoefs(acoef, bcoef, ccoef);
+#endif
 }
 
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
+#ifndef COORDINATES_USE_3D
   Timer timer("invert");
 
   Mesh *mesh = rhs.getMesh();
@@ -260,4 +263,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   }
   
   return result;
+#else
+  return Field3D{};
+#endif
 }
