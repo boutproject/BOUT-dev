@@ -37,8 +37,9 @@
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 
-#include <utils.hxx>
 #include <bout/constants.hxx>
+#include <bout/rvec.hxx>
+#include <utils.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {
@@ -324,12 +325,17 @@ BoutReal Average_XY(const Field2D &var) {
   return Vol_Glb;
 }
 
+BoutReal Average_XY(const Field3D& var) {
+  AUTO_TRACE();
+  throw BoutException("Average_XY(Field3D) not yet implemented.");
+}
+
 BoutReal Vol_Integral(const Field2D &var) {
   Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
   Coordinates *metric = var.getCoordinates();
 
-  Field2D result = metric->J * var * metric->dx * metric->dy;
+  auto result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>((mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy)*PI * 2.;
