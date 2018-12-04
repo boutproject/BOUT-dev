@@ -336,11 +336,13 @@ name, e.g. if multiple meshes are used.
 
 -  ``second``, method for second derivatives
 
+-  ``fourth``, method for fourth derivatives
+
 -  ``upwind``, method for upwinding terms
 
 -  ``flux``, for conservation law terms
 
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
+The methods which can be specified include U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
 

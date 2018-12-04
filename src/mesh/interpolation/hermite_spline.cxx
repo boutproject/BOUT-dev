@@ -113,11 +113,11 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
-  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, "DEFAULT", RGN_ALL);
   localmesh->communicateXZ(fz);
-  Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
