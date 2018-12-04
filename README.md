@@ -174,3 +174,10 @@ GNU Lesser General Public License for more details.
 
 A copy of the LGPL license is in [LICENSE](LICENSE). Since this is based
 on (and refers to) the GPL, this is included in [LICENSE.GPL](LICENSE.GPL).
+
+Some of the autoconf macros under [m4](m4) are licensed under
+GPLv3. These are not necessary to either build or run BOUT++, but are
+used in the creation of [configure](configure) from
+[configure.ac](configure.ac), and are provided as a courtesy to
+developers. You are free to substitute them with other autoconf macros
+that provide equivalent functionality.
