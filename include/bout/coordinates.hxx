@@ -38,14 +38,6 @@ class Coordinates;
 #include "field2d.hxx"
 #include "field3d.hxx"
 
-#ifdef COORDINATES_USE_3D
-#define COORDINATES_FIELD_TYPE Field3D
-#define COORDINATES_VECTOR_TYPE Vector3D
-#else
-#define COORDINATES_FIELD_TYPE Field2D
-#define COORDINATES_VECTOR_TYPE Vector2D
-#endif
-
 class Datafile;
 class Mesh;
 
@@ -59,8 +51,11 @@ class Mesh;
  */ 
 class Coordinates {
 public:
-  using metric_field_type = COORDINATES_FIELD_TYPE;
-  using metric_vector_type = COORDINATES_VECTOR_TYPE;
+#ifdef COORDINATES_USE_3D
+  using metric_field_type = Field3D;
+#else
+  using metric_field_type = Field2D;
+#endif
 
   /// Standard constructor from input
   Coordinates(Mesh *mesh);
