@@ -214,11 +214,14 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z, 
-                              x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
+          boundary->add_point(
+              x, y, z, x + dx, y + 0.5 * dir,
+              z + dz, // Intersection point in local index space
+              0.5
+                  * coord.dy(x, y,
+                             z), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+              PI                 // Right-angle intersection
+              );
         }
 
         //----------------------------------------
