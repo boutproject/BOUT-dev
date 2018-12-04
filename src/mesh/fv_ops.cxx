@@ -10,6 +10,7 @@ namespace FV {
 
   // Div ( a Laplace_perp(f) )  -- Vorticity
   const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
+#ifndef COORDINATES_USE_3D
     ASSERT2(a.getLocation() == f.getLocation());
 
     Mesh *mesh = a.getMesh();
@@ -112,6 +113,9 @@ namespace FV {
       }
   
     return result;
+#else
+    throw BoutException("Not all FV:: ops currently support 3D metrics.");
+#endif
   }
 
   const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
@@ -191,9 +195,8 @@ namespace FV {
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
-        BoutReal dy3 = SQ(coord->dy(i,j))*coord->dy(i,j);
         for(int k=0;k<mesh->LocalNz;k++) {
-          
+          BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
           // 3rd derivative at right boundary
           
           BoutReal d3fdx3 = (
@@ -202,12 +205,13 @@ namespace FV {
                              + 3.*f(i,j,  k)
                              -    f(i,j-1,k)
                              ) / dy3;
-          
-          BoutReal flux = 0.5*(d(i,j,k) + d(i,j+1,k))*(coord->J(i,j) + coord->J(i,j+1)) * d3fdx3;
-          
-          result(i,j,  k) += flux / (coord->J(i,j) * coord->dy(i,j));
-          result(i,j+1,k) -= flux / (coord->J(i,j+1) * coord->dy(i,j+1));
-          
+
+          BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
+                          * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdx3;
+
+          result(i, j, k) += flux / (coord->J(i, j, k) * coord->dy(i, j, k));
+          result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
+
           if(j == mesh->ystart && (!mesh->firstY())) {
             // Left cell boundary, no flux through boundaries
             d3fdx3 = (
@@ -216,11 +220,13 @@ namespace FV {
                       + 3.*f(i,j-1,k)
                       -    f(i,j-2,k)
                       ) / dy3;
-            
-            flux = 0.5*(d(i,j,k) + d(i,j-1,k))*(coord->J(i,j) + coord->J(i,j-1)) * d3fdx3;
-            
-            result(i,j,  k) -= flux / (coord->J(i,j) * coord->dy(i,j));
-            result(i,j-1,k) += flux / (coord->J(i,j-1) * coord->dy(i,j-1));
+
+            flux = 0.5 * (d(i, j, k) + d(i, j - 1, k))
+                   * (coord->J(i, j, k) + coord->J(i, j - 1, k)) * d3fdx3;
+
+            result(i, j, k) -= flux / (coord->J(i, j, k) * coord->dy(i, j, k));
+            result(i, j - 1, k) +=
+                flux / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
           }
         }
       }
@@ -250,16 +256,20 @@ namespace FV {
         
         if (bndry_flux || (j != mesh->yend) || !has_upper_boundary) {
           // Calculate the fluxes
-          
-          // Right boundary common factors
-          BoutReal common_factor = 0.25 *
-            (coord->dy(i, j) + coord->dy(i, j + 1)) *
-            (coord->J(i, j) + coord->J(i, j + 1));
-          
-          BoutReal factor_rc = common_factor / (coord->J(i,j) * coord->dy(i,j));
-          BoutReal factor_rp = common_factor / (coord->J(i,j+1) * coord->dy(i,j+1));
-          if ( j != mesh->yend || !has_upper_boundary ) {
-            for(int k=0;k<mesh->LocalNz;k++) {
+
+          if (j != mesh->yend || !has_upper_boundary) {
+
+            for (int k = 0; k < mesh->LocalNz; k++) {
+              // Right boundary common factors
+              BoutReal common_factor = 0.25
+                                       * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
+                                       * (coord->J(i, j, j) + coord->J(i, j + 1, k));
+
+              BoutReal factor_rc =
+                  common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
+              BoutReal factor_rp =
+                  common_factor / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
+
               // Not on domain boundary
               // 3rd derivative at right cell boundary
               
@@ -278,6 +288,15 @@ namespace FV {
             // Use a one-sided difference formula
             
             for(int k=0;k<mesh->LocalNz;k++) {
+              // Right boundary common factors
+              BoutReal common_factor = 0.25
+                                       * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
+                                       * (coord->J(i, j, j) + coord->J(i, j + 1, k));
+
+              BoutReal factor_rc =
+                  common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
+              BoutReal factor_rp =
+                  common_factor / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
 
               BoutReal d3fdx3 = -((16. / 5) * 0.5 *
                                   (f(i, j + 1, k) + f(i, j, k)) // Boundary value f_b
@@ -297,16 +316,18 @@ namespace FV {
         if (bndry_flux || (j != mesh->ystart) || !has_lower_boundary) {
           // Calculate the fluxes
 
-          BoutReal common_factor = 0.25 *
-            (coord->dy(i, j) + coord->dy(i, j + 1)) *
-            (coord->J(i, j) + coord->J(i, j - 1));
-
-          BoutReal factor_lc = common_factor / (coord->J(i, j) * coord->dy(i, j));
-          BoutReal factor_lm = common_factor / (coord->J(i, j - 1) * coord->dy(i, j - 1));
             
           if ( j != mesh->ystart || !has_lower_boundary ) {
             for(int k=0;k<mesh->LocalNz;k++) {
-          
+              BoutReal common_factor = 0.25
+                                       * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
+                                       * (coord->J(i, j, k) + coord->J(i, j - 1, k));
+
+              BoutReal factor_lc =
+                  common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
+              BoutReal factor_lm =
+                  common_factor / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
+
               // Not on a domain boundary
               BoutReal d3fdx3 = (f(i, j + 1, k)
                                  - 3. * f(i, j, k)
@@ -319,12 +340,20 @@ namespace FV {
           } else {
             // On a domain (Y) boundary
             for(int k=0;k<mesh->LocalNz;k++) {
-              BoutReal d3fdx3 = -(-(16. / 5) * 0.5 *
-                                  (f(i, j - 1, k) + f(i, j, k)) // Boundary value f_b
-                                  + 6. * f(i, j, k)                 // f_0
-                                  - 4. * f(i, j + 1, k)             // f_1
-                                  + (6. / 5) * f(i, j + 2, k)       // f_2
-                                  );
+              BoutReal common_factor = 0.25
+                                       * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
+                                       * (coord->J(i, j, k) + coord->J(i, j - 1, k));
+
+              BoutReal factor_lc =
+                  common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
+              BoutReal factor_lm =
+                  common_factor / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
+              BoutReal d3fdx3 =
+                  -(-(16. / 5) * 0.5 * (f(i, j - 1, k) + f(i, j, k)) // Boundary value f_b
+                    + 6. * f(i, j, k)                                // f_0
+                    - 4. * f(i, j + 1, k)                            // f_1
+                    + (6. / 5) * f(i, j + 2, k)                      // f_2
+                    );
 
               result(i, j    , k) -= d3fdx3 * factor_lc; 
               result(i, j - 1, k) += d3fdx3 * factor_lm;
