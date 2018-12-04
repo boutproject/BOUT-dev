@@ -31,8 +31,8 @@ const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) 
           
         BoutReal fp = (SR*f(i,j,k) - SL*f(i+1,j,k) + SL*SR*(u(i+1,j,k) - u(i,j,k)) ) / (SR - SL);
           BoutReal fm = (SR*f(i-1,j,k) - SL*f(i,j,k) + SL*SR*(u(i,j,k) - u(i-1,j,k)) ) / (SR - SL);
-          
-          result(i,j,k) = (fm - fp) / coord->dx(i,j);
+
+          result(i, j, k) = (fm - fp) / coord->dx(i, j, k);
         }
   return result;
 }
