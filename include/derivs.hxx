@@ -69,10 +69,11 @@ inline const Field3D DDX(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                         const std::string& method = "DEFAULT",
+                                         REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type
+DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
   return DDX(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -107,10 +108,11 @@ inline const Field3D DDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                         const std::string& method = "DEFAULT",
+                                         REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type
+DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
   return DDY(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -145,10 +147,11 @@ inline const Field3D DDZ(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                         const std::string& method = "DEFAULT",
+                                         REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type
+DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
   return DDZ(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -223,10 +226,13 @@ inline const Field3D D2DX2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DX2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DX2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DX2(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DX2(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D2DX2(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -261,10 +267,13 @@ inline const Field3D D2DY2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DY2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DY2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DY2(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DY2(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D2DY2(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -299,10 +308,13 @@ inline const Field3D D2DZ2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DZ2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DZ2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DZ2(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DZ2(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D2DZ2(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -339,10 +351,13 @@ inline const Field3D D4DX4(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DX4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D4DX4(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D4DX4(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D4DX4(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D4DX4(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -377,10 +392,13 @@ inline const Field3D D4DY4(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DY4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D4DY4(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D4DY4(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D4DY4(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D4DY4(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -415,10 +433,13 @@ inline const Field3D D4DZ4(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DZ4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D4DZ4(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D4DZ4(const Field2D& f,
+                                           CELL_LOC outloc = CELL_DEFAULT,
+                                           const std::string& method = "DEFAULT",
+                                           REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D4DZ4(const Field2D& f, CELL_LOC outloc,
+                                                  DIFF_METHOD method,
+                                                  REGION region = RGN_NOBNDRY) {
   return D4DZ4(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -455,10 +476,13 @@ inline const Field3D VDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D VDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type VDDX(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type VDDX(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return VDDX(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -495,10 +519,13 @@ inline const Field3D VDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D VDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type VDDY(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type VDDY(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return VDDY(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -535,10 +562,13 @@ inline const Field3D VDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type VDDZ(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type VDDZ(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return VDDZ(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -555,10 +585,13 @@ inline const Field2D VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDZ(const Field3D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D VDDZ(const Field3D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type VDDZ(const Field3D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type VDDZ(const Field3D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return VDDZ(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -595,10 +628,13 @@ inline const Field3D FDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D FDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type FDDX(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type FDDX(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return FDDX(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -635,10 +671,13 @@ inline const Field3D FDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D FDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type FDDY(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type FDDY(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return FDDY(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -675,10 +714,13 @@ inline const Field3D FDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D FDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type FDDZ(const Field2D& v, const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type FDDZ(const Field2D& v, const Field2D& f,
+                                                 CELL_LOC outloc, DIFF_METHOD method,
+                                                 REGION region = RGN_NOBNDRY) {
   return FDDZ(v, f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -713,10 +755,13 @@ inline const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD metho
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                            REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DXDY(const Field2D& f,
+                                            CELL_LOC outloc = CELL_DEFAULT,
+                                            const std::string& method = "DEFAULT",
+                                            REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc,
+                                                   DIFF_METHOD method,
+                                                   REGION region = RGN_NOBNDRY) {
   return D2DXDY(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -751,10 +796,13 @@ inline const Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc, DIFF_METHOD metho
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DXDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DXDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                            REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DXDZ(const Field2D& f,
+                                            CELL_LOC outloc = CELL_DEFAULT,
+                                            const std::string& method = "DEFAULT",
+                                            REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DXDZ(const Field2D& f, CELL_LOC outloc,
+                                                   DIFF_METHOD method,
+                                                   REGION region = RGN_NOBNDRY) {
   return D2DXDZ(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
@@ -789,10 +837,13 @@ inline const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, DIFF_METHOD metho
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DYDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
-inline const Field2D D2DYDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                            REGION region = RGN_NOBNDRY) {
+const Coordinates::metric_field_type D2DYDZ(const Field2D& f,
+                                            CELL_LOC outloc = CELL_DEFAULT,
+                                            const std::string& method = "DEFAULT",
+                                            REGION region = RGN_NOBNDRY);
+inline const Coordinates::metric_field_type D2DYDZ(const Field2D& f, CELL_LOC outloc,
+                                                   DIFF_METHOD method,
+                                                   REGION region = RGN_NOBNDRY) {
   return D2DYDZ(f, outloc, DIFF_METHOD_STRING(method), region);
 };
 
