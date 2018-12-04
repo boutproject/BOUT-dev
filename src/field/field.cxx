@@ -31,6 +31,7 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <bout/mesh.hxx>
+#include <bout/coordinates.hxx>
 
 Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
   if (fieldmesh == nullptr) {

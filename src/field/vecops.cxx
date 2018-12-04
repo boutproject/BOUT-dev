@@ -118,7 +118,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc) {
  * Divergence operators
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
+const Coordinates::metric_field_type Div(const Vector2D &v, CELL_LOC outloc) {
   TRACE("Div( Vector2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -128,7 +128,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
-  Field2D result(localmesh);
+  Coordinates::metric_field_type result(localmesh);
 
   Coordinates *metric = localmesh->getCoordinates(outloc);
 
@@ -175,7 +175,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
  * Divergence operators for flux methods
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
+const Coordinates::metric_field_type Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   TRACE("Div( Vector2D, Field2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -192,7 +192,7 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  Field2D result(localmesh);
+  Coordinates::metric_field_type result(localmesh);
   result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc);
   result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc);
   result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc);
@@ -300,10 +300,10 @@ const Vector3D Curl(const Vector3D &v) {
 /**************************************************************************
  * Upwinding operators
  **************************************************************************/
-const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
+const Coordinates::metric_field_type V_dot_Grad(const Vector2D &v, const Field2D &f) {
   TRACE("V_dot_Grad( Vector2D , Field2D )");
   SCOREP0();
-  Field2D result(f.getMesh());
+  Coordinates::metric_field_type result(f.getMesh());
 
   // Get contravariant components of v
   auto vcn = v;

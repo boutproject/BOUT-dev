@@ -35,8 +35,6 @@ class Coordinates;
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#define COORDINATES_USE_3D 1
-
 #ifdef COORDINATES_USE_3D
 #define COORDINATES_FIELD_TYPE Field3D
 #define COORDINATES_VECTOR_TYPE Vector3D
@@ -45,10 +43,9 @@ class Coordinates;
 #define COORDINATES_VECTOR_TYPE Vector2D
 #endif
 
-//
+class Datafile;
+class Mesh;
 
-#include "mesh.hxx"
-#include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
 

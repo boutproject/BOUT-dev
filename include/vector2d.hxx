@@ -37,9 +37,11 @@ class Vector2D;
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
-#include "field2d.hxx"
-class Field3D;  //#include "field3d.hxx"
+class Field2D;
+class Field3D;
 class Vector3D; //#include "vector3d.hxx"
+
+#include <bout/coordinates.hxx>
 
 /*!
  * A vector with three components (x,y,z) which only vary in 2D
@@ -51,7 +53,7 @@ class Vector2D : public FieldData {
   Vector2D(const Vector2D &f);
   ~Vector2D() override;
 
-  Field2D x, y, z; ///< components
+  Coordinates::metric_field_type x, y, z; ///< components
 
   bool covariant; ///< true if the components are covariant (default)
 
@@ -122,7 +124,7 @@ class Vector2D : public FieldData {
   const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
   const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
-  const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
+  const Coordinates::metric_field_type operator*(const Vector2D &rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
    /*!
@@ -175,7 +177,7 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D &v, REGION region = RGN_ALL);
+const Coordinates::metric_field_type abs(const Vector2D &v, REGION region = RGN_ALL);
 
 /*!
  * @brief Time derivative of 2D vector field

@@ -430,7 +430,8 @@ class Field3D : public Field, public FieldData {
 #endif
 
   friend class Vector3D;
-
+  friend class Vector2D;
+  
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const std::string &condition);

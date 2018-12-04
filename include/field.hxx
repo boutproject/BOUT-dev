@@ -33,7 +33,6 @@ class Field;
 
 #include "bout_types.hxx"
 #include "stencils.hxx"
-#include <bout/rvec.hxx>
 #include "boutexception.hxx"
 
 #include "unused.hxx"
