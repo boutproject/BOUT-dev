@@ -1754,6 +1754,10 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
       }
     }
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 
@@ -1966,10 +1970,6 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
       }
     }
   }
-#else
-  throw BoutException(
-      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
-#endif
 }
 
 void BoundaryNeumann::apply_ddt(Field2D &f) {
