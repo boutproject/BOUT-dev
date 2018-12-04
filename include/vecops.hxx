@@ -43,7 +43,7 @@
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc The location where the result is desired (if staggered meshes are enabled)
 ///                   By default this is the same location as the input \p f
-const Coordinates::metric_vector_type Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
+const Vector2D Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 
 /// Perpendicular gradient of scalar field \p f
@@ -67,10 +67,10 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 /// @param[in] v  The vector to differentiate
 /// @param[in] outloc  The cell location where the result is desired
 ///
-const Coordinates::metric_field_type Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
+const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
 
-const Coordinates::metric_field_type Div(const Vector2D &v, const Field2D &f);
+const Field2D Div(const Vector2D &v, const Field2D &f);
 const Field3D Div(const Vector3D &v, const Field3D &f);
 
 const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
@@ -98,7 +98,7 @@ DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
 ///
 /// @param[in] v  The vector to differentiate
 ///
-const Coordinates::metric_vector_type Curl(const Vector2D &v);
+const Vector2D Curl(const Vector2D &v);
 const Vector3D Curl(const Vector3D &v);
 
 // Upwinding routines
@@ -107,7 +107,7 @@ const Vector3D Curl(const Vector3D &v);
 ///
 /// The vector and the field must be at the same location, which
 /// cannot be CELL_VSHIFT
-const Coordinates::metric_field_type V_dot_Grad(const Vector2D &v, const Field2D &f);
+const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
@@ -115,7 +115,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
 /// Advection of a vector field \p a by a velocity vector \p v
 ///
 /// Both vectors must be at the same location, which cannot be CELL_VSHIFT
-const Coordinates::metric_vector_type V_dot_Grad(const Vector2D &v, const Vector2D &a);
+const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a);
