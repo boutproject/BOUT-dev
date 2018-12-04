@@ -1,3 +1,4 @@
+#ifndef COORDINATES_USE_3D
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -498,3 +499,4 @@ TEST_F(Vector2DTest, DivideVector2DField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 2.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 3.0));
 }
+#endif
