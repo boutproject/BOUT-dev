@@ -1929,7 +1929,7 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
             BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                             + bndry->by * metric->dy(bndry->x, bndry->y, kz);
+                             + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 
             if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
