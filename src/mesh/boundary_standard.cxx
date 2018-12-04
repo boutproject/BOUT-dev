@@ -1452,6 +1452,7 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const s
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
+#ifndef COORDINATES_USE_3D
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
@@ -1489,6 +1490,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
       }
     }
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
@@ -1499,19 +1504,23 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
   Field3D dfdz = DDZ(f);
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    // Interpolate (linearly) metrics to halfway between last cell and boundary cell
-    BoutReal g11shift = 0.5*(metric->g11(bndry->x,bndry->y) + metric->g11(bndry->x-bndry->bx,bndry->y));
-    BoutReal g12shift = 0.5*(metric->g12(bndry->x,bndry->y) + metric->g12(bndry->x-bndry->bx,bndry->y));
-    BoutReal g13shift = 0.5*(metric->g13(bndry->x,bndry->y) + metric->g13(bndry->x-bndry->bx,bndry->y));
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
     for(int z=0;z<mesh->LocalNz;z++) {
+      // Interpolate (linearly) metrics to halfway between last cell and boundary cell
+      BoutReal g11shift = 0.5 * (metric->g11(bndry->x, bndry->y, z)
+                                 + metric->g11(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g12shift = 0.5 * (metric->g12(bndry->x, bndry->y, z)
+                                 + metric->g12(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g13shift = 0.5 * (metric->g13(bndry->x, bndry->y, z)
+                                 + metric->g13(bndry->x - bndry->bx, bndry->y, z));
+
       BoutReal xshift = g12shift*dfdy(bndry->x-bndry->bx,bndry->y,z) 
         + g13shift*dfdz(bndry->x-bndry->bx,bndry->y,z);
       if(bndry->bx != 0 && bndry->by == 0) {
         // x boundaries only
-        BoutReal delta = bndry->bx*metric->dx(bndry->x, bndry->y);
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, z);
         f(bndry->x, bndry->y, z) = f(bndry->x - bndry->bx, bndry->y, z) + delta/g11shift*(val - xshift);
         if (bndry->width == 2){
           f(bndry->x + bndry->bx, bndry->y, z) = f(bndry->x - 2*bndry->bx, bndry->y, z) + 3.0*delta/g11shift*(val - xshift);
@@ -1519,7 +1528,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
       } else if(bndry->by != 0 && bndry->bx == 0) {
         // y boundaries only
         //   no need to shift this b/c we want parallel nuemann not theta
-        BoutReal delta = bndry->by*metric->dy(bndry->x, bndry->y);
+        BoutReal delta = bndry->by * metric->dy(bndry->x, bndry->y, z);
         f(bndry->x, bndry->y, z) = f(bndry->x, bndry->y - bndry->by, z) + delta*val;
         if (bndry->width == 2){
           f(bndry->x, bndry->y + bndry->by, z) = f(bndry->x, bndry->y - 2*bndry->by, z) + 3.0*delta*val;
@@ -1556,7 +1565,7 @@ void BoundaryNeumann::apply(Field2D &f) {
 void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
-  
+#ifndef COORDINATES_USE_3D
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1785,9 +1794,10 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x, bndry->y);
-	    
-	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
+              val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t)
+                    * metric->dx(bndry->x, bndry->y, zk);
+
+            f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
 	    
 	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=1;i<bndry->width;i++) {
@@ -1812,9 +1822,10 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
-            
-	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
+              val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t)
+                    * metric->dx(bndry->x - bndry->bx, bndry->y, zk);
+
+            f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
 
             // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
@@ -1835,10 +1846,12 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
 	  
-	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
-	    if(fg){
+            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
+                             + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+
+            if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
@@ -1862,8 +1875,9 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	  
 	    if(fg){
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y);
-	    }
+              val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t)
+                    * metric->dy(bndry->x, bndry->y, zk);
+            }
 	    f(bndry->x,bndry->y,zk) =   (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
 	    
 	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
@@ -1887,9 +1901,10 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 				   + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
 	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t) * metric->dy(bndry->x, bndry->y - bndry->by);
-            
-	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
+              val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t)
+                    * metric->dy(bndry->x, bndry->y - bndry->by, zk);
+
+            f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
 	    
 	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 	    for(int i=0;i<bndry->width;i++) {
@@ -1911,10 +1926,12 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
 	  
-	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
 	  for(int zk=0;zk<mesh->LocalNz;zk++) {
-	    if(fg){
+            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
+                             + bndry->by * metric->dy(bndry->x, bndry->y, kz);
+
+            if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	    }
 	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
@@ -1935,10 +1952,11 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
       BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
 			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
-      
       for(int zk=0;zk<mesh->LocalNz;zk++) {
-	if(fg){
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
+                         + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+
+        if(fg){
 	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
 	}
 	f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
@@ -1948,6 +1966,10 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
       }
     }
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryNeumann::apply_ddt(Field2D &f) {
@@ -1979,7 +2001,7 @@ void BoundaryNeumann_O4::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
-  
+#ifndef COORDINATES_USE_3D
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   bndry->first();
@@ -2029,6 +2051,10 @@ void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
       }
     }
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryNeumann_O4::apply(Field3D &f) {
@@ -2060,9 +2086,10 @@ void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
       BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
                                + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      BoutReal delta = bndry->bx*coords->dx(bndry->x,bndry->y)+bndry->by*coords->dy(bndry->x,bndry->y);
-
       for(int zk=0;zk<mesh->LocalNz;zk++) {
+        BoutReal delta = bndry->bx * coords->dx(bndry->x, bndry->y, zk)
+                         + bndry->by * coords->dy(bndry->x, bndry->y, zk);
+
         if(fg){
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->LocalNz),t);
         }
@@ -2110,6 +2137,7 @@ BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const std::l
 }
 
 void BoundaryNeumann_4thOrder::apply(Field2D &f) {
+#ifndef COORDINATES_USE_3D
   Coordinates *metric = f.getCoordinates();
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
@@ -2118,6 +2146,10 @@ void BoundaryNeumann_4thOrder::apply(Field2D &f) {
     f(bndry->x,bndry->y) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by);
     f(bndry->x+bndry->bx,bndry->y+bndry->by) = -24.*delta*val + 27.*f(bndry->x,bndry->y) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryNeumann_4thOrder::apply(Field3D &f) {
@@ -2126,7 +2158,8 @@ void BoundaryNeumann_4thOrder::apply(Field3D &f) {
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
     for(int z=0;z<mesh->LocalNz;z++) {
-      BoutReal delta = -(bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y));
+      BoutReal delta = -(bndry->bx * metric->dx(bndry->x, bndry->y, z)
+                         + bndry->by * metric->dy(bndry->x, bndry->y, z));
       f(bndry->x,bndry->y,z) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
       f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x,bndry->y,z) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
     }
@@ -2157,17 +2190,25 @@ BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const std::list<st
 
 
 void BoundaryNeumannPar::apply(Field2D &f) {
+#ifndef COORDINATES_USE_3D
   Coordinates *metric = f.getCoordinates();
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryNeumannPar::apply(Field3D &f) {
   Coordinates *metric = f.getCoordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
-      f(bndry->x,bndry->y,z) = f(bndry->x - bndry->bx,bndry->y - bndry->by,z)*sqrt(metric->g_22(bndry->x, bndry->y)/metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+      f(bndry->x, bndry->y, z) =
+          f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
+          * sqrt(metric->g_22(bndry->x, bndry->y, z)
+                 / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
 }
 
 ///////////////////////////////////////////////////////////////
@@ -2268,6 +2309,7 @@ BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const std::list<s
 }
 
 void BoundaryZeroLaplace::apply(Field2D &f) {
+#ifndef COORDINATES_USE_3D
   Coordinates *metric = f.getCoordinates();
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
@@ -2287,9 +2329,14 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
+#ifndef COORDINATES_USE_3D
   int ncz = mesh->LocalNz;
 
   Coordinates *metric = f.getCoordinates();
@@ -2340,6 +2387,10 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
       y = bndry->y;
     } while (!bndry->isDone());
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field3D not compatible with 3D metrics in ZeroLaplace case.");
+#endif
 }
 
 ///////////////////////////////////////////////////////////////
@@ -2354,6 +2405,7 @@ BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
 }
 
 void BoundaryZeroLaplace2::apply(Field2D &f) {
+#ifndef COORDINATES_USE_3D
   if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException(
@@ -2377,9 +2429,14 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
       y = bndry->y;
     } while (!bndry->isDone());
   }
+#else
+  throw BoutException(
+      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+#endif
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
+#ifndef COORDINATES_USE_3D
   int ncz = mesh->LocalNz;
 
   ASSERT0(ncz % 2 == 0); // Allocation assumes even number
@@ -2428,6 +2485,10 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
       y = bndry->y;
     } while (!bndry->isDone());
   }
+#else
+  throw BoutException("Applying boundary to Field3D not compatible with 3D metrics in "
+                      "ZeroLaplace2 case.");
+#endif
 }
 
 ///////////////////////////////////////////////////////////////
@@ -2471,6 +2532,7 @@ void BoundaryConstLaplace::apply(Field2D &f) {
 }
 
 void BoundaryConstLaplace::apply(Field3D &f) {
+#ifndef COORDINATES_USE_3D
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
@@ -2528,6 +2590,10 @@ void BoundaryConstLaplace::apply(Field3D &f) {
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
+#else
+  throw BoutException("Applying boundary to Field3D not compatible with 3D metrics in "
+                      "ConstLaplace case.");
+#endif
 }
 
 ///////////////////////////////////////////////////////////////
@@ -2544,6 +2610,7 @@ void BoundaryDivCurl::apply(Vector2D &UNUSED(f)) {
 }
 
 void BoundaryDivCurl::apply(Vector3D &var) {
+#ifndef COORDINATES_USE_3D
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
@@ -2605,6 +2672,10 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 			      4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
     }
   }
+#else
+  throw BoutException(
+      "Applying boundary to Vector3D not compatible with 3D metrics in DivCurl.");
+#endif
 }
 
 ///////////////////////////////////////////////////////////////
