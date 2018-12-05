@@ -50,7 +50,10 @@
 
 InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-  ASSERT1((std::same<A.getCoordinates()::metric_field_type, Field2D>::value));
+#ifdef COORDINATES_USE_3D
+  throw BoutException("Parallel cyclic solver does not support 3D metric yet.");
+#endif
+
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
 }

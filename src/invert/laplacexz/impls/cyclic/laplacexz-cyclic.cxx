@@ -9,7 +9,10 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), mesh(m) {
-  ASSERT1((std::same<m.getCoordinates()::metric_field_type, Field2D>::value));
+#ifdef COORDINATES_USE_3D
+  throw BoutException("LaplaceXZ cyclic solver does not support 3D metric yet.");
+#endif
+
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;
 
