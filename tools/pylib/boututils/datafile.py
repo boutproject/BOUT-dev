@@ -32,6 +32,7 @@ from builtins import map, zip, str, object
 
 import numpy as np
 import time
+import types
 import getpass
 from boututils.boutwarnings import alwayswarn
 from boututils.boutarray import BoutArray
@@ -691,6 +692,20 @@ class DataFile_netCDF(DataFile):
             attributes = {}  # Map of attribute names to values
 
             try:
+                #The following attempts to patch the scipy variable to provide
+                #methods for attribute introspection
+                if library == "scipy":
+                    def getScipyAttributesList(self):
+                        try:
+                            return self.attributes.keys()
+                        except:
+                            return {}
+                    def getScipyAttribute(self, name):
+                        return self.attributes[name]
+
+                    var.ncattrs = types.MethodType(getScipyAttributesList, var)
+                    var.getncattr = types.MethodType(getScipyAttribute, var)
+
                 # This code tested with NetCDF4 library
                 attribs = var.ncattrs()  # List of attributes
                 for attrname in attribs:
