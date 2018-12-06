@@ -6212,8 +6212,6 @@ $as_echo X"$fftw_wisdom0" |
 	  s/.*/./; q'`
   with_fftw="$with_fftw $fftw_wisdom"
 
-fi
-
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw3.h" >&5
 $as_echo_n "checking for fftw3.h... " >&6; }
@@ -6305,7 +6303,7 @@ fi
   if test .$BACH_found = .yes; then :
 
 else
-  as_fn_error $? "FFTW3 is needed by BOUT++" "$LINENO" 5
+  as_fn_error $? "FFTW3 requested but not found" "$LINENO" 5
 fi
 
 
@@ -6443,7 +6441,7 @@ fi
    if test $BACL_found = yes; then :
 
 else
-  as_fn_error $? "FFTW3 is needed by BOUT++" "$LINENO" 5
+  as_fn_error $? "FFTW3 requested but not found" "$LINENO" 5
 fi
 
    LIBS=$save_LIBS
@@ -6457,9 +6455,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-#If we've reached this point then we're happy that we have FFTW so
-#add our define to CXXFLAGS
-CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
+  #If we've reached this point then we're happy that we have FFTW so
+  #add our define to CXXFLAGS
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
+  HAS_FFTW="yes"
+
+else
+  HAS_FFTW="no"
+fi
 
 #############################################################
 # netCDF support
@@ -17082,6 +17085,8 @@ $as_echo "$as_me:   IDA support             : $HAS_IDA" >&6;}
 $as_echo "$as_me:   CVODE support           : $HAS_CVODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   ARKODE support          : $HAS_ARKODE" >&5
 $as_echo "$as_me:   ARKODE support          : $HAS_ARKODE" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   FFTW support            : $HAS_FFTW" >&5
+$as_echo "$as_me:   FFTW support            : $HAS_FFTW" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   NetCDF support          : $HAS_NETCDF" >&5
 $as_echo "$as_me:   NetCDF support          : $HAS_NETCDF" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Parallel-NetCDF support : $HAS_PNETCDF" >&5
