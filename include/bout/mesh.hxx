@@ -461,7 +461,7 @@ class Mesh {
       return CELL_YLOW;
     case (DIRECTION::Z):
       return CELL_ZLOW;
-    case default:
+    default:
       throw BoutException("Unhandled direction encountered in getAllowedStaggerLoc");
     }
   };
@@ -479,7 +479,7 @@ class Mesh {
       return LocalNy;
     case (DIRECTION::Z):
       return LocalNz;
-    case default:
+    default:
       throw BoutException("Unhandled direction encountered in getNpoints");
     }
   };
@@ -497,7 +497,7 @@ class Mesh {
       return ystart;
     case (DIRECTION::Z):
       return 2;
-    case default:
+    default:
       throw BoutException("Unhandled direction encountered in getNguard");
     }
   };
