@@ -655,7 +655,16 @@ const Coordinates::metric_field_type Coordinates::DDX(const Field2D& f, CELL_LOC
 }
 const Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, REGION region) {
-  return ::DDX(f, outloc, method, region);
+
+  auto result = bout::derivatives::index::DDX(f, outloc, method, region);
+  result /= dx;
+
+  if (f.getMesh()->IncIntShear) {
+    // Using BOUT-06 style shifting
+    result += IntShiftTorsion * DDZ(f, outloc, method, region);
+  }
+
+  return result;
 };
 
 const Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC loc,
@@ -666,7 +675,7 @@ const Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC
 }
 const Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, REGION region) {
-  return ::DDY(f, outloc, method, region);
+  return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
 const Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f),
@@ -681,7 +690,7 @@ const Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D
 }
 const Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, REGION region) {
-  return ::DDZ(f, outloc, method, region);
+  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
 };
 
 /////////////////////////////////////////////////////////
