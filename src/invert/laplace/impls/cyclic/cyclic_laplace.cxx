@@ -45,6 +45,10 @@
 
 LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+#ifdef COORDINATES_USE_3D
+  throw BoutException("Laplacian cyclic solver does not support 3D metric yet.");
+#endif
+
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);

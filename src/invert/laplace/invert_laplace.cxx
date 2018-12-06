@@ -731,6 +731,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
   }
+#else
+  throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
 #endif
 }
 
