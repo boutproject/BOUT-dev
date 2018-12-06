@@ -496,16 +496,18 @@ struct registerMethod {
     // used to pass this around
     using FieldType = typename FieldTypeContainer::type;
 
+    Method method{};
+
     // Note whilst this should be known at compile time using this directly in the
     // template parameters below causes problems for old versions of gcc/libstdc++
     // (tested with 4.8.3) so we currently use a hacky workaround. Once we drop
     // support for these versions the branching in the case statement below can be
     // removed and we can use nGuard directly in the template statement.
-    const int nGuards = Method{}.meta.nGuards;
+    const int nGuards = method.meta.nGuards;
 
     auto& derivativeRegister = DerivativeStore<FieldType>::getInstance();
 
-    switch (Method{}.meta.derivType) {
+    switch (method.meta.derivType) {
     case (DERIV::Standard):
     case (DERIV::StandardSecond):
     case (DERIV::StandardFourth): {
@@ -515,16 +517,16 @@ struct registerMethod {
             &Method::template standard<Direction::value, Stagger::value, 1, FieldType>,
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
-            Method{}, _1, _2, _3);
-        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
+            method, _1, _2, _3);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       } else {
         const auto theFunc = std::bind(
             // Method to store in function
             &Method::template standard<Direction::value, Stagger::value, 2, FieldType>,
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
-            Method{}, _1, _2, _3);
-        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
+            method, _1, _2, _3);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       }
       break;
     }
@@ -537,8 +539,8 @@ struct registerMethod {
                                            FieldType>,
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
-            Method{}, _1, _2, _3, _4);
-        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
+            method, _1, _2, _3, _4);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       } else {
         const auto theFunc = std::bind(
             // Method to store in function
@@ -546,8 +548,8 @@ struct registerMethod {
                                            FieldType>,
             // Arguments -- first is hidden this of type-bound, others are placeholders
             // for input field, output field, region
-            Method{}, _1, _2, _3, _4);
-        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, Method{});
+            method, _1, _2, _3, _4);
+        derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       }
       break;
     }
