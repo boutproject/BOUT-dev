@@ -6466,7 +6466,11 @@ else
   as_fn_error $? "FFTW3 requested but fftw-wisdom not found" "$LINENO" 5
 fi
 else
-  HAS_FFTW="no"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Configuring without FFTW3 is not recommended" >&5
+$as_echo "$as_me: Configuring without FFTW3 is not recommended" >&6;}
+HAS_FFTW="no"
+
 fi
 
 #############################################################

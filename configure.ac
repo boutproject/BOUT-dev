@@ -408,7 +408,10 @@ AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
   HAS_FFTW="yes"
 ], AC_MSG_ERROR([FFTW3 requested but fftw-wisdom not found]))],
-[HAS_FFTW="no"])
+[
+AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
+HAS_FFTW="no"
+])
 
 #############################################################
 # netCDF support
