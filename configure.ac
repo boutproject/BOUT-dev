@@ -392,21 +392,23 @@ AS_IF([test $? = 0], [
 # FFT routines
 #############################################################
 
+AS_IF([test "x$with_fftw" != "xno"], [
 AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
-AS_IF([test "x$fftw_path" != "xno"], [
+  AS_IF([test "x$fftw_path" != "xno"], [
   fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
   fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
   with_fftw="$with_fftw $fftw_wisdom"
 
-  BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but not found]), $with_fftw)
-  BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but not found]), $with_fftw)
+  BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
+  BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
 
   #If we've reached this point then we're happy that we have FFTW so
   #add our define to CXXFLAGS
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
   HAS_FFTW="yes"
-], [HAS_FFTW="no"])
+], AC_MSG_ERROR([FFTW3 requested but fftw-wisdom not found]))],
+[HAS_FFTW="no"])
 
 #############################################################
 # netCDF support

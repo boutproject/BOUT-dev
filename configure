@@ -6120,6 +6120,8 @@ fi
 # FFT routines
 #############################################################
 
+if test "x$with_fftw" != "xno"; then :
+
 # Extract the first word of "fftw-wisdom", so it can be a program name with args.
 set dummy fftw-wisdom; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6162,7 +6164,7 @@ fi
 
 
 
-if test "x$fftw_path" != "xno"; then :
+  if test "x$fftw_path" != "xno"; then :
 
   fftw_wisdom0=`$as_dirname -- "$fftw_path" ||
 $as_expr X"$fftw_path" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -6303,7 +6305,7 @@ fi
   if test .$BACH_found = .yes; then :
 
 else
-  as_fn_error $? "FFTW3 requested but not found" "$LINENO" 5
+  as_fn_error $? "FFTW3 requested but header not found" "$LINENO" 5
 fi
 
 
@@ -6441,7 +6443,7 @@ fi
    if test $BACL_found = yes; then :
 
 else
-  as_fn_error $? "FFTW3 requested but not found" "$LINENO" 5
+  as_fn_error $? "FFTW3 requested but library not found" "$LINENO" 5
 fi
 
    LIBS=$save_LIBS
@@ -6460,6 +6462,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
   HAS_FFTW="yes"
 
+else
+  as_fn_error $? "FFTW3 requested but fftw-wisdom not found" "$LINENO" 5
+fi
 else
   HAS_FFTW="no"
 fi
