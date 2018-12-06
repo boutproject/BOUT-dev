@@ -403,6 +403,10 @@ AS_IF([test "x$fftw_path" != "xno"], [
 BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
 
+#If we've reached this point then we're happy that we have FFTW so
+#add our define to CXXFLAGS
+CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
+
 #############################################################
 # netCDF support
 #############################################################
