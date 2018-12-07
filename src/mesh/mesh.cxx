@@ -390,11 +390,13 @@ void Mesh::createDefaultRegions(){
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1,
+  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, zstart, zend,
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOX", Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
+                                       LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
 
@@ -412,13 +414,15 @@ void Mesh::createDefaultRegions(){
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
                                            LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1,
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, zstart, zend, 1,
                                                LocalNz, maxregionblocksize));
   addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
                                            maxregionblocksize)); // Same as NOBNDRY
   addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
-                                           LocalNz, maxregionblocksize)); // Same as ALL
-  addRegionPerp("RGN_NOZ", getRegionPerp("RGN_ALL")); // Currently the same as ALL
+                                           LocalNz, maxregionblocksize));
+
+  addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
+                                           maxregionblocksize));
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
 
   // Construct index lookup for 3D-->2D
