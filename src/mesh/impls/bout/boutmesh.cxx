@@ -108,23 +108,24 @@ int BoutMesh::load() {
   if (Mesh::get(ny, "ny"))
     throw BoutException(_("Mesh must contain ny"));
 
-  int MZ;
-
-  if (Mesh::get(MZ, "nz")) {
+  if (Mesh::get(nz, "nz")) {
     // No "nz" variable in the grid file. Instead read MZ from options
 
     OPTION(options, MZ, 64);
-    if (!is_pow2(MZ)) {
+    OPTION(options, nz, MZ);
+    ASSERT0(nz == MZ);
+    if (!is_pow2(nz)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
-                        MZ);
+      output_warn.write(
+          _("WARNING: Number of toroidal points should be 2^n for efficient "
+            "FFT performance -- consider changing MZ if using FFTs\n"),
+          nz);
     }
   } else {
     output_info.write(_("\tRead nz from input grid file\n"));
   }
 
-  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << MZ << endl;
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << nz << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
@@ -140,7 +141,12 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
+  // For now only support no z-guard cells
+  MZG = 0;
+  ASSERT0(MZG >= 0);
+
+  output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
+              << std::endl;
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
@@ -150,7 +156,7 @@ int BoutMesh::load() {
   // Set global grid sizes
   GlobalNx = nx;
   GlobalNy = ny + 2 * MYG;
-  GlobalNz = MZ;
+  GlobalNz = nz;
 
   if (2 * MXG >= nx)
     throw BoutException(_("nx must be greater than 2*MXG"));
@@ -226,6 +232,9 @@ int BoutMesh::load() {
                       jyseps2_2, jyseps1_2, jyseps1_2);
     jyseps2_2 = jyseps1_2;
   }
+
+  // For now don't parallelise z
+  NZPE = 1;
 
   if (options->isSet("NXPE")) {    // Specified NXPE
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
@@ -415,6 +424,12 @@ int BoutMesh::load() {
         _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
   }
 
+  MZSUB = MZ / NZPE;
+  if ((MY % NYPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+  }
+
   /// Get mesh options
   OPTION(options, IncIntShear, false);
   OPTION(options, periodicX, false); // Periodic in X
@@ -441,9 +456,12 @@ int BoutMesh::load() {
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
   LocalNx = MXSUB + 2 * MXG;
   LocalNy = MYSUB + 2 * MYG;
-  LocalNz = MZ;
+  LocalNz = MZSUB + 2 * MZG;
 
   // Set local index ranges
+
+  zstart = MZG;
+  zend = MZG + MZSUB - 1;
 
   xstart = MXG;
   xend = MXG + MXSUB - 1;
@@ -2541,6 +2559,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYG, "MYG", false);
   file.add(nx, "nx", false);
   file.add(ny, "ny", false);
+  file.add(LocalNz, "nz", false);
   file.add(LocalNz, "MZ", false);
   file.add(NXPE, "NXPE", false);
   file.add(NYPE, "NYPE", false);

@@ -426,8 +426,8 @@ class Mesh {
   int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
-  int xstart, xend, ystart, yend;
-  
+  int xstart, xend, ystart, yend, zstart, zend;
+
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   bool IncIntShear; ///< Include integrated shear (if shifting X)
