@@ -122,6 +122,7 @@ int BoutMesh::load() {
           nz);
     }
   } else {
+    MZ = nz;
     output_info.write(_("\tRead nz from input grid file\n"));
   }
 
