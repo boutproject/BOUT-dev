@@ -35,6 +35,7 @@ def genMesh(nx,ny,nz,**kwargs):
     bc.setOption("mesh:nx",str(nx + 4 if nx > 1 else nx), force=True)
     bc.setOption("mesh:ny",str(ny), force=True)
     bc.setOption("mz",str(nz), force=True)
+    bc.setOption("mesh:nz",str(nz), force=True)    
     bc.setOption("mesh:dx","2*pi/(%d)"%(nx), force=True)
     bc.setOption("mesh:dy","1/(%d)"%(ny), force=True)
     bc.setOption("mesh:dz","1/(%d)"%(nz), force=True)
