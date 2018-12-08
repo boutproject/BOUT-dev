@@ -190,12 +190,7 @@ public:
   /// and then saves the resulting string.
   template <typename T>
   T operator=(T inputvalue) {
-    // Convert to string
-    std::stringstream ss;
-    ss << inputvalue;
-
-    // Set the internal value.
-    _set(ss.str(), "", false);
+    assign<T>(inputvalue);
     return inputvalue;
   }
 
@@ -207,6 +202,7 @@ public:
   /// Options option;
   /// option["test"].assign(42, "some source");
   ///
+  /// Note: Specialised versions for types stored in ValueType
   template<typename T>
   void assign(T val, const std::string source="") {
     std::stringstream ss;
@@ -214,6 +210,14 @@ public:
     _set(ss.str(), source, false);
   }
   
+  // Specialised assign methods for types stored in ValueType
+  template<> void assign<>(bool val, const std::string source) { _set(val, source, false); }
+  template<> void assign<>(int val, const std::string source) { _set(val, source, false); }
+  template<> void assign<>(BoutReal val, const std::string source) { _set(val, source, false); }
+  template<> void assign<>(std::string val, const std::string source) { _set(val, source, false); }
+  // Note: const char* version needed to avoid conversion to bool
+  template<> void assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
+
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
@@ -238,7 +242,7 @@ public:
   /// int value = option["test"];
   ///
   template <typename T> operator T() const { return as<T>(); }
-
+  
   /// Get the value as a specified type
   /// If there is no value then an exception is thrown
   /// Note there are specialised versions of this template
@@ -256,31 +260,39 @@ public:
     }
     
     T val;
-    std::stringstream ss(value.value);
-    ss >> val;
     
-    // Check if the parse failed
-    if (ss.fail()) {
-      throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(), value.value.c_str());
-    }
-
-    // Check if there are characters remaining
-    std::string remainder;
-    std::getline(ss, remainder);
-    for (const char &ch : remainder) {
-      if (!std::isspace(static_cast<unsigned char>(ch))) {
-        // Meaningful character not parsed
-        throw BoutException("Option %s could not be parsed", full_name.c_str());
+    if (std::holds_alternative<std::string>(value)) {
+      
+      std::stringstream ss(std::get<std::string>(value));
+      ss >> val;
+      
+      // Check if the parse failed
+      if (ss.fail()) {
+        throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(), value.value.c_str());
       }
+
+      // Check if there are characters remaining
+      std::string remainder;
+      std::getline(ss, remainder);
+      for (const char &ch : remainder) {
+        if (!std::isspace(static_cast<unsigned char>(ch))) {
+          // Meaningful character not parsed
+          throw BoutException("Option %s could not be parsed", full_name.c_str());
+        }
+      }
+    } else {
+      // Value not holding a string. Try casting to the requested type
+      
+      val = std::visit( StaticCast<T>(), value );
     }
     
     // Mark this option as used
-    value.used = true; // Note this is mutable
+    attributes["used"] = true; // Note this is mutable
 
     output_info << "\tOption " << full_name  << " = " << val;
-    if (!value.source.empty()) {
+    if (!attributes["source"].empty()) {
       // Specify the source of the setting
-      output_info << " (" << value.source << ")";
+      output_info << " (" << attributes["source"] << ")";
     }
     output_info << endl;
 
@@ -403,6 +415,12 @@ public:
   /// clean the cache of parsed options
   static void cleanCache();
 
+  using ValueType = std::variant<bool, int, BoutReal, std::string>;
+  using AttributeType = std::variant<bool, int, BoutReal, std::string>;
+  
+  ValueType value;
+  std::map<std::string, AttributeType> attributes;
+  
   /*!
    * Class used to store values, together with
    * information about their origin and usage
@@ -434,46 +452,53 @@ public:
   std::map<std::string, Options> children; ///< If a section then has children
 
   bool is_value = false; ///< Is this Options object a value?
-  OptionValue value{}; ///< If a value
-  
-  void _set(std::string val, std::string source, bool force);
 
+  template <typename T>
+  void _set(T val, std::string source, bool force) {
+    if (isSet()) {
+      // Check if current value the same as new value
+      if (value != val) {
+        if (force or attributes["source"] != source) {
+          output_warn << _("\tOption ") << full_name << " = " << toString(value) << " ("
+                      << attributes["source"] << _(") overwritten with:") << "\n"
+                      << "\t\t" << full_name << " = " << toString(val) << " (" << source
+                      << ")\n";
+        } else {
+          throw BoutException(
+              _("Options: Setting a value from same source (%s) to new value "
+                "'%s' - old value was '%s'."),
+              source.c_str(), toString(val).c_str(), toString(value).c_str());
+        }
+      }
+    }
+
+    value = std::move(val);
+    attributes["source"] = std::move(source);
+    attributes["used"] = false;
+    is_value = true;
+  }
+  
   /// Tests if two values are similar. 
   template <typename T> bool similar(T a, T b) const { return a == b; }
+
+  /// Functor to perform static casting with std::visit
+  /// from https://stackoverflow.com/questions/8806453/functor-version-of-static-cast-in-stdbind
+  template <class Target> struct StaticCast {
+    template <class Source> Target operator()(Source &&source) const {
+      return static_cast<Target>(std::forward<Source>(source));
+    }
+  };
+  
 };
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
-
-/// Specialised assignment operator
-template <>
-inline BoutReal Options::operator=<BoutReal>(BoutReal inputvalue) {
-  std::stringstream ss;
-  // Make sure the precision is large enough to hold a BoutReal
-  ss << std::scientific << std::setprecision(17) << inputvalue;
-  _set(ss.str(), "", false);
-  return inputvalue;
-}
 
 /// Specialised as routines
 template <> std::string Options::as<std::string>() const;
 template <> int Options::as<int>() const;
 template <> BoutReal Options::as<BoutReal>() const;
 template <> bool Options::as<bool>() const;
-
-// Specialised assign methods
-template<> void Options::assign<bool>(bool val, const std::string source);
-template<> void Options::assign<BoutReal>(BoutReal val, const std::string source);
-
-// Note: const char* version needed to avoid conversion to bool
-template<>
-inline void Options::assign<const char *>(const char *val, const std::string source) {
-  _set(val,source,false);
-}
-template<>
-inline void Options::assign<std::string>(std::string val, const std::string source) {
-  _set(val,source,false);
-};
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

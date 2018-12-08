@@ -73,44 +73,6 @@ const Options &Options::operator[](const std::string &name) const {
   return it->second;
 }
 
-template <> void Options::assign<bool>(bool val, const std::string source) {
-  if (val) {
-    _set("true", source, false);
-  } else {
-    _set("false", source, false);
-  }
-}
-
-template <> void Options::assign<BoutReal>(BoutReal val, const std::string source) {
-  std::stringstream ss;
-  // Make sure the precision is large enough to hold a BoutReal
-  ss << std::scientific << std::setprecision(17) << val;
-  _set(ss.str(), source, false);
-}
-
-void Options::_set(std::string val, std::string source, bool force) {
-  if (isSet()) {
-    // Check if current value the same as new value
-    if (value.value != val) {
-      if (force or value.source != source) {
-        output_warn << _("\tOption ") << full_name << " = " << value.value << " ("
-                    << value.source << _(") overwritten with:")
-                    << "\n"
-                    << "\t\t" << full_name << " = " << val << " (" << source << ")\n";
-      } else {
-        throw BoutException(_("Options: Setting a value from same source (%s) to new value "
-                              "'%s' - old value was '%s'."),
-                            source.c_str(), val.c_str(), value.value.c_str());
-      }
-    }
-  }
-
-  value.value = std::move(val);
-  value.source = std::move(source);
-  value.used = false;
-  is_value = true;
-}
-
 bool Options::isSet() const {
   // Check if no value
   if (!is_value) {
