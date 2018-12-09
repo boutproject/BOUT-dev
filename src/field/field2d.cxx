@@ -120,10 +120,6 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
 };
 
-const Region<Ind2D>& Field2D::getRegion(const std::string &region_name) const {
-  return fieldmesh->getRegion2D(region_name);
-}
-
 void Field2D::setLocation(CELL_LOC new_location) {
   if (getMesh()->StaggerGrids) {
     if (new_location == CELL_VSHIFT) {

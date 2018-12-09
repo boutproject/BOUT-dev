@@ -169,10 +169,6 @@ const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) cons
   return fieldmesh->getRegionPerp(region_name);
 };
 
-const Region<IndPerp>& FieldPerp::getRegion(const std::string &region_name) const {
-  return fieldmesh->getRegionPerp(region_name);
-}
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
