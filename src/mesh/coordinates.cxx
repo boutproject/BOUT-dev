@@ -457,7 +457,7 @@ int Coordinates::geometry() {
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
-    mesh->communicateXZ(d2x);
+    localmesh->communicateXZ(d2x);
     d1_dx = -d2x / (dx * dx);
   }
 
@@ -468,9 +468,10 @@ int Coordinates::geometry() {
     localmesh->communicate(tmp2);
     d1_dy = bout::derivatives::index::DDY(tmp2); // d/di(1/dy)
   } else {
-    mesh->communicateXZ(d2y);
+    localmesh->communicateXZ(d2y);
     d1_dy = -d2y / (dy * dy);
   }
+  localmesh->communicate(d1_dx, d1_dy);
 
   return 0;
 }
