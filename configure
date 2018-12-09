@@ -622,7 +622,8 @@ ac_includes_default="\
 #endif"
 
 gt_needs=
-ac_subst_vars='HAS_NLS
+ac_subst_vars='METRIC_TYPE
+HAS_NLS
 HAS_OPENMP
 SLEPC_ARCH
 SLEPC_DIR
@@ -15735,6 +15736,7 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
 
 
 
