@@ -359,6 +359,33 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
   return found->second;
 }
 
+const bool Mesh::hasRegion3D(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+const bool Mesh::hasRegion2D(const std::string& region_name) const {
+  const auto found = regionMap2D.find(region_name);
+  if (found == end(regionMap2D)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+const bool Mesh::hasRegionPerp(const std::string& region_name) const {
+  const auto found = regionMapPerp.find(region_name);
+  if (found == end(regionMapPerp)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
