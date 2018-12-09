@@ -1,3 +1,3 @@
 #!/bin/sh
-
+#requires: not metric_3d
 ./runtest.py staggered
