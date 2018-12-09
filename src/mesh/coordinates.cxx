@@ -788,8 +788,9 @@ Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc, const std::string& me
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  auto sg = sqrt(g_22);
-  auto result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg
+  auto invSg = 1.0 / sqrt(g_22);
+  localmesh->communicate(invSg);
+  auto result = DDY(invSg, outloc, method) * DDY(f, outloc, method) * invSg
                 + D2DY2(f, outloc, method) / g_22;
 
   return result;
@@ -803,7 +804,9 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const s
   ASSERT1(location == outloc);
 
   auto sg = sqrt(g_22);
-  sg = DDY(1. / sg, outloc, method) / sg;
+  auto invSg = 1.0 / sg;
+  localmesh->communicate(invSg);
+  sg = DDY(invSg, outloc, method) * invSg;
 
   Field3D result(localmesh), r2(localmesh);
 
