@@ -518,6 +518,24 @@ TEST(StringUtilitiesTest, StringToIntFail) {
   EXPECT_THROW(stringToInt(number_string), BoutException);
 }
 
+TEST(StringUtilitiesTest, BoolToString) {
+  std::string true_string = "true";
+  std::string false_string = "false";
+
+  EXPECT_EQ(true_string, toString(true));
+  EXPECT_EQ(false_string, toString(false));
+}
+
+TEST(StringUtilitiesTest, ConstCharToString) {
+  EXPECT_EQ(std::string("hello"), toString("hello"));
+}
+
+TEST(StringUtilitiesTest, StringToString) {
+  std::string test_string = "dlkjl872kj";
+
+  EXPECT_EQ( test_string, toString(test_string) );
+}
+
 TEST(StringUtilitiesTest, IntToString) {
   int number_int = 42;
   std::string number_string = "42";
@@ -527,7 +545,7 @@ TEST(StringUtilitiesTest, IntToString) {
 
 TEST(StringUtilitiesTest, RealToString) {
   BoutReal number_real = 3.142e8;
-  std::string number_string = "3.142e+08";
+  std::string number_string = "3.14200000000000000e+08";
 
   EXPECT_EQ(number_string, toString(number_real));
 }

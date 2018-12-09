@@ -371,21 +371,42 @@ inline void checkData(BoutReal UNUSED(f)){};
  */ 
 char* copy_string(const char* s);
 
-/*!
- * Convert a value to a string
- * by writing to a stringstream
- */
+
+/// Convert a value to a string
+/// by writing to a stringstream
 template <class T>
-const std::string toString(const T& val) {
+std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
 
+/// Simple case where input is already a string
+/// This is so that toString can be used in templates
+/// where the type may be std::string.
+template <>
+inline std::string toString<>(const std::string& val) {
+  return val;
+}
+
+/// Convert a bool to "true" or "false"
+template <>
+inline std::string toString<>(const bool& val) {
+  if (val) {
+    return "true";
+  }
+  return "false";
+}
+
+/// Convert BoutReal to string
+/// Make sure the precision is large enough to hold a BoutReal
+template <>
+std::string toString<>(const BoutReal& val);
+
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
 template <>
-const std::string toString<>(const time_t& time);
+std::string toString<>(const time_t& time);
 
 /*!
  * Convert a string to lower case

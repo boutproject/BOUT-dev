@@ -139,7 +139,14 @@ std::string trimComments(const std::string &s, const std::string &c) {
 }
 
 template <>
-const std::string toString<>(const time_t& time) {
+std::string toString<>(const BoutReal& val) {
+  std::stringstream ss;
+  ss << std::scientific << std::setprecision(17) << val;
+  return ss.str();
+}
+
+template <>
+std::string toString<>(const time_t& time) {
   // Get local time
   std::tm *tm = std::localtime(&time);
 
