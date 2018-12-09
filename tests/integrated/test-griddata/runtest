@@ -31,14 +31,18 @@ for nproc in [1]:
   Rxy = collect("Rxy", prefix=prefix, info=False)
   Bpxy = collect("Bpxy", prefix=prefix, info=False)
   dx = collect("dx", prefix=prefix, info=False)
-  
+
   nx,ny = Rxy.shape
+
+  #Handle 3D metric case
+  if len(dx.shape) == 3:
+    dx = dx[:,:,0]
 
   rwidth = 0.4
   dr = float(rwidth) / nx
 
   # Test value of dx
-  if np.min(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
+  if not np.allclose(dx, dr*Bpxy*Rxy, atol = 1e-7):
     print("Failed: dx does not match")
     exit(1)
 
