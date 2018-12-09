@@ -453,6 +453,7 @@ class Mesh {
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
       coords_map.emplace(location, createDefaultCoordinates(location));
+      coords_map[location].get()->geometry();
       return coords_map[location].get();
     }
   }

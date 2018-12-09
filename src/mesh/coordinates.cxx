@@ -28,19 +28,15 @@ Coordinates::Coordinates(Mesh *mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
-  if (mesh->get(dx, "dx")) {
+  if (mesh->get(dx, "dx", 1.0, false)) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
-    dx = 1.0;
   }
+  mesh->communicateXZ(dx);
 
-  if (mesh->periodicX) {
-    mesh->communicate(dx);
-  }
-
-  if (mesh->get(dy, "dy")) {
+  if (mesh->get(dy, "dy", 1.0, false)) {
     output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
-    dy = 1.0;
   }
+  mesh->communicateXZ(dy);
 
   nz = mesh->LocalNz;
 
@@ -64,14 +60,16 @@ Coordinates::Coordinates(Mesh *mesh)
   }
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  mesh->get(g11, "g11", 1.0);
-  mesh->get(g22, "g22", 1.0);
-  mesh->get(g33, "g33", 1.0);
+  mesh->get(g11, "g11", 1.0, false);
+  mesh->get(g22, "g22", 1.0, false);
+  mesh->get(g33, "g33", 1.0, false);
 
   // Off-diagonal elements. Default to 0
-  mesh->get(g12, "g12", 0.0);
-  mesh->get(g13, "g13", 0.0);
-  mesh->get(g23, "g23", 0.0);
+  mesh->get(g12, "g12", 0.0, false);
+  mesh->get(g13, "g13", 0.0, false);
+  mesh->get(g23, "g23", 0.0, false);
+
+  mesh->communicateXZ(g11, g22, g33, g12, g13, g23);
 
   // Check input metrics
   if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -93,12 +91,14 @@ Coordinates::Coordinates(Mesh *mesh)
     if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22") and
         mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
         mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
-      mesh->get(g_11, "g_11");
-      mesh->get(g_22, "g_22");
-      mesh->get(g_33, "g_33");
-      mesh->get(g_12, "g_12");
-      mesh->get(g_13, "g_13");
-      mesh->get(g_23, "g_23");
+      mesh->get(g_11, "g_11", 1.0, false);
+      mesh->get(g_22, "g_22", 1.0, false);
+      mesh->get(g_33, "g_33", 1.0, false);
+      mesh->get(g_12, "g_12", 0.0, false);
+      mesh->get(g_13, "g_13", 0.0, false);
+      mesh->get(g_23, "g_23", 0.0, false);
+
+      mesh->communicateXZ(g_11, g_22, g_33, g_12, g_13, g_23);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -124,12 +124,14 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read J from the grid file
   auto Jcalc = J;
-  if (mesh->get(J, "J")) {
+  if (mesh->get(J, "J", 0.0, false)) {
     output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
     // Compare calculated and loaded values
     output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+
+    mesh->communicateXZ(J);
 
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22) / J;
@@ -137,11 +139,13 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Attempt to read Bxy from the grid file
   auto Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy")) {
+  if (mesh->get(Bxy, "Bxy", 0.0, false)) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
     Bxy = Bcalc;
   } else {
+    mesh->communicateXZ(Bxy);
+
     output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     if (!finite(Bxy)) {
@@ -149,24 +153,18 @@ Coordinates::Coordinates(Mesh *mesh)
     }
   }
 
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
-  if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
+  if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
   }
+  mesh->communicateXZ(ShiftTorsion);
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+    if (mesh->get(IntShiftTorsion, "IntShiftTorsion", 0.0, false)) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
     }
+    mesh->communicateXZ(IntShiftTorsion);
   }
 }
 
@@ -275,12 +273,6 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   if (jacobian())
     throw BoutException("Error in jacobian call");
 
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
   ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
@@ -314,6 +306,8 @@ void Coordinates::outputVars(Datafile &file) {
 
 int Coordinates::geometry() {
   TRACE("Coordinates::geometry");
+  localmesh->communicate(dx, dy, g11, g22, g33, g12, g13, g23);
+  localmesh->communicate(g_11, g_22, g_33, g_12, g_13, g_23, J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -409,9 +403,15 @@ int Coordinates::geometry() {
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22) +
           0.5 * g33 * DDY(g_33);
 
-  G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
-  G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
-  G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
+  auto tmp = J * g12;
+  localmesh->communicate(tmp);
+  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
+  tmp = J * g22;
+  localmesh->communicate(tmp);
+  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
+  tmp = J * g23;
+  localmesh->communicate(tmp);
+  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -452,19 +452,23 @@ int Coordinates::geometry() {
 
   Coordinates::metric_field_type d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
-  if (localmesh->get(d2x, "d2x")) {
+  if (localmesh->get(d2x, "d2x", 0.0, false)) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
+    mesh->communicateXZ(d2x);
     d1_dx = -d2x / (dx * dx);
   }
 
-  if (localmesh->get(d2y, "d2y")) {
+  if (localmesh->get(d2y, "d2y", 0.0, false)) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
+    auto tmp2 = 1. / dy;
+    localmesh->communicate(tmp2);
+    d1_dy = bout::derivatives::index::DDY(tmp2); // d/di(1/dy)
   } else {
+    mesh->communicateXZ(d2y);
     d1_dy = -d2y / (dy * dy);
   }
 
