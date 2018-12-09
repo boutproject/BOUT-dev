@@ -657,6 +657,18 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
     if(floats)
       file->setLowPrecision();
 
+#ifdef COORDINATES_USE_3D
+    // Add variables to file
+    if (!file->addVarField3D(d.name + "_x", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
+    }
+    if (!file->addVarField3D(d.name + "_y", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
+    }
+    if (!file->addVarField3D(d.name + "_z", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
+    }
+#else
     // Add variables to file
     if (!file->addVarField2D(d.name + "_x", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
@@ -667,6 +679,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
     if (!file->addVarField2D(d.name + "_z", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
     }
+#endif
 
     if(openclose) {
       file->close();
