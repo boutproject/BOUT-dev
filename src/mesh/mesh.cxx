@@ -68,7 +68,7 @@ int Mesh::get(BoutReal &rval, const std::string &name) {
   return 0;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -78,7 +78,9 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
     return 1;
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if (communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -110,43 +112,43 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name) {
+int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name) {
+int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
