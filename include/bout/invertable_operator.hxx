@@ -23,6 +23,14 @@
  *
  **************************************************************************/
 
+template <typename T>
+class InvertableOperator;
+
+#ifndef __INVERTABLE_OPERATOR_H__
+#define __INVERTABLE_OPERATOR_H__
+
+#ifdef BOUT_HAS_PETSC
+
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
@@ -30,24 +38,21 @@
 #include <options.hxx>
 #include <output.hxx>
 
-template <typename T> class InvertableOperator;
-
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
-
-#ifdef BOUT_HAS_PETSC
-
 #include <petscksp.h>
 
 #include <bout/petsclib.hxx>
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
-template <typename T> T identity(const T &in) { return in; };
+template <typename T>
+T identity(const T& in) {
+  return in;
+};
 
-template <typename T> class InvertableOperator {
+template <typename T>
+class InvertableOperator {
   static_assert(
-      std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value ||
-          std::is_base_of<FieldPerp, T>::value,
+      std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value
+          || std::is_base_of<FieldPerp, T>::value,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
@@ -55,14 +60,14 @@ public:
   using data_type = T;
 
   /// The signature of the functor that applies the operator.
-  using function_signature = std::function<T(const T &)>;
+  using function_signature = std::function<T(const T&)>;
 
   /// Almost empty constructor -- currently don't actually use Options for anything
-  InvertableOperator(const function_signature &func = identity<T>, Options *opt = nullptr,
-                 Mesh *localmesh = nullptr)
-    : operatorFunction(func), preconditionerFunction(func),
-      opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
-      localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
+  InvertableOperator(const function_signature& func = identity<T>, Options* opt = nullptr,
+                     Mesh* localmesh = nullptr)
+      : operatorFunction(func), preconditionerFunction(func),
+        opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
+        localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
     TRACE("InvertableOperator<T>::constructor");
   };
 
@@ -71,14 +76,15 @@ public:
     TRACE("InvertableOperator<T>::destructor");
 #if CHECK > 3
     output_info << endl;
-    output_info << "Destroying KSP object in InvertableOperator with properties: " << endl;
+    output_info << "Destroying KSP object in InvertableOperator with properties: "
+                << endl;
     KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
     output_info << endl;
 #endif
 
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
-    MatDestroy(&matPreconditioner);    
+    MatDestroy(&matPreconditioner);
     VecDestroy(&rhs);
     VecDestroy(&lhs);
   };
@@ -87,20 +93,21 @@ public:
   /// Note by default we set the preconditioner function to match this
   /// as this is the usual mode of operation. If the user doesn't want to
   /// do this they can set alsoSetPreconditioner to false.
-  void setOperatorFunction(const function_signature& func, bool alsoSetPreconditioner = true){
+  void setOperatorFunction(const function_signature& func,
+                           bool alsoSetPreconditioner = true) {
     TRACE("InvertableOperator<T>::setOperatorFunction");
     operatorFunction = func;
-    if ( alsoSetPreconditioner ) {
+    if (alsoSetPreconditioner) {
       preconditionerFunction = func;
     }
   }
 
   /// Allow the user to override the existing preconditioner function
-  void setPreconditionerFunction(const function_signature& func){
-    TRACE("InvertableOperator<T>::setPreconditionerFunction");    
+  void setPreconditionerFunction(const function_signature& func) {
+    TRACE("InvertableOperator<T>::setPreconditionerFunction");
     preconditionerFunction = func;
   }
-  
+
   /// Provide a way to apply the operator to a Field
   T operator()(const T& input) {
     TRACE("InvertableOperator<T>::operator()");
@@ -108,19 +115,20 @@ public:
   }
 
   /// Provide a synonym for applying the operator to a Field
-  T apply(const T& input){ return operator()(input); }
-  
+  T apply(const T& input) { return operator()(input); }
+
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
   /// represents. Not actually required by any of the setup so this should
   /// probably be moved to a separate place (maybe the constructor).
   PetscErrorCode setup() {
     TRACE("InvertableOperator<T>::setup");
-    
+
     Timer timer("invertable_operator_setup");
     if (doneSetup) {
-      throw BoutException("Trying to call setup on an InvertableOperator instance that has "
-                          "already been setup.");
+      throw BoutException(
+          "Trying to call setup on an InvertableOperator instance that has "
+          "already been setup.");
     }
 
     PetscInt ierr;
@@ -140,14 +148,12 @@ public:
                           &matOperator);
     CHKERRQ(ierr);
 
-    /// Create vectors compatible with matrix
-#if PETSC_VERSION_LT(3,6,0)
-    ierr = MatGetVecs(matOperator, &rhs,
-                         &lhs);
-#else    
-    ierr = MatCreateVecs(matOperator, &rhs,
-                         &lhs);
-#endif    
+/// Create vectors compatible with matrix
+#if PETSC_VERSION_LT(3, 6, 0)
+    ierr = MatGetVecs(matOperator, &rhs, &lhs);
+#else
+    ierr = MatCreateVecs(matOperator, &rhs, &lhs);
+#endif
     CHKERRQ(ierr);
 
     /// Zero out the lhs vector as values used for initial guess
@@ -155,7 +161,7 @@ public:
     /// done in the callback function using the passed Field.
     ierr = VecSet(lhs, 0.0);
     CHKERRQ(ierr);
-    
+
     /// Now register Matrix_multiply operation
     ierr =
         MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
@@ -168,23 +174,24 @@ public:
     CHKERRQ(ierr);
 
     /// Now register Matrix_multiply operation
-    ierr =
-        MatShellSetOperation(matPreconditioner, MATOP_MULT, (void (*)(void))(preconditionerWrapper));
+    ierr = MatShellSetOperation(matPreconditioner, MATOP_MULT,
+                                (void (*)(void))(preconditionerWrapper));
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix
     ierr = KSPCreate(BoutComm::get(), &ksp);
     CHKERRQ(ierr);
 
-#if PETSC_VERSION_LT(3,5,0)
+#if PETSC_VERSION_LT(3, 5, 0)
     /// Need to provide a MatStructure flag in versions <3.5. This details if we expect
     /// the preconditioner matrix structure to vary between calls to KSPSolve.
     /// Safest but slowest option is DIFFERENT_NONZERO_PATTERN but can probably usually
     /// use SAME_PRECONDITIONER.
-    ierr = KSPSetOperators(ksp, matOperator, matPreconditioner, DIFFERENT_NONZERO_PATTERN);
+    ierr =
+        KSPSetOperators(ksp, matOperator, matPreconditioner, DIFFERENT_NONZERO_PATTERN);
 #else
     ierr = KSPSetOperators(ksp, matOperator, matPreconditioner);
-#endif    
+#endif
     CHKERRQ(ierr);
 
     /// By default allow a non-zero initial guess as this is probably the
@@ -194,7 +201,7 @@ public:
     /// guess of zero being used.
     ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
     CHKERRQ(ierr);
-    
+
     /// Allow options to be set on command line using a --invert_ksp_* prefix.
     ierr = KSPSetOptionsPrefix(ksp, "invert_");
     CHKERRQ(ierr);
@@ -214,22 +221,22 @@ public:
   // This may be the way to set the initial guess
   // but suspect it's not as there are KSPGuess objects
   // to deal with.
-  T invert(const T &rhsField, const T &guess) {
+  T invert(const T& rhsField, const T& guess) {
     fieldToPetscVec(guess, lhs);
     return invert(rhsField);
   }
-  
+
   /// Triggers the solve of A.x = b for x, where b = rhs and A is the matrix
   /// representation
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
-  T invert(const T &rhsField) {
+  T invert(const T& rhsField) {
     TRACE("InvertableOperator<T>::invert");
     Timer timer("invertable_operator_invert");
 
     if (!doneSetup) {
-      throw BoutException(
-          "Trying to call invert on an InvertableOperator instance that has not been setup.");
+      throw BoutException("Trying to call invert on an InvertableOperator instance that "
+                          "has not been setup.");
     }
 
     ASSERT2(localmesh == rhsField.getMesh());
@@ -269,11 +276,11 @@ public:
   /// With checks enabled provides a convience routine to check that
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
-  bool verify(const T &rhsIn, BoutReal tol = 1.0e-5) {
+  bool verify(const T& rhsIn, BoutReal tol = 1.0e-5) {
     TRACE("InvertableOperator<T>::verify");
 #if CHECK > 1
     T result = invert(rhsIn);
-    localmesh->communicate(result);    
+    localmesh->communicate(result);
     const T applied = operator()(result);
     const BoutReal maxDiff = max(abs(applied - rhsIn), true);
 #if CHECK > 3
@@ -294,7 +301,7 @@ public:
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
   static void reportTime() {
-    TRACE("InvertableOperator<T>::reportTime");    
+    TRACE("InvertableOperator<T>::reportTime");
     BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
     BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
     BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
@@ -302,28 +309,30 @@ public:
     BoutReal time_operate = Timer::resetTime("invertable_operator_operate");
     output_warn << "InvertableOperator timing :: Setup " << time_setup;
     output_warn << " , Invert(packing) " << time_invert << "(";
-    output_warn << time_packing << ")" ;
-    output_warn << " operate :"<<time_operate<< endl;
+    output_warn << time_packing << ")";
+    output_warn << " operate :" << time_operate << endl;
   };
-  
+
 private:
   // PETSc objects
   Mat matOperator, matPreconditioner;
   Vec rhs, lhs;
   KSP ksp;
 
-  // Internal types
-  Options *opt;    // Do we need this?
-  Mesh *localmesh; //< To ensure we can create T on the right mesh
-  bool doneSetup = false;
-
   /// The function that represents the operator that we wish to invert
   function_signature operatorFunction = identity<T>;
 
-  /// The function that represents the preconditioner for the operator that we wish to invert
+  /// The function that represents the preconditioner for the operator that we wish to
+  /// invert
   function_signature preconditionerFunction = identity<T>;
 
-  // To ensure PETSc has been setup -- a bit noisy if creating/destroying InvertableOperator,
+  // Internal types
+  Options* opt;    // Do we need this?
+  Mesh* localmesh; //< To ensure we can create T on the right mesh
+  bool doneSetup = false;
+
+  // To ensure PETSc has been setup -- a bit noisy if creating/destroying
+  // InvertableOperator,
   // maybe this should be static to avoid this but then how do we initialise it?
   PetscLib lib; // Do we need this?
 
@@ -333,9 +342,10 @@ private:
   /// copies the result into the v2 argument.
   static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
     TRACE("InvertableOperator<T>::functionWrapper");
-    InvertableOperator<T> *ctx;
+    InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
-    T tmpField(ctx->localmesh); tmpField.allocate();
+    T tmpField(ctx->localmesh);
+    tmpField.allocate();
     petscVecToField(v1, tmpField);
     // Need following communicate if operator() uses guard cells, i.e. differential
     // operator. Could delegate to the user function but then need to remove const
@@ -343,14 +353,14 @@ private:
     // @TODO : Consider removing the communicate and introduce requirement for user
     // function to communicate if required. This would be neater as currently result
     // of invert needs explicitly communicating if we want to apply the operator to
-    // it, for example (e.g. see verify). 
-    ctx->localmesh->communicate(tmpField); 
+    // it, for example (e.g. see verify).
+    ctx->localmesh->communicate(tmpField);
     T tmpField2 = ctx->operator()(tmpField);
     // This communicate is required in case operator() ends up not setting
     // all periodic boundaries correctly (possibly -- need to check?)
     // @TODO : Consider need for this communicate. Could communicate at the
     // end of the user routine.
-    ctx->localmesh->communicate(tmpField2);  
+    ctx->localmesh->communicate(tmpField2);
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
@@ -361,9 +371,10 @@ private:
   /// copies the result into the v2 argument.
   static PetscErrorCode preconditionerWrapper(Mat m, Vec v1, Vec v2) {
     TRACE("InvertableOperator<T>::functionWrapper");
-    InvertableOperator<T> *ctx;
+    InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
-    T tmpField(ctx->localmesh); tmpField.allocate();
+    T tmpField(ctx->localmesh);
+    tmpField.allocate();
     petscVecToField(v1, tmpField);
     // Need following communicate if operator() uses guard cells, i.e. differential
     // operator. Could delegate to the user function but then need to remove const
@@ -371,32 +382,33 @@ private:
     // @TODO : Consider removing the communicate and introduce requirement for user
     // function to communicate if required. This would be neater as currently result
     // of invert needs explicitly communicating if we want to apply the operator to
-    // it, for example (e.g. see verify). 
-    ctx->localmesh->communicate(tmpField); 
+    // it, for example (e.g. see verify).
+    ctx->localmesh->communicate(tmpField);
     T tmpField2 = ctx->preconditionerFunction(tmpField);
     // This communicate is required in case operator() ends up not setting
     // all periodic boundaries correctly (possibly -- need to check?)
     // @TODO : Consider need for this communicate. Could communicate at the
     // end of the user routine.
-    ctx->localmesh->communicate(tmpField2);  
+    ctx->localmesh->communicate(tmpField2);
     fieldToPetscVec(tmpField2, v2);
     return ierr;
   }
 };
 
 /// Pack a PetscVec from a Field<T>
-template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
+template <typename T>
+PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
   TRACE("fieldToPetscVec<T>");
   Timer timer("invertable_operator_packing");
 
-  PetscScalar *vecData;
+  PetscScalar* vecData;
 
   auto ierr = VecGetArray(out, &vecData);
   CHKERRQ(ierr);
 
   int counter = 0;
 
-  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS") ) {  
+  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS")) {
     vecData[counter] = in[i];
     counter++;
   }
@@ -408,18 +420,19 @@ template <typename T> PetscErrorCode fieldToPetscVec(const T &in, Vec out) {
 }
 
 /// Pack a Field<T> from a PetscVec
-template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
+template <typename T>
+PetscErrorCode petscVecToField(Vec in, T& out) {
   TRACE("petscVecToField<T>");
   Timer timer("invertable_operator_packing");
 
-  const PetscScalar *vecData;
+  const PetscScalar* vecData;
 
   auto ierr = VecGetArrayRead(in, &vecData);
   CHKERRQ(ierr);
 
   int counter = 0;
 
-  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS") ) {  
+  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS")) {
     out[i] = vecData[counter];
     counter++;
   }
@@ -432,7 +445,8 @@ template <typename T> PetscErrorCode petscVecToField(Vec in, T &out) {
 
 #else
 
-template <typename T> class InvertableOperator {
+template <typename T>
+class InvertableOperator {
 public:
 };
 
