@@ -91,8 +91,8 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynam
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
-AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--metric-3D=no/yes],
-        [If yes use Field3D to store coordinates metric data])],,[metric_3d=no])
+AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d=no/yes],
+        [If yes use Field3D to store coordinates metric data])],,[enable_metric_3d=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -362,11 +362,13 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
   ])
 ])
 
-AS_IF([test "x$metric_3d" != "xno"], [
-  AC_MSG_NOTICE([Using Field3D to store coordinates data])
+AS_IF([test "x$enable_metric_3d" != "xno"], [
+  AC_MSG_WARN([Using Field3D to store coordinates data, this is experimental.])
        CXXFLAGS="$CXXFLAGS -DCOORDINATES_USE_3D=yes"
+       METRIC_TYPE="3D"
      ], [
   AC_MSG_NOTICE([Using Field2D to store coordinates data])
+         METRIC_TYPE="2D"
 ])
 
 #############################################################
@@ -1309,7 +1311,7 @@ AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
-
+AC_MSG_NOTICE([  Metric type             : $METRIC_TYPE])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])
 AC_MSG_NOTICE([  Data analysis configuration  ])

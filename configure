@@ -1480,7 +1480,8 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
-  --metric-3D=no/yes      If yes use Field3D to store coordinates metric data
+  --enable-metric-3d=no/yes
+                          If yes use Field3D to store coordinates metric data
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
   --disable-nls           do not use Native Language Support
@@ -2724,7 +2725,7 @@ fi
 if test "${enable_metric_3d+set}" = set; then :
   enableval=$enable_metric_3d;
 else
-  metric_3d=no
+  enable_metric_3d=no
 fi
 
 
@@ -6090,16 +6091,18 @@ fi
 
 fi
 
-if test "x$metric_3d" != "xno"; then :
+if test "x$enable_metric_3d" != "xno"; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Using Field3D to store coordinates data" >&5
-$as_echo "$as_me: Using Field3D to store coordinates data" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Using Field3D to store coordinates data, this is experimental." >&5
+$as_echo "$as_me: WARNING: Using Field3D to store coordinates data, this is experimental." >&2;}
        CXXFLAGS="$CXXFLAGS -DCOORDINATES_USE_3D=yes"
+       METRIC_TYPE="3D"
 
 else
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Using Field2D to store coordinates data" >&5
 $as_echo "$as_me: Using Field2D to store coordinates data" >&6;}
+         METRIC_TYPE="2D"
 
 fi
 
@@ -17116,7 +17119,8 @@ $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
 $as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS (path: $localedir)" >&5
 $as_echo "$as_me:   Natural language support: $HAS_NLS (path: $localedir)" >&6;}
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   Metric type             : $METRIC_TYPE" >&5
+$as_echo "$as_me:   Metric type             : $METRIC_TYPE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: -------------------------------" >&5
