@@ -64,11 +64,109 @@ public:
 
   /// Almost empty constructor -- currently don't actually use Options for anything
   InvertableOperator(const function_signature& func = identity<T>, Options* opt = nullptr,
-                     Mesh* localmesh = nullptr)
+                     Mesh* localmeshIn = nullptr)
       : operatorFunction(func), preconditionerFunction(func),
         opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmesh ? localmesh : mesh), doneSetup(false) {
+        localmesh(localmeshIn == nullptr ? mesh : localmeshIn), doneSetup(false) {
     TRACE("InvertableOperator<T>::constructor");
+
+    if (std::is_same<Field3D, T>::value) {
+      if (not localmesh->hasRegion3D("RGN_NOCORNERS")) {
+        // This avoids all guard cells and corners but includes boundaries
+        // Note we probably don't want to include periodic boundaries as these
+        // are essentially just duplicate points so should be careful here (particularly
+        // in y)
+        // to only include unique points
+        Region<Ind3D> nocorner3D = localmesh->getRegion3D("RGN_NOBNDRY");
+        if (!localmesh->periodicX) {
+          if (localmesh->firstX())
+            nocorner3D += Region<Ind3D>(0, localmesh->xstart - 1, localmesh->ystart,
+                                        localmesh->yend, 0, localmesh->LocalNz - 1,
+                                        localmesh->LocalNy, localmesh->LocalNz,
+                                        localmesh->maxregionblocksize);
+          if (localmesh->lastX())
+            nocorner3D += Region<Ind3D>(
+                localmesh->LocalNx - localmesh->xstart, localmesh->LocalNx - 1,
+                localmesh->ystart, localmesh->yend, 0, localmesh->LocalNz - 1,
+                localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+        }
+        if (localmesh->firstY() or localmesh->lastY()) {
+          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+            if (not localmesh->periodicY(ix)) {
+              if (localmesh->firstY())
+                nocorner3D +=
+                    Region<Ind3D>(ix, ix, 0, localmesh->ystart - 1, 0,
+                                  localmesh->LocalNz - 1, localmesh->LocalNy,
+                                  localmesh->LocalNz, localmesh->maxregionblocksize);
+              if (localmesh->lastY())
+                nocorner3D += Region<Ind3D>(
+                    ix, ix, localmesh->LocalNy - localmesh->ystart,
+                    localmesh->LocalNy - 1, 0, localmesh->LocalNz - 1, localmesh->LocalNy,
+                    localmesh->LocalNz, localmesh->maxregionblocksize);
+            }
+          }
+        }
+
+        nocorner3D.unique();
+        localmesh->addRegion3D("RGN_NOCORNERS", nocorner3D);
+      }
+
+    } else if (std::is_same<Field2D, T>::value) {
+      if (not localmesh->hasRegion2D("RGN_NOCORNERS")) {
+        // This avoids all guard cells and corners but includes boundaries
+        Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
+        if (!localmesh->periodicX) {
+          if (localmesh->firstX())
+            nocorner2D += Region<Ind2D>(0, localmesh->xstart - 1, localmesh->ystart,
+                                        localmesh->yend, 0, 0, localmesh->LocalNy, 1,
+                                        localmesh->maxregionblocksize);
+          if (localmesh->lastX())
+            nocorner2D +=
+                Region<Ind2D>(localmesh->LocalNx - localmesh->xstart,
+                              localmesh->LocalNx - 1, localmesh->ystart, localmesh->yend,
+                              0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+        }
+        if (localmesh->firstY() or localmesh->lastY()) {
+          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+            if (not localmesh->periodicY(ix)) {
+              if (localmesh->firstY())
+                nocorner2D +=
+                    Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
+                                  localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+              if (localmesh->lastY())
+                nocorner2D +=
+                    Region<Ind2D>(ix, ix, localmesh->LocalNy - localmesh->ystart,
+                                  localmesh->LocalNy - 1, 0, 0, localmesh->LocalNy, 1,
+                                  localmesh->maxregionblocksize);
+            }
+          }
+        }
+        nocorner2D.unique();
+        localmesh->addRegion2D("RGN_NOCORNERS", nocorner2D);
+      }
+
+    } else if (std::is_same<FieldPerp, T>::value) {
+      if (not localmesh->hasRegionPerp("RGN_NOCORNERS")) {
+        // This avoids all guard cells and corners but includes boundaries
+        Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
+        if (!localmesh->periodicX) {
+          if (localmesh->firstX())
+            nocornerPerp +=
+                Region<IndPerp>(0, localmesh->xstart - 1, 0, 0, 0, localmesh->LocalNz - 1,
+                                1, localmesh->LocalNz, localmesh->maxregionblocksize);
+          if (localmesh->lastX())
+            nocornerPerp +=
+                Region<IndPerp>(localmesh->LocalNx - localmesh->xstart,
+                                localmesh->LocalNx - 1, 0, 0, 0, localmesh->LocalNz - 1,
+                                1, localmesh->LocalNz, localmesh->maxregionblocksize);
+        }
+        nocornerPerp.unique();
+        localmesh->addRegionPerp("RGN_NOCORNERS", nocornerPerp);
+      }
+
+    } else {
+      throw BoutException("Invalid template type provided to InvertableOperator");
+    }
   };
 
   /// Destructor just has to cleanup the PETSc owned objects.
