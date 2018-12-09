@@ -26,8 +26,7 @@
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <fieldperp.hxx>
 #include <utils.hxx>
@@ -39,13 +38,6 @@ FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
   }
-  
-#if CHECK > 0
-  else {
-    nx=-1;
-    nz=-1;
-  }
-#endif
 }
 
 FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {
@@ -96,45 +88,21 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
   checkData(rhs);
 
-  const Region<IndPerp> &region_all = fieldmesh->getRegionPerp("RGN_ALL");
-
-  BOUT_FOR(i, region_all) {
-    (*this)[i] = rhs;
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;
 }
 
 /***************************************************************
- *                         ITERATORS
- ***************************************************************/
-
-const DataIterator FieldPerp::begin() const {
-  return DataIterator( 0, nx-1,
-                      yindex, yindex,
-                      0, nz-1);
-}
-
-const DataIterator FieldPerp::end() const {
-  return DataIterator( 0, nx-1,
-                      yindex, yindex,
-		       0, nz-1,DI_GET_END);
-}
-
-
-/***************************************************************
  *                         OPERATORS 
  ***************************************************************/
 
-#define FPERP_OP_FPERP(op, bop, ftype)                                                   \
-  FieldPerp &FieldPerp::operator op(const ftype &rhs) {                                  \
+#define FPERP_OP_FPERP(op, bop)                                                          \
+  FieldPerp &FieldPerp::operator op(const FieldPerp &rhs) {                              \
     if (data.unique()) {                                                                 \
       checkData(rhs);                                                                    \
       /* Only reference to the data */                                                   \
-      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
-      BOUT_FOR(i, region) {                                                              \
-        (*this)[i] op rhs[i];                                                            \
-      }                                                                                  \
+      BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] op rhs[i]; }                        \
       checkData(*this);                                                                  \
     } else {                                                                             \
       /* Shared with another FieldPerp */                                                \
@@ -143,10 +111,10 @@ const DataIterator FieldPerp::end() const {
     return *this;                                                                        \
   }
 
-FPERP_OP_FPERP(+=, +, FieldPerp);
-FPERP_OP_FPERP(-=, -, FieldPerp);
-FPERP_OP_FPERP(*=, *, FieldPerp);
-FPERP_OP_FPERP(/=, /, FieldPerp);
+FPERP_OP_FPERP(+=, +);
+FPERP_OP_FPERP(-=, -);
+FPERP_OP_FPERP(*=, *);
+FPERP_OP_FPERP(/=, /);
 
 #define FPERP_OP_FIELD(op, bop, ftype)                                                   \
   FieldPerp &FieldPerp::operator op(const ftype &rhs) {                                  \
@@ -154,10 +122,7 @@ FPERP_OP_FPERP(/=, /, FieldPerp);
       checkData(*this);                                                                  \
       checkData(rhs);                                                                    \
       /* Only reference to the data */                                                   \
-      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
-      BOUT_FOR(i, region) {                                                              \
-        (*this)[i] op rhs(i.x(), yindex, i.z());                                         \
-      }                                                                                  \
+      BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] op rhs(i.x(), yindex, i.z()); }     \
       checkData(*this);                                                                  \
     } else {                                                                             \
       /* Shared with another FieldPerp */                                                \
@@ -183,10 +148,7 @@ FPERP_OP_FIELD(/=, /, Field2D);
     if (data.unique()) {                                                                 \
       checkData(rhs);                                                                    \
       /* Only reference to the data */                                                   \
-      const Region<IndPerp> &region = fieldmesh->getRegionPerp("RGN_ALL");               \
-      BOUT_FOR(i, region) {                                                              \
-        (*this)[i] op rhs;                                                               \
-      }                                                                                  \
+      BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] op rhs; }                           \
       checkData(*this);                                                                  \
     } else {                                                                             \
       /* Shared with another FieldPerp */                                                \
@@ -200,20 +162,12 @@ FPERP_OP_REAL(-=, -);
 FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
-const IndexRange FieldPerp::region(REGION rgn) const {
-  switch (rgn) {
-  case RGN_ALL:
-  case RGN_NOZ:
-    return IndexRange{0, nx - 1, 0, 0, 0, nz - 1};
-    break;
-  case RGN_NOX:
-    return IndexRange{getMesh()->xstart, getMesh()->xend, 0, 0, 0, nz - 1};
-    break;
-  default:
-    throw BoutException("FieldPerp::region() : Requested region not implemented");
-    break;
-  };
-}
+const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
+  return fieldmesh->getRegionPerp(REGION_STRING(region));
+};
+const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
+  return fieldmesh->getRegionPerp(region_name);
+};
 
 const Region<IndPerp>& FieldPerp::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegionPerp(region_name);
@@ -227,26 +181,23 @@ const Region<IndPerp>& FieldPerp::getRegion(const std::string &region_name) cons
 FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
 
 // Operator on FieldPerp and another field
-#define FPERP_FPERP_OP_FPERP(op, ftype)                                                  \
-  const FieldPerp operator op(const FieldPerp &lhs, const ftype &rhs) {                  \
+#define FPERP_FPERP_OP_FPERP(op)                                                         \
+  const FieldPerp operator op(const FieldPerp &lhs, const FieldPerp &rhs) {              \
     checkData(lhs);                                                                      \
     checkData(rhs);                                                                      \
     FieldPerp result(lhs.getMesh());                                                     \
     result.allocate();                                                                   \
     result.setIndex(lhs.getIndex());                                                     \
                                                                                          \
-    const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp("RGN_ALL");             \
-    BOUT_FOR(i, region) {                                                                \
-      result[i] = lhs[i] op rhs[i];                                                      \
-    }                                                                                    \
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs[i] op rhs[i]; }           \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
 
-FPERP_FPERP_OP_FPERP(+, FieldPerp);
-FPERP_FPERP_OP_FPERP(-, FieldPerp);
-FPERP_FPERP_OP_FPERP(*, FieldPerp);
-FPERP_FPERP_OP_FPERP(/, FieldPerp);
+FPERP_FPERP_OP_FPERP(+);
+FPERP_FPERP_OP_FPERP(-);
+FPERP_FPERP_OP_FPERP(*);
+FPERP_FPERP_OP_FPERP(/);
 
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FIELD(op, ftype)                                                  \
@@ -257,8 +208,7 @@ FPERP_FPERP_OP_FPERP(/, FieldPerp);
     result.allocate();                                                                   \
     result.setIndex(lhs.getIndex());                                                     \
                                                                                          \
-    const Region<IndPerp> &region = lhs.getMesh()->getRegionPerp("RGN_ALL");             \
-    BOUT_FOR(i, region) {                                                                \
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) {                                           \
       result[i] = lhs[i] op rhs(i.x(), lhs.getIndex(), i.z());                           \
     }                                                                                    \
     checkData(result);                                                                   \
@@ -286,10 +236,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
     result.allocate();                                                                   \
     result.setIndex(lhs.getIndex());                                                     \
                                                                                          \
-    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
-    BOUT_FOR (i, region) {                                                               \
-      result[i] = lhs[i] op rhs;                                                         \
-    }                                                                                    \
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs[i] op rhs; }              \
                                                                                          \
     checkData(result);                                                                   \
     return result;                                                                       \
@@ -308,10 +255,7 @@ FPERP_FPERP_OP_REAL(/);
     result.allocate();                                                                   \
     result.setIndex(rhs.getIndex());                                                     \
                                                                                          \
-    const Region<IndPerp> &region = result.getMesh()->getRegionPerp("RGN_ALL");          \
-    BOUT_FOR (i, region) {                                                               \
-      result[i] = lhs op rhs[i];                                                         \
-    }                                                                                    \
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs op rhs[i]; }              \
                                                                                          \
     checkData(result);                                                                   \
     return result;                                                                       \
@@ -350,10 +294,7 @@ FPERP_REAL_OP_FPERP(/);
     FieldPerp result(f.getMesh());                                                       \
     result.allocate();                                                                   \
     result.setIndex(f.getIndex());                                                       \
-    const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));      \
-    BOUT_FOR (d, region) {                                                               \
-      result[d] = func(f[d]);                                                            \
-    }                                                                                    \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -383,8 +324,7 @@ const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn) {
   checkData(var);
   FieldPerp result = copy(var);
 
-  const Region<IndPerp> &region = var.getMesh()->getRegionPerp(REGION_STRING(rgn));
-  BOUT_FOR(d, region) {
+  BOUT_FOR(d, var.getRegion(rgn)) {
     if (result[d] < f) {
       result[d] = f;
     }
@@ -404,11 +344,8 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   result.allocate();
   result.setIndex(y);
 
-  const Region<IndPerp> &region_all = f.getMesh()->getRegionPerp("RGN_ALL");
-  BOUT_FOR(i, region_all) {
-    result[i] = f(i, y);
-  }
-  
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = f(i, y); }
+
   checkData(result);
   return result;
 }
@@ -418,8 +355,7 @@ BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
 
   checkData(f);
 
-  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
@@ -442,8 +378,7 @@ BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
 
   checkData(f);
 
-  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
+  const auto region = f.getRegion(rgn);
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
@@ -468,9 +403,7 @@ bool finite(const FieldPerp &f, REGION rgn) {
     return false;
   }
 
-  const Region<IndPerp> &region = f.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
-  BOUT_FOR_SERIAL(i, region) {
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!::finite(f[i])) {
       return false;
     }
@@ -492,11 +425,7 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
   result.setIndex(lhs.getIndex());
 
-  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   checkData(result);
   return result;
@@ -513,11 +442,7 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
   result.allocate();
   result.setIndex(lhs.getIndex());
 
-  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs[i], rhs);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
   checkData(result);
   return result;
@@ -534,11 +459,7 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   result.allocate();
   result.setIndex(rhs.getIndex());
 
-  const Region<IndPerp> &region = result.getMesh()->getRegionPerp(REGION_STRING(rgn));
-
-  BOUT_FOR(i, region) {
-    result[i] = ::pow(lhs, rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
   checkData(result);
   return result;
@@ -546,10 +467,8 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
 
 #if CHECK > 2
 void checkDataIsFiniteOnRegion(const FieldPerp &f, REGION region) {
-  const Region<IndPerp> &new_region = f.getMesh()->getRegionPerp(REGION_STRING(region));
-  
   // Do full checks
-  BOUT_FOR_SERIAL(i, new_region) {
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
       throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x(),
                           i.z());
@@ -578,10 +497,6 @@ void checkData(const FieldPerp &f, REGION region) {
 void invalidateGuards(FieldPerp &var) {
   Mesh *localmesh = var.getMesh();
 
-  const Region<IndPerp> &region_guards = localmesh->getRegionPerp("RGN_GUARDS");
-
-  BOUT_FOR(i, region_guards) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

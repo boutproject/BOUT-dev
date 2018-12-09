@@ -54,7 +54,7 @@ protected:
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
     GRID_LOAD(Rxy);

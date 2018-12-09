@@ -247,27 +247,6 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, Bou
 
 const Field3D field_larger(const Field3D &f, const BoutReal limit);
 
-const Field2D Invert_laplace2(const Field2D &f, int flags) {
-  Field3D f_tmp, result_tmp;
-  Field2D result;
-  f_tmp.allocate();
-  result_tmp.allocate();
-  result.allocate();
-  
-  f_tmp = f;
-  
-  result_tmp = invert_laplace(f_tmp, flags, NULL);
-  mesh->communicate(result_tmp);
-  result_tmp = smooth_x(result_tmp);
-  result_tmp = nl_filter_y(result_tmp, 1);
-
-  for(auto i : result) {
-    result[i] = result_tmp[i];
-  }
-  
-  return(result);
-}
-
 const Field3D field_larger(const Field3D &f, const BoutReal limit) {
   Field3D result;
   result.allocate();
@@ -356,7 +335,7 @@ int physics_init(bool restarting) {
   bool noshear;
   
   // Get the metric tensor
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
 
   output.write("Solving high-beta flute reduced equations\n");
   output.write("\tFile    : %s\n", __FILE__);
@@ -1174,7 +1153,7 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
     fp = interpolate(f, Xip_x, Xip_z);
     fm = interpolate(f, Xim_x, Xim_z);
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     result.allocate();
     for(auto i : result) {
@@ -1204,7 +1183,7 @@ bool first_run = true; // For printing out some diagnostics first time around
 
 int physics_run(BoutReal t) {
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
 
   // Perform communications
   mesh->communicate(comms);

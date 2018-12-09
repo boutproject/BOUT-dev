@@ -29,14 +29,14 @@ void InterpolationFactory::cleanup() {
 
 Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   // Get the default interpolation type
-  string type = getDefaultInterpType();
+  std::string type = getDefaultInterpType();
 
   // If no options section passed (e.g. for a variable), then use the
   // "interpolation" section
   if (options == nullptr)
     options = Options::getRoot()->getSection("interpolation");
 
-  string interp_option;
+  std::string interp_option;
   options->get("type", interp_option, type);
 
   if (!interp_option.empty()) type = interp_option.c_str();
@@ -44,7 +44,7 @@ Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   return create(type, options, mesh);
 }
 
-Interpolation* InterpolationFactory::create(const string &name, Options *options, Mesh *localmesh) {
+Interpolation* InterpolationFactory::create(const std::string &name, Options *options, Mesh *localmesh) {
   // If no options section passed (e.g. for a variable), then use the
   // "interpolation" section
   if (options == nullptr)
@@ -61,7 +61,7 @@ Interpolation* InterpolationFactory::create(const string &name, Options *options
   return interp(localmesh);
 }
 
-void InterpolationFactory::add(CreateInterpCallback interp, const string &name) {
+void InterpolationFactory::add(CreateInterpCallback interp, const std::string &name) {
   if ((findInterpolation(name)) != nullptr) {
     // error - already exists
     output << "ERROR: Trying to add an already existing interpolation: " << name << endl;
@@ -70,7 +70,7 @@ void InterpolationFactory::add(CreateInterpCallback interp, const string &name) 
   interp_map[lowercase(name)] = interp;
 }
 
-InterpolationFactory::CreateInterpCallback InterpolationFactory::findInterpolation(const string &name) {
+InterpolationFactory::CreateInterpCallback InterpolationFactory::findInterpolation(const std::string &name) {
   auto interp = interp_map.find(lowercase(name));
   if (interp == end(interp_map))
     return nullptr;

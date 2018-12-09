@@ -20,35 +20,8 @@
 /// Global mesh
 extern Mesh *mesh;
 
-/// Test fixture to make sure the global mesh is our fake one
-class Field2DTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int Field2DTest::nx = 3;
-const int Field2DTest::ny = 5;
-const int Field2DTest::nz = 7;
+// Reuse the "standard" fixture for FakeMesh
+using Field2DTest = FakeMeshFixture;
 
 TEST_F(Field2DTest, IsReal) {
   Field2D field;
@@ -256,43 +229,7 @@ TEST_F(Field2DTest, IterateOverWholeField) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
-      ++found_sentinels;
-    }
-  }
-
-  EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(test_indices == result_indices);
-}
-
-TEST_F(Field2DTest, IterateOverRGN_ALL) {
-  Field2D field = 1.0;
-
-  const BoutReal sentinel = -99.0;
-
-  // We use a set in case for some reason the iterator doesn't visit
-  // each point in the order we expect
-  std::set<std::vector<int>> test_indices;
-  test_indices.insert({0, 0});
-  test_indices.insert({0, 1});
-  test_indices.insert({1, 0});
-  test_indices.insert({1, 1});
-  const int num_sentinels = test_indices.size();
-
-  // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
-    field(index[0], index[1]) = sentinel;
-  }
-
-  int found_sentinels = 0;
-  BoutReal sum = 0.0;
-  std::set<std::vector<int>> result_indices;
-
-  for (auto &i : field.region(RGN_ALL)) {
-    sum += field[i];
-    if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -321,7 +258,7 @@ TEST_F(Field2DTest, IterateOverRegionInd2D_RGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.getMesh()->getRegion2D("RGN_ALL")) {
+  for (auto &i : field.getRegion("RGN_ALL")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y()});
@@ -394,10 +331,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOBNDRY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOBNDRY)) {
+  for (auto &i : field.getRegion(RGN_NOBNDRY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -435,10 +372,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOX)) {
+  for (auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -476,10 +413,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOY)) {
+  for (auto &i : field.getRegion(RGN_NOY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -493,7 +430,7 @@ TEST_F(Field2DTest, IterateOverRGN_NOZ) {
   Field2D field = 1.0;
 
   // This is not a valid region for Field2D
-  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+  EXPECT_THROW(field.getRegion(RGN_NOZ), BoutException);
 }
 
 TEST_F(Field2DTest, Indexing) {
@@ -656,7 +593,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
   const int nmesh = nx * ny;
 
   int sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -664,7 +601,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.region(RGN_NOBNDRY)) {
+  for (const auto &i : field.getRegion(RGN_NOBNDRY)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -680,7 +617,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
 
   sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     if (!finite(field[i]))
       sum++;
   }
@@ -1143,6 +1080,102 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(Field2DTest, Swap) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Mesh for second field
+  constexpr int second_nx = Field2DTest::nx + 2;
+  constexpr int second_ny = Field2DTest::ny + 2;
+  constexpr int second_nz = Field2DTest::nz + 2;
+
+  FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.StaggerGrids = false;
+  output_info.disable();
+  second_mesh.createDefaultRegions();
+  output_info.enable();
+
+  // Second field
+  Field2D second(2., &second_mesh);
+
+  ddt(second) = 2.4;
+
+  // Basic sanity check
+  EXPECT_TRUE(IsField2DEqualBoutReal(first, 1.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 2.0));
+
+  // swap is marked noexcept, so absolutely should not throw!
+  ASSERT_NO_THROW(swap(first, second));
+
+  // Values
+  EXPECT_TRUE(IsField2DEqualBoutReal(first, 2.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(first), 2.4));
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(first.getMesh(), &second_mesh);
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(first.getNx(), second_nx);
+  EXPECT_EQ(first.getNy(), second_ny);
+  EXPECT_EQ(first.getNz(), 1);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(first.getLocation(), CELL_CENTRE);
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
+TEST_F(Field2DTest, MoveCtor) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Second field
+  Field2D second{std::move(first)};
+
+  // Values
+  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
 }
 
 #pragma GCC diagnostic pop

@@ -44,10 +44,10 @@ class BoundaryRegionPar : public BoundaryRegionBase {
   IndicesIter bndry_position;
 
 public:
-  BoundaryRegionPar(const string &name, int dir, Mesh* passmesh) :
+  BoundaryRegionPar(const std::string &name, int dir, Mesh* passmesh) :
     BoundaryRegionBase(name, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
-  BoundaryRegionPar(const string &name, BndryLoc loc,int dir, Mesh* passmesh) :
+  BoundaryRegionPar(const std::string &name, BndryLoc loc,int dir, Mesh* passmesh) :
     BoundaryRegionBase(name, loc, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
 

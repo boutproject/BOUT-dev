@@ -23,28 +23,6 @@
 // 2nd order central differencing
 
 /*!
- * \brief 2nd order central differencing in X
- * 
- * Performs calculation at a single point. The input field
- * must be defined at i.xp() and i.xm()
- * 
- * @param f  The field to be differentiated
- * @param i  The point where the result is calculated
- */
-inline BoutReal DDX_C2(const Field3D &f, const DataIterator &i) {
-  return (f[i.xp()] - f[i.xm()])/(2.*mesh->coordinates()->dx[i]);
-}
-
-inline BoutReal DDY_C2(const Field3D &f, const DataIterator &i) {
-  return (f.yup()[i.yp()] - f.ydown()[i.ym()])/(2.*mesh->coordinates()->dy[i]);
-}
-
-
-inline BoutReal DDZ_C2(const Field3D &f, const DataIterator &i) {
-  return (f[i.zp()] - f[i.zm()])/(2.*mesh->coordinates()->dz);
-}
-
-/*!
  * 2nd order central differencing in X
  * Performs operation over RGN_NOBNDRY
  */
@@ -85,20 +63,6 @@ const Field3D DDZ_C2(const Field3D &f) {
 
 /////////////////////////////////////////////////////////////////////////////
 // 4th order central differencing
-
-/*!
- * 4th order central differencing in X
- */
-inline BoutReal DDX_C4(const Field3D &f, const DataIterator &i) {
-  return (8.*f[i.xp()] - 8.*f[i.xm()] + f[i.offset(-2,0,0)] - f[i.offset(2,0,0)])/(12.*mesh->coordinates()->dx[i]);
-}
-
-/*!
- * 4th order central differencing in Z
- */
-inline BoutReal DDZ_C4(const Field3D &f, const DataIterator &i) {
-  return (8.*f[i.zp()] - 8.*f[i.zm()] + f[i.offset(0,0,-2)] - f[i.offset(0,0,2)])/(12.*mesh->coordinates()->dz);
-}
 
 /*!
  * 4th order central differencing in X
@@ -157,44 +121,6 @@ const Field3D DDX_test(const Field3D &f) {
 
 /////////////////////////////////////////////////////////////////////////////
 // Arakawa brackets
-
-BoutReal bracket_arakawa(const Field3D &f, const Field3D &g, const DataIterator &i) {
-  Coordinates *metric = mesh->coordinates();
-  
-  BoutReal fxp = f[i.xp()];
-  BoutReal fxm = f[i.xm()];
-  BoutReal fzp = f[i.zp()];
-  BoutReal fzm = f[i.zm()];
-
-  BoutReal fpp = f[i.offset(1,0,1)];
-  BoutReal fpm = f[i.offset(1,0,-1)];
-  BoutReal fmp = f[i.offset(-1,0,1)];
-  BoutReal fmm = f[i.offset(-1,0,-1)];
-  
-  BoutReal gxp = g[i.xp()];
-  BoutReal gxm = g[i.xm()];
-  BoutReal gzp = g[i.zp()];
-  BoutReal gzm = g[i.zm()];
-
-  // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-  BoutReal Jpp = 0.25*( (fzp - fzm)*
-                        (gxp - gxm) -
-                        (fxp - fxm)*
-                        (gzp - gzm) );
-  
-  // J+x
-  BoutReal Jpx = 0.25*( gxp*(fpp-fpm) -
-                        gxm*(fmp-fmm) -
-                        gzp*(fpp-fmp) +
-                        gzm*(fpm-fmm));
-  // Jx+
-  BoutReal Jxp = 0.25*( g[i.offset(1,0,1)]*(fzp-fxp) -
-                        g[i.offset(-1,0,-1)]*(fxm-fzm) -
-                        g[i.offset(-1,0,1)]*(fzp-fxm) +
-                        g[i.offset(1,0,-1)]*(fxp-fzm) );
-  
-  return (Jpp + Jpx + Jxp) / (3. * metric->dx[i] * metric->dz);
-}
 
 const Field3D bracket_arakawa(const Field3D &f, const Field3D &g) {
   Field3D result;

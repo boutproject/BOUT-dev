@@ -24,7 +24,7 @@
  * format     Pointer to DataFormat. This will be deleted in
  *            destructor
  */
-GridFile::GridFile(std::unique_ptr<DataFormat> format, string gridfilename)
+GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
     : file(std::move(format)), filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
@@ -46,13 +46,13 @@ GridFile::~GridFile() {
  * Currently this is done by getting the variable's size,
  * and testing for zero size.
  */
-bool GridFile::hasVar(const string &name) {
+bool GridFile::hasVar(const std::string &name) {
   if (!file->is_valid()) {
     return false;
   }
   
   /// Get the size of the variable
-  vector<int> s = file->getSize(name);
+  std::vector<int> s = file->getSize(name);
   
   /// Test if the variable has zero size
   return s.size() != 0;
@@ -79,7 +79,7 @@ bool GridFile::hasVar(const string &name) {
  *   Boolean. True on success.
  * 
  */
-bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
+bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
   Timer timer("io");
   TRACE("GridFile::get(int)");
   
@@ -100,7 +100,7 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival,      const string &name) {
  *
  *
  */
-bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
+bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
   Timer timer("io");
   TRACE("GridFile::get(BoutReal)");
   
@@ -121,14 +121,14 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
  * 
  * Succeeds if the variable in the file is 0-D or 2-D
  */
-bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
+bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal def) {
   Timer timer("io");
   TRACE("GridFile::get(Field2D)");
 
   if (!file->is_valid()) {
     throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
   }
-  vector<int> size = file->getSize(name);
+  std::vector<int> size = file->getSize(name);
   
   switch(size.size()) {
   case 0: {
@@ -179,7 +179,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
   ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
 
   ///Global (x,y) dimensions of field
-  const vector<int> field_dimensions = file->getSize(name);
+  const std::vector<int> field_dimensions = file->getSize(name);
 
   // Number of points to read.
   int nx_to_read = -1;
@@ -237,7 +237,7 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
  * 
  * 
  */
-bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
+bool GridFile::get(Mesh *m, Field3D &var,   const std::string &name, BoutReal def) {
   Timer timer("io");
   TRACE("GridFile::get(Field3D)");
 
@@ -249,7 +249,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 
   // Check the size of the variable in the file
   
-  vector<int> size = file->getSize(name);
+  std::vector<int> size = file->getSize(name);
   switch(size.size()) {
   case 0: {
     // Variable not found
@@ -331,7 +331,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
   return true;
 }
 
-bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
+bool GridFile::get(Mesh *UNUSED(m), std::vector<int> &var, const std::string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<int>)");
   
@@ -349,7 +349,7 @@ bool GridFile::get(Mesh *UNUSED(m), vector<int> &var, const string &name,
   return true;
 }
 
-bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
+bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<BoutReal>)");
   
@@ -382,7 +382,7 @@ bool GridFile::get(Mesh *UNUSED(m), vector<BoutReal> &var, const string &name,
   with the BoutReal and imaginary parts of each (positive) frequency
   up to the nyquist frequency.
  */
-bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name, 
+bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name, 
 				 int yread, int ydest, int ysize, 
 				 int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
@@ -391,7 +391,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   }
   
   /// Check the size of the data
-  vector<int> size = file->getSize(name);
+  std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
@@ -407,7 +407,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  BoutReal zlength = m->coordinates(var.getLocation())->zlength();
+  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength();
   
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
@@ -472,7 +472,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
  * Reads a 3D variable directly from the file, without 
  * any processing
  */ 
-bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name, 
+bool GridFile::readgrid_3dvar_real(Mesh *m, const std::string &name, 
 				   int yread, int ydest, int ysize, 
 				   int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
@@ -481,7 +481,7 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name,
   }
   
   /// Check the size of the data
-  vector<int> size = file->getSize(name);
+  std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());

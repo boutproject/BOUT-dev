@@ -42,7 +42,7 @@ cat <<EOF
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
-# distutils: sources = helper.cxx
+# distutils: sources = helper.cxx boutexception_helper.cxx
 # distutils: extra_compile_args = $flags
 EOF
 if test ".${ldflags}" != "."
@@ -60,6 +60,9 @@ cimport numpy as np
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
+
+cdef extern from "boutexception_helper.hxx":
+     cdef void raise_bout_py_error()
 EOF
 
 # make a list of the format "nx, ny, nz" or something similar
@@ -108,15 +111,15 @@ EOF
 for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
 do
     n=${f%:*}
-    echo "    c.$ftype * f$n( c.$ftype*, c.$ftype*) except +"
-    echo "    c.$ftype * f$n( c.$ftype*, double) except +"
-    echo "    c.$ftype * f$n( double, c.$ftype*) except +"
-    echo "    void fi$n( c.$ftype*, c.$ftype*) except +"
-    echo "    void fi$n( c.$ftype*, double) except +"
+    echo "    c.$ftype * f$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
+    echo "    c.$ftype * f$n( c.$ftype*, double) except +raise_bout_py_error"
+    echo "    c.$ftype * f$n( double, c.$ftype*) except +raise_bout_py_error"
+    echo "    void fi$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
+    echo "    void fi$n( c.$ftype*, double) except +raise_bout_py_error"
     if [ $ftype = "Field3D" ]; then
-        echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +"
-        echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +"
-        echo "    void fi$n( c.Field3D*, c.Field2D*) except +"
+        echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +raise_bout_py_error"
+        echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
+        echo "    void fi$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
     fi
 done
 cat <<EOF
@@ -162,11 +165,11 @@ cdef class $ftype:
 
         Parameters
         ----------
-        tind : int
+        tind : int, optional
             time slice to read
-        mesh : Mesh
+        mesh : Mesh, optional
             if not defined, use global mesh
-        ignoreDataType : bool
+        ignoreDataType : bool, optional
             Do not fail if data is not float64
         **kwargs
             remaining arguments are passed to collect
@@ -223,11 +226,11 @@ cdef class $ftype:
         ----------
         outputs : BoutOutputs
             object to read from
-        tind : int
+        tind : int, optional
             time slice to read
-        mesh : Mesh
+        mesh : Mesh, optional
             if not defined, use global mesh
-        ignoreDataType : bool
+        ignoreDataType : bool, optional
             Do not fail if data is not float64
         **kwargs
             remaining arguments are passed to collect
@@ -299,7 +302,7 @@ cdef class $ftype:
         ----------
         data : array_like
             The data to be set
-        ignoreDataType : bool
+        ignoreDataType : bool, optional
             Ignore if data is off different type to BoutReal
         """
         return self.setAll(data,ignoreDataType)
@@ -312,7 +315,7 @@ cdef class $ftype:
         ----------
         data : array_like
             The data to be set
-        ignoreDataType : bool
+        ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
 EOF
@@ -393,15 +396,15 @@ cat <<EOF
         """
         Get or set the time derivative
 
-        Returns
-        -------
-        $ftype
-            the $ftype's time derivative
-
         Parameters
         ----------
         val : $ftype, optional
              If set, set the time derivative to val
+
+        Returns
+        -------
+        $ftype
+            The time derivative
         """
         if val:
             c_set_${fdd}_from_${fdd}(&c.ddt(self.cobj[0]),(<$ftype?>val).cobj)
@@ -436,7 +439,7 @@ cat <<EOF
 
         Parameters
         ----------
-        slices: tuple_like, slice
+        slices: tuple_like of slice
             List of slice objects, which shall be returned. Must contain ${ndim} slice objects
 
         Returns
@@ -580,10 +583,10 @@ cat <<EOF
 
         Parameters
         ----------
-        boundary : string
+        boundary : string, optional
            The boundary to be set. Has to be a valid boundary type,
            e.g. "neumann".
-        time : float
+        time : float, optional
             The time to be used by the boundary, if time dependent
             boundary conditions are used.
         """
@@ -635,17 +638,17 @@ cdef class Mesh:
 
         Parameter
         ---------
-        create : bool
+        create : bool, optional
             Create the underling C++ object. Disabled probably only
             useful for internal usage. Use at own risk.
-        section : string
+        section : string, optional
             The section of the options which to read. If not given,
             default to the root section.
-        options : Options
+        options : Options, optional
             The Option which to use. Can be specified together with
-            \p section, in which case the subsection from the current
-            Options object is used. If nether \p section nor \p
-            options is given, the default section ([mesh]) fromt the
+            section, in which case the subsection from the current
+            Options object is used. If nether section nor
+            options is given, the default section (mesh) from the
             global Options object is used.
         """
         checkInit()
@@ -746,7 +749,7 @@ cdef class Mesh:
         Get the Coordinates object of this mesh
         """
         if self._coords is None:
-            self._coords = coordsFromObj(self.cobj.coordinates())
+            self._coords = coordsFromObj(self.cobj.getCoordinates())
         return self._coords
 
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
@@ -811,7 +814,7 @@ cdef class Laplacian:
         else:
            self.cobj = c.Laplacian.create(NULL)
 
-    def solve(self,Field3D a, Field3D b):
+    def solve(self,Field3D x, Field3D guess):
         """
         Calculate the Laplacian inversion
 
@@ -828,7 +831,7 @@ cdef class Laplacian:
         Field3D
             the inversion of x, where guess is a guess to start with
         """
-        return f3dFromObj(self.cobj.solve(a.cobj[0],b.cobj[0]))
+        return f3dFromObj(self.cobj.solve(x.cobj[0],guess.cobj[0]))
 
     def setCoefs(self, **kwargs):
         """
@@ -1009,7 +1012,7 @@ class PhysicsModel(PhysicsModelBase):
 
         Parameters
         ----------
-        kwargs : dict
+        kwargs : dictionary of Field2D or Field3D
             Keys must be strings, and value of dict must be the Field3D which should be evolved.
         """
         try:
@@ -1024,7 +1027,7 @@ class PhysicsModel(PhysicsModelBase):
         pass
 
 cdef extern from "bout.hxx":
-    int BoutInitialise(int&, char **&)
+    int BoutInitialise(int&, char **&) except +raise_bout_py_error
     void BoutFinalise()
 
 cdef extern from "boutcore_openmpi_compat.hxx":
@@ -1038,7 +1041,7 @@ def init(args=[]):
 
     Parameters
     ----------
-    args : list or string
+    args : list of string or string, optional
         It accepts ether a list of strings, or a string that is split at the spaces.
         This is passed on to MPI and other libraries that BOUT++ initializes.
     """
@@ -1421,6 +1424,20 @@ cdef class Options:
     cdef c.bool isSelfOwned
 
     def __init__(self,name=""):
+        """
+	Get a section from the global options tree
+
+	Parameters
+	----------
+	name : string, optional
+	    The name of the section. Can contain ':' to specify subsections.
+	    Defaults to the root section ''.
+
+	Returns
+	-------
+	Options
+	    The Options object
+	"""
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
@@ -1466,10 +1483,10 @@ cdef class Options:
              e.g. `mesh:ddx:first`.
         value : string
             the value to be set
-        source : string
+        source : string, optional
             The source of the change. Useful for keeping
             track of where what was set.
-        force : bool
+        force : bool, optional
             If a value is overwritten, an exception is
             thrown. setting this to `True` avoids the exception.
         """
@@ -1494,12 +1511,12 @@ cdef class Options:
         name : string
              the name of the value to get. Can be relative,
              e.g. `mesh:ddx:first`.
-        default : bool, string or float
+        default : bool or string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float
         Returns
         -------
-        bool, string or float
+        bool or string or float
             See default for the type.
             The option that was read if available, otherwise default
         """

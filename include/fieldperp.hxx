@@ -30,7 +30,6 @@ class FieldPerp;
 
 #include "field.hxx"
 
-#include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
@@ -83,32 +82,13 @@ class FieldPerp : public Field {
   FieldPerp &operator=(FieldPerp &&rhs) = default;
   FieldPerp &operator=(BoutReal rhs);
 
-  /*!
-   * Iterators and data access
-   */
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
-
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
-
+  /// Return a Region<IndPerp> reference to use to iterate over this field
+  const Region<IndPerp>& getRegion(REGION region) const;  
   const Region<IndPerp>& getRegion(const std::string &region_name) const;
-  
-  /*!
-   * Direct data access using DataIterator indexing
-   */
-  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.z);
-  }
-  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.z);
-  }
-  BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.z);
-  }
-  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override{
-    return operator()(i.x, i.z);
-  }
 
+  Region<IndPerp>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<IndPerp>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
+  
   inline BoutReal& operator[](const IndPerp &d) {
     return data[d.ind];
   }
@@ -262,11 +242,12 @@ class FieldPerp : public Field {
    */
   int getNz() const override {return nz;};
   
- private:
-  int yindex = -1; ///< The Y index at which this FieldPerp is defined
+private:
+  /// The Y index at which this FieldPerp is defined
+  int yindex{-1};
 
   /// The size of the data array
-  int nx, nz;
+  int nx{-1}, nz{-1};
 
   /// The underlying data array
   Array<BoutReal> data;

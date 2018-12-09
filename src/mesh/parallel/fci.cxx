@@ -137,7 +137,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
-  Coordinates &coord = *(mesh.coordinates());
+  Coordinates &coord = *(mesh.getCoordinates());
 
   for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {

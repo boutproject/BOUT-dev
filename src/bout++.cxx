@@ -30,18 +30,12 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 const char DEFAULT_SET[] = "BOUT.settings";
 const char DEFAULT_LOG[] = "BOUT.log";
 
-// MD5 Checksum passed at compile-time
-#define CHECKSUM1_(x) #x
-#define CHECKSUM_(x) CHECKSUM1_(x)
-#define CHECKSUM CHECKSUM_(MD5SUM)
-
-// Revision passed at compile time
-#define REV1_(x) #x
-#define REV_(x) REV1_(x)
-#define REV REV_(REVISION)
+// Value passed at compile time
+// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
+#define BUILDFLAG1_(x) #x
+#define BUILDFLAG(x) BUILDFLAG1_(x)
 
 #define GLOBALORIGIN
-
 
 #define INDIRECT1_BOUTMAIN(a) #a
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
@@ -66,11 +60,11 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
-#include <time.h>
+#include <ctime>
 
 #include <strings.h>
 #include <string>
-#include <list>
+#include <vector>
 using std::string;
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,7 +74,7 @@ using std::string;
 #include <omp.h>
 #endif
 
-#include <signal.h>
+#include <csignal>
 void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
@@ -118,10 +112,10 @@ int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
-  const char *data_dir; ///< Directory for data input/output
-  const char *opt_file; ///< Filename for the options file
-  const char *set_file; ///< Filename for the options file
-  const char *log_file; ///< File name for the log file
+  std::string data_dir{DEFAULT_DIR}; ///< Directory for data input/output
+  std::string opt_file{DEFAULT_OPT}; ///< Filename for the options file
+  std::string set_file{DEFAULT_SET}; ///< Filename for the options file
+  std::string log_file{DEFAULT_LOG}; ///< File name for the log file
 
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
@@ -135,12 +129,30 @@ int BoutInitialise(int &argc, char **&argv) {
   /// Trap SIGUSR1 to allow a clean exit after next write
   signal(SIGUSR1, bout_signal_handler);
 
-  // Set default data directory
-  data_dir = DEFAULT_DIR;
-  opt_file = DEFAULT_OPT;
-  set_file = DEFAULT_SET;
-  log_file = DEFAULT_LOG;
-
+#if BOUT_HAS_GETTEXT
+  // Setting the i18n environment
+  //
+  // For libraries:
+  // https://www.gnu.org/software/gettext/manual/html_node/Libraries.html
+  //
+  try {
+    // Note: Would like to use std::locale::global
+    //    std::locale::global(std::locale(""));
+    // but the Numeric aspect causes problems parsing input strings
+    //
+    // Note: Since BOUT++ is a library, it shouldn't really call setlocale;
+    //       that should be part of main().
+    std::setlocale(LC_ALL, "");
+    std::setlocale(LC_NUMERIC, "C");
+    
+    bindtextdomain (GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
+    
+    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
+  } catch (const std::runtime_error &e) {
+    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
+  }
+#endif // BOUT_HAS_GETTEXT
+  
   int verbosity=4;
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
@@ -149,73 +161,99 @@ int BoutInitialise(int &argc, char **&argv) {
     if (string(argv[i]) == "-h" ||
     	string(argv[i]) == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
-      fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
+      fprintf(stdout, _("Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n"), argv[0]);
       fprintf(stdout,
-              "\n"
-              "  -d <data directory>\tLook in <data directory> for input/output files\n"
-              "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
-              "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-              "  -l, --log <log filename>\tPrint log to <log filename>\n"
-              "  -v, --verbose\t\tIncrease verbosity\n"
-              "  -q, --quiet\t\tDecrease verbosity\n"
+              _("\n"
+                "  -d <data directory>\tLook in <data directory> for input/output files\n"
+                "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+                "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+                "  -l, --log <log filename>\tPrint log to <log filename>\n"
+                "  -v, --verbose\t\tIncrease verbosity\n"
+                "  -q, --quiet\t\tDecrease verbosity\n"));
 #ifdef LOGCOLOR
-              "  -c, --color\t\tColor output using bout-log-color\n"
+      fprintf(stdout,
+              _("  -c, --color\t\tColor output using bout-log-color\n"));
 #endif
-              "  -h, --help\t\tThis message\n"
-              "  restart [append]\tRestart the simulation. If append is specified, "
-              "append to the existing output files, otherwise overwrite them\n"
-              "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-              "\nFor all possible input parameters, see the user manual and/or the "
-              "physics model source (e.g. %s.cxx)\n",
+      fprintf(stdout,
+              _("  -h, --help\t\tThis message\n"
+                "  restart [append]\tRestart the simulation. If append is specified, "
+                "append to the existing output files, otherwise overwrite them\n"
+                "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+                "\nFor all possible input parameters, see the user manual and/or the "
+                "physics model source (e.g. %s.cxx)\n"),
               argv[0]);
 
-      return -1;
+      std::exit(EXIT_SUCCESS);
     }
   }
+
   bool color_output = false; // Will be set true if -c is in the options
+  std::vector<std::string> original_argv;
+  original_argv.reserve(argc);
+
+  for (int i = 0; i < argc; i++) {
+    original_argv.emplace_back(argv[i]);
+  }
+
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
       if (i+1 >= argc) {
-        fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
+        fprintf(stderr, _("Usage is %s -d <data directory>\n"), argv[0]);
         return 1;
       }
-      i++;
-      data_dir = argv[i];
-      
+
+      data_dir = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
     } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
-        fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
+        fprintf(stderr, _("Usage is %s -f <options filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      opt_file = argv[i];
+
+      opt_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
       
     } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i+1 >= argc) {
-        fprintf(stderr, "Usage is %s -o <settings filename>\n", argv[0]);
+        fprintf(stderr, _("Usage is %s -o <settings filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      set_file = argv[i];
+
+      set_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
       if (i + 1 >= argc) {
-        fprintf(stderr, "Usage is %s -l <log filename>\n", argv[0]);
+        fprintf(stderr, _("Usage is %s -l <log filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      log_file = argv[i];
+
+      log_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
 
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
       verbosity++;
+
+      argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-q") ||
                 (string(argv[i]) == "--quiet")) {
       verbosity--;
+
+      argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-c") ||
                 (string(argv[i]) == "--color") ) {
@@ -223,28 +261,26 @@ int BoutInitialise(int &argc, char **&argv) {
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       color_output = true;
+
+      argv[i][0] = 0;
     }
   }
   
   if (std::string(set_file) == std::string(opt_file)){
-    throw BoutException("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n");
+    throw BoutException(_("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n"));
   }
 
   // Check that data_dir exists. We do not check whether we can write, as it is
   // sufficient that the files we need are writeable ...
   struct stat test;
-  if (stat(data_dir, &test) == 0){
-    if (!S_ISDIR(test.st_mode)){
-      throw BoutException("DataDir \"%s\" is not a directory\n",data_dir);
+  if (stat(data_dir.c_str(), &test) == 0) {
+    if (!S_ISDIR(test.st_mode)) {
+      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
     }
   } else {
-    throw BoutException("DataDir \"%s\" does not exist or is not accessible\n",data_dir);
+    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
+                        data_dir.c_str());
   }
-  
-  // Set options
-  Options::getRoot()->set("datadir", string(data_dir));
-  Options::getRoot()->set("optionfile", string(opt_file));
-  Options::getRoot()->set("settingsfile", string(set_file));
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
@@ -285,7 +321,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
     if (!success) {
       // Failed . Probably not important enough to stop the simulation
-      fprintf(stderr, "Could not run bout-log-color. Make sure it is in your PATH\n");
+      fprintf(stderr, _("Could not run bout-log-color. Make sure it is in your PATH\n"));
     }
   }
 #endif // LOGCOLOR
@@ -298,7 +334,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir, log_file, MYPE)) {
+    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
       return 1;
     }
   }
@@ -325,57 +361,57 @@ int BoutInitialise(int &argc, char **&argv) {
   }
   
   /// Print intro
-  output_progress.write("BOUT++ version %s\n", BOUT_VERSION_STRING);
+  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
 #ifdef REVISION
-  output_progress.write("Revision: %s\n", REV);
+  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
 #endif
 #ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", CHECKSUM);
+  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output_info.write("Processor number: %d of %d\n\n", MYPE, NPES);
+  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
 
   output_info.write("pid: %d\n\n",getpid());
 
   /// Print compile-time options
 
-  output_info.write("Compile-time options:\n");
+  output_info.write(_("Compile-time options:\n"));
 
 #if CHECK > 0
-  output_info.write("\tChecking enabled, level %d\n", CHECK);
+  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
 #else
-  output_info.write("\tChecking disabled\n");
+  output_info.write(_("\tChecking disabled\n"));
 #endif
 
 #ifdef SIGHANDLE
-  output_info.write("\tSignal handling enabled\n");
+  output_info.write(_("\tSignal handling enabled\n"));
 #else
-  output_info.write("\tSignal handling disabled\n");
+  output_info.write(_("\tSignal handling disabled\n"));
 #endif
 
 #ifdef NCDF
-  output_info.write("\tnetCDF support enabled\n");
+  output_info.write(_("\tnetCDF support enabled\n"));
 #else
 #ifdef NCDF4
-  output_info.write("\tnetCDF4 support enabled\n");
+  output_info.write(_("\tnetCDF4 support enabled\n"));
 #else
-  output_info.write("\tnetCDF support disabled\n");
+  output_info.write(_("\tnetCDF support disabled\n"));
 #endif
 #endif
 
 #ifdef PNCDF
-  output_info.write("\tParallel NetCDF support enabled\n");
+  output_info.write(_("\tParallel NetCDF support enabled\n"));
 #else
-  output_info.write("\tParallel NetCDF support disabled\n");
+  output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
 #ifdef _OPENMP
-  output_info.write("\tOpenMP parallelisation enabled, using %d threads\n",omp_get_max_threads());
+  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),omp_get_max_threads());
 #else
-  output_info.write("\tOpenMP parallelisation disabled\n");
+  output_info.write(_("\tOpenMP parallelisation disabled\n"));
 #endif
 
 #ifdef METRIC3D
@@ -388,25 +424,49 @@ int BoutInitialise(int &argc, char **&argv) {
 
   //The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   //which could cause problems (e.g. terminate strings).
-  output_info.write("\tCompiled with flags : %s\n",STRINGIFY(BOUT_FLAGS_STRING));
+  output_info.write(_("\tCompiled with flags : %s\n"),STRINGIFY(BOUT_FLAGS_STRING));
   
+  // Print command line options
+  output_info.write(_("\tCommand line options for this run : "));
+  for (auto& arg : original_argv) {
+    output_info << arg << " ";
+  }
+  output_info.write("\n");
+
   /// Get the options tree
   Options *options = Options::getRoot();
 
   try {
     /// Load settings file
     OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", data_dir, opt_file);
+    reader->read(options, "%s/%s", data_dir.c_str(), opt_file.c_str());
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
 
+    // Override options set from short option from the command-line
+    Options::root()["datadir"].force(data_dir);
+    Options::root()["optionfile"].force(opt_file);
+    Options::root()["settingsfile"].force(set_file);
+
+    // Put some run information in the options.
+    // This is mainly so it can be easily read in post-processing
+    auto &runinfo = Options::root()["run"];
+      
+    // Note: have to force value, since may already be set if a previously
+    // output BOUT.settings file was used as input
+    runinfo["version"].force(BOUT_VERSION_STRING, "");
+    runinfo["revision"].force(BUILDFLAG(REVISION), "");
+    
+    time_t start_time = time(nullptr);
+    runinfo["started"].force(ctime(&start_time), "");
+    
     // Save settings
     if (BoutComm::rank() == 0) {
-      reader->write(options, "%s/%s", data_dir, set_file);
+      reader->write(options, "%s/%s", data_dir.c_str(), set_file.c_str());
     }
   } catch (BoutException &e) {
-    output << "Error encountered during initialisation\n";
+    output << _("Error encountered during initialisation\n");
     output << e.what() << endl;
     return 1;
   }
@@ -436,9 +496,9 @@ int BoutInitialise(int &argc, char **&argv) {
     
     /// Open a file for the output
     if(append) {
-      dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+      dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }else {
-      dump.openw("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+      dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }
 
     /// Add book-keeping variables to the output files
@@ -451,9 +511,10 @@ int BoutInitialise(int &argc, char **&argv) {
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
-    output_error.write("Error encountered during initialisation: %s\n", e.what());
+    output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
   }
+  
   return 0;
 }
 
@@ -479,13 +540,17 @@ int BoutFinalise() {
       string data_dir;
       Options::getRoot()->get("datadir", data_dir, "data");
 
+      // Set the end time in the settings file
+      time_t end_time = time(nullptr);
+      Options::root()["run"]["finished"].force(ctime(&end_time), "");
+      
       OptionsReader *reader = OptionsReader::getInstance();
       std::string settingsfile;
       OPTION(Options::getRoot(), settingsfile, "");
       reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
     }
   } catch (BoutException &e) {
-    output_error << "Error whilst writing settings" << endl;
+    output_error << _("Error whilst writing settings") << endl;
     output_error << e.what() << endl;
   }
 
@@ -596,11 +661,11 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
     /// Print the column header for timing info
     if (!output_split) {
-      output_progress.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   "
-                            "SOLVER\n\n");
+      output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
+                              "   I/O   SOLVER\n\n"));
     } else {
-      output_progress.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv  "
-                            " Comm    I/O   SOLVER\n\n");
+      output_progress.write(_("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  "
+                              "Calc    Inv   Comm    I/O   SOLVER\n\n"));
     }
   }
 
@@ -635,7 +700,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
     if (t_remain < wtime) {
       // Less than 1 time-step left
-      output_warn.write("Only %e seconds left. Quitting\n", t_remain);
+      output_warn.write(_("Only %e seconds left. Quitting\n"), t_remain);
 
       return 1; // Return an error code to quit
     } else {

@@ -36,9 +36,6 @@ class OptionsReader;
 
 #include "options.hxx"
 
-#include <stdarg.h>
-#include <stdio.h>
-
 /// Class to handle reading options from file
 ///
 /// Example

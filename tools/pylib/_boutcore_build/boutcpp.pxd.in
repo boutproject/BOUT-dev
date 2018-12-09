@@ -6,6 +6,10 @@ from libcpp cimport bool
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
+
+cdef extern from "boutexception_helper.hxx":
+     cdef void raise_bout_py_error()
+
 EOF
 for ftype in "Field3D" "Field2D"
 do
@@ -60,7 +64,7 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
-        Coordinates * coordinates()
+        Coordinates * getCoordinates()
 
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
@@ -136,12 +140,12 @@ do
     for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
     done
     for f in VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
     done
 done
 cat <<EOF

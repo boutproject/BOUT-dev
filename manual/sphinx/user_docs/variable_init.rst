@@ -87,7 +87,7 @@ following values are also already defined:
 +--------+------------------------------------------------------------------------------------+
 | z      | :math:`z` position between :math:`0` and :math:`2\pi` (excluding the last point)   |
 +--------+------------------------------------------------------------------------------------+
-| pi     | :math:`3.1415\ldots`                                                               |
+| pi  π  | :math:`3.1415\ldots`                                                               |
 +--------+------------------------------------------------------------------------------------+
 
 Table: Initialisation expression values
@@ -169,6 +169,8 @@ expressions.
    | ``TanhHat(x, width, centre, steepness)`` | The hat function                                     |
    |                                          | :math:`\frac{1}{2}(\tanh[s (x-[c-\frac{w}{2}])]`     |
    |                                          | :math:`- \tanh[s (x-[c+\frac{w}{2}])] )`             |
+   +------------------------------------------+------------------------------------------------------+
+   | ``fmod(x)``                              | The modulo operator, returns floating point remainder|
    +------------------------------------------+------------------------------------------------------+
 
 For field-aligned tokamak simulations, the Y direction is along the

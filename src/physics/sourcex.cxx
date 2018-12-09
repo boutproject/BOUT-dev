@@ -3,7 +3,7 @@
  **************************************************************/
 
 #include <globals.hxx>
-#include <math.h>
+#include <cmath>
 
 #include <sourcex.hxx>
 #include <msg_stack.hxx>
@@ -21,7 +21,7 @@ const Field2D source_tanhx(const Field2D &UNUSED(f), BoutReal swidth, BoutReal s
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
-  BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = mesh->GlobalX(i.x()) - slength;
     BoutReal dampl = TanH(lx / swidth);
     result[i] = 0.5 * (1.0 - dampl);
@@ -40,7 +40,7 @@ const Field2D source_expx2(const Field2D &UNUSED(f), BoutReal swidth, BoutReal s
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
-  BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = mesh->GlobalX(i.x()) - slength;
     BoutReal dampl = exp(-lx * lx / swidth / swidth);
     result[i] = dampl;
@@ -59,7 +59,7 @@ const Field3D sink_tanhx(const Field2D &UNUSED(f0), const Field3D &f, BoutReal s
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
-  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal rlx = 1. - mesh->GlobalX(i.x()) - slength;
     BoutReal dampr = TanH(rlx / swidth);
     result[i] = 0.5 * (1.0 - dampr) * f[i];
@@ -79,7 +79,7 @@ const Field3D mask_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
-  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = mesh->GlobalX(i.x());
     BoutReal dampl = TanH(lx / 40.0);
     BoutReal dampr = TanH((1. - lx) / 40.0);
@@ -102,7 +102,7 @@ const Field3D sink_tanhxl(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
 
   result.allocate();
 
-  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = mesh->GlobalX(i.x()) - slength;
     BoutReal dampl = TanH(lx / swidth);
 
@@ -122,7 +122,7 @@ const Field3D sink_tanhxr(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
   Field3D result;
   result.allocate();
 
-  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal rlx = 1. - mesh->GlobalX(i.x()) - slength;
     BoutReal dampr = TanH(rlx / swidth);
 
@@ -147,7 +147,7 @@ const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   const BoutReal deltal = 0.05;
   const BoutReal deltar = 0.05;
 
-  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = mesh->GlobalX(i.x());
     BoutReal rlx = 1. - lx;
 

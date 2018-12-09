@@ -52,7 +52,19 @@ inline const std::string& CELL_LOC_STRING(CELL_LOC location) {
 }
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
+enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_S2};
+
+const std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
+  {DIFF_DEFAULT, "DEFAULT"},
+  {DIFF_U1, "U1"}, {DIFF_U2, "U2"}, {DIFF_U3, "U3"},
+  {DIFF_C2, "C2"}, {DIFF_C4, "C4"}, {DIFF_S2, "S2"},
+  {DIFF_W2, "W2"}, {DIFF_W3, "W3"}, {DIFF_FFT, "FFT"},
+  {DIFF_SPLIT, "SPLIT"}
+};
+
+inline const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
+  return DIFF_METHODtoString.at(location);
+}
 
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
@@ -68,6 +80,62 @@ const std::map<REGION, std::string> REGIONtoString = {
 inline const std::string& REGION_STRING(REGION region) {
   return REGIONtoString.at(region);
 }
+
+/// To identify particular directions (in index space)
+enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5 };
+
+const std::map<DIRECTION, std::string> DIRECTIONtoString = {
+  {DIRECTION::X, "X"},
+  {DIRECTION::Y, "Y"},
+  {DIRECTION::Z, "Z"},
+  {DIRECTION::YAligned, "Y - field aligned"},
+  {DIRECTION::YOrthogonal, "Y - orthogonal"}
+
+};
+
+inline const std::string& DIRECTION_STRING(DIRECTION direction) {
+  return DIRECTIONtoString.at(direction);
+}
+
+/// To identify valid staggering combinations
+enum class STAGGER { None = 0, C2L = 1, L2C = 2};
+
+const std::map<STAGGER, std::string> STAGGERtoString = {
+  {STAGGER::None, "No staggering"},
+  {STAGGER::C2L, "Centre to Low"},
+  {STAGGER::L2C, "Low to Centre"}
+
+};
+
+inline const std::string& STAGGER_STRING(STAGGER stagger) {
+  return STAGGERtoString.at(stagger);
+}
+
+/// To identify types of derivative method combinations
+enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
+		   Upwind = 3, Flux = 4 };
+
+static std::map<DERIV, std::string> DERIVtoString = {
+  {DERIV::Standard, "Standard"},
+  {DERIV::StandardSecond, "Standard -- second order"},
+  {DERIV::StandardFourth, "Standard -- fourth order"},
+  {DERIV::Upwind, "Upwind"},
+  {DERIV::Flux, "Flux"}  
+};
+
+inline const std::string& DERIV_STRING(DERIV deriv) {
+  return DERIVtoString.at(deriv);
+}
+
+// A small struct that can be used to wrap a specific enum value, giving
+// it a unique type that can be passed as a valid type to templates and
+// which can be inspected to provide the actual value of the enum
+template<typename T, T val>
+struct enumWrapper {
+  using type = T;
+  static const type value = val;
+  T lookup(){return val;};
+};
 
 /// Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);

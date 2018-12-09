@@ -7,7 +7,6 @@
 
 #include "parderiv_factory.hxx"
 
-#include "impls/serial/serial.hxx"
 #include "impls/cyclic/cyclic.hxx"
 
 ParDerivFactory *ParDerivFactory::instance = nullptr;
@@ -23,32 +22,30 @@ ParDerivFactory* ParDerivFactory::getInstance() {
   return instance;
 }
 
-InvertPar* ParDerivFactory::createInvertPar() {
+InvertPar* ParDerivFactory::createInvertPar(Mesh *mesh_in) {
   // Get the default options section
   Options *opt = Options::getRoot()->getSection(default_section);
 
-  return createInvertPar( opt );
+  return createInvertPar(opt, mesh_in);
 }
 
-InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {
+InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt, Mesh *mesh_in) {
   int NPES;
   MPI_Comm_size(BoutComm::get(), &NPES);
 
   if (opt == nullptr)
     opt = Options::getRoot()->getSection(default_section);
 
-  if(!strcasecmp(type, PARDERIVSERIAL)) {
-    return new InvertParSerial(opt);
-  }else if(!strcasecmp(type, PARDERIVCYCLIC)) {
-    return new InvertParCR(opt);
+  if (!strcasecmp(type, PARDERIVCYCLIC)) {
+    return new InvertParCR(opt, mesh_in);
   }
   
   throw BoutException("No such ParDeriv solver exists in this build, type: %s", type);
 }
 
-InvertPar* ParDerivFactory::createInvertPar(Options *opts) {
-  string type;
+InvertPar* ParDerivFactory::createInvertPar(Options *opts, Mesh *mesh_in) {
+  std::string type;
   opts->get("type", type, "cyclic");
   
-  return createInvertPar(type.c_str(), opts);
+  return createInvertPar(type.c_str(), opts, mesh_in);
 }

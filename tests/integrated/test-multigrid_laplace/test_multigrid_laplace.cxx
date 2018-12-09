@@ -48,12 +48,8 @@ int main(int argc, char** argv) {
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
-  // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-  BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
-  BoutReal nz = mesh->GlobalNz;
-
-  dump.add(mesh->coordinates()->G1,"G1");
-  dump.add(mesh->coordinates()->G3,"G3");
+  dump.add(mesh->getCoordinates()->G1,"G1");
+  dump.add(mesh->getCoordinates()->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
@@ -231,13 +227,13 @@ int main(int argc, char** argv) {
   if (mesh->firstX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xstart,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xstart,mesh->ystart));
+                                        /mesh->getCoordinates()->dx(mesh->xstart,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xstart,mesh->ystart));
   if (mesh->lastX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xend,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xend,mesh->ystart));
+                                        /mesh->getCoordinates()->dx(mesh->xend,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xend,mesh->ystart));
 
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));
@@ -283,16 +279,16 @@ int main(int argc, char** argv) {
 // Delp2 uses FFT z-derivatives and Laplace includes y-derivatives, so can't use those
 // The function is a copy of Laplace() with the y-derivatives deleted
 Field3D this_Grad_perp2(const Field3D &f) {
-  Field3D result = mesh->coordinates()->G1 * ::DDX(f) +  mesh->coordinates()->G3 * ::DDZ(f) +
-                   mesh->coordinates()->g11 * ::D2DX2(f) + mesh->coordinates()->g33 * ::D2DZ2(f) +
-                   2.0 * mesh->coordinates()->g13 * ::D2DXDZ(f);
+  Field3D result = mesh->getCoordinates()->G1 * ::DDX(f) +  mesh->getCoordinates()->G3 * ::DDZ(f) +
+                   mesh->getCoordinates()->g11 * ::D2DX2(f) + mesh->getCoordinates()->g33 * ::D2DZ2(f) +
+                   2.0 * mesh->getCoordinates()->g13 * ::D2DXDZ(f);
 
   return result;
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
-  Field3D result = mesh->coordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->coordinates()->g33 * ::DDZ(f) * ::DDZ(g)
-                   + mesh->coordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
+  Field3D result = mesh->getCoordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->getCoordinates()->g33 * ::DDZ(f) * ::DDZ(g)
+                   + mesh->getCoordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
   
   return result;
 }

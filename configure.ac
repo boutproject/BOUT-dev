@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.1.2],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -87,7 +87,7 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
-AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
+AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
@@ -1131,6 +1131,33 @@ AS_IF([test "$with_pvode" != "no"], [
 ])
 
 #############################################################
+# Localisation (i18n) with gettext
+#############################################################
+
+HAS_NLS="no"
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
+AM_GNU_GETTEXT([external])
+AS_IF([test "$USE_NLS" = "yes"], [
+  AC_MSG_NOTICE([Enabling language support with gettext])
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
+
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
+
+  # Set variable substituted into bout-config 
+  HAS_NLS="yes"
+],[
+  AC_MSG_NOTICE([Language support with gettext not available])
+]) 
+
+#############################################################
 # Check environment
 #############################################################
 
@@ -1246,6 +1273,7 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_NLS)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
@@ -1271,6 +1299,7 @@ AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
+AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

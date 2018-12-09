@@ -7,8 +7,6 @@
 #include <map>
 #include <string>
 
-using std::string;
-
 class Mesh;
 
 class InterpolationFactory {
@@ -25,14 +23,14 @@ private:
   static InterpolationFactory* instance;
 
   /// Database of available interpolations
-  std::map<string, CreateInterpCallback> interp_map;
+  std::map<std::string, CreateInterpCallback> interp_map;
 
   /// Find an interpolation method in the list of available methods
   ///
   /// @param name Name of the interpolation method
   ///
   /// @return A pointer to the Interpolation object in the map
-  CreateInterpCallback findInterpolation(const string &name);
+  CreateInterpCallback findInterpolation(const std::string &name);
 public:
   ~InterpolationFactory() {};
 
@@ -43,7 +41,7 @@ public:
   static void cleanup();
 
   /// A string representing the default interpolation type
-  inline string getDefaultInterpType() { return "hermitespline"; }
+  inline std::string getDefaultInterpType() { return "hermitespline"; }
 
   /// Create an interpolation object
   Interpolation *create(Mesh *mesh) {
@@ -61,11 +59,11 @@ public:
   /// @param mesh    A Mesh object to construct the interpolation on
   ///
   /// @return A new copy of an Interpolation object
-  Interpolation *create(const string &name, Options *options = nullptr,
+  Interpolation *create(const std::string &name, Options *options = nullptr,
                         Mesh *mesh = nullptr);
 
   /// Add available interpolations to database
-  void add(CreateInterpCallback interp, const string &name);
+  void add(CreateInterpCallback interp, const std::string &name);
 };
 
 #endif //__INTERP_FACTORY_H__

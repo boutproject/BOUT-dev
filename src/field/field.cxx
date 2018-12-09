@@ -25,8 +25,6 @@
 
 //#include <globals.hxx>
 
-#include <stdarg.h>
-
 #include <field.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
@@ -34,13 +32,7 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
-}
-
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
+Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }
@@ -50,24 +42,20 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) 
 // call fieldmesh->coordinates, which would create fields, which would then call
 // getCoordinates again etc.). This also requires care in the derived class
 // constructors.
-  
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
 }
 
 Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates;    
   } else {
-    fieldCoordinates = getMesh()->coordinates(getLocation());
+    fieldCoordinates = getMesh()->getCoordinates(getLocation());
     return fieldCoordinates;
   }
 }
 
 Coordinates *Field::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) return getCoordinates();  
-  return getMesh()->coordinates(loc);
+  return getMesh()->getCoordinates(loc);
 }
 
 int Field::getNx() const{
@@ -81,30 +69,4 @@ int Field::getNy() const{
 int Field::getNz() const{
   return getMesh()->LocalNz;
 };
-
-/////////////////// PROTECTED ////////////////////
-
-
-// Report an error occurring
-void Field::error(const char *s, ...) const {
-  int buf_len=512;
-  char * err_buffer=new char[buf_len];
-
-  if (s == nullptr) {
-    output_error.write("Unspecified error in field\n");
-  } else {
-
-    bout_vsnprintf(err_buffer,buf_len, s);
-
-#ifdef TRACK
-      output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
-#else
-      output_error.write("Error in field: %s", err_buffer);
-#endif
-  }
-  std::string msg="Error in field: ";
-  msg+=err_buffer;
-  delete[] err_buffer;
-  throw BoutException(msg);
-}
 

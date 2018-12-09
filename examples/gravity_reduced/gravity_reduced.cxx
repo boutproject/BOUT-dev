@@ -130,7 +130,7 @@ private:
     
     //load metric tensor components
 
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     BoutReal Lz; // Size of the Z box
     

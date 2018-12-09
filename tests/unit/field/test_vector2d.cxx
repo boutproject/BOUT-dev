@@ -15,7 +15,7 @@ extern Mesh *mesh;
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {
 protected:
-  static void SetUpTestCase() {
+  Vector2DTest() {
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -37,7 +37,7 @@ protected:
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
   }
 
-  static void TearDownTestCase() {
+  ~Vector2DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {
@@ -49,14 +49,14 @@ protected:
   }
 
 public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
+  static constexpr int nx = 5;
+  static constexpr int ny = 5;
+  static constexpr int nz = 1;
 };
 
-const int Vector2DTest::nx = 5;
-const int Vector2DTest::ny = 5;
-const int Vector2DTest::nz = 1;
+constexpr int Vector2DTest::nx;
+constexpr int Vector2DTest::ny;
+constexpr int Vector2DTest::nz;
 
 TEST_F(Vector2DTest, ApplyBoundaryString) {
   Vector2D v;
@@ -111,6 +111,75 @@ TEST_F(Vector2DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
+TEST_F(Vector2DTest, SetLocationNonStaggered) {
+  Vector2D vector;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_CENTRE));
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+#if CHECK > 0
+  EXPECT_THROW(vector.setLocation(CELL_XLOW), BoutException);
+#endif
+}
+
+TEST_F(Vector2DTest, SetLocationXLOW) {
+  Vector2D vector;
+  CELL_LOC targetLoc = CELL_XLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector2DTest, SetLocationYLOW) {
+  Vector2D vector;
+  CELL_LOC targetLoc = CELL_YLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector2DTest, SetLocationZLOW) {
+  Vector2D vector;
+  CELL_LOC targetLoc = CELL_ZLOW;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(targetLoc));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
+TEST_F(Vector2DTest, SetLocationVSHIFT) {
+  Vector2D vector;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_VSHIFT));
+  EXPECT_EQ(vector.getLocation(), CELL_VSHIFT);
+  EXPECT_EQ(vector.x.getLocation(), CELL_XLOW);
+  EXPECT_EQ(vector.y.getLocation(), CELL_YLOW);
+  EXPECT_EQ(vector.z.getLocation(), CELL_ZLOW);
+}
+
+TEST_F(Vector2DTest, SetLocationDEFAULT) {
+  Vector2D vector;
+  CELL_LOC targetLoc = CELL_CENTRE;
+  vector.x.getMesh()->StaggerGrids = true;
+  EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
+  EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
+  EXPECT_EQ(vector.getLocation(), targetLoc);
+  EXPECT_EQ(vector.x.getLocation(), targetLoc);
+  EXPECT_EQ(vector.y.getLocation(), targetLoc);
+  EXPECT_EQ(vector.z.getLocation(), targetLoc);
+}
+
 TEST_F(Vector2DTest, AssignFromBoutReal) {
   Vector2D vector;
 
@@ -123,28 +192,38 @@ TEST_F(Vector2DTest, AssignFromBoutReal) {
 
 TEST_F(Vector2DTest, AssignFromVector2D) {
   Vector2D vector1, vector2;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 1.0;
   vector1.y = 2.0;
   vector1.z = 3.0;
+  vector1.setLocation(CELL_XLOW);
 
   vector2 = vector1;
 
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.x, 1.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.y, 2.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector2DTest, CreateFromVector2D) {
   Vector2D vector1;
+
+  vector1.x.getMesh()->StaggerGrids = true;
+
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
+  vector1.setLocation(CELL_YLOW);
 
   Vector2D vector2{vector1};
 
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.x, 4.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.y, 5.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(vector2.z, 6.0));
+  EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
 TEST_F(Vector2DTest, UnaryMinus) {

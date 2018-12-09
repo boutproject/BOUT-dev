@@ -27,7 +27,6 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
-#include <bout/deprecated.hxx>
 #include <interpolation.hxx>
 #include <mask.hxx>
 #include <parallel_boundary_region.hxx>
@@ -46,8 +45,6 @@ class FCIMap {
 public:
   /// dir MUST be either +1 or -1
   FCIMap(Mesh& mesh, int dir, bool zperiodic);
-  DEPRECATED(FCIMap(Mesh &mesh, int dir, bool UNUSED(yperiodic), bool zperiodic))
-      : FCIMap(mesh, dir, zperiodic) {}
 
   int dir;                     /**< Direction of map */
 
@@ -68,8 +65,6 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  DEPRECATED(FCITransform(Mesh &mesh, bool UNUSED(yperiodic), bool zperiodic))
-      : FCITransform(mesh, zperiodic) {}
   FCITransform(Mesh &mesh, bool zperiodic = true)
       : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
         zperiodic(zperiodic) {}

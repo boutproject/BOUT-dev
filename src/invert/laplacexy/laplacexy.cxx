@@ -92,9 +92,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
   bvals = Matrix<BoutReal>(nsys, nloc);
 
   // Create a cyclic reduction object
-  // FIXME: replace with make_unique when we upgrade to C++14 or add our own version
-  cr = std::unique_ptr<CyclicReduce<BoutReal>>(
-      new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc));
+  cr = bout::utils::make_unique<CyclicReduce<BoutReal>>(mesh->getXcomm(), nloc);
 
   //////////////////////////////////////////////////
   // Pre-allocate PETSc storage
@@ -236,11 +234,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
     OPTION(opt, maxits, 100000); // Maximum iterations
     
     // Get KSP Solver Type
-    string ksptype;
+    std::string ksptype;
     opt->get("ksptype", ksptype, "gmres");
     
     // Get PC type
-    string pctype;
+    std::string pctype;
     opt->get("pctype", pctype, "none", true);
 
     KSPSetType( ksp, ksptype.c_str() );
@@ -291,7 +289,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
-  Coordinates *coords = mesh->coordinates(location);
+  Coordinates *coords = mesh->getCoordinates(location);
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -634,6 +632,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   
   Field2D result;
   result.allocate();
+  result.setLocation(rhs.getLocation());
   
   for(int x=mesh->xstart;x<= mesh->xend;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {

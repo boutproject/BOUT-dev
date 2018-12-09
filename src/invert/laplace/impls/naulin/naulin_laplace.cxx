@@ -120,8 +120,8 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc)
-    : Laplacian(opt, loc), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
+LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+    : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
@@ -135,7 +135,7 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc)
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
-  delp2solver = create(opt->getSection("delp2solver"));
+  delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
@@ -170,9 +170,8 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   ASSERT1(C1coef.getLocation() == location);
   ASSERT1(C2coef.getLocation() == location);
   ASSERT1(Acoef.getLocation() == location);
+  ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
 
-  Mesh *mesh = rhs.getMesh();
-  Coordinates *coords = mesh->coordinates(location);
   Field3D x(x0); // Result
 
   Field3D rhsOverD = rhs/Dcoef;
@@ -203,12 +202,12 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
     if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) )
       // This passes in the boundary conditions from x0's guard cells
-      copy_x_boundaries(x, x0, mesh);
+      copy_x_boundaries(x, x0, localmesh);
 
     // NB need to pass x in case boundary flags require 'x0', even if
     // delp2solver is not iterative and does not use an initial guess
     x = delp2solver->solve(b, x);
-    mesh->communicate(x);
+    localmesh->communicate(x);
 
     // re-calculate the rhs from the new solution
     // Use here to calculate an error, can also use for the next iteration
@@ -233,17 +232,17 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   return x;
 }
 
-void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh) {
-  if (mesh->firstX()) {
-    for (int i=mesh->xstart-1; i>=0; i--)
-      for (int j=mesh->ystart; j<=mesh->yend; j++)
-        for (int k=0; k<mesh->LocalNz; k++)
+void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
+  if (localmesh->firstX()) {
+    for (int i=localmesh->xstart-1; i>=0; i--)
+      for (int j=localmesh->ystart; j<=localmesh->yend; j++)
+        for (int k=0; k<localmesh->LocalNz; k++)
           x(i, j, k) = x0(i, j, k);
   }
-  if (mesh->lastX()) {
-    for (int i=mesh->xend+1; i<mesh->LocalNx; i++)
-      for (int j=mesh->ystart; j<=mesh->yend; j++)
-        for (int k=0; k<mesh->LocalNz; k++)
+  if (localmesh->lastX()) {
+    for (int i=localmesh->xend+1; i<localmesh->LocalNx; i++)
+      for (int j=localmesh->ystart; j<=localmesh->yend; j++)
+        for (int k=0; k<localmesh->LocalNz; k++)
           x(i, j, k) = x0(i, j, k);
   }
 }
