@@ -831,6 +831,7 @@ const Coordinates::metric_field_type Coordinates::Delp2(const Field2D& f,
 
 const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( Field3D )");
+#ifndef COORDINATES_USE_3D
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -896,6 +897,10 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
+#else
+  throw BoutException("Delp2(Field3D) currently relies on the tridiagonal code that is "
+                      "not supported with 3D metrics.");
+#endif
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
