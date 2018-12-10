@@ -433,6 +433,11 @@ public:
     std::string value;
     std::string source;     // Source of the setting
     mutable bool used = false;  // Set to true when used
+
+    /// This constructor needed for map::emplace
+    /// Can be removed in C++17 with map::insert and brace initialisation
+    OptionValue(std::string value, std::string source, bool used)
+        : value(value), source(source), used(used) {}
   };
 
   /// Read-only access to internal options and sections
