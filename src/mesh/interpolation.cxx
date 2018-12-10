@@ -152,7 +152,14 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
           Field3D var_fa = fieldmesh->toFieldAligned(var);
           if (region != RGN_NOBNDRY) {
-            result = fieldmesh->toFieldAligned(result);
+            // repeat the hack above for boundary points
+            // this avoids a duplicate toFieldAligned call if we had called
+            // result = toFieldAligned(result)
+            // to get the boundary cells
+            //
+            // result is requested in some boundary region(s)
+            result = var_fa; // NOTE: This is just for boundaries. FIX!
+            result.allocate();
           }
           if (fieldmesh->ystart > 1) {
 
