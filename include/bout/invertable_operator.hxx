@@ -383,7 +383,7 @@ public:
   /// back the initial values.
   bool verify(const T& rhsIn, BoutReal tol = 1.0e-5) {
     TRACE("InvertableOperator<T>::verify");
-#if CHECK > 1
+
     T result = invert(rhsIn);
     localmesh->communicate(result);
     const T applied = operator()(result);
@@ -395,9 +395,6 @@ public:
       output_debug << "Max result is " << max(abs(result), true) << endl;
     };
     return maxDiff < tol;
-#else
-    return true;
-#endif
   };
 
   /// Reports the time spent in various parts of InvertableOperator. Note
