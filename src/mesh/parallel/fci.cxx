@@ -131,9 +131,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   
   interp_corner->setMask(corner_boundary_mask);
   interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  
-  interp->calcWeights(xt_prime, zt_prime);
-  
+    
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
@@ -237,6 +235,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   }
 
   interp->setMask(boundary_mask);
+  interp->calcWeights(xt_prime, zt_prime);
 }
 
 const Field3D FCIMap::integrate(Field3D &f) const {
