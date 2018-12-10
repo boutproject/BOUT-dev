@@ -163,6 +163,16 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
         t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
         //----------------------------------------
+
+        // Check that t_x and t_z are in range
+        if ((t_x < 0.0) || (t_x > 1.0))
+          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
+
+        if ((t_z < 0.0) || (t_z > 1.0))
+          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
+
+        
+        //----------------------------------------
         // Boundary stuff
         //
         // If a field line leaves the domain, then the forward or backward
@@ -221,15 +231,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
               PI                 // Right-angle intersection
               );
         }
-
-        //----------------------------------------
-
-        // Check that t_x and t_z are in range
-        if ((t_x < 0.0) || (t_x > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
-
-        if ((t_z < 0.0) || (t_z > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
       }
     }
   }
