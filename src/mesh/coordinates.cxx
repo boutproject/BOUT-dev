@@ -443,7 +443,7 @@ int Coordinates::geometry() {
   com.add(G2);
   com.add(G3);
 
-  localmesh->communicate(com);
+  localmesh->communicateXZ(com);
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -471,7 +471,7 @@ int Coordinates::geometry() {
     localmesh->communicateXZ(d2y);
     d1_dy = -d2y / (dy * dy);
   }
-  localmesh->communicate(d1_dx, d1_dy);
+  localmesh->communicateXZ(d1_dx, d1_dy);
 
   return 0;
 }
