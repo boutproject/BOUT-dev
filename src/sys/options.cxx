@@ -114,21 +114,21 @@ template <> int Options::as<int>() const {
 
   int result;
 
-  if (std::holds_alternative<int>(value)) {
-    result = std::get<int>(value);
+  if (bout::utils::holds_alternative<int>(value)) {
+    result = bout::utils::get<int>(value);
     
   } else {
     // Cases which get a BoutReal then check if close to an integer
     BoutReal rval;
     
-    if (std::holds_alternative<BoutReal>(value)) {
-      rval = std::get<BoutReal>(value);
+    if (bout::utils::holds_alternative<BoutReal>(value)) {
+      rval = bout::utils::get<BoutReal>(value);
     
-    } else if (std::holds_alternative<std::string>(value)) {
+    } else if (bout::utils::holds_alternative<std::string>(value)) {
       // Use FieldFactory to evaluate expression
       // Parse the string, giving this Option pointer for the context
       // then generate a value at t,x,y,z = 0,0,0,0
-      auto gen = FieldFactory::get()->parse(std::get<std::string>(value), this);
+      auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
       if (!gen) {
         throw BoutException(_("Couldn't get integer from option %s = '%s'"),
                             full_name.c_str(), bout::utils::variantToString(value).c_str());
@@ -169,21 +169,21 @@ template <> BoutReal Options::as<BoutReal>() const {
 
   BoutReal result;
   
-  if (std::holds_alternative<int>(value)) {
-    result = static_cast<BoutReal>(std::get<int>(value));
+  if (bout::utils::holds_alternative<int>(value)) {
+    result = static_cast<BoutReal>(bout::utils::get<int>(value));
     
-  } else if (std::holds_alternative<BoutReal>(value)) {
-    result = std::get<BoutReal>(value);
+  } else if (bout::utils::holds_alternative<BoutReal>(value)) {
+    result = bout::utils::get<BoutReal>(value);
       
-  } else if (std::holds_alternative<std::string>(value)) {
+  } else if (bout::utils::holds_alternative<std::string>(value)) {
     
     // Use FieldFactory to evaluate expression
     // Parse the string, giving this Option pointer for the context
     // then generate a value at t,x,y,z = 0,0,0,0
-    std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(std::get<std::string>(value), this);
+    std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
     if (!gen) {
       throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
-                          std::get<std::string>(value).c_str());
+                          bout::utils::get<std::string>(value).c_str());
     }
     result = gen->generate(0, 0, 0, 0);
   } else {
@@ -211,11 +211,11 @@ template <> bool Options::as<bool>() const {
   
   bool result;
   
-  if (std::holds_alternative<bool>(value)) {
-    result = std::get<bool>(value);
+  if (bout::utils::holds_alternative<bool>(value)) {
+    result = bout::utils::get<bool>(value);
   
-  } else if(std::holds_alternative<std::string>(value)) {
-    std::string strvalue = std::get<std::string>(value);
+  } else if(bout::utils::holds_alternative<std::string>(value)) {
+    std::string strvalue = bout::utils::get<std::string>(value);
   
     char c = static_cast<char>(toupper((strvalue)[0]));
     if ((c == 'Y') || (c == 'T') || (c == '1')) {

@@ -4,9 +4,9 @@
 * The Options class represents a tree structure of key-value settings.
 * Provides get and set methods on these options.
 *
-* Internally, all quantities are stored as strings for simplicity
-* and so that option file parsers don't have to do type conversion
-* without knowing the type a priori.
+* Internally, values are stored in a variant. Conversion of types
+* is handled internally, so this is transparent to the user. If desired,
+* the user can directly access the "value" member which is the variant.
 *
 * There is a singleton object "root" which contains the top-level
 * options and allows access to all sub-sections
