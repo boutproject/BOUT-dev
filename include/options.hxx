@@ -160,6 +160,20 @@ public:
   Options(Options *parent_instance, std::string full_name)
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
 
+  /// Copy constructor
+  Options(const Options& other)
+      : value(other.value), attributes(other.attributes),
+        parent_instance(other.parent_instance), full_name(other.full_name),
+        is_section(other.is_section), children(other.children), is_value(other.is_value),
+        value_used(other.value_used) {
+
+    // Ensure that this is the parent of all children,
+    // otherwise will point to the original Options instance
+    for (auto &child : children) {
+      child.second.parent_instance = this;
+    }
+  }
+
   /// Get a reference to the only root instance
   static Options &root();
   
@@ -205,6 +219,32 @@ public:
     return inputvalue;
   }
 
+  /// Copy assignment
+  ///
+  /// This replaces the value, attributes and all children
+  ///
+  /// Note that if only the value is desired, then that can be copied using
+  /// the value member directly e.g. option2.value = option1.value;
+  ///
+  Options& operator=(const Options& other) {
+    // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+    value = other.value;
+    attributes = other.attributes;
+    full_name = other.full_name;
+    is_section = other.is_section;
+    children = other.children;
+    is_value = other.is_value;
+    value_used = other.value_used;
+
+    // Ensure that this is the parent of all children,
+    // otherwise will point to the original Options instance
+    for (auto &child : children) {
+      child.second.parent_instance = this;
+    }
+    return *this;
+  }
+  
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
@@ -220,7 +260,7 @@ public:
     ss << val;
     _set(ss.str(), source, false);
   }
-
+  
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>

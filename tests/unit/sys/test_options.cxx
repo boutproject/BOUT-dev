@@ -477,3 +477,110 @@ TEST_F(OptionsTest, OptionsMacroConstReference) {
   EXPECT_EQ(val, 42);
 }
 
+/// Copy constructor copies value
+TEST_F(OptionsTest, CopyOption) {
+  Options option1;
+
+  option1 = 42;
+
+  Options option2(option1);
+
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+/// Copy constructor makes independent copy
+TEST_F(OptionsTest, CopyOptionDistinct) {
+  Options option1;
+  option1 = 42;
+
+  Options option2(option1);
+
+  option1.force(23);
+  
+  EXPECT_EQ(option1.as<int>(), 23);
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+/// Copies of sections get values
+TEST_F(OptionsTest, CopySection) {
+  Options option1;
+
+  option1["key"] = 42;   // option1 now a section
+
+  Options option2(option1);
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+/// The parent should be updated when copied
+TEST_F(OptionsTest, CopySectionParent) {
+  Options option1;
+
+  option1["key"] = 42;
+
+  Options option2(option1);
+  
+  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+}
+
+TEST_F(OptionsTest, AssignOption) {
+  Options option1, option2;
+
+  option1 = 42;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSection) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSectionReplace) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  option2["key"] = 23;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSectionParent) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  
+  option2 = option1;
+  
+  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+}
+
+TEST_F(OptionsTest, AssignSubSection) {
+  Options option1, option2;
+
+  option1["key1"] = 42;
+  
+  option2["key2"] = option1;
+
+  EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSubSectionParent) {
+  Options option1, option2;
+
+  option1["key1"] = 42;
+  
+  option2["key2"] = option1;
+
+  EXPECT_EQ(&option2["key2"].parent(), &option2);
+  EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
+}
