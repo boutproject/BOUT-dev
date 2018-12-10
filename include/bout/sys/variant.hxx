@@ -18,7 +18,10 @@
 #ifndef __VARIANT_HXX__
 #define __VARIANT_HXX__
 
-#include <variant>
+// std::variant added in C++17
+//#include <variant>
+
+#include "external/mpark/variant.hpp"
 
 #include "utils.hxx"
 
@@ -26,11 +29,18 @@ namespace bout {
 namespace utils {
 
 /// Import variant, visit into bout::utils namespace
-using std::variant;
-using std::visit;
-using std::holds_alternative;
-using std::get;
 
+// From C++17
+// using std::variant;
+// using std::visit;
+// using std::holds_alternative;
+// using std::get;
+
+using mpark::variant;
+using mpark::visit;
+using mpark::holds_alternative;
+using mpark::get;
+  
 ////////////////////////////////////////////////////////////
 // Variant comparison
 
@@ -71,7 +81,7 @@ struct IsEqual {
 /// which \v can hold.
 template <typename Variant, typename T>
 bool variantEqualTo(const Variant& v, const T& t) {
-  return visit(details::IsEqual(t), v);
+  return visit(details::IsEqual<T>(t), v);
 }
 
 ////////////////////////////////////////////////////////////
@@ -122,7 +132,7 @@ struct StaticCastOrThrow {
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
 T variantStaticCastOrThrow(const Variant &v) {
-  std::visit( details::StaticCastOrThrow<T>(), v );
+  visit( details::StaticCastOrThrow<T>(), v );
 }
 
 namespace details {
