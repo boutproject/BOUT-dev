@@ -43,6 +43,7 @@ class Options;
 #include "unused.hxx"
 #include "output.hxx"
 #include "utils.hxx"
+#include "bout/sys/variant.hxx"
 
 #include <map>
 #include <string>
@@ -158,13 +159,23 @@ public:
   /// @param[in] sectionName   Name of the section, including path from the root
   Options(Options *parent_instance, std::string full_name)
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
-  
+
   /// Get a reference to the only root instance
   static Options &root();
   
   /// Free all memory
   static void cleanup();
 
+  /// The type used to store values
+  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string>;
+  /// The type used to store attributes
+  using AttributeType = bout::utils::variant<bool, int, BoutReal, std::string>;
+
+  /// The value stored
+  ValueType value;
+  /// A collection of attributes belonging to the value
+  std::map<std::string, AttributeType> attributes;
+  
   /// Get a sub-section or value
   ///
   /// Example:
@@ -209,14 +220,6 @@ public:
     ss << val;
     _set(ss.str(), source, false);
   }
-  
-  // Specialised assign methods for types stored in ValueType
-  template<> void assign<>(bool val, const std::string source) { _set(val, source, false); }
-  template<> void assign<>(int val, const std::string source) { _set(val, source, false); }
-  template<> void assign<>(BoutReal val, const std::string source) { _set(val, source, false); }
-  template<> void assign<>(std::string val, const std::string source) { _set(val, source, false); }
-  // Note: const char* version needed to avoid conversion to bool
-  template<> void assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
 
   /// Force to a value
   /// Overwrites any existing setting
@@ -258,41 +261,48 @@ public:
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
-    
+
     T val;
     
-    if (std::holds_alternative<std::string>(value)) {
+    // Try casting. This will throw std::bad_cast if it can't be done
+    try {
+      val = bout::utils::variantStaticCastOrThrow<T>(value);
+    } catch (const std::bad_cast &e) {
+      // If the variant is a string then we may be able to parse it
       
-      std::stringstream ss(std::get<std::string>(value));
-      ss >> val;
-      
-      // Check if the parse failed
-      if (ss.fail()) {
-        throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(), value.value.c_str());
-      }
-
-      // Check if there are characters remaining
-      std::string remainder;
-      std::getline(ss, remainder);
-      for (const char &ch : remainder) {
-        if (!std::isspace(static_cast<unsigned char>(ch))) {
-          // Meaningful character not parsed
-          throw BoutException("Option %s could not be parsed", full_name.c_str());
+      if (bout::utils::holds_alternative<std::string>(value)) {
+        std::stringstream ss(bout::utils::get<std::string>(value));
+        ss >> val;
+        
+        // Check if the parse failed
+        if (ss.fail()) {
+          throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(),
+                              bout::utils::variantToString(value).c_str());
         }
+        
+        // Check if there are characters remaining
+        std::string remainder;
+        std::getline(ss, remainder);
+        for (const char &ch : remainder) {
+          if (!std::isspace(static_cast<unsigned char>(ch))) {
+            // Meaningful character not parsed
+            throw BoutException("Option %s could not be parsed", full_name.c_str());
+          }
+        }
+      } else {
+        // Another type which can't be casted
+        throw BoutException("Option %s could not be converted to type %s",
+                            full_name.c_str(), typeid(T).name());
       }
-    } else {
-      // Value not holding a string. Try casting to the requested type
-      
-      val = std::visit( StaticCast<T>(), value );
     }
     
     // Mark this option as used
-    attributes["used"] = true; // Note this is mutable
+    value_used = true; // Note this is mutable
 
     output_info << "\tOption " << full_name  << " = " << val;
-    if (!attributes["source"].empty()) {
+    if (attributes.count("source")) {
       // Specify the source of the setting
-      output_info << " (" << attributes["source"] << ")";
+      output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
     }
     output_info << endl;
 
@@ -305,7 +315,7 @@ public:
     if (!is_value) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
-      value.used = true; // Mark the option as used
+      value_used = true; // Mark the option as used
 
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
@@ -313,11 +323,11 @@ public:
     }
     T val = as<T>();
     // Check if this was previously set as a default option
-    if (value.source == DEFAULT_SOURCE) {
+    if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
         throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-                            full_name.c_str(), value.value.c_str(), toString(def).c_str());
+                            full_name.c_str(), bout::utils::variantToString(value).c_str(), toString(def).c_str());
       }
     }
     return val;
@@ -334,11 +344,11 @@ public:
     }
     T val = as<T>();
     // Check if this was previously set as a default option
-    if (value.source == DEFAULT_SOURCE) {
+    if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
         throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-                            full_name.c_str(), value.value.c_str(), toString(def).c_str());
+                            full_name.c_str(), bout::utils::variantToString(value).c_str(), toString(def).c_str());
       }
     }
     return val;
@@ -414,12 +424,6 @@ public:
 
   /// clean the cache of parsed options
   static void cleanCache();
-
-  using ValueType = std::variant<bool, int, BoutReal, std::string>;
-  using AttributeType = std::variant<bool, int, BoutReal, std::string>;
-  
-  ValueType value;
-  std::map<std::string, AttributeType> attributes;
   
   /*!
    * Class used to store values, together with
@@ -452,44 +456,47 @@ public:
   std::map<std::string, Options> children; ///< If a section then has children
 
   bool is_value = false; ///< Is this Options object a value?
-
+  mutable bool value_used = false; ///< Record whether this value is used
+  
   template <typename T>
   void _set(T val, std::string source, bool force) {
     if (isSet()) {
       // Check if current value the same as new value
-      if (value != val) {
-        if (force or attributes["source"] != source) {
-          output_warn << _("\tOption ") << full_name << " = " << toString(value) << " ("
-                      << attributes["source"] << _(") overwritten with:") << "\n"
+      if (!bout::utils::variantEqualTo(value, val)) {
+        if (force or !bout::utils::variantEqualTo(attributes["source"], source)) {
+          output_warn << _("\tOption ") << full_name << " = "
+                      << bout::utils::variantToString(value) << " ("
+                      << bout::utils::variantToString(attributes["source"])
+                      << _(") overwritten with:") << "\n"
                       << "\t\t" << full_name << " = " << toString(val) << " (" << source
                       << ")\n";
         } else {
           throw BoutException(
               _("Options: Setting a value from same source (%s) to new value "
                 "'%s' - old value was '%s'."),
-              source.c_str(), toString(val).c_str(), toString(value).c_str());
+              source.c_str(), toString(val).c_str(),
+              bout::utils::variantToString(value).c_str());
         }
       }
     }
 
     value = std::move(val);
     attributes["source"] = std::move(source);
-    attributes["used"] = false;
+    value_used = false;
     is_value = true;
   }
   
   /// Tests if two values are similar. 
   template <typename T> bool similar(T a, T b) const { return a == b; }
-
-  /// Functor to perform static casting with std::visit
-  /// from https://stackoverflow.com/questions/8806453/functor-version-of-static-cast-in-stdbind
-  template <class Target> struct StaticCast {
-    template <class Source> Target operator()(Source &&source) const {
-      return static_cast<Target>(std::forward<Source>(source));
-    }
-  };
-  
 };
+
+// Specialised assign methods for types stored in ValueType
+template<> inline void Options::assign<>(bool val, const std::string source) { _set(val, source, false); }
+template<> inline void Options::assign<>(int val, const std::string source) { _set(val, source, false); }
+template<> inline void Options::assign<>(BoutReal val, const std::string source) { _set(val, source, false); }
+template<> inline void Options::assign<>(std::string val, const std::string source) { _set(val, source, false); }
+// Note: const char* version needed to avoid conversion to bool
+template<> inline void Options::assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }

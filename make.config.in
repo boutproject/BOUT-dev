@@ -39,7 +39,7 @@ BOUT_LOCALE_PATH=@localedir@
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
+BOUT_FLAGS = -std=c++17 $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
 #Use := here to force a "static" evaluation of the current state of BOUT_FLAGS to
 #avoid infinite recursion that would arise if BOUT_FLAGS appeared on both sides of =
 BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
