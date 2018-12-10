@@ -67,7 +67,7 @@ private:
   // or even a Lambda
   // mySolver([](const Field3D &input) { return input + Delp2(input); });
 
-  class Laplacian *phiSolverXZ;
+  class Laplacian* laplacianSolver;
 
   const int nits = 10;
 
@@ -87,10 +87,10 @@ protected:
     mySolver.setOperatorFunction(mm);
     mySolver.setup();
 
-    phiSolverXZ = Laplacian::create();
-    phiSolverXZ->setCoefA(mm.A);
-    phiSolverXZ->setCoefC(1.0);
-    phiSolverXZ->setCoefD(mm.D);
+    laplacianSolver = Laplacian::create();
+    laplacianSolver->setCoefA(mm.A);
+    laplacianSolver->setCoefC(1.0);
+    laplacianSolver->setCoefD(mm.D);
 
     n.applyBoundary("dirichlet");
 
@@ -117,27 +117,27 @@ protected:
 
     mesh->communicate(solutionInv);
 
-    output_warn << std::endl;
+    output << std::endl;
     auto pass = mySolver.verify(n) == 0 ? "False" : "True";
-    output_warn << "Has test passed ? " << pass << std::endl;
-    output_warn << std::endl;
+    output << "Has test passed ? " << pass << std::endl;
+    output << std::endl;
 
     {
       Timer timer("sol_lap");
       try {
         for (int i = 0; i < nits; i++) {
-          solutionLap = phiSolverXZ->solve(n);
+          solutionLap = laplacianSolver->solve(n);
         }
       } catch (BoutException &e) {
       };
     }
 
-    output_warn << "Max diff undo Invertable is " << max(abs(mm(solutionInv) - n), true)
-                << endl;
-    output_warn << "MAX DIFF SOL " << max(abs(solutionLap - solutionInv), true) << endl;
+    output << "Max diff undo Invertable is " << max(abs(mm(solutionInv) - n), true)
+           << endl;
+    output << "MAX DIFF SOL " << max(abs(solutionLap - solutionInv), true) << endl;
 
     mySolver.reportTime();
-    output_warn << "Laplacian time is " << Timer::resetTime("sol_lap") << endl;
+    output << "Laplacian time is " << Timer::resetTime("sol_lap") << endl;
 
     return 0;
   }
