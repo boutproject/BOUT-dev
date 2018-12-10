@@ -35,6 +35,7 @@ class InvertableOperator;
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <globals.hxx>
+#include <msg_stack.hxx>
 #include <options.hxx>
 #include <output.hxx>
 
@@ -45,6 +46,7 @@ class InvertableOperator;
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
 T identity(const T& in) {
+  AUTO_TRACE();
   return in;
 };
 
@@ -63,13 +65,79 @@ public:
   using function_signature = std::function<T(const T&)>;
 
   /// Almost empty constructor -- currently don't actually use Options for anything
-  InvertableOperator(const function_signature& func = identity<T>, Options* opt = nullptr,
-                     Mesh* localmeshIn = nullptr)
+  InvertableOperator(const function_signature& func = identity<T>,
+                     Options* optIn = nullptr, Mesh* localmeshIn = nullptr)
       : operatorFunction(func), preconditionerFunction(func),
-        opt(opt ? opt : Options::getRoot()->getSection("invertableOperator")),
+        opt(optIn == nullptr ? optIn
+                             : Options::getRoot()->getSection("invertableOperator")),
         localmesh(localmeshIn == nullptr ? mesh : localmeshIn), doneSetup(false) {
-    TRACE("InvertableOperator<T>::constructor");
+    AUTO_TRACE();
+  };
 
+  /// Destructor just has to cleanup the PETSc owned objects.
+  ~InvertableOperator() {
+    TRACE("InvertableOperator<T>::destructor");
+#if CHECK > 3 // For initial development
+    output_info << endl;
+    output_info << "Destroying KSP object in InvertableOperator with properties: "
+                << endl;
+    KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
+    output_info << endl;
+#endif
+
+    KSPDestroy(&ksp);
+    MatDestroy(&matOperator);
+    MatDestroy(&matPreconditioner);
+    VecDestroy(&rhs);
+    VecDestroy(&lhs);
+  };
+
+  /// Allow the user to override the existing function
+  /// Note by default we set the preconditioner function to match this
+  /// as this is the usual mode of operation. If the user doesn't want to
+  /// do this they can set alsoSetPreconditioner to false.
+  void setOperatorFunction(const function_signature& func,
+                           bool alsoSetPreconditioner = true) {
+    TRACE("InvertableOperator<T>::setOperatorFunction");
+    operatorFunction = func;
+    if (alsoSetPreconditioner) {
+      preconditionerFunction = func;
+    }
+  }
+
+  /// Allow the user to override the existing preconditioner function
+  void setPreconditionerFunction(const function_signature& func) {
+    TRACE("InvertableOperator<T>::setPreconditionerFunction");
+    preconditionerFunction = func;
+  }
+
+  /// Provide a way to apply the operator to a Field
+  T operator()(const T& input) {
+    TRACE("InvertableOperator<T>::operator()");
+    return operatorFunction(input);
+  }
+
+  /// Provide a synonym for applying the operator to a Field
+  T apply(const T& input) {
+    AUTO_TRACE();
+    return operator()(input);
+  }
+
+  /// Sets up the PETSc objects required for inverting the operator
+  /// Currently also takes the functor that applies the operator this class
+  /// represents. Not actually required by any of the setup so this should
+  /// probably be moved to a separate place (maybe the constructor).
+  PetscErrorCode setup() {
+    TRACE("InvertableOperator<T>::setup");
+
+    Timer timer("invertable_operator_setup");
+    if (doneSetup) {
+      throw BoutException(
+          "Trying to call setup on an InvertableOperator instance that has "
+          "already been setup.");
+    }
+
+    // Add the RGN_NOCORNERS region to the mesh. Requires RGN_NOBNDRY to be defined.
     if (std::is_same<Field3D, T>::value) {
       if (not localmesh->hasRegion3D("RGN_NOCORNERS")) {
         // This avoids all guard cells and corners but includes boundaries
@@ -167,67 +235,6 @@ public:
     } else {
       throw BoutException("Invalid template type provided to InvertableOperator");
     }
-  };
-
-  /// Destructor just has to cleanup the PETSc owned objects.
-  ~InvertableOperator() {
-    TRACE("InvertableOperator<T>::destructor");
-#if CHECK > 3
-    output_info << endl;
-    output_info << "Destroying KSP object in InvertableOperator with properties: "
-                << endl;
-    KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
-    output_info << endl;
-#endif
-
-    KSPDestroy(&ksp);
-    MatDestroy(&matOperator);
-    MatDestroy(&matPreconditioner);
-    VecDestroy(&rhs);
-    VecDestroy(&lhs);
-  };
-
-  /// Allow the user to override the existing function
-  /// Note by default we set the preconditioner function to match this
-  /// as this is the usual mode of operation. If the user doesn't want to
-  /// do this they can set alsoSetPreconditioner to false.
-  void setOperatorFunction(const function_signature& func,
-                           bool alsoSetPreconditioner = true) {
-    TRACE("InvertableOperator<T>::setOperatorFunction");
-    operatorFunction = func;
-    if (alsoSetPreconditioner) {
-      preconditionerFunction = func;
-    }
-  }
-
-  /// Allow the user to override the existing preconditioner function
-  void setPreconditionerFunction(const function_signature& func) {
-    TRACE("InvertableOperator<T>::setPreconditionerFunction");
-    preconditionerFunction = func;
-  }
-
-  /// Provide a way to apply the operator to a Field
-  T operator()(const T& input) {
-    TRACE("InvertableOperator<T>::operator()");
-    return operatorFunction(input);
-  }
-
-  /// Provide a synonym for applying the operator to a Field
-  T apply(const T& input) { return operator()(input); }
-
-  /// Sets up the PETSc objects required for inverting the operator
-  /// Currently also takes the functor that applies the operator this class
-  /// represents. Not actually required by any of the setup so this should
-  /// probably be moved to a separate place (maybe the constructor).
-  PetscErrorCode setup() {
-    TRACE("InvertableOperator<T>::setup");
-
-    Timer timer("invertable_operator_setup");
-    if (doneSetup) {
-      throw BoutException(
-          "Trying to call setup on an InvertableOperator instance that has "
-          "already been setup.");
-    }
 
     PetscInt ierr;
 
@@ -294,14 +301,14 @@ public:
 
     /// By default allow a non-zero initial guess as this is probably the
     /// most helpful mode of operation. To disable this user can pass
-    /// `-invert_ksp_initial_guess_nonzero false` on the command line or simply
-    /// use `result = operator.invert(rhs, 0.0)` which will lead to an initial
-    /// guess of zero being used.
+    /// `-invertable_ksp_initial_guess_nonzero false` on the command line or simply
+    /// use `result = operator.invert(rhs, T{})` which will lead to an initial
+    /// guess of whatever is in the instance of T that is passed.
     ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
     CHKERRQ(ierr);
 
-    /// Allow options to be set on command line using a --invert_ksp_* prefix.
-    ierr = KSPSetOptionsPrefix(ksp, "invert_");
+    /// Allow options to be set on command line using a --invertable_ksp_* prefix.
+    ierr = KSPSetOptionsPrefix(ksp, "invertable_");
     CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ksp);
     CHKERRQ(ierr);
@@ -320,6 +327,7 @@ public:
   // but suspect it's not as there are KSPGuess objects
   // to deal with.
   T invert(const T& rhsField, const T& guess) {
+    AUTO_TRACE();
     fieldToPetscVec(guess, lhs);
     return invert(rhsField);
   }
@@ -358,9 +366,8 @@ public:
       throw BoutException("KSPSolve failed with reason %d.", reason);
     }
 
-#if CHECK > 3
-    output_info << "KSPSolve finished with converged reason : " << reason << endl;
-#endif
+    // Probably want to remove the following in the long run
+    output_debug << "KSPSolve finished with converged reason : " << reason << endl;
 
     // lhs to lhsField -- first make the output field and ensure it has space allocated
     T lhsField(localmesh);
@@ -381,14 +388,12 @@ public:
     localmesh->communicate(result);
     const T applied = operator()(result);
     const BoutReal maxDiff = max(abs(applied - rhsIn), true);
-#if CHECK > 3
     if (maxDiff >= tol) {
-      output_info << "Maximum difference in verify is " << maxDiff << endl;
-      output_info << "Max rhs is " << max(abs(rhsIn), true) << endl;
-      output_info << "Max applied is " << max(abs(applied), true) << endl;
-      output_info << "Max result is " << max(abs(result), true) << endl;
+      output_debug << "Maximum difference in verify is " << maxDiff << endl;
+      output_debug << "Max rhs is " << max(abs(rhsIn), true) << endl;
+      output_debug << "Max applied is " << max(abs(applied), true) << endl;
+      output_debug << "Max result is " << max(abs(result), true) << endl;
     };
-#endif
     return maxDiff < tol;
 #else
     return true;
@@ -406,9 +411,9 @@ public:
 
     BoutReal time_operate = Timer::resetTime("invertable_operator_operate");
     output_warn << "InvertableOperator timing :: Setup " << time_setup;
-    output_warn << " , Invert(packing) " << time_invert << "(";
-    output_warn << time_packing << ")";
-    output_warn << " operate :" << time_operate << endl;
+    output_warn << " , Invert(packing, operation) " << time_invert << "(";
+    output_warn << time_packing << ", ";
+    output_warn << time_operate << "). Total : " << time_setup + time_invert << endl;
   };
 
 private:
@@ -506,6 +511,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
 
   int counter = 0;
 
+  // Should explore ability to OpenMP this
   BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS")) {
     vecData[counter] = in[i];
     counter++;
@@ -530,6 +536,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 
   int counter = 0;
 
+  // Should explore ability to OpenMP this
   BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS")) {
     out[i] = vecData[counter];
     counter++;
