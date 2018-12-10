@@ -545,7 +545,7 @@ TEST(StringUtilitiesTest, IntToString) {
 
 TEST(StringUtilitiesTest, RealToString) {
   BoutReal number_real = 3.142e8;
-  std::string number_string = "3.14200000000000000e+08";
+  std::string number_string = "3.142e+08";
 
   EXPECT_EQ(number_string, toString(number_real));
 }
