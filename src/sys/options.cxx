@@ -180,7 +180,7 @@ template <> BoutReal Options::as<BoutReal>() const {
     // Use FieldFactory to evaluate expression
     // Parse the string, giving this Option pointer for the context
     // then generate a value at t,x,y,z = 0,0,0,0
-    std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
+    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
     if (!gen) {
       throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
                           bout::utils::get<std::string>(value).c_str());
@@ -215,9 +215,9 @@ template <> bool Options::as<bool>() const {
     result = bout::utils::get<bool>(value);
   
   } else if(bout::utils::holds_alternative<std::string>(value)) {
-    std::string strvalue = bout::utils::get<std::string>(value);
+    auto strvalue = bout::utils::get<std::string>(value);
   
-    char c = static_cast<char>(toupper((strvalue)[0]));
+    auto c = static_cast<char>(toupper((strvalue)[0]));
     if ((c == 'Y') || (c == 'T') || (c == '1')) {
       result = true;
     } else if ((c == 'N') || (c == 'F') || (c == '0')) {
@@ -280,9 +280,9 @@ std::map<std::string, Options::OptionValue> Options::values() const {
   std::map<std::string, OptionValue> options;
   for (const auto& it : children) {
     if (it.second.is_value) {
-      options.emplace(it.first, OptionValue{ bout::utils::variantToString(it.second.value),
-                                              bout::utils::variantToString(it.second.attributes.at("source")),
-                                              it.second.value_used});
+      options.insert({it.first, { bout::utils::variantToString(it.second.value),
+                                  bout::utils::variantToString(it.second.attributes.at("source")),
+                                  it.second.value_used}});
     }
   }
   return options;
