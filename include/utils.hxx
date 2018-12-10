@@ -398,11 +398,6 @@ inline std::string toString<>(const bool& val) {
   return "false";
 }
 
-/// Convert BoutReal to string
-/// Make sure the precision is large enough to hold a BoutReal
-template <>
-std::string toString<>(const BoutReal& val);
-
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
 template <>
