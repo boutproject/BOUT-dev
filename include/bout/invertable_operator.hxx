@@ -427,8 +427,8 @@ private:
   function_signature preconditionerFunction = identity<T>;
 
   // Internal types
-  Options* opt;    // Do we need this?
-  Mesh* localmesh; //< To ensure we can create T on the right mesh
+  Options* opt = nullptr;    // Do we need this?
+  Mesh* localmesh = nullptr; //< To ensure we can create T on the right mesh
   bool doneSetup = false;
 
   // To ensure PETSc has been setup -- a bit noisy if creating/destroying
