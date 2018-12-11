@@ -181,6 +181,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
