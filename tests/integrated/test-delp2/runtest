@@ -21,8 +21,9 @@ shell_safe("make > make.log")
 exefile = "./test_delp2"
 
 # List of settings to apply
-settings = ["mxg=2 mesh:nx=36", 
-            "mxg=1 mesh:nx=34"]
+settings = ["mxg=2 mesh:nx=36 diffusion:useFFT=true", 
+            "mxg=1 mesh:nx=34 diffusion:useFFT=true", "mxg=2 mesh:nx=36 diffusion:useFFT=false", 
+            "mxg=1 mesh:nx=34 diffusion:useFFT=false"]
 
 
 success = True
