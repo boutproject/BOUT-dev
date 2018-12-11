@@ -40,12 +40,12 @@ def test_make_maps_slab():
         assert np.allclose(maps['backward_zt_prime'][:,y,:], identity_map_z)
 
     # The last forward map should hit a boundary
-    assert np.allclose(maps['forward_xt_prime'][:,-1,:], -1.0)
-    assert np.allclose(maps['forward_zt_prime'][:,-1,:], -1.0)
+    assert np.all(maps['forward_xt_prime'][:,-1,:] < 0.0)
+    assert np.all(maps['forward_zt_prime'][:,-1,:] < 0.0)
 
     # First backward map hits boundary
-    assert np.allclose(maps['backward_xt_prime'][:,0,:], -1.0)
-    assert np.allclose(maps['backward_zt_prime'][:,0,:], -1.0)
+    assert np.all(maps['backward_xt_prime'][:,0,:] < 0.0)
+    assert np.all(maps['backward_zt_prime'][:,0,:] < 0.0)
 
 
 def test_make_maps_straight_stellarator():
