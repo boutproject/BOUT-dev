@@ -173,17 +173,17 @@ private:
    * @param[in] zangle  The angle (z coordinate) to shift by
    * @param[out] out  A 1D array of length \p len, already allocated
    */
-  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
+  void shiftZ(const BoutReal* in, int len, BoutReal zangle, BoutReal* out);
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
    *
    * @param[in] in  A 1D array of length mesh.LocalNz
-   * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
+   * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1)
+   * i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out);
 };
-
 
 #endif // __PARALLELTRANSFORM_H__

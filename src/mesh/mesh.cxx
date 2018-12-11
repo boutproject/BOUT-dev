@@ -13,6 +13,7 @@
 #include <output.hxx>
 
 #include "parallel/fci.hxx"
+#include "parallel/shifttofieldaligned.hxx"
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
@@ -299,8 +300,12 @@ void Mesh::setParallelTransform() {
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
+  }else if(ptstr == "shifttofieldaligned") {
+    // Shifted metric method, shifting to globally field-aligned coordinates
+    transform = bout::utils::make_unique<ShiftToFieldAligned>(*this);
+
   }else if(ptstr == "fci") {
 
     Options *fci_options = Options::getRoot()->getSection("fci");
