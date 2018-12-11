@@ -768,7 +768,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const s
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
+const Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
@@ -777,7 +777,7 @@ const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc, bool useFFT) {
+const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   if (outloc == CELL_DEFAULT) {
@@ -847,7 +847,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc, bool useFFT)
   return result;
 }
 
-const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
+const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( FieldPerp )");
 
   if (outloc == CELL_DEFAULT) {

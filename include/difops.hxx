@@ -257,9 +257,10 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
  *
  * For the full perpendicular Laplacian, use Laplace_perp
  */
-const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+const Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
 
 /*!
  * Perpendicular Laplacian, keeping y derivatives
