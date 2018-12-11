@@ -785,7 +785,7 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
   }
 
   ASSERT1(location == outloc);
-  ASSERT2(f.getLocation() == outloc);
+  ASSERT1(f.getLocation() == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -831,16 +831,6 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
 
         irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
       }
-
-      // Boundaries
-      for (int jz = 0; jz < ncz; jz++) {
-        for (int jx = 0; jx < localmesh->xstart; jx++) {
-          result(jx, jy, jz) = 0.0;
-        }
-        for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-          result(jx, jy, jz) = 0.0;
-        }
-      }
     }
   } else {
     result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
@@ -860,7 +850,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
   }
 
   ASSERT1(location == outloc);
-  ASSERT2(f.getLocation() == outloc);
+  ASSERT1(f.getLocation() == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -903,16 +893,6 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
     // Reverse FFT
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
       irfft(&delft(jx, 0), ncz, &result(jx, 0));
-    }
-
-    // Boundaries
-    for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx < localmesh->xstart; jx++) {
-        result(jx, jz) = 0.0;
-      }
-      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
     }
 
   } else {

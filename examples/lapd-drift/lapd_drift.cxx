@@ -577,7 +577,7 @@ protected:
       }
       
       if (rho_rho1) {
-        ddt(rho) += mu_i * Delp2(rho); // Check second argument meaning in difops.cpp
+        ddt(rho) += mu_i * Delp2(rho);
       }
       
       if (rho_diff) {
