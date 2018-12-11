@@ -31,7 +31,7 @@ matrix:
   - env: &default_env
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
       - SCRIPT_FLAGS='-uim'
-      - PIP_PACKAGES='netcdf4 sympy'
+      - PIP_PACKAGES='cython netcdf4 sympy'
   - addons:
       apt:
         sources:
@@ -53,7 +53,6 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
       - SCRIPT_FLAGS="-uim -t python -t shared"
-      - PIP_PACKAGES='netcdf4 cython sympy'
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp'
