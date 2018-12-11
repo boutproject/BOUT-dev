@@ -777,12 +777,15 @@ const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
+const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field3D )");
+
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
+
   ASSERT1(location == outloc);
+  ASSERT2(f.getLocation() == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -790,11 +793,9 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
-  ASSERT2(f.getLocation() == outloc);
-
   Field3D result(localmesh);
   result.allocate();
-  result.setLocation(f.getLocation());
+  result.setLocation(outloc);
 
   int ncz = localmesh->LocalNz;
 
@@ -812,12 +813,12 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
-      dcomplex a, b, c;
 
       // No smoothing in the x direction
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
         // Perform x derivative
 
+        dcomplex a, b, c;
         laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
 
         delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
@@ -849,10 +850,18 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
 const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   TRACE("Coordinates::Delp2( FieldPerp )");
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
 
   ASSERT1(location == outloc);
   ASSERT2(f.getLocation() == outloc);
+
+  if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f * 0;
+  }
+  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   FieldPerp result(localmesh);
   result.allocate();
@@ -875,7 +884,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   for (int jz = 0; jz <= ncz / 2; jz++) {
 
     // No smoothing in the x direction
-    for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
+    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
       // Perform x derivative
 
       dcomplex a, b, c;
@@ -886,14 +895,18 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   }
 
   // Reverse FFT
-  for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
+  for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
     irfft(&delft(jx, 0), ncz, &result(jx, 0));
   }
 
   // Boundaries
   for (int jz = 0; jz < ncz; jz++) {
-    result(0, jz) = 0.0;
-    result(localmesh->LocalNx - 1, jz) = 0.0;
+    for (int jx = 0; jx < localmesh->xstart; jx++) {
+      result(jx, jz) = 0.0;
+    }
+    for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
+      result(jx, jy, jz) = 0.0;
+    }
   }
 
   return result;
