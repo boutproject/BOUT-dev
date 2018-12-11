@@ -104,6 +104,9 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
+  ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
+
   f.splitYupYdown();
   
   Field3D& yup = f.yup();
