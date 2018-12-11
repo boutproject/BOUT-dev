@@ -797,52 +797,57 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
   result.allocate();
   result.setLocation(outloc);
 
-  int ncz = localmesh->LocalNz;
+  if (useFFT) {
+    int ncz = localmesh->LocalNz;
 
-  // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-  // Loop over all y indices
-  for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+    // Loop over all y indices
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
-    // Take forward FFT
+      // Take forward FFT
 
-    for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+      for (int jx = 0; jx < localmesh->LocalNx; jx++)
+        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
-    // Loop over kz
-    for (int jz = 0; jz <= ncz / 2; jz++) {
+      // Loop over kz
+      for (int jz = 0; jz <= ncz / 2; jz++) {
 
-      // No smoothing in the x direction
+        // No smoothing in the x direction
+        for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
+          // Perform x derivative
+
+          dcomplex a, b, c;
+          laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+
+          delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        }
+      }
+
+      // Reverse FFT
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-        // Perform x derivative
 
-        dcomplex a, b, c;
-        laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+      }
 
-        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      // Boundaries
+      for (int jz = 0; jz < ncz; jz++) {
+        for (int jx = 0; jx < localmesh->xstart; jx++) {
+          result(jx, jy, jz) = 0.0;
+        }
+        for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
+          result(jx, jy, jz) = 0.0;
+        }
       }
     }
+  } else {
+    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+             + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+  };
 
-    // Reverse FFT
-    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-
-      irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
-    }
-
-    // Boundaries
-    for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx < localmesh->xstart; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
-      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
-    }
-  }
-
-  ASSERT2(result.getLocation() == f.getLocation());
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -870,44 +875,53 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
   int jy = f.getIndex();
   result.setIndex(jy);
 
-  int ncz = localmesh->LocalNz;
+  if (useFFT) {
+    int ncz = localmesh->LocalNz;
 
-  // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-  // Take forward FFT
-  for (int jx = 0; jx < localmesh->LocalNx; jx++)
-    rfft(&f(jx, 0), ncz, &ft(jx, 0));
+    // Take forward FFT
+    for (int jx = 0; jx < localmesh->LocalNx; jx++)
+      rfft(&f(jx, 0), ncz, &ft(jx, 0));
 
-  // Loop over kz
-  for (int jz = 0; jz <= ncz / 2; jz++) {
+    // Loop over kz
+    for (int jz = 0; jz <= ncz / 2; jz++) {
 
-    // No smoothing in the x direction
+      // No smoothing in the x direction
+      for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
+        // Perform x derivative
+
+        dcomplex a, b, c;
+        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+
+        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      }
+    }
+
+    // Reverse FFT
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-      // Perform x derivative
-
-      dcomplex a, b, c;
-      laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-      delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      irfft(&delft(jx, 0), ncz, &result(jx, 0));
     }
-  }
 
-  // Reverse FFT
-  for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-    irfft(&delft(jx, 0), ncz, &result(jx, 0));
-  }
+    // Boundaries
+    for (int jz = 0; jz < ncz; jz++) {
+      for (int jx = 0; jx < localmesh->xstart; jx++) {
+        result(jx, jz) = 0.0;
+      }
+      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
+        result(jx, jy, jz) = 0.0;
+      }
+    }
 
-  // Boundaries
-  for (int jz = 0; jz < ncz; jz++) {
-    for (int jx = 0; jx < localmesh->xstart; jx++) {
-      result(jx, jz) = 0.0;
-    }
-    for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-      result(jx, jy, jz) = 0.0;
-    }
-  }
+  } else {
+    throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
+    // Would be the following but don't have standard derivative operators for FieldPerps
+    // yet
+    // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+    //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+  };
 
   return result;
 }
@@ -930,6 +944,8 @@ const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
 
   Field2D result =
       G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
