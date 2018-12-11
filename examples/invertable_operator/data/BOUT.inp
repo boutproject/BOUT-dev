@@ -10,8 +10,8 @@ first = fft
 second = fft
 
 [laplace]
-inner_boundary_flags = 0#32#2
-outer_boundary_flags = 0#32#2
+inner_boundary_flags = 0
+outer_boundary_flags = 0
 
 [all]
 bndry_all = none
@@ -19,4 +19,4 @@ function = 0.
 
 [n]
 scale = 1.0
-function = sin(z) #gauss(x-0.5)*cos(x*2*pi)*sin(z) 
+function = sin(z)
