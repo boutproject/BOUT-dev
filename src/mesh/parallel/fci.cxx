@@ -296,6 +296,12 @@ const Field3D FCIMap::integrate(Field3D &f) const {
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
+  ASSERT1(f.getMesh() == &mesh);
+
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 
@@ -307,6 +313,12 @@ void FCITransform::calcYUpDown(Field3D &f) {
 void FCITransform::integrateYUpDown(Field3D &f) {
   TRACE("FCITransform::integrateYUpDown");
   
+  ASSERT1(f.getMesh() == &mesh);
+
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 
