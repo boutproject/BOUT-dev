@@ -126,9 +126,9 @@ The bare-minimum requirements for compiling and running BOUT++ are:
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
    LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
    
-#. The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ )
-   
 #. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+   
+The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
