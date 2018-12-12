@@ -603,16 +603,6 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
-#define F3D_OP_FPERP(op)                                                                 \
-  FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) {                      \
-    FieldPerp result;                                                                    \
-    result.allocate();                                                                   \
-    result.setIndex(rhs.getIndex());                                                     \
-    BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {                                              \
-      result[i] = lhs(i, rhs.getIndex()) op rhs[i];                                      \
-      return result;                                                                     \
-    }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
@@ -657,16 +647,16 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(lhs);
   checkData(rhs);
   ASSERT1(lhs.getMesh() == rhs.getMesh());
+  ASSERT1(lhs.getLocation() == rhs.getLocation());  
 
   FieldPerp result{rhs.getMesh()};
   result.allocate();
   result.setIndex(rhs.getIndex());
-
+  result.setLocation(rhs.getLocation());
+  
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
   }
-
-  result.setLocation( lhs.getLocation() );
 
   checkData(result);
   return result;
