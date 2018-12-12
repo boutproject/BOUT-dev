@@ -9,9 +9,8 @@ from boutdata.data import BoutOptionsFile
 import math
 
 shell("make")
-shell("rm -f test.settings")
-shell("rm -f output.nc")
-
+shell("rm -f test-out.ini")
+shell("rm -f test-out.nc")
 
 # Create a NetCDF input file
 with DataFile("test.nc", create=True, format="NETCDF4") as f:
@@ -23,7 +22,7 @@ with DataFile("test.nc", create=True, format="NETCDF4") as f:
 shell("./test-options-netcdf")
 
 # Check the output INI file
-result = BoutOptionsFile("test.settings")
+result = BoutOptionsFile("test-out.ini")
 
 print(result)
 
@@ -34,9 +33,18 @@ assert result["string"] == "hello"
 print("Checking saved NetCDF file")
 
 # Check the output NetCDF file
-with DataFile("output.nc") as f:
+with DataFile("test-out.nc") as f:
     assert f["int"] == 42
     assert math.isclose(f["real"], 3.1415)
     assert result["string"] == "hello"
 
+print("Checking saved settings.ini")
+    
+# Check the settings.ini file, coming from BOUT.inp
+# which is converted to NetCDF, read in, then written again
+settings = BoutOptionsFile("settings.ini")
+
+assert settings["mesh"]["nx"] == 5
+assert settings["mesh"]["ny"] == 5
+    
 print(" => Passed")

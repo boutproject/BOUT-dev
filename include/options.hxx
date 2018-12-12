@@ -488,7 +488,13 @@ public:
   const std::map<std::string, Options>& getChildren() const {
     return children;
   }
-  
+
+  bool isValue() const {
+    return is_value;
+  }
+  bool isSection() const {
+    return is_section;
+  }
  private:
   
   /// The source label given to default values
