@@ -299,8 +299,6 @@ public:
       throw BoutException("Invalid template type provided to InvertableOperator");
     }
 
-    PetscInt ierr;
-
     // Hacky way to determine the local size for now
     PetscInt nlocal = 0;
     {
@@ -312,8 +310,8 @@ public:
 
     /// Create the shell matrix representing the operator to invert
     /// Note we currently pass "this" as the Matrix context
-    ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal, this,
-                          &matOperator);
+    PetscInt ierr = MatCreateShell(BoutComm::get(), nlocal, nlocal, nglobal, nglobal,
+                                   this, &matOperator);
     CHKERRQ(ierr);
 
 /// Create vectors compatible with matrix
