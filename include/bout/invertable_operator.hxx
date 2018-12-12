@@ -1,5 +1,5 @@
 /**************************************************************************
- * Invert arbitrary linear global operation using PETSc. to invert
+ * Invert arbitrary linear global operation using PETSc.
  *
  **************************************************************************
  * Copyright 2018 D. Dickinson
@@ -23,8 +23,12 @@
  *
  **************************************************************************/
 
+namespace bout {
+namespace inversion {
 template <typename T>
 class InvertableOperator;
+};
+};
 
 #ifndef __INVERTABLE_OPERATOR_H__
 #define __INVERTABLE_OPERATOR_H__
@@ -43,6 +47,13 @@ class InvertableOperator;
 
 #include <bout/petsclib.hxx>
 
+#endif
+
+namespace bout {
+namespace inversion {
+
+#ifdef BOUT_HAS_PETSC
+
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
 T identity(const T& in) {
@@ -50,6 +61,58 @@ T identity(const T& in) {
   return in;
 };
 
+/// Pack a PetscVec from a Field<T>
+template <typename T>
+PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
+  TRACE("fieldToPetscVec<T>");
+  Timer timer("invertable_operator_packing");
+
+  PetscScalar* vecData;
+
+  auto ierr = VecGetArray(out, &vecData);
+  CHKERRQ(ierr);
+
+  int counter = 0;
+
+  // Should explore ability to OpenMP this
+  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS")) {
+    vecData[counter] = in[i];
+    counter++;
+  }
+
+  ierr = VecRestoreArray(out, &vecData);
+  CHKERRQ(ierr);
+
+  return ierr;
+}
+
+/// Pack a Field<T> from a PetscVec
+template <typename T>
+PetscErrorCode petscVecToField(Vec in, T& out) {
+  TRACE("petscVecToField<T>");
+  Timer timer("invertable_operator_packing");
+
+  const PetscScalar* vecData;
+
+  auto ierr = VecGetArrayRead(in, &vecData);
+  CHKERRQ(ierr);
+
+  int counter = 0;
+
+  // Should explore ability to OpenMP this
+  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS")) {
+    out[i] = vecData[counter];
+    counter++;
+  }
+
+  ierr = VecRestoreArrayRead(in, &vecData);
+  CHKERRQ(ierr);
+
+  return ierr;
+};
+
+/// Class to define an invertable operator. Provides interface to PETSc routines
+/// for solving A.x = b
 template <typename T>
 class InvertableOperator {
   static_assert(
@@ -495,56 +558,6 @@ private:
   }
 };
 
-/// Pack a PetscVec from a Field<T>
-template <typename T>
-PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
-  TRACE("fieldToPetscVec<T>");
-  Timer timer("invertable_operator_packing");
-
-  PetscScalar* vecData;
-
-  auto ierr = VecGetArray(out, &vecData);
-  CHKERRQ(ierr);
-
-  int counter = 0;
-
-  // Should explore ability to OpenMP this
-  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS")) {
-    vecData[counter] = in[i];
-    counter++;
-  }
-
-  ierr = VecRestoreArray(out, &vecData);
-  CHKERRQ(ierr);
-
-  return ierr;
-}
-
-/// Pack a Field<T> from a PetscVec
-template <typename T>
-PetscErrorCode petscVecToField(Vec in, T& out) {
-  TRACE("petscVecToField<T>");
-  Timer timer("invertable_operator_packing");
-
-  const PetscScalar* vecData;
-
-  auto ierr = VecGetArrayRead(in, &vecData);
-  CHKERRQ(ierr);
-
-  int counter = 0;
-
-  // Should explore ability to OpenMP this
-  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS")) {
-    out[i] = vecData[counter];
-    counter++;
-  }
-
-  ierr = VecRestoreArrayRead(in, &vecData);
-  CHKERRQ(ierr);
-
-  return ierr;
-}
-
 #else
 
 template <typename T>
@@ -553,4 +566,7 @@ public:
 };
 
 #endif // PETSC
+};
+};
+
 #endif // HEADER GUARD

@@ -24,7 +24,8 @@ been implemented that allows the user to define a generic differential
 operator and provides a simple (for the user) method to invert the
 operator to find :math:`\underline{x}`. This class currently relies on
 PETSc to provide the inversion functionality and hence is not
-available when configuring without PETSc support.
+available when configuring without PETSc support. It is available in
+the namespace ``bout::inversion``.
 
 There is an example in `examples/invertable_operator` that uses the
 class to solve a simple Laplacian operator and compares to the
@@ -34,8 +35,13 @@ The `InvertableOperator` class is templated on the field type of the
 operator (essentially defining the domain over which the problem
 exists).  To define the operator that the `InvertableOperator`
 instances represents one should use the
-`InvertableOperator::setOperatorFunction` method. This takes a function
-of signature ``std::function<T(const T&)>``. This can be a ``std::function``, compatible function pointer, lambda or a functor. The last of these allows more complicated functions that use a local context. For example the following code snippet demonstrates a functor that stores several auxilliary ``Field3D`` variables used in the ``operator()`` call::
+`InvertableOperator::setOperatorFunction` method. This takes a
+function of signature ``std::function<T(const T&)>``. This can be a
+``std::function``, compatible function pointer, lambda or a
+functor. The last of these allows more complicated functions that use
+a local context. For example the following code snippet demonstrates a
+functor that stores several auxilliary ``Field3D`` variables used in
+the ``operator()`` call::
 
   struct myLaplacian {
     Field3D D = 1.0, C = 1.0, A = 0.0;
@@ -73,7 +79,7 @@ A more complete example is ::
     };
   };
 
-  InveratbleOperator<Field3D> solver;
+  bout::inversion::InveratbleOperator<Field3D> solver;
   myLaplacian laplacianOperator;
   laplacianOperator.A = 1.0;
   laplacianOperator.B = 2.0;
@@ -104,7 +110,8 @@ hence subsequent changes to the functor will not be reflected in the
 operator without a further call to ``setOperatorFunction``. For
 example::
 
-  InveratbleOperator<Field3D> solver;
+  using bout::inversion;
+  InvertableOperator<Field3D> solver;
   myLaplacian laplacianOperator;
   laplacianOperator.A = 1.0;
   laplacianOperator.B = 2.0;

@@ -61,7 +61,7 @@ private:
   };
 
   myLaplacian mm;
-  InvertableOperator<Field3D> mySolver;
+  bout::inversion::InvertableOperator<Field3D> mySolver;
   // Above could also be:
   // mySolver(delp);
   // or even a Lambda
