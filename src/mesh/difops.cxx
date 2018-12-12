@@ -87,73 +87,83 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 
   Field3D gys(mesh);
   gys.allocate();
+  gys.setLocation(f.getLocation());
 
   // Need Y derivative everywhere
-  for(int x=1;x<=mesh->LocalNx-2;x++)
-    for(int y=1;y<=mesh->LocalNy-2;y++)
-      for(int z=0;z<ncz;z++) {
-        gys(x, y, z) = (f.yup()(x, y+1, z) - f.ydown()(x, y-1, z))/(0.5*metric->dy(x, y+1) + metric->dy(x, y) + 0.5*metric->dy(x, y-1));
-      }
-  
-  for(int x=1;x<=mesh->LocalNx-2;x++) {
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      BoutReal by = 1./sqrt(metric->g_22(x, y));
-      for(int z=0;z<ncz;z++) {
-        // Z indices zm and zp
-        int zm = (z - 1 + ncz) % ncz;
-        int zp = (z + 1) % ncz;
-        
-        // bx = -DDZ(apar)
-        BoutReal bx = (apar(x, y, zm) - apar(x, y, zp))/(2.*metric->dz);
-        // bz = DDX(f)
-        BoutReal bz = (apar(x+1, y, z) - apar(x-1, y, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y));
-        
-	// Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
-        
-        // Length dl for predictor
-        BoutReal dl = fabs(metric->dx(x, y)) / (fabs(bx) + 1e-16);
-        dl = BOUTMIN(dl, fabs(metric->dy(x, y)) / (fabs(by) + 1e-16));
-        dl = BOUTMIN(dl, metric->dz / (fabs(bz) + 1e-16));
-        
-	BoutReal fp, fm;
-        
-        // X differencing
-        fp = f(x+1, y, z)
-          + (0.25*dl/metric->dz) * bz * (f(x+1, y, zm) - f(x+1, y, zp))
-          - 0.5*dl * by * gys(x+1, y, z);
-        
-        fm = f(x-1, y, z)
-          + (0.25*dl/metric->dz) * bz * (f(x-1, y, zm) - f(x-1, y, zp))
-          - 0.5*dl * by * gys(x-1, y, z);
-        
-        result(x, y, z) = bx * (fp - fm) / (0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y));
+  BOUT_FOR(i, f.getRegion("RGN_NOY")) {
+    int x = i.x(), y = i.y(), z = i.z();
+    gys[i] =
+        (f.yup()(x, y + 1, z) - f.ydown()(x, y - 1, z))
+        / (0.5 * metric->dy(x, y + 1) + metric->dy(x, y) + 0.5 * metric->dy(x, y - 1));
+  }
 
-	// Z differencing
-        
-        fp = f(x, y, zp)
-          + (0.25*dl/metric->dx(x, y)) * bx * (f(x-1, y, zp) - f(x+1, y, zp))
-          - 0.5*dl * by * gys(x, y, zp);
-        
-        fm = f(x, y, zm)
-          + (0.25*dl/metric->dx(x, y)) * bx * (f(x-1,y,zm) - f(x+1, y, zm))
-          - 0.5*dl * by * gys(x, y, zm);
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    BoutReal by = 1. / sqrt(metric->g_22[i]);
 
-        result(x, y, z) += bz * (fp - fm) / (2.*metric->dz);
+    // Z indices zm and zp
+    auto ixm = i.xm(), ixp = i.xp();
+    auto iym = i.ym(), iyp = i.yp();
+    auto izm = i.zm(), izp = i.zp();
 
-        // Y differencing
-        
-        fp = f.yup()(x,y+1,z)
-          - 0.5*dl * bx * (f.yup()(x+1, y+1, z) - f.yup()(x-1, y+1, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y))
-          
-          + (0.25*dl/metric->dz) * bz * (f.yup()(x,y+1,zm) - f.yup()(x,y+1,zp));
-        
-        fm = f.ydown()(x,y-1,z)
-          - 0.5*dl * bx * (f.ydown()(x+1, y-1, z) - f.ydown()(x-1, y-1, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y))
-          + (0.25*dl/metric->dz) * bz * (f.ydown()(x,y-1,zm) - f.ydown()(x,y-1,zp));
+    auto ixmym = ixm.ym(), ixmyp = ixm.yp();
+    auto ixpym = ixp.ym(), ixpyp = ixp.yp();
 
-        result(x,y,z) += by * (fp - fm) / (0.5*metric->dy(x,y-1) + metric->dy(x,y) + 0.5*metric->dy(x,y+1));
-      }
-    }
+    auto ixpzm = ixp.zm(), ixpzp = ixp.zp();
+    auto ixmzm = ixm.zm(), ixmzp = ixm.zp();
+
+    auto iypzm = iyp.zm(), iypzp = iyp.zp();
+    auto iymzm = iym.zm(), iymzp = iym.zp();
+
+    // bx = -DDZ(apar)
+    BoutReal bx = (apar[izm] - apar[izp]) / (2. * metric->dz);
+    // bz = DDX(f)
+    BoutReal bz = (apar[ixp] - apar[ixm])
+                  / (0.5 * metric->dx[ixm] + metric->dx[i] + 0.5 * metric->dx[ixp]);
+
+    // Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
+
+    // Length dl for predictor
+    BoutReal dl = fabs(metric->dx[i]) / (fabs(bx) + 1e-16);
+    dl = BOUTMIN(dl, fabs(metric->dy[i]) / (fabs(by) + 1e-16));
+    dl = BOUTMIN(dl, metric->dz / (fabs(bz) + 1e-16));
+
+    BoutReal fp, fm;
+
+    // X differencing
+    fp = f[ixp] + (0.25 * dl / metric->dz) * bz * (f[ixpzm] - f[ixpzp])
+         - 0.5 * dl * by * gys[ixp];
+
+    fm = f[ixm] + (0.25 * dl / metric->dz) * bz * (f[ixmzm] - f[ixmzp])
+         - 0.5 * dl * by * gys[ixm];
+
+    result[i] =
+        bx * (fp - fm) / (0.5 * metric->dx[ixm] + metric->dx[i] + 0.5 * metric->dx[ixp]);
+
+    // Z differencing
+
+    fp = f[izp] + (0.25 * dl / metric->dx[i]) * bx * (f[ixmzp] - f[ixpzp])
+         - 0.5 * dl * by * gys[izp];
+
+    fm = f[izm] + (0.25 * dl / metric->dx[i]) * bx * (f[ixmzm] - f[ixpzm])
+         - 0.5 * dl * by * gys[izm];
+
+    result[i] += bz * (fp - fm) / (2. * metric->dz);
+
+    // Y differencing
+
+    fp = f.yup()[iyp]
+         - 0.5 * dl * bx * (f.yup()[ixpyp] - f.yup()[ixmyp])
+               / (0.5 * metric->dx[ixm] + metric->dx[i] + 0.5 * metric->dx[ixp])
+
+         + (0.25 * dl / metric->dz) * bz * (f.yup()[iypzm] - f.yup()[iypzp]);
+
+    fm = f.ydown()[iym]
+         - 0.5 * dl * bx * (f.ydown()[ixpym] - f.ydown()[ixmym])
+               / (0.5 * metric->dx[ixm] + metric->dx[i] + 0.5 * metric->dx[ixp])
+         + (0.25 * dl / metric->dz) * bz * (f.ydown()[iymzm] - f.ydown()[iymzp]);
+
+    result[i] +=
+        by * (fp - fm) / (0.5 * metric->dy[iym] + metric->dy[i] + 0.5 * metric->dy[iyp]);
   }
   
   ASSERT2(result.getLocation() == f.getLocation());
@@ -214,27 +224,27 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
   result.allocate();
 
   Coordinates *coord = f.getCoordinates();
-  
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
 
-        // Value of f and v at left cell face
-	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
-	BoutReal vL = 0.5*(v(i,j,k) + v.ydown()(i,j-1,k));
-	
-	BoutReal fR = 0.5*(f(i,j,k) + f.yup()(i,j+1,k));
-	BoutReal vR = 0.5*(v(i,j,k) + v.yup()(i,j+1,k));
-	
-        // Calculate flux at right boundary (y+1/2)
-	BoutReal fluxRight = fR * vR * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
-	
-        // Calculate at left boundary (y-1/2)
-	BoutReal fluxLeft = fL * vL * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
-	
-	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
-      }
-    }
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    const auto iym = i.ym(), iyp = i.yp();
+
+    // Value of f and v at left cell face
+    BoutReal fL = 0.5 * (f[i] + f.ydown()[iym]);
+    BoutReal vL = 0.5 * (v[i] + v.ydown()[iym]);
+
+    BoutReal fR = 0.5 * (f[i] + f.yup()[iyp]);
+    BoutReal vR = 0.5 * (v[i] + v.yup()[iyp]);
+
+    // Calculate flux at right boundary (y+1/2)
+    BoutReal fluxRight = fR * vR * (coord->J[i] + coord->J[iyp])
+                         / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[iyp]));
+
+    // Calculate at left boundary (y-1/2)
+    BoutReal fluxLeft = fL * vL * (coord->J[i] + coord->J[iym])
+                        / (sqrt(coord->g_22[i]) + sqrt(coord->g_22[iym]));
+
+    result[i] = (fluxRight - fluxLeft) / (coord->dy[i] * coord->J[i]);
+  }
 
   result.setLocation(f.getLocation());
 
@@ -287,23 +297,21 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 
   if (var.hasYupYdown()) {
     // NOTE: Need to calculate one more point than centred vars
-    for(int jx=0; jx<mesh->LocalNx;jx++) {
-      for(int jy=1;jy<mesh->LocalNy;jy++) {
-        for(int jz=0;jz<mesh->LocalNz;jz++) {
-          result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
-      }
-      }
+    BOUT_FOR(i, var.getRegion("RGN_NOY")) {
+      const auto iym = i.ym();
+      result[i] = 2. * (var[i] - var.ydown()[iym])
+                  / (metric->dy[i] * sqrt(metric->g_22[i])
+                     + metric->dy[iym] * sqrt(metric->g_22[iym]));
     }
   } else {
     // No yup/ydown fields, so transform to cell centred
     Field3D var_fa = mesh->toFieldAligned(var);
-    
-    for(int jx=0; jx<mesh->LocalNx;jx++) {
-      for(int jy=1;jy<mesh->LocalNy;jy++) {
-        for(int jz=0;jz<mesh->LocalNz;jz++) {
-          result(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
-        }
-      }
+
+    BOUT_FOR(i, var.getRegion("RGN_NOY")) {
+      const auto iym = i.ym();
+      result[i] =
+          2. * (var_fa[i] - var_fa[iym]) / (metric->dy[i] * sqrt(metric->g_22[i])
+                                            + metric->dy[iym] * sqrt(metric->g_22[iym]));
     }
 
     result = mesh->fromFieldAligned(result);
@@ -810,37 +818,33 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     
     result.allocate();
     result.setLocation(outloc);
-    
-    int ncz = mesh->LocalNz;
-    for(int x=mesh->xstart;x<=mesh->xend;x++)
-      for(int y=mesh->ystart;y<=mesh->yend;y++) {
-        for (int z = 0; z < mesh->LocalNz; z++) {
-          int zm = (z - 1 + ncz) % ncz;
-	  int zp = (z + 1) % ncz;
-          
-	  BoutReal gp, gm;
-	  
-          // Vx = DDZ(f)
-          BoutReal vx = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz);
-          
-          // Set stability condition
-          solver->setMaxTimestep(metric->dx(x,y) / (fabs(vx) + 1e-16));
-          
-          // X differencing
-          if(vx > 0.0) {
-            gp = g(x,y);
-            
-            gm = g(x-1,y);
-            
-          }else {
-            gp = g(x+1,y);
-            
-            gm = g(x,y);
-          }
-          
-          result(x,y,z) = vx * (gp - gm) / metric->dx(x,y);
-        }
+
+    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+      const auto izm = i.zm(), izp = i.zp();
+
+      BoutReal gp, gm;
+
+      // Vx = DDZ(f)
+      BoutReal vx = (f[izp] - f[izm]) / (2. * metric->dz);
+
+      // Set stability condition
+      solver->setMaxTimestep(metric->dx[i] / (fabs(vx) + 1e-16));
+
+      // X differencing
+      if (vx > 0.0) {
+        gp = g[i];
+
+        gm = g[i.xm()];
+
+      } else {
+        gp = g[i.xp()];
+
+        gm = g[i];
       }
+
+      result[i] = vx * (gp - gm) / metric->dx[i];
+    }
+
     break;
   }
   case BRACKET_ARAKAWA: {
