@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+from boututils.datafile import DataFile
+from boututils.run_wrapper import shell
+from boutdata.data import BoutOptionsFile
+
+import math
+
+shell("make")
+
+# Create a NetCDF input file
+with DataFile("test.nc", create=True, format="NETCDF4") as f:
+    f.write("int", 42);
+    f.write("real", 3.1415);
+    f.write("string", "hello");
+
+# run BOUT++
+shell("./test-options-netcdf")
+
+# Check the output INI file
+result = BoutOptionsFile("test.settings")
+
+print(result)
+
+assert result["int"] == 42
+assert math.isclose(result["real"], 3.1415)
+assert result["string"] == "hello"
+
+print("Passed")
