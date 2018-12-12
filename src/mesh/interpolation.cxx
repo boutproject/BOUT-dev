@@ -427,88 +427,11 @@ void printLocation(const Field2D &var) { output.write(strLocation(var.getLocatio
 
 const char *strLocation(CELL_LOC loc) { return CELL_LOC_STRING(loc).c_str(); }
 
-// 4-point Lagrangian interpolation
-// offset must be between 0 and 1
-BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
-                      BoutReal offset) {
-  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0 +
-         0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm -
-         0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp +
-         offset * (offset * offset - 1.0) * v2p / 6.0;
-}
-
-BoutReal lagrange_4pt(BoutReal v[], BoutReal offset) {
-  return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
-}
-
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
   TRACE("Interpolating 3D field");
-
-  Mesh *mesh = f.getMesh();
-  ASSERT1(mesh == delta_x.getMesh());
-  ASSERT1(mesh == delta_z.getMesh());
-  Field3D result(mesh);
-  result.allocate();
-
-  // Loop over output grid points
-  for (int jx = 0; jx < mesh->LocalNx; jx++) {
-    for (int jy = 0; jy < mesh->LocalNy; jy++) {
-      for (int jz = 0; jz < mesh->LocalNz; jz++) {
-        // Need to get value of f at
-        // [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
-
-        // get lower (rounded down) index
-        int jxmnew = static_cast<int>(delta_x(jx, jy, jz));
-        int jzmnew = static_cast<int>(delta_z(jx, jy, jz));
-        // and the distance from this point
-        BoutReal xs = delta_x(jx, jy, jz) - static_cast<BoutReal>(jxmnew);
-        BoutReal zs = delta_z(jx, jy, jz) - static_cast<BoutReal>(jzmnew);
-        // Get new lower index
-        jxmnew += jx;
-        jzmnew += jz;
-
-        // Check bounds. If beyond bounds just constant
-        if (jxmnew < 0) {
-          jxmnew = 0;
-          xs = 0.0;
-        } else if (jxmnew >= (mesh->LocalNx - 1)) {
-          // Want to always be able to use [jxnew] and [jxnew+1]
-          jxmnew = mesh->LocalNx - 2;
-          xs = 1.0;
-        }
-
-        int jx2mnew = (jxmnew == 0) ? 0 : (jxmnew - 1);
-        int jxpnew = jxmnew + 1;
-        int jx2pnew = (jxmnew == (mesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
-
-        int ncz = mesh->LocalNz;
-
-        // Get the 4 Z points
-        jzmnew = ((jzmnew % ncz) + ncz) % ncz;
-        int jzpnew = (jzmnew + 1) % ncz;
-        int jz2pnew = (jzmnew + 2) % ncz;
-        int jz2mnew = (jzmnew - 1 + ncz) % ncz;
-
-        // Now have 4 indices for X and Z to interpolate
-
-        // Interpolate in Z first
-        BoutReal xvals[4];
-
-        xvals[0] = lagrange_4pt(f(jx2mnew, jy, jz2mnew), f(jx2mnew, jy, jzmnew),
-                                f(jx2mnew, jy, jzpnew), f(jx2mnew, jy, jz2pnew), zs);
-        xvals[1] = lagrange_4pt(f(jxmnew, jy, jz2mnew), f(jxmnew, jy, jzmnew),
-                                f(jxmnew, jy, jzpnew), f(jxmnew, jy, jz2pnew), zs);
-        xvals[2] = lagrange_4pt(f(jxpnew, jy, jz2mnew), f(jxpnew, jy, jzmnew),
-                                f(jxpnew, jy, jzpnew), f(jxpnew, jy, jz2pnew), zs);
-        xvals[3] = lagrange_4pt(f(jx2pnew, jy, jz2mnew), f(jx2pnew, jy, jzmnew),
-                                f(jx2pnew, jy, jzpnew), f(jx2pnew, jy, jz2pnew), zs);
-        // Then in X
-        result(jx, jy, jz) = lagrange_4pt(xvals, xs);
-      }
-    }
-  }
-  return result;
+  Lagrange4pt interpolateMethod{f.getMesh()};
+  return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x,

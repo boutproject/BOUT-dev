@@ -52,18 +52,15 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
 
 class Interpolation {
 protected:
+  Mesh* localmesh{nullptr};
+
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
 
-  Mesh *localmesh;
-
 public:
-  Interpolation(int y_offset = 0, Mesh *mesh = nullptr)
-      : localmesh(mesh), y_offset(y_offset) {
-    if (mesh == nullptr) {
-      localmesh = mesh;
-    }
-  }
+  Interpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
+      : localmesh(localmeshIn == nullptr ? mesh : localmeshIn),
+        skip_mask(*localmesh, false), y_offset(y_offset) {}
   Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : Interpolation(y_offset, mesh) {
     skip_mask = mask;
