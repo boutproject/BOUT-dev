@@ -54,9 +54,85 @@ Options OptionsNetCDF::read() {
   return result;
 }
 
+/// Convert variant into NcType
+/// If the type is not recognised then NcType null object is returned
+struct NcTypeVisitor {
+  template<typename T>
+  NcType operator()(const T& UNUSED(t)) {
+    return {}; // Null object by defaul
+  }
+};
+
+template <>
+NcType NcTypeVisitor::operator()<int>(const int& UNUSED(t)) {
+  return ncInt;
+}
+
+template <>
+NcType NcTypeVisitor::operator()<double>(const double& UNUSED(t)) {
+  return ncDouble;
+}
+
+template <>
+NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
+  return ncFloat;
+}
+
+template <>
+NcType NcTypeVisitor::operator()<std::string>(const std::string& UNUSED(t)) {
+  return ncString;
+}
+
+/// Visit a variant type, and put the data into a NcVar
+struct NcPutVarVisitor {
+  NcPutVarVisitor(NcVar &var) : var(var) {}
+  template<typename T>
+  void operator()(const T& UNUSED(t)) {}
+private:
+  NcVar &var;
+};
+
+template<>
+void NcPutVarVisitor::operator()<int>(const int &value) {
+  var.putVar(&value);
+}
+template<>
+void NcPutVarVisitor::operator()<double>(const double &value) {
+  var.putVar(&value);
+}
+template<>
+void NcPutVarVisitor::operator()<float>(const float &value) {
+  var.putVar(&value);
+}
+template<>
+void NcPutVarVisitor::operator()<std::string>(const std::string &value) {
+  const char* cstr = value.c_str();
+  var.putVar(&cstr);
+}
+
 /// Write options to file
 void OptionsNetCDF::write(const Options &options) {
+  NcFile dataFile(filename, NcFile::replace);
+
+  if (dataFile.isNull()) {
+    throw BoutException("Could not open NetCDF file '%s' for writing", filename.c_str()); 
+  }
   
+  for (const auto& childpair : options.getChildren()) {
+    const auto &name = childpair.first;
+    const auto &child = childpair.second;
+
+    auto nctype = bout::utils::visit(NcTypeVisitor(), child.value);
+
+    if (nctype.isNull()) {
+      continue; // Skip this value
+    }
+
+    auto var = dataFile.addVar(name, nctype);
+
+    // Put the data into the variable
+    bout::utils::visit(NcPutVarVisitor(var), child.value);
+  }
 }
 
 

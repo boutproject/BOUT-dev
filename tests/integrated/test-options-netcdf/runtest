@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#requires: false
+
 from boututils.datafile import DataFile
 from boututils.run_wrapper import shell
 from boutdata.data import BoutOptionsFile
@@ -8,6 +10,8 @@ import math
 
 shell("make")
 shell("rm -f test.settings")
+shell("rm -f output.nc")
+
 
 # Create a NetCDF input file
 with DataFile("test.nc", create=True, format="NETCDF4") as f:
@@ -26,5 +30,13 @@ print(result)
 assert result["int"] == 42
 assert math.isclose(result["real"], 3.1415)
 assert result["string"] == "hello"
+
+print("Checking saved NetCDF file")
+
+# Check the output NetCDF file
+with DataFile("output.nc") as f:
+    assert f["int"] == 42
+    assert math.isclose(f["real"], 3.1415)
+    assert result["string"] == "hello"
 
 print(" => Passed")

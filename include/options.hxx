@@ -485,6 +485,10 @@ public:
   std::map<std::string, OptionValue> values() const;
   std::map<std::string, const Options*> subsections() const;
 
+  const std::map<std::string, Options>& getChildren() const {
+    return children;
+  }
+  
  private:
   
   /// The source label given to default values

@@ -17,6 +17,9 @@ int main(int argc, char** argv) {
   // Write to an INI text file
   OptionsReader *reader = OptionsReader::getInstance();
   reader->write(&values, "test.settings");
+
+  // Write to a NetCDF file
+  OptionsNetCDF("output.nc").write(values);
   
   BoutFinalise();
 };
