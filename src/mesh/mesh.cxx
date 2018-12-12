@@ -360,30 +360,15 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
 }
 
 const bool Mesh::hasRegion3D(const std::string& region_name) const {
-  const auto found = regionMap3D.find(region_name);
-  if (found == end(regionMap3D)) {
-    return false;
-  } else {
-    return true;
-  }
+  return regionMap3D.find(region_name) != std::end(regionMap3D);
 }
 
 const bool Mesh::hasRegion2D(const std::string& region_name) const {
-  const auto found = regionMap2D.find(region_name);
-  if (found == end(regionMap2D)) {
-    return false;
-  } else {
-    return true;
-  }
+  return regionMap2D.find(region_name) != std::end(regionMap2D);
 }
 
 const bool Mesh::hasRegionPerp(const std::string& region_name) const {
-  const auto found = regionMapPerp.find(region_name);
-  if (found == end(regionMapPerp)) {
-    return false;
-  } else {
-    return true;
-  }
+  return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
