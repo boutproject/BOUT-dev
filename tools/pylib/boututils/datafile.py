@@ -652,7 +652,7 @@ class DataFile_netCDF(DataFile):
 
             if var is None:
                 raise Exception("Couldn't create variable")
-            
+
         # Write the data
         if t == 'str':
             var[0] = data
