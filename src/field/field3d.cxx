@@ -312,6 +312,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
+
+  // Alternative to setting the location of *this, is to ASSERT on input
+  // that rhs.getLocation() == location;
+  setLocation(rhs.getLocation());
 }
 
 Field3D & Field3D::operator=(const BoutReal val) {
