@@ -143,7 +143,6 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
-  ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY); // Never calculate x-guard cells here
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
@@ -178,7 +177,6 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
-  ASSERT1(region == RGN_NOX || region == RGN_NOBNDRY); // Never calculate x-guard cells here
   ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
