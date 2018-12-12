@@ -382,7 +382,8 @@ public:
   // to deal with.
   T invert(const T& rhsField, const T& guess) {
     AUTO_TRACE();
-    fieldToPetscVec(guess, lhs);
+    auto ierr = fieldToPetscVec(guess, lhs);
+    CHKERRQ(ierr);
     return invert(rhsField);
   }
 
@@ -402,7 +403,8 @@ public:
     ASSERT2(localmesh == rhsField.getMesh());
 
     // rhsField to rhs
-    fieldToPetscVec(rhsField, rhs);
+    auto ierr = fieldToPetscVec(rhsField, rhs);
+    CHKERRQ(ierr);
 
     /// Do the solve with solution stored in lhs
     /// Note: the values in lhs on input are used as the initial guess
@@ -411,7 +413,7 @@ public:
     /// between calls to invert (as a class member rather than local scope)
     /// we automatically provide the previous solution as the initial guess
     /// for subsequent solves.
-    auto ierr = KSPSolve(ksp, rhs, lhs);
+    ierr = KSPSolve(ksp, rhs, lhs);
     CHKERRQ(ierr);
 
     KSPConvergedReason reason;
@@ -427,7 +429,8 @@ public:
     T lhsField(localmesh);
     lhsField.allocate();
 
-    petscVecToField(lhs, lhsField);
+    ierr = petscVecToField(lhs, lhsField);
+    CHKERRQ(ierr);
 
     return lhsField;
   };
@@ -500,7 +503,8 @@ private:
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
     tmpField.allocate();
-    petscVecToField(v1, tmpField);
+    ierr = petscVecToField(v1, tmpField);
+    CHKERRQ(ierr);
     // Need following communicate if operator() uses guard cells, i.e. differential
     // operator. Could delegate to the user function but then need to remove const
     // from signature of the function (function_signature) likely involving a copy.
@@ -515,7 +519,8 @@ private:
     // @TODO : Consider need for this communicate. Could communicate at the
     // end of the user routine.
     ctx->localmesh->communicate(tmpField2);
-    fieldToPetscVec(tmpField2, v2);
+    ierr = fieldToPetscVec(tmpField2, v2);
+    CHKERRQ(ierr);
     return ierr;
   }
 
@@ -529,7 +534,8 @@ private:
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
     tmpField.allocate();
-    petscVecToField(v1, tmpField);
+    ierr = petscVecToField(v1, tmpField);
+    CHKERRQ(ierr);
     // Need following communicate if operator() uses guard cells, i.e. differential
     // operator. Could delegate to the user function but then need to remove const
     // from signature of the function (function_signature) likely involving a copy.
@@ -544,7 +550,8 @@ private:
     // @TODO : Consider need for this communicate. Could communicate at the
     // end of the user routine.
     ctx->localmesh->communicate(tmpField2);
-    fieldToPetscVec(tmpField2, v2);
+    ierr = fieldToPetscVec(tmpField2, v2);
+    CHKERRQ(ierr);
     return ierr;
   }
 };
