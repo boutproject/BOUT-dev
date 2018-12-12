@@ -259,6 +259,7 @@ extern ConditionalOutput output_warn;  ///< warnings
 extern ConditionalOutput output_progress;  ///< progress
 extern ConditionalOutput output_info;  ///< information 
 extern ConditionalOutput output_error; ///< errors
+extern ConditionalOutput output_verbose; ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;

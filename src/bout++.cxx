@@ -338,13 +338,14 @@ int BoutInitialise(int &argc, char **&argv) {
       return 1;
     }
   }
-  
-  output_error.enable(verbosity>0);
-  output_warn.enable(verbosity>1);
-  output_progress.enable(verbosity>2);
-  output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
-  
+
+  output_error.enable(verbosity > 0);
+  output_warn.enable(verbosity > 1);
+  output_progress.enable(verbosity > 2);
+  output_info.enable(verbosity > 3);
+  output_debug.enable(verbosity > 4); // Only actually enabled if also compiled with DEBUG
+  output_verbose.enable(verbosity > 5);
+
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
 
