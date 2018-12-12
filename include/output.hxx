@@ -148,7 +148,8 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base) : base(base), enabled(true) {};
+  /// @param[in] enabled Should this be enabled by default?
+  ConditionalOutput(Output *base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
