@@ -140,13 +140,6 @@ public:
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertableOperator() {
     TRACE("InvertableOperator<T>::destructor");
-#if CHECK > 3 // For initial development
-    output_info << endl;
-    output_info << "Destroying KSP object in InvertableOperator with properties: "
-                << endl;
-    KSPView(ksp, PETSC_VIEWER_STDOUT_SELF);
-    output_info << endl;
-#endif
 
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
