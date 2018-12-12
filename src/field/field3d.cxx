@@ -199,6 +199,7 @@ const Field3D& Field3D::ynext(int dir) const {
 }
 
 void Field3D::setLocation(CELL_LOC new_location) {
+  AUTO_TRACE();
   if (getMesh()->StaggerGrids) {
     if (new_location == CELL_VSHIFT) {
       throw BoutException(
@@ -228,6 +229,7 @@ void Field3D::setLocation(CELL_LOC new_location) {
 }
 
 CELL_LOC Field3D::getLocation() const {
+  AUTO_TRACE();
   return location;
 }
 
@@ -294,9 +296,8 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Copy data
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
 
-  /// Only 3D fields have locations for now
-  //location = CELL_CENTRE;
-  
+  setLocation(rhs.getLocation());
+
   return *this;
 }
 
