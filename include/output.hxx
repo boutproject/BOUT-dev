@@ -128,15 +128,9 @@ class DummyOutput : public Output {
 public:
   void write(const char *UNUSED(str), ...) override{};
   void print(const char *UNUSED(str), ...) override{};
-  void enable() override {
-    throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
-                        "--enable-debug or be less verbose?");
-  };
+  void enable() override{};
   void disable() override{};
-  void enable(bool enable) {
-    if (enable)
-      this->enable();
-  };
+  void enable(MAYBE_UNUSED(bool enable)){};
   bool isEnabled() override { return false; }
 };
 
