@@ -103,132 +103,134 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   xt_prime_corner.allocate();
   zt_prime_corner.allocate();
 
-  for (int x = mesh.xstart; x <= mesh.xend; x++) {
-    for (int y = mesh.ystart; y <= mesh.yend; y++) {
-      for (int z = 0; z < mesh.LocalNz - 1; z++) {
-        // Point interpolated from (x+1/2, z+1/2)
+  BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
+    const auto xp = i.xp();
+    const auto zp = i.zp();
+    const auto xpzp = xp.zp();
 
-        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
-            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
-          // Hit a boundary
-          corner_boundary_mask(x, y, z) = true;
-          
-          xt_prime_corner(x, y, z) = -1.0;
-          zt_prime_corner(x, y, z) = -1.0;
-          continue;
-        }
-        
-        xt_prime_corner(x, y, z) =
-            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
-                    xt_prime(x + 1, y, z + 1));
+    // Point interpolated from (x+1/2, z+1/2)
+    if ((xt_prime[i] < 0.0) || (xt_prime[xp] < 0.0) || (xt_prime[xpzp] < 0.0)
+        || (xt_prime[zp] < 0.0)) {
+      // Hit a boundary
+      corner_boundary_mask[i] = true;
 
-        zt_prime_corner(x, y, z) =
-            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
-                    zt_prime(x + 1, y, z + 1));
-      }
+      xt_prime_corner[i] = -1.0;
+      zt_prime_corner[i] = -1.0;
+      continue;
     }
+
+    xt_prime_corner[i] =
+        0.25 * (xt_prime[i] + xt_prime[xp] + xt_prime[zp] + xt_prime[xpzp]);
+
+    zt_prime_corner[i] =
+        0.25 * (zt_prime[i] + zt_prime[xp] + zt_prime[zp] + zt_prime[xpzp]);
   }
-  
+
   interp_corner->setMask(corner_boundary_mask);
   interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
   
   interp->calcWeights(xt_prime, zt_prime);
   
   int ncz = mesh.LocalNz;
+
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+  throw BoutException("FCIMap/Zoidberg need updating to account for z-guard cells.");
+#endif
+
   BoutReal t_x, t_z;
 
   Coordinates &coord = *(mesh.getCoordinates());
 
-  for (int x = mesh.xstart; x <= mesh.xend; x++) {
-    for (int y = mesh.ystart; y <= mesh.yend; y++) {
-      for (int z = 0; z < ncz; z++) {
+  BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
+    // The integer part of xt_prime, zt_prime are the indices of the cell
+    // containing the field line end-point
+    i_corner[i] = static_cast<int>(floor(xt_prime[i]));
 
-        // The integer part of xt_prime, zt_prime are the indices of the cell
-        // containing the field line end-point
-        i_corner(x, y, z) = static_cast<int>(floor(xt_prime(x, y, z)));
+    // z is periodic, so make sure the z-index wraps around
+    if (zperiodic) {
+      zt_prime[i] = zt_prime[i]
+                    - ncz * (static_cast<int>(zt_prime[i] / static_cast<BoutReal>(ncz)));
 
-        // z is periodic, so make sure the z-index wraps around
-        if (zperiodic) {
-          zt_prime(x, y, z) =
-              zt_prime(x, y, z) -
-              ncz * (static_cast<int>(zt_prime(x, y, z) / static_cast<BoutReal>(ncz)));
+      if (zt_prime[i] < 0.0)
+        zt_prime[i] += ncz;
+    }
 
-          if (zt_prime(x, y, z) < 0.0)
-            zt_prime(x, y, z) += ncz;
-        }
+    k_corner[i] = static_cast<int>(floor(zt_prime[i]));
 
-        k_corner(x, y, z) = static_cast<int>(floor(zt_prime(x, y, z)));
+    // t_x, t_z are the normalised coordinates \in [0,1) within the cell
+    // calculated by taking the remainder of the floating point index
+    t_x = xt_prime[i] - static_cast<BoutReal>(i_corner[i]);
+    t_z = zt_prime[i] - static_cast<BoutReal>(k_corner[i]);
 
-        // t_x, t_z are the normalised coordinates \in [0,1) within the cell
-        // calculated by taking the remainder of the floating point index
-        t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-        t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    //----------------------------------------
+    // Boundary stuff
+    //
+    // If a field line leaves the domain, then the forward or backward
+    // indices (forward/backward_xt_prime and forward/backward_zt_prime)
+    // are set to -1
 
-        //----------------------------------------
-        // Boundary stuff
-        //
-        // If a field line leaves the domain, then the forward or backward
-        // indices (forward/backward_xt_prime and forward/backward_zt_prime)
-        // are set to -1
+    if (xt_prime[i] < 0.0) {
+      // Hit a boundary
+      const auto xp = i.xp(), xm = i.xm();
+      const auto zp = i.zp(), zm = i.zm();
+      const auto x = i.x(), y = i.y(), z = i.z();
 
-        if (xt_prime(x, y, z) < 0.0) {
-          // Hit a boundary
+      boundary_mask[i] = true;
 
-          boundary_mask(x, y, z) = true;
+      // Need to specify the index of the boundary intersection, but
+      // this may not be defined in general.
+      // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
+      // using the change in R and Z to calculate the change in (x,z) indices
+      //
+      // ( dR ) = ( dR/dx  dR/dz ) ( dx )
+      // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
+      //
+      // where (dR,dZ) is the change in (R,Z) along the field,
+      // (dx,dz) is the change in (x,z) index along the field,
+      // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-          // Need to specify the index of the boundary intersection, but
-          // this may not be defined in general.
-          // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
-          // using the change in R and Z to calculate the change in (x,z) indices
-          //
-          // ( dR ) = ( dR/dx  dR/dz ) ( dx )
-          // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
-          //
-          // where (dR,dZ) is the change in (R,Z) along the field,
-          // (dx,dz) is the change in (x,z) index along the field,
-          // and the gradients dR/dx etc. are evaluated at (x,y,z)
+      BoutReal dR_dx = 0.5 * (R[xp] - R[xm]);
+      BoutReal dZ_dx = 0.5 * (Z[xp] - Z[xm]);
 
-          BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
-          BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
+      BoutReal dR_dz, dZ_dz;
+      // Handle the edge cases in Z
+      if (z == 0) {
+        dR_dz = R[zp] - R[i];
+        dZ_dz = Z[zp] - Z[i];
 
-          BoutReal dR_dz, dZ_dz;
-          // Handle the edge cases in Z
-          if (z == 0) {
-            dR_dz = R(x, y, z + 1) - R(x, y, z);
-            dZ_dz = Z(x, y, z + 1) - Z(x, y, z);
+      } else if (z == mesh.LocalNz - 1) {
+        dR_dz = R[i] - R[zm];
+        dZ_dz = Z[i] - Z[zm];
 
-          } else if (z == mesh.LocalNz - 1) {
-            dR_dz = R(x, y, z) - R(x, y, z - 1);
-            dZ_dz = Z(x, y, z) - Z(x, y, z - 1);
+      } else {
+        dR_dz = 0.5 * (R[zp] - R[zm]);
+        dZ_dz = 0.5 * (Z[zp] - Z[zm]);
+      }
 
-          } else {
-            dR_dz = 0.5 * (R(x, y, z + 1) - R(x, y, z - 1));
-            dZ_dz = 0.5 * (Z(x, y, z + 1) - Z(x, y, z - 1));
-          }
+      BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
-          BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+      BoutReal dR = R_prime[i] - R[i];
+      BoutReal dZ = Z_prime[i] - Z[i];
 
-          BoutReal dR = R_prime(x, y, z) - R(x, y, z);
-          BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
+      // Invert 2x2 matrix to get change in index
+      BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+      BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+      boundary->add_point(
+          x, y, z, x + dx, y + 0.5 * dir,
+          z + dz,               // Intersection point in local index space
+          0.5 * coord.dy(x, y), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+          PI                    // Right-angle intersection
+          );
+    }
 
-          // Invert 2x2 matrix to get change in index
-          BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
-          BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z, 
-                              x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
-        }
+    //----------------------------------------
 
-        //----------------------------------------
+    // Check that t_x and t_z are in range
+    if ((t_x < 0.0) || (t_x > 1.0))
+      throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
 
-        // Check that t_x and t_z are in range
-        if ((t_x < 0.0) || (t_x > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
-
-        if ((t_z < 0.0) || (t_z > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
+    if ((t_z < 0.0) || (t_z > 1.0))
+      throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
       }
     }
   }
@@ -245,49 +247,40 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
-  Field3D result;
+  Field3D result(f.getMesh());
   result.allocate();
+  result.setLocation(f.getLocation());
 
-  int nz = mesh->LocalNz;
-  
-  for(int x = mesh->xstart; x <= mesh->xend; x++) {
-    for(int y = mesh->ystart; y <= mesh->yend; y++) {
-      
-      int ynext = y+dir;
-      
-      for(int z = 0; z < nz; z++) {
-        if (boundary_mask(x,y,z))
-          continue;
-        
-        int zm = z - 1;
-        if (z == 0) {
-          zm = nz-1;
-        }
-        
-        BoutReal f_c  = centre(x,ynext,z);
-        
-        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
-            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm) ||
-            (x == mesh->xstart)) {
-          // One of the corners leaves the domain.
-          // Use the cell centre value, since boundary conditions are not
-          // currently applied to corners.
-          result(x, ynext, z) = f_c;
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+    if (boundary_mask[i])
+      continue;
 
-        } else {
-          BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
-          BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
-          BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
-          BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
+    const auto ynext = i.y() + dir;
+    const auto x = i.x(), y = i.y(), z = i.z();
+    const auto zm = i.zm(), zp = i.zp();
+    const auto xm = i.xm(), xp = i.xp(), xmzm = xm.zm();
 
-          // This uses a simple weighted average of centre and corners
-          // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
-          // which would include cell edges and corners
-          result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
+    BoutReal f_c = centre(x, ynext, z);
 
-          ASSERT2(finite(result(x,ynext,z)));
-        }
-      }
+    if (corner_boundary_mask[i] || corner_boundary_mask[xm] || corner_boundary_mask[zm]
+        || corner_boundary_mask[xmzm] || (x == mesh->xstart)) {
+      // One of the corners leaves the domain.
+      // Use the cell centre value, since boundary conditions are not
+      // currently applied to corners.
+      result(x, ynext, z) = f_c;
+
+    } else {
+      BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
+      BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
+      BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
+      BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
+
+      // This uses a simple weighted average of centre and corners
+      // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
+      // which would include cell edges and corners
+      result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
+
+      ASSERT2(finite(result(x, ynext, z)));
     }
   }
   return result;
