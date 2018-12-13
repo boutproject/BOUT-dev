@@ -80,8 +80,6 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 
   Field3D result(mesh);
   result.allocate();
-  
-  int ncz = mesh->LocalNz;
 
   Coordinates *metric = apar.getCoordinates();
 
@@ -1077,7 +1075,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
     vz.allocate();
-    
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+    throw BoutException("Bracket_CTU needs updating to account for z-guard cells.");
+#endif
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       for(int x=1;x<=mesh->LocalNx-2;x++) {
