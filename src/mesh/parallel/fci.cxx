@@ -104,6 +104,9 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   zt_prime_corner.allocate();
 
   BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
+
+    const auto x = i.x(), y = i.y(), z = i.z();
+
     const auto xp = i.xp();
     const auto zp = i.zp();
     const auto xpzp = xp.zp();
@@ -112,7 +115,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     if ((xt_prime[i] < 0.0) || (xt_prime[xp] < 0.0) || (xt_prime[xpzp] < 0.0)
         || (xt_prime[zp] < 0.0)) {
       // Hit a boundary
-      corner_boundary_mask[i] = true;
+      corner_boundary_mask(x, y, z) = true;
 
       xt_prime_corner[i] = -1.0;
       zt_prime_corner[i] = -1.0;
@@ -142,9 +145,12 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   Coordinates &coord = *(mesh.getCoordinates());
 
   BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
+
+    const auto x = i.x(), y = i.y(), z = i.z();
+
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    i_corner[i] = static_cast<int>(floor(xt_prime[i]));
+    i_corner(x, y, z) = static_cast<int>(floor(xt_prime[i]));
 
     // z is periodic, so make sure the z-index wraps around
     if (zperiodic) {
@@ -155,12 +161,12 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
         zt_prime[i] += ncz;
     }
 
-    k_corner[i] = static_cast<int>(floor(zt_prime[i]));
+    k_corner(x, y, z) = static_cast<int>(floor(zt_prime[i]));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    t_x = xt_prime[i] - static_cast<BoutReal>(i_corner[i]);
-    t_z = zt_prime[i] - static_cast<BoutReal>(k_corner[i]);
+    t_x = xt_prime[i] - static_cast<BoutReal>(i_corner(x, y, z));
+    t_z = zt_prime[i] - static_cast<BoutReal>(k_corner(x, y, z));
 
     //----------------------------------------
     // Boundary stuff
@@ -173,9 +179,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
       // Hit a boundary
       const auto xp = i.xp(), xm = i.xm();
       const auto zp = i.zp(), zm = i.zm();
-      const auto x = i.x(), y = i.y(), z = i.z();
 
-      boundary_mask[i] = true;
+      boundary_mask(x, y, z) = true;
 
       // Need to specify the index of the boundary intersection, but
       // this may not be defined in general.
@@ -231,8 +236,6 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
 
     if ((t_z < 0.0) || (t_z > 1.0))
       throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
-      }
-    }
   }
 
   interp->setMask(boundary_mask);
@@ -252,18 +255,19 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   result.setLocation(f.getLocation());
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-    if (boundary_mask[i])
+    const auto x = i.x(), y = i.y(), z = i.z();
+    if (boundary_mask(x, y, z))
       continue;
 
     const auto ynext = i.y() + dir;
-    const auto x = i.x(), y = i.y(), z = i.z();
     const auto zm = i.zm(), zp = i.zp();
     const auto xm = i.xm(), xp = i.xp(), xmzm = xm.zm();
 
     BoutReal f_c = centre(x, ynext, z);
 
-    if (corner_boundary_mask[i] || corner_boundary_mask[xm] || corner_boundary_mask[zm]
-        || corner_boundary_mask[xmzm] || (x == mesh->xstart)) {
+    if (corner_boundary_mask(x, y, z) || corner_boundary_mask(xm.ind, y, z)
+        || corner_boundary_mask(x, y, zm.ind) || corner_boundary_mask(xm.ind, y, zm.ind)
+        || (x == mesh->xstart)) {
       // One of the corners leaves the domain.
       // Use the cell centre value, since boundary conditions are not
       // currently applied to corners.
@@ -272,8 +276,8 @@ const Field3D FCIMap::integrate(Field3D &f) const {
     } else {
       BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
       BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
-      BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
-      BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
+      BoutReal f_pm = corner(x, ynext, zm.ind); // (x+1/2, z-1/2)
+      BoutReal f_mm = corner(x - 1, ynext, zm.ind); // (x-1/2, z-1/2)
 
       // This uses a simple weighted average of centre and corners
       // A more sophisticated approach might be to use e.g. Gauss-Lobatto points

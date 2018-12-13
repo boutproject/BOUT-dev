@@ -343,7 +343,7 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, const std::string &metho
   result.allocate();
   result.setLocation(f.getLocation());
   ASSERT1(method == "DEFAULT");
-  BOUT_FOR(i result.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     const auto yp = i.yp(), ym = i.ym();
     const auto ypzp = yp.zp(), ypzm = yp.zm();
     const auto ymzp = ym.zp(), ymzm = ym.zm();
