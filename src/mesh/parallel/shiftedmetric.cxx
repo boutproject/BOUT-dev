@@ -41,7 +41,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //As we're attached to a mesh we can expect the z direction to
   //not change once we've been created so precalculate the complex
   //phases used in transformations
-  int nmodes = mesh.LocalNz/2 + 1;
+  int nmodes = (mesh.zend + 1 - mesh.zstart) / 2 + 1;
   BoutReal zlength = mesh.getCoordinates()->zlength();
 
   //Allocate storage for complex intermediate
@@ -111,7 +111,8 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
+      shiftZ(&(f(jx, jy + 1, mesh.zstart)), yupPhs[jx][jy],
+             &(yup(jx, jy + 1, mesh.zstart)));
     }
   }
 
@@ -120,7 +121,8 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
+      shiftZ(&(f(jx, jy - 1, mesh.zstart)), ydownPhs[jx][jy],
+             &(ydown(jx, jy - 1, mesh.zstart)));
     }
   }
 }
@@ -151,7 +153,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
   
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
+      shiftZ(&f(jx, jy, mesh.zstart), phs[jx][jy], &result(jx, jy, mesh.zstart));
     }
   }
   
@@ -161,7 +163,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
 
 void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
   // Take forward FFT
-  rfft(in, mesh.LocalNz, &cmplx[0]);
+  rfft(in, mesh.zend + 1 - mesh.zstart, &cmplx[0]);
 
   //Following is an algorithm approach to write a = a*b where a and b are
   //vectors of dcomplex.
@@ -173,7 +175,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
     cmplx[jz] *= phs[jz];
   }
 
-  irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+  irfft(&cmplx[0], mesh.zend + 1 - mesh.zstart, out); // Reverse FFT
 }
 
 //Old approach retained so we can still specify a general zShift
@@ -187,7 +189,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), mesh.LocalNz, zangle(jx,jy), result(jx,jy));
+      shiftZ(&f(jx, jy, mesh.zstart), mesh.zend + 1 - mesh.zstart, zangle(jx, jy),
+             &result(jx, jy, mesh.zstart));
     }
   }
   
