@@ -827,7 +827,6 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
 
   Mesh *localmesh = var.getMesh();
 
-  int ncz = localmesh->LocalNz;
 
   Field3D result(localmesh);
   result.allocate();
@@ -840,13 +839,14 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
 
   const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
 
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   BOUT_OMP(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
 
     BOUT_FOR_INNER(i, region) {
       // Forward FFT
-      rfft(var(i.x(), i.y()), ncz, f.begin());
+      rfft(&var(i.x(), i.y(), localmesh->zstart), ncz, f.begin());
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
         if (jz != N0) {
@@ -856,7 +856,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
       }
 
       // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
+      irfft(f.begin(), ncz, &result(i.x(), i.y(), localmesh->zstart));
     }
   }
 
@@ -877,7 +877,7 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
   checkData(var);
 
   Mesh *localmesh = var.getMesh();
-  const int ncz = localmesh->LocalNz;
+  const int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   if ((zmax >= ncz / 2) || (zmax < 0)) {
     // Removing nothing
@@ -900,7 +900,7 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
 
     BOUT_FOR_INNER(i, region) {
       // Take FFT in the Z direction
-      rfft(var(i.x(), i.y()), ncz, f.begin());
+      rfft(&var(i.x(), i.y(), localmesh->zstart), ncz, f.begin());
 
       // Filter in z
       for (int jz = zmax + 1; jz <= ncz / 2; jz++) {
@@ -908,7 +908,7 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
       }
 
       // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
+      irfft(f.begin(), ncz, &result(i.x(), i.y(), localmesh->zstart));
     }
   }
   result.setLocation(var.getLocation());
@@ -923,7 +923,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
 
   checkData(var);
   Mesh *localmesh = var.getMesh();
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   if (((zmax >= ncz / 2) || (zmax < 0)) && (zmin < 0)) {
     // Removing nothing
@@ -946,7 +946,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
 
     BOUT_FOR_INNER(i, region) {
       // Take FFT in the Z direction
-      rfft(var(i.x(), i.y()), ncz, f.begin());
+      rfft(&var(i.x(), i.y(), localmesh->zstart), ncz, f.begin());
 
       // Filter in z
       for (int jz = zmax + 1; jz <= ncz / 2; jz++)
@@ -957,7 +957,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
         f[0] = 0.0;
       }
       // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
+      irfft(f.begin(), ncz, &result(i.x(), i.y(), localmesh->zstart));
     }
   }
 
@@ -976,13 +976,13 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   var.allocate(); // Ensure that var is unique
   Mesh *localmesh = var.getMesh();
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   if(ncz == 1)
     return; // Shifting doesn't do anything
   
   Array<dcomplex> v(ncz/2 + 1);
-  
-  rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
+
+  rfft(&(var(jx, jy, localmesh->zstart)), ncz, v.begin()); // Forward FFT
 
   BoutReal zlength = var.getCoordinates()->zlength();
 
@@ -992,7 +992,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
     v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
   }
 
-  irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
+  irfft(v.begin(), ncz, &(var(jx, jy, localmesh->zstart))); // Reverse FFT
 }
 
 void shiftZ(Field3D &var, double zangle, REGION rgn) {
@@ -1085,10 +1085,10 @@ Field2D DC(const Field3D &f, REGION rgn) {
 
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = 0.0;
-    for (int k = 0; k < localmesh->LocalNz; k++) {
+    for (int k = localmesh->zstart; k <= localmesh->zend; k++) {
       result[i] += f[localmesh->ind2Dto3D(i, k)];
     }
-    result[i] /= (localmesh->LocalNz);
+    result[i] /= (localmesh->zend + 1 - localmesh->zstart);
   }
 
   checkData(result);
