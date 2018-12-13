@@ -796,7 +796,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   result.allocate();
   result.setLocation(f.getLocation());
 
-  int ncz = localmesh->zend - localmesh->zstart;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   // Allocate memory
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -851,7 +851,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   int jy = f.getIndex();
   result.setIndex(jy);
 
-  int ncz = localmesh->zend - localmesh->zstart;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   // Allocate memory
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
