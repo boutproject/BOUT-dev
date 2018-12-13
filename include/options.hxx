@@ -44,6 +44,8 @@ class Options;
 #include "output.hxx"
 #include "utils.hxx"
 #include "bout/sys/variant.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 
 #include <map>
 #include <string>
@@ -181,7 +183,7 @@ public:
   static void cleanup();
 
   /// The type used to store values
-  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string>;
+  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D>;
   /// The type used to store attributes
   using AttributeType = bout::utils::variant<bool, int, BoutReal, std::string>;
 
@@ -297,7 +299,8 @@ public:
   /// option["test"] = 2.0;
   /// int value = option["test"].as<int>();
   ///
-  template <typename T> T as() const {
+  template <typename T>
+  T as(Mesh* mesh = nullptr) const {
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -306,7 +309,7 @@ public:
     
     // Try casting. This will throw std::bad_cast if it can't be done
     try {
-      val = bout::utils::variantStaticCastOrThrow<T>(value);
+      val = bout::utils::variantStaticCastOrThrow<ValueType, T>(value);
     } catch (const std::bad_cast &e) {
       // If the variant is a string then we may be able to parse it
       
@@ -552,15 +555,31 @@ template<> inline void Options::assign<>(BoutReal val, const std::string source)
 template<> inline void Options::assign<>(std::string val, const std::string source) { _set(val, source, false); }
 // Note: const char* version needed to avoid conversion to bool
 template<> inline void Options::assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
+// Note: Field assignments don't check for previous assignment (always force)
+template<> inline void Options::assign<>(Field2D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template<> inline void Options::assign<>(Field3D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
 
 /// Specialised as routines
-template <> std::string Options::as<std::string>() const;
-template <> int Options::as<int>() const;
-template <> BoutReal Options::as<BoutReal>() const;
-template <> bool Options::as<bool>() const;
+template <> std::string Options::as<std::string>(Mesh* mesh) const;
+template <> int Options::as<int>(Mesh* mesh) const;
+template <> BoutReal Options::as<BoutReal>(Mesh* mesh) const;
+template <> bool Options::as<bool>(Mesh* mesh) const;
+template <> Field2D Options::as<Field2D>(Mesh* mesh) const;
+template <> Field3D Options::as<Field3D>(Mesh* mesh) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

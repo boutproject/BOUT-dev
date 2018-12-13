@@ -73,6 +73,9 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+
+    // Need some options for parallelTransform
+    options = Options::getRoot();
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };

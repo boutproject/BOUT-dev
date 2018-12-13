@@ -132,7 +132,7 @@ struct StaticCastOrThrow {
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
 T variantStaticCastOrThrow(const Variant &v) {
-  visit( details::StaticCastOrThrow<T>(), v );
+  return visit( details::StaticCastOrThrow<T>(), v );
 }
 
 namespace details {

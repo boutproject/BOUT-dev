@@ -40,6 +40,8 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+#include "utils.hxx"
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.
@@ -750,6 +752,13 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 /// Wrapper around member function f.timeDeriv()
 inline Field3D& ddt(Field3D &f) {
   return *(f.timeDeriv());
+}
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field3D& UNUSED(val)) {
+  return "<Field3D>";
 }
 
 #endif /* __FIELD3D_H__ */

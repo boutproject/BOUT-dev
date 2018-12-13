@@ -87,7 +87,7 @@ bool Options::isSet() const {
   return true;
 }
 
-template <> std::string Options::as<std::string>() const {
+template <> std::string Options::as<std::string>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -107,7 +107,7 @@ template <> std::string Options::as<std::string>() const {
   return result;
 }
 
-template <> int Options::as<int>() const {
+template <> int Options::as<int>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -162,7 +162,7 @@ template <> int Options::as<int>() const {
   return result;
 }
 
-template <> BoutReal Options::as<BoutReal>() const {
+template <> BoutReal Options::as<BoutReal>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -204,7 +204,7 @@ template <> BoutReal Options::as<BoutReal>() const {
   return result;
 }
 
-template <> bool Options::as<bool>() const {
+template <> bool Options::as<bool>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -242,6 +242,50 @@ template <> bool Options::as<bool>() const {
   output_info << endl;
 
   return result;
+}
+
+template <> Field3D Options::as<Field3D>(Mesh* mesh) const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+  
+  Field3D val;
+
+  try {
+    val = bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
+  } catch (const std::bad_cast &e) {
+    
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->create3D( bout::utils::get<std::string>(value), this, mesh);
+    } else {
+      throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
+                          full_name.c_str());
+    }
+  }
+  return val;
+}
+
+template <> Field2D Options::as<Field2D>(Mesh* mesh) const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+  
+  Field2D val;
+
+  try {
+    val = bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);
+  } catch (const std::bad_cast &e) {
+    
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->create2D( bout::utils::get<std::string>(value), this, mesh);
+    } else {
+      throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
+                          full_name.c_str());
+    }
+  }
+  return val;
 }
 
 void Options::printUnused() const {
