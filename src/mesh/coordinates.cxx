@@ -796,7 +796,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   result.allocate();
   result.setLocation(f.getLocation());
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend - localmesh->zstart;
 
   // Allocate memory
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -808,7 +808,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
     // Take forward FFT
 
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+      rfft(&f(jx, jy, localmesh->zstart), ncz, &ft(jx, 0));
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -827,17 +827,7 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
     // Reverse FFT
     for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-      irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
-    }
-
-    // Boundaries
-    for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx < localmesh->xstart; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
-      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
+      irfft(&delft(jx, 0), ncz, &result(jx, jy, localmesh->zstart));
     }
   }
 
@@ -861,7 +851,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   int jy = f.getIndex();
   result.setIndex(jy);
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend - localmesh->zstart;
 
   // Allocate memory
   auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -869,7 +859,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 
   // Take forward FFT
   for (int jx = 0; jx < localmesh->LocalNx; jx++)
-    rfft(&f(jx, 0), ncz, &ft(jx, 0));
+    rfft(&f(jx, localmesh->zstart), ncz, &ft(jx, 0));
 
   // Loop over kz
   for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -887,13 +877,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
 
   // Reverse FFT
   for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
-    irfft(&delft(jx, 0), ncz, &result(jx, 0));
-  }
-
-  // Boundaries
-  for (int jz = 0; jz < ncz; jz++) {
-    result(0, jz) = 0.0;
-    result(localmesh->LocalNx - 1, jz) = 0.0;
+    irfft(&delft(jx, 0), ncz, &result(jx, localmesh->zstart));
   }
 
   return result;
