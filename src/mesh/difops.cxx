@@ -306,7 +306,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
       }
     }
 
-    result = mesh->fromFieldAligned(result);
+    result = mesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   result.setLocation(CELL_YLOW);

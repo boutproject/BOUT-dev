@@ -229,7 +229,7 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
   if (localmesh->canToFromFieldAligned()){ // Ask wheter it is possible
     // Transform from field aligned coordinates, to be compatible with
     // older BOUT++ inputs. This is not a particularly "nice" solution.
-    result = localmesh->fromFieldAligned(result);
+    result = localmesh->fromFieldAligned(result, RGN_ALL);
   }
 
   return result;
