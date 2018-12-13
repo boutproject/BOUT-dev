@@ -343,22 +343,13 @@ const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, const std::string &metho
   result.allocate();
   result.setLocation(f.getLocation());
   ASSERT1(method == "DEFAULT");
-  for(int i=f.getMesh()->xstart;i<=f.getMesh()->xend;i++)
-    for(int j=f.getMesh()->ystart;j<=f.getMesh()->yend;j++)
-      for(int k=0;k<f.getMesh()->LocalNz;k++) {
-        int kp = (k+1) % (f.getMesh()->LocalNz);
-        int km = (k-1+f.getMesh()->LocalNz) % (f.getMesh()->LocalNz);
-        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))
-                               -(f(i,j+1,km) - f(i,j-1,km)) )
-                    / (coords->dy(i,j) * coords->dz);
-      }
-  // TODO: use region aware implementation
-  // BOUT_FOR(i, f.getRegion(region)) {
-  // result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
-  //                              / (coords->dy[i.yp()])
-  //                    -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])
-  //                              / (coords->dy[i.ym()]))
-  //   / coords->dz; }
+  BOUT_FOR(i result.getRegion("RGN_NOBNDRY")) {
+    const auto yp = i.yp(), ym = i.ym();
+    const auto ypzp = yp.zp(), ypzm = yp.zm();
+    const auto ymzp = ym.zp(), ymzm = ym.zm();
+    result[i] = 0.25 * (+(f[ypzp] - f[ymzp]) - (f[ypzm] - f[ymzm]))
+                / (coords->dy[i] * coords->dz);
+  }
   return result;
 }
 
