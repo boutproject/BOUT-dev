@@ -854,6 +854,37 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     result.setLocation(outloc);
 
     const BoutReal fac = 1.0 / (12 * metric->dz);
+
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+    // Not making change yet as without z-guard cells this new version
+    // won't vectorise.
+    BOUT_FOR(i, result.getRegion2D("RGN_NOBNDRY")) {
+      // Get constants for this iteration
+      const BoutReal spacingFactor = fac / metric->dx[i];
+
+      const auto xm = i.xm(), xp = i.xp();
+
+      // Extract relevant Field2D values
+      const BoutReal gxm = gp[xm], gc = g[i], gxp = g[xp];
+
+      const auto jStart = mesh->ind2Dto3D(i, mesh->zstart);
+      const auto jEnd = mesh->ind2Dto3D(i, mesh->zend);
+      for (auto j = jStart; j <= jEnd; j++) {
+        const auto zp = j.zp(), xmzp = zp.xm(), xpzp = zp.xp();
+        const auto zm = j.zm(), xmzm = zm.xm(), xpzm = zm.xp();
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp = 2 * (f[zp] - f[zm]) * (gxp - gxm);
+
+        // J+x
+        const BoutReal Jpx = gxp * (f[xpzp] - f[xpzm]) - gxm * (f[xmzp] - f[xmzm])
+                             + gc * (f[xpzm] - f[xpzp] - f[xmzm] + f[xmzp]);
+
+        result[j] = (Jpp + Jpx) * spacingFactor;
+      }
+    }
+#else
+    // Following loop tagged for replacement
     const int ncz = mesh->LocalNz;
 
     BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
@@ -917,47 +948,44 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
         result(jx, jy, ncz - 1) = (Jpp + Jpx) * spacingFactor;
       }
     }
-
+#endif
     break;
   }
   case BRACKET_ARAKAWA_OLD: {
     result.allocate();
     result.setLocation(outloc);
-    const int ncz = mesh->LocalNz;
+
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
-    BOUT_OMP(parallel for)
-    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          const int jzp = jz+1 < ncz ? jz + 1 : 0;
-	  //Above is alternative to const int jzp = (jz + 1) % ncz;
-	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
-	  //Above is alternative to const int jzmTmp = (jz - 1 + ncz) % ncz;
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+      // Being lazy in migrating to a BOUT_FOR loop from a nested loop
+      // just calculate individual indices for each direction -- don't have
+      // to change the main loop body but this is probably inefficient.
+      const int jx = i.x(), jy = i.y(), jz = i.z();
+      const int jzp = i.zp().ind;
+      const int jzm = i.zm().ind;
 
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = ( (f(jx,jy,jzp) - f(jx,jy,jzm))*
-			   (g(jx+1,jy) - g(jx-1,jy)) -
-			   (f(jx+1,jy,jz) - f(jx-1,jy,jz))*
-			   (g(jx,jy) - g(jx,jy)) );
-      
-          // J+x
-          BoutReal Jpx = ( g(jx+1,jy)*(f(jx+1,jy,jzp)-f(jx+1,jy,jzm)) -
-			   g(jx-1,jy)*(f(jx-1,jy,jzp)-f(jx-1,jy,jzm)) -
-			   g(jx,jy)*(f(jx+1,jy,jzp)-f(jx-1,jy,jzp)) +
-			   g(jx,jy)*(f(jx+1,jy,jzm)-f(jx-1,jy,jzm)));
+      const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
 
-          // Jx+
-          BoutReal Jxp = ( g(jx+1,jy)*(f(jx,jy,jzp)-f(jx+1,jy,jz)) -
-			   g(jx-1,jy)*(f(jx-1,jy,jz)-f(jx,jy,jzm)) -
-			   g(jx-1,jy)*(f(jx,jy,jzp)-f(jx-1,jy,jz)) +
-			   g(jx+1,jy)*(f(jx+1,jy,jz)-f(jx,jy,jzm)));
-          
-          result(jx,jy,jz) = (Jpp + Jpx + Jxp) * spacingFactor;
-	  }
-	}
-      }
-    
+      // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+      BoutReal Jpp =
+          ((f(jx, jy, jzp) - f(jx, jy, jzm)) * (g(jx + 1, jy) - g(jx - 1, jy))
+           - (f(jx + 1, jy, jz) - f(jx - 1, jy, jz)) * (g(jx, jy) - g(jx, jy)));
+
+      // J+x
+      BoutReal Jpx = (g(jx + 1, jy) * (f(jx + 1, jy, jzp) - f(jx + 1, jy, jzm))
+                      - g(jx - 1, jy) * (f(jx - 1, jy, jzp) - f(jx - 1, jy, jzm))
+                      - g(jx, jy) * (f(jx + 1, jy, jzp) - f(jx - 1, jy, jzp))
+                      + g(jx, jy) * (f(jx + 1, jy, jzm) - f(jx - 1, jy, jzm)));
+
+      // Jx+
+      BoutReal Jxp = (g(jx + 1, jy) * (f(jx, jy, jzp) - f(jx + 1, jy, jz))
+                      - g(jx - 1, jy) * (f(jx - 1, jy, jz) - f(jx, jy, jzm))
+                      - g(jx - 1, jy) * (f(jx, jy, jzp) - f(jx - 1, jy, jz))
+                      + g(jx + 1, jy) * (f(jx + 1, jy, jz) - f(jx, jy, jzm)));
+
+      result[i] = (Jpp + Jpx + Jxp) * spacingFactor;
+    }
+
     break;
   }
   case BRACKET_SIMPLE: {
@@ -1053,7 +1081,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       for(int x=1;x<=mesh->LocalNx-2;x++) {
-        for (int z = 0; z < mesh->LocalNz; z++) {
+        for (int z = mesh->zstart; z <= mesh->zend; z++) {
+          // Following two lines need updating for z with guard-cells
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
           
@@ -1071,7 +1100,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
       // Simplest form: use cell-centered velocities (no divergence included so not flux conservative)
       
       for(int x=mesh->xstart;x<=mesh->xend;x++)
-        for (int z = 0; z < ncz; z++) {
+        for (int z = mesh->zstart; z <= mesh->zend; z++) {
+          // Following two lines need updating for z with guard-cells
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
 
@@ -1137,13 +1167,46 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     result.allocate();
     result.setLocation(outloc);
     
-    const int ncz = mesh->LocalNz;
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
 
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+    // Not making change yet as without z-guard cells this new version
+    // won't vectorise.
+    BOUT_FOR(i, result.getRegion2D("RGN_NOBNDRY")) {
+      // Get constants for this iteration
+      const BoutReal spacingFactor = fac / metric->dx[i];
+
+      const auto xm = i.xm(), xp = i.xp();
+
+      const auto jStart = mesh->ind2Dto3D(i, mesh->zstart);
+      const auto jEnd = mesh->ind2Dto3D(i, mesh->zend);
+
+      for (auto j = jStart; j <= jEnd; j++) {
+        const auto zp = j.zp(), xmzp = zp.xm(), xpzp = zp.xp();
+        const auto zm = j.zm(), xmzm = zm.xm(), xpzm = zm.xp();
+
+        // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+        const BoutReal Jpp =
+            ((f[zp] - f[zm]) * (g[xp] - g[xm]) - (f[xp] - f[xm]) * (g[zp] - g[zm]));
+
+        // J+x
+        const BoutReal Jpx =
+            (g[xp] * (f[xpzp] - f[xpzm]) - g[xm] * (f[xmzp] - f[xmzm])
+             - g[zp] * (f[xpzp] - f[xmzp]) + g[zm] * (f[xpzm] - f[xmzm]));
+
+        // Jx+
+        const BoutReal Jxp = (g[xpzp] * (f[zp] - f[xp]) - g[xmzm] * (f[xm] - f[zm])
+                              - g[xmzp] * (f[zp] - f[xm]) + g[xpzm] * (f[xp] - f[zm]));
+
+        result[j] = (Jpp + Jpx + Jxp) * spacingFactor;
+      }
+#else
     // We need to discard const qualifier in order to manipulate
     // storage array directly
     Field3D f_temp = f;
     Field3D g_temp = g;
+
+    const int ncz = mesh->LocalNz;
 
     BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
       const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
@@ -1222,59 +1285,13 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
       }
     }
-
-    break;
-  }
+#endif
+      break;
+    }
   case BRACKET_ARAKAWA_OLD: {
     // Arakawa scheme for perpendicular flow
-
-    result.allocate();
-    result.setLocation(outloc);
-
-    const int ncz = mesh->LocalNz;
-    const BoutReal partialFactor = 1.0 / (12 * metric->dz);
-
-    // We need to discard const qualifier in order to manipulate
-    // storage array directly
-    Field3D f_temp = f;
-    Field3D g_temp = g;
-
-    BOUT_OMP(parallel for)
-    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-      for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
-        const BoutReal *Fxm = f_temp(jx-1, jy);
-        const BoutReal *Fx  = f_temp(jx,   jy);
-        const BoutReal *Fxp = f_temp(jx+1, jy);
-        const BoutReal *Gxm = g_temp(jx-1, jy);
-        const BoutReal *Gx  = g_temp(jx,   jy);
-        const BoutReal *Gxp = g_temp(jx+1, jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          const int jzp = jz+1 < ncz ? jz + 1 : 0;
-	  //Above is alternative to const int jzp = (jz + 1) % ncz;
-	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
-	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
-
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = ((Fx[jzp] - Fx[jzm])*(Gxp[jz] - Gxm[jz]) - 
-			  (Fxp[jz] - Fxm[jz])*(Gx[jzp] - Gx[jzm]));
-
-          // J+x
-          BoutReal Jpx = ( Gxp[jz]*(Fxp[jzp]-Fxp[jzm]) -
-			   Gxm[jz]*(Fxm[jzp]-Fxm[jzm]) -
-			   Gx[jzp]*(Fxp[jzp]-Fxm[jzp]) +
-			   Gx[jzm]*(Fxp[jzm]-Fxm[jzm])) ;
-
-          // Jx+
-          BoutReal Jxp = ( Gxp[jzp]*(Fx[jzp]-Fxp[jz]) -
-			   Gxm[jzm]*(Fxm[jz]-Fx[jzm]) -
-			   Gxm[jzp]*(Fx[jzp]-Fxm[jz]) +
-			   Gxp[jzm]*(Fxp[jz]-Fx[jzm]));
-			  
-          result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
-        }
-      }
-    }
+    // Just use main Arakawa method rather than maintaining two versions
+    return bracket(f, g, BRACKET_ARAKAWA, outloc, solver);
     break;
   }
   case BRACKET_SIMPLE: {
