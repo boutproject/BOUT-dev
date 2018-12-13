@@ -783,9 +783,10 @@ int Solver::getLocalN() {
   
   int n2d = n2Dvars();
   int n3d = n3Dvars();
-  
-  int local_N = size(mesh->getRegion2D("RGN_NOBNDRY")) * (n2d + mesh->LocalNz*n3d);
-  
+
+  int local_N = size(mesh->getRegion2D("RGN_NOBNDRY"))
+                * (n2d + (mesh->zend + 1 - mesh->zstart) * n3d);
+
   //////////// How many variables have evolving boundaries?
   
   int n2dbndry = 0;
@@ -828,7 +829,6 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
-  int nz = mesh->LocalNz;
   
   switch(op) {
   case LOAD_VARS: {
@@ -841,9 +841,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       (*f.var)[i2d] = udata[p];
       p++;
     }
-    
-    for (int jz=0; jz < nz; jz++) {
-      
+
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
@@ -865,9 +865,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       (*f.F_var)[i2d] = udata[p];
       p++;
     }
-    
-    for (int jz=0; jz < nz; jz++) {
-      
+
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
@@ -893,9 +893,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       }
       p++;
     }
-    
-    for (int jz=0; jz < nz; jz++) {
-      
+
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
@@ -921,9 +921,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       udata[p] = (*f.var)[i2d];
       p++;
     }
-    
-    for (int jz=0; jz < nz; jz++) {
-      
+
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
@@ -944,9 +944,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
       udata[p] = (*f.F_var)[i2d];
       p++;
     }
-    
-    for (int jz=0; jz < nz; jz++) {
-      
+
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+
       // Loop over 3D variables
       for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
@@ -1081,8 +1081,6 @@ const Field3D Solver::globalIndex(int localStart) {
   int n3d = f3d.size();
 
   int ind = localStart;
-
-  int nz = mesh->LocalNz;
   
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
@@ -1095,7 +1093,13 @@ const Field3D Solver::globalIndex(int localStart) {
     if (f.evolve_bndry)
       ++n3dbndry;
   }
-  
+
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+  output_warn << "Warning globalIndex may need updating to account for z-guard cells."
+              << endl;
+// NOTE THE FOLLOWING MAY NEED UPDATING FOR ZGUARDS
+#endif
+
   if (n2dbndry + n3dbndry > 0) {
     // Some boundary points evolving
 
@@ -1104,7 +1108,7 @@ const Field3D Solver::globalIndex(int localStart) {
       index[mesh->ind2Dto3D(i2d, 0)] = ind;
       ind += n2dbndry + n3dbndry;
 
-      for (int jz = 1; jz < nz; jz++) {
+      for (int jz = 1; jz < mesh->LocalNz; jz++) {
         index[mesh->ind2Dto3D(i2d, jz)] = ind;
         ind += n3dbndry;
       }
@@ -1117,7 +1121,7 @@ const Field3D Solver::globalIndex(int localStart) {
     index[mesh->ind2Dto3D(i2d, 0)] = ind;
     ind += n2d + n3d;
 
-    for (int jz = 1; jz < nz; jz++) {
+    for (int jz = 1; jz < mesh->LocalNz; jz++) {
       index[mesh->ind2Dto3D(i2d, jz)] = ind;
       ind += n3d;
     }
