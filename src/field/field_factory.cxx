@@ -186,9 +186,8 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
       result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
+                                TWOPI * localmesh->GlobalZ(i.z()), // Z
+                                t);                                // T
     }
     break;
   }
@@ -197,19 +196,20 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
       result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
+                                TWOPI * localmesh->GlobalZ(i.z()), // Z
+                                t);                                // T
     }
     break;
   }
   case CELL_ZLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+      BoutReal zpos =
+          TWOPI * 0.5 * (localmesh->GlobalZ(i.z() - 1) + localmesh->GlobalZ(i.z()));
+
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
+                        zpos, // Z
+                        t);   // T
     }
     break;
   }
@@ -217,9 +217,8 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * static_cast<BoutReal>(i.z()) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
+                        TWOPI * localmesh->GlobalZ(i.z()), // Z
+                        t);                                // T
     }
   }
   };
