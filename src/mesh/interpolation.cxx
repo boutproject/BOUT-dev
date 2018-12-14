@@ -91,7 +91,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+          BOUT_FOR_INNER(i, result.getRegion("RGN_NOBNDRY")) {
             // Set stencils
             s.mm = var[i.xmm()];
             s.m = var[i.xm()];
@@ -127,7 +127,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                               "/double-down fields, then we can use this case.");
           BOUT_OMP(parallel) {
             stencil s;
-            BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+            BOUT_FOR_INNER(i, result.getRegion("RGN_NOBNDRY")) {
               // Set stencils
               s.m = var.ydown()[i.ym()];
               s.c = var[i];
@@ -162,7 +162,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             // This allows higher-order methods to be used
             BOUT_OMP(parallel) {
               stencil s;
-              BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+              BOUT_FOR_INNER(i, result.getRegion("RGN_NOBNDRY")) {
                 // Set stencils
                 s.mm = var_fa[i.ymm()];
                 s.m = var_fa[i.ym()];
@@ -190,7 +190,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             // stencil for interp, then this will be useful
             BOUT_OMP(parallel) {
               stencil s;
-              BOUT_FOR_INNER(i, fieldmesh->getRegion3D("RGN_NOBNDRY")) {
+              BOUT_FOR_INNER(i, result.getRegion("RGN_NOBNDRY")) {
                 // Set stencils
                 s.m = var_fa[i.ym()];
                 s.c = var_fa[i];
@@ -221,7 +221,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
 
         BOUT_OMP(parallel) {
           stencil s;
-          BOUT_FOR_INNER(i, fieldmesh->getRegion3D(region_str)) {
+          BOUT_FOR_INNER(i, result.getRegion(region_str)) {
             s.mm = var[i.zmm()];
             s.m = var[i.zm()];
             s.c = var[i];
@@ -311,7 +311,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
       case CELL_XLOW: {
         ASSERT0(fieldmesh->xstart >= 2); // At least 2 boundary cells needed for interpolation in x-direction
 
-        BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
 
           // Set stencils
           s.c = var[i];
@@ -341,7 +341,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
 
           // More than one guard cell, so set pp and mm values
           // This allows higher-order methods to be used
-          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];
@@ -366,7 +366,7 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
           // Note: at the moment we cannot reach this case because of the
           // 'ASSERT0(fieldmesh->ystart >=2)' above, but if we implement a 3-point
           // stencil for interp, then this will be useful
-          BOUT_FOR(i, fieldmesh->getRegion2D("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Set stencils
             s.c = var[i];
             s.p = var[i.yp()];

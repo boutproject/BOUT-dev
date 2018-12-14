@@ -42,7 +42,7 @@ for i, opts in enumerate(settings):
     shell("rm data/BOUT.dmp.*.nc")
     
     stdout.write("   %d processor...." % (nproc))
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
     with open("run.log."+str(i)+"."+str(nproc), "w") as f:
       f.write(out)
 

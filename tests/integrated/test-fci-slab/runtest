@@ -26,7 +26,7 @@ nx = 5 # Not changed for these tests
 # Resolution in y and z
 nlist = [64,128] #[8,16,32,64,128,256]
 
-nproc = 4
+nproc = 2
 
 directory = "mms"
 
@@ -79,7 +79,7 @@ for n in nlist:
     print("Running command: "+cmd)
     
     # Launch using MPI
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
 
     # Save output to log file
     with open("run.log."+str(n), "w") as f:

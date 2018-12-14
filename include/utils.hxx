@@ -393,6 +393,11 @@ const std::string toString<>(const time_t& time);
 const std::string lowercase(const std::string &str);
 
 /*!
+ * Convert a string to upper case
+ */
+const std::string uppercase(const std::string &str);
+
+/*!
  * Convert to lower case, except inside quotes (" or ')
  */
 const std::string lowercasequote(const std::string &str);
