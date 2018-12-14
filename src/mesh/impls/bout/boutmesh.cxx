@@ -60,8 +60,9 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
                 << optionfile << "\n";
   }
   OPTION(options, symmetricGlobalY, true);
-  OPTION(options, symmetricGlobalZ, true);
-  
+  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
+                                            // this breaks backwards compatibility
+
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
