@@ -2,5 +2,5 @@
 
 [mesh]
 nx = 5
-ny = 5
-
+ny = 2
+nz = 2

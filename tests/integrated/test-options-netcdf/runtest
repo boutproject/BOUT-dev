@@ -8,6 +8,7 @@ from boututils.run_wrapper import shell
 from boutdata.data import BoutOptionsFile
 
 import math
+import numpy as np
 
 shell("make")
 shell("rm -f test-out.ini")
@@ -46,6 +47,14 @@ print("Checking saved settings.ini")
 settings = BoutOptionsFile("settings.ini")
 
 assert settings["mesh"]["nx"] == 5
-assert settings["mesh"]["ny"] == 5
-    
+assert settings["mesh"]["ny"] == 2
+
+print("Checking saved settings.nc")
+
+with DataFile("settings.nc") as f:
+    assert f["f2d"].shape == (5,6)  # Field2D
+    assert f["f3d"].shape == (5,6,2) # Field3D
+    assert np.allclose(f["f2d"], 1.0)
+    assert np.allclose(f["f3d"], 2.0)
+
 print(" => Passed")
