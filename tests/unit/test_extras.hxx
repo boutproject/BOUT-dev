@@ -151,10 +151,13 @@ public:
   std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
+  BoutReal GlobalZ(int UNUSED(jz)) const { return 0; }  
   BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
   BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
+  BoutReal GlobalZ(BoutReal UNUSED(jz)) const { return 0; }  
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
+  int ZGLOBAL(int UNUSED(zloc)) const { return 0; }  
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
