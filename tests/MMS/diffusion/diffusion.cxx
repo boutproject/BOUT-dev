@@ -76,7 +76,8 @@ int physics_init(bool restarting) {
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         output.write("Initial condition at %d,%d,%d\n", xi, yj, zk);
-        N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,coord->dz*zk);
+        N(xi, yj, zk) =
+            MS(0., mesh->GlobalX(xi) * Lx, mesh->GlobalY(yj) * Ly, mesh->GlobalZ(zk));
       }
     }
   }
@@ -140,7 +141,7 @@ void solution(Field3D &f, BoutReal t, BoutReal D) {
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        z = coord->dz*zk;
+        z = mesh->GlobalZ(zk);
         output.write("Solution at %d,%d,%d\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
       }
@@ -165,7 +166,7 @@ Field3D MMS_Source(BoutReal t)
       for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
+        z = mesh->GlobalZ(zk);
         result(xi,yj,zk) = -2.*Sin(10*t)*Sin(5.*Power(x,2)) + Cos(10*t)*
           (-2.*Cos(5.*Power(x,2)) + 20.*Power(x,2)*Sin(5.*Power(x,2)));
       }

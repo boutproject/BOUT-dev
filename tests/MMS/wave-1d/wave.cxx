@@ -101,18 +101,22 @@ protected:
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
 	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
-	  }
+            f(xi, yj, zk) =
+                MS_f(0., mesh->GlobalX(xi), mesh->GlobalY(yj), mesh->GlobalZ(zk));
+            g(xi, yj, zk) = MS_g(0., 0.5 * (mesh->GlobalX(xi) + mesh->GlobalX(xi - 1)),
+                                 mesh->GlobalY(yj), mesh->GlobalZ(zk));
+          }
 	}
       }
     }else {
       for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
 	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
 	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	  }
+            f(xi, yj, zk) =
+                MS_f(0., mesh->GlobalX(xi), mesh->GlobalY(yj), mesh->GlobalZ(zk));
+            g(xi, yj, zk) =
+                MS_g(0., mesh->GlobalX(xi), mesh->GlobalY(yj), mesh->GlobalZ(zk));
+          }
 	}
       }
     }
@@ -200,7 +204,7 @@ const Field3D Wave1D::solution_f(BoutReal t) {
       BoutReal x = mesh->GlobalX(xi);
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        BoutReal z = coord->dz*zk;
+        BoutReal z = mesh->GlobalZ(zk);
         S(xi, yj, zk) = MS_f(t,x,y,z);
       }
     }
@@ -220,7 +224,7 @@ const Field3D Wave1D::source_f(BoutReal t) {
       for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
+        z = mesh->GlobalZ(zk);
         result(xi,yj,zk) = -0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) - 2.0*Sin(10*t)*Sin(5.0*Power(x,2)) - 0.7;
       }
     }
@@ -262,7 +266,7 @@ const Field3D Wave1D::solution_g(BoutReal t) {
       }
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        BoutReal z = coord->dz*zk;
+        BoutReal z = mesh->GlobalZ(zk);
         S(xi, yj, zk) = MS_g(t,x,y,z);
       }
     }
@@ -288,7 +292,7 @@ const Field3D Wave1D::source_g(BoutReal t) {
 	  x = mesh->GlobalX(xi)*Lx;
 	}
         y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
+        z = mesh->GlobalZ(zk);
         result(xi,yj,zk) = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
       }
     }

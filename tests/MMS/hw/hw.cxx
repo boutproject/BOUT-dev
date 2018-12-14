@@ -37,7 +37,7 @@ int physics_init(bool restart) {
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
   mesh->getCoordinates()->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->getCoordinates()->dz = TWOPI*Lx/(mesh->LocalNz);
+  mesh->getCoordinates()->dz = TWOPI * Lx / (mesh->GlobalNz - 2 * mesh->zstart);
   /////
 
   SOLVE_FOR2(n, vort);
