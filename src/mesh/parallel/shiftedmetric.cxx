@@ -73,18 +73,18 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   }
 	
   //To/From field aligned phases
-  BOUT_FOR(i, zShift.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      fromAlignedPhs[i.x()][i.y()][jz] = dcomplex(cos(kwave*zShift(i.x(),i.y())) , -sin(kwave*zShift(i.x(),i.y())));
-      toAlignedPhs[i.x()][i.y()][jz] =   dcomplex(cos(kwave*zShift(i.x(),i.y())) ,  sin(kwave*zShift(i.x(),i.y())));
+      fromAlignedPhs[i.x()][i.y()][jz] = dcomplex(cos(kwave*zShift[i]) , -sin(kwave*zShift[i]));
+      toAlignedPhs[i.x()][i.y()][jz] =   dcomplex(cos(kwave*zShift[i]) ,  sin(kwave*zShift[i]));
     }
   }
 
   //Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  BOUT_FOR(i, zShift.getRegion("RGN_ALL")) {
-    BoutReal yupShift = zShift(i.x(),i.y()) - zShift(i.x(),i.y()+1);
-    BoutReal ydownShift = zShift(i.x(),i.y()) - zShift(i.x(),i.y()-1);
+  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+    BoutReal yupShift = zShift[i] - zShift[i.yp()];
+    BoutReal ydownShift = zShift[i] - zShift[i.ym()];
 
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -100,20 +100,22 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
+  ASSERT1(&mesh == f.getMesh());
+
   f.splitYupYdown();
   
   Field3D& yup = f.yup();
   yup.allocate();
 
-  BOUT_FOR(i, f.getRegion("RGN_NOX")) {
-    shiftZ(&(f(i.x(),i.y()+1,0)), yupPhs[i.x()][i.y()], &(yup(i.x(),i.y()+1,0)));
+  BOUT_FOR(i, mesh.getRegion2D("RGN_NOX")) {
+    shiftZ(&f(i.x(), i.y()+1, 0), yupPhs[i.x()][i.y()], &yup(i.x(),i.y()+1,0));
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  BOUT_FOR(i, f.getRegion("RGN_NOX")) {
-    shiftZ(&(f(i.x(),i.y()-1,0)), ydownPhs[i.x()][i.y()], &(ydown(i.x(),i.y()-1,0)));
+  BOUT_FOR(i, mesh.getRegion2D("RGN_NOX")) {
+    shiftZ(&f(i.x(), i.y()-1, 0), ydownPhs[i.x()][i.y()], &ydown(i.x(),i.y()-1,0));
   }
 }
   
@@ -141,8 +143,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const
   Field3D result(&mesh);
   result.allocate();
 
-  BOUT_FOR(i, f.getRegion(region)) {
-    shiftZ(f(i.x(),i.y()), phs[i.x()][i.y()], result(i.x(),i.y()));
+  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i.x(), i.y(), 0), phs[i.x()][i.y()], &result(i.x(), i.y(), 0));
   }
   
   return result;
@@ -182,8 +184,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
   // (Note valgrind complains about corner guard cells if we try to loop over
   // the whole grid, because zShift is not initialized in the corner guard
   // cells.)
-  BOUT_FOR(i, f.getRegion(region)) {
-    shiftZ(f(i.x(), i.y()), mesh.LocalNz, zangle(i.x(),i.y()), result(i.x(), i.y()));
+  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i.x(), i.y(), 0), mesh.LocalNz, zangle[i], &result(i.x(), i.y(), 0));
   }
   
   return result;
