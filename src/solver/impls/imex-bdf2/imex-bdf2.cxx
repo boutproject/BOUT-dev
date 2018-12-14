@@ -563,7 +563,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
 
               if (mesh->LocalNz > 1) {
                 // Multiple points in z
-                SpecificInd<Ind3D> i(z, mesh->LocalNy, mesh->LocalNz);
+                Ind3D i(z, mesh->LocalNy, mesh->LocalNz);
                 int zp = i.zp().z();
 
                 int ind2 = ROUND(index(x, y, zp));

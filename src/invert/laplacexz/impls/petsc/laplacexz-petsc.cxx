@@ -13,6 +13,7 @@
 #ifdef BOUT_HAS_PETSC  // Requires PETSc
 
 #include <bout/assert.hxx>
+#include <bout/region.hxx>
 #include <bout/sys/timer.hxx>
 
 #include <msg_stack.hxx>
@@ -202,7 +203,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
       }
     }else {
       // One point on another processor
-      for (int z = zstart; z <= mesh->zend; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         int ind = localN - (mesh->zend - mesh->zstart + 1) + z;
         d_nnz[ind] -= 1;
         o_nnz[ind] += 1;
@@ -404,10 +405,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Note that because metrics are constant in Z many terms cancel
 
         // Wrap around z-1 and z+1 indices
-        const SpecificInd<Ind3D> i(z, mesh->LocalNy, mesh->LocalNz);
-        int zminus = z.zm().z();
-        int zplus = z.zp().z();
-        ;
+        const Ind3D thisIndex(z, mesh->LocalNy, mesh->LocalNz);
+        int zminus = thisIndex.zm().z();
+        int zplus = thisIndex.zp().z();
 
         // Metrics on z+1/2 boundary
         Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
