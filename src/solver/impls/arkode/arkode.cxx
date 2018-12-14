@@ -733,7 +733,7 @@ void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
     p++;
   }
 
-  for (int jz=0; jz < mesh->LocalNz; jz++) {
+  for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
     // Loop over 3D variables
     for(std::vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry)
