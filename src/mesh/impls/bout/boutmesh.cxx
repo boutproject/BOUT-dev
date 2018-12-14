@@ -57,6 +57,8 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
                 << optionfile << "\n";
   }
   OPTION(options, symmetricGlobalY, true);
+  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
+                                            // this breaks backwards compatibility
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -516,9 +518,10 @@ int BoutMesh::load() {
     findProcessorSplit();
   }
 
-  // Get X and Y processor indices
+  // Get X, Y, Z processor indices
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
+  PE_ZIND = 0;
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
@@ -1741,15 +1744,21 @@ int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
   return yglobal - PE_YIND * MYSUB + MYG;
 }
 
-int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
+int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + (yproc * MYSUB) - MYG; }
 
-int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - (yproc * MYSUB) + MYG; }
 
-int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal + (PE_ZIND * MZSUB); }
 
-int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal + (PE_ZIND * MZSUB) - MZG; }
 
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+
+/// Returns the global Z index given a local index
+int BoutMesh::ZGLOBAL(BoutReal zloc, BoutReal& zglo) const {
+  zglo = zloc + (PE_ZIND * MZSUB);
+  return static_cast<int>(zglo);
+}
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
@@ -3220,6 +3229,27 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   }
 
   return yglo / static_cast<BoutReal>(nycore);
+}
+
+BoutReal BoutMesh::GlobalZ(int jz) const {
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dz/2 away form the first/last inner points
+    return (0.5 + getGlobalZIndex(jz) - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return static_cast<BoutReal>(getGlobalZIndex(jz)) / static_cast<BoutReal>(MZ);
+}
+
+BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
+
+  // Get global Z index as a BoutReal
+  BoutReal zglo;
+  ZGLOBAL(jz, zglo);
+
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dx/2 away form the first/last inner points
+    return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return zglo / static_cast<BoutReal>(MZ);
 }
 
 void BoutMesh::outputVars(Options& output_options) {
