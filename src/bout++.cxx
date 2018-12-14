@@ -343,8 +343,8 @@ int BoutInitialise(int &argc, char **&argv) {
   output_warn.enable(verbosity > 1);
   output_progress.enable(verbosity > 2);
   output_info.enable(verbosity > 3);
-  output_debug.enable(verbosity > 4); // Only actually enabled if also compiled with DEBUG
-  output_verbose.enable(verbosity > 5);
+  output_verbose.enable(verbosity > 4);
+  output_debug.enable(verbosity > 5); // Only actually enabled if also compiled with DEBUG
 
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
