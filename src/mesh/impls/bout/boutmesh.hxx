@@ -172,8 +172,10 @@ public:
 
   BoutReal GlobalX(int jx) const override;
   BoutReal GlobalY(int jy) const override;
+  BoutReal GlobalZ(int jz) const override;
   BoutReal GlobalX(BoutReal jx) const override;
   BoutReal GlobalY(BoutReal jy) const override;
+  BoutReal GlobalZ(BoutReal jz) const override;
 
   BoutReal getIxseps1() const { return ixseps1; }
   BoutReal getIxseps2() const { return ixseps2; }
@@ -296,15 +298,17 @@ private:
   int MYPE; ///< Rank of this processor
 
   int PE_YIND; ///< Y index of this processor
-  int NYPE;    // Number of processors in the Y direction
+  int NYPE;    ///< Number of processors in the Y direction
 
-  int NZPE;
+  int PE_ZIND{0}; ///< Z index of this processor
+  int NZPE{1};    ///< Number of processors in the Z direction
 
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
+  int ZGLOBAL(BoutReal zloc, BoutReal& zglo) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
@@ -355,8 +359,9 @@ private:
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
 
-  bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
-  bool symmetricGlobalY;
+  bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
+  bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
+  bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
 
   int zperiod;
   BoutReal ZMIN, ZMAX; // Range of the Z domain (in fractions of 2pi)
