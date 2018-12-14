@@ -492,6 +492,7 @@ class Field3D : public Field, public FieldData {
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
     swap(first.nz, second.nz);
+    swap(first.coordinate_system, second.coordinate_system);
     swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.yup_field, second.yup_field);
