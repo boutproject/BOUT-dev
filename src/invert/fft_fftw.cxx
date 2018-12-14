@@ -471,19 +471,19 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   ASSERT1(!in.empty());
 
   int size{in.size()};
-  Array<dcomplex> out{size};
+  Array<dcomplex> out{(size / 2) + 1};
 
-  ::rfft(in.begin(), size, out.begin());
+  rfft(in.begin(), size, out.begin());
   return out;
 }
 
 Array<BoutReal> irfft(const Array<dcomplex>& in) {
   ASSERT1(!in.empty());
 
-  int size{in.size()};
+  int size{(in.size() - 1) * 2};
   Array<BoutReal> out{size};
 
-  ::irfft(in.begin(), size, out.begin());
+  irfft(in.begin(), size, out.begin());
   return out;
 }
 
