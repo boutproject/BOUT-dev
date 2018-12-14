@@ -80,10 +80,10 @@
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} < fieldmesh->zend; ++{{jz_var}}){
+	   for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} <= fieldmesh->zend; ++{{jz_var}}){
 		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
         {% else %}
-           for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} < fieldmesh->zend; ++{{jz_var}}){
+           for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} <= fieldmesh->zend; ++{{jz_var}}){
 	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
         {% endif %}
 	}
