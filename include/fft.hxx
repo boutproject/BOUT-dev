@@ -30,6 +30,14 @@
 
 #include "dcomplex.hxx"
 
+template <typename T>
+class Array;
+
+class Options;
+
+namespace bout {
+namespace fft {
+
 /*!
  * Returns the fft of a real signal using fftw_forward
  *
@@ -78,13 +86,6 @@ void DST(const BoutReal *in, int length, dcomplex *out);
  */
 void DST_rev(dcomplex *in, int length, BoutReal *out);
 
-template <typename T>
-class Array;
-
-class Options;
-
-namespace bout {
-namespace fft {
 /// Should the FFT functions find and use an optimised plan?
 void fft_init(bool fft_measure);
 /// Should the FFT functions find and use an optimised plan?
@@ -101,5 +102,23 @@ Array<BoutReal> irfft(const Array<dcomplex>& in);
 
 } // namespace fft
 } // namespace bout
+
+// Legacy non-namespaced versions
+
+inline void rfft(const BoutReal *in, int length, dcomplex *out) {
+  return bout::fft::rfft(in, length, out);
+}
+
+inline void irfft(const dcomplex *in, int length, BoutReal *out) {
+  return bout::fft::irfft(in, length, out);
+}
+
+inline void DST(const BoutReal *in, int length, dcomplex *out) {
+  return bout::fft::DST(in, length, out);
+}
+
+inline void DST_rev(dcomplex *in, int length, BoutReal *out) {
+  return bout::fft::DST_rev(in, length, out);
+}
 
 #endif // __FFT_H__

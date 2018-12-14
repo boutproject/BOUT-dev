@@ -40,11 +40,14 @@
 
 namespace bout {
 namespace fft {
-bool fft_initialised = false;
-bool fft_measure;
+
+/// Have we set fft_measure?
+bool fft_initialised{false};
+/// Should FFTW find an optimised plan by measuring various plans?
+bool fft_measure{false};
 
 void fft_init(Options* options) {
-  if (bout::fft::fft_initialised) {
+  if (fft_initialised) {
     return;
   }
   if (options == nullptr) {
@@ -55,11 +58,8 @@ void fft_init(Options* options) {
 
 void fft_init(bool fft_measure) {
   bout::fft::fft_measure = fft_measure;
-  bout::fft::fft_initialised = true;
+  fft_initialised = true;
 }
-
-} // namespace fft
-} // namespace bout
 
 /***********************************************************
  * Real FFTs
@@ -84,7 +84,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
       fftw_free(fout);
     }
 
-    bout::fft::fft_init();
+    fft_init();
 
     // Initialize the input for the fourier transformation
     fin = (double*) fftw_malloc(sizeof(double) * length);
@@ -96,7 +96,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if (bout::fft::fft_measure) {
+    if (fft_measure) {
       flags = FFTW_MEASURE;
     }
 
@@ -143,7 +143,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       fftw_free(fout);
     }
 
-    bout::fft::fft_init();
+    fft_init();
 
     // Initilaize the input for the inverse fourier transformation
     /* NOTE: Only the non-redundant input is given
@@ -155,7 +155,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
     unsigned int flags = FFTW_ESTIMATE;
-    if (bout::fft::fft_measure) {
+    if (fft_measure) {
       flags = FFTW_MEASURE;
     }
 
@@ -216,7 +216,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
         fftw_free(foutall);
       }
 
-      bout::fft::fft_init();
+      fft_init();
 
       finall = static_cast<double *>(fftw_malloc(sizeof(double) * length * n_th));
       foutall = static_cast<fftw_complex *>(
@@ -224,7 +224,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
       p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if (bout::fft::fft_measure) {
+      if (fft_measure) {
         flags = FFTW_MEASURE;
       }
 
@@ -287,7 +287,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
         fftw_free(foutall);
       }
 
-      bout::fft::fft_init();
+      fft_init();
 
       finall = static_cast<fftw_complex *>(
           fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
@@ -296,7 +296,7 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       p = new fftw_plan[n_th]; // Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if (bout::fft::fft_measure) {
+      if (fft_measure) {
         flags = FFTW_MEASURE;
       }
 
@@ -351,7 +351,7 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if (bout::fft::fft_measure) {
+    if (fft_measure) {
       flags = FFTW_MEASURE;
     }
 
@@ -406,7 +406,7 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if (bout::fft::fft_measure) {
+    if (fft_measure) {
       flags = FFTW_MEASURE;
     }
 
@@ -437,7 +437,7 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     out[i] = fout[i];
 }
 
-Array<dcomplex> bout::fft::rfft(const Array<BoutReal>& in) {
+Array<dcomplex> rfft(const Array<BoutReal>& in) {
   ASSERT1(!in.empty());
 
   int size{in.size()};
@@ -447,7 +447,7 @@ Array<dcomplex> bout::fft::rfft(const Array<BoutReal>& in) {
   return out;
 }
 
-Array<BoutReal> bout::fft::irfft(const Array<dcomplex>& in) {
+Array<BoutReal> irfft(const Array<dcomplex>& in) {
   ASSERT1(!in.empty());
 
   int size{in.size()};
@@ -456,3 +456,7 @@ Array<BoutReal> bout::fft::irfft(const Array<dcomplex>& in) {
   ::irfft(in.begin(), size, out.begin());
   return out;
 }
+
+} // namespace fft
+} // namespace bout
+
