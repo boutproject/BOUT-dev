@@ -117,7 +117,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   int ix, kz;
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   data.jy = b.getIndex();
 
@@ -157,7 +157,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   Array<dcomplex> bk1d(ncz / 2 + 1); ///< 1D in Z for taking FFTs
 
   for(ix=0; ix < localmesh->LocalNx; ix++) {
-    rfft(b[ix], ncz, std::begin(bk1d));
+    rfft(&b(ix, localmesh->zstart), ncz, std::begin(bk1d));
     for(kz = 0; kz <= maxmode; kz++)
       data.bk(kz, ix) = bk1d[kz];
   }
@@ -326,7 +326,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
   }
   
   // Have result in Fourier space. Convert back to BoutReal space
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   Array<dcomplex> xk1d(ncz / 2 + 1); ///< 1D in Z for taking FFTs
   for (kz = maxmode; kz <= ncz / 2; kz++)
@@ -341,6 +341,6 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
-    irfft(std::begin(xk1d), ncz, x[ix]);
+    irfft(std::begin(xk1d), ncz, &x(ix, localmesh->zstart));
   }
 }
