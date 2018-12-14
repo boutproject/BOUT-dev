@@ -359,15 +359,15 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
   return found->second;
 }
 
-const bool Mesh::hasRegion3D(const std::string& region_name) const {
+bool Mesh::hasRegion3D(const std::string& region_name) const {
   return regionMap3D.find(region_name) != std::end(regionMap3D);
 }
 
-const bool Mesh::hasRegion2D(const std::string& region_name) const {
+bool Mesh::hasRegion2D(const std::string& region_name) const {
   return regionMap2D.find(region_name) != std::end(regionMap2D);
 }
 
-const bool Mesh::hasRegionPerp(const std::string& region_name) const {
+bool Mesh::hasRegionPerp(const std::string& region_name) const {
   return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
