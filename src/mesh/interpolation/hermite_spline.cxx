@@ -49,13 +49,13 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
 
 void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
-  BoutReal t_x, t_z;
-
   BOUT_FOR(i, delta_x.getRegion("RGN_NOBNDRY")) {
     const auto x = i.x(), y = i.y(), z = i.z();
 
     if (skip_mask(x, y, z))
       continue;
+
+    BoutReal t_x, t_z;
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
