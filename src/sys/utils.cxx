@@ -150,6 +150,6 @@ std::string toString<>(const time_t& time) {
 
   // Older compilers
   char buffer[80];
-  strftime(buffer, 80, "%Ec %Z", tm);
+  strftime(buffer, 80, "%Ec", tm);
   return std::string(buffer);
 }
