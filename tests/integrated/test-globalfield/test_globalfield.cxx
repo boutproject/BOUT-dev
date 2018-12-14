@@ -65,32 +65,37 @@ int physics_init(bool restarting) {
 
   
   // Create local variables, fill with data
-  Field3D localX3D, localY3D;
+  Field3D localX3D, localY3D, localZ3D;
 
   localX3D.allocate();
   localY3D.allocate();
-  
+  localZ3D.allocate();
+
   for(int x=0;x<mesh->LocalNx;x++)
     for(int y=0;y<mesh->LocalNy;y++)
       for(int z=0;z<mesh->LocalNz;z++) {
         localX3D(x,y,z) = mesh->XGLOBAL(x) + z;
         localY3D(x,y,z) = mesh->YGLOBAL(y) + z;
+        localZ3D(x, y, z) = mesh->ZGLOBAL(z) + z;
       }
   
   // Gather onto one processor (0 by default)
-  GlobalField3D gX3D(mesh), gY3D(mesh);
+  GlobalField3D gX3D(mesh), gY3D(mesh), gZ3D(mesh);
 
   gX3D.gather(localX3D);
   gY3D.gather(localY3D);
-  
+  gZ3D.gather(localZ3D);
+
   if(gX3D.dataIsLocal()) {
     // Data is on this processor
     bool gather_pass3D = true;
     for(int x=0;x<gX3D.xSize();x++)
       for(int y=0;y<gX3D.ySize();y++) 
         for(int z=0;z<gX3D.zSize();z++) {
-          if( (ROUND(gX3D(x,y,z)) != x + z) || (ROUND(gY3D(x,y,z)) != y + z) ) {
-            output.write("%d, %d, %d :  %e, %e\n", x,y,z, gX3D(x,y,z), gY3D(x,y,z));
+          if ((ROUND(gX3D(x, y, z)) != x + z) || (ROUND(gY3D(x, y, z)) != y + z)
+              || (ROUND(gZ3D(x, y, z)) != z + z)) {
+            output.write("%d, %d, %d :  %e, %e, %e\n", x, y, z, gX3D(x, y, z),
+                         gY3D(x, y, z), gZ3D(x, y, z));
             gather_pass3D = false;
           }
       }
@@ -100,14 +105,18 @@ int physics_init(bool restarting) {
   // Scatter back and check
   Field3D scatX3D = gX3D.scatter();
   Field3D scatY3D = gY3D.scatter();
-  
+  Field3D scatZ3D = gZ3D.scatter();
+
   bool scatter_pass3D = true;
   for(int x=mesh->xstart;x<=mesh->xend;x++)
     for(int y=mesh->ystart;y<=mesh->yend;y++)
       for(int z=0;z<mesh->LocalNz;z++) {
-        if( (localX3D(x,y,z) != scatX3D(x,y,z)) || (localY3D(x,y,z) != scatY3D(x,y,z)) ) {
-          output.write("%d, %d, %d :  (%e, %e) (%e, %e)", x, y, z,
-                       localX3D(x,y,z), localY3D(x,y,z), scatX3D(x,y,z), scatY3D(x,y,z));
+        if ((localX3D(x, y, z) != scatX3D(x, y, z))
+            || (localY3D(x, y, z) != scatY3D(x, y, z))
+            || (localZ3D(x, y, z) != scatZ3D(x, y, z))) {
+          output.write("%d, %d, %d :  (%e, %e) (%e, %e) (%e, %e)", x, y, z,
+                       localX3D(x, y, z), localY3D(x, y, z), localZ3D(x, y, z),
+                       scatX3D(x, y, z), scatY3D(x, y, z), scatZ3D(x, y, z));
           scatter_pass3D = false;
         }
       }

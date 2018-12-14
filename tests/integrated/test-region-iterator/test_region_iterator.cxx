@@ -40,7 +40,8 @@ int physics_init(bool UNUSED(restarting)) {
   //Check expected results
   nerr=0;
   //Expect to find differences just in the boundaries, so work out how many boundary points there area
-  const int nerrExpected = (2*mesh->xstart*mesh->LocalNy + 2*mesh->ystart*(mesh->LocalNx-mesh->xstart*2))*mesh->LocalNz;
+  const int nerrExpected =
+      d.getRegion("RGN_ALL").size() - d.getRegion("RGN_NOBNDRY").size();
   for (const auto &i : d.getRegion(RGN_ALL)) {
     if (d[i] != 3.0) nerr++;
   }
