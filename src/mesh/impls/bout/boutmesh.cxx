@@ -404,7 +404,7 @@ int BoutMesh::load() {
   }
 
   /// Get X and Y processor indices
-  PE_ZIND = 1;  
+  PE_ZIND = 0;
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
 
