@@ -64,7 +64,7 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
-    zstart = 0;
+    zstart = 0; // No guards in z here
     zend = nz - 1;
 
     StaggerGrids=true;
