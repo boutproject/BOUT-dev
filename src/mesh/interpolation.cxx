@@ -151,11 +151,16 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
           // coordinates
 
           Field3D var_fa = fieldmesh->toFieldAligned(var);
-          Field3D result_fa(fieldmesh);
           if (region != RGN_NOBNDRY) {
-            result_fa = fieldmesh->toFieldAligned(result);
+            // repeat the hack above for boundary points
+            // this avoids a duplicate toFieldAligned call if we had called
+            // result = toFieldAligned(result)
+            // to get the boundary cells
+            //
+            // result is requested in some boundary region(s)
+            result = var_fa; // NOTE: This is just for boundaries. FIX!
+            result.allocate();
           }
-          result_fa.allocate();
           if (fieldmesh->ystart > 1) {
 
             // More than one guard cell, so set pp and mm values
@@ -180,7 +185,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                   s.m = s.c;
                 }
 
-                result_fa[i] = interp(s);
+                result[i] = interp(s);
               }
             }
           } else {
@@ -206,12 +211,12 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
                   s.m = s.c;
                 }
 
-                result_fa[i] = interp(s);
+                result[i] = interp(s);
               }
             }
           }
           
-          result = fieldmesh->fromFieldAligned(result_fa);
+          result = fieldmesh->fromFieldAligned(result);
         }
         break;
       }
