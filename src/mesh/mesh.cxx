@@ -359,6 +359,18 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
   return found->second;
 }
 
+bool Mesh::hasRegion3D(const std::string& region_name) const {
+  return regionMap3D.find(region_name) != std::end(regionMap3D);
+}
+
+bool Mesh::hasRegion2D(const std::string& region_name) const {
+  return regionMap2D.find(region_name) != std::end(regionMap2D);
+}
+
+bool Mesh::hasRegionPerp(const std::string& region_name) const {
+  return regionMapPerp.find(region_name) != std::end(regionMapPerp);
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
@@ -420,7 +432,7 @@ void Mesh::createDefaultRegions(){
                                            LocalNz, maxregionblocksize)); // Same as ALL
   addRegionPerp("RGN_NOZ", getRegionPerp("RGN_ALL")); // Currently the same as ALL
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
-
+  
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
