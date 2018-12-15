@@ -82,7 +82,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   }
 
   //Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
     BoutReal yupShift = zShift[i] - zShift[i.yp()];
     BoutReal ydownShift = zShift[i] - zShift[i.ym()];
 
@@ -107,14 +107,14 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   Field3D& yup = f.yup();
   yup.allocate();
 
-  BOUT_FOR(i, mesh.getRegion2D("RGN_NOX")) {
+  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
     shiftZ(&f(i.x(), i.y()+1, 0), yupPhs[i.x()][i.y()], &yup(i.x(),i.y()+1,0));
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  BOUT_FOR(i, mesh.getRegion2D("RGN_NOX")) {
+  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
     shiftZ(&f(i.x(), i.y()-1, 0), ydownPhs[i.x()][i.y()], &ydown(i.x(),i.y()-1,0));
   }
 }
