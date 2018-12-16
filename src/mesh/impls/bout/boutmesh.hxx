@@ -105,6 +105,20 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const;
 
+  /// Is there a branch cut at the lower y edge of this processor's grid points
+  /// at x-index jx?
+  bool hasBranchCutDown(int jx) const {
+    return (TS_down_in && (DDATA_INDEST != -1) && (jx < DDATA_XSPLIT))
+      || (TS_down_out && (DDATA_OUTDEST != -1) && (jx >= DDATA_XSPLIT));
+  }
+
+  /// Is there a branch cut at the upper y edge of this processor's grid points
+  /// at x-index jx?
+  bool hasBranchCutUp(int jx) const {
+    return (TS_up_in && (UDATA_INDEST != -1) && (jx < UDATA_XSPLIT))
+      || (TS_up_out && (UDATA_OUTDEST != -1) && (jx >= UDATA_XSPLIT));
+  }
+
   int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////

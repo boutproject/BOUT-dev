@@ -322,7 +322,15 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Is there a branch cut at the lower y edge of this processor's grid points
+  /// at x-index jx?
+  virtual bool hasBranchCutDown(int jx) const = 0;
   
+  /// Is there a branch cut at the upper y edge of this processor's grid points
+  /// at x-index jx?
+  virtual bool hasBranchCutUp(int jx) const = 0;
+
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
