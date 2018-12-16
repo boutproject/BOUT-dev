@@ -304,6 +304,8 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
+  ASSERT1(location == rhs.getLocation());
+
   /// Check that the data is valid
   checkData(rhs);
 
