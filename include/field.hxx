@@ -47,6 +47,28 @@ extern Mesh * mesh; ///< Global mesh
 #endif
 
 /*!
+ * Coordinate systems that Field3Ds can be stored in
+ *
+ * None - special value to be used for Field3Ds initialized before the Mesh and
+ * ParallelTransform have finished being initialized, because then we cannot
+ * get the COORDINATE_SYSTEM to use from the ParallelTransform, but Field3Ds
+ * created then must not need to know their COORDINATE_SYSTEM, or must set it
+ * explicitly later.
+ */
+enum class COORDINATE_SYSTEM { None, FieldAligned, Orthogonal, FCI };
+
+#define COORDENUMSTR(val) {COORDINATE_SYSTEM::val, #val}
+
+const std::map<COORDINATE_SYSTEM, std::string> COORDINATE_SYSTEMtoString = {
+  COORDENUMSTR(None),
+  COORDENUMSTR(FieldAligned),
+  COORDENUMSTR(Orthogonal),
+  COORDENUMSTR(FCI)
+};
+
+#undef COORDENUMSTR
+
+/*!
  * \brief Base class for fields
  *
  * Defines the virtual function SetStencil, used by differencing methods
