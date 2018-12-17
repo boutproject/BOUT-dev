@@ -1,7 +1,6 @@
 #include <mpi.h>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
-#include <iostream>
 #include <msg_stack.hxx>
 #include <output.hxx>
 

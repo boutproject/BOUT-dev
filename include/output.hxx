@@ -30,7 +30,6 @@ class Output;
 #define __OUTPUT_H__
 
 #include "multiostream.hxx"
-#include <iostream>
 #include <fstream>
 #include <functional>
 

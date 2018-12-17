@@ -9,7 +9,6 @@ class SolverFactory;
 
 #include <functional>
 #include <string>
-#include <iostream>
 
 class Options;
 
