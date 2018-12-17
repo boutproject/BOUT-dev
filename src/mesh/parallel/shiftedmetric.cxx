@@ -41,12 +41,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //As we're attached to a mesh we can expect the z direction to
   //not change once we've been created so precalculate the complex
   //phases used in transformations
-  int nmodes = mesh.LocalNz/2 + 1;
+  nmodes = mesh.LocalNz / 2 + 1;
   BoutReal zlength = mesh.getCoordinates()->zlength();
-
-  //Allocate storage for complex intermediate
-  cmplx.resize(nmodes);
-  std::fill(cmplx.begin(), cmplx.end(), 0.0);
 
   //Allocate storage for our 3d vector structures.
   //This could be made more succinct but this approach is fairly
@@ -152,6 +148,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const
 }
 
 void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
+  Array<dcomplex> cmplx(nmodes);
+
   // Take forward FFT
   rfft(in, mesh.LocalNz, &cmplx[0]);
 
@@ -160,7 +158,6 @@ void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs,
   //  std::transform(cmplxOneOff.begin(),cmplxOneOff.end(), ptr.begin(), 
   //		 cmplxOneOff.begin(), std::multiplies<dcomplex>());
 
-  const int nmodes = cmplx.size();
   for(int jz=1;jz<nmodes;jz++) {
     cmplx[jz] *= phs[jz];
   }
@@ -195,8 +192,8 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   int nmodes = len/2 + 1;
 
   // Complex array used for FFTs
-  cmplxLoc.resize(nmodes);
-  
+  Array<dcomplex> cmplxLoc(nmodes);
+
   // Take forward FFT
   rfft(in, len, &cmplxLoc[0]);
   

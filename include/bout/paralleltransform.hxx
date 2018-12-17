@@ -129,8 +129,8 @@ private:
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
-  std::vector<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
-  std::vector<dcomplex> cmplxLoc; ///< A temporary array, used for input/output to fft routines
+
+  int nmodes;
 
   arr3Dvec toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
   arr3Dvec fromAlignedPhs; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
