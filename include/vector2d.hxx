@@ -38,8 +38,13 @@ class Vector2D;
 #define __VECTOR2D_H__
 
 #include "field2d.hxx"
-class Field3D;  //#include "field3d.hxx"
-class Vector3D; //#include "vector3d.hxx"
+#include "field_data.hxx"
+
+class Mesh;
+class Field3D;
+class Vector3D;
+
+#include <string>
 
 /*!
  * A vector with three components (x,y,z) which only vary in 2D

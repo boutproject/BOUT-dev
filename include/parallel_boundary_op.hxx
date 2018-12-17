@@ -3,9 +3,10 @@
 
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
-#include "parallel_boundary_region.hxx"
 #include "utils.hxx"
 #include "unused.hxx"
+
+class BoundaryRegionPar;
 
 #include <utility>
 

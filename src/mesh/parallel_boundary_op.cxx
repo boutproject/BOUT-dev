@@ -5,6 +5,7 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include <bout/coordinates.hxx>
+#include <parallel_boundary_region.hxx>
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
