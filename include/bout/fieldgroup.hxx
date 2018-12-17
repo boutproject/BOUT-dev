@@ -1,15 +1,14 @@
 #ifndef __FIELDGROUP_H__
 #define __FIELDGROUP_H__
 
-#include "field_data.hxx"
-#include <field3d.hxx>
+#include <vector>
 
+#include <field2d.hxx>
+#include <field3d.hxx>
 #include <vector2d.hxx>
 #include <vector3d.hxx>
 
-#include <vector>
-
-#include <algorithm>
+class FieldData;
 
 /// Group together fields for easier communication
 ///

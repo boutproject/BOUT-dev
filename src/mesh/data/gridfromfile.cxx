@@ -2,6 +2,7 @@
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/griddata.hxx>
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 #include <fft.hxx>

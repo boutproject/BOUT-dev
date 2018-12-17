@@ -31,7 +31,6 @@ class Output;
 
 #include "multiostream.hxx"
 #include <fstream>
-#include <functional>
 
 #include "bout/assert.hxx"
 #include "boutexception.hxx"

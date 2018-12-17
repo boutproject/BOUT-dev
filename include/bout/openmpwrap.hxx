@@ -27,6 +27,10 @@
 #ifndef __OPENMPWRAP_H__
 #define __OPENMPWRAP_H__
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 //Some helpers for indirection -- required so that the _Pragma gets "omp <x>"
 //where <x> is any number of valid omp options/environments (e.g. atomic, critical etc.)
 #define INDIRECT0(a) #a

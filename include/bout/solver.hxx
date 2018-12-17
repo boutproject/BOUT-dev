@@ -35,6 +35,11 @@
 
 class Solver;
 
+///////////////////////////////////////////////////////////////////
+
+#ifndef __SOLVER_H__
+#define __SOLVER_H__
+
 #include <bout_types.hxx>
 #include <boutexception.hxx>
 #include <unused.hxx>
@@ -42,10 +47,17 @@ class Solver;
 #include "options.hxx"
 #include "datafile.hxx"
 
-///////////////////////////////////////////////////////////////////
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
-#ifndef __SOLVER_H__
-#define __SOLVER_H__
+#include "bout/mesh.hxx"
+
+#include <list>
+#include <string>
+
+class PhysicsModel;
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -59,22 +71,8 @@ typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
 /// User-supplied Jacobian function
 typedef int (*Jacobian)(BoutReal t);
 
-
 /// Solution monitor, called each timestep
 typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
-
-
-
-//#include "globals.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
-#include "physicsmodel.hxx"
-
-#include <string>
-#include <list>
 
 typedef std::string SolverType;
 #define SOLVERCVODE       "cvode"

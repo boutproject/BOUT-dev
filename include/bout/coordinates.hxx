@@ -35,10 +35,13 @@ class Coordinates;
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "mesh.hxx"
-#include "datafile.hxx"
-#include "utils.hxx"
 #include <bout_types.hxx>
+#include <field2d.hxx>
+#include <field3d.hxx>
+#include <fieldperp.hxx>
+
+class Mesh;
+class Datafile;
 
 /*!
  * Represents a coordinate system, and associated operators

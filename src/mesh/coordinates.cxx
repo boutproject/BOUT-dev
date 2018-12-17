@@ -10,11 +10,9 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>
-
 #include <derivs.hxx>
 #include <fft.hxx>
 #include <interpolation.hxx>
-
 #include <globals.hxx>
 
 Coordinates::Coordinates(Mesh *mesh)

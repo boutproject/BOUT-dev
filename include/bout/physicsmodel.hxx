@@ -37,12 +37,12 @@ class PhysicsModel;
 #ifndef __PHYSICS_MODEL_H__
 #define __PHYSICS_MODEL_H__
 
-#include <bout.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
-#include "solver.hxx"
 #include "unused.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/solver.hxx"
+#include <bout.hxx>
+#include <msg_stack.hxx>
+#include <options.hxx>
 /*!
   Base class for physics models
  */
