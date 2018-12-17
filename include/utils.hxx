@@ -30,20 +30,19 @@
 #define __UTILS_H__
 
 #include "bout_types.hxx"
-#include "dcomplex.hxx"
 #include "boutexception.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
-#include <string>
-#include <list>
+#include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <algorithm>
+#include <list>
 #include <memory>
+#include <sstream>
+#include <string>
 
 namespace bout {
 namespace utils {
