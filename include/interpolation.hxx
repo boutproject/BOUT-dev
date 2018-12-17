@@ -27,9 +27,11 @@
 #define __INTERP_H__
 
 #include "bout_types.hxx"
-#include "field3d.hxx"
 #include "mask.hxx"
 #include "utils.hxx"
+
+class Field3D;
+class Field2D;
 
 /// Interpolate to a give cell location
 const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region = RGN_ALL);

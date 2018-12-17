@@ -32,7 +32,7 @@
 #ifndef __GYRO_AVERAGE_H__
 #define __GYRO_AVERAGE_H__
 
-#include "field3d.hxx"
+class Field3D;
 
 const int GYRO_FLAGS = 64 + 16384 + 32768; ///< = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style Laplacian inversion flags
 

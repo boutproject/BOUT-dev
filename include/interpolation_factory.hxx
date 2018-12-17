@@ -1,13 +1,14 @@
 #ifndef __INTERP_FACTORY_H__
 #define __INTERP_FACTORY_H__
 
-#include "interpolation.hxx"
-#include "options.hxx"
+//#include "interpolation.hxx"
 
 #include <map>
 #include <string>
 
 class Mesh;
+class Options;
+class Interpolation;
 
 class InterpolationFactory {
 public:
