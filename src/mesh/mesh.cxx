@@ -6,6 +6,7 @@
 #include <bout/region.hxx>
 #include <bout/sys/range.hxx>
 #include <derivs.hxx>
+#include <fieldperp.hxx>
 #include <globals.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>

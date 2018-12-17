@@ -39,6 +39,7 @@
 #include <dcomplex.hxx>
 #include <fft.hxx>
 #include <field3d.hxx>
+#include <fieldperp.hxx>
 #include <interpolation.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>

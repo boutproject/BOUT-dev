@@ -33,6 +33,7 @@
 #include <interpolation.hxx>
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <msg_stack.hxx>
+#include <stencils.hxx>
 #include <unused.hxx>
 #include <utils.hxx>
 #include <vecops.hxx>

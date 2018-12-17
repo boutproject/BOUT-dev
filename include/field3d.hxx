@@ -26,16 +26,18 @@ class Field3D;
 #ifndef __FIELD3D_H__
 #define __FIELD3D_H__
 
-class Mesh;  // #include "bout/mesh.hxx"
-#include "field.hxx"
-#include "field2d.hxx"
-#include "fieldperp.hxx"
-#include "stencils.hxx"
 #include "bout_types.hxx"
+#include "field.hxx"
+#include "field_data.hxx"
+#include "unused.hxx"
 #include "bout/array.hxx"
-#include "bout/region.hxx"
 #include "bout/assert.hxx"
-#include "bout/field_visitor.hxx"
+#include "bout/region.hxx"
+
+class Mesh;
+class Field2D;
+class FieldPerp;
+class FieldVisitor;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
