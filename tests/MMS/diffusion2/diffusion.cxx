@@ -1,9 +1,10 @@
+#include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout.hxx>
 #include <boutmain.hxx>
-#include <initialprofiles.hxx>
+#include <cmath>
 #include <derivs.hxx>
-#include <math.h>
-#include <bout/constants.hxx>
+#include <initialprofiles.hxx>
 
 Field3D N;
 

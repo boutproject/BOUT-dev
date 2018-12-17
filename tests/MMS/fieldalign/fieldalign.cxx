@@ -1,3 +1,4 @@
+#include <bout/coordinates.hxx>
 #include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 

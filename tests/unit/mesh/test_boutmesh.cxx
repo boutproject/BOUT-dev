@@ -1,9 +1,11 @@
 #include "gtest/gtest.h"
 
 #include "../src/mesh/impls/bout/boutmesh.hxx"
-#include "bout/mesh.hxx"
+#include "bout_types.hxx"
 #include "output.hxx"
 #include "unused.hxx"
+#include "bout/griddata.hxx"
+#include "bout/mesh.hxx"
 
 class FakeGridDataSource : public GridDataSource {
 public:

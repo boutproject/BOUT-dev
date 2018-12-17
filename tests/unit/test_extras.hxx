@@ -6,9 +6,10 @@
 #include <iostream>
 #include <mpi.h>
 
-#include "bout/mesh.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/range.hxx"
 
 const BoutReal BoutRealTolerance = 1e-15;
 

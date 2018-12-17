@@ -14,7 +14,7 @@ int physics_init(bool restarting) {
   Options *options = Options::getRoot();
 
   // Read strings containing coefficients
-  string in, acoef, ccoef;
+  std::string in, acoef, ccoef;
   OPTION(options, in, "(1-gauss(x-0.5,0.2))*gauss(z-pi)");
   OPTION(options, acoef, "gauss(x)");
   OPTION(options, ccoef, "sin(x) * gauss(x-0.5)");  

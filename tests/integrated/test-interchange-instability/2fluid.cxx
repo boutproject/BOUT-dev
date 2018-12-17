@@ -5,13 +5,14 @@
 
 #include <bout.hxx>
 
+#include <bout/coordinates.hxx>
 #include <derivs.hxx>
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 class Interchange : public PhysicsModel {
 
