@@ -15,17 +15,14 @@ class Datafile;
 #define __DATAFILE_H__
 
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-#include "options.hxx"
 #include "bout/macro_for_each.hxx"
 
-#include "dataformat.hxx"
-
-#include <cstdarg>
-#include <cstdio>
+class Field3D;
+class Field2D;
+class Vector3D;
+class Vector2D;
+class Options;
+class DataFormat;
 
 #include <vector>
 #include <string>
