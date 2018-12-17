@@ -37,8 +37,9 @@
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 
-#include <utils.hxx>
 #include <bout/constants.hxx>
+#include <bout/rvec.hxx>
+#include <utils.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {

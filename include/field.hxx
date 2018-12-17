@@ -29,22 +29,14 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
-#include <cstdio>
+#include <string>
 
 #include "bout_types.hxx"
-#include "stencils.hxx"
-#include <bout/rvec.hxx>
 #include "boutexception.hxx"
-
-#include "unused.hxx"
 
 class Mesh;
 class Coordinates;
 extern Mesh * mesh; ///< Global mesh
-
-#ifdef TRACK
-#include <string>
-#endif
 
 /*!
  * \brief Base class for fields
