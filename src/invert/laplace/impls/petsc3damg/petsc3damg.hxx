@@ -89,17 +89,12 @@ public:
   
   const Field3D solve(const Field3D &b) override { Field3D zero(b.getMesh()); zero = 0.; return solve(b, zero); }
   const Field3D solve(const Field3D &b_in, const Field3D &x0) override;
-  const FieldPerp solve(const FieldPerp &b_in) {
-    throw BoutException("Error: cannot call "
-        "LaplacePetsc3DAmg::solve(FieldPerp); only the 3D version "
-        "LaplacePetsc3DAmg::solve(Field3D) is supported.");
-  }
 
   Field3D multiplyAx(const Field3D &x);
   
 private:
   Field3D A,C1,C2,D; // ODE Coefficients
-  int Nx_local, Nx_global,Nlocal,Nz_local,Nz_global,Nglobal,Ny_local,Ny_global;
+  int Nx_local, Nx_global,Nlocal,Nz_local,Nz_global,Nglobal,Ny_local,Nz_global;
   // Local and global grid sizes
   int mzstart,mxstart,mystart,lxs,lzs,lys,nxt,nzt,nyt;
   int zbdcon,ybdcon,xbdcon;
@@ -124,6 +119,7 @@ private:
   /*********************************************************/
   PetscLib lib;
   
+  MPI_Comm commX,commY,commT;
   Mat MatA,MatP;
   Vec xs, bs;                 // Solution and RHS vectors
   KSP ksp;
@@ -138,5 +134,4 @@ private:
 };
 #endif //   BOUT_HAS_PETSC
 #endif // __PETSCAMG_H__
-
-
+
