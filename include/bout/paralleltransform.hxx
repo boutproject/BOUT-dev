@@ -101,7 +101,13 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  ShiftedMetric(Mesh &mesh);
+  ShiftedMetric(Mesh &m) : mesh(m) {}
+
+  /// initialize after constructor is finished, so that
+  /// localmesh->getCoordinateSystem() can call
+  /// ParallelTransform::getCoordinateSystem() for fields belonging to the
+  /// ParallelTransform
+  void initialize();
   
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -150,6 +156,10 @@ private:
 
   Tensor<dcomplex> yupPhs;   ///< Cache of phase shifts for calculating yup fields
   Tensor<dcomplex> ydownPhs; ///< Cache of phase shifts for calculating ydown fields
+
+#if CHECK>0
+  bool isinitialized = false;
+#endif
 
   /*!
    * Shift a 2D field in Z. 

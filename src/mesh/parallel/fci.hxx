@@ -39,12 +39,10 @@ class FCIMap {
   /// Interpolation object
   Interpolation *interp;        // Cell centre
   Interpolation *interp_corner; // Cell corner at (x+1, z+1)
-
-  /// Private constructor - must be initialised with mesh
-  FCIMap();
 public:
+  /// initialize method must be called before using FCIMap
   /// dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool zperiodic);
+  void initialize(Mesh& mesh, int dir_in, bool zperiodic_in);
 
   int dir;                     /**< Direction of map */
 
@@ -65,9 +63,21 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  FCITransform(Mesh &mesh, bool zperiodic = true)
-      : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
-        zperiodic(zperiodic) {}
+  FCITransform(Mesh& m) : mesh(m) {}
+
+  /// initialize after constructor is finished, so that
+  /// localmesh->getCoordinateSystem() can call
+  /// ParallelTransform::getCoordinateSystem() for fields belonging to the
+  /// ParallelTransform
+  void initialize(bool zperiodic_in = true) {
+    forward_map.initialize(mesh, +1, zperiodic);
+    backward_map.initialize(mesh, -1, zperiodic);
+    zperiodic = zperiodic_in;
+
+#if CHECK>0
+    isinitialized = true;
+#endif
+  }
 
   void calcYUpDown(Field3D &f) override;
   
@@ -97,6 +107,10 @@ private:
   FCIMap backward_map;          /**< FCI map for field lines in -ve y */
 
   bool zperiodic;               /**< Is the z-direction periodic? */
+
+#if CHECK>0
+  bool isinitialized = false;
+#endif
 };
 
 #endif // __FCITRANSFORM_H__

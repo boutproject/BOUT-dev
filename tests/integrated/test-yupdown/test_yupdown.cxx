@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   ShiftedMetric s(*mesh);
+  s.initialize();
 
   // Read variable from mesh
   Field3D var;

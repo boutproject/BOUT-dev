@@ -15,9 +15,9 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+void ShiftedMetric::initialize() {
   // Read the zShift angle from the mesh
-  
+  zShift = Field2D(&mesh);
   if(mesh.get(zShift, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
     mesh.get(zShift, "qinty");
@@ -76,6 +76,9 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     }
   }
 
+#if CHECK > 1
+  isinitialized = true;
+#endif
 }
 
 /*!
@@ -83,6 +86,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(isinitialized);
 
   f.splitYupYdown();
   
@@ -106,7 +110,9 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D &f, const REGION region) {
+  ASSERT1(isinitialized);
   ASSERT2(f.getCoordinateSystem() == COORDINATE_SYSTEM::Orthogonal);
+
   Field3D result = shiftZ(f, toAlignedPhs, region);
   result.setCoordinateSystem(COORDINATE_SYSTEM::FieldAligned);
   return result;
@@ -117,7 +123,9 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f, const REGION regio
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION region) {
+  ASSERT1(isinitialized);
   ASSERT2(f.getCoordinateSystem() == COORDINATE_SYSTEM::FieldAligned);
+
   Field3D result = shiftZ(f, fromAlignedPhs, region);
   result.setCoordinateSystem(f.getMesh()->getCoordinateSystem());
   return result;
@@ -126,6 +134,7 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const REGION region) {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(isinitialized);
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
@@ -141,6 +150,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
 }
 
 void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) {
+  ASSERT1(isinitialized);
+
   Array<dcomplex> cmplx(nmodes);
 
   // Take forward FFT
@@ -160,6 +171,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, const REGION region) {
+  ASSERT1(isinitialized);
   ASSERT1(&mesh == f.getMesh());
   ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
@@ -182,6 +194,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
 }
 
 void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out) {
+  ASSERT1(isinitialized);
+
   int nmodes = len/2 + 1;
 
   // Complex array used for FFTs

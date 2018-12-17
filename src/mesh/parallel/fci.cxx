@@ -53,8 +53,11 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
-  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
+void FCIMap::initialize(Mesh &mesh, int dir_in, bool zperiodic) {
+  dir = dir_in;
+  boundary_mask = BoutMask(mesh);
+  corner_boundary_mask = BoutMask(mesh);
+  y_prime = Field3D(0., &mesh);
 
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
@@ -238,7 +241,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
 
 const Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
-  
+
   // Cell centre values
   Field3D centre = interp->interpolate(f);
   
@@ -296,6 +299,8 @@ const Field3D FCIMap::integrate(Field3D &f) const {
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 
+  ASSERT1(isinitialized);
+
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 
@@ -306,7 +311,9 @@ void FCITransform::calcYUpDown(Field3D &f) {
 
 void FCITransform::integrateYUpDown(Field3D &f) {
   TRACE("FCITransform::integrateYUpDown");
-  
+
+  ASSERT1(isinitialized);
+
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 

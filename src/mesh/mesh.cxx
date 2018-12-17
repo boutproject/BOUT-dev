@@ -299,7 +299,8 @@ void Mesh::setParallelTransform() {
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    static_cast<ShiftedMetric*>(transform.get())->initialize();
       
   }else if(ptstr == "fci") {
 
@@ -307,7 +308,8 @@ void Mesh::setParallelTransform() {
     // Flux Coordinate Independent method
     bool fci_zperiodic;
     fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
+    transform = bout::utils::make_unique<FCITransform>(*this);
+    static_cast<FCITransform*>(transform.get())->initialize(fci_zperiodic);
       
   }else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
