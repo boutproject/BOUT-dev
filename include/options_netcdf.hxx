@@ -44,6 +44,11 @@ public:
 
 private:
   std::string filename;
+
+  /// NetCDF doesn't seem to keep track of the current index
+  /// for each variable. This map keeps track of the current
+  /// index being written for each time dimension
+  std::map<int, size_t> time_index;
 };
 
 #endif

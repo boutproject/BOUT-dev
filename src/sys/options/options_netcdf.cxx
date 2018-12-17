@@ -206,8 +206,51 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0,0,0));
 }
+
+
+/// Visit a variant type, and put the data into a NcVar
+struct NcPutVarCountVisitor {
+  NcPutVarCountVisitor(NcVar& var, const std::vector<size_t> &start, const std::vector<size_t> &count)
+      : var(var), start(start), count(count) {}
+  template <typename T>
+  void operator()(const T& UNUSED(t)) {}
+
+private:
+  NcVar& var;
+  const std::vector<size_t> &start; ///< Starting (corner) index
+  const std::vector<size_t> &count; ///< Index count in each dimension
+};
+
+template <>
+void NcPutVarCountVisitor::operator()<int>(const int& value) {
+  var.putVar(start, &value);
+}
+template <>
+void NcPutVarCountVisitor::operator()<double>(const double& value) {
+  var.putVar(start, &value);
+}
+template <>
+void NcPutVarCountVisitor::operator()<float>(const float& value) {
+  var.putVar(start, &value);
+}
+template <>
+void NcPutVarCountVisitor::operator()<std::string>(const std::string& value) {
+  const char* cstr = value.c_str();
+  var.putVar(start, &cstr);
+}
+template <>
+void NcPutVarCountVisitor::operator()<Field2D>(const Field2D& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(start, count, &value(0,0));
+}
+template <>
+void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(start, count, &value(0,0,0));
+}
+
   
-void writeGroup(const Options& options, NcGroup group) {
+  void writeGroup(const Options& options, NcGroup group, std::map<int, size_t> &time_index) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
@@ -222,14 +265,57 @@ void writeGroup(const Options& options, NcGroup group) {
 
       auto dims = bout::utils::visit(NcDimVisitor(group), child.value);
       
-      auto var = group.addVar(name, nctype, dims);
-      
-      // Put the data into the variable
-      bout::utils::visit(NcPutVarVisitor(var), child.value);
+      auto time_it = child.attributes.find("time_dimension");
+      if (time_it != child.attributes.end()) {
+        // Has a time dimension
+        
+        auto time_name = bout::utils::get<std::string>(time_it->second);
+        auto time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
+        if (time_dim.isNull()) {
+          time_dim = group.addDim(time_name);
+        }
+
+        // Get the index
+        auto time_index_it = time_index.find(time_dim.getId());
+        
+        if (time_index_it == time_index.end()) {
+          // Haven't seen this index before
+          time_index[time_dim.getId()] = time_dim.getSize();
+        }
+        
+        // prepend to vector of dimensions
+        dims.insert(dims.begin(), time_dim);
+        
+        std::vector<size_t> start_index; ///< Starting index where data will be inserted
+        std::vector<size_t> count_index; ///< Size of each dimension
+
+        // Time dimension
+        start_index.push_back(time_index[time_dim.getId()]);
+        count_index.push_back(1); // Writing one record
+
+        // Other dimensions (if any)
+        for (const auto& dim : dims) {
+          start_index.push_back(0);
+          count_index.push_back(dim.getSize());
+        }
+
+        // Create variable
+        auto var = group.addVar(name, nctype, dims);
+
+        // Put the data into the variable
+        bout::utils::visit(NcPutVarCountVisitor(var, start_index, count_index), child.value);
+      } else {
+        // No time index
+        
+        auto var = group.addVar(name, nctype, dims);
+        
+        // Put the data into the variable
+        bout::utils::visit(NcPutVarVisitor(var), child.value);
+      }
     }
 
     if (child.isSection()) {
-      writeGroup(child, group.addGroup(name));
+      writeGroup(child, group.addGroup(name), time_index);
     }
   }
 }
@@ -244,7 +330,7 @@ void OptionsNetCDF::write(const Options& options) {
     throw BoutException("Could not open NetCDF file '%s' for writing", filename.c_str());
   }
 
-  writeGroup(options, dataFile);
+  writeGroup(options, dataFile, time_index);
 }
 
 #endif // NCDF4
