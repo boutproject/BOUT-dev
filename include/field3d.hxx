@@ -32,12 +32,12 @@ class Field3D;
 #include "unused.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/field_visitor.hxx"
 #include "bout/region.hxx"
 
 class Mesh;
 class Field2D;
 class FieldPerp;
-class FieldVisitor;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!

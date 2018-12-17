@@ -49,6 +49,7 @@
 #include <msg_stack.hxx>
 #include <options.hxx>
 #include <output.hxx>
+#include <parallel_boundary_region.hxx>
 #include <utils.hxx>
 
 /// MPI type of BoutReal for communications

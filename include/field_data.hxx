@@ -30,24 +30,18 @@ class FieldData;
 #ifndef __FIELD_DATA_H__
 #define __FIELD_DATA_H__
 
+#include "boundary_region.hxx" // Just for BndryLoc enum
 #include "bout_types.hxx"
 #include "unused.hxx"
+#include "bout/sys/expressionparser.hxx"
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-// Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
-
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
-
-#include "bout/sys/expressionparser.hxx"
-
 class FieldVisitor;
 
 /// Interface used to access data in field classes
@@ -96,8 +90,6 @@ protected:
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };
-
-#include "bout/field_visitor.hxx"
 
 #endif
 

@@ -35,12 +35,12 @@ class Field2D;
 #include "field_data.hxx"
 #include "unused.hxx"
 #include "bout/array.hxx"
+#include "bout/field_visitor.hxx"
 #include "bout/region.hxx"
 
 class Mesh;
 class Field3D;
 class FieldPerp;
-class FieldVisitor;
 
 /*!
  * \brief 2D X-Y scalar fields
