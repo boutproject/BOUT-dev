@@ -6,14 +6,13 @@
 #ifndef __PARALLELTRANSFORM_H__
 #define __PARALLELTRANSFORM_H__
 
-#include <field3d.hxx>
 #include <boutexception.hxx>
 #include <dcomplex.hxx>
+#include <field3d.hxx>
 #include <unused.hxx>
+#include <utils.hxx>
 
 class Mesh;
-
-#include <vector>
 
 /*!
  * Calculates the values of a field along the magnetic
@@ -121,8 +120,6 @@ public:
     return true;
   }
 
-  /// A 3D array, implemented as nested vectors
-  typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
 private:
   Mesh &mesh; ///< The mesh this paralleltransform is part of
 
@@ -132,11 +129,14 @@ private:
 
   int nmodes;
 
-  arr3Dvec toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
-  arr3Dvec fromAlignedPhs; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
+  Tensor<dcomplex> toAlignedPhs;   ///< Cache of phase shifts for transforming from X-Z
+                                   ///orthogonal coordinates to field-aligned coordinates
+  Tensor<dcomplex> fromAlignedPhs; ///< Cache of phase shifts for transforming from
+                                   ///field-aligned coordinates to X-Z orthogonal
+                                   ///coordinates
 
-  arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
-  arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
+  Tensor<dcomplex> yupPhs;   ///< Cache of phase shifts for calculating yup fields
+  Tensor<dcomplex> ydownPhs; ///< Cache of phase shifts for calculating ydown fields
 
   /*!
    * Shift a 2D field in Z. 
@@ -162,7 +162,8 @@ private:
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
    */
-  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region=RGN_NOX);
+  const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                       const REGION region = RGN_NOX);
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
@@ -181,7 +182,7 @@ private:
    * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
-  void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
+  void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out);
 };
 
 

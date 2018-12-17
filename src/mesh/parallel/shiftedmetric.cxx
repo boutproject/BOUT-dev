@@ -44,36 +44,21 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   nmodes = mesh.LocalNz / 2 + 1;
   BoutReal zlength = mesh.getCoordinates()->zlength();
 
-  //Allocate storage for our 3d vector structures.
-  //This could be made more succinct but this approach is fairly
-  //verbose --> transparent
-  fromAlignedPhs.resize(mesh.LocalNx);
-  toAlignedPhs.resize(mesh.LocalNx);
-  
-  yupPhs.resize(mesh.LocalNx);
-  ydownPhs.resize(mesh.LocalNx);
+  // Allocate storage for our 3d phase information.
+  fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
+  toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
-  for(int jx=0;jx<mesh.LocalNx;jx++){
-    fromAlignedPhs[jx].resize(mesh.LocalNy);
-    toAlignedPhs[jx].resize(mesh.LocalNy);
+  yupPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
+  ydownPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
-    yupPhs[jx].resize(mesh.LocalNy);
-    ydownPhs[jx].resize(mesh.LocalNy);
-    for(int jy=0;jy<mesh.LocalNy;jy++){
-      fromAlignedPhs[jx][jy].resize(nmodes);
-      toAlignedPhs[jx][jy].resize(nmodes);
-      
-      yupPhs[jx][jy].resize(nmodes);
-      ydownPhs[jx][jy].resize(nmodes);
-    }
-  }
-	
   //To/From field aligned phases
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      fromAlignedPhs[i.x()][i.y()][jz] = dcomplex(cos(kwave*zShift[i]) , -sin(kwave*zShift[i]));
-      toAlignedPhs[i.x()][i.y()][jz] =   dcomplex(cos(kwave*zShift[i]) ,  sin(kwave*zShift[i]));
+      fromAlignedPhs(i.x(), i.y(), jz) =
+          dcomplex(cos(kwave * zShift[i]), -sin(kwave * zShift[i]));
+      toAlignedPhs(i.x(), i.y(), jz) =
+          dcomplex(cos(kwave * zShift[i]), sin(kwave * zShift[i]));
     }
   }
 
@@ -85,8 +70,9 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
 
-      yupPhs[i.x()][i.y()][jz] = dcomplex(cos(kwave*yupShift) , -sin(kwave*yupShift));
-      ydownPhs[i.x()][i.y()][jz] = dcomplex(cos(kwave*ydownShift) , -sin(kwave*ydownShift));
+      yupPhs(i.x(), i.y(), jz) = dcomplex(cos(kwave * yupShift), -sin(kwave * yupShift));
+      ydownPhs(i.x(), i.y(), jz) =
+          dcomplex(cos(kwave * ydownShift), -sin(kwave * ydownShift));
     }
   }
 
@@ -104,14 +90,15 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   yup.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
-    shiftZ(&f(i.x(), i.y()+1, 0), yupPhs[i.x()][i.y()], &yup(i.x(),i.y()+1,0));
+    shiftZ(&f(i.x(), i.y() + 1, 0), &yupPhs(i.x(), i.y(), 0), &yup(i.x(), i.y() + 1, 0));
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
-    shiftZ(&f(i.x(), i.y()-1, 0), ydownPhs[i.x()][i.y()], &ydown(i.x(),i.y()-1,0));
+    shiftZ(&f(i.x(), i.y() - 1, 0), &ydownPhs(i.x(), i.y(), 0),
+           &ydown(i.x(), i.y() - 1, 0));
   }
 }
   
@@ -131,7 +118,8 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
   return shiftZ(f, fromAlignedPhs, region);
 }
 
-const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const REGION region) {
+const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                                    const REGION region) {
   ASSERT1(&mesh == f.getMesh());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
@@ -140,14 +128,14 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs, const
   result.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
-    shiftZ(&f(i.x(), i.y(), 0), phs[i.x()][i.y()], &result(i.x(), i.y(), 0));
+    shiftZ(&f(i.x(), i.y(), 0), &phs(i.x(), i.y(), 0), &result(i.x(), i.y(), 0));
   }
   
   return result;
 
 }
 
-void ShiftedMetric::shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) {
+void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) {
   Array<dcomplex> cmplx(nmodes);
 
   // Take forward FFT
