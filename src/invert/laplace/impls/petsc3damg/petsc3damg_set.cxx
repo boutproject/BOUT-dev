@@ -155,6 +155,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   // MPI_Barrier(MPI_COMM_WORLD);
   
   int ind,i2,i,j,j2,j2p,j2m,k,k2,nn,nxzt;
+  BoutReal area;
   PetscScalar val,volm;
   nxzt = nzt*nxt;
   if(fcheck) tms = MPI_Wtime();
@@ -203,10 +204,10 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   BoutReal tval[tmax*nzt];
   if(yProcI == 0) {
     BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddy,dxdy,dzdy,dyd;
+    BoutReal dval,ddy,dxdy,dzdy,dyd,dydz;
     if(ybdcon != 0) { // Boundary value along with y-direction, i.e. x and z index
       k2 = mystart;
-      if(ybcon%3 == 1) { // Neumann
+      if(ybdcon%3 == 1) { // Neumann
         for(i = 0; i< nxt; i++) {
 	  i2 = i + mxstart - lxs;
 	  for(j = 0;j < nzt; j++) {
@@ -287,10 +288,10 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
 
   if(yProcI == yNP - 1) {
     BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddy,dxdy,dzdy,dyd;
+    BoutReal dval,ddy,dxdy,dzdy,dyd,dydz;
     if(ybdcon != 0) { // Boundary value along with y-direction, i.e. x and z index
       k2 = Ny_global - 1;
-      if(ybcon%5 == 1) { // Neumann
+      if(ybdcon%5 == 1) { // Neumann
         for(i = 0; i< nxt; i++) {
 	  i2 = i + mxstart - lxs;
 	  for(j = 0;j < nzt; j++) {
@@ -370,11 +371,11 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   }
   
   if(xProcI == 0) { 
-    BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddx,dxdz,dxdy,dxd;
+    BoutReal dhx,dhy,dhz,volm,gt11,gt12,gt13,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
+    BoutReal dval,ddx,dxdz,dxdy,dxd,dydz;
     if(xbdcon != 0) { // Boundary value along with x-direction, i.e. y and z index
       i2 = mxstart;
-      if(xbcon%3 == 1) { // Neumann
+      if(xbdcon%3 == 1) { // Neumann
         for(k = 0; k< nyt; k++) {
 	  k2 = k + mystart - lys;
 	  for(j = 0;j < nzt; j++) {
@@ -403,7 +404,9 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
           j2 = j + mzstart;
 	  j2m = (j2-1+Nz_global)%Nz_global;
 	  j2p = (j2+1)%Nz_global;
+  	  gt11 = coords->g11(i2,k2);
   	  gt12 = coords->g12(i2,k2);
+  	  gt13 = coords->g13(i2,k2);
 	  gt22 = coords->g22(i2,k2) - 1.0/coords->g22(i2,k2);
 	  gt23 = coords->g23(i2,k2);
 
@@ -419,7 +422,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
       
           dxdy = 2.0*D(i2,k2,j2)*gt12/dhx/dhy; 
           dxdz = 2.0*D(i2,k2,j2)*gt13/dhx/dhz; 
-	//  dydz = 2.0*D(i2,k2,j2)*gt23/dhy/dhz; 
+	  dydz = 2.0*D(i2,k2,j2)*gt23/dhy/dhz; 
        
           dxd = (D(i2,k2,j2)*coords->G1(i2,k2) + gt11*ddx_C + gt12*ddy_C + gt13*ddz_C)/dhx;
 	//  dyd = (D(i2,k2,j2)*(coords->G2(i2,k2) - ddJ)+gt12*ddx_C + gt22*ddy_C + gt23*ddz_C)/dhy;
@@ -454,11 +457,11 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   }
 
   if(xProcI == xNP - 1) { 
-    BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddx,dxdz,dxdy,dxd;
+    BoutReal dhx,dhy,dhz,volm,gt11,gt12,gt13,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
+    BoutReal dval,ddx,dxdz,dxdy,dxd,dydz;
     if(xbdcon != 0) { // Boundary value along with x-direction, i.e. y and z index
       i2 = Nx_global - 1;
-      if(xbcon%5 == 1) { // Neumann
+      if(xbdcon%5 == 1) { // Neumann
         for(k = 0; k< nyt; k++) {
 	  k2 = k + mystart - lys;
 	  for(j = 0;j < nzt; j++) {
@@ -487,7 +490,9 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
           j2 = j + mzstart;
 	  j2m = (j2-1+Nz_global)%Nz_global;
 	  j2p = (j2+1)%Nz_global;
+  	  gt11 = coords->g11(i2,k2);
   	  gt12 = coords->g12(i2,k2);
+  	  gt13 = coords->g13(i2,k2);
 	  gt22 = coords->g22(i2,k2) - 1.0/coords->g22(i2,k2);
 	  gt23 = coords->g23(i2,k2);
 
@@ -503,7 +508,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
       
           dxdy = 2.0*D(i2,k2,j2)*gt12/dhx/dhy; 
           dxdz = 2.0*D(i2,k2,j2)*gt13/dhx/dhz; 
-	//   dydz = 2.0*D(i2,k2,j2)*gt23/dhy/dhz; 
+	  dydz = 2.0*D(i2,k2,j2)*gt23/dhy/dhz; 
        
           dxd = (D(i2,k2,j2)*coords->G1(i2,k2) + gt11*ddx_C + gt12*ddy_C + gt13*ddz_C)/dhx;
 	//  dyd = (D(i2,k2,j2)*(coords->G2(i2,k2) - ddJ)+gt12*ddx_C + gt22*ddy_C + gt23*ddz_C)/dhy;
@@ -714,6 +719,3 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   return result;
 }
 
-
-
-

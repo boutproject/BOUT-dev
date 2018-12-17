@@ -35,6 +35,8 @@
  
 #include "petsc3damg.hxx"
 
+#include <boutcomm.hxx>
+
 //BoutReal amgsoltime=0.0,amgsettime=0.0;
 
 LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
@@ -79,9 +81,8 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 
   // For boundary condition for y-direction?? all Dirichlet
   ybdcon = 2;
-  commY = mesh->getYcomm();
-  MPI_Comm_size(commY,&yNP);
-  MPI_Comm_rank(commY,&yProcI); 
+  yNP = mesh->getNYPE();
+  yProcI = mesh->getYProcIndex();
   Ny_local = mesh->yend - mesh->ystart + 1; // excluding guard cells
   Ny_global = mesh->GlobalNy - 2*mesh->ystart; // excluding guard cells
   mystart = mesh->ystart;
@@ -91,11 +92,9 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
   }
   
   // For boundary condition for x-direction?? 0-Neumann 1-Dirichlet
-  commT = MPI_COMM_WORLD;
   xbdcon = 4;
-  commX = mesh->getXcomm(); 
-  MPI_Comm_size(commX,&xNP);
-  MPI_Comm_rank(commX,&xProcI); 
+  xNP = mesh->getNXPE();
+  xProcI = mesh->getXProcIndex();
   Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
   Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
   mxstart = mesh->xstart;
@@ -178,9 +177,9 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
   Nglobal = Nz_global*Nx_global*Ny_global;
 
   if (mgcount == 0) {
-    output <<"NP="<<tNP",("<<yNP<<","<<xNP<<") N="<<Nlocal<<"("<<Nglobal<<")"<<endl;
+    output <<"NP="<<tNP<<",("<<yNP<<","<<xNP<<") N="<<Nlocal<<"("<<Nglobal<<")"<<endl;
   }
-  int ig,jg,kg,ll,lg,nxzt,NxzG;
+  int ig,jg,kg,ll,lg,NxzG;
   nxzt = nzt*nxt;
   NxzG = Nz_global*Nx_global;
 
@@ -495,14 +494,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
         if(xProcI < xNP - 1) {
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nxt-1)*nzt + jg + lzs;
-            lg = (ygstart-1)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
+            lg = (ygstart-1)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll = 0;
 	    if(zProcI == 0) lg = (ygstart-1)*NxzG + Nx_global*Nz_global - 1;
-	    else lg =  (ygstart-1)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
+	    else lg =  (ygstart-1)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1;
 	    ll = nzt - 1;
@@ -514,14 +513,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 	else if(nxt == Nx_local+lxs+1) {
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nxt-1)*nzt + jg + lzs;
-            lg = (ygstart-1)*NxyG + zgstart + jg;
+            lg = (ygstart-1)*NxzG + zgstart + jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll = 0;
 	    if(zProcI == 0) lg = (ygstart-1)*NxzG + Nz_global - 1;
-	    else lg =  (ygstart-1)*NxyG + zgstart - 1;
+	    else lg =  (ygstart-1)*NxzG + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1;
 	    ll = nzt - 1;
@@ -619,14 +618,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
         if(xProcI < xNP - 1) {
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nxt-1)*nzt + jg + lzs;
-            lg = (Ny_global-1)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
+            lg = (Ny_global-1)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll = 0;
 	    if(zProcI == 0) lg = (Ny_global-1)*NxzG + Nx_global*Nz_global - 1;
-	    else lg =  (Ny_global-1)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
+	    else lg =  (Ny_global-1)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1;
 	    ll = nzt - 1;
@@ -638,14 +637,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 	else if(nxt == Nx_local+lxs+1) {
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nxt-1)*nzt + jg + lzs;
-            lg = (Ny_global-1)*NxyG + zgstart + jg;
+            lg = (Ny_global-1)*NxzG + zgstart + jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll = 0;
-	    if(zProcI == 0) lg = (Ny_globak-1)*NxzG + Nz_global - 1;
-	    else lg =  (Ny_global-1)*NxyG + zgstart - 1;
+	    if(zProcI == 0) lg = (Ny_global-1)*NxzG + Nz_global - 1;
+	    else lg =  (Ny_global-1)*NxzG + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1;
 	    ll = nzt - 1;
@@ -743,14 +742,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
         if(xProcI < xNP - 1) {
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nyt-1)*nxzt + (nxt-1)*nzt + jg + lzs;
-            lg = (ygstart+Ny_local)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
+            lg = (ygstart+Ny_local)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart+jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll =  (nyt-1)*nxzt + (nxt-1)*nzt;
 	    if(zProcI == 0) lg = (ygstart+Ny_local)*NxzG + Nx_global*Nz_global - 1;
-	    else lg =  (ygstart+Ny_local)*NxyG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
+	    else lg =  (ygstart+Ny_local)*NxzG + (Nx_local+xgstart)*Nz_global + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1
 	    ll =  nyt*nxzt - 1;
@@ -762,18 +761,18 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 	else if(nxt == Nx_local+lxs+1) { // xProcI = xNP-1 Periodic BD x-direction 
           for(jg = 0;jg < Nz_local;jg++) {
             ll = (nyt-1)*nxzt + (nxt-1)*nzt + jg + lzs;
-            lg = (ygstart+Ny_local)*NxyG + zgstart + jg;
+            lg = (ygstart+Ny_local)*NxzG + zgstart + jg;
             gindices[ll] = lg;
           }
           if(zNP > 1) {
 	    // jg = -1 = -lzs
 	    ll = (nyt-1)*nxzt + (nxt-1)*nzt;
 	    if(zProcI == 0) lg = (ygstart+Ny_local)*NxzG + Nz_global - 1;
-	    else lg =  (ygstart+Ny_local)*NxyG + zgstart - 1;
+	    else lg =  (ygstart+Ny_local)*NxzG + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1
 	    ll = nyt*nxzt - 1;
-	    if(zProcI == zNP - 1) lg = (ygstart+Nylocal)*NxzG;	  
+	    if(zProcI == zNP - 1) lg = (ygstart+Ny_local)*NxzG;	  
 	    else lg = (ygstart+Ny_local)*NxzG + zgstart + Nz_local;	  
 	    gindices[ll] = lg;
           }
@@ -857,7 +856,7 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 	    else lg = (Nx_global-1)*Nz_global + zgstart - 1;
   	    gindices[ll] = lg;
 	    // jg = Nz_local = nzt - 1;
-	    ll = {nyt-1)*nxzt + nzt - 1;
+	    ll = (nyt-1)*nxzt + nzt - 1;
 	    if(zProcI == zNP - 1) lg = (Nx_global-1)*Nz_global;	  
 	    else lg = (Nx_global-1)*Nz_global + zgstart + Nz_local;	  
 	    gindices[ll] = lg;
@@ -906,9 +905,9 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
     }
   }
   
-  ISLocalToGlobalMappingCreate(commX,1,Nlocal,gindices,PETSC_COPY_VALUES,&mgmapping);
+  ISLocalToGlobalMappingCreate(BoutComm::get(),1,Nlocal,gindices,PETSC_COPY_VALUES,&mgmapping);
 
-  VecCreateMPI(commX,Nx_local*Nz_local,PETSC_DETERMINE,&xs);
+  VecCreateMPI(BoutComm::get(),Nlocal,PETSC_DETERMINE,&xs);
   VecSetLocalToGlobalMapping(xs,mgmapping);
   VecSetFromOptions(xs);
   VecDuplicate(xs,&bs);
@@ -919,7 +918,7 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 Field3D LaplacePetsc3DAmg::multiplyAx(const Field3D &x) {
 
   PetscErrorCode ierr;
-  int i, k, j,  i2, ind;
+  int i, k, j,  i2, k2, ind;
   BoutReal val;
 
   for (k=0; k < Ny_local; k++) {
@@ -942,7 +941,7 @@ Field3D LaplacePetsc3DAmg::multiplyAx(const Field3D &x) {
   ierr = MatMult(MatA, xs, bs);
   if (ierr) throw BoutException("multiplyAx: Petsc error %i", ierr);
 
-  FieldPerp result;
+  Field3D result;
   result.allocate();
   for(k = 0;k<Ny_local;k++) {
     for(i = 0;i < Nx_local;i++) {
@@ -956,4 +955,3 @@ Field3D LaplacePetsc3DAmg::multiplyAx(const Field3D &x) {
 
   return result;
 }
-

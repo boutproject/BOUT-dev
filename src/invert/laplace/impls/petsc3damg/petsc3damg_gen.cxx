@@ -30,17 +30,19 @@
 
 #include "petsc3damg.hxx"
 
+#include <boutcomm.hxx>
+
 void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
 
   TRACE("LaplacePetsc3DAmg::generateMatrixA(int)");
   
   // Set (fine-level) matrix entries
   Coordinates *coords = mesh->coordinates();
-  int i,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal dx_C,dz_C,dy_C,ddx,ddz,ddz,dxdz,dxdy,dydz,dxd,dzd,dyd,area,volm;
-  PetscScalar lval[19],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22f,gt23,gt33;
+  int i,j,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
+  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddz,ddy,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,area,volm;
+  PetscScalar lval[19],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22,gt23,gt33;
   nn = Nx_local*Nz_local*Ny_local;
-  nzx = Nx_local*Nz_local;
+  int nxz = Nx_local*Nz_local;
   dz = 19;
   oz = 12; // For x- and y- directional decomposition only
   // oz = 5 //For 3-d decompositions
@@ -70,13 +72,14 @@ void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
 	    else if((xProcI == xNP-1) && (xbdcon != 0)) bcase += 10;
 	  }
 	  if(j == 0) {
-            if(lzs == 1} bcase += 1;
+            if(lzs == 1) bcase += 1;
 	    else if((zProcI == 0) && (zbdcon != 0)) bcase += 10;
 	  }
 	  else if(j == Nz_local - 1) {
 	    if(lzs == Nz_local + lzs + 1) bcase += 1;
 	    else if((zProcI == zNP-1) && (zbdcon != 0)) bcase += 10;
 	  }
+          int odz, tdz;
 	  switch(bcase) {
 	    case 0: tdz = 19;
 	      odz = 0;
@@ -116,12 +119,12 @@ void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
 	}
       }
     }
-    MatCreateAIJ(commT,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,dzz,oz,ozz,&MatA );
+    MatCreateAIJ(BoutComm::get(),nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,dzz,oz,ozz,&MatA );
     delete [] dzz;
     delete [] ozz;
   }
   else { 
-    MatCreateAIJ(commT,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,NULL,oz,NULL,&MatA );
+    MatCreateAIJ(BoutComm::get(),nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,NULL,oz,NULL,&MatA );
   }
   MatSetFromOptions(MatA);
   
@@ -267,7 +270,7 @@ BOUT_OMP(for)
 	}
         if((xProcI == xNP-1) && (i == Nx_local-1)) {
 	  if(xbdcon > 0) {
-	    if(cbdcon%5 == 1) {
+	    if(xbdcon%5 == 1) {
 	      lval[2] += lval[4];
 	      lval[8] += lval[11];
 	      lval[9] += lval[12];
@@ -410,11 +413,11 @@ void LaplacePetsc3DAmg::generateMatrixP(int kflag) {
 
   // Set (fine-level) matrix entries
   Coordinates *coords = mesh->coordinates();
-  int i,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal dx_C,dz_C,dy_C,ddx,ddz,ddz,dxdz,dxdy,dydz,dxd,dzd,dyd,area,volm;
-  PetscScalar lval[7],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22f,gt23,gt33;
+  int i,j,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
+  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddy,ddz,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,area,volm;
+  PetscScalar lval[7],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22,gt23,gt33;
   nn = Nx_local*Nz_local*Ny_local;
-  nzx = Nx_local*Nz_local;
+  int nxz = Nx_local*Nz_local;
   dz = 7;
   oz = 3; // For x- and y- directional decomposition only
   if(kflag >1) {
@@ -443,13 +446,14 @@ void LaplacePetsc3DAmg::generateMatrixP(int kflag) {
 	    else if((xProcI == xNP-1) && (xbdcon != 0)) bcase += 10;
 	  }
 	  if(j == 0) {
-            if(lzs == 1} bcase += 1;
+            if(lzs == 1) bcase += 1;
 	    else if((zProcI == 0) && (zbdcon != 0)) bcase += 10;
 	  }
 	  else if(j == Nz_local - 1) {
 	    if(lzs == Nz_local + lzs + 1) bcase += 1;
 	    else if((zProcI == zNP-1) && (zbdcon != 0)) bcase += 10;
 	  }
+          int odz, tdz;
 	  switch(bcase) {
 	    case 0: tdz = 7;
 	      odz = 0;
@@ -489,12 +493,12 @@ void LaplacePetsc3DAmg::generateMatrixP(int kflag) {
 	}
       }
     }
-    MatCreateAIJ(commT,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,dzz,oz,ozz,&MatP );
+    MatCreateAIJ(BoutComm::get(),nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,dzz,oz,ozz,&MatP );
     delete [] dzz;
     delete [] ozz;
   }
   else { 
-    MatCreateAIJ(commT,nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,NULL,oz,NULL,&MatP );
+    MatCreateAIJ(BoutComm::get(),nn,nn,PETSC_DETERMINE,PETSC_DETERMINE,dz,NULL,oz,NULL,&MatP );
   }
   MatSetFromOptions(MatP);
   
@@ -540,7 +544,7 @@ BOUT_OMP(for)
        
         dxd = (D(i2,k2,j2)*coords->G1(i2,k2) + gt11*ddx_C + gt12*ddy_C + gt13*ddz_C)/dhx;
         dyd = (D(i2,k2,j2)*(coords->G2(i2,k2) - ddJ)+gt12*ddx_C + gt22*ddy_C + gt23*ddz_C)/dhy;
-        dzd = (D(i2,k2,j2)*coords->G3(i2,k2) + gt33*ddz_C +gt13*ddx_C + gt23ddy_C)/dhz;
+        dzd = (D(i2,k2,j2)*coords->G3(i2,k2) + gt33*ddz_C +gt13*ddx_C + gt23*ddy_C)/dhz;
         volm = dhx*dhy*dhz;
        
       // Put Matrix element with global numbering
@@ -595,7 +599,7 @@ BOUT_OMP(for)
 	}
         if((xProcI == xNP-1) && (i == Nx_local-1)) {
 	  if(xbdcon > 0) {
-	    if(cbdcon%5 == 1) {
+	    if(xbdcon%5 == 1) {
 	      lval[3] += lval[5];
 	    }
 	    else {
@@ -653,4 +657,4 @@ BOUT_OMP(for)
   MatAssemblyBegin( MatP, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatP, MAT_FINAL_ASSEMBLY );
 }
-
+
