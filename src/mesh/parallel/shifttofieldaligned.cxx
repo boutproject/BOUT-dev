@@ -95,33 +95,21 @@ void ShiftToFieldAligned::Implementation::cachePhases() {
   // As we're attached to a mesh we can expect the z direction to
   // not change once we've been created so precalculate the complex
   // phases used in transformations
-  int nmodes = mesh.LocalNz / 2 + 1;
+  nmodes = mesh.LocalNz / 2 + 1;
   BoutReal zlength = mesh.getCoordinates()->zlength();
 
-  // Allocate storage for complex intermediate
-  cmplx = Array<dcomplex>(nmodes);
-  std::fill(cmplx.begin(), cmplx.end(), 0.0);
-
   // Allocate storage for our 3d vector structures.
-  fromAlignedPhs = Matrix<Array<dcomplex>>(mesh.LocalNx, mesh.LocalNy);
-  for (auto& element : fromAlignedPhs) {
-    element = Array<dcomplex>(mesh.LocalNz);
-  }
-  toAlignedPhs = Matrix<Array<dcomplex>>(mesh.LocalNx, mesh.LocalNy);
-  for (auto& element : toAlignedPhs) {
-    element = Array<dcomplex>(mesh.LocalNz);
-  }
+  fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
   // To/From field aligned phases
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    for (int jy = 0; jy < mesh.LocalNy; jy++) {
-      for (int jz = 0; jz < nmodes; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
-        fromAlignedPhs(jx, jy)[jz] =
-            dcomplex(cos(kwave * zShift(jx, jy)), -sin(kwave * zShift(jx, jy)));
-        toAlignedPhs(jx, jy)[jz] =
-            dcomplex(cos(kwave * zShift(jx, jy)), sin(kwave * zShift(jx, jy)));
-      }
+  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+    for (int jz = 0; jz < nmodes; jz++) {
+      BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
+      fromAlignedPhs(i.x(), i.y(), jz) =
+        dcomplex(cos(kwave * zShift[i]), -sin(kwave * zShift[i]));
+      toAlignedPhs(i.x(), i.y(), jz) =
+        dcomplex(cos(kwave * zShift[i]), sin(kwave * zShift[i]));
     }
   }
 }
@@ -145,7 +133,7 @@ const Field3D ShiftToFieldAligned::Implementation::fromFieldAligned(const Field3
 }
 
 const Field3D ShiftToFieldAligned::Implementation::shiftZ(
-    const Field3D& f, const Matrix<Array<dcomplex>>& phs, const REGION region) {
+    const Field3D& f, const Tensor<dcomplex>& phs, const REGION region) {
   ASSERT1(&mesh == f.getMesh());
   ASSERT1(f.getLocation() == location);
 
@@ -156,28 +144,29 @@ const Field3D ShiftToFieldAligned::Implementation::shiftZ(
   result.allocate();
   result.setLocation(location);
 
-  for (const auto& i : mesh.getRegion2D(REGION_STRING(region))) {
-    shiftZ(f(i.x(), i.y()), phs(i.x(), i.y()), result(i.x(), i.y()));
+  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
 
   return result;
 }
 
 void ShiftToFieldAligned::Implementation::shiftZ(const BoutReal* in,
-                                                 const Array<dcomplex>& phs,
+                                                 const dcomplex* phs,
                                                  BoutReal* out) {
+  Array<dcomplex> cmplx(nmodes);
+
   // Take forward FFT
-  rfft(in, mesh.LocalNz, cmplx.begin());
+  rfft(in, mesh.LocalNz, &cmplx[0]);
 
   // Following is an algorithm approach to write a = a*b where a and b are
   // vectors of dcomplex.
   //  std::transform(cmplxOneOff.begin(),cmplxOneOff.end(), ptr.begin(),
   //                 cmplxOneOff.begin(), std::multiplies<dcomplex>());
 
-  const int nmodes = cmplx.size();
   for (int jz = 1; jz < nmodes; jz++) {
     cmplx[jz] *= phs[jz];
   }
 
-  irfft(cmplx.begin(), mesh.LocalNz, out); // Reverse FFT
+  irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }

@@ -92,18 +92,14 @@ private:
     /// Calculate and store the phases for to/from field aligned using zShift
     void cachePhases();
 
-    Array<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
-    Array<dcomplex>
-        cmplxLoc; ///< A temporary array, used for input/output to fft routines
+    int nmodes;
 
-    Matrix<Array<dcomplex>> toAlignedPhs; ///< Cache of phase shifts for
-                                          /// transforming from X-Z orthogonal
-    /// coordinates to field-aligned
-    /// coordinates.
-    Matrix<Array<dcomplex>> fromAlignedPhs; ///< Cache of phase shifts for
-                                            /// transforming from field-aligned
-                                            /// coordinates to X-Z orthogonal
-                                            /// coordinates.
+    Tensor<dcomplex> toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z
+                                   ///  orthogonal coordinates to field-aligned
+                                   ///  coordinates.
+    Tensor<dcomplex> fromAlignedPhs; ///< Cache of phase shifts for transforming from
+                                     ///  field-aligned coordinates to X-Z orthogonal
+                                     ///  coordinates.
 
     /*!
      * Shift a 3D field \p f by the given phase \p phs in Z
@@ -114,7 +110,7 @@ private:
      * @param[in] f  The field to shift
      * @param[in] phs  The phase to shift by
      */
-    const Field3D shiftZ(const Field3D& f, const Matrix<Array<dcomplex>>& phs,
+    const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                          const REGION region = RGN_NOX);
 
     /*!
@@ -125,7 +121,7 @@ private:
      * i.e. the number of modes
      * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
      */
-    void shiftZ(const BoutReal* in, const Array<dcomplex>& phs, BoutReal* out);
+    void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out);
   };
 
   std::map<CELL_LOC, Implementation> implementations;
