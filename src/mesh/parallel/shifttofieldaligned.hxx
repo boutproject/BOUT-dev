@@ -61,6 +61,8 @@ public:
     return implementations.at(f.getLocation()).fromFieldAligned(f, region);
   }
 
+  COORDINATE_SYSTEM getCoordinateSystem() const { return COORDINATE_SYSTEM::Orthogonal; }
+
   bool canToFromFieldAligned() override { return true; }
 
 private:

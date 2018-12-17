@@ -120,7 +120,14 @@ void ShiftToFieldAligned::Implementation::cachePhases() {
  */
 const Field3D ShiftToFieldAligned::Implementation::toFieldAligned(const Field3D& f,
                                                                   const REGION region) {
-  return shiftZ(f, toAlignedPhs, region);
+  if (f.getCoordinateSystem() == COORDINATE_SYSTEM::FieldAligned) {
+    return f;
+  } else {
+    ASSERT1(f.getCoordinateSystem() == COORDINATE_SYSTEM::Orthogonal);
+    Field3D result = shiftZ(f, toAlignedPhs, region);
+    result.setCoordinateSystem(COORDINATE_SYSTEM::FieldAligned);
+    return result;
+  }
 }
 
 /*!
@@ -129,7 +136,10 @@ const Field3D ShiftToFieldAligned::Implementation::toFieldAligned(const Field3D&
  */
 const Field3D ShiftToFieldAligned::Implementation::fromFieldAligned(const Field3D& f,
                                                                     const REGION region) {
-  return shiftZ(f, fromAlignedPhs, region);
+  ASSERT1(f.getCoordinateSystem() == COORDINATE_SYSTEM::FieldAligned);
+  Field3D result = shiftZ(f, fromAlignedPhs, region);
+  result.setCoordinateSystem(COORDINATE_SYSTEM::Orthogonal);
+  return result;
 }
 
 const Field3D ShiftToFieldAligned::Implementation::shiftZ(
