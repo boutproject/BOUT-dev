@@ -90,15 +90,14 @@ void ShiftedMetric::calcYUpDown(Field3D &f) {
   yup.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
-    shiftZ(&f(i.x(), i.y() + 1, 0), &yupPhs(i.x(), i.y(), 0), &yup(i.x(), i.y() + 1, 0));
+    shiftZ(&f(i.yp(), 0), &yupPhs(i.x(), i.y(), 0), &yup(i.yp(), 0));
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
-    shiftZ(&f(i.x(), i.y() - 1, 0), &ydownPhs(i.x(), i.y(), 0),
-           &ydown(i.x(), i.y() - 1, 0));
+    shiftZ(&f(i.ym(), 0), &ydownPhs(i.x(), i.y(), 0), &ydown(i.ym(), 0));
   }
 }
   
@@ -128,7 +127,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
   result.allocate();
 
   BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
-    shiftZ(&f(i.x(), i.y(), 0), &phs(i.x(), i.y(), 0), &result(i.x(), i.y(), 0));
+    shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
   
   return result;
@@ -170,7 +169,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
   // the whole grid, because zShift is not initialized in the corner guard
   // cells.)
   BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
-    shiftZ(&f(i.x(), i.y(), 0), mesh.LocalNz, zangle[i], &result(i.x(), i.y(), 0));
+    shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
   }
   
   return result;
