@@ -45,7 +45,6 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
   TRACE("Mesh::getStagger -- three arguments");
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
-
   if ((!StaggerGrids) || outloc == inloc)
     return STAGGER::None;
   if (outloc == allowedStaggerLoc) {

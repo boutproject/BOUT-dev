@@ -54,11 +54,19 @@ Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
+  if (fieldmesh) {
+    coordinate_system = fieldmesh->getCoordinateSystem();
+  } else {
+    coordinate_system = COORDINATE_SYSTEM::None;
+  }
+
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
+Field3D::Field3D(const Field3D& f)
+  : Field(f.fieldmesh), coordinate_system(f.coordinate_system), data(f.data),
+    location(f.location) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -72,7 +80,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
     nz = fieldmesh->LocalNz;
   }
 
-  location = f.location;
   fieldCoordinates = f.fieldCoordinates;
 }
 
@@ -86,6 +93,7 @@ Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
 
   location = f.getLocation();
   fieldCoordinates = nullptr;
+  coordinate_system = fieldmesh->getCoordinateSystem();
 
   *this = f;
 }
@@ -97,6 +105,8 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
+
+  coordinate_system = fieldmesh->getCoordinateSystem();
 
   *this = val;
 }
@@ -275,6 +285,8 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
+  coordinate_system = rhs.coordinate_system;
+
   data = rhs.data;
 
   setLocation(rhs.location);
@@ -614,6 +626,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
 
   ASSERT1(lhs.getLocation() == rhs.getLocation());
+  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());
@@ -622,6 +635,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   result.setLocation( lhs.getLocation() );
+  result.setCoordinateSystem( lhs.getCoordinateSystem() );
   
   checkData(result);
   return result;
@@ -641,6 +655,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   result.setLocation( lhs.getLocation() );
+  result.setCoordinateSystem( lhs.getCoordinateSystem() );
   
   checkData(result);
   return result;
@@ -652,6 +667,11 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(lhs);
   checkData(rhs);
   ASSERT1(lhs.getMesh() == rhs.getMesh());
+
+  // Assume FieldPerp is always on the default coordinate system of its Mesh,
+  // since at the moment FieldPerp cannot switch between orthogonal and field
+  // aligned coordinates
+  ASSERT2(lhs.getCoordinateSystem() == rhs.getMesh()->getCoordinateSystem());
 
   FieldPerp result{rhs.getMesh()};
   result.allocate();
@@ -679,6 +699,7 @@ Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
   result.setLocation( lhs.getLocation() );
+  result.setCoordinateSystem( lhs.getCoordinateSystem() );
 
   checkData(result);
   return result;
@@ -697,6 +718,7 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
   result.setLocation( rhs.getLocation() );
+  result.setCoordinateSystem( rhs.getCoordinateSystem() );
 
   checkData(result);
   return result;
@@ -802,6 +824,7 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
     result.allocate();                                                                   \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
     result.setLocation(f.getLocation());                                                 \
+    result.setCoordinateSystem(f.getCoordinateSystem());                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -865,6 +888,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
 #endif
 
   result.setLocation(var.getLocation());
+  result.setCoordinateSystem(var.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -912,6 +936,7 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
     }
   }
   result.setLocation(var.getLocation());
+  result.setCoordinateSystem(var.getCoordinateSystem());
 
   checkData(result);
   return result;
@@ -962,6 +987,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
   }
 
   result.setLocation(var.getLocation());
+  result.setCoordinateSystem(var.getCoordinateSystem());
 
   checkData(result);
   return result;

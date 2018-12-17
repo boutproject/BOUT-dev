@@ -111,6 +111,24 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
+  /*!
+   * Return the coordinate system of this field
+   */
+  COORDINATE_SYSTEM getCoordinateSystem() const {
+#if CHECK > 0
+    throw BoutException("getCoordinateSystem() should not be called for Field2D");
+#endif
+  }
+
+  /*!
+   * Reset the coordinate system of this field
+   */
+  void setCoordinateSystem(COORDINATE_SYSTEM UNUSED(new_coords)) {
+#if CHECK > 0
+    throw BoutException("setCoordinateSystem() should not be called for Field2D");
+#endif
+  }
+
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
     return true;

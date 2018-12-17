@@ -321,10 +321,7 @@ void Mesh::setParallelTransform() {
 }
 
 ParallelTransform& Mesh::getParallelTransform() {
-  if(!transform) {
-    // No ParallelTransform object yet. Set from options
-    setParallelTransform();
-  }
+  ASSERT1(transform);
   
   // Return a reference to the ParallelTransform object
   return *transform;

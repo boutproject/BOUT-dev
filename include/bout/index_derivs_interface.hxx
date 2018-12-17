@@ -96,6 +96,9 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
   T result(localmesh);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
+  if (std::is_base_of<Field3D, T>::value) {
+    result.setCoordinateSystem(f.getCoordinateSystem());
+  }
 
   // Apply method
   derivativeMethod(vel, f, result, region);
@@ -162,6 +165,9 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   T result(localmesh);
   result.allocate(); // Make sure data allocated
   result.setLocation(outloc);
+  if (std::is_base_of<Field3D, T>::value) {
+    result.setCoordinateSystem(f.getCoordinateSystem());
+  }
 
   // Apply method
   derivativeMethod(f, result, region);
