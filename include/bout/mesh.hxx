@@ -45,36 +45,27 @@ class Mesh;
 
 #include "mpi.h"
 
-#include <bout/deprecated.hxx>
-#include <bout/deriv_store.hxx>
-#include <bout/index_derivs_interface.hxx>
-
-#include "field_data.hxx"
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "datafile.hxx"
-#include "options.hxx"
-
 #include "fieldgroup.hxx"
-
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
-
-#include "sys/range.hxx" // RangeIterator
-
-#include <bout/griddata.hxx>
-
-#include "coordinates.hxx"    // Coordinates class
-
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
+#include <bout/deprecated.hxx>
+#include <bout/index_derivs_interface.hxx>
+#include <bout/paralleltransform.hxx>
 
-#include <bout/region.hxx>
+class Field3D;
+class Field2D;
+class RangeIterator;
+class Coordinates;
+class GridDataSource;
+class FieldData;
+class Datafile;
+class Options;
+class BoundaryRegion;
+class BoundaryRegionPar;
+template <typename T>
+class Region;
 
-#include <list>
-#include <memory>
+//#include <memory>
 #include <map>
 
 /// Type used to return pointers to handles

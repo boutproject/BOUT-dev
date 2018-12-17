@@ -36,9 +36,13 @@
 #include "boutmesh.hxx"
 
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/griddata.hxx>
+#include <bout/sys/range.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
+#include <datafile.hxx>
 #include <dcomplex.hxx>
 #include <derivs.hxx>
 #include <fft.hxx>

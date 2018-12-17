@@ -32,13 +32,13 @@
 
 #include <cmath>
 
-#include <globals.hxx>
-#include <smoothing.hxx>
-#include <bout_types.hxx>
-#include <msg_stack.hxx>
-
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/rvec.hxx>
+#include <bout_types.hxx>
+#include <globals.hxx>
+#include <msg_stack.hxx>
+#include <smoothing.hxx>
 #include <utils.hxx>
 
 // Smooth using simple 1-2-1 filter

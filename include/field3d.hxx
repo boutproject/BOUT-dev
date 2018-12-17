@@ -32,12 +32,9 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
-
 #include "bout/array.hxx"
 #include "bout/region.hxx"
-
 #include "bout/assert.hxx"
-
 #include "bout/field_visitor.hxx"
 
 /// Class for 3D X-Y-Z scalar fields

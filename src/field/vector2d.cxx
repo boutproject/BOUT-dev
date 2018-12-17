@@ -28,13 +28,13 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-
-#include <vector2d.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
-#include <bout/scorepwrapper.hxx>
+#include <globals.hxx>
 #include <interpolation.hxx>
+#include <vector2d.hxx>
 
 Vector2D::Vector2D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}

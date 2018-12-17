@@ -24,17 +24,16 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
 #include "serial_band.hxx"
-
-#include <fft.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/openmpwrap.hxx>
-
+#include <boutexception.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
+#include <lapack_routines.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 
 //#define SECONDORDER // Define to use 2nd order differencing
 

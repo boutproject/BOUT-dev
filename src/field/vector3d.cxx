@@ -28,14 +28,14 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-
-#include <vector3d.hxx>
+#include <bout/assert.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
-#include <bout/assert.hxx>
-#include <bout/scorepwrapper.hxx>
+#include <globals.hxx>
 #include <interpolation.hxx>
+#include <vector3d.hxx>
 
 Vector3D::Vector3D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}

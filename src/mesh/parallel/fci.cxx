@@ -41,6 +41,7 @@
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/mesh.hxx>
 #include <bout_types.hxx> // See this for codes
 #include <msg_stack.hxx>

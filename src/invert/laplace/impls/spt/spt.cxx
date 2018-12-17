@@ -31,15 +31,15 @@
  *
  */
 
+#include "spt.hxx"
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 #include <fft.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
-
-#include "spt.hxx"
 
 LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {

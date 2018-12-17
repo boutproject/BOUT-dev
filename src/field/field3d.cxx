@@ -30,18 +30,19 @@
 
 #include <cmath>
 
-#include <field3d.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <dcomplex.hxx>
-#include <interpolation.hxx>
-#include <boundary_op.hxx>
-#include <boundary_factory.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <bout/constants.hxx>
 #include <bout/assert.hxx>
+#include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <boundary_factory.hxx>
+#include <boundary_op.hxx>
+#include <boutexception.hxx>
+#include <dcomplex.hxx>
+#include <fft.hxx>
+#include <field3d.hxx>
+#include <interpolation.hxx>
+#include <msg_stack.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {

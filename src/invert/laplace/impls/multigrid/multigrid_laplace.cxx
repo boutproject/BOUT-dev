@@ -28,12 +28,9 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
-#include <msg_stack.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/openmpwrap.hxx>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <msg_stack.hxx>
 
 BoutReal soltime=0.0,settime=0.0;
 
