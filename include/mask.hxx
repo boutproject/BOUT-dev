@@ -22,11 +22,10 @@
 #ifndef __MASK_H__
 #define __MASK_H__
 
-#include <vector>
-
-#include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "globals.hxx"
+
+class Mesh;
 
 /**
  * 3D array of bools to mask Field3Ds

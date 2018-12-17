@@ -23,7 +23,14 @@
 #ifndef __LAPACK_ROUTINES_H__
 #define __LAPACK_ROUTINES_H__
 
-#include <utils.hxx>
+#include <bout_types.hxx>
+#include <dcomplex.hxx>
+
+template <typename T>
+class Matrix;
+
+template <typename T>
+class Array;
 
 /* Tridiagonal inversion
  *
