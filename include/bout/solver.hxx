@@ -292,7 +292,7 @@ class Solver {
   ///
   /// @param[inout] outputfile   The file to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  void outputVars(Datafile &outputfile, bool save_repeat=true);
+  virtual void outputVars(Datafile &outputfile, bool save_repeat=true);
 
   /*!
    * Create a Solver object. This uses the "type" option
