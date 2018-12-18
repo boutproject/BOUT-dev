@@ -38,8 +38,14 @@
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh* UNUSED(m), Options* UNUSED(options), const CELL_LOC loc = CELL_CENTRE)
-      : location(loc) {}
+  LaplaceXZ(Mesh* m = nullptr, Options* UNUSED(options) = nullptr,
+      const CELL_LOC loc = CELL_CENTRE)
+  : localmesh(m), location(loc) {
+    if (localmesh == nullptr) {
+      // use global mesh
+      localmesh = mesh;
+    }
+  }
   virtual ~LaplaceXZ() {}
 
   virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;
@@ -47,13 +53,14 @@ public:
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
-  static LaplaceXZ *create(Mesh *m = mesh, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  static LaplaceXZ *create(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
 
 protected:
   static const int INVERT_DC_GRAD  = 1;
   static const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)
   static const int INVERT_SET      = 16; // Set boundary to x0 value
   static const int INVERT_RHS      = 32; // Set boundary to b value
+  Mesh* localmesh;   ///< The mesh this operates on, provides metrics and communication
   CELL_LOC location;
 private:
 

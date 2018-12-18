@@ -16,7 +16,7 @@ class LaplaceXZpetsc;
 #include <boutexception.hxx>
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  LaplaceXZpetsc(Mesh *m = mesh, Options *options = nullptr,
+  LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr,
       const CELL_LOC loc = CELL_CENTRE) : LaplaceXZ(m, options, loc) {
     throw BoutException("No PETSc LaplaceXZ solver available");
   }
@@ -40,7 +40,7 @@ public:
   /*!
    * Constructor
    */
-  LaplaceXZpetsc(Mesh *m = mesh, Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
 
   /*!
    * Destructor
@@ -75,8 +75,6 @@ private:
   std::vector<YSlice> slice;
 
   Vec xs, bs;        ///< Solution and RHS vectors
-
-  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
 
   int reuse_limit; ///< How many times can the preconditioner be reused?
   int reuse_count; ///< How many times has it been reused?

@@ -8,7 +8,7 @@
 
 #include <output.hxx>
 
-LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), localmesh(m) {
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
 
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;

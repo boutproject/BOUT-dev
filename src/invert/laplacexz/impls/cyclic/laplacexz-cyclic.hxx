@@ -7,7 +7,7 @@
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXZcyclic(Mesh *m = mesh, Options *options = nullptr,
+  LaplaceXZcyclic(Mesh *m = nullptr, Options *options = nullptr,
       const CELL_LOC loc = CELL_CENTRE);
   ~LaplaceXZcyclic();
   
@@ -17,8 +17,6 @@ public:
   using LaplaceXZ::solve;
   Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
-  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
-
   int xstart, xend;
   int nmode, nloc, nsys;
   Matrix<dcomplex> acoef, bcoef, ccoef, xcmplx, rhscmplx;
