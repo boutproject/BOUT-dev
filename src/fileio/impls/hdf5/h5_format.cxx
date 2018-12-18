@@ -34,7 +34,7 @@
 #include <msg_stack.hxx>
 #include <boutcomm.hxx>
 
-H5Format::H5Format(bool parallel_in) {
+H5Format::H5Format(bool parallel_in, Mesh* mesh_in) : DataFormat(mesh_in) {
   parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
@@ -69,7 +69,8 @@ H5Format::H5Format(bool parallel_in) {
     throw BoutException("Failed to set error stack to not print errors");
 }
 
-H5Format::H5Format(const char *name, bool parallel_in) {
+H5Format::H5Format(const char *name, bool parallel_in, Mesh* mesh_in)
+  : DataFormat(mesh_in) {
   parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;

@@ -37,7 +37,7 @@ class Datafile;
 */
 class Datafile {
  public:
-  Datafile(Options *opt = nullptr);
+  Datafile(Options *opt = nullptr, Mesh* mesh_in = nullptr);
   Datafile(Datafile &&other) noexcept;
   ~Datafile(); // need to delete filename
   
@@ -78,6 +78,7 @@ class Datafile {
   void setAttribute(const std::string &varname, const std::string &attrname, BoutReal value);
 
  private:
+  Mesh* mesh;
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
   bool guards;   // Write guard cells?

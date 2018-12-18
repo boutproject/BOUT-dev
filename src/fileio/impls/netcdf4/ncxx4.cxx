@@ -38,7 +38,7 @@ using namespace netCDF;
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-Ncxx4::Ncxx4() {
+Ncxx4::Ncxx4(Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -51,7 +51,7 @@ Ncxx4::Ncxx4() {
   fname = nullptr;
 }
 
-Ncxx4::Ncxx4(const char *name) {
+Ncxx4::Ncxx4(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];

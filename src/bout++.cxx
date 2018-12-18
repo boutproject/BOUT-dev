@@ -493,7 +493,7 @@ int BoutInitialise(int &argc, char **&argv) {
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
 
-    dump = Datafile(options->getSection("output"));
+    dump = Datafile(options->getSection("output"), mesh);
     
     /// Open a file for the output
     if(append) {

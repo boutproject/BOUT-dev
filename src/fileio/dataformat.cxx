@@ -3,6 +3,9 @@
 #include <dataformat.hxx>
 #include <utils.hxx>
 
+DataFormat::DataFormat(Mesh* mesh_in)
+  : mesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+
 bool DataFormat::openr(const std::string &name, int mype) {
   // Split into base name and extension
   size_t pos = name.find_last_of('.');
