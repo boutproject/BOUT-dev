@@ -749,6 +749,11 @@ class Mesh {
   const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
   const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
+  /// Indicate if named region has already been defined
+  bool hasRegion3D(const std::string& region_name) const;
+  bool hasRegion2D(const std::string& region_name) const;
+  bool hasRegionPerp(const std::string& region_name) const;
+
   /// Add a new region to the region_map for the data iterator
   ///
   /// Outputs an error message if region_name already exists

@@ -205,6 +205,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b_in.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   checkData(b_in);
   checkData(x0);
@@ -426,6 +428,7 @@ BOUT_OMP(for)
   }
 
   FieldPerp result(localmesh);
+  result.setLocation(location);
   result.allocate();
   result.setIndex(yindex);
 

@@ -750,6 +750,13 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
 
+  // Laplacian::defaultInstance is at CELL_CENTRE
+  ASSERT1(b.getLocation() == CELL_CENTRE);
+  ASSERT1(x.getLocation() == CELL_CENTRE);
+  ASSERT1(a->getLocation() == CELL_CENTRE);
+  ASSERT1(c->getLocation() == CELL_CENTRE);
+  ASSERT1(d->getLocation() == CELL_CENTRE);
+
   Laplacian *lap = Laplacian::defaultInstance();
 
   if (a != nullptr) {

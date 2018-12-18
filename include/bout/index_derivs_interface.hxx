@@ -214,7 +214,7 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
   } else {
     const T f_aligned = f.getMesh()->toFieldAligned(f);
     T result =
-        standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f, outloc, method, region);
+        standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc, method, region);
     return f.getMesh()->fromFieldAligned(result);
   }
 }
@@ -229,7 +229,7 @@ T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
         f, outloc, method, region);
   } else {
     const T f_aligned = f.getMesh()->toFieldAligned(f);
-    T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(f, outloc,
+    T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(f_aligned, outloc,
                                                                           method, region);
     return f.getMesh()->fromFieldAligned(result);
   }
@@ -245,7 +245,7 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
         f, outloc, method, region);
   } else {
     const T f_aligned = f.getMesh()->toFieldAligned(f);
-    T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(f, outloc,
+    T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(f_aligned, outloc,
                                                                           method, region);
     return f.getMesh()->fromFieldAligned(result);
   }

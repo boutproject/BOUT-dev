@@ -35,7 +35,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
         
         # Run the case
-        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
 
         with open("run.log."+str(nproc)+"."+str(r), "w") as f:
           f.write(out)

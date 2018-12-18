@@ -1082,7 +1082,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
+    vx.setLocation(outloc);
     vz.allocate();
+    vz.setLocation(outloc);
     
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
