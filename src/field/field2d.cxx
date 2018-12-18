@@ -93,7 +93,7 @@ void Field2D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }

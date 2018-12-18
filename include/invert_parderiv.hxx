@@ -63,8 +63,8 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = mesh)
-    : localmesh(mesh_in) {}
+  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
+    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() {}
   
   /*!
@@ -72,7 +72,7 @@ public:
    * 
    * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static InvertPar* Create(Mesh *mesh_in = mesh);
+  static InvertPar* Create(Mesh *mesh_in = nullptr);
   
   /*!
    * Solve the system of equations

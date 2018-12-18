@@ -50,7 +50,7 @@ void FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
     }
