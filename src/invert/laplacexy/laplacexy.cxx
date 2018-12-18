@@ -298,6 +298,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : localmesh(m), 
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
+  ASSERT1(A.getMesh() == localmesh);
+  ASSERT1(B.getMesh() == localmesh);
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
@@ -526,6 +528,8 @@ LaplaceXY::~LaplaceXY() {
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   Timer timer("invert");
   
+  ASSERT1(rhs.getMesh() == localmesh);
+  ASSERT1(x0.getMesh() == localmesh);
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 

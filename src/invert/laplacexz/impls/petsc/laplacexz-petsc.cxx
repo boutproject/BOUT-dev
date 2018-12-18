@@ -276,6 +276,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
   TRACE("LaplaceXZpetsc::setCoefs");
 
+  ASSERT1(Ain.getMesh() == localmesh);
+  ASSERT1(Bin.getMesh() == localmesh);
   ASSERT1(Ain.getLocation() == location);
   ASSERT1(Bin.getLocation() == location);
 
@@ -581,6 +583,8 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   TRACE("LaplaceXZpetsc::solve");
 
+  ASSERT1(bin.getMesh() == localmesh);
+  ASSERT1(x0in.getMesh() == localmesh);
   ASSERT1(bin.getLocation() == location);
   ASSERT1(x0in.getLocation() == location);
 

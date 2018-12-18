@@ -64,6 +64,8 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
 
+  ASSERT1(A2D.getMesh() == localmesh);
+  ASSERT1(B2D.getMesh() == localmesh);
   ASSERT1(A2D.getLocation() == location);
   ASSERT1(B2D.getLocation() == location);
   
@@ -164,6 +166,8 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
 
+  ASSERT1(rhs.getMesh() == localmesh);
+  ASSERT1(x0.getMesh() == localmesh);
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
