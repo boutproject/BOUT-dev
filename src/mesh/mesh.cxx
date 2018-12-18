@@ -432,7 +432,7 @@ void Mesh::createDefaultRegions(){
                                            LocalNz, maxregionblocksize)); // Same as ALL
   addRegionPerp("RGN_NOZ", getRegionPerp("RGN_ALL")); // Currently the same as ALL
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
-  
+
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {

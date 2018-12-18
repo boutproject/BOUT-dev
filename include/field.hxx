@@ -33,6 +33,7 @@ class Field;
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
+#include "msg_stack.hxx"
 
 class Mesh;
 class Coordinates;
@@ -49,12 +50,15 @@ class Field {
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  virtual void setLocation(CELL_LOC loc) {
-    if (loc != CELL_CENTRE)
-      throw BoutException("not implemented!");
+  virtual void setLocation(CELL_LOC UNUSED(loc)) {
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::setLocation which is intentionally not fully implemented.");
   }
   virtual CELL_LOC getLocation() const {
-    return CELL_CENTRE;
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::getLocation which is intentionally not fully implemented.");
   }
 
   std::string name;

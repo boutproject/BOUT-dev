@@ -81,8 +81,11 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   FieldPerp x(localmesh);
+  x.setLocation(location);
   x.allocate();
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
@@ -144,6 +147,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   }while(running);
 
   FieldPerp xperp(localmesh);
+  xperp.setLocation(location);
   xperp.allocate();
   
   // All calculations finished. Get result
@@ -275,6 +279,8 @@ void LaplaceSPT::tridagBack(dcomplex *u, int n,
 int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   if(localmesh->firstX() && localmesh->lastX())
     throw BoutException("Error: SPT method only works for localmesh->NXPE > 1\n");
+
+  ASSERT1(b.getLocation() == location);
 
   data.jy = b.getIndex();
 
@@ -459,6 +465,8 @@ BOUT_OMP(parallel for)
 void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   int ncx = localmesh->LocalNx-1;
   int ncz = localmesh->LocalNz;
+
+  ASSERT1(x.getLocation() == location);
 
   x.allocate();
   x.setIndex(data.jy);

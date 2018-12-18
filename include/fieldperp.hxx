@@ -56,8 +56,9 @@ class FieldPerp : public Field {
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp &f)
-      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+  FieldPerp(const FieldPerp& f)
+      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data),
+        location(f.location) {}
 
   /*!
    * Move constructor
@@ -79,6 +80,15 @@ class FieldPerp : public Field {
   FieldPerp &operator=(const FieldPerp &rhs);
   FieldPerp &operator=(FieldPerp &&rhs) = default;
   FieldPerp &operator=(BoutReal rhs);
+
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location) override;
+  /// Get variable location
+  CELL_LOC getLocation() const override;
 
   /// Return a Region<IndPerp> reference to use to iterate over this field
   const Region<IndPerp>& getRegion(REGION region) const;  
@@ -249,6 +259,9 @@ private:
 
   /// The underlying data array
   Array<BoutReal> data;
+
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
 };
   
 // Non-member overloaded operators

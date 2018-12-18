@@ -40,6 +40,7 @@
 
 const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   PDD_data data;
 
@@ -55,6 +56,7 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
 
 const Field3D LaplacePDD::solve(const Field3D &b) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   Field3D x(localmesh);
   x.allocate();
@@ -114,6 +116,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
 /// @param[in] data  Internal data used for multiple calls in parallel mode
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   int ix, kz;
 
@@ -302,6 +305,8 @@ void LaplacePDD::next(PDD_data &data) {
 
 /// Last part of the PDD algorithm
 void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
+  ASSERT1(x.getLocation() == location);
+
   int ix, kz;
 
   x.allocate();
