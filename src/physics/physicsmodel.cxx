@@ -28,7 +28,9 @@
  *
  **************************************************************************/
 
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include <bout/physicsmodel.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 PhysicsModel::PhysicsModel()
     : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),

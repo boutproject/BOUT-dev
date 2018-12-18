@@ -31,6 +31,8 @@
 #include "datafile.hxx"
 #include "bout/macro_for_each.hxx"
 
+namespace bout {
+namespace globals {
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #define SETTING(name, val) extern name
@@ -83,5 +85,7 @@ GLOBAL Datafile dump;
 
 #undef GLOBAL
 #undef SETTING
+} // namespace globals
+} // namespace bout
 
 #endif // __GLOBALS_H__

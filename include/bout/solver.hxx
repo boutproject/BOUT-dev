@@ -71,7 +71,9 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <string>
 #include <list>
