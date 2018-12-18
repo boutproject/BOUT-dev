@@ -452,6 +452,7 @@ const Field3D Div_par_LtoC(const Field3D &var) {
   Field3D result;
   result.allocate();
 
+  Mesh* mesh = var.getMesh();
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
   // NOTE: Need to calculate one more point than centred vars
@@ -481,6 +482,7 @@ const Field3D Div_par_CtoL(const Field3D &var) {
   Field3D result;
   result.allocate();
 
+  Mesh* mesh = var.getMesh();
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
   // NOTE: Need to calculate one more point than centred vars
