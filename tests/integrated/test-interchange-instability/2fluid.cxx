@@ -9,6 +9,7 @@
 #include <derivs.hxx>
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
 
 #include <cmath>
 #include <cstdio>
