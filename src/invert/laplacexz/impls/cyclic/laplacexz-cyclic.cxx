@@ -48,7 +48,11 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   OPTION(options, outer_boundary_flags, 0);
 
   // Set default coefficients
-  setCoefs(Field2D(1.0), Field2D(0.0));
+  Field2D one(1., &mesh);
+  Field2D zero(0., &mesh);
+  one.setLocation(location);
+  zero.setLocation(location);
+  setCoefs(one, zero);
 }
 
 LaplaceXZcyclic::~LaplaceXZcyclic() {
@@ -59,6 +63,9 @@ LaplaceXZcyclic::~LaplaceXZcyclic() {
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
+
+  ASSERT1(A2D.getLocation() == location);
+  ASSERT1(B2D.getLocation() == location);
   
   // Set coefficients
 
@@ -157,6 +164,9 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
 
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
   Mesh *mesh = rhs.getMesh();
   // Create the rhs array
   int ind = 0;
@@ -244,7 +254,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   Field3D result(mesh);
   result.allocate();
-  result.setLocation(rhs.getLocation());
+  result.setLocation(location);
 
   ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {

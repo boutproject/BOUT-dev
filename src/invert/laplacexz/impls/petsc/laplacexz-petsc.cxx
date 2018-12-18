@@ -276,6 +276,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
   TRACE("LaplaceXZpetsc::setCoefs");
 
+  ASSERT1(Ain.getLocation() == location);
+  ASSERT1(Bin.getLocation() == location);
+
   #if CHECK > 0
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
@@ -578,6 +581,9 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   TRACE("LaplaceXZpetsc::solve");
 
+  ASSERT1(bin.getLocation() == location);
+  ASSERT1(x0in.getLocation() == location);
+
   if(!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
@@ -589,7 +595,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   Field3D result;
   result.allocate();
-  result.setLocation(bin.getLocation());
+  result.setLocation(location);
 
   for (auto &it : slice) {
     /// Get y index
