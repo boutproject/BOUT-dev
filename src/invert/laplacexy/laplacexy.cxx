@@ -283,11 +283,18 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : mesh(m), locat
   
   ///////////////////////////////////////////////////
   // Set the default coefficients
-  setCoefs(1.0, 0.0);
+  Field2D one(1., &mesh);
+  Field2D zero(0., &mesh);
+  one.setLocation(location);
+  zero.setLocation(location);
+  setCoefs(one, zero);
 }
 
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
+
+  ASSERT1(A.getLocation() == location);
+  ASSERT1(B.getLocation() == location);
 
   Coordinates *coords = mesh->getCoordinates(location);
   
@@ -514,6 +521,9 @@ LaplaceXY::~LaplaceXY() {
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   Timer timer("invert");
   
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
   // Load initial guess x0 into xs and rhs into bs
   
   for(int x=mesh->xstart;x<= mesh->xend;x++) {
@@ -632,7 +642,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   
   Field2D result;
   result.allocate();
-  result.setLocation(rhs.getLocation());
+  result.setLocation(location);
   
   for(int x=mesh->xstart;x<= mesh->xend;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
