@@ -17,12 +17,12 @@ public:
 
   /// Read options from file
   Options read() {
-    throw BoutException("OptionNetCDF not available\n");
+    throw BoutException("OptionsNetCDF not available\n");
   }
 
   /// Write options to file
   void write(const Options &options) {
-    throw BoutException("OptionNetCDF not available\n");
+    throw BoutException("OptionsNetCDF not available\n");
   }
 };
 

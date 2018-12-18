@@ -42,6 +42,7 @@ void readGroup(const std::string &filename, NcGroup group, Options& result) {
         result[var_name] = std::string(value);
         result[var_name].attributes["source"] = filename;
       }
+      // Note: NetCDF does not support boolean atoms
       // else ignore
     }
   }
@@ -77,10 +78,15 @@ namespace {
 struct NcTypeVisitor {
   template <typename T>
   NcType operator()(const T& UNUSED(t)) {
-    return {}; // Null object by defaul
+    return {}; // Null object by default
   }
 };
 
+template <>
+NcType NcTypeVisitor::operator()<bool>(const bool& UNUSED(t)) {
+  return ncInt;
+}
+  
 template <>
 NcType NcTypeVisitor::operator()<int>(const int& UNUSED(t)) {
   return ncInt;
@@ -173,24 +179,20 @@ std::vector<NcDim> NcDimVisitor::operator()<Field3D>(const Field3D& value) {
 struct NcPutVarVisitor {
   NcPutVarVisitor(NcVar& var) : var(var) {}
   template <typename T>
-  void operator()(const T& UNUSED(t)) {}
+  void operator()(const T& value) {
+    var.putVar(&value);
+  }
 
 private:
   NcVar& var;
 };
 
 template <>
-void NcPutVarVisitor::operator()<int>(const int& value) {
-  var.putVar(&value);
+void NcPutVarVisitor::operator()<bool>(const bool& value) {
+  int int_val = value ? 1 : 0;
+  var.putVar(&int_val);
 }
-template <>
-void NcPutVarVisitor::operator()<double>(const double& value) {
-  var.putVar(&value);
-}
-template <>
-void NcPutVarVisitor::operator()<float>(const float& value) {
-  var.putVar(&value);
-}
+
 template <>
 void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
   const char* cstr = value.c_str();
@@ -207,13 +209,14 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   var.putVar(&value(0,0,0));
 }
 
-
 /// Visit a variant type, and put the data into a NcVar
 struct NcPutVarCountVisitor {
   NcPutVarCountVisitor(NcVar& var, const std::vector<size_t> &start, const std::vector<size_t> &count)
       : var(var), start(start), count(count) {}
   template <typename T>
-  void operator()(const T& UNUSED(t)) {}
+  void operator()(const T& value) {
+    var.putVar(start, &value);
+  }
 
 private:
   NcVar& var;
@@ -221,18 +224,6 @@ private:
   const std::vector<size_t> &count; ///< Index count in each dimension
 };
 
-template <>
-void NcPutVarCountVisitor::operator()<int>(const int& value) {
-  var.putVar(start, &value);
-}
-template <>
-void NcPutVarCountVisitor::operator()<double>(const double& value) {
-  var.putVar(start, &value);
-}
-template <>
-void NcPutVarCountVisitor::operator()<float>(const float& value) {
-  var.putVar(start, &value);
-}
 template <>
 void NcPutVarCountVisitor::operator()<std::string>(const std::string& value) {
   const char* cstr = value.c_str();
@@ -248,9 +239,8 @@ void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(start, count, &value(0,0,0));
 }
-
   
-  void writeGroup(const Options& options, NcGroup group, std::map<int, size_t> &time_index) {
+void writeGroup(const Options& options, NcGroup group, std::map<int, size_t> &time_index) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
