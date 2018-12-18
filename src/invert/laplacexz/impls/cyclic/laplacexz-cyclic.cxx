@@ -171,7 +171,6 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  Mesh *localmesh = rhs.getMesh();
   // Create the rhs array
   int ind = 0;
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
