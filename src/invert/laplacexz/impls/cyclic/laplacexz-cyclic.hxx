@@ -2,11 +2,13 @@
 #include <bout/invert/laplacexz.hxx>
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
+#include <globals.hxx>
 #include "utils.hxx"
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc);
+  LaplaceXZcyclic(Mesh *m = mesh, Options *options = nullptr,
+      const CELL_LOC loc = CELL_CENTRE);
   ~LaplaceXZcyclic();
   
   using LaplaceXZ::setCoefs;
@@ -15,7 +17,7 @@ public:
   using LaplaceXZ::solve;
   Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
-  Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
+  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
 
   int xstart, xend;
   int nmode, nloc, nsys;
