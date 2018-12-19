@@ -83,7 +83,10 @@ class Field2D : public Field, public FieldData {
    * boundary cells.
    */ 
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
-
+  
+  /// Constructor from Array and Mesh
+  Field2D(Array<BoutReal> data, Mesh *localmesh, CELL_LOC location = CELL_CENTRE);
+  
   /*!
    * Destructor
    */

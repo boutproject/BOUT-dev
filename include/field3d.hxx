@@ -180,6 +180,8 @@ class Field3D : public Field, public FieldData {
   Field3D(const Field2D& f);
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  /// Constructor from Array and Mesh
+  Field3D(Array<BoutReal> data, Mesh *localmesh, CELL_LOC location = CELL_CENTRE);
   /// Destructor
   ~Field3D() override;
 
