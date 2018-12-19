@@ -24,10 +24,9 @@
  *
  */
 
-class Field;
-
 #ifndef __FIELD_H__
 #define __FIELD_H__
+class Field;
 
 #include <string>
 

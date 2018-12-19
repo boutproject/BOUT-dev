@@ -26,17 +26,17 @@
  *
  **************************************************************************/
 
-class LaplaceCyclic;
-
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
+
+class LaplaceCyclic;
 
 #include <invert_laplace.hxx>
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
-#include <options.hxx>
-
 #include "utils.hxx"
+
+class Options;
 
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!

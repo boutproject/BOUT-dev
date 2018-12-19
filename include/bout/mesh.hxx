@@ -38,11 +38,11 @@
  *
  **************************************************************************/
 
-class Mesh;
-
 #ifndef __MESH_H__
 #define __MESH_H__
+class Mesh;
 
+// The following is relatively expensive to include
 #include "mpi.h"
 
 #include "bout_types.hxx"
@@ -65,8 +65,8 @@ class BoundaryRegionPar;
 template <typename T>
 class Region;
 
-//#include <memory>
 #include <map>
+#include <string>
 
 /// Type used to return pointers to handles
 typedef void* comm_handle;

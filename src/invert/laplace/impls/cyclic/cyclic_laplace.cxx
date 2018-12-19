@@ -37,10 +37,7 @@
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
 #include <fft.hxx>
-#include <globals.hxx>
-#include <output.hxx>
 #include <utils.hxx>
 
 LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
