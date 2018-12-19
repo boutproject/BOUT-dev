@@ -447,7 +447,7 @@ int Coordinates::geometry() {
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = localmesh->indexDDX(1. / dx); // d/di(1/dx)
+    d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
     d1_dx = -d2x / (dx * dx);
   }
@@ -455,7 +455,7 @@ int Coordinates::geometry() {
   if (localmesh->get(d2y, "d2y")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = localmesh->indexDDY(1. / dy); // d/di(1/dy)
+    d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
   } else {
     d1_dy = -d2y / (dy * dy);
   }
@@ -625,12 +625,12 @@ int Coordinates::jacobian() {
 
 const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, const std::string &method, REGION region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return localmesh->indexDDX(f, loc, method, region) / dx;
+  return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
 
 const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, const std::string &method, REGION region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return localmesh->indexDDY(f, loc, method, region) / dy;
+  return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
 const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), CELL_LOC loc,

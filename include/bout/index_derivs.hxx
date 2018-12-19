@@ -838,9 +838,9 @@ public:
     AUTO_TRACE();
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
-    result = indexFlowDerivative<T, direction, DERIV::Upwind>(
+    result = bout::derivatives::index::flowDerivative<T, direction, DERIV::Upwind>(
         vel, var, result.getLocation(), "DEFAULT", region);
-    result += indexStandardDerivative<T, direction, DERIV::Standard>(
+    result += bout::derivatives::index::standardDerivative<T, direction, DERIV::Standard>(
                   vel, result.getLocation(), "DEFAULT", region)
               * interp_to(var, result.getLocation());
     return;
