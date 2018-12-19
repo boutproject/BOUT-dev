@@ -560,8 +560,6 @@ void checkData(const Field2D &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(Field2D &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

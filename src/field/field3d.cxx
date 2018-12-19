@@ -1094,8 +1094,6 @@ Field2D DC(const Field3D &f, REGION rgn) {
 
 #if CHECK > 2
 void invalidateGuards(Field3D &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
