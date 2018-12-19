@@ -128,7 +128,8 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   //   int band_width_default = n3Dvars()*(MXSUB+2);
   int band_width_default = 0;
   for (auto fvar : f3d) {
-    band_width_default += fvar.var->getNx();
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
   }
 
   
