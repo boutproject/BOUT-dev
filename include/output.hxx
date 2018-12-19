@@ -126,15 +126,9 @@ class DummyOutput : public Output {
 public:
   void write(const char *UNUSED(str), ...) override{};
   void print(const char *UNUSED(str), ...) override{};
-  void enable() override {
-    throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
-                        "--enable-debug or be less verbose?");
-  };
+  void enable() override{};
   void disable() override{};
-  void enable(bool enable) {
-    if (enable)
-      this->enable();
-  };
+  void enable(MAYBE_UNUSED(bool enable)){};
   bool isEnabled() override { return false; }
 };
 
@@ -146,7 +140,8 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base) : base(base), enabled(true) {};
+  /// @param[in] enabled Should this be enabled by default?
+  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled){};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
@@ -257,6 +252,7 @@ extern ConditionalOutput output_warn;  ///< warnings
 extern ConditionalOutput output_progress;  ///< progress
 extern ConditionalOutput output_info;  ///< information 
 extern ConditionalOutput output_error; ///< errors
+extern ConditionalOutput output_verbose; ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;

@@ -147,7 +147,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) {
 
   Field3D result(&mesh);
   result.allocate();
-  
+  result.setLocation(f.getLocation());
+
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {
       shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
@@ -183,6 +184,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) {
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   for(int jx=0;jx<mesh.LocalNx;jx++) {
     for(int jy=0;jy<mesh.LocalNy;jy++) {

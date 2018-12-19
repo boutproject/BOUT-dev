@@ -548,7 +548,7 @@ protected:
       }
       
       if (ni_diff) {
-        ddt(ni) += ni_perpdiff * Delp2(ni,-1.0);
+        ddt(ni) += ni_perpdiff * Delp2(ni);
       }
 
       if (evolve_source_ni) {
@@ -577,11 +577,11 @@ protected:
       }
       
       if (rho_rho1) {
-        ddt(rho) += mu_i*Delp2(rho,-1.0);  //Check second argument meaning in difops.cpp
+        ddt(rho) += mu_i * Delp2(rho);
       }
       
       if (rho_diff) {
-        ddt(rho) += rho_perpdiff * Delp2(rho,-1.0);
+        ddt(rho) += rho_perpdiff * Delp2(rho);
       }
       
       if (rho_rho1_phi1) {
@@ -684,7 +684,7 @@ protected:
       }
       
       if (te_diff) {
-        ddt(te) += te_perpdiff * Delp2(te,-1.0);
+        ddt(te) += te_perpdiff * Delp2(te);
       }
       
       if (remove_tor_av_te) {
