@@ -36,7 +36,7 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = bout::globals::mesh) {
+  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = nullptr) {
     throw BoutException("Mumps library not available");
   }
 
@@ -76,7 +76,7 @@ public:
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = bout::globals::mesh);
+  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);
