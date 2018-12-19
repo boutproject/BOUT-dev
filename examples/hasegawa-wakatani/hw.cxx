@@ -24,11 +24,11 @@ private:
   // Simple implementation of 4th order perpendicular Laplacian
   Field3D Delp4(const Field3D &var) {
     Field3D tmp;
-    tmp = Delp2(var, 0.0);
+    tmp = Delp2(var);
     mesh->communicate(tmp);
     tmp.applyBoundary("neumann");
-    return Delp2(tmp, 0.0);
-    
+    return Delp2(tmp);
+
     //return Delp2(var);
   }
   
