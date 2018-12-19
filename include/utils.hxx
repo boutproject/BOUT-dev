@@ -98,7 +98,7 @@ public:
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     data = Array<T>(n1*n2);
   }
-  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
+  Matrix(const Matrix &other) : data(other.data), n1(other.n1), n2(other.n2) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
   }
@@ -135,9 +135,9 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2);};
 
-  bool empty(){
+  bool empty() const {
     return n1*n2 == 0;
   }
 
@@ -150,9 +150,10 @@ public:
     data.ensureUnique();
   }
   
+  /// Underlying 1D storage array
+  Array<T> data;
 private:
   size_type n1, n2;
-  Array<T> data;
 };
 
 /// Helper class for 3D arrays
@@ -168,7 +169,7 @@ public:
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     data = Array<T>(n1*n2*n3);
   }
-  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
+  Tensor(const Tensor &other) : data(other.data), n1(other.n1), n2(other.n2), n3(other.n3) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
   }
@@ -208,9 +209,9 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
   
-  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
+  std::tuple<size_type, size_type, size_type> shape() const { return std::make_tuple(n1, n2, n3);};
   
-  bool empty(){
+  bool empty() const {
     return n1*n2*n3 == 0;
   }
   
@@ -222,10 +223,11 @@ public:
   void ensureUnique() {
     data.ensureUnique();
   }
-  
+
+  /// Underlying 1D storage array
+  Array<T> data;
 private:
   size_type n1, n2, n3;
-  Array<T> data;
 };
 
 
