@@ -222,11 +222,12 @@ public:
   void ensureUnique() {
     data.ensureUnique();
   }
- 
+  
 private:
   size_type n1, n2, n3;
   Array<T> data;
 };
+
 
 /**************************************************************************
  * Matrix routines
@@ -387,6 +388,21 @@ std::string toString(const T& val) {
 template <>
 inline std::string toString<>(const std::string& val) {
   return val;
+}
+
+template <>
+inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
+  return "<Array>";
+}
+
+template <>
+inline std::string toString<>(const Matrix<BoutReal>& UNUSED(val)) {
+  return "<Matrix>";
+}
+
+template <>
+inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
+  return "<Tensor>";
 }
 
 /// Convert a bool to "true" or "false"

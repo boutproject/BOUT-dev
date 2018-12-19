@@ -39,6 +39,15 @@ int main(int argc, char** argv) {
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
   OptionsNetCDF("fields.nc").write(fields);
+
+  ///////////////////////////
+  // Read fields
+
+  Options fields_in = OptionsNetCDF("fields.nc").read();
+  
+  Field2D f2d = fields_in["f2d"];
+  
+  reader->write(&fields_in, "fields.ini");
   
   ///////////////////////////
   // Time dependent values

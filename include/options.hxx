@@ -183,7 +183,9 @@ public:
   static void cleanup();
 
   /// The type used to store values
-  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D>;
+  using ValueType =
+      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D,
+                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
   /// The type used to store attributes
   using AttributeType = bout::utils::variant<bool, int, BoutReal, std::string>;
 
@@ -568,7 +570,24 @@ template<> inline void Options::assign<>(Field3D val, const std::string source) 
   value_used = false;
   is_value = true;
 }
-
+template<> inline void Options::assign<>(Array<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template<> inline void Options::assign<>(Matrix<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template<> inline void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }

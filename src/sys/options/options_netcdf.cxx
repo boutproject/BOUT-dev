@@ -16,12 +16,15 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
   for (const auto& varpair : group.getVars()) {
     const auto& var_name = varpair.first; // Name of the variable
     const auto& var = varpair.second;     // The NcVar object
-
-    if (var.getDimCount() == 0) {
+    
+    auto var_type = var.getType(); // Variable type 
+    auto ndims = var.getDimCount(); // Number of dimensions
+    auto dims = var.getDims(); // Vector of dimensions
+    
+    switch (ndims) {
+    case 0: {
       // Scalar variables
-
-      auto var_type = var.getType();
-
+      
       if (var_type == ncDouble) {
         double value;
         var.getVar(&value);
@@ -45,6 +48,34 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
       }
       // Note: NetCDF does not support boolean atoms
       // else ignore
+      break;
+    }
+    case 1: {
+      if (var_type == ncDouble) {
+        Array<double> value{dims[0].getSize()};
+        var.getVar(value.begin());
+        result[var_name] = value;
+        result[var_name].attributes["source"] = filename;
+      }
+      break;
+    }
+    case 2: {
+      if (var_type == ncDouble) {
+        Matrix<double> value{dims[0].getSize(), dims[1].getSize()};
+        var.getVar(value.begin());
+        result[var_name] = value;
+        result[var_name].attributes["source"] = filename;
+      }
+      break;
+    }
+    case 3: {
+      if (var_type == ncDouble) {
+        Tensor<double> value{dims[0].getSize(), dims[1].getSize(), dims[2].getSize()};
+        var.getVar(value.begin());
+        result[var_name] = value;
+        result[var_name].attributes["source"] = filename;
+      }
+    }
     }
   }
 

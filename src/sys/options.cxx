@@ -244,7 +244,7 @@ template <> bool Options::as<bool>(Mesh* UNUSED(mesh)) const {
   return result;
 }
 
-template <> Field3D Options::as<Field3D>(Mesh* mesh) const {
+template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
@@ -257,16 +257,22 @@ template <> Field3D Options::as<Field3D>(Mesh* mesh) const {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create3D( bout::utils::get<std::string>(value), this, mesh);
+      return FieldFactory::get()->create3D( bout::utils::get<std::string>(value), this, localmesh);
+    } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+      }
+      
+      
     } else {
-      throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
+      throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
                           full_name.c_str());
     }
   }
   return val;
 }
 
-template <> Field2D Options::as<Field2D>(Mesh* mesh) const {
+template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
@@ -279,9 +285,14 @@ template <> Field2D Options::as<Field2D>(Mesh* mesh) const {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create2D( bout::utils::get<std::string>(value), this, mesh);
+      return FieldFactory::get()->create2D( bout::utils::get<std::string>(value), this, localmesh);
+    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Matrix to Field2D");
+      }
+      
     } else {
-      throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
+      throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
                           full_name.c_str());
     }
   }
