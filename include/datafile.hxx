@@ -26,6 +26,7 @@ class Datafile;
 
 #include <cstdarg>
 #include <cstdio>
+class Mesh;
 
 #include <vector>
 #include <string>
