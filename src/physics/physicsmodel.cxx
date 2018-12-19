@@ -129,7 +129,7 @@ int PhysicsModel::postInit(bool restarting) {
   // Add mesh information to restart file
   // Note this is done after reading, so mesh variables
   // are not overwritten.
-  mesh->outputVars(restart);
+  bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
