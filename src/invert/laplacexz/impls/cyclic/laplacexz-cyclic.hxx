@@ -9,7 +9,7 @@ class LaplaceXZcyclic : public LaplaceXZ {
 public:
   LaplaceXZcyclic(Mesh *m = nullptr, Options *options = nullptr,
       const CELL_LOC loc = CELL_CENTRE);
-  ~LaplaceXZcyclic();
+  ~LaplaceXZcyclic() {}
   
   using LaplaceXZ::setCoefs;
   void setCoefs(const Field2D &A, const Field2D &B) override;
@@ -21,7 +21,7 @@ private:
   int nmode, nloc, nsys;
   Matrix<dcomplex> acoef, bcoef, ccoef, xcmplx, rhscmplx;
   Array<dcomplex> k1d, k1d_2;
-  CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<dcomplex>> cr; ///< Tridiagonal solver
 
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition

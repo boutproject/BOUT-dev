@@ -41,7 +41,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   k1d_2 = Array<dcomplex>((m->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), nloc);
+  cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);
 
   // Getting the boundary flags
   OPTION(options, inner_boundary_flags, 0);
@@ -53,11 +53,6 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   one.setLocation(location);
   zero.setLocation(location);
   setCoefs(one, zero);
-}
-
-LaplaceXZcyclic::~LaplaceXZcyclic() {
-  // Delete tridiagonal solver
-  delete cr;
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
