@@ -44,12 +44,15 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include "mpi.h"
 
 #include <boutcomm.hxx>
-#include <bout.hxx>
 #include <datafile.hxx>
 #include <bout/solver.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 #include <msg_stack.hxx>
+
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+#include <bout.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/sys/timer.hxx>
 

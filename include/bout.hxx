@@ -65,6 +65,13 @@
 
 const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE;  ///< Version number
 
+#ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+// Include using statement by default in user code.
+// Macro allows us to include bout.hxx or physicsmodel.hxx without the using
+// statement in library code.
+using namespace bout::globals;
+#endif // BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
 // BOUT++ main functions
 
 /*!
