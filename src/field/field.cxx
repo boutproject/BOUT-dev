@@ -44,6 +44,14 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
 // constructors.
 }
 
+Mesh* Field::getMesh() const {
+  if (fieldmesh) {
+    return fieldmesh;
+  } else {
+    return mesh;
+  }
+}
+
 Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates;    

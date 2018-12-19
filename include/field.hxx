@@ -36,7 +36,6 @@ class Field;
 
 class Mesh;
 class Coordinates;
-extern Mesh * mesh; ///< Global mesh
 
 /*!
  * \brief Base class for fields
@@ -81,13 +80,7 @@ class Field {
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  virtual Mesh * getMesh() const{
-    if (fieldmesh){
-      return fieldmesh;
-    } else {
-      return mesh;
-    }
-  }
+  virtual Mesh* getMesh() const;
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
