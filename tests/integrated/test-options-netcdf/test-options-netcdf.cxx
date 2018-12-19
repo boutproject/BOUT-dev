@@ -22,12 +22,6 @@ int main(int argc, char** argv) {
   OptionsNetCDF("test-out.nc").write(values);
 
   ///////////////////////////
-
-  Options::root()["f2d"] = Field2D(1.0);
-  Options::root()["f3d"] = Field3D(2.0);
-
-  Options::root()["time_test"] = 1.0;
-  Options::root()["time_test"].attributes["time_dimension"] = std::string("t");
   
   // Write the BOUT.inp settings to NetCDF file
   OptionsNetCDF("settings.nc").write(Options::root());
@@ -37,6 +31,33 @@ int main(int argc, char** argv) {
 
   // Write to INI file
   reader->write(&settings, "settings.ini");
+  
+  ///////////////////////////
+  // Write fields
+
+  Options fields;
+  fields["f2d"] = Field2D(1.0);
+  fields["f3d"] = Field3D(2.0);
+  OptionsNetCDF("fields.nc").write(fields);
+  
+  ///////////////////////////
+  // Time dependent values
+
+  Options data;
+  data["scalar"] = 1.0;
+  data["scalar"].attributes["time_dimension"] = std::string("t");
+  
+  data["field"] = Field3D(2.0);
+  data["field"].attributes["time_dimension"] = std::string("t");
+  
+  OptionsNetCDF("time.nc").write(data);
+  
+  // Update time-dependent values
+  data["scalar"].force(2.0);
+  data["field"].force(Field3D(3.0));
+  
+  // Append data to file
+  OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
   
   BoutFinalise();
 };

@@ -49,9 +49,9 @@ settings = BoutOptionsFile("settings.ini")
 assert settings["mesh"]["nx"] == 5
 assert settings["mesh"]["ny"] == 2
 
-print("Checking saved settings.nc")
+print("Checking saved fields.nc")
 
-with DataFile("settings.nc") as f:
+with DataFile("fields.nc") as f:
     assert f["f2d"].shape == (5,6)  # Field2D
     assert f["f3d"].shape == (5,6,2) # Field3D
     assert np.allclose(f["f2d"], 1.0)

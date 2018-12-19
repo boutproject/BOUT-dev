@@ -3,14 +3,15 @@
 
 #include "options_netcdf.hxx"
 
-#include <vector>
+#include <exception>
 #include <netcdf>
+#include <vector>
 
 using namespace netCDF;
 
 namespace {
-void readGroup(const std::string &filename, NcGroup group, Options& result) {
-  
+void readGroup(const std::string& filename, NcGroup group, Options& result) {
+
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
     const auto& var_name = varpair.first; // Name of the variable
@@ -51,7 +52,7 @@ void readGroup(const std::string &filename, NcGroup group, Options& result) {
   for (const auto& grouppair : group.getGroups()) {
     const auto& name = grouppair.first;
     const auto& subgroup = grouppair.second;
-    
+
     readGroup(filename, subgroup, result[name]);
   }
 }
@@ -67,7 +68,7 @@ Options OptionsNetCDF::read() {
 
   Options result;
   readGroup(filename, dataFile, result);
-  
+
   return result;
 }
 
@@ -86,7 +87,7 @@ template <>
 NcType NcTypeVisitor::operator()<bool>(const bool& UNUSED(t)) {
   return ncInt;
 }
-  
+
 template <>
 NcType NcTypeVisitor::operator()<int>(const int& UNUSED(t)) {
   return ncInt;
@@ -124,30 +125,35 @@ struct NcDimVisitor {
   std::vector<NcDim> operator()(const T& UNUSED(t)) {
     return {};
   }
+
 private:
   NcGroup& group;
 };
 
 NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) {
   // Get the dimension
-  auto dim = group.getDim(name, NcGroup::ParentsAndCurrent);
-  if (dim.isNull()) {
-    // Dimension doesn't yet exist
-    dim = group.addDim(name, size);
-  } else {
-    // Dimension exists, check it's the right size
-    if (dim.getSize() != size) {
-      // wrong size. Check this group
-      dim = group.getDim(name, NcGroup::Current);
-      if (!dim.isNull()) {
-        // Already defined in this group
-        return {}; // Return null object
-      }
-      // Define in this group
+  try {
+    auto dim = group.getDim(name, NcGroup::ParentsAndCurrent);
+    if (dim.isNull()) {
+      // Dimension doesn't yet exist
       dim = group.addDim(name, size);
+    } else {
+      // Dimension exists, check it's the right size
+      if (dim.getSize() != size) {
+        // wrong size. Check this group
+        dim = group.getDim(name, NcGroup::Current);
+        if (!dim.isNull()) {
+          // Already defined in this group
+          return {}; // Return null object
+        }
+        // Define in this group
+        dim = group.addDim(name, size);
+      }
     }
+    return dim;
+  } catch (const std::exception& e) {
+    throw BoutException("Error in findDimension('%s'): %s", name.c_str(), e.what());
   }
-  return dim;
 }
 
 template <>
@@ -157,7 +163,7 @@ std::vector<NcDim> NcDimVisitor::operator()<Field2D>(const Field2D& value) {
 
   auto ydim = findDimension(group, "y", value.getNy());
   ASSERT0(!ydim.isNull());
-  
+
   return {xdim, ydim};
 }
 
@@ -168,10 +174,10 @@ std::vector<NcDim> NcDimVisitor::operator()<Field3D>(const Field3D& value) {
 
   auto ydim = findDimension(group, "y", value.getNy());
   ASSERT0(!ydim.isNull());
-  
+
   auto zdim = findDimension(group, "z", value.getNz());
   ASSERT0(!zdim.isNull());
-  
+
   return {xdim, ydim, zdim};
 }
 
@@ -201,17 +207,18 @@ void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
 template <>
 void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
-  var.putVar(&value(0,0));
+  var.putVar(&value(0, 0));
 }
 template <>
 void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
-  var.putVar(&value(0,0,0));
+  var.putVar(&value(0, 0, 0));
 }
 
 /// Visit a variant type, and put the data into a NcVar
 struct NcPutVarCountVisitor {
-  NcPutVarCountVisitor(NcVar& var, const std::vector<size_t> &start, const std::vector<size_t> &count)
+  NcPutVarCountVisitor(NcVar& var, const std::vector<size_t>& start,
+                       const std::vector<size_t>& count)
       : var(var), start(start), count(count) {}
   template <typename T>
   void operator()(const T& value) {
@@ -220,8 +227,8 @@ struct NcPutVarCountVisitor {
 
 private:
   NcVar& var;
-  const std::vector<size_t> &start; ///< Starting (corner) index
-  const std::vector<size_t> &count; ///< Index count in each dimension
+  const std::vector<size_t>& start; ///< Starting (corner) index
+  const std::vector<size_t>& count; ///< Index count in each dimension
 };
 
 template <>
@@ -232,89 +239,173 @@ void NcPutVarCountVisitor::operator()<std::string>(const std::string& value) {
 template <>
 void NcPutVarCountVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
-  var.putVar(start, count, &value(0,0));
+  var.putVar(start, count, &value(0, 0));
 }
 template <>
 void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
-  var.putVar(start, count, &value(0,0,0));
+  for (unsigned int i=0;i<start.size();i++) {
+    output << "DIM: " << i << " : " << start[i] << " ... " << count[i] << endl;
+  }
+  var.putVar(start, count, &value(0, 0, 0));
 }
-  
-void writeGroup(const Options& options, NcGroup group, std::map<int, size_t> &time_index) {
+
+void writeGroup(const Options& options, NcGroup group,
+                std::map<int, size_t>& time_index) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
     const auto& child = childpair.second;
 
     if (child.isValue()) {
-      auto nctype = bout::utils::visit(NcTypeVisitor(), child.value);
+      try {
+        auto nctype = bout::utils::visit(NcTypeVisitor(), child.value);
 
-      if (nctype.isNull()) {
-        continue; // Skip this value
-      }
+        if (nctype.isNull()) {
+          continue; // Skip this value
+        }
 
-      auto dims = bout::utils::visit(NcDimVisitor(group), child.value);
-      
-      auto time_it = child.attributes.find("time_dimension");
-      if (time_it != child.attributes.end()) {
-        // Has a time dimension
-        
-        auto time_name = bout::utils::get<std::string>(time_it->second);
-        auto time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
+        // Get spatial dimensions
+        auto spatial_dims = bout::utils::visit(NcDimVisitor(group), child.value);
+
+        // Vector of all dimensions, including time
+        std::vector<NcDim> dims{spatial_dims};
+
+        // Get the time dimension
+        NcDim time_dim; ///< Time dimension (Null -> none)
+        auto time_it = child.attributes.find("time_dimension");
+        if (time_it != child.attributes.end()) {
+          // Has a time dimension
+
+          auto time_name = bout::utils::get<std::string>(time_it->second);
+          time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
+          if (time_dim.isNull()) {
+            time_dim = group.addDim(time_name);
+          }
+
+          // prepend to vector of dimensions
+          dims.insert(dims.begin(), time_dim);
+        }
+
+        // Check if the variable exists
+        auto var = group.getVar(name);
+        if (var.isNull()) {
+          // Variable doesn't exist yet
+          // Create variable
+          var = group.addVar(name, nctype, dims);
+        } else {
+          // Variable does exist
+
+          // Check types are the same
+          if (var.getType() != nctype) {
+            throw BoutException(
+                "Changed type of variable '%s'. Was '%s', now writing '%s'", name.c_str(),
+                var.getType().getName().c_str(), nctype.getName().c_str());
+          }
+
+          // Check that the dimensions are correct
+          auto var_dims = var.getDims();
+
+          // Same number of dimensions?
+          if (var_dims.size() != dims.size()) {
+            throw BoutException("Changed dimensions for variable '%s'\nIn file has %d "
+                                "dimensions, now writing %d\n",
+                                name.c_str(), var_dims.size(), dims.size());
+          }
+          // Dimensions compatible?
+          for (std::vector<netCDF::NcDim>::size_type i = 0; i < dims.size(); ++i) {
+            if (var_dims[i] == dims[i]) {
+              continue; // The same dimension -> ok
+            }
+            if (var_dims[i].isUnlimited() != dims[i].isUnlimited()) {
+              throw BoutException("Unlimited dimension changed for variable '%s'",
+                                  name.c_str());
+            }
+            if (var_dims[i].getSize() != dims[i].getSize()) {
+              throw BoutException("Dimension size changed for variable '%s'",
+                                  name.c_str());
+            }
+          }
+          // All ok. Set dimensions to the variable's NcDims
+          dims = var_dims;
+
+          if (!time_dim.isNull()) {
+            // A time dimension
+            time_dim = dims[0];
+          }
+        }
+
+        // Write the variable
+
         if (time_dim.isNull()) {
-          time_dim = group.addDim(time_name);
+          // No time index
+
+          // Put the data into the variable
+          bout::utils::visit(NcPutVarVisitor(var), child.value);
+
+        } else {
+          // Has a time index, so need the record index
+
+          // Get the index from the map storing the current index
+          // This is needed because NetCDF doesn't provide a way to get
+          // the size of this variable along an unlimited dimension.
+          // Instead the dimension is shared between variables.
+
+          auto time_index_it = time_index.find(time_dim.getId());
+          if (time_index_it == time_index.end()) {
+            // Haven't seen this index before
+            time_index[time_dim.getId()] = time_dim.getSize();
+          }
+
+          std::vector<size_t> start_index; ///< Starting index where data will be inserted
+          std::vector<size_t> count_index; ///< Size of each dimension
+
+          
+
+          // Dimensions, including time
+          for (const auto& dim : dims) {
+            start_index.push_back(0);
+            count_index.push_back(dim.getSize());
+          }
+          // Time dimension
+          start_index[0] = time_index[time_dim.getId()];
+          count_index[0] = 1; // Writing one record
+
+          // Put the data into the variable
+          bout::utils::visit(NcPutVarCountVisitor(var, start_index, count_index),
+                             child.value);
         }
-
-        // Get the index
-        auto time_index_it = time_index.find(time_dim.getId());
-        
-        if (time_index_it == time_index.end()) {
-          // Haven't seen this index before
-          time_index[time_dim.getId()] = time_dim.getSize();
-        }
-        
-        // prepend to vector of dimensions
-        dims.insert(dims.begin(), time_dim);
-        
-        std::vector<size_t> start_index; ///< Starting index where data will be inserted
-        std::vector<size_t> count_index; ///< Size of each dimension
-
-        // Time dimension
-        start_index.push_back(time_index[time_dim.getId()]);
-        count_index.push_back(1); // Writing one record
-
-        // Other dimensions (if any)
-        for (const auto& dim : dims) {
-          start_index.push_back(0);
-          count_index.push_back(dim.getSize());
-        }
-
-        // Create variable
-        auto var = group.addVar(name, nctype, dims);
-
-        // Put the data into the variable
-        bout::utils::visit(NcPutVarCountVisitor(var, start_index, count_index), child.value);
-      } else {
-        // No time index
-        
-        auto var = group.addVar(name, nctype, dims);
-        
-        // Put the data into the variable
-        bout::utils::visit(NcPutVarVisitor(var), child.value);
+      } catch (const std::exception &e) {
+        throw BoutException("Error while writing value '%s' : %s", name.c_str(), e.what());
       }
     }
 
     if (child.isSection()) {
-      writeGroup(child, group.addGroup(name), time_index);
+      // Check if the group exists
+      TRACE("Writing group '%s'", name.c_str());
+
+      auto subgroup = group.getGroup(name);
+      if (subgroup.isNull()) {
+        // Doesn't exist yet, so create it
+        subgroup = group.addGroup(name);
+      }
+      
+      writeGroup(child, subgroup, time_index);
     }
   }
 }
-  
+
 } // namespace
 
 /// Write options to file
 void OptionsNetCDF::write(const Options& options) {
-  NcFile dataFile(filename, NcFile::replace);
+  // Check the file mode to use
+  auto ncmode = NcFile::replace;
+  if (file_mode == FileMode::append) {
+    ncmode = NcFile::write;
+  }
+
+  NcFile dataFile(filename, ncmode);
 
   if (dataFile.isNull()) {
     throw BoutException("Could not open NetCDF file '%s' for writing", filename.c_str());
