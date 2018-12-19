@@ -25,13 +25,9 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc) : localmesh(m), location(loc) {
+LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
+    : localmesh(m==nullptr ? mesh : m), location(loc) {
   Timer timer("invert");
-
-  if (localmesh == nullptr) {
-    // Use global mesh
-    localmesh = mesh;
-  }
 
   if (opt == nullptr) {
     // If no options supplied, use default
