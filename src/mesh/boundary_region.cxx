@@ -1,4 +1,5 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <boundary_region.hxx>
 #include <utils.hxx>

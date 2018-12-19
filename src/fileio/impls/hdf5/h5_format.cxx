@@ -30,6 +30,7 @@
 #include <string>
 #include <mpi.h>
 
+#include <bout/mesh.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <boutcomm.hxx>

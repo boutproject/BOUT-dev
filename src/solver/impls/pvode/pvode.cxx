@@ -27,6 +27,7 @@
 
 #ifdef BOUT_HAS_PVODE
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>

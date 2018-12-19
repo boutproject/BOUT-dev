@@ -1,4 +1,5 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <dataformat.hxx>
 #include <utils.hxx>

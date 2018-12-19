@@ -28,6 +28,7 @@
 
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <fieldperp.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -542,8 +543,6 @@ void checkData(const FieldPerp &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(FieldPerp &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

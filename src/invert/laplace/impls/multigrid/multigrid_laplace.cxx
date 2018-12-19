@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 

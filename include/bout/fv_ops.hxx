@@ -10,6 +10,7 @@
 #include "../vector2d.hxx"
 
 #include "../utils.hxx"
+#include <bout/mesh.hxx>
 
 namespace FV {
   /*!

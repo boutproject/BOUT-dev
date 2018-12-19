@@ -39,6 +39,7 @@
 
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/mesh.hxx>
 
 #include <cmath>
 #include <output.hxx>

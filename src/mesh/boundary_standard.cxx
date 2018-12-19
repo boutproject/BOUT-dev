@@ -1,3 +1,4 @@
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <boundary_standard.hxx>
 #include <invert_laplace.hxx>

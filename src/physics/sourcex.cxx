@@ -5,6 +5,8 @@
 #include <globals.hxx>
 #include <cmath>
 
+#include <bout/mesh.hxx>
+#include <field2d.hxx>
 #include <sourcex.hxx>
 #include <msg_stack.hxx>
 

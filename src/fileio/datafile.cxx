@@ -36,9 +36,11 @@
 //#include "mpi.h" // For MPI_Wtime()
 
 #include <globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <datafile.hxx>
 #include <boutexception.hxx>
+#include <options.hxx>
 #include <output.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>

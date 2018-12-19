@@ -35,6 +35,7 @@
 
 #include <globals.hxx>
 #include <boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
 #include <bout/sys/timer.hxx>

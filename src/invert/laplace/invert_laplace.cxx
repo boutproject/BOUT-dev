@@ -31,6 +31,7 @@
  *
  */
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <invert_laplace.hxx>
 #include <bout_types.hxx>

@@ -28,6 +28,7 @@
 #include <utils.hxx>
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
 

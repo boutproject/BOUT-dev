@@ -38,6 +38,7 @@
 
 #include "boutcomm.hxx"
 
+#include <bout/mesh.hxx>
 #include "globals.hxx"
 
 #include "field2d.hxx"

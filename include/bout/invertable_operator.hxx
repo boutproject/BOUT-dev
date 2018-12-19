@@ -35,6 +35,7 @@ class InvertableOperator;
 
 #ifdef BOUT_HAS_PETSC
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>

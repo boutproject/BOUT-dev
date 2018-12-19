@@ -32,6 +32,7 @@
 
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <smoothing.hxx>
 #include <bout_types.hxx>

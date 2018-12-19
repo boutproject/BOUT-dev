@@ -27,9 +27,10 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "bout/mesh.hxx"
 #include "datafile.hxx"
 #include "bout/macro_for_each.hxx"
+
+class Mesh;
 
 namespace bout {
 namespace globals {

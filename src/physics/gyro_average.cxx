@@ -27,6 +27,7 @@
  *
  **************************************************************/
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <difops.hxx>
 #include <gyro_average.hxx>

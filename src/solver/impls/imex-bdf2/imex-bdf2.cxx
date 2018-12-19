@@ -3,6 +3,7 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>

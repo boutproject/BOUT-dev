@@ -24,6 +24,7 @@
 
 #ifdef NCDF4
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
 #include <cmath>

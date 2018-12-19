@@ -1,4 +1,5 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <field_data.hxx>
 #include <boundary_factory.hxx>
