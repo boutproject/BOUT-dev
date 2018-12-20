@@ -584,3 +584,49 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
   EXPECT_EQ(&option2["key2"].parent(), &option2);
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
 }
+
+TEST_F(OptionsTest, AttributeMissingBool) {
+  Options option;
+
+  bool a = option.attributes["test"];
+  EXPECT_EQ(a, false);
+}
+
+TEST_F(OptionsTest, AttributeMissingInt) {
+  Options option;
+
+  int a = option.attributes["test"];
+  EXPECT_EQ(a, 0);
+}
+
+TEST_F(OptionsTest, AttributeMissingBoutReal) {
+  Options option;
+
+  BoutReal a = option.attributes["test"];
+  EXPECT_DOUBLE_EQ(a, 0.0);
+}
+
+TEST_F(OptionsTest, AttributeMissingString) {
+  Options option;
+
+  EXPECT_THROW(option.attributes["test"].as<std::string>(), std::bad_cast);
+}
+
+TEST_F(OptionsTest, AttributeStoreBool) {
+  Options option;
+  option.attributes["test"] = true;
+
+  EXPECT_TRUE(option.attributes["test"].as<bool>());
+
+  option.attributes["test"] = false;
+  EXPECT_FALSE(option.attributes["test"].as<bool>());
+}
+
+
+TEST_F(OptionsTest, AttributeConstChars) {
+  Options option;
+  option.attributes["test"] = "hello";
+
+  std::string test = option.attributes["test"];
+  EXPECT_EQ(test, "hello");
+}

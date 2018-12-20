@@ -186,8 +186,50 @@ public:
   using ValueType =
       bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D,
                            Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
+
   /// The type used to store attributes
-  using AttributeType = bout::utils::variant<bool, int, BoutReal, std::string>;
+  /// Extends the variant class so that cast operator can be implemented
+  /// and assignment operator overloaded
+  ///
+  /// Note: Due to default initialisation rules, if an attribute
+  /// is used without being set, it will be false, 0, 0.0 and
+  /// throw std::bad_cast if cast to std::string
+  /// 
+  class AttributeType : public bout::utils::variant<bool, int, BoutReal, std::string> {
+  public:
+    using Base = bout::utils::variant<bool, int, BoutReal, std::string>;
+
+    /// Constructor
+    AttributeType() {}
+    /// Copy constructor
+    AttributeType(const AttributeType& other) : Base(other) {}
+    /// Move constructor
+    AttributeType(AttributeType&& other) : Base(other) {}
+
+    /// Destructor
+    ~AttributeType() {}
+
+    /// Assignment operator, including move assignment
+    using Base::operator=;
+
+    /// Assignment from const char*
+    AttributeType& operator=(const char* str) {
+      operator=(std::string(str));
+      return *this;
+    }
+
+    /// Cast operator, which allows this class to be
+    /// assigned to type T
+    /// This will throw std::bad_cast if it can't be done
+    template <typename T> operator T() const { return as<T>(); }
+
+    /// Get the value as a specified type
+    /// This will throw std::bad_cast if it can't be done
+    template <typename T>
+    T as() const {
+      return bout::utils::variantStaticCastOrThrow<Base, T>(*this);
+    }
+  };
 
   /// The value stored
   ValueType value;
