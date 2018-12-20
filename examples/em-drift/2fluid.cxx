@@ -107,7 +107,7 @@ private:
     /************* SHIFTED RADIAL COORDINATES ************/
   
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {

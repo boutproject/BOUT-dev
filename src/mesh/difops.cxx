@@ -552,16 +552,16 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
 * perpendicular Laplacian operator
 *******************************************************************************/
 
-const Field2D Delp2(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field2D Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
 /*******************************************************************************
@@ -1044,7 +1044,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
+    vx.setLocation(outloc);
     vz.allocate();
+    vz.setLocation(outloc);
     
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {

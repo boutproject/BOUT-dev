@@ -741,9 +741,9 @@ class Mesh {
   const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
   /// Indicate if named region has already been defined
-  const bool hasRegion3D(const std::string& region_name) const;
-  const bool hasRegion2D(const std::string& region_name) const;
-  const bool hasRegionPerp(const std::string& region_name) const;
+  bool hasRegion3D(const std::string& region_name) const;
+  bool hasRegion2D(const std::string& region_name) const;
+  bool hasRegionPerp(const std::string& region_name) const;
 
   /// Add a new region to the region_map for the data iterator
   ///

@@ -26,7 +26,7 @@ protected:
     phi = 0.0;
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     return 0;
   }

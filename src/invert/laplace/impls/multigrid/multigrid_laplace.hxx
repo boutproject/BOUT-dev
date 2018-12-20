@@ -196,6 +196,7 @@ public:
 
     FieldPerp zero(localmesh);
     zero = 0.;
+    zero.setLocation(location);
     zero.setIndex(b.getIndex());
     return solve(b, zero);
   }

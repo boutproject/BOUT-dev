@@ -180,10 +180,13 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-  const Field3D Delp2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  const FieldPerp Delp2(const FieldPerp &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+  const Field2D Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
+  const Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
+  const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
+                        bool useFFT = true);
+
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) ) 
   const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
