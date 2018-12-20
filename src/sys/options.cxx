@@ -249,10 +249,8 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
   
-  Field3D val;
-
   try {
-    val = bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
+    return bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
@@ -262,14 +260,24 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
       if (!localmesh) {
         throw BoutException("mesh must be supplied when converting Tensor to Field3D");
       }
+
+      // Get a reference, to try and avoid copying
+      const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
       
-      
-    } else {
-      throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
-                          full_name.c_str());
+      // Check if the dimension sizes are the same as a Field3D
+      if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
+                                            localmesh->LocalNy,
+                                            localmesh->LocalNz)) {
+        return Field3D(tensor.data, localmesh);
+      }
+      // If dimension sizes not the same, may be able
+      // to select a region from it using Mesh e.g. if this
+      // is from the input grid file.
+
     }
   }
-  return val;
+  throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
+                      full_name.c_str());
 }
 
 template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
@@ -277,10 +285,8 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
   
-  Field2D val;
-
   try {
-    val = bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);
+    return bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
@@ -290,13 +296,19 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
       if (!localmesh) {
         throw BoutException("mesh must be supplied when converting Matrix to Field2D");
       }
-      
-    } else {
-      throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
-                          full_name.c_str());
+
+      // Get a reference, to try and avoid copying
+      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+      // Check if the dimension sizes are the same as a Field3D
+      if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
+                                            localmesh->LocalNy)) {
+        return Field2D(matrix.data, localmesh);
+      }
     }
   }
-  return val;
+  throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
+                      full_name.c_str());
 }
 
 void Options::printUnused() const {

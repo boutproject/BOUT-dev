@@ -275,9 +275,6 @@ void NcPutVarCountVisitor::operator()<Field2D>(const Field2D& value) {
 template <>
 void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
-  for (unsigned int i=0;i<start.size();i++) {
-    output << "DIM: " << i << " : " << start[i] << " ... " << count[i] << endl;
-  }
   var.putVar(start, count, &value(0, 0, 0));
 }
 

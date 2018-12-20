@@ -45,9 +45,15 @@ int main(int argc, char** argv) {
 
   Options fields_in = OptionsNetCDF("fields.nc").read();
   
-  Field2D f2d = fields_in["f2d"];
+  auto f2d = fields_in["f2d"].as<Field2D>(mesh);
+  auto f3d = fields_in["f3d"].as<Field3D>(mesh);
+
+  Options fields2;
+  fields2["f2d"] = f2d;
+  fields2["f3d"] = f3d;
   
-  reader->write(&fields_in, "fields.ini");
+  // Write out again
+  OptionsNetCDF("fields2.nc").write(fields2);
   
   ///////////////////////////
   // Time dependent values
