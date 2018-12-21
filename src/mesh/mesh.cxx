@@ -436,3 +436,55 @@ void Mesh::createDefaultRegions(){
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }
+
+CELL_LOC Mesh::getAllowedStaggerLoc(DIRECTION direction) const {
+  AUTO_TRACE();
+  switch (direction) {
+  case (DIRECTION::X):
+    return CELL_XLOW;
+  case (DIRECTION::Y):
+  case (DIRECTION::YOrthogonal):
+  case (DIRECTION::YAligned):
+    return CELL_YLOW;
+  case (DIRECTION::Z):
+    return CELL_ZLOW;
+  default:
+    throw BoutException("Unhandled direction encountered in getAllowedStaggerLoc");
+  }
+};
+
+/// Returns the number of grid points in the
+/// particular direction
+int Mesh::getNpoints(DIRECTION direction) const {
+  AUTO_TRACE();
+  switch (direction) {
+  case (DIRECTION::X):
+    return LocalNx;
+  case (DIRECTION::Y):
+  case (DIRECTION::YOrthogonal):
+  case (DIRECTION::YAligned):
+    return LocalNy;
+  case (DIRECTION::Z):
+    return LocalNz;
+  default:
+    throw BoutException("Unhandled direction encountered in getNpoints");
+  }
+};
+
+/// Returns the number of guard points in the
+/// particular direction
+int Mesh::getNguard(DIRECTION direction) const {
+  AUTO_TRACE();
+  switch (direction) {
+  case (DIRECTION::X):
+    return xstart;
+  case (DIRECTION::Y):
+  case (DIRECTION::YOrthogonal):
+  case (DIRECTION::YAligned):
+    return ystart;
+  case (DIRECTION::Z):
+    return 2;
+  default:
+    throw BoutException("Unhandled direction encountered in getNguard");
+  }
+};

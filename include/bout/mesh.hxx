@@ -442,57 +442,15 @@ class Mesh {
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return CELL_XLOW;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return CELL_YLOW;
-    case (DIRECTION::Z):
-      return CELL_ZLOW;
-    default:
-      throw BoutException("Unhandled direction encountered in getAllowedStaggerLoc");
-    }
-  };
+  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const;
 
   /// Returns the number of grid points in the
   /// particular direction
-  int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return LocalNx;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return LocalNy;
-    case (DIRECTION::Z):
-      return LocalNz;
-    default:
-      throw BoutException("Unhandled direction encountered in getNpoints");
-    }
-  };
+  int getNpoints(DIRECTION direction) const;
 
   /// Returns the number of guard points in the
   /// particular direction
-  int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return xstart;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return ystart;
-    case (DIRECTION::Z):
-      return 2;
-    default:
-      throw BoutException("Unhandled direction encountered in getNguard");
-    }
-  };
+  int getNguard(DIRECTION direction) const;
 
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS
