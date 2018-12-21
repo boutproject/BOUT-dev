@@ -42,13 +42,12 @@
 #endif
 //#define DIAGNOSE 1
 
-#include "mpi.h"
-#include "utils.hxx"
-#include "msg_stack.hxx"
-#include <lapack_routines.hxx>
-
-#include "bout/assert.hxx"
 #include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
+#include "bout/assert.hxx"
+#include <boutcomm.hxx>
+#include <lapack_routines.hxx>
 
 #include "output.hxx"
 

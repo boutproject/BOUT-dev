@@ -35,8 +35,6 @@ class KarniadakisSolver;
 #ifndef __KARNIADAKIS_SOLVER_H__
 #define __KARNIADAKIS_SOLVER_H__
 
-#include "mpi.h"
-
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 

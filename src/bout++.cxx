@@ -41,8 +41,6 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
-#include "mpi.h"
-
 #include <boutcomm.hxx>
 #include <bout.hxx>
 #include <datafile.hxx>

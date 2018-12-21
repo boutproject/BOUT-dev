@@ -1,5 +1,5 @@
-#include <mpi.h>
 #include <bout/sys/timer.hxx>
+#include <boutcomm.hxx>
 
 using namespace std;
 

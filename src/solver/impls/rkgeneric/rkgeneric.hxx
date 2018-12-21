@@ -28,8 +28,6 @@ class RKGenericSolver;
 #ifndef __RKGENERIC_SOLVER_H__
 #define __RKGENERIC_SOLVER_H__
 
-#include "mpi.h"
-
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 #include <bout/rkscheme.hxx>

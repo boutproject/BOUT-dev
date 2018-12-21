@@ -2,10 +2,9 @@
 #ifndef __BOUTMESH_H__
 #define __BOUTMESH_H__
 
-#include "mpi.h"
-
-#include <bout/mesh.hxx>
+#include "boutcomm.hxx"
 #include "unused.hxx"
+#include <bout/mesh.hxx>
 
 #include <list>
 #include <vector>

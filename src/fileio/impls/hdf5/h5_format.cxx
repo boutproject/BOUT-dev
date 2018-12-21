@@ -28,7 +28,6 @@
 #include <utils.hxx>
 #include <cmath>
 #include <string>
-#include <mpi.h>
 
 #include <output.hxx>
 #include <msg_stack.hxx>

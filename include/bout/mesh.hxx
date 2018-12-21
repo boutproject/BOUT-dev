@@ -42,8 +42,8 @@
 #define __MESH_H__
 class Mesh;
 
-// The following is relatively expensive to include
-#include "mpi.h"
+// The following is relatively expensive to include because it includes mpi.h
+#include <boutcomm.hxx>
 
 #include "bout_types.hxx"
 #include "fieldgroup.hxx"
