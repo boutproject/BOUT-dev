@@ -60,16 +60,16 @@ int main(int argc, char** argv) {
 
   Options data;
   data["scalar"] = 1.0;
-  data["scalar"].attributes["time_dimension"] = std::string("t");
+  data["scalar"].attributes["time_dimension"] = "t";
   
   data["field"] = Field3D(2.0);
-  data["field"].attributes["time_dimension"] = std::string("t");
+  data["field"].attributes["time_dimension"] = "t";
   
   OptionsNetCDF("time.nc").write(data);
   
   // Update time-dependent values
-  data["scalar"].force(2.0);
-  data["field"].force(Field3D(3.0));
+  data["scalar"] = 2.0;
+  data["field"] = Field3D(3.0);
   
   // Append data to file
   OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);

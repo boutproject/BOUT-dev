@@ -622,11 +622,39 @@ TEST_F(OptionsTest, AttributeStoreBool) {
   EXPECT_FALSE(option.attributes["test"].as<bool>());
 }
 
+TEST_F(OptionsTest, AttributeStoreInt) {
+  Options option;
+  option.attributes["test"] = 42;
 
-TEST_F(OptionsTest, AttributeConstChars) {
+  int value = option.attributes["test"];
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, AttributeStoreBoutReal) {
+  Options option;
+  option.attributes["test"] = 3.1415;
+
+  BoutReal value = option.attributes["test"];
+  EXPECT_DOUBLE_EQ(value, 3.1415);
+}
+
+TEST_F(OptionsTest, AttributeStoreConstChars) {
   Options option;
   option.attributes["test"] = "hello";
 
   std::string test = option.attributes["test"];
   EXPECT_EQ(test, "hello");
+}
+
+TEST_F(OptionsTest,  AttributeTimeDimension) {
+  Options option;
+
+  option = 3;
+  EXPECT_EQ(option.as<int>(), 3);
+  
+  option.attributes["time_dimension"] = "t";
+
+  option = 4;
+
+  EXPECT_EQ(option.as<int>(), 4);
 }

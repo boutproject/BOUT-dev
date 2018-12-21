@@ -233,7 +233,13 @@ public:
 
   /// The value stored
   ValueType value;
+  
   /// A collection of attributes belonging to the value
+  /// Special attributes:
+  ///  - time_dimension   [string] If this is set then changes to the value
+  ///                     do not need to be forced. The string will be used
+  ///                     when writing the output as the name of the time
+  ///                     dimension (unlimited first dimension in NetCDF files).
   std::map<std::string, AttributeType> attributes;
   
   /// Get a sub-section or value
@@ -562,7 +568,10 @@ public:
   
   template <typename T>
   void _set(T val, std::string source, bool force) {
-    if (isSet()) {
+    // If already set, and not time evolving then check for changing values
+    // If a variable has a "time_dimension" attribute then it is assumed
+    // that updates to the value is ok and don't need to be forced.
+    if (isSet() && (attributes.find("time_dimension") == attributes.end())) {
       // Check if current value the same as new value
       if (!bout::utils::variantEqualTo(value, val)) {
         if (force or !bout::utils::variantEqualTo(attributes["source"], source)) {
