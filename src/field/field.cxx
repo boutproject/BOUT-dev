@@ -23,7 +23,6 @@
  *
  **************************************************************************/
 
-//#include <globals.hxx>
 
 #include <field.hxx>
 #include <output.hxx>
@@ -32,11 +31,7 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
-  if (fieldmesh == nullptr) {
-    fieldmesh = mesh;
-  }
-
+Field::Field(Mesh *localmesh) : fieldmesh(localmesh != nullptr? localmesh : mesh) {
 // Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
 // currently as this would lead to circular/recursive behaviour (getCoordinates would
 // call fieldmesh->coordinates, which would create fields, which would then call
@@ -45,11 +40,7 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
 }
 
 Mesh* Field::getMesh() const {
-  if (fieldmesh) {
-    return fieldmesh;
-  } else {
-    return mesh;
-  }
+  return fieldmesh != nullptr? fieldmesh : mesh;
 }
 
 Coordinates *Field::getCoordinates() const {

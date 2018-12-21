@@ -2,6 +2,8 @@
 
 #include <map>
 
+#define ENUMSTR(val) {val, #val}
+
 const std::string& CELL_LOC_STRING(CELL_LOC location) {
   const static std::map<CELL_LOC, std::string> CELL_LOCtoString = {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
