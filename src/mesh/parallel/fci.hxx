@@ -32,6 +32,8 @@
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>
 
+class Mesh;
+
 /*!
  * Field line map - contains the coefficients for interpolation
  */

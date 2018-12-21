@@ -1,18 +1,15 @@
 
 #include "meshfactory.hxx"
 #include "parallel/fci.hxx"
+#include "parallel/identity.hxx"
+#include "parallel/shiftedmetric.hxx"
 #include <bout/coordinates.hxx>
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 #include <bout/sys/range.hxx>
-#include <derivs.hxx>
 #include <fieldperp.hxx>
-#include <globals.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <utils.hxx>
-
-#include <cmath>
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);

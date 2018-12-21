@@ -6,11 +6,10 @@
  *
  */
 
+#include "shiftedmetric.hxx"
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
-#include <cmath>
 #include <fft.hxx>
 #include <output.hxx>
 
