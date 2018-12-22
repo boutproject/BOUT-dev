@@ -7,8 +7,14 @@
 #include <strings.h>
 
 LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
-  if (options == nullptr)
+  if (m == nullptr) {
+    // use global mesh
+    m = mesh;
+  }
+
+  if (options == nullptr) {
     options = Options::getRoot()->getSection("laplacexz");
+  }
 
   std::string type;
   options->get("type", type, "cyclic");
