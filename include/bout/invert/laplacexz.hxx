@@ -39,8 +39,8 @@
 class LaplaceXZ {
 public:
   LaplaceXZ(Mesh* m = nullptr, Options* UNUSED(options) = nullptr,
-      const CELL_LOC loc = CELL_CENTRE)
-    : localmesh(m==nullptr ? mesh : m), location(loc) {}
+            const CELL_LOC loc = CELL_CENTRE)
+      : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {}
   virtual ~LaplaceXZ() {}
 
   virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;

@@ -7,7 +7,13 @@
 #include "test_extras.hxx"
 
 /// Global mesh
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
+}
+} // namespace bout
+
+using bout::globals::mesh;
 
 using CoordinatesTest = FakeMeshFixture;
 
