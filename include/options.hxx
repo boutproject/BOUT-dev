@@ -426,6 +426,12 @@ public:
     return val;
   }
 
+  /// Overloaded version for const char*
+  /// Note: Different from template since return type is different to input
+  std::string withDefault(const char* def) {
+    return withDefault<std::string>(std::string(def));
+  }
+  
   /// Get the value of this option. If not found,
   /// return the default value but do not set
   template <typename T> T withDefault(T def) const {

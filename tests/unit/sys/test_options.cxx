@@ -437,6 +437,13 @@ TEST_F(OptionsTest, NewDefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
+TEST_F(OptionsTest, WithDefaultString) {
+  Options options;
+
+  std::string value = options.withDefault("hello");
+  EXPECT_EQ(value, "hello");
+}
+
 TEST_F(OptionsTest, OptionsMacroPointer) {
   Options options;
 
