@@ -77,6 +77,32 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
       }
     }
     }
+
+    // Get variable attributes
+    for (const auto& attpair : var.getAtts()) {
+      const auto &att_name = attpair.first;   // Attribute name
+      const auto &att = attpair.second;   // NcVarAtt object
+      
+      auto att_type = att.getType(); // Type of the attribute
+      if (att_type == ncInt) {
+        int value;
+        att.getValues(&value);
+        result[var_name].attributes[att_name] = value;
+      } else if (att_type == ncFloat) {
+        float value;
+        att.getValues(&value);
+        result[var_name].attributes[att_name] = value;
+      } else if (att_type == ncDouble) {
+        double value;
+        att.getValues(&value);
+        result[var_name].attributes[att_name] = value;
+      } else if (att_type == ncString) {
+        std::string value;
+        att.getValues(value);
+        result[var_name].attributes[att_name] = value;
+      }
+      // Else ignore
+    }
   }
 
   // Iterate over groups
@@ -278,6 +304,40 @@ void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   var.putVar(start, count, &value(0, 0, 0));
 }
 
+/// Visit a variant type, and put the data into an attributute
+struct NcPutAttVisitor {
+  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(name) {}
+  template <typename T>
+  void operator()(const T& UNUSED(value)) {
+    // Default is to ignore if unhandled
+  }
+private:
+  NcVar& var;
+  std::string name;
+};
+
+template <>
+void NcPutAttVisitor::operator()(const bool& value) {
+  int ival = value ? 1 : 0;
+  var.putAtt(name, ncInt, ival);
+}
+template <>
+void NcPutAttVisitor::operator()(const int& value) {
+  var.putAtt(name, ncInt, value);
+}
+template <>
+void NcPutAttVisitor::operator()(const double& value) {
+  var.putAtt(name, ncDouble, value);
+}
+template <>
+void NcPutAttVisitor::operator()(const float& value) {
+  var.putAtt(name, ncFloat, value);
+}
+template <>
+void NcPutAttVisitor::operator()(const std::string& value) {
+  var.putAtt(name, value);
+}
+  
 void writeGroup(const Options& options, NcGroup group,
                 std::map<int, size_t>& time_index) {
 
@@ -403,6 +463,15 @@ void writeGroup(const Options& options, NcGroup group,
           bout::utils::visit(NcPutVarCountVisitor(var, start_index, count_index),
                              child.value);
         }
+
+        // Write attributes
+        for (const auto& it: child.attributes) {
+          const std::string& att_name = it.first;
+          const auto& att = it.second;
+          
+          bout::utils::visit(NcPutAttVisitor(var, att_name), att);
+        }
+        
       } catch (const std::exception &e) {
         throw BoutException("Error while writing value '%s' : %s", name.c_str(), e.what());
       }
