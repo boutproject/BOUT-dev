@@ -665,3 +665,53 @@ TEST_F(OptionsTest,  AttributeTimeDimension) {
 
   EXPECT_EQ(option.as<int>(), 4);
 }
+
+TEST_F(OptionsTest, EqualityBool) {
+  Options option;
+
+  option = true;
+
+  EXPECT_TRUE(option == true);
+  EXPECT_FALSE(option == false);
+
+  option.force(false);
+
+  EXPECT_TRUE(option == false);
+  EXPECT_FALSE(option == true);
+}
+
+TEST_F(OptionsTest, EqualityInt) {
+  Options option;
+
+  option = 3;
+
+  EXPECT_TRUE(option == 3);
+  EXPECT_FALSE(option == 4);
+}
+
+TEST_F(OptionsTest, EqualityString) {
+  Options option;
+
+  option = "hello";
+
+  EXPECT_TRUE(option == "hello");
+  EXPECT_FALSE(option == "goodbye");
+}
+
+TEST_F(OptionsTest, ComparisonInt) {
+  Options option;
+
+  option = 3;
+
+  EXPECT_TRUE(option < 4);
+  EXPECT_FALSE(option < 3);
+}
+
+TEST_F(OptionsTest, ComparisonString) {
+  Options option;
+
+  option = "bbb";
+
+  EXPECT_TRUE(option < "ccc");
+  EXPECT_FALSE(option < "aaa");
+}

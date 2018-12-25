@@ -311,6 +311,16 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
                       full_name.c_str());
 }
 
+// Note: This is defined here rather than in the header
+// to avoid using as<string> before specialising it.
+bool Options::operator==(const char* other) const {
+  return as<std::string>() == std::string(other);
+}
+
+bool Options::operator<(const char* other) const {
+  return as<std::string>() < std::string(other);
+}
+
 void Options::printUnused() const {
   bool allused = true;
   // Check if any options are unused

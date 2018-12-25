@@ -350,7 +350,7 @@ public:
   /// int value = option["test"].as<int>();
   ///
   template <typename T>
-  T as(Mesh* mesh = nullptr) const {
+  T as(Mesh* UNUSED(mesh) = nullptr) const {
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -461,6 +461,26 @@ public:
     return *parent_instance;
   }
 
+  /// Equality operator
+  /// Converts to the same type and compares
+  /// This conversion may fail, throwing std::bad_cast
+  template<typename T>
+  bool operator==(const T& other) const {
+    return as<T>() == other;
+  }
+
+  /// Overloaded equality operator for literal strings
+  bool operator==(const char* other) const;
+  
+  /// Comparison operator
+  template<typename T>
+  bool operator<(const T& other) const {
+    return as<T>() < other;
+  }
+
+  /// Overloaded comparison operator for literal strings
+  bool operator<(const char* other) const;
+  
   //////////////////////////////////////
   // Backward-compatible interface
   
