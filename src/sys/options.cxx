@@ -26,6 +26,19 @@ void Options::cleanup() {
   root_instance = nullptr;
 }
 
+Options::Options(const Options& other)
+    : value(other.value), attributes(other.attributes),
+      parent_instance(other.parent_instance), full_name(other.full_name),
+      is_section(other.is_section), children(other.children), is_value(other.is_value),
+      value_used(other.value_used) {
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;
@@ -73,6 +86,25 @@ const Options &Options::operator[](const std::string &name) const {
   return it->second;
 }
 
+Options& Options::operator=(const Options& other) {
+  // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+  value = other.value;
+  attributes = other.attributes;
+  full_name = other.full_name;
+  is_section = other.is_section;
+  children = other.children;
+  is_value = other.is_value;
+  value_used = other.value_used;
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+  return *this;
+}
+
 bool Options::isSet() const {
   // Check if no value
   if (!is_value) {
@@ -85,6 +117,42 @@ bool Options::isSet() const {
   }
 
   return true;
+}
+
+template <>
+void Options::assign<>(Field2D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Field3D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Array<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Matrix<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
 }
 
 template <> std::string Options::as<std::string>(Mesh* UNUSED(mesh)) const {

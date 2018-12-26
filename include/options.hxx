@@ -163,18 +163,7 @@ public:
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
 
   /// Copy constructor
-  Options(const Options& other)
-      : value(other.value), attributes(other.attributes),
-        parent_instance(other.parent_instance), full_name(other.full_name),
-        is_section(other.is_section), children(other.children), is_value(other.is_value),
-        value_used(other.value_used) {
-
-    // Ensure that this is the parent of all children,
-    // otherwise will point to the original Options instance
-    for (auto &child : children) {
-      child.second.parent_instance = this;
-    }
-  }
+  Options(const Options& other);
 
   /// Get a reference to the only root instance
   static Options &root();
@@ -278,24 +267,7 @@ public:
   /// Note that if only the value is desired, then that can be copied using
   /// the value member directly e.g. option2.value = option1.value;
   ///
-  Options& operator=(const Options& other) {
-    // Note: Here can't do copy-and-swap because pointers to parents are stored
-
-    value = other.value;
-    attributes = other.attributes;
-    full_name = other.full_name;
-    is_section = other.is_section;
-    children = other.children;
-    is_value = other.is_value;
-    value_used = other.value_used;
-
-    // Ensure that this is the parent of all children,
-    // otherwise will point to the original Options instance
-    for (auto &child : children) {
-      child.second.parent_instance = this;
-    }
-    return *this;
-  }
+  Options& operator=(const Options& other);
   
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
@@ -635,36 +607,11 @@ template<> inline void Options::assign<>(std::string val, const std::string sour
 // Note: const char* version needed to avoid conversion to bool
 template<> inline void Options::assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> inline void Options::assign<>(Field2D val, const std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template<> inline void Options::assign<>(Field3D val, const std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template<> inline void Options::assign<>(Array<BoutReal> val, const std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template<> inline void Options::assign<>(Matrix<BoutReal> val, const std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template<> inline void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
+template<> void Options::assign<>(Field2D val, const std::string source);
+template<> void Options::assign<>(Field3D val, const std::string source);
+template<> void Options::assign<>(Array<BoutReal> val, const std::string source);
+template<> void Options::assign<>(Matrix<BoutReal> val, const std::string source);
+template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source);
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
