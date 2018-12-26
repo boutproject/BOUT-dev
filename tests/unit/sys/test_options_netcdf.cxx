@@ -85,6 +85,20 @@ TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
   EXPECT_DOUBLE_EQ(value(1,1,1), 2.4);
 }
 
+TEST_F(OptionsNetCDFTest, Groups) {
+  std::string filename = std::tmpnam(nullptr);
+  
+  Options options;
+  options["test"]["key"] = 42;
+
+  // Write file
+  OptionsNetCDF(filename).write(options);
+
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+  EXPECT_EQ(data["test"]["key"], 42);
+}
+
 TEST_F(OptionsNetCDFTest, AttributeInt) {
   std::string filename = std::tmpnam(nullptr);
   
