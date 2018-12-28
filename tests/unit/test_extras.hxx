@@ -65,12 +65,12 @@ public:
     ystart = 1;
     yend = ny - 2;
 
-    StaggerGrids=true;
+    StaggerGrids=false;
+    
     // Unused variables
     periodicX = false;
     NXPE = 1;
     PE_XIND = 0;
-    StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
