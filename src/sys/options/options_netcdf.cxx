@@ -84,6 +84,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
       const auto &att = attpair.second;   // NcVarAtt object
       
       auto att_type = att.getType(); // Type of the attribute
+
       if (att_type == ncInt) {
         int value;
         att.getValues(&value);
@@ -96,7 +97,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
         double value;
         att.getValues(&value);
         result[var_name].attributes[att_name] = value;
-      } else if (att_type == ncString) {
+      } else if ((att_type == ncString) or (att_type == ncChar)) {
         std::string value;
         att.getValues(value);
         result[var_name].attributes[att_name] = value;
@@ -261,15 +262,24 @@ void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
   const char* cstr = value.c_str();
   var.putVar(&cstr);
 }
+  
+/// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
+  // Set cell location attribute
+  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
 }
+  
+/// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0, 0));
+
+  // Set cell location attribute
+  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
 }
 
 /// Visit a variant type, and put the data into a NcVar

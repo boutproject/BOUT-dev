@@ -20,12 +20,14 @@ using OptionsNetCDFTest = FakeMeshFixture;
 TEST_F(OptionsNetCDFTest, ReadWriteInt) {
   // Temporary file
   OptionsNetCDF file(std::tmpnam(nullptr));
-  
-  Options options;
-  options["test"] = 42;
 
-  // Write the file
-  file.write(options);
+  {
+    Options options;
+    options["test"] = 42;
+    
+    // Write the file
+    file.write(options);
+  }
 
   // Read again
   Options data = file.read();
@@ -36,12 +38,14 @@ TEST_F(OptionsNetCDFTest, ReadWriteInt) {
 TEST_F(OptionsNetCDFTest, ReadWriteString) {
   std::string filename = std::tmpnam(nullptr);
 
-  Options options;
-  options["test"] = "hello";
+  {
+    Options options;
+    options["test"] = "hello";
 
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
@@ -51,12 +55,14 @@ TEST_F(OptionsNetCDFTest, ReadWriteString) {
 TEST_F(OptionsNetCDFTest, ReadWriteField2D) {
   std::string filename = std::tmpnam(nullptr);
 
-  Options options;
-  options["test"] = Field2D(1.0);
-
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
+  {
+    Options options;
+    options["test"] = Field2D(1.0);
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
@@ -68,13 +74,15 @@ TEST_F(OptionsNetCDFTest, ReadWriteField2D) {
 
 TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
   std::string filename = std::tmpnam(nullptr);
-  
-  Options options;
-  options["test"] = Field3D(2.4);
-  
-  // Write file
-  OptionsNetCDF(filename).write(options);
 
+  {
+    Options options;
+    options["test"] = Field3D(2.4);
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
@@ -87,13 +95,15 @@ TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
 
 TEST_F(OptionsNetCDFTest, Groups) {
   std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["test"]["key"] = 42;
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
   
-  Options options;
-  options["test"]["key"] = 42;
-
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
   // Read file
   Options data = OptionsNetCDF(filename).read();
   EXPECT_EQ(data["test"]["key"], 42);
@@ -101,47 +111,133 @@ TEST_F(OptionsNetCDFTest, Groups) {
 
 TEST_F(OptionsNetCDFTest, AttributeInt) {
   std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["test"] = 3;
+    options["test"].attributes["thing"] = 4;
+
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
   
-  Options options;
-  options["test"] = 3;
-  options["test"].attributes["thing"] = 4;
-
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
   // Read file
   Options data = OptionsNetCDF(filename).read();
-  EXPECT_EQ(options["test"].attributes["thing"].as<int>(), 4);
+  EXPECT_EQ(data["test"].attributes["thing"].as<int>(), 4);
 }
 
 TEST_F(OptionsNetCDFTest, AttributeBoutReal) {
   std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["test"] = 3;
+    options["test"].attributes["thing"] = 3.14;
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
   
-  Options options;
-  options["test"] = 3;
-  options["test"].attributes["thing"] = 3.14;
-
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
   // Read file
   Options data = OptionsNetCDF(filename).read();
-  EXPECT_DOUBLE_EQ(options["test"].attributes["thing"].as<BoutReal>(), 3.14);
+  EXPECT_DOUBLE_EQ(data["test"].attributes["thing"].as<BoutReal>(), 3.14);
 }
 
 TEST_F(OptionsNetCDFTest, AttributeString) {
   std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["test"] = 3;
+    options["test"].attributes["thing"] = "hello";
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
   
-  Options options;
-  options["test"] = 3;
-  options["test"].attributes["thing"] = "hello";
-
-  // Write file
-  OptionsNetCDF(filename).write(options);
-
   // Read file
   Options data = OptionsNetCDF(filename).read();
-  EXPECT_EQ(options["test"].attributes["thing"].as<std::string>(), "hello");
+  EXPECT_EQ(data["test"].attributes["thing"].as<std::string>(), "hello");
+}
+
+TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
+  std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["f2d"] = Field2D(2.0);
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_CENTRE));
+}
+
+TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
+  std::string filename = std::tmpnam(nullptr);
+
+  // Enable staggered grids
+  mesh->StaggerGrids = true;
+  
+  {
+    Field2D f(2.0);
+    f.setLocation(CELL_YLOW);
+    
+    Options options;
+    options["f2d"] = f;
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_YLOW));
+}
+
+TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
+  std::string filename = std::tmpnam(nullptr);
+
+  {
+    Options options;
+    options["f3d"] = Field3D(2.0);
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_CENTRE));
+}
+
+TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
+  std::string filename = std::tmpnam(nullptr);
+
+  // Enable staggered grids
+  mesh->StaggerGrids = true;
+  
+  {
+    Field3D f(2.0);
+    f.setLocation(CELL_YLOW);
+    
+    Options options;
+    options["f3d"] = f;
+    
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+  
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_YLOW));
 }
 
 
