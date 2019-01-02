@@ -6,6 +6,8 @@
 #include <iostream>
 #include <mpi.h>
 
+#include "bout/mesh.hxx"
+#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
@@ -74,6 +76,10 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+  }
+
+  void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
+    coords_map[location] = coords;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
