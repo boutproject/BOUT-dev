@@ -1216,10 +1216,10 @@ def Laplace(Field3D a):
     checkInit()
     return f3dFromObj(c.Laplace(a.cobj[0]))
 
-def Delp2(Field3D a, zsmooth=-1):
-#    """Delp2(Field3D a, zsmooth=-1)"""
+def Delp2(Field3D a):
+#    """Delp2(Field3D a)"""
     checkInit()
-    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
+    return f3dFromObj(c.Delp2(a.cobj[0]))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     """

@@ -125,6 +125,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
@@ -161,6 +162,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
 
   Field3D result(&mesh);
   result.allocate();
+  result.setLocation(f.getLocation());
 
   // We only use methods in ShiftedMetric to get fields for parallel operations
   // like interp_to or DDY.

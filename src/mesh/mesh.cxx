@@ -376,8 +376,8 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
-  output_info << _("Registered region 3D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region 3D ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
@@ -385,8 +385,8 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
     throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
-  output_info << _("Registered region 2D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region 2D ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
@@ -394,8 +394,8 @@ void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &
     throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
   }
   regionMapPerp[region_name] = region;
-  output_info << _("Registered region Perp ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region Perp ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){
@@ -432,7 +432,7 @@ void Mesh::createDefaultRegions(){
                                            LocalNz, maxregionblocksize)); // Same as ALL
   addRegionPerp("RGN_NOZ", getRegionPerp("RGN_ALL")); // Currently the same as ALL
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
-  
+
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {

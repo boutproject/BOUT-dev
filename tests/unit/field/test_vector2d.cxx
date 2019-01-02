@@ -35,6 +35,12 @@ protected:
     mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
     mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
+
+    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
+        Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
   }
 
   ~Vector2DTest() {
@@ -497,4 +503,165 @@ TEST_F(Vector2DTest, DivideVector2DField3D) {
   EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 1.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 2.0));
   EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 3.0));
+}
+
+TEST_F(Vector2DTest, Cross2D3D) {
+  Vector2D vector1;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector3D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = cross(vector1, vector2);
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 0.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 0.0));
+  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 0.0));
+}
+
+TEST_F(Vector2DTest, Cross2D2D) {
+  Vector2D vector1;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector2D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = cross(vector1, vector2);
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result.x, 0.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(result.y, 0.0));
+  EXPECT_TRUE(IsField2DEqualBoutReal(result.z, 0.0));
+}
+
+TEST_F(Vector2DTest, Dot2D3DCoCo) {
+  Vector2D vector1;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector3D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+}
+
+TEST_F(Vector2DTest, Dot2D2DCoCo) {
+  Vector2D vector1;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector2D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result, 308.0));
+}
+
+TEST_F(Vector2DTest, Dot2D3DCoContra) {
+  Vector2D vector1;
+  vector1.covariant = false;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector3D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(result, 28.0));
+}
+
+TEST_F(Vector2DTest, Dot2D2DCoContra) {
+  Vector2D vector1;
+  vector1.covariant = false;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector2D vector2;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result, 28.0));
+}
+
+TEST_F(Vector2DTest, Dot2D3DContraContra) {
+  Vector2D vector1;
+  vector1.covariant = false;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector3D vector2;
+  vector2.covariant = false;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+}
+
+TEST_F(Vector2DTest, Dot2D2DContraContra) {
+  Vector2D vector1;
+  vector1.covariant = false;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  Vector2D vector2;
+  vector2.covariant = false;
+  vector2.x = 1.0;
+  vector2.y = 2.0;
+  vector2.z = 3.0;
+
+  auto result = vector1 * vector2;
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result, 308.0));
+}
+
+TEST_F(Vector2DTest, AbsCo) {
+  Vector2D vector1;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  auto result = abs(vector1);
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result, 24.819347291981714));
+}
+
+TEST_F(Vector2DTest, AbsContra) {
+  Vector2D vector1;
+  vector1.covariant = false;
+  vector1.x = 2.0;
+  vector1.y = 4.0;
+  vector1.z = 6.0;
+
+  auto result = abs(vector1);
+
+  EXPECT_TRUE(IsField2DEqualBoutReal(result, 24.819347291981714));
 }
