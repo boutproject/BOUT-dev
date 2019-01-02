@@ -5625,14 +5625,11 @@ if test "x$enable_warnings" != "xno"; then :
 
 # Some hopefully sensible default compiler warning flags
 
-# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
-# we cast a function to the wrong type in MatFDColoringSetFunction
 
 
 
 
-
-for flag in       -Wall      -Wextra      -Wnull-dereference      -Wno-cast-function-type   ; do
+for flag in       -Wall      -Wextra      -Wnull-dereference   ; do
   as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags_$extra_compiler_flags_test_$flag" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $flag" >&5
 $as_echo_n "checking whether C++ compiler accepts $flag... " >&6; }
@@ -5702,6 +5699,91 @@ else
 fi
 
 done
+
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+# Also note that gcc ignores unknown flags of the form "-Wno-warning"
+# for backwards compatibility. Therefore we need to add the positive
+# form as an additional flag which it will choke on (if it doesn't
+# exist). See: https://gcc.gnu.org/wiki/FAQ#wnowarning
+
+
+
+
+
+for flag in       -Wno-cast-function-type   ; do
+  as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags_$extra_compiler_flags_test "-Wcast-function-type"_$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $flag" >&5
+$as_echo_n "checking whether C++ compiler accepts $flag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS $extra_compiler_flags_test "-Wcast-function-type" $flag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+
+if ${CXXFLAGS+:} false; then :
+
+  case " $CXXFLAGS " in #(
+  *" $flag "*) :
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS already contains \$flag"; } >&5
+  (: CXXFLAGS already contains $flag) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } ;; #(
+  *) :
+
+     as_fn_append CXXFLAGS " $flag"
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+     ;;
+esac
+
+else
+
+  CXXFLAGS=$flag
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: : CXXFLAGS=\"\$CXXFLAGS\""; } >&5
+  (: CXXFLAGS="$CXXFLAGS") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+
+fi
+
+else
+  :
+fi
+
+done
+
 
 
 else
