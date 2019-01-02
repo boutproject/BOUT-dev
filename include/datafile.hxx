@@ -15,10 +15,6 @@ class Datafile;
 #define __DATAFILE_H__
 
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
 #include "options.hxx"
 #include "bout/macro_for_each.hxx"
 
@@ -27,6 +23,10 @@ class Datafile;
 #include <cstdarg>
 #include <cstdio>
 class Mesh;
+class Field2D;
+class Field3D;
+class Vector2D;
+class Vector3D;
 
 #include <vector>
 #include <string>
