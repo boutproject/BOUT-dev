@@ -68,3 +68,11 @@ build-check-integrated-tests: libfast
 
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
+
+######################################################################
+# Releases
+######################################################################
+
+# Makes the tarball BOUT++-v<version>.tar.gz
+dist:
+	@bin/bout-archive-helper.sh v$(BOUT_VERSION)
