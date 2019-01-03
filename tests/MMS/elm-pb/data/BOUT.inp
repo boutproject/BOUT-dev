@@ -35,6 +35,8 @@ floats = false # -> Output in double precision
 
 [laplace]
 all_terms = true
+inner_boundary_flags = 0
+outer_boundary_flags = 0
 
 ##################################################
 # derivative methods
@@ -139,9 +141,6 @@ viscos_perp = -1.0  # Perpendicular
 ## Compressional terms (only when compress = true)
 phi_curv = true    # Include curvature*Grad(phi) in P equation
 # gamma = 1.6666
-
-## field inversion flags
-phi_flags = 0
 
 ##################################################
 # settings for individual variables
