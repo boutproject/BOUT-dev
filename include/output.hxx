@@ -35,7 +35,7 @@ class Output;
 #include "bout/assert.hxx"
 #include "boutexception.hxx"
 #include "unused.hxx"
-#include "bout/sys/gettext.hxx"  // for gettext _() macro
+#include "bout/sys/gettext.hxx"  // IWYU pragma: keep for gettext _() macro
 
 using std::endl;
 

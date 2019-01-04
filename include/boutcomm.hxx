@@ -30,7 +30,7 @@ class BoutComm;
 #ifndef __BOUTCOMM_H__
 #define __BOUTCOMM_H__
 
-#include <mpi.h>
+#include <mpi.h> // IWYU pragma: keep
 
 /// Class to represent the 'global' communicator
 class BoutComm {
