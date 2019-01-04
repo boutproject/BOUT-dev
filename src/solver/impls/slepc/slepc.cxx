@@ -36,6 +36,7 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <boutcomm.hxx>
+#include <dcomplex.hxx>
 
 std::string formatEig(BoutReal reEig, BoutReal imEig);
 
