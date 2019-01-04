@@ -33,6 +33,8 @@
 #include <string>
 #include <vector>
 
+#include "unused.hxx" // IWYU pragma: keep
+
 /// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
 

@@ -26,6 +26,8 @@
 
 #include <cmath>
 
+#include "boutexception.hxx"
+#include "globals.hxx"
 #include "msg_stack.hxx"
 #include "output.hxx"
 #include "utils.hxx"
