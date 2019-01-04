@@ -41,8 +41,9 @@ class LaplaceSPT;
 #ifndef __SPT_H__
 #define __SPT_H__
 
-#include <invert_laplace.hxx>
+#include <bout/mesh.hxx> // Just for comm_handle?
 #include <dcomplex.hxx>
+#include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 

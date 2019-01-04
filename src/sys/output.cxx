@@ -26,6 +26,8 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+
 #include <output.hxx>
 #include <utils.hxx>
 

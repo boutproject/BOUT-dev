@@ -1,9 +1,10 @@
-#include <bout/physicsmodel.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <math.h>
 #include "mathematica.h"
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/physicsmodel.hxx>
+#include <derivs.hxx>
+#include <initialprofiles.hxx>
+#include <math.h>
 
 BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);

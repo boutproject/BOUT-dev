@@ -34,6 +34,7 @@ class LaplacePDD;
 #ifndef __LAPLACE_PDD_H__
 #define __LAPLACE_PDD_H__
 
+#include <bout/mesh.hxx> // Just for comm_handle?
 #include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>

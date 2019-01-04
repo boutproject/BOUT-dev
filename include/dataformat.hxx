@@ -34,7 +34,6 @@ class DataFormat;
 #define __DATAFORMAT_H__
 
 #include "bout_types.hxx"
-#include "unused.hxx"
 
 #include <string>
 #include <memory>

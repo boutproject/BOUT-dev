@@ -30,20 +30,19 @@
 #define __UTILS_H__
 
 #include "bout_types.hxx"
-#include "dcomplex.hxx"
 #include "boutexception.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
-#include <string>
-#include <list>
+#include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <algorithm>
+#include <list>
 #include <memory>
+#include <sstream>
+#include <string>
 
 namespace bout {
 namespace utils {
@@ -370,7 +369,6 @@ inline void checkData(BoutReal UNUSED(f)){};
  * Allocate memory and copy string \p s
  */ 
 char* copy_string(const char* s);
-
 
 /// Convert a value to a string
 /// by writing to a stringstream

@@ -27,10 +27,11 @@
 #define __INTERP_H__
 
 #include "bout_types.hxx"
-#include "field3d.hxx"
-#include "mask.hxx"
-#include "stencils.hxx"
-#include "utils.hxx"
+#include <bout/mesh.hxx>
+#include <field2d.hxx>
+#include <field3d.hxx>
+#include <mask.hxx>
+#include <stencils.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

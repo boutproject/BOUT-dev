@@ -533,7 +533,7 @@ TEST(StringUtilitiesTest, ConstCharToString) {
 TEST(StringUtilitiesTest, StringToString) {
   std::string test_string = "dlkjl872kj";
 
-  EXPECT_EQ( test_string, toString(test_string) );
+  EXPECT_EQ(test_string, toString(test_string));
 }
 
 TEST(StringUtilitiesTest, IntToString) {

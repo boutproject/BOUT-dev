@@ -29,14 +29,14 @@
  *
  **************************************************************************/
 
+#include "pdd.hxx"
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <boutexception.hxx>
 #include <fft.hxx>
 #include <globals.hxx>
 #include <lapack_routines.hxx>
 #include <utils.hxx>
-
-#include "pdd.hxx"
 
 const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
   ASSERT1(localmesh == b.getMesh());

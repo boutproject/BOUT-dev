@@ -30,7 +30,6 @@
 #define __INDEX_DERIVS_HXX__
 
 #include <functional>
-#include <iostream>
 
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>

@@ -13,8 +13,8 @@
 #ifdef BOUT_HAS_PETSC  // Requires PETSc
 
 #include <bout/assert.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/sys/timer.hxx>
-
 #include <msg_stack.hxx>
 #include <output.hxx>
 

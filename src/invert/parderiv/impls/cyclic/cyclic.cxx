@@ -35,16 +35,16 @@
  *
  ************************************************************************/
 
-#include <globals.hxx>
-#include <utils.hxx>
 #include "cyclic.hxx"
-#include <fft.hxx>
+#include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/surfaceiter.hxx>
 #include <boutexception.hxx>
 #include <cyclic_reduction.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
 #include <msg_stack.hxx>
-#include <bout/constants.hxx>
-
-#include <bout/surfaceiter.hxx>
+#include <utils.hxx>
 
 #include <cmath>
 

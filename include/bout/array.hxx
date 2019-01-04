@@ -30,10 +30,6 @@
 #include <vector>
 #include <memory>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #ifdef BOUT_ARRAY_WITH_VALARRAY
 #include <valarray>
 #endif

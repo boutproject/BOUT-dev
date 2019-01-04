@@ -37,30 +37,19 @@
 #define __BOUT_H__
 
 #include "boutcomm.hxx"
-
 #include "globals.hxx"
-
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
-
 #include "difops.hxx" // Differential operators
-
 #include "vecops.hxx" // Vector differential operations
-
 #include "smoothing.hxx" // Smoothing functions
-
 #include "sourcex.hxx"     // source and mask functions
-
 #include "bout/solver.hxx"
-
 #include "datafile.hxx"
-
 #include "where.hxx"
-
 #include "output.hxx"
-
 #include "utils.hxx"
 
 const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE;  ///< Version number

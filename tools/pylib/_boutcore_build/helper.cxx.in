@@ -3,6 +3,7 @@ cat <<EOF
 #include <globals.hxx>
 #include <derivs.hxx>
 #include <difops.hxx>
+#include <bout/coordinates.hxx>
 #include <invert_laplace.hxx>
 EOF
 for ftype in "Field3D" "Field2D"

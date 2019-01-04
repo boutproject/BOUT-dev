@@ -29,12 +29,12 @@
 #ifndef __VECOPS_H__
 #define __VECOPS_H__
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
 #include "bout/deprecated.hxx"
+
+class Field2D;
+class Field3D;
+class Vector2D;
+class Vector3D;
 
 /// Gradient of scalar field \p f, returning a covariant vector
 ///

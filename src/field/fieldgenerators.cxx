@@ -2,6 +2,7 @@
 #include "fieldgenerators.hxx"
 
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <utils.hxx>
 
 //////////////////////////////////////////////////////////

@@ -38,44 +38,35 @@
  *
  **************************************************************************/
 
-class Mesh;
-
 #ifndef __MESH_H__
 #define __MESH_H__
+class Mesh;
 
-#include "mpi.h"
+// The following is relatively expensive to include because it includes mpi.h
+#include <boutcomm.hxx>
 
-#include <bout/deprecated.hxx>
-#include <bout/deriv_store.hxx>
-#include <bout/index_derivs_interface.hxx>
-
-#include "field_data.hxx"
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "datafile.hxx"
-#include "options.hxx"
-
 #include "fieldgroup.hxx"
-
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
-
-#include "sys/range.hxx" // RangeIterator
-
-#include <bout/griddata.hxx>
-
-#include "coordinates.hxx"    // Coordinates class
-
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
+#include <bout/deprecated.hxx>
+#include <bout/index_derivs_interface.hxx>
+#include <bout/paralleltransform.hxx>
 
-#include <bout/region.hxx>
+class Field3D;
+class Field2D;
+class RangeIterator;
+class Coordinates;
+class GridDataSource;
+class FieldData;
+class Datafile;
+class Options;
+class BoundaryRegion;
+class BoundaryRegionPar;
+template <typename T>
+class Region;
 
-#include <list>
-#include <memory>
 #include <map>
+#include <string>
 
 /// Type used to return pointers to handles
 typedef void* comm_handle;
@@ -451,57 +442,15 @@ class Mesh {
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return CELL_XLOW;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return CELL_YLOW;
-    case (DIRECTION::Z):
-      return CELL_ZLOW;
-    default:
-      throw BoutException("Unhandled direction encountered in getAllowedStaggerLoc");
-    }
-  };
+  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const;
 
   /// Returns the number of grid points in the
   /// particular direction
-  int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return LocalNx;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return LocalNy;
-    case (DIRECTION::Z):
-      return LocalNz;
-    default:
-      throw BoutException("Unhandled direction encountered in getNpoints");
-    }
-  };
+  int getNpoints(DIRECTION direction) const;
 
   /// Returns the number of guard points in the
   /// particular direction
-  int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
-    switch (direction) {
-    case (DIRECTION::X):
-      return xstart;
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::YAligned):
-      return ystart;
-    case (DIRECTION::Z):
-      return 2;
-    default:
-      throw BoutException("Unhandled direction encountered in getNguard");
-    }
-  };
+  int getNguard(DIRECTION direction) const;
 
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS

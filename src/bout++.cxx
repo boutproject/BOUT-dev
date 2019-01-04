@@ -41,47 +41,32 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
-#include "mpi.h"
-
-#include <boutcomm.hxx>
-#include <bout.hxx>
-#include <datafile.hxx>
-#include <bout/solver.hxx>
-#include <boutexception.hxx>
-#include <optionsreader.hxx>
-#include <msg_stack.hxx>
-
-#include <bout/sys/timer.hxx>
-
-#include <boundary_factory.hxx>
-
-#include <invert_laplace.hxx>
-
-#include <bout/slepclib.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/petsclib.hxx>
+#include <bout/slepclib.hxx>
+#include <bout/solver.hxx>
+#include <bout/sys/timer.hxx>
+#include <boundary_factory.hxx>
+#include <bout.hxx>
+#include <bout_types.hxx>
+#include <boutcomm.hxx>
+#include <boutexception.hxx>
+#include <dcomplex.hxx>
+#include <invert_laplace.hxx>
+#include <optionsreader.hxx>
+#include <output.hxx>
 
-#include <ctime>
-
-#include <strings.h>
 #include <string>
-#include <vector>
 using std::string;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 #include <csignal>
 void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
 #endif
-
-
-#include <output.hxx>
 
 BoutReal simtime;
 int iteration;

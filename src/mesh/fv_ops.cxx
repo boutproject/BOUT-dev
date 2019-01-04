@@ -3,7 +3,6 @@
 #include <globals.hxx>
 #include <utils.hxx>
 #include <msg_stack.hxx>
-
 #include <output.hxx>
 
 namespace FV {

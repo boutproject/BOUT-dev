@@ -1,10 +1,11 @@
-#include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <math.h>
 #include "mathematica.h"
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout.hxx>
+#include <boutmain.hxx>
+#include <derivs.hxx>
+#include <initialprofiles.hxx>
+#include <math.h>
 
 void solution(Field3D &f, BoutReal t, BoutReal D);
 class ErrorMonitor: public Monitor{

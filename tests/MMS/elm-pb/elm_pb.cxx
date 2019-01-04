@@ -9,21 +9,22 @@
  *
  *******************************************************************************/
 
+#include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout.hxx>
+#include <boutmain.hxx>
+#include <derivs.hxx>
 #include <initialprofiles.hxx>
+#include <interpolation.hxx>
 #include <invert_laplace.hxx>
 #include <invert_parderiv.hxx>
-#include <interpolation.hxx>
-#include <derivs.hxx>
-#include <sourcex.hxx>
-#include <boutmain.hxx>
-#include <bout/constants.hxx>
 #include <msg_stack.hxx>
+#include <sourcex.hxx>
 #include <utils.hxx>
 
 #include <field_factory.hxx>
 
-#include <math.h>
+#include <cmath>
 
 // 2D inital profiles
 Field2D J0, P0; // Current and pressure

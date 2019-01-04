@@ -32,9 +32,6 @@ class CvodeSolver;
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-// NOTE: MPI must be included before SUNDIALS, otherwise complains
-#include "mpi.h"
-
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"

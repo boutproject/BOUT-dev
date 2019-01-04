@@ -27,8 +27,6 @@
 
 
 #ifdef BOUT_HAS_MUMPS
-
-// #include "mpi.h"
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <msg_stack.hxx>

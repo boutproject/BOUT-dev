@@ -1,10 +1,11 @@
 
+#include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <boutmain.hxx>
-#include <smoothing.hxx>
-#include <invert_laplace.hxx>
 #include <derivs.hxx>
 #include <field_factory.hxx>
-#include <bout/constants.hxx>
+#include <invert_laplace.hxx>
+#include <smoothing.hxx>
 
 Field3D n, vort;  // Evolving density and vorticity
 Field3D phi;

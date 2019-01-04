@@ -42,9 +42,6 @@ class IdaSolver;
 #include <vector2d.hxx>
 #include <vector3d.hxx>
 
-// NOTE: MPI must be included before SUNDIALS, otherwise complains
-#include "mpi.h"
-
 #include <nvector/nvector_parallel.h>
 
 #include <vector>

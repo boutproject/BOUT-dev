@@ -1,5 +1,8 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "gtest/gtest.h"
 
 #include <cmath>
 

@@ -6,9 +6,10 @@
  * 
  */
 
+#include <bout/coordinates.hxx>
 #include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
 #include <derivs.hxx>
+#include <field_factory.hxx>
 
 class TokamakMMS : public PhysicsModel {
 public:

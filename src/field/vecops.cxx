@@ -24,13 +24,13 @@
  *
  **************************************************************************/
 
+#include <bout/coordinates.hxx>
 #include <bout/scorepwrapper.hxx>
-
-#include <globals.hxx>
-#include <vecops.hxx>
 #include <derivs.hxx>
+#include <globals.hxx>
 #include <msg_stack.hxx>
 #include <unused.hxx>
+#include <vecops.hxx>
 
 /**************************************************************************
  * Gradient operators

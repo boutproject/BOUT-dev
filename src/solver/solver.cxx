@@ -20,26 +20,15 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <bout/solver.hxx>
-#include <cstring>
-#include <ctime>
-
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <boutexception.hxx>
-
-#include <field_factory.hxx>
-
 #include "bout/solverfactory.hxx"
-
+#include <bout/physicsmodel.hxx>
+#include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <bout/assert.hxx>
+#include <bout_types.hxx>
+#include <field_factory.hxx>
+#include <initialprofiles.hxx>
 
-#include <bout/array.hxx>
-#include "bout/region.hxx"
+#include <string>
 
 // Static member variables
 
@@ -197,7 +186,8 @@ void Solver::add(Field3D &v, const std::string name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), strLocation(v.getLocation()));
+    output_info.write("\tVariable %s shifted to %s\n", name.c_str(),
+                      CELL_LOC_STRING(v.getLocation()).c_str());
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -1058,7 +1048,11 @@ void Solver::save_derivs(BoutReal *dudata) {
   // Make sure 3D fields are at the correct cell location
   for(const auto& f : f3d) {
     if(f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException(_("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n"),strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
+      throw BoutException(_("Time derivative at wrong location - Field is at %s, "
+                            "derivative is at %s for field '%s'\n"),
+                          CELL_LOC_STRING(f.var->getLocation()).c_str(),
+                          CELL_LOC_STRING(f.F_var->getLocation()).c_str(),
+                          f.name.c_str());
     }
   }
 

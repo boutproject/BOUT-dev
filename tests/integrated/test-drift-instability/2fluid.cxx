@@ -6,13 +6,14 @@
 #include <bout.hxx>
 #include <boutmain.hxx>
 
-#include <initialprofiles.hxx>
+#include <bout/coordinates.hxx>
 #include <derivs.hxx>
+#include <initialprofiles.hxx>
 #include <interpolation.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;

@@ -23,15 +23,16 @@
  *
  **************************************************************************/
 
-#include <bout.hxx>
+#include "../../../src/invert/laplace/impls/naulin/naulin_laplace.hxx"
 #include <bout/constants.hxx>
-#include <field_factory.hxx>
+#include <bout/coordinates.hxx>
+#include <bout.hxx>
 #include <boutexception.hxx>
-#include <options.hxx>
-#include <invert_laplace.hxx>
 #include <cmath>
 #include <derivs.hxx>
-#include "../../../src/invert/laplace/impls/naulin/naulin_laplace.hxx"
+#include <field_factory.hxx>
+#include <invert_laplace.hxx>
+#include <options.hxx>
 
 BoutReal max_error_at_ystart(const Field3D &error);
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g);

@@ -30,8 +30,6 @@ class EulerSolver;
 #ifndef __EULER_SOLVER_H__
 #define __EULER_SOLVER_H__
 
-#include "mpi.h"
-
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 

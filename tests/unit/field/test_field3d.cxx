@@ -4,14 +4,15 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "field3d.hxx"
+#include "fieldperp.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
 
 #include <cmath>
 #include <set>

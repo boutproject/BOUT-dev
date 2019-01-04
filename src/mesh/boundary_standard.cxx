@@ -1,13 +1,14 @@
-#include <globals.hxx>
-#include <boundary_standard.hxx>
-#include <invert_laplace.hxx>
-#include <fft.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <boundary_standard.hxx>
+#include <boutexception.hxx>
 #include <derivs.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
+#include <invert_laplace.hxx>
+#include <msg_stack.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 // #define BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
 

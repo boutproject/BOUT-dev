@@ -1,6 +1,7 @@
+#include <bout/coordinates.hxx>
+#include <bout/mesh.hxx>
 #include <bout/physicsmodel.hxx>
 #include <utils.hxx>
-#include <bout/mesh.hxx>
 
 class FCISlab : public PhysicsModel {
 public:

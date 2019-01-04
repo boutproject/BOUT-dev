@@ -24,28 +24,18 @@
  *
  */
 
-class Field;
-
 #ifndef __FIELD_H__
 #define __FIELD_H__
+class Field;
 
-#include <cstdio>
+#include <string>
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
 #include "msg_stack.hxx"
-#include "stencils.hxx"
-#include <bout/rvec.hxx>
-
-#include "unused.hxx"
 
 class Mesh;
 class Coordinates;
-extern Mesh * mesh; ///< Global mesh
-
-#ifdef TRACK
-#include <string>
-#endif
 
 /*!
  * \brief Base class for fields
@@ -90,13 +80,7 @@ class Field {
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  virtual Mesh * getMesh() const{
-    if (fieldmesh){
-      return fieldmesh;
-    } else {
-      return mesh;
-    }
-  }
+  virtual Mesh* getMesh() const;
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.

@@ -5,7 +5,7 @@
   if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
     throw BoutException(
         "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation({{lhs.name}}.getLocation()), strLocation({{rhs.name}}.getLocation()));
+        CELL_LOC_STRING({{lhs.name}}.getLocation()).c_str(), CELL_LOC_STRING({{rhs.name}}.getLocation()).c_str());
   }
 #endif
   {% endif %}
@@ -63,7 +63,7 @@
     if (this->getLocation() != rhs.getLocation()) {
       throw BoutException(
         "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(this->getLocation()), strLocation({{rhs.name}}.getLocation()));
+        CELL_LOC_STRING(this->getLocation()).c_str(), CELL_LOC_STRING({{rhs.name}}.getLocation()).c_str());
     }
 #endif
     {% endif %}

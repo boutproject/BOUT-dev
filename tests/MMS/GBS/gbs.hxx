@@ -6,8 +6,9 @@ class GBS;
 
 #include <bout/physicsmodel.hxx>
 
-#include <invert_laplace.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <invert_laplace.hxx>
 
 class GBS : public PhysicsModel {
 protected:

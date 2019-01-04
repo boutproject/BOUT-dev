@@ -1,10 +1,13 @@
 #include "gtest/gtest.h"
-
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "interpolation.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
+
+// Hack to get access to "private" specific
+// parallel transform type(s).
+#include "../src/mesh/parallel/identity.hxx"
 
 ////// delete these
 #include "bout/constants.hxx"

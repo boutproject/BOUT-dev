@@ -38,14 +38,17 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
-#include "fieldperp.hxx"
-#include "field3d.hxx"
-#include "field2d.hxx"
-#include <boutexception.hxx>
-#include "unused.hxx"
-
 #include "dcomplex.hxx"
-#include "options.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+#include <boutexception.hxx>
+
+class Field2D;
+class Field3D;
+class Options;
+class Mesh;
+class Coordinates;
 
 // Inversion flags for each boundary
 const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value

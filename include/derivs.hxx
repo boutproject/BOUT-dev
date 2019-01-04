@@ -29,12 +29,11 @@
 #ifndef __DERIVS_H__
 #define __DERIVS_H__
 
+#include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
-
-#include "bout_types.hxx"
 
 ////////// FIRST DERIVATIVES //////////
 

@@ -3,15 +3,14 @@
 
 #include <petscksp.h>
 
-#include <bout/invert/laplacexy.hxx>
-
 #include <bout/assert.hxx>
-
-#include <boutcomm.hxx>
-#include <utils.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/invert/laplacexy.hxx>
+#include <bout/sys/range.hxx>
 #include <bout/sys/timer.hxx>
-
+#include <boutcomm.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"

@@ -23,7 +23,6 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
 #include <interpolation.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>

@@ -31,8 +31,6 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
-#include <mpi.h>
-
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>

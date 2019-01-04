@@ -33,7 +33,6 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *********************************************************/
-//#include "mpi.h" // For MPI_Wtime()
 
 #include <globals.hxx>
 #include <bout/sys/timer.hxx>
