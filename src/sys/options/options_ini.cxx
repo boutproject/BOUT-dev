@@ -49,10 +49,19 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
 #include "options_ini.hxx"
+
+#include <cstddef>
+#include <map>
+#include <utility>
+
+#include "bout/sys/gettext.hxx"
+
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 using namespace std;
 

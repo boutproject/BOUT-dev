@@ -1,14 +1,21 @@
 #ifndef __PAR_BNDRY_OP_H__
 #define __PAR_BNDRY_OP_H__
 
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
-#include "utils.hxx"
+#include "boutexception.hxx"
 #include "unused.hxx"
 
 class BoundaryRegionPar;
-
-#include <utility>
+class Field2D;
+class Field3D;
+class FieldGenerator;
 
 //////////////////////////////////////////////////
 // Base class

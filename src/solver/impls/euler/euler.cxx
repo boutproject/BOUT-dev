@@ -1,15 +1,17 @@
 
 #include "euler.hxx"
 
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <bout/openmpwrap.hxx>
+#include <iterator>
 
-#include <cmath>
+#include "bout/openmpwrap.hxx"
+#include "bout/solver.hxx"
 
-#include <output.hxx>
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
   if(dt >= cfl_factor*timestep)

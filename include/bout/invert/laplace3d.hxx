@@ -1,5 +1,3 @@
-class Laplace3D;
-
 #ifndef __LAPLACE3D_H__
 #define __LAPLACE3D_H__
 
@@ -16,9 +14,9 @@ class Laplace3D;
 //
 ///////////////////////////////////////////////////////////////////
 
-#include <options.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "options.hxx"
 
 class Laplace3D {
 public:

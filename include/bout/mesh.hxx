@@ -40,17 +40,14 @@
 
 #ifndef __MESH_H__
 #define __MESH_H__
-class Mesh;
 
-// The following is relatively expensive to include because it includes mpi.h
-#include <boutcomm.hxx>
-
+#include "bout/deprecated.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/paralleltransform.hxx"
 #include "bout_types.hxx"
+#include "boutcomm.hxx"
 #include "fieldgroup.hxx"
 #include "unused.hxx"
-#include <bout/deprecated.hxx>
-#include <bout/index_derivs_interface.hxx>
-#include <bout/paralleltransform.hxx>
 
 class Field3D;
 class Field2D;

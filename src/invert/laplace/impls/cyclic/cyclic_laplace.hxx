@@ -29,14 +29,22 @@
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-class LaplaceCyclic;
+#include "dcomplex.hxx"
+#include "invert_laplace.hxx"
 
-#include <invert_laplace.hxx>
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
 #include "utils.hxx"
 
+class Mesh;
 class Options;
+template <class T> class CyclicReduce;
 
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!

@@ -38,10 +38,16 @@
 
 #include "karniadakis.hxx"
 
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <bout/openmpwrap.hxx>
+#include <iterator>
+
+#include "bout/openmpwrap.hxx"
+#include "bout/solver.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 
 KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
   canReset = true;  

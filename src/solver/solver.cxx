@@ -20,15 +20,41 @@
  *
  **************************************************************************/
 
-#include "bout/solverfactory.hxx"
-#include <bout/physicsmodel.hxx>
-#include <bout/solver.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout_types.hxx>
-#include <field_factory.hxx>
-#include <initialprofiles.hxx>
+#include "bout/solver.hxx"
 
+#include <ctime>
+#include <list>
+#include <map>
+#include <ostream>
 #include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+#include "bout/monitor.hxx"
+#include "bout/physicsmodel.hxx"
+#include "bout/region.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "field_factory.hxx"
+#include "globals.hxx"
+#include "initialprofiles.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 // Static member variables
 

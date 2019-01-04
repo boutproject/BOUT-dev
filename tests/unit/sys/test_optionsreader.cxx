@@ -1,16 +1,20 @@
 #include "gtest/gtest.h"
-#include "test_extras.hxx"
-#include "optionsreader.hxx"
-
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "utils.hxx"
-
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
+
+#include "bout_types.hxx"
+#include "options.hxx"
+#include "optionsreader.hxx"
+#include "output.hxx"
+#include "test_extras.hxx"
+#include "utils.hxx"
+
+class BoutException;
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 class OptionsReaderTest : public ::testing::Test {

@@ -23,15 +23,27 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include "fieldperp.hxx"
 
 #include <cmath>
+#include <map>
+#include <string>
+#include <vector>
 
-#include <fieldperp.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
 
 FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
   if (fieldmesh) {

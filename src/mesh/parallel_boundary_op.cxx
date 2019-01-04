@@ -1,11 +1,17 @@
 #include "parallel_boundary_op.hxx"
+
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/expressionparser.hxx"
+
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "field_factory.hxx"
 #include "globals.hxx"
-#include "output.hxx"
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include <bout/coordinates.hxx>
-#include <parallel_boundary_region.hxx>
+#include "msg_stack.hxx"
+#include "parallel_boundary_region.hxx"
+#include "utils.hxx"
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 

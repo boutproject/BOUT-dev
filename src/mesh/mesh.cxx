@@ -1,15 +1,40 @@
 
+#include "bout/mesh.hxx"
+
+#include <iterator>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/fieldgroup.hxx"
+#include "bout/griddata.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/sys/range.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "field_data.hxx"
+#include "fieldperp.hxx"
 #include "meshfactory.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 #include "parallel/fci.hxx"
 #include "parallel/identity.hxx"
 #include "parallel/shiftedmetric.hxx"
-#include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
-#include <bout/region.hxx>
-#include <bout/sys/range.hxx>
-#include <fieldperp.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);

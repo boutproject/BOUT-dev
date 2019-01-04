@@ -1,10 +1,14 @@
+
 #include "gtest/gtest.h"
 
 #include "bout/coordinates.hxx"
-#include "bout/mesh.hxx"
-#include "output.hxx"
 
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "output.hxx"
 #include "test_extras.hxx"
+
+class Mesh;
 
 /// Global mesh
 extern Mesh *mesh;

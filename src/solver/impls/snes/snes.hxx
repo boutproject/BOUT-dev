@@ -25,21 +25,20 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class SNESSolver;
-
 #ifndef __SNES_SOLVER_H__
 #define __SNES_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
-#include <bout/petsclib.hxx>
+#ifdef BOUT_HAS_PETSC
+
+#include "bout_types.hxx"
+#include "bout/solver.hxx"
+#include "bout/petsclib.hxx"
 
 #include <petsc.h>
 #include <petscsnes.h>
 
-#include <bout/solverfactory.hxx>
+#include "bout/solverfactory.hxx"
+class SNESSolver;
 namespace {
 RegisterSolver<SNESSolver> registersolversnes("snes");
 }

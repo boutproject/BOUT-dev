@@ -1,11 +1,11 @@
-
-class RK4SIMPLEScheme;
-
 #ifndef __RK4SIMPLE_SCHEME_H__
 #define __RK4SIMPLE_SCHEME_H__
 
-#include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include "bout/rkscheme.hxx"
+#include "bout/array.hxx"
+#include "bout_types.hxx"
+
+class Options;
 
 class RK4SIMPLEScheme : public RKScheme{
  public:

@@ -5,7 +5,7 @@
  * Usage
  * -----
  *
- * #include <bout/slepclib.hxx>
+ * #include "bout/slepclib.hxx"
  * 
  * class MyClass {
  *   public:
@@ -39,8 +39,6 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-
-class SlepcLib;
 
 #ifndef __SLEPCLIB_H__
 #define __SLEPCLIB_H__

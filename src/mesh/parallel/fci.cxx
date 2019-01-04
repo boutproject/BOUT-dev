@@ -37,15 +37,27 @@
  **************************************************************************/
 
 #include "fci.hxx"
+
+#include <cmath>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+
+#include "boundary_region.hxx"
+#include "bout_types.hxx" // See this for codes
+#include "field2d.hxx"
+#include "globals.hxx"
+#include "interpolation.hxx"
 #include "interpolation_factory.hxx"
-#include "parallel_boundary_op.hxx"
+#include "mask.hxx"
+#include "msg_stack.hxx"
 #include "parallel_boundary_region.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
-#include <bout_types.hxx> // See this for codes
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include "utils.hxx"
 
 /**
  * Return the sign of val

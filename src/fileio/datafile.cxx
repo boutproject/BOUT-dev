@@ -34,16 +34,31 @@
  * 
  *********************************************************/
 
-#include <globals.hxx>
-#include <bout/sys/timer.hxx>
-#include <datafile.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <msg_stack.hxx>
+#include "datafile.hxx"
+
 #include <cstring>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "dataformat.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "formatfactory.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true),
   floats(false), openclose(true), enabled(true), shiftOutput(false),

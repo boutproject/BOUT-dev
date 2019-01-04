@@ -38,19 +38,23 @@
  *
  **************************************************************************/
 
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <stencils.hxx>
-#include <utils.hxx>
+#include "derivs.hxx"
 
-#include <cmath>
+#include <string>
 
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mesh.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 /*******************************************************************************
  * First central derivatives

@@ -28,9 +28,23 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
-#include <bout/coordinates.hxx>
-#include <bout/openmpwrap.hxx>
-#include <msg_stack.hxx>
+
+#include <cmath>
+#include <cstdio>
+#include <iterator>
+#include <ostream>
+
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+
+#include "boutexception.hxx"
+#include "invert_laplace.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 BoutReal soltime=0.0,settime=0.0;
 

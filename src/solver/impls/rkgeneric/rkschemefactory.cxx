@@ -1,11 +1,16 @@
 #include "rkschemefactory.hxx"
 
-#include "impls/rkf45/rkf45.hxx"
+#include <string>
+#include <strings.h>
+
+#include "bout/rkscheme.hxx"
+
+#include "boutexception.hxx"
 #include "impls/cashkarp/cashkarp.hxx"
 #include "impls/rk4simple/rk4simple.hxx"
 #include "impls/rkf34/rkf34.hxx"
-
-#include <boutexception.hxx>
+#include "impls/rkf45/rkf45.hxx"
+#include "options.hxx"
 
 RKSchemeFactory *RKSchemeFactory::instance = nullptr;
 

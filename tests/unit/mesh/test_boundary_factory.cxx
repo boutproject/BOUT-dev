@@ -1,9 +1,18 @@
 #include "gtest/gtest.h"
+#include <list>
+#include <map>
+#include <string>
+
+#include "bout/mesh.hxx"
 
 #include "boundary_factory.hxx"
+#include "boundary_op.hxx"
 #include "boundary_region.hxx"
-
 #include "test_extras.hxx"
+#include "unused.hxx"
+
+class Field2D;
+class Field3D;
 
 /// Global mesh
 extern Mesh *mesh;

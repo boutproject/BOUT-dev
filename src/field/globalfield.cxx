@@ -1,7 +1,12 @@
+#include "bout/globalfield.hxx"
 
-#include <bout/globalfield.hxx>
-#include <boutexception.hxx>
-#include <boutcomm.hxx>
+#include <map>
+#include <vector>
+
+#include "bout/mesh.hxx"
+
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
 
 GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize) 
   : mesh(m), data_on_proc(proc), nx(xsize), ny(ysize), nz(zsize) {

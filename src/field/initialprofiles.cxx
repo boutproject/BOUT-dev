@@ -36,15 +36,21 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <initialprofiles.hxx>
-#include <boutexception.hxx>
-#include <field_factory.hxx>
-#include <output.hxx>
-#include <bout/constants.hxx>
-#include <msg_stack.hxx>
-#include "unused.hxx"
+#include "initialprofiles.hxx"
 
+#include <string>
+
+#include "bout/mesh.hxx"
+
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "field_factory.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 void initial_profile(const std::string &name, Field3D &var) {
   TRACE("initial_profile(string, Field3D)");

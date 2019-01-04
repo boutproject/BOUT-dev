@@ -24,23 +24,20 @@
  *
  **************************************************************************/
 
-class FieldGenerator;
-class ExpressionParser;
-class ParseException;
-
 #ifndef __EXPRESSION_PARSER_H__
 #define __EXPRESSION_PARSER_H__
 
+#include <exception>
+#include <list>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
+
 #include "unused.hxx"
 
-#include <string>
-#include <map>
-#include <list>
-#include <utility>
-#include <sstream>
-#include <memory>
-#include <exception>
-
+class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
 
 //////////////////////////////////////////////////////////

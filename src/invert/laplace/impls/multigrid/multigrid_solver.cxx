@@ -27,9 +27,23 @@
  *
  **************************************************************************/
 
+#include <cmath>
+#include <cstdio>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/openmpwrap.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
 #include "multigrid_laplace.hxx"
+#include "output.hxx"
 #include "unused.hxx"
-#include <bout/openmpwrap.hxx>
+#include "utils.hxx"
 
 Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
                     MPI_Comm comm,int check) : 

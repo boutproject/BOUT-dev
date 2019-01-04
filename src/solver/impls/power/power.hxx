@@ -24,15 +24,19 @@
  *
  **************************************************************************/
 
-class PowerSolver;
-
 #ifndef __POWER_SOLVER_H__
 #define __POWER_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include <map>
+#include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/array.hxx"
+
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
+
+class PowerSolver;
 namespace {
 RegisterSolver<PowerSolver> registersolverpower("power");
 }

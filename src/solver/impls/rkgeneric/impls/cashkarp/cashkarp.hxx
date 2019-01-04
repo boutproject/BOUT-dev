@@ -1,11 +1,9 @@
-
-class CASHKARPScheme;
-
 #ifndef __CASHKARP_SCHEME_H__
 #define __CASHKARP_SCHEME_H__
 
-#include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include "bout/rkscheme.hxx"
+
+class Options;
 
 class CASHKARPScheme : public RKScheme{
  public:

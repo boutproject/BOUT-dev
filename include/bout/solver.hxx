@@ -33,29 +33,23 @@
  *
  **************************************************************************/
 
-class Solver;
-
-///////////////////////////////////////////////////////////////////
-
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
-#include "bout/monitor.hxx"
-#include "options.hxx"
-#include "datafile.hxx"
-
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
-#include "bout/mesh.hxx"
-
 #include <list>
 #include <string>
+
+#include "bout/mesh.hxx"
+#include "bout/monitor.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "options.hxx"
+#include "unused.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 class PhysicsModel;
 

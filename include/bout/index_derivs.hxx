@@ -29,25 +29,35 @@
 #ifndef __INDEX_DERIVS_HXX__
 #define __INDEX_DERIVS_HXX__
 
+#include <cmath>
+#include <complex>
 #include <functional>
+#include <map>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <vector>
 
-#include <bout/assert.hxx>
-#include <bout/constants.hxx>
-#include <bout/deriv_store.hxx>
-#include <bout/index_derivs_interface.hxx>
-#include <bout/region.hxx>
-#include <bout/scorepwrapper.hxx>
-#include <bout/template_combinations.hxx>
-
-#include <bout_types.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <unused.hxx>
-
-class Field3D;
-class Field2D;
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/deriv_store.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+#include "bout/template_combinations.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "interpolation.hxx"
+#include "msg_stack.hxx"
+#include "stencils.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
 
 const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 

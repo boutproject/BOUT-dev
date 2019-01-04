@@ -5,7 +5,7 @@
 #ifndef __MASKX_H__
 #define __MASKX_H__
 
-#include <bout_types.hxx>
+#include "bout_types.hxx"
 
 class Field2D;
 class Field3D;

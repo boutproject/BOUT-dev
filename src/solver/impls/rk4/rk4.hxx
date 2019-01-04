@@ -25,15 +25,18 @@
  *
  **************************************************************************/
 
-class RK4Solver;
-
 #ifndef __RK4_SOLVER_H__
 #define __RK4_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include "bout/array.hxx"
 
-#include <bout/solverfactory.hxx>
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
+
+class Options;
+class RK4Solver;
+
 namespace {
 RegisterSolver<RK4Solver> registersolverrk4("rk4");
 }

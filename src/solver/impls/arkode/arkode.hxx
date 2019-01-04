@@ -26,28 +26,23 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_ARKODE
-
-class ArkodeSolver;
-
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#ifdef BOUT_HAS_ARKODE
 
-#include "bout/solver.hxx"
-
-#include <arkode/arkode_spgmr.h>
-#include <arkode/arkode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
-
+#include <sundials/sundials_nvector.h>
 #include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/region.hxx"
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+
+#include "bout_types.hxx"
+
+class ArkodeSolver;
+class Options;
+
 namespace {
 RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 }

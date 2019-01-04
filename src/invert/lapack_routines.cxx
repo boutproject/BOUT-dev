@@ -34,10 +34,16 @@
  *
  */
 
+#include <complex>
+#include <map>
+#include <vector>
 
-#include <globals.hxx>
-#include <dcomplex.hxx>
-#include <boutexception.hxx>
+#include "bout/array.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "utils.hxx"
 
 #ifdef LAPACK
 

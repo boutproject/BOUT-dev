@@ -36,13 +36,12 @@
 #ifndef __DIFOPS_H__
 #define __DIFOPS_H__
 
-#include "bout_types.hxx"
-
-class Field2D;
-class Field3D;
-class Solver;
-
 #include "bout/deprecated.hxx"
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+
+class Solver;
 
 /*!
  * Parallel derivative (central differencing) in Y

@@ -1,9 +1,13 @@
 #ifndef __PAR_BNDRY_H__
 #define __PAR_BNDRY_H__
 
+#include <string>
+#include <vector>
+
 #include "boundary_region.hxx"
 #include "bout_types.hxx"
-#include <vector>
+
+class Mesh;
 
 /**
  * Boundary region for parallel direction. This contains a vector of points that are

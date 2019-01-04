@@ -1,12 +1,9 @@
-
-class RKSchemeFactory;
-
 #ifndef __RKSCHEME_FACTORY_H__
 #define __RKSCHEME_FACTORY_H__
 
-#include <bout/rkscheme.hxx>
+#include "bout/rkscheme.hxx"
 
-#include <string.h>
+class Options;
 
 class RKSchemeFactory {
  public:

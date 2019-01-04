@@ -1,10 +1,18 @@
 #include "power.hxx"
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
 
 #include <cmath>
+#include <iterator>
+
+#include "bout/solver.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 
 int PowerSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Power solver");

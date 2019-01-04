@@ -36,16 +36,27 @@
  *
  **************************************************************************/
 
-class LaplaceSPT;
-
 #ifndef __SPT_H__
 #define __SPT_H__
 
-#include <bout/mesh.hxx> // Just for comm_handle?
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include "bout/mesh.hxx" // Just for comm_handle?
+#include "dcomplex.hxx"
+#include "invert_laplace.hxx"
+#include "utils.hxx"
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+
+class Options;
 
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!

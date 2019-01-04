@@ -34,8 +34,8 @@
 #include <valarray>
 #endif
 
-#include <bout/assert.hxx>
-#include <bout/openmpwrap.hxx>
+#include "bout/assert.hxx"
+#include "bout/openmpwrap.hxx"
 
 /*!
  * Data array type with automatic memory management

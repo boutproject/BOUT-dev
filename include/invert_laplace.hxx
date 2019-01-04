@@ -29,8 +29,6 @@
  *
  **************************************************************************/
 
-class Laplacian;
-
 #ifndef __LAPLACE_H__
 #define __LAPLACE_H__
 
@@ -38,11 +36,11 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
+#include "boutexception.hxx"
 #include "dcomplex.hxx"
 #include "fieldperp.hxx"
 #include "globals.hxx"
 #include "unused.hxx"
-#include <boutexception.hxx>
 
 class Field2D;
 class Field3D;

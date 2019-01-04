@@ -1,5 +1,16 @@
 #include "cashkarp.hxx"
 
+#include <map>
+#include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/rkscheme.hxx"
+
+#include "bout_types.hxx"
+#include "options.hxx"
+#include "utils.hxx"
+
 CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   //Set characteristics of scheme
   numStages = 6;

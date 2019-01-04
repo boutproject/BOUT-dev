@@ -28,7 +28,23 @@
  *
  **************************************************************************/
 
-#include <bout/physicsmodel.hxx>
+#include "bout/physicsmodel.hxx"
+
+#include <string>
+
+#include "bout/mesh.hxx"
+#include "bout/solver.hxx"
+
+#include "bout.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+
+class Field2D;
+class Field3D;
+class Vector2D;
+class Vector3D;
 
 PhysicsModel::PhysicsModel()
     : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),

@@ -31,15 +31,20 @@
  *
  **************************************************************************/
 
-class RK3SSP;
-
 #ifndef __RK3SSP_SOLVER_H__
 #define __RK3SSP_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include <map>
+#include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/array.hxx"
+
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
+class Options;
+class RK3SSP;
+
 namespace {
 RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");
 }

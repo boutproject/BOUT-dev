@@ -31,10 +31,10 @@
 #ifndef __LAPLACEXZ_H__
 #define __LAPLACEXZ_H__
 
-#include <options.hxx>
-#include <field3d.hxx>
-#include <bout/mesh.hxx>
-#include <unused.hxx>
+#include "bout/mesh.hxx"
+#include "field3d.hxx"
+#include "options.hxx"
+#include "unused.hxx"
 
 class LaplaceXZ {
 public:

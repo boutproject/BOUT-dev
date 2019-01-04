@@ -2,8 +2,8 @@
 #ifndef __EMPTYLAPLACE3D_H__
 #define __EMPTYLAPLACE3D_H__
 
-#include <bout/invert/laplace3d.hxx>
-#include <boutexception.hxx>
+#include "bout/invert/laplace3d.hxx"
+#include "boutexception.hxx"
 
 class EmptyLaplace3D : public Laplace3D {
 public:

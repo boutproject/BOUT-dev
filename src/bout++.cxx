@@ -41,28 +41,30 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
-#include <bout/openmpwrap.hxx>
-#include <bout/petsclib.hxx>
-#include <bout/slepclib.hxx>
-#include <bout/solver.hxx>
-#include <bout/sys/timer.hxx>
-#include <boundary_factory.hxx>
-#include <bout.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <optionsreader.hxx>
-#include <output.hxx>
-
+#include <csignal>
 #include <string>
-using std::string;
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include <csignal>
+#include "bout/openmpwrap.hxx"
+#include "bout/petsclib.hxx"
+#include "bout/slepclib.hxx"
+#include "bout/solver.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "boundary_factory.hxx"
+#include "bout.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "invert_laplace.hxx"
+#include "optionsreader.hxx"
+#include "output.hxx"
+
+using std::string;
+
 void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>

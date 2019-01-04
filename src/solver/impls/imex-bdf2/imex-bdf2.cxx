@@ -3,18 +3,18 @@
 
 #include "imex-bdf2.hxx"
 
-#include <bout/assert.hxx>
-#include <bout/sys/range.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
-
 #include <cmath>
 
-#include "petscsnes.h"
+#include "bout/assert.hxx"
+#include "bout/sys/range.hxx"
+
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
 #include "petscmat.h"
+#include "petscsnes.h"
+#include "utils.hxx"
 
 IMEXBDF2::IMEXBDF2(Options *opt)
     : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),

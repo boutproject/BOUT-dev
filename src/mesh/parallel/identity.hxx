@@ -1,7 +1,7 @@
 #ifndef __IDENTITY_TRANSFORM_HXX__
 #define __IDENTITY_TRANSFORM_HXX__
 
-#include <bout/paralleltransform.hxx>
+#include "bout/paralleltransform.hxx"
 
 /*!
  * This class implements the simplest form of ParallelTransform

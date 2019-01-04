@@ -1,5 +1,5 @@
 
-#include <bout/invert/laplace3d.hxx>
+#include "bout/invert/laplace3d.hxx"
 
 #include "laplace3d_factory.hxx"
 

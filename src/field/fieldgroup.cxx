@@ -1,5 +1,8 @@
+#include "bout/fieldgroup.hxx"
 
-#include <bout/fieldgroup.hxx>
+#include <algorithm>
+
+class Field3D;
 
 FieldGroup operator+(const FieldGroup &lhs, const FieldGroup &rhs) {
   return FieldGroup(lhs) += rhs;

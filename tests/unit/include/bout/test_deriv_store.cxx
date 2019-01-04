@@ -1,12 +1,15 @@
 #include "gtest/gtest.h"
+#include <functional>
+#include <set>
+#include <string>
+#include <vector>
 
-#include <bout/deriv_store.hxx>
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include "bout/deriv_store.hxx"
 
-#include <typeindex>
+#include "bout_types.hxx"
+#include "unused.hxx"
+
+class BoutException;
 
 using FieldType = std::vector<BoutReal>;
 

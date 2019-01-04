@@ -31,6 +31,9 @@
 
 #include "bout/deprecated.hxx"
 
+#include "bout_types.hxx"
+#include "field3d.hxx"
+
 class Field2D;
 class Field3D;
 class Vector2D;

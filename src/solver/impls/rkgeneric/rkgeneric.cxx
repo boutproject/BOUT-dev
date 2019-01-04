@@ -1,16 +1,23 @@
 
 #include "rkgeneric.hxx"
+
+#include <iterator>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "bout/openmpwrap.hxx"
+#include "bout/rkscheme.hxx"
+#include "bout/solver.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 #include "rkschemefactory.hxx"
-#include <bout/rkscheme.hxx>
-
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-
-#include <cmath>
-
-#include <output.hxx>
+#include "utils.hxx"
 
 RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   //Create scheme

@@ -28,13 +28,25 @@
  *
  **************************************************************************/
 
-#include <bout/coordinates.hxx>
-#include <bout/scorepwrapper.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <vector2d.hxx>
+#include "vector2d.hxx"
+
+#include <vector>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field_visitor.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/scorepwrapper.hxx"
+
+#include "boundary_op.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "interpolation.hxx"
+#include "msg_stack.hxx"
+#include "vector3d.hxx"
 
 Vector2D::Vector2D(Mesh *localmesh)
     : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}

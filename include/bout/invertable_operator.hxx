@@ -23,6 +23,9 @@
  *
  **************************************************************************/
 
+#ifndef __INVERTABLE_OPERATOR_H__
+#define __INVERTABLE_OPERATOR_H__
+
 namespace bout {
 namespace inversion {
 template <typename T>
@@ -30,22 +33,18 @@ class InvertableOperator;
 };
 };
 
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
-
 #ifdef BOUT_HAS_PETSC
 
-#include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
+#include "bout/petsclib.hxx"
+#include "bout/sys/timer.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 
 #include <petscksp.h>
-
-#include <bout/petsclib.hxx>
 
 #endif
 

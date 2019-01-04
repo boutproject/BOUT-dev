@@ -25,19 +25,30 @@
 
 #include "pvode.hxx"
 
+#include "bout/mesh.hxx"
+#include "bout/solver.hxx"
+
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "options.hxx"
+#include "pvode/cvode.h"
+#include "pvode/llnltyps.h"
+#include "pvode/nvector.h"
+
 #ifdef BOUT_HAS_PVODE
 
-#include <boutcomm.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
+#include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
+#include <pvode/iterativ.h> // contains the enum for types of preconditioning
+#include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
+#include "bout/sys/timer.hxx"
+
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
 #include "unused.hxx"
-
-#include <pvode/iterativ.h>  // contains the enum for types of preconditioning
-#include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
-#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
 
 using namespace pvode;
 

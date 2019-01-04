@@ -4,16 +4,39 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
-#include <bout/assert.hxx>
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
-#include <globals.hxx>
+#include "bout/coordinates.hxx"
+
+#include <cmath>
+#include <complex>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/fieldgroup.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mesh.hxx"
+
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "dcomplex.hxx"
+#include "derivs.hxx"
+#include "fft.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "interpolation.hxx"
+#include "invert_laplace.hxx" // Delp2 uses same coefficients as inversion code
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
 
 Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
                          Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
@@ -660,8 +683,6 @@ const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), CELL_LOC loc,
   return result;
 }
 
-#include <derivs.hxx>
-
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
@@ -783,8 +804,6 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const s
 
 /////////////////////////////////////////////////////////
 // perpendicular Laplacian operator
-
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 const Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field2D )");

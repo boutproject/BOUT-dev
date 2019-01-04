@@ -1,9 +1,14 @@
 
-#include <bout/fv_ops.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include "bout/fv_ops.hxx"
+
+#include <vector>
+
+#include "bout/coordinates.hxx"
+#include "bout/region.hxx"
+
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
 
 namespace FV {
 

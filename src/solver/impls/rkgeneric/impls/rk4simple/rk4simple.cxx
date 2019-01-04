@@ -1,5 +1,14 @@
 #include "rk4simple.hxx"
 
+#include <map>
+#include <string>
+#include <vector>
+
+#include "bout/rkscheme.hxx"
+
+#include "options.hxx"
+#include "utils.hxx"
+
 RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   //Set characteristics of scheme
   numStages = 11;

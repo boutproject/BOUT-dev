@@ -1,8 +1,7 @@
 #include "gtest/gtest.h"
-#include "boutexception.hxx"
-
-#include <iostream>
 #include <string>
+
+#include "boutexception.hxx"
 
 TEST(BoutExceptionTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutException("test"), BoutException);

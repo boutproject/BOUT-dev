@@ -1,11 +1,12 @@
 #include "gtest/gtest.h"
-
-#include "boutexception.hxx"
-#include "bout/generic_factory.hxx"
-
-#include <exception>
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
+
+#include "bout/generic_factory.hxx"
+
+class BoutException;
 
 class Base {
 public:

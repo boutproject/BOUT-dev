@@ -2,13 +2,13 @@
 /// Defines a class for iterating over flux surfaces (surfaces of constant x)
 /// 
 
-class SurfaceIter;
-
 #ifndef __SURFACEITER_H__
 #define __SURFACEITER_H__
 
-#include "mesh.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
 
+class Mesh;
 /// Iterates over Y-Z surfaces, optionally distributing work between processors
 ///
 /// Example

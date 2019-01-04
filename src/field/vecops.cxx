@@ -24,13 +24,24 @@
  *
  **************************************************************************/
 
-#include <bout/coordinates.hxx>
-#include <bout/scorepwrapper.hxx>
-#include <derivs.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
-#include <vecops.hxx>
+#include "vecops.hxx"
+
+#include <string>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/scorepwrapper.hxx"
+
+#include "bout_types.hxx"
+#include "derivs.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
 /**************************************************************************
  * Gradient operators

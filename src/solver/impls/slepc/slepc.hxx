@@ -24,25 +24,23 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_SLEPC
-
-class SlepcSolver;
-
 #ifndef __SLEPC_SOLVER_H__
 #define __SLEPC_SOLVER_H__
+
+#ifdef BOUT_HAS_SLEPC
 
 #include <slepc.h>
 
 #include "bout/solverfactory.hxx"
-#include <bout/solver.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <utils.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include "bout/solver.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "utils.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
-#include <bout/petsclib.hxx>
-#include <bout/slepclib.hxx>
+#include "bout/petsclib.hxx"
+#include "bout/slepclib.hxx"
 #include <vector>
 
 #define OPT_SIZE 40
@@ -50,6 +48,8 @@ class SlepcSolver;
 // Define a name to use with SolverType to indicate SlepcSolver
 // is in charge of advancing fields
 #define SOLVERSLEPCSELF "self"
+
+class SlepcSolver;
 
 namespace {
 RegisterSolver<SlepcSolver> registersolverslepc("slepc");

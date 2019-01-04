@@ -1,9 +1,24 @@
+#include "field_data.hxx"
 
-#include <globals.hxx>
-#include <field_data.hxx>
-#include <boundary_factory.hxx>
-#include <output.hxx>
-#include <field_factory.hxx>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bout/mesh.hxx"
+#include "bout/sys/expressionparser.hxx"
+
+#include "boundary_factory.hxx"
+#include "boundary_op.hxx"
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "field_factory.hxx"
+#include "globals.hxx"
+#include "output.hxx"
+#include "parallel_boundary_op.hxx"
+#include "parallel_boundary_region.hxx"
 #include "unused.hxx"
 
 FieldData::~FieldData() {

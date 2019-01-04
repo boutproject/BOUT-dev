@@ -26,12 +26,24 @@
 #ifndef __INTERP_H__
 #define __INTERP_H__
 
+#include <map>
+#include <string>
+#include <type_traits>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
 #include "bout_types.hxx"
-#include <bout/mesh.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <mask.hxx>
-#include <stencils.hxx>
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "globals.hxx"
+#include "mask.hxx"
+#include "msg_stack.hxx"
+#include "stencils.hxx"
+#include "utils.hxx"
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

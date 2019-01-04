@@ -1,17 +1,32 @@
 
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/griddata.hxx>
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <unused.hxx>
-#include <utils.hxx> // for ROUND function
-
+#include <complex>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <string>
 #include <utility>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/griddata.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "dataformat.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx" // for ROUND function
 
 /*!
  * Creates a GridFile object

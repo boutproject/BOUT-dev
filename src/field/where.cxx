@@ -23,8 +23,15 @@
  *
  **************************************************************************/
 
-#include <bout/mesh.hxx>
-#include <where.hxx>
+#include "where.hxx"
+
+#include <vector>
+
+#include "bout/region.hxx"
+
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 
 //////////////////////////////////////////////////////////////////////////////////
 // Versions taking Field2D and returning Field3D

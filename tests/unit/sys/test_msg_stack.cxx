@@ -2,10 +2,11 @@
 #if CHECK > 1
 
 #include "gtest/gtest.h"
-#include "msg_stack.hxx"
-
 #include <iostream>
+#include <sstream>
 #include <string>
+
+#include "msg_stack.hxx"
 
 TEST(MsgStackTest, BasicTest) {
   MsgStack msg_stack;

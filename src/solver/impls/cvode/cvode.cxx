@@ -24,23 +24,27 @@
  *
  **************************************************************************/
 
-#include "cvode.hxx"
-
 #ifdef BOUT_HAS_CVODE
 
-#include <boutcomm.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include "cvode.hxx"
 
 #include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
+#include <cvode/cvode_spgmr.h>
+#include <cvode/cvode_spils.h>
+#include <memory>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_iterative.h>
 #include <sundials/sundials_types.h>
-#include <sundials/sundials_math.h>
 
-#include <output.hxx>
+#include "bout/mesh.hxx"
 
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 #include "unused.hxx"
 
 #define ZERO        RCONST(0.)

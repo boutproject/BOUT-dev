@@ -23,13 +23,16 @@
  *
  **************************************************************************/
 
+#include "output.hxx"
+
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <string>
 
-#include <output.hxx>
-#include <utils.hxx>
+#include "multiostream.hxx"
+#include "utils.hxx"
 
 void Output::enable() {
   add(std::cout);

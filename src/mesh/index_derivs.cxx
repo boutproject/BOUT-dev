@@ -20,10 +20,16 @@
  *
  **************************************************************************/
 
-#include <bout/index_derivs.hxx>
-#include <bout/mesh.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
+#include "bout/index_derivs.hxx"
+
+#include "bout/assert.hxx"
+#include "bout/deriv_store.hxx"
+#include "bout/mesh.hxx"
+
+#include "bout_types.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "unused.hxx"
 
 /*******************************************************************************
  * Helper routines

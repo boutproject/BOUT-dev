@@ -27,26 +27,20 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_IDA
-
-class IdaSolver;
-
 #ifndef __IDA_SOLVER_H__
 #define __IDA_SOLVER_H__
 
-#include <bout/solver.hxx>
+#ifdef BOUT_HAS_IDA
 
-#include <bout_types.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include <sundials/sundials_nvector.h>
 
-#include <nvector/nvector_parallel.h>
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
 
-#include <vector>
+class IdaSolver;
+class Options;
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<IdaSolver> registersolverida("ida");
 }

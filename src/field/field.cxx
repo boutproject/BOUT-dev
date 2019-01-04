@@ -23,13 +23,11 @@
  *
  **************************************************************************/
 
+#include "field.hxx"
 
-#include <field.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <bout/mesh.hxx>
+#include "bout/mesh.hxx"
+
+#include "boundary_region.hxx"
 
 Field::Field(Mesh *localmesh) : fieldmesh(localmesh != nullptr? localmesh : mesh) {
 // Note we would like to do `fieldCoordinates = getCoordinates();` here but can't

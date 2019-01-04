@@ -26,11 +26,13 @@
 #ifdef BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
-#include <bout/assert.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <utils.hxx>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "boutcomm.hxx"
+#include "utils.hxx"
 
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV   "chebyshev"

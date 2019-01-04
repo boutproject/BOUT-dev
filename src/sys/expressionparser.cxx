@@ -22,9 +22,14 @@
  *
  **************************************************************************/
 
-#include <bout/sys/expressionparser.hxx>
+#include "bout/sys/expressionparser.hxx"
 
-#include <utils.hxx> // for lowercase
+#include <cctype>
+#include <cmath>
+#include <cstdio>
+
+#include "bout_types.hxx"
+#include "utils.hxx" // for lowercase
 
 using std::string;
 using std::list;

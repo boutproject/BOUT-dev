@@ -1,18 +1,16 @@
 
-#include <globals.hxx>
-
 #include "formatfactory.hxx"
 
-#include "impls/emptyformat.hxx"
-
-#include "impls/netcdf4/ncxx4.hxx"
-#include "impls/netcdf/nc_format.hxx"
-#include "impls/hdf5/h5_format.hxx"
-#include "impls/pnetcdf/pnetcdf.hxx"
-
-#include <boutexception.hxx>
-#include <output.hxx>
 #include <cstring>
+
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "impls/emptyformat.hxx"
+#include "impls/hdf5/h5_format.hxx"
+#include "impls/netcdf/nc_format.hxx"
+#include "impls/netcdf4/ncxx4.hxx"
+#include "impls/pnetcdf/pnetcdf.hxx"
+#include "output.hxx"
 
 FormatFactory *FormatFactory::instance = nullptr;
 

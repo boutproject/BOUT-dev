@@ -34,11 +34,27 @@
  */
 
 #include "cyclic_laplace.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
-#include <fft.hxx>
-#include <utils.hxx>
+
+#include <complex>
+#include <iterator>
+#include <map>
+#include <tuple>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "cyclic_reduction.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "invert_laplace.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "utils.hxx"
 
 LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {

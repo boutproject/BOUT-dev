@@ -1,13 +1,16 @@
 
-#include <boutcomm.hxx>
-#include <invert_parderiv.hxx>
-#include <boutexception.hxx>
-
-#include <strings.h>
-
 #include "parderiv_factory.hxx"
 
+#include <string>
+#include <strings.h>
+
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
 #include "impls/cyclic/cyclic.hxx"
+#include "invert_parderiv.hxx"
+#include "options.hxx"
+
+class Mesh;
 
 ParDerivFactory *ParDerivFactory::instance = nullptr;
 

@@ -23,16 +23,19 @@
  *
  **************************************************************************/
 
-class RKGenericSolver;
-
 #ifndef __RKGENERIC_SOLVER_H__
 #define __RKGENERIC_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
-#include <bout/rkscheme.hxx>
+#include "bout/array.hxx"
 
-#include <bout/solverfactory.hxx>
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
+
+class Options;
+class RKGenericSolver;
+class RKScheme;
+
 namespace {
 RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 }

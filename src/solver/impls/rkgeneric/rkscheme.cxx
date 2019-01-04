@@ -1,9 +1,22 @@
-#include "rkschemefactory.hxx"
-#include "unused.hxx"
-#include <bout/rkscheme.hxx>
-#include <boutcomm.hxx>
+#include "bout/rkscheme.hxx"
+
 #include <cmath>
-#include <output.hxx>
+#include <iomanip>
+#include <map>
+#include <ostream>
+#include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/openmpwrap.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
 
 ////////////////////
 // PUBLIC

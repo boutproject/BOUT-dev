@@ -7,11 +7,17 @@
 #ifndef __FIELDGENERATORS_H__
 #define __FIELDGENERATORS_H__
 
-#include <field_factory.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
-
 #include <cmath>
+#include <list>
+#include <memory>
+#include <string>
+
+#include "bout/sys/expressionparser.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "unused.hxx"
+
+class Mesh;
 
 //////////////////////////////////////////////////////////
 // Generators from values
@@ -282,8 +288,6 @@ private:
 // Ballooning transform
 // Use a truncated Ballooning transform to enforce periodicity
 // in doubly periodic domains
-
-#include <bout/mesh.hxx>
 
 class FieldBallooning : public FieldGenerator {
 public:

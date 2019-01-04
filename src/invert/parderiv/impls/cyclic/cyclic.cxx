@@ -36,17 +36,29 @@
  ************************************************************************/
 
 #include "cyclic.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/surfaceiter.hxx>
-#include <boutexception.hxx>
-#include <cyclic_reduction.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
 
 #include <cmath>
+#include <complex>
+#include <iterator>
+#include <map>
+#include <tuple>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/surfaceiter.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "cyclic_reduction.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
+
+class Options;
 
 InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {

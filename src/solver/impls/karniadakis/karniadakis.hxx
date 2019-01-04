@@ -30,15 +30,21 @@
  *
  **************************************************************************/
 
-class KarniadakisSolver;
-
 #ifndef __KARNIADAKIS_SOLVER_H__
 #define __KARNIADAKIS_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include <map>
+#include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/array.hxx"
+
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
+
+class KarniadakisSolver;
+class Options;
+
 namespace {
 RegisterSolver<KarniadakisSolver> registersolverkarniadakis("karniadakis");
 }

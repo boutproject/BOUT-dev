@@ -25,15 +25,14 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-class LaplacePetsc;
 
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
 #ifndef BOUT_HAS_PETSC
 
-#include <boutexception.hxx>
-#include <invert_laplace.hxx>
+#include "boutexception.hxx"
+#include "invert_laplace.hxx"
 
 class LaplacePetsc : public Laplacian {
 public:
@@ -58,13 +57,13 @@ public:
 
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
+#include "globals.hxx"
+#include "output.hxx"
 #include <petscksp.h>
-#include <options.hxx>
-#include <invert_laplace.hxx>
-#include <bout/petsclib.hxx>
-#include <boutexception.hxx>
+#include "options.hxx"
+#include "invert_laplace.hxx"
+#include "bout/petsclib.hxx"
+#include "boutexception.hxx"
 
 class LaplacePetsc : public Laplacian {
 public:

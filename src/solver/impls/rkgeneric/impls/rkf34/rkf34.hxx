@@ -1,11 +1,8 @@
-
-class RKF34Scheme;
-
 #ifndef __RKF34_SCHEME_H__
 #define __RKF34_SCHEME_H__
 
-#include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include "bout/rkscheme.hxx"
+class Options;
 
 class RKF34Scheme : public RKScheme{
  public:

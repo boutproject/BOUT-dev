@@ -24,27 +24,26 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class PetscSolver;
-
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
+#ifdef BOUT_HAS_PETSC
+
 #include <petsc.h>
 
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
 
-#include <bout/solver.hxx>
+#include "bout/solver.hxx"
 
-#include <bout/petsclib.hxx>
+#include "bout/petsclib.hxx"
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/solverfactory.hxx"
+class PetscSolver;
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }

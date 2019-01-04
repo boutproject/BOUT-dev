@@ -1,9 +1,11 @@
 #include "gtest/gtest.h"
-#include "boutexception.hxx"
-#include "output.hxx"
-
 #include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
+
+#include "output.hxx"
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 class OutputTest : public ::testing::Test {

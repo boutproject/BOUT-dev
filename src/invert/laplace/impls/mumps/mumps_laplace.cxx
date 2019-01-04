@@ -23,14 +23,16 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#ifdef BOUT_HAS_MUMPS
+
 #include "mumps_laplace.hxx"
 
-
-#ifdef BOUT_HAS_MUMPS
-#include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <msg_stack.hxx>
 #include <cmath>
+
+#include "bout/sys/timer.hxx"
+
+#include "boutcomm.hxx"
+#include "msg_stack.hxx"
 
 LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mesh) : 
   Laplacian(opt, loc, mesh_in),

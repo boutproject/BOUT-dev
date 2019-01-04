@@ -25,18 +25,30 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx> // for mesh
-#include <field2d.hxx>
-#include <utils.hxx>
-#include <boundary_op.hxx>
-#include <boundary_factory.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <bout/assert.hxx>
+#include "field2d.hxx"
 
 #include <cmath>
+#include <map>
+#include <ostream>
+#include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+
+#include "boundary_factory.hxx"
+#include "boundary_op.hxx"
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 

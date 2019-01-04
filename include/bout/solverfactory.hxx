@@ -1,6 +1,3 @@
-
-class SolverFactory;
-
 #ifndef __SOLVER_FACTORY_H__
 #define __SOLVER_FACTORY_H__
 
@@ -55,7 +52,7 @@ public:
 ///
 /// Usage:
 ///
-///     #include <bout/solverfactory.hxx>
+///     #include "bout/solverfactory.hxx"
 ///     namespace {
 ///     RegisterSolver<MySolver> registersolvermine("mysolver");
 ///     }

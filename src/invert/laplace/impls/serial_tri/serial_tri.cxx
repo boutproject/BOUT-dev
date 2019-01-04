@@ -25,16 +25,27 @@
  **************************************************************************/
 
 #include "serial_tri.hxx"
-#include "globals.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/openmpwrap.hxx>
-#include <boutexception.hxx>
+
 #include <cmath>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <complex>
+#include <iterator>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "invert_laplace.hxx"
+#include "lapack_routines.hxx"
+#include "utils.hxx"
+
+class Options;
 
 LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {

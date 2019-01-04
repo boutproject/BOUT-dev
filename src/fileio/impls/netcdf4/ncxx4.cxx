@@ -20,16 +20,20 @@
  *
  **************************************************************************/
 
-#include "ncxx4.hxx"
-
 #ifdef NCDF4
 
-#include <globals.hxx>
-#include <utils.hxx>
-#include <cmath>
+#include "ncxx4.hxx"
 
-#include <output.hxx>
-#include <msg_stack.hxx>
+#include <cmath>
+#include <cstdlib>
+
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 using std::string;
 

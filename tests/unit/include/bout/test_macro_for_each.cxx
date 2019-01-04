@@ -1,8 +1,7 @@
 #include "gtest/gtest.h"
+#include <sstream>
 
 #include "bout/macro_for_each.hxx"
-
-#include <sstream>
 
 #define INC(x) {++(x);}
 

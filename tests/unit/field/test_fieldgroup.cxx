@@ -1,7 +1,8 @@
 #include "gtest/gtest.h"
-#include "test_extras.hxx"
+#include <vector>
 
 #include "bout/fieldgroup.hxx"
+
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"

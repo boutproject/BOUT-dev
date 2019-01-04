@@ -1,10 +1,12 @@
 #include "gtest/gtest.h"
+#include <map>
+#include <numeric>
+#include <utility>
+#include <vector>
 
 #include "bout/array.hxx"
-#include "boutexception.hxx"
 
-#include <iostream>
-#include <numeric>
+class BoutException;
 
 // In order to keep these tests independent, they need to use
 // different sized arrays in order to not just reuse the data from

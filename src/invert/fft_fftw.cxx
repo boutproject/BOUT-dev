@@ -25,23 +25,29 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <options.hxx>
-#include <fft.hxx>
-#include <unused.hxx>
+#include <complex>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+
+#include "bout_types.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "options.hxx"
+#include "unused.hxx"
 
 #ifdef BOUT_HAS_FFTW
-#include <bout/constants.hxx>
-#include <bout/openmpwrap.hxx>
-
 #include <fftw3.h>
-#include <cmath>
+
+#include "bout/openmpwrap.hxx"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 #else
-#include <boutexception.hxx>
+#include "boutexception.hxx"
 #endif
 
 namespace bout {

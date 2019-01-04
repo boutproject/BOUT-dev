@@ -1,14 +1,18 @@
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <map>
+#include <numeric>
+#include <vector>
 
-#include "dcomplex.hxx"
-#include "fft.hxx"
-#include "test_extras.hxx"
 #include "bout/array.hxx"
 #include "bout/constants.hxx"
 
-#include <algorithm>
-#include <iostream>
-#include <numeric>
+#include "bout_types.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "test_extras.hxx"
 
 TEST(FFTTest, rfft) {
 

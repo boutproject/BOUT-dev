@@ -29,12 +29,10 @@
 *
 **************************************************************************/
 
-class OptionsReader;
-
 #ifndef __OPTIONSREADER_H__
 #define __OPTIONSREADER_H__
 
-#include "options.hxx"
+class Options;
 
 /// Class to handle reading options from file
 ///

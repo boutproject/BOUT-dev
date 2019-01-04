@@ -20,12 +20,21 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "interpolation.hxx"
+#include <cmath>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
-#include <vector>
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field3d.hxx"
+#include "interpolation.hxx"
+#include "mask.hxx"
+#include "utils.hxx"
 
 HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
     : Interpolation(y_offset, mesh), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),

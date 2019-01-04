@@ -1,11 +1,21 @@
 #include "laplacexz-cyclic.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+
+#include <complex>
+#include <iterator>
+
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/invert/laplacexz.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "cyclic_reduction.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "utils.hxx"
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
 

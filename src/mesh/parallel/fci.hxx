@@ -26,12 +26,15 @@
 #ifndef __FCITRANSFORM_H__
 #define __FCITRANSFORM_H__
 
-#include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
-#include <mask.hxx>
-#include <parallel_boundary_region.hxx>
-#include <unused.hxx>
+#include "bout/paralleltransform.hxx"
+#include "interpolation.hxx"
+#include "mask.hxx"
+#include "unused.hxx"
 
+#include "boutexception.hxx"
+#include "field3d.hxx"
+
+class BoundaryRegionPar;
 class Mesh;
 
 /*!

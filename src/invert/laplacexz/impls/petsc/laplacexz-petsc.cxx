@@ -12,11 +12,12 @@
 
 #ifdef BOUT_HAS_PETSC  // Requires PETSc
 
-#include <bout/assert.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "msg_stack.hxx"
+#include "output.hxx"
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   : LaplaceXZ(m, opt, loc), coefs_set(false) {

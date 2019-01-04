@@ -1,9 +1,15 @@
-
 #include "fieldgenerators.hxx"
 
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <utils.hxx>
+#include <cstdlib>
+#include <iterator>
+#include <utility>
+
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "utils.hxx"
 
 //////////////////////////////////////////////////////////
 

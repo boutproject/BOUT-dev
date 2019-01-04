@@ -1,7 +1,15 @@
 #include "interpolation_factory.hxx"
+
+#include <iterator>
+#include <ostream>
+#include <utility>
+
+#include "boutexception.hxx"
+#include "globals.hxx"
 #include "interpolation.hxx"
 #include "options.hxx"
 #include "output.hxx"
+#include "utils.hxx"
 
 InterpolationFactory* InterpolationFactory::instance = nullptr;
 

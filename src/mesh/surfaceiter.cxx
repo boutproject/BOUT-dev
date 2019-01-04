@@ -1,8 +1,10 @@
 
-#include <bout/surfaceiter.hxx>
+#include "bout/surfaceiter.hxx"
 
-#include <boutexception.hxx>
-#include <unused.hxx>
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "unused.hxx"
 
 int SurfaceIter::ySize() {
   return m->ySize(xpos);

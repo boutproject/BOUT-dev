@@ -34,12 +34,11 @@
 #include <set>
 #include <unordered_map>
 
-#include <bout/scorepwrapper.hxx>
-
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
+#include "bout/scorepwrapper.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
 /// for all types of derivatives. It is templated on the FieldType (2D or 3D) as

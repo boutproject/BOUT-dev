@@ -25,15 +25,23 @@
  **************************************************************************/
 
 #include "serial_band.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/openmpwrap.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <lapack_routines.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+
+#include <cmath>
+#include <complex>
+
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "invert_laplace.hxx"
+#include "lapack_routines.hxx"
+#include "utils.hxx"
+
+class Options;
 
 //#define SECONDORDER // Define to use 2nd order differencing
 

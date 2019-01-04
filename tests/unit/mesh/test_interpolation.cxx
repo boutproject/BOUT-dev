@@ -1,24 +1,17 @@
-#include "gtest/gtest.h"
-#include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "interpolation.hxx"
-#include "output.hxx"
-#include "test_extras.hxx"
 
 // Hack to get access to "private" specific
 // parallel transform type(s).
-#include "../src/mesh/parallel/identity.hxx"
+#include "gtest/gtest.h"
 
-////// delete these
-#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
+
+#include "../src/mesh/parallel/identity.hxx"
+#include "bout_types.hxx"
 #include "field3d.hxx"
-#include "unused.hxx"
+#include "interpolation.hxx"
+#include "output.hxx"
+#include "test_extras.hxx"
 #include "utils.hxx"
-#include <cmath>
-#include <set>
-#include <vector>
 ///////
 
 /// Global mesh

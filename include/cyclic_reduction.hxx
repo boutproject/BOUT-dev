@@ -42,16 +42,14 @@
 #endif
 //#define DIAGNOSE 1
 
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
-#include "utils.hxx"
 #include "bout/assert.hxx"
-#include <boutcomm.hxx>
-#include <lapack_routines.hxx>
-
-#include "output.hxx"
-
 #include "bout/openmpwrap.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "lapack_routines.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 template <class T> class CyclicReduce {
 public:

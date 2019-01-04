@@ -1,9 +1,10 @@
 
-#include <options.hxx>
-#include <boutexception.hxx>
+#include "laplace3d_factory.hxx"
+
 #include <strings.h>
 
-#include "laplace3d_factory.hxx"
+#include "boutexception.hxx"
+#include "options.hxx"
 
 // Include implementations here
 #include "impls/petsc/petsc_laplace3d.hxx"

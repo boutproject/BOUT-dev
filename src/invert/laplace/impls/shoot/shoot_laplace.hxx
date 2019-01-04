@@ -25,15 +25,26 @@
  *
  **************************************************************************/
 
-class LaplaceShoot;
-
 #ifndef __LAP_SHOOT_H__
 #define __LAP_SHOOT_H__
 
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include "boutexception.hxx"
+#include "invert_laplace.hxx"
+
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "dcomplex.hxx"
+#include "field2d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+
+class Mesh;
+class Options;
 
 class LaplaceShoot : public Laplacian {
 public:

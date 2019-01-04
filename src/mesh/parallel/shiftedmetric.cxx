@@ -7,11 +7,21 @@
  */
 
 #include "shiftedmetric.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
-#include <fft.hxx>
-#include <output.hxx>
+
+#include <algorithm>
+#include <cmath>
+#include <memory>
+
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "field2d.hxx"
+#include "options.hxx"
 
 ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   // Read the zShift angle from the mesh

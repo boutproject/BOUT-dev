@@ -24,15 +24,12 @@
  *
  **************************************************************************/
 
-class MsgStack;
-
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
-#include "unused.hxx"
-
-#include <exception>
 #include <cstdarg>
+#include <cstdio>
+#include <exception>
 #include <string>
 #include <vector>
 

@@ -38,9 +38,9 @@
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
-#include <bout/mesh.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
+#include "bout/mesh.hxx"
+#include "options.hxx"
+#include "boutexception.hxx"
 
 /*!
  * Create a dummy class so that code will compile
@@ -58,9 +58,9 @@ class LaplaceXY {
 
 #else // BOUT_HAS_PETSC
 
-#include <bout/mesh.hxx>
-#include <bout/petsclib.hxx>
-#include <cyclic_reduction.hxx>
+#include "bout/mesh.hxx"
+#include "bout/petsclib.hxx"
+#include "cyclic_reduction.hxx"
 #include "utils.hxx"
 
 class LaplaceXY {

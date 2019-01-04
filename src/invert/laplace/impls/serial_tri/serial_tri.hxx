@@ -24,14 +24,20 @@
  *
  **************************************************************************/
 
-class LaplaceSerialTri;
-
 #ifndef __SERIAL_TRI_H__
 #define __SERIAL_TRI_H__
 
-#include <invert_laplace.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
+#include "invert_laplace.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+
+class Mesh;
+class Options;
 
 class LaplaceSerialTri : public Laplacian {
 public:

@@ -1,14 +1,40 @@
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <boundary_standard.hxx>
-#include <boutexception.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include "boundary_standard.hxx"
+
+#include <cmath>
+#include <complex>
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/expressionparser.hxx"
+
+#include "boundary_op.hxx"
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "derivs.hxx"
+#include "fft.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "field_factory.hxx"
+#include "globals.hxx"
+#include "invert_laplace.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "vector3d.hxx"
+
+class Vector2D;
 
 // #define BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
 

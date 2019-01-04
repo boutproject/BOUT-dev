@@ -30,16 +30,27 @@
  *
  **************************************************************/
 
-#include <cmath>
+#include "smoothing.hxx"
 
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/rvec.hxx>
-#include <bout_types.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <smoothing.hxx>
-#include <utils.hxx>
+#include <cmath>
+#include <cstddef>
+#include <iterator>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/rvec.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "utils.hxx"
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {

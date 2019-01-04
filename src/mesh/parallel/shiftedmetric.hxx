@@ -1,12 +1,16 @@
 #ifndef __SHIFTEDMETRIC_TRANSFORM_HXX__
 #define __SHIFTEDMETRIC_TRANSFORM_HXX__
 
-#include <bout/paralleltransform.hxx>
-#include <dcomplex.hxx>
-#include <field2d.hxx>
-#include <unused.hxx>
-
+#include "bout/paralleltransform.hxx"
+#include "dcomplex.hxx"
+#include "field2d.hxx"
+#include "unused.hxx"
 #include <vector>
+
+#include "bout_types.hxx"
+#include "field3d.hxx"
+
+class Mesh;
 
 /*!
  * Shifted metric method

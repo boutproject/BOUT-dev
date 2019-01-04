@@ -1,18 +1,23 @@
 #include "gtest/gtest.h"
-
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "bout/region.hxx"
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "test_extras.hxx"
-#include "unused.hxx"
-
 #include <algorithm>
+#include <iterator>
 #include <list>
-#include <vector>
+#include <memory>
 #include <sstream>
 #include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+
+#include "bout_types.hxx"
+#include "field3d.hxx"
+#include "output.hxx"
+#include "test_extras.hxx"
+
+class BoutException;
 
 /// Global mesh
 extern Mesh *mesh;

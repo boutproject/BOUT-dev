@@ -1,12 +1,20 @@
 #include "gtest/gtest.h"
+#include <memory>
+#include <vector>
 
-#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
+
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
+#include "vector2d.hxx"
 #include "vector3d.hxx"
+
+class BoutException;
 
 /// Global mesh
 extern Mesh *mesh;

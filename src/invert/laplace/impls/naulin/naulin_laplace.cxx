@@ -109,16 +109,21 @@
  *              * Stop: Function returns phiNext
  */
 
-#include <boutexception.hxx>
-#include <bout/mesh.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
-#include <output.hxx>
-
 #include "naulin_laplace.hxx"
+
+#include <cmath>
+#include <string>
+
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "derivs.hxx"
+#include "invert_laplace.hxx"
+#include "options.hxx"
+#include "utils.hxx"
 
 LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),

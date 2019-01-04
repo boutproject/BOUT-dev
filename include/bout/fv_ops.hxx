@@ -5,11 +5,18 @@
 #ifndef __FV_OPS_H__
 #define __FV_OPS_H__
 
+#include <cmath>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
 #include "field3d.hxx"
 #include "globals.hxx"
 #include "utils.hxx"
-#include "vector2d.hxx"
-#include <bout/coordinates.hxx>
+#include "vector3d.hxx"
 
 namespace FV {
   /*!

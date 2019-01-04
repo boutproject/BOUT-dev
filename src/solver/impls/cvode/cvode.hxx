@@ -25,28 +25,23 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_CVODE
-
-class CvodeSolver;
-
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#ifdef BOUT_HAS_CVODE
 
-#include "bout/solver.hxx"
-
-#include <cvode/cvode_spgmr.h>
-#include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
-
+#include <sundials/sundials_nvector.h>
 #include <vector>
 
-#include <bout/solverfactory.hxx>
+#include "bout/region.hxx"
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+
+#include "bout_types.hxx"
+
+class CvodeSolver;
+class Options;
+
 namespace {
 RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 }

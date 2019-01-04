@@ -30,13 +30,19 @@
  **************************************************************************/
 
 #include "pdd.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
+
+#include <complex>
+#include <iterator>
+
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "fft.hxx"
+#include "invert_laplace.hxx"
+#include "lapack_routines.hxx"
+#include "utils.hxx"
 
 const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
   ASSERT1(localmesh == b.getMesh());

@@ -1,7 +1,18 @@
 #include "gtest/gtest.h"
+#include <cmath>
+#include <cstdlib>
+#include <iterator>
+#include <list>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+
+#include "bout_types.hxx"
 #include "utils.hxx"
 
-#include <string>
+class BoutException;
 
 TEST(MatrixTest, DefaultShape) {
   Matrix<int> matrix;

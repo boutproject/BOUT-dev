@@ -1,13 +1,19 @@
 
 #include "meshfactory.hxx"
 
-#include <options.hxx>
+#include <ostream>
+#include <string>
 #include <strings.h>
-#include <output.hxx>
-#include <dataformat.hxx>
-#include <boutexception.hxx>
 
+#include "bout/griddata.hxx"
+
+#include "boutexception.hxx"
+#include "dataformat.hxx"
 #include "impls/bout/boutmesh.hxx"
+#include "options.hxx"
+#include "output.hxx"
+
+class Mesh;
 
 MeshFactory *MeshFactory::instance = nullptr;
 

@@ -1,11 +1,9 @@
-
-class RKF45Scheme;
-
 #ifndef __RKF45_SCHEME_H__
 #define __RKF45_SCHEME_H__
 
-#include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include "bout/rkscheme.hxx"
+
+class Options;
 
 class RKF45Scheme : public RKScheme{
  public:

@@ -23,16 +23,14 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
-#include <cstring>
-#include <cstdlib>
-#include <cctype>
-#include <vector>
+#include "utils.hxx"
+
 #include <algorithm>
-#include <sstream>
-#include <cmath>
+#include <cctype>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
-#include <iomanip>
+#include <sstream>
 
 /**************************************************************************
  * String routines

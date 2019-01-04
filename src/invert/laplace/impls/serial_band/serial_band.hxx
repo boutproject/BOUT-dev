@@ -24,15 +24,26 @@
  *
  **************************************************************************/
 
-class LaplaceSerialBand;
-
 #ifndef __SERIAL_BAND_H__
 #define __SERIAL_BAND_H__
 
-#include <invert_laplace.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include "dcomplex.hxx"
+#include "invert_laplace.hxx"
+#include "utils.hxx"
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+
+class Mesh;
+class Options;
 
 class LaplaceSerialBand : public Laplacian {
 public:

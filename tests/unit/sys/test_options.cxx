@@ -1,11 +1,14 @@
 #include "gtest/gtest.h"
-#include "test_extras.hxx"
+#include <iostream>
+#include <sstream>
+#include <string>
 
+#include "bout_types.hxx"
 #include "options.hxx"
 #include "output.hxx"
-#include <boutexception.hxx>
+#include "test_extras.hxx"
 
-#include <string>
+class BoutException;
 
 class OptionsTest : public ::testing::Test {
 public:

@@ -23,10 +23,15 @@
  *
  **************************************************************************/
 
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include "interpolation.hxx"
+
+#include "bout/mesh.hxx"
+
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "unused.hxx"
 
 void printLocation(const Field3D &var) { output.write(strLocation(var.getLocation())); }
 void printLocation(const Field2D &var) { output.write(strLocation(var.getLocation())); }

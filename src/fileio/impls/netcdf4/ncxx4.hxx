@@ -36,23 +36,22 @@
 #ifndef NCDF4
 
 #include "../emptyformat.hxx"
+#include "bout_types.hxx"
+
 typedef EmptyFormat Ncxx4;
 
 #else
 
-class Ncxx4;
-
 #ifndef __NCFORMAT4_H__
 #define __NCFORMAT4_H__
 
-#include "dataformat.hxx"
-#include "unused.hxx"
-
-#include <netcdf>
-
 #include <map>
+#include <netcdf>
 #include <string>
 #include <vector>
+
+#include "dataformat.hxx"
+#include "unused.hxx"
 
 class Ncxx4 : public DataFormat {
  public:

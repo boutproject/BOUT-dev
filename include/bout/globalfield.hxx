@@ -2,14 +2,16 @@
  * Provides global gather/scatter operations for fields
  *
  */
-
-class GlobalField;
-class GlobalField2D;
-
 #ifndef __GLOBALFIELD_H__
 #define __GLOBALFIELD_H__
 
-#include "mesh.hxx"
+#include "bout/array.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+
+class Mesh;
 
 /*!
  * This provides a method for gathering and scattering a field

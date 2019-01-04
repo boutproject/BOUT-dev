@@ -1,10 +1,10 @@
-#include "impls/cyclic/laplacexz-cyclic.hxx"
-#include "impls/petsc/laplacexz-petsc.hxx"
-
-#include <boutexception.hxx>
-#include <bout/invert/laplacexz.hxx>
+#include "bout/invert/laplacexz.hxx"
 
 #include <strings.h>
+
+#include "boutexception.hxx"
+#include "impls/cyclic/laplacexz-cyclic.hxx"
+#include "impls/petsc/laplacexz-petsc.hxx"
 
 LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
   if (m == nullptr) {

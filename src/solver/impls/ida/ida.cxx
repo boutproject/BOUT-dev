@@ -27,25 +27,28 @@
  *
  **************************************************************************/
 
-#include "ida.hxx"
-
 #ifdef BOUT_HAS_IDA
 
-#include <boutcomm.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
+#include "ida.hxx"
 
 #include <ida/ida.h>
-#include <ida/ida_spgmr.h>
 #include <ida/ida_bbdpre.h>
+#include <ida/ida_spgmr.h>
+#include <ida/ida_spils.h>
 #include <nvector/nvector_parallel.h>
-#include <sundials/sundials_dense.h>
 #include <sundials/sundials_types.h>
-#include <sundials/sundials_math.h>
+#include <vector>
 
-#include <output.hxx>
+#include "bout/mesh.hxx"
+#include "bout/solver.hxx"
 
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 #include "unused.hxx"
 
 #define ZERO        RCONST(0.)

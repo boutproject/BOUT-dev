@@ -20,13 +20,17 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "interpolation.hxx"
-#include "output.hxx"
+#include <cmath>
+
+#include "bout/assert.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
-#include <vector>
+#include "bout_types.hxx"
+#include "field3d.hxx"
+#include "interpolation.hxx"
+#include "mask.hxx"
+#include "utils.hxx"
 
 Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
   ASSERT1(f.getMesh() == localmesh);

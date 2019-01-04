@@ -1,15 +1,20 @@
 
 #include "rk4.hxx"
 
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <bout/openmpwrap.hxx>
-
 #include <cmath>
+#include <iterator>
+#include <map>
+#include <vector>
 
-#include <output.hxx>
+#include "bout/openmpwrap.hxx"
+#include "bout/solver.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
 
 RK4Solver::RK4Solver(Options *options) : Solver(options) { canReset = true; }
 

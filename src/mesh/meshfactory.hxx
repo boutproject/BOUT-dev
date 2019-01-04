@@ -1,12 +1,11 @@
-
-class MeshFactory;
-
 #ifndef __MESH_FACTORY_H__
 #define __MESH_FACTORY_H__
 
-#include <bout/mesh.hxx>
-#include <bout/sys/uncopyable.hxx>
-#include <bout/griddata.hxx>
+#include "bout/sys/uncopyable.hxx"
+
+class GridDataSource;
+class Mesh;
+class Options;
 
 class MeshFactory : private Uncopyable {
  public:

@@ -23,22 +23,31 @@
 * 
 **************************************************************************/
 
-#include <bout/assert.hxx>
-#include <bout/coordinates.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <unused.hxx>
-#include <utils.hxx>
-#include <vecops.hxx>
+#include "difops.hxx"
 
 #include <cmath>
+#include <string>
+#include <vector>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+#include "bout/solver.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "derivs.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "interpolation.hxx"
+#include "msg_stack.hxx"
+#include "stencils.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
 
 /*******************************************************************************
 * Grad_par

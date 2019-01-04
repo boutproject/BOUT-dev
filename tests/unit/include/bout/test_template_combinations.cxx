@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
-
-#include <bout/template_combinations.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-
+#include <map>
+#include <string>
 #include <typeindex>
+#include <vector>
+
+#include "bout/template_combinations.hxx"
 
 using innerType = std::vector<std::string>;
 using registrationType = std::vector<innerType>;

@@ -26,16 +26,15 @@
 
 #ifndef __FIELD_H__
 #define __FIELD_H__
-class Field;
-
 #include <string>
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
 #include "msg_stack.hxx"
+#include "unused.hxx"
 
-class Mesh;
 class Coordinates;
+class Mesh;
 
 /*!
  * \brief Base class for fields

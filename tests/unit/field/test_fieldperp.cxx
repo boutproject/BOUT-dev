@@ -2,19 +2,26 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
+#include <cmath>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <set>
+#include <vector>
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
+#include "bout/region.hxx"
+
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "fieldperp.hxx"
-#include "test_extras.hxx"
 #include "output.hxx"
+#include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
 
-#include <cmath>
-#include <set>
-#include <vector>
+class BoutException;
 
 /// Global mesh
 extern Mesh *mesh;

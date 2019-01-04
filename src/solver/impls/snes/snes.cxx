@@ -3,16 +3,14 @@
 
 #include "snes.hxx"
 
-#include <boutcomm.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-
 #include <cmath>
 
-#include <output.hxx>
-
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
 #include "petscsnes.h"
+#include "utils.hxx"
 
 /*
  * PETSc callback function, which evaluates the nonlinear

@@ -24,21 +24,20 @@
  * 
  **************************************************************************/
 
-#ifdef BOUT_HAS_PVODE
-
-class PvodeSolver;
-
 #ifndef __PVODE_SOLVER_H__
 #define __PVODE_SOLVER_H__
 
-#include <bout/solver.hxx>
-#include <bout_types.hxx>
+#ifdef BOUT_HAS_PVODE
 
+#include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout_types.hxx"
 #include <pvode/nvector.h>
-#include <pvode/cvode.h>     // main CVODE header file
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
 
-#include <bout/solverfactory.hxx>
+class Options;
+class PvodeSolver;
+
 namespace {
 RegisterSolver<PvodeSolver> registersolverpvode("pvode");
 }

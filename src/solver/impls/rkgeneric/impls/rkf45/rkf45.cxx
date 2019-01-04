@@ -1,5 +1,16 @@
 #include "rkf45.hxx"
 
+#include <map>
+#include <string>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/rkscheme.hxx"
+
+#include "bout_types.hxx"
+#include "options.hxx"
+#include "utils.hxx"
+
 RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Set characteristics of scheme
   numStages = 6;

@@ -31,20 +31,29 @@
  *
  */
 
-#include "laplacefactory.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/openmpwrap.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout_types.hxx>
-#include <boutexception.hxx>
+#include "invert_laplace.hxx"
+
 #include <cmath>
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <complex>
+
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "laplacefactory.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION

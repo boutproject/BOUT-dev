@@ -23,16 +23,24 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-class LaplaceMumps;
 
 #ifndef __MUMPS_LAPLACE_H__
 #define __MUMPS_LAPLACE_H__
 
-#include <invert_laplace.hxx>
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "unused.hxx"
+
+#include "invert_laplace.hxx"
+
+class Mesh;
+class Options;
 
 #ifndef BOUT_HAS_MUMPS
  
-#include <boutexception.hxx>
+#include "boutexception.hxx"
  
 class LaplaceMumps : public Laplacian {
 public:
@@ -59,10 +67,11 @@ public:
  
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "options.hxx"
+#include "output.hxx"
+
 #include "dmumps_c.h"
 
 #define MUMPS_JOB_INIT -1

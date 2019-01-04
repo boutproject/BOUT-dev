@@ -1,16 +1,20 @@
-#include <optionsreader.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <bout/assert.hxx>
-#include <utils.hxx>
+#include "optionsreader.hxx"
 
+#include <cstddef>
+#include <string>
+
+#include "bout/assert.hxx"
+#include "bout/sys/gettext.hxx"
+
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 // Interface for option file parsers
 #include "options/optionparser.hxx"
-
 // Individual parsers
 #include "options/options_ini.hxx"
-
-#include <output.hxx>
 
 OptionsReader *OptionsReader::instance = nullptr;
 

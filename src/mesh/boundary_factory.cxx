@@ -1,15 +1,23 @@
-#include <globals.hxx>
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-#include <utils.hxx>
+#include "boundary_factory.hxx"
 
 #include <list>
-#include <string>
 #include <map>
+#include <ostream>
+#include <string>
+#include <utility>
+
+#include "boundary_op.hxx"
+#include "boundary_region.hxx"
+#include "boundary_standard.hxx"
+#include "boutexception.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "parallel_boundary_op.hxx"
+#include "parallel_boundary_region.hxx"
+#include "utils.hxx"
+
 using std::list;
 using std::string;
-
-#include <output.hxx>
 
 BoundaryFactory *BoundaryFactory::instance = nullptr;
 

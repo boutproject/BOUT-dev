@@ -39,9 +39,14 @@
 #ifndef __INV_PAR_CR_H__
 #define __INV_PAR_CR_H__
 
+#include "boundary_region.hxx"
+#include "bout/assert.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "invert_parderiv.hxx"
-#include "dcomplex.hxx"
-#include "utils.hxx"
+
+class Mesh;
+class Options;
 
 class InvertParCR : public InvertPar {
 public:

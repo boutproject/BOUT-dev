@@ -31,12 +31,24 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <invert_laplace.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#include "boutexception.hxx"
+#include "globals.hxx"
+#include "invert_laplace.hxx"
+#include <map>
+#include <memory>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "unused.hxx"
+
+class Mesh;
+class Options;
 
 #define MAXGM 15
 

@@ -1,10 +1,11 @@
-class ParDerivFactory;
-
 #ifndef __PARDERIV_FACTORY_H__
 #define __PARDERIV_FACTORY_H__
 
-#include <invert_parderiv.hxx>
-#include <options.hxx>
+#include "boundary_region.hxx"
+
+class InvertPar;
+class Mesh;
+class Options;
 
 class ParDerivFactory {
  public:

@@ -23,8 +23,8 @@
 #ifndef __LAPACK_ROUTINES_H__
 #define __LAPACK_ROUTINES_H__
 
-#include <bout_types.hxx>
-#include <dcomplex.hxx>
+#include "bout_types.hxx"
+#include "dcomplex.hxx"
 
 template <typename T>
 class Matrix;

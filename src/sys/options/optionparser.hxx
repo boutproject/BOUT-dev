@@ -37,14 +37,12 @@
 *
 **************************************************************************/
 
-class OptionParser;
-
 #ifndef __OPTIONPARSER_H__
 #define __OPTIONPARSER_H__
 
 #include "bout_types.hxx"
 #include "options.hxx"
-#include <boutexception.hxx>
+#include "boutexception.hxx"
 
 /// Base class for input file types
 class OptionParser {

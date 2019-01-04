@@ -5,7 +5,7 @@
 
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
-#include <field_factory.hxx>
+#include "field_factory.hxx"
 #include "unused.hxx"
 
 #include <utility>

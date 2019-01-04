@@ -1,11 +1,23 @@
-#include <boutexception.hxx>
-#include <field_factory.hxx> // Used for parsing expressions
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include "options.hxx"
 
+#include <cctype>
+#include <cmath>
 #include <iomanip>
+#include <map>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
+
+#include "bout/sys/expressionparser.hxx"
+#include "bout/sys/gettext.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field_factory.hxx" // Used for parsing expressions
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "utils.hxx"
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};

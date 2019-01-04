@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
-#include "bout/sys/range.hxx"
 
+#include "gtest/gtest.h"
 #include <vector>
+
+#include "bout/sys/range.hxx"
 
 TEST(RangeTest, SimpleRangeStartEnd) {
   RangeIterator range(0, 4);

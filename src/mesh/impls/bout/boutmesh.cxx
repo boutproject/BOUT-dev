@@ -35,22 +35,30 @@
 
 #include "boutmesh.hxx"
 
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/griddata.hxx>
-#include <bout/sys/range.hxx>
-#include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <datafile.hxx>
-#include <dcomplex.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
-#include <parallel_boundary_region.hxx>
-#include <utils.hxx>
+#include <cmath>
+#include <iterator>
+#include <ostream>
+
+#include "bout/assert.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/griddata.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/sys/range.hxx"
+#include "bout/sys/timer.hxx"
+
+#include "boundary_region.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "field2d.hxx"
+#include "field_data.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "parallel_boundary_region.hxx"
+#include "utils.hxx"
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE

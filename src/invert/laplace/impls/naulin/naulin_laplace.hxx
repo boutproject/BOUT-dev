@@ -23,13 +23,24 @@
  *
  **************************************************************************/
 
-class LaplaceNaulin;
-
 #ifndef __LAP_NAULIN_H__
 #define __LAP_NAULIN_H__
 
-#include <invert_laplace.hxx>
-#include <options.hxx>
+#include <cstddef>
+
+#include "bout/assert.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "invert_laplace.hxx"
+#include "unused.hxx"
+
+class Mesh;
+class Options;
 
 /// Solves the 2D Laplacian equation
 /*!

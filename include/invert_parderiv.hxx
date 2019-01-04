@@ -31,10 +31,14 @@
 #ifndef __INV_PAR_H__
 #define __INV_PAR_H__
 
-#include "field3d.hxx"
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
 #include "field2d.hxx"
-#include "options.hxx"
+#include "field3d.hxx"
 #include "unused.hxx"
+
+class Mesh;
+class Options;
 
 // Parderiv implementations
 #define PARDERIVCYCLIC "cyclic"

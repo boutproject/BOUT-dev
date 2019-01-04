@@ -31,15 +31,15 @@
 *
 **************************************************************************/
 
-class OptionINI;
-
 #ifndef __OPTIONS_INI_H__
 #define __OPTIONS_INI_H__
 
+#include <fstream>
+#include <string>
+
 #include "optionparser.hxx"
 
-#include <string>
-#include <fstream>
+class Options;
 
 /// Class for reading INI style configuration files
 /*!

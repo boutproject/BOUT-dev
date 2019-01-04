@@ -2,16 +2,28 @@
 #define TEST_EXTRAS_H__
 
 #include "gtest/gtest.h"
-
 #include <iostream>
-#include <mpi.h>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "bout/mesh.hxx"
-#include "bout/coordinates.hxx"
-#include "field3d.hxx"
-#include "unused.hxx"
-#include "bout/mesh.hxx"
+#include "bout/region.hxx"
 #include "bout/sys/range.hxx"
+
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "fieldperp.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+
+class BoundaryRegionPar;
+class Coordinates;
+class FieldGroup;
 
 const BoutReal BoutRealTolerance = 1e-15;
 

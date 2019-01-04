@@ -4,16 +4,14 @@
  *
  ************************************************************/
 
-class LaplaceXZpetsc;
-
 #ifndef __LAPLACEXZ_PETSC_H__
 #define __LAPLACEXZ_PETSC_H__
 
-#include <bout/invert/laplacexz.hxx>
+#include "bout/invert/laplacexz.hxx"
 
 #ifndef BOUT_HAS_PETSC
 
-#include <boutexception.hxx>
+#include "boutexception.hxx"
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
   LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr,
@@ -33,7 +31,7 @@ private:
 
 #else // BOUT_HAS_PETSC
 
-#include <bout/petsclib.hxx>
+#include "bout/petsclib.hxx"
 
 class LaplaceXZpetsc : public LaplaceXZ {
 public:

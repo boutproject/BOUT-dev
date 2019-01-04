@@ -1,10 +1,10 @@
 
 #ifdef BOUT_HAS_PETSC
 
-#include "boutcomm.hxx"
-#include <bout/petsclib.hxx>
+#include "bout/petsclib.hxx"
 
-#include <output.hxx>
+#include "boutcomm.hxx"
+#include "output.hxx"
 
 // Define all the static member variables
 int PetscLib::count = 0;

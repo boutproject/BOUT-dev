@@ -3,20 +3,25 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 #include "gtest/gtest.h"
+#include <cmath>
+#include <set>
+#include <utility>
+#include <vector>
 
-#include "boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+
+#include "bout_types.hxx"
+#include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
 
-#include <cmath>
-#include <set>
-#include <vector>
+class BoutException;
 
 /// Global mesh
 extern Mesh *mesh;

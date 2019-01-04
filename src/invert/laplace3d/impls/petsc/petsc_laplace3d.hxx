@@ -2,6 +2,9 @@
  * 3D Laplacian solver using PETSc
  */
 
+#ifndef __PETSC_LAPLACE3D_H__
+#define __PETSC_LAPLACE3D_H__
+
 #ifndef BOUT_HAS_PETSC
 // No PETSc available, so define as an empty laplace3d
 
@@ -10,12 +13,7 @@ typedef EmptyLaplace3D Laplace3DPetsc;
 
 #else // BOUT_HAS_PETSC
 
-class Laplace3DPetsc;
-
-#ifndef __PETSC_LAPLACE3D_H__
-#define __PETSC_LAPLACE3D_H__
-
-#include <bout/invert/laplace3d.hxx>
+#include "bout/invert/laplace3d.hxx"
 
 class Laplace3DPetsc : public Laplace3D {
 public:
@@ -37,7 +35,6 @@ private:
   Field3D A,B,C,D; // Coefficients
 };
 
-#endif // __PETSC_LAPLACE3D_H__
-
 #endif // BOUT_HAS_PETSC
 
+#endif // __PETSC_LAPLACE3D_H__

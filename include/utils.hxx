@@ -29,20 +29,23 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#include "bout_types.hxx"
-#include "boutexception.hxx"
-#include "bout/array.hxx"
-#include "bout/assert.hxx"
-#include "msg_stack.hxx"
-#include "unused.hxx"
-
-#include <algorithm>
 #include <cmath>
+#include <cstdarg>
+#include <cstdlib>
 #include <ctime>
 #include <list>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
 
 namespace bout {
 namespace utils {

@@ -1,11 +1,12 @@
 #include "gtest/gtest.h"
+#include <vector>
 
-#include "bout/mesh.hxx"
 #include "bout/region.hxx"
-#include "boutexception.hxx"
-#include "output.hxx"
 
+#include "output.hxx"
 #include "test_extras.hxx"
+
+class BoutException;
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {

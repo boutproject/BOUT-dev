@@ -24,14 +24,12 @@
  *
  **************************************************************************/
 
-class EmptyFormat;
-
 #ifndef __EMPTYSOLVER_H__
 #define __EMPTYSOLVER_H__
 
-#include <dataformat.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
+#include "dataformat.hxx"
+#include "boutexception.hxx"
+#include "unused.hxx"
 
 class EmptyFormat {
   EmptyFormat() {throw BoutException("File format not enabled!");}

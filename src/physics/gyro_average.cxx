@@ -27,10 +27,17 @@
  *
  **************************************************************/
 
-#include <globals.hxx>
-#include <difops.hxx>
-#include <gyro_average.hxx>
-#include <invert_laplace.hxx>
+#include "gyro_average.hxx"
+
+#include "bout/mesh.hxx"
+
+#include "bout_types.hxx"
+#include "difops.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "globals.hxx"
+#include "invert_laplace.hxx"
+#include "utils.hxx"
 
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho) {
   return f + SQ(rho) * Delp2(f);

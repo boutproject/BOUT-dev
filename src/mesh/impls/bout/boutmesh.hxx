@@ -2,13 +2,26 @@
 #ifndef __BOUTMESH_H__
 #define __BOUTMESH_H__
 
-#include "boutcomm.hxx"
-#include "unused.hxx"
-#include <bout/mesh.hxx>
-
+#include "bout/mesh.hxx"
 #include <list>
+#include <map>
+#include <string>
 #include <vector>
-#include <cmath>
+
+#include "bout/array.hxx"
+#include "bout/fieldgroup.hxx"
+#include "bout/sys/range.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "field3d.hxx"
+#include "unused.hxx"
+
+class BoundaryRegion;
+class BoundaryRegionPar;
+class Datafile;
+class FieldData;
+class GridDataSource;
+class Options;
 
 /// Implementation of Mesh (mostly) compatible with BOUT
 ///

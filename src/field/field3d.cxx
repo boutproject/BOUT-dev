@@ -25,25 +25,40 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include "field3d.hxx"
 
 #include <cmath>
+#include <complex>
+#include <map>
+#include <ostream>
+#include <string>
+#include <vector>
 
-#include <bout/assert.hxx>
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <boundary_factory.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
-#include <dcomplex.hxx>
-#include <fft.hxx>
-#include <field3d.hxx>
-#include <fieldperp.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
+
+#include "boundary_factory.hxx"
+#include "boundary_op.hxx"
+#include "boundary_region.hxx"
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "dcomplex.hxx"
+#include "fft.hxx"
+#include "field.hxx"
+#include "field2d.hxx"
+#include "fieldperp.hxx"
+#include "globals.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "parallel_boundary_op.hxx"
+#include "parallel_boundary_region.hxx"
+#include "utils.hxx"
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {

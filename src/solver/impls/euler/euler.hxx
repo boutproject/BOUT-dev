@@ -25,15 +25,22 @@
  *
  **************************************************************************/
 
-class EulerSolver;
-
 #ifndef __EULER_SOLVER_H__
 #define __EULER_SOLVER_H__
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include <map>
+#include <vector>
+
+#include "bout/array.hxx"
+
+#include "bout/solver.hxx"
+#include "bout_types.hxx"
 
 #include "bout/solverfactory.hxx"
+
+class EulerSolver;
+class Options;
+
 namespace{
 RegisterSolver<EulerSolver> registersolvereuler("euler");
 }

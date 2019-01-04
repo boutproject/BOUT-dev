@@ -27,8 +27,22 @@
  *
  **************************************************************************/
 
+#include <cmath>
+#include <cstdio>
+#include <iterator>
+#include <map>
+#include <ostream>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/openmpwrap.hxx"
+
+#include "bout_types.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
 #include "multigrid_laplace.hxx"
-#include <bout/openmpwrap.hxx>
+#include "output.hxx"
 #include "unused.hxx"
 
 // Define basic multigrid algorithm

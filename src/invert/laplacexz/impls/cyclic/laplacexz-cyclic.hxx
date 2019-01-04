@@ -1,9 +1,21 @@
+#ifndef BOUT_LAPLACEXZ_CYCLIC_H
+#define BOUT_LAPLACEXZ_CYCLIC_H
 
-#include <bout/invert/laplacexz.hxx>
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include <globals.hxx>
+#include "bout/invert/laplacexz.hxx"
+#include "cyclic_reduction.hxx"
+#include "dcomplex.hxx"
+#include <map>
+#include <memory>
+#include <vector>
+
+#include "bout/array.hxx"
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
 #include "utils.hxx"
+
+class Mesh;
+class Options;
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
@@ -26,3 +38,5 @@ private:
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 };
+
+#endif // BOUT_LAPLACEXZ_CYCLIC_H

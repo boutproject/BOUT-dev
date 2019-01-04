@@ -24,10 +24,12 @@
  *
  **************************************************************************/
 
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include "msg_stack.hxx"
+
 #include <cstdarg>
 #include <string>
+
+#include "output.hxx"
 
 #if CHECK > 1
 int MsgStack::push(const char *s, ...) {

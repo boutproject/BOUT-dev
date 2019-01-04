@@ -24,23 +24,20 @@
  *
  **************************************************************************/
 
-
-class FieldFactory;
-
 #ifndef __FIELD_FACTORY_H__
 #define __FIELD_FACTORY_H__
 
-#include <bout/sys/expressionparser.hxx>
-#include <bout_types.hxx>
+#include <string>
+#include <map>
+#include <list>
+
+#include "bout/sys/expressionparser.hxx"
+#include "bout_types.hxx"
 
 class Field2D;
 class Field3D;
 class Mesh;
 class Options;
-
-#include <string>
-#include <map>
-#include <list>
 
 // Utility routines to create generators from values
 

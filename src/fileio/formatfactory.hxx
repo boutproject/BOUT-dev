@@ -1,12 +1,9 @@
-
-class FormatFactory;
-
 #ifndef __FORMATFACTORY_H__
 #define __FORMATFACTORY_H__
 
 #include "dataformat.hxx"
 
-#include <bout/sys/uncopyable.hxx>
+#include "bout/sys/uncopyable.hxx"
 
 class FormatFactory : private Uncopyable {
 public:

@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
+#include <initializer_list>
 
 #include "bout/monitor.hxx"
-#include "boutexception.hxx"
+
+class BoutException;
 
 TEST(MonitorTest, IsMultiple) {
   EXPECT_TRUE(isMultiple(1., 4.));

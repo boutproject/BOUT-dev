@@ -32,22 +32,22 @@
  *
  **************************************************************************/
 
+#ifndef __IMEXBDF2_SOLVER_H__
+#define __IMEXBDF2_SOLVER_H__
+
 #ifdef BOUT_HAS_PETSC
 
 class IMEXBDF2;
 
-#ifndef __IMEXBDF2_SOLVER_H__
-#define __IMEXBDF2_SOLVER_H__
+#include "bout_types.hxx"
+#include "bout/solver.hxx"
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
-
-#include <bout/petsclib.hxx>
+#include "bout/petsclib.hxx"
 
 #include <petsc.h>
 #include <petscsnes.h>
 
-#include <bout/solverfactory.hxx>
+#include "bout/solverfactory.hxx"
 namespace {
 RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 }

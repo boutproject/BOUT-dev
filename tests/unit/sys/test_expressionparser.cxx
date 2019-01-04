@@ -1,10 +1,13 @@
 #include "gtest/gtest.h"
+#include <list>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "bout/sys/expressionparser.hxx"
+
 #include "bout_types.hxx"
 #include "unused.hxx"
-
-#include <vector>
 
 // Need to inherit from ExpressionParser in order to expose the
 // protected parseString as a public method

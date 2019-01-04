@@ -32,17 +32,23 @@
  *
  **************************************************************************/
 
-class PhysicsModel;
-
 #ifndef __PHYSICS_MODEL_H__
 #define __PHYSICS_MODEL_H__
 
-#include "unused.hxx"
 #include "bout/macro_for_each.hxx"
-#include "bout/solver.hxx"
-#include <bout.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
+#include "bout/monitor.hxx"
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "options.hxx"
+#include "unused.hxx"
+
+class Field2D;
+class Field3D;
+class Solver;
+class Vector2D;
+class Vector3D;
+
 /*!
   Base class for physics models
  */

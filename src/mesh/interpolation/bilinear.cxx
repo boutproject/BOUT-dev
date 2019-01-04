@@ -20,12 +20,20 @@
  *
  **************************************************************************/
 
-#include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "interpolation.hxx"
-
-#include <string>
+#include <cmath>
+#include <map>
 #include <vector>
+
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "field3d.hxx"
+#include "interpolation.hxx"
+#include "mask.hxx"
+#include "utils.hxx"
 
 Bilinear::Bilinear(int y_offset, Mesh *mesh)
   : Interpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {

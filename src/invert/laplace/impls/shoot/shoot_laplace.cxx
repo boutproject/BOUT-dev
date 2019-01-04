@@ -32,10 +32,20 @@
  */
 
 #include "shoot_laplace.hxx"
-#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
+
+#include <complex>
+#include <iterator>
+#include <utility>
+
+#include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+
+#include "boutexception.hxx"
+#include "fft.hxx"
+#include "invert_laplace.hxx"
+
+class Options;
 
 LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {

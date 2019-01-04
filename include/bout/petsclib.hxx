@@ -5,7 +5,7 @@
  * Usage
  * -----
  *
- * #include <bout/petsclib.hxx>
+ * #include "bout/petsclib.hxx"
  * 
  * class MyClass {
  *   public:
@@ -39,8 +39,6 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-
-class PetscLib;
 
 #ifndef __PETSCLIB_H__
 #define __PETSCLIB_H__
