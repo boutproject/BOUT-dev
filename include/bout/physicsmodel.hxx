@@ -37,17 +37,18 @@
 
 #include "bout/macro_for_each.hxx"
 #include "bout/monitor.hxx"
+
+#include "bout.hxx" // IWYU pragma: keep
 #include "bout_types.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "field2d.hxx" // IWYU pragma: keep
+#include "field3d.hxx" // IWYU pragma: keep
 #include "options.hxx"
+#include "solver.hxx"
 #include "unused.hxx"
-
-class Field2D;
-class Field3D;
-class Solver;
-class Vector2D;
-class Vector3D;
+#include "vector2d.hxx" // IWYU pragma: keep
+#include "vector3d.hxx" // IWYU pragma: keep
 
 /*!
   Base class for physics models

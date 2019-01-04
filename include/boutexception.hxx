@@ -1,6 +1,3 @@
-
-class BoutException;
-
 #ifndef __BOUT_EXCEPTION_H__
 #define __BOUT_EXCEPTION_H__
 
