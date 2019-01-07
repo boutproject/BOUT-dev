@@ -114,19 +114,15 @@ class Field2D : public Field, public FieldData {
   /*!
    * Return the coordinate system of this field
    */
-  CoordinateSystem getCoordinateSystem() const {
-#if CHECK > 0
-    throw BoutException("getCoordinateSystem() should not be called for Field2D");
-#endif
-  }
+  CoordinateSystem getCoordinateSystem() const { return coordinate_system; }
 
   /*!
    * Reset the coordinate system of this field
    */
-  void setCoordinateSystem(CoordinateSystem UNUSED(new_coords)) {
-#if CHECK > 0
-    throw BoutException("setCoordinateSystem() should not be called for Field2D");
-#endif
+  void setCoordinateSystem(CoordinateSystem new_coords) {
+    ASSERT1(new_coords != CoordinateSystem::FieldAligned);
+    ASSERT1(new_coords != CoordinateSystem::Orthogonal);
+    coordinate_system = new_coords;
   }
 
   /// Check if this field has yup and ydown fields
@@ -280,6 +276,7 @@ class Field2D : public Field, public FieldData {
     swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
+    swap(first.coordinate_system, second.coordinate_system);
     swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.bndry_op, second.bndry_op);
@@ -292,6 +289,8 @@ class Field2D : public Field, public FieldData {
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1};
+
+  CoordinateSystem coordinate_system; ///< Coordinate system used by this field, e.g. fieldaligned, orthogonal
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

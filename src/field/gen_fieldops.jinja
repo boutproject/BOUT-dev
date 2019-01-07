@@ -16,8 +16,8 @@
     ASSERT1(localmesh == {{rhs.name}}.getMesh());
   {% endif %}
 
-  {% if lhs == "Field3D" and rhs == "Field3D" %}
-    ASSERT1({{lhs.name}}.getCoordinateSystem() == {{rhs.name}}.getCoordinateSystem());
+  {% if lhs in ["Field3D", "Field2D"] and rhs in ["Field3D", "Field2D"] %}
+    ASSERT1(compareCoordinateSystems({{lhs.name}}.getCoordinateSystem(), {{rhs.name}}.getCoordinateSystem()));
   {% endif %}
 
   {{out.field_type}} {{out.name}}(localmesh);
@@ -49,11 +49,12 @@
   {% endif %}
 
   {% if out in ['Field3D','Field2D'] %}
+    {% if out == rhs %}
+    {{out.name}}.setCoordinateSystem(rhs.getCoordinateSystem());
+    {% else %}
+    {{out.name}}.setCoordinateSystem(lhs.getCoordinateSystem());
+    {% endif %}
     {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
-
-  {% endif %}
-  {% if out in ['Field3D'] %}
-    {{out.name}}.setCoordinateSystem({{rhs.name if rhs == "Field3D" else lhs.name}}.getCoordinateSystem());
 
   {% endif %}
   checkData({{out.name}});
@@ -66,8 +67,8 @@
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    {% if ((lhs in ["Field3D"]) and (rhs in ["Field3D"])) %}
-    ASSERT1(this->getCoordinateSystem() == {{rhs.name}}.getCoordinateSystem())
+    {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
+    ASSERT1(compareCoordinateSystems(this->getCoordinateSystem(), {{rhs.name}}.getCoordinateSystem()));
 
     {% endif %}
     {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}

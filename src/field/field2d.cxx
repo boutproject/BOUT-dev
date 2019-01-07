@@ -48,6 +48,12 @@
 Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 
   if (fieldmesh) {
+    setCoordinateSystem(fieldmesh->getCoordinateSystem2D());
+  } else {
+    setCoordinateSystem(CoordinateSystem::None);
+  }
+
+  if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
@@ -57,7 +63,9 @@ Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
+Field2D::Field2D(const Field2D& f)
+  : Field(f.fieldmesh), coordinate_system(f.coordinate_system), data(f.data)
+{
   TRACE("Field2D(Field2D&)");
 
 #ifdef TRACK
@@ -80,6 +88,8 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field(localmesh) {
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
+
+  setCoordinateSystem(fieldmesh->getCoordinateSystem2D());
 
   *this = val;
 }
@@ -181,6 +191,9 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx;
   ny = rhs.ny;
+
+  // Copy the coordinate system label
+  setCoordinateSystem(rhs.getCoordinateSystem());
 
   // Copy reference to data
   data = rhs.data;
@@ -430,6 +443,7 @@ bool finite(const Field2D &f, REGION rgn) {
     checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
     Field2D result(f.getMesh());                                                         \
+    result.setCoordinateSystem(f.getCoordinateSystem());                                 \
     result.allocate();                                                                   \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
     result.setLocation(f.getLocation());                                                 \
@@ -477,11 +491,13 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
+  ASSERT1(lhs.getMesh() == rhs.getMesh());
   ASSERT1(lhs.getLocation() == rhs.getLocation());
+  ASSERT1(compareCoordinateSystems(lhs.getCoordinateSystem(), rhs.getCoordinateSystem()));
 
   // Define and allocate the output result
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field2D result(lhs.getMesh());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
   result.allocate();
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
@@ -500,6 +516,7 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
 
   // Define and allocate the output result
   Field2D result(lhs.getMesh());
+  result.setCoordinateSystem(lhs.getCoordinateSystem());
   result.allocate();
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
@@ -518,6 +535,7 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
 
   // Define and allocate the output result
   Field2D result(rhs.getMesh());
+  result.setCoordinateSystem(rhs.getCoordinateSystem());
   result.allocate();
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }

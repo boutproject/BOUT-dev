@@ -55,9 +55,9 @@ Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
     nz = fieldmesh->LocalNz;
   }
   if (fieldmesh) {
-    coordinate_system = fieldmesh->getCoordinateSystem();
+    setCoordinateSystem(fieldmesh->getCoordinateSystem3D());
   } else {
-    coordinate_system = CoordinateSystem::None;
+    setCoordinateSystem(CoordinateSystem::None);
   }
 
 }
@@ -93,7 +93,7 @@ Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
 
   location = f.getLocation();
   fieldCoordinates = nullptr;
-  coordinate_system = fieldmesh->getCoordinateSystem();
+  setCoordinateSystem(fieldmesh->getCoordinateSystem3D());
 
   *this = f;
 }
@@ -106,7 +106,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
 
-  coordinate_system = fieldmesh->getCoordinateSystem();
+  setCoordinateSystem(fieldmesh->getCoordinateSystem3D());
 
   *this = val;
 }
@@ -118,6 +118,8 @@ Field3D::Field3D(Mesh* localmesh, CoordinateSystem coordinate_system_in)
 #ifdef TRACK
   name = "<F3D>";
 #endif
+
+  ASSERT1(coordinate_system != CoordinateSystem::Axisymmetric);
 
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -300,7 +302,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
   
-  coordinate_system = rhs.coordinate_system;
+  setCoordinateSystem(rhs.coordinate_system);
 
   data = rhs.data;
 
@@ -641,7 +643,7 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
 
   ASSERT1(lhs.getLocation() == rhs.getLocation());
-  ASSERT1(lhs.getCoordinateSystem() == rhs.getCoordinateSystem());
+  ASSERT1(compareCoordinateSystems(lhs.getCoordinateSystem(), rhs.getCoordinateSystem()));
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());
@@ -686,7 +688,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   // Assume FieldPerp is always on the default coordinate system of its Mesh,
   // since at the moment FieldPerp cannot switch between orthogonal and field
   // aligned coordinates
-  ASSERT2(lhs.getCoordinateSystem() == rhs.getMesh()->getCoordinateSystem());
+  ASSERT1(compareCoordinateSystems(lhs.getCoordinateSystem(), rhs.getMesh()->getCoordinateSystem3D()));
 
   FieldPerp result{rhs.getMesh()};
   result.allocate();

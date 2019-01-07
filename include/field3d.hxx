@@ -225,7 +225,10 @@ class Field3D : public Field, public FieldData {
   /*!
    * Reset the coordinate system of this field
    */
-  void setCoordinateSystem(CoordinateSystem new_coords) { coordinate_system = new_coords; }
+  void setCoordinateSystem(CoordinateSystem new_coords) {
+    ASSERT1(new_coords != CoordinateSystem::Axisymmetric);
+    coordinate_system = new_coords;
+  }
 
   /*!
    * Ensure that this field has separate fields

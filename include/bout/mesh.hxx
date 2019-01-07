@@ -695,12 +695,22 @@ class Mesh {
     return f;
   }
 
-  CoordinateSystem getCoordinateSystem() const {
+  CoordinateSystem getCoordinateSystem3D() const {
     if (transform) {
-      return transform->getCoordinateSystem();
+      return transform->getCoordinateSystem3D();
     } else {
-      // ParallelTransform not initialized yet. Any Field3D created better not
-      // need to know its coordinate system.
+      // ParallelTransform not initialized yet. Any Field3D calling this method
+      // better not need to know its coordinate system.
+      return CoordinateSystem::None;
+    }
+  }
+
+  CoordinateSystem getCoordinateSystem2D() const {
+    if (transform) {
+      return transform->getCoordinateSystem2D();
+    } else {
+      // ParallelTransform not initialized yet. Any Field2D calling this method
+      // better not need to know its coordinate system.
       return CoordinateSystem::None;
     }
   }

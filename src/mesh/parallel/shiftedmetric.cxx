@@ -120,7 +120,7 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D &f, const REGION regio
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION region) {
   ASSERT2(f.getCoordinateSystem() == CoordinateSystem::FieldAligned);
   Field3D result = shiftZ(f, fromAlignedPhs, region);
-  result.setCoordinateSystem(f.getMesh()->getCoordinateSystem());
+  result.setCoordinateSystem(CoordinateSystem::Orthogonal);
   return result;
 }
 
