@@ -71,6 +71,9 @@ int Mesh::get(BoutReal &rval, const std::string &name) {
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
+  // Make sure right fieldmesh, etc. are set
+  var = Field2D(0., this);
+
   // Ensure data allocated
   var.allocate();
 
@@ -88,6 +91,9 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
+
+  // Make sure right fieldmesh, etc. are set
+  var = Field3D(0., this);
 
   // Ensure data allocated
   var.allocate();
