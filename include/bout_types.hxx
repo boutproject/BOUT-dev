@@ -156,7 +156,7 @@ const std::map<CoordinateSystem, std::string> CoordinateSystemMap = {
 
 #undef BOUT_COORDENUMSTR
 
-bool compareCoordinateSystems(CoordinateSystem lhs, CoordinateSystem rhs) {
+inline bool compareCoordinateSystems(CoordinateSystem lhs, CoordinateSystem rhs) {
   // lhs and rhs are identical
   if (lhs == rhs) {
     return true;
