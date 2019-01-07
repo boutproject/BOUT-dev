@@ -54,7 +54,8 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
-  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
+  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh),
+    y_prime(&mesh, COORDINATE_SYSTEM::FCI) {
 
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);

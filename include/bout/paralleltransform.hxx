@@ -24,6 +24,8 @@ class Mesh;
  */
 class ParallelTransform {
 public:
+  /// Constructor
+  ParallelTransform(Mesh& mesh_in = *mesh) : thismesh(mesh_in) {}
   virtual ~ParallelTransform() {}
 
   /// Given a 3D field, calculate and set the Y up down fields
@@ -49,6 +51,9 @@ public:
   virtual COORDINATE_SYSTEM getCoordinateSystem() const = 0;
 
   virtual bool canToFromFieldAligned() = 0;
+
+protected:
+  Mesh& thismesh; ///< Mesh that this ParallelTransform belongs to
 };
 
 
@@ -59,6 +64,9 @@ public:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
+  /// Constructor
+  ParallelTransformIdentity(Mesh& mesh_in = *mesh)
+    : ParallelTransform(mesh_in) {}
   /*!
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
@@ -101,7 +109,8 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  ShiftedMetric(Mesh &mesh);
+  /// Constructor
+  ShiftedMetric(Mesh& mesh_in = *mesh);
   
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -134,8 +143,6 @@ public:
   }
 
 private:
-  Mesh &mesh; ///< The mesh this paralleltransform is part of
-
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
@@ -191,9 +198,9 @@ private:
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
    *
-   * @param[in] in  A 1D array of length mesh.LocalNz
-   * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
-   * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
+   * @param[in] in  A 1D array of length thismesh.LocalNz
+   * @param[in] phs Phase shift, assumed to have length (thismesh.LocalNz/2 + 1) i.e. the number of modes
+   * @param[out] out  A 1D array of length thismesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out);
 };

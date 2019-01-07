@@ -178,6 +178,8 @@ class Field3D : public Field, public FieldData {
   Field3D(const Field2D& f);
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  /// Constructor specifying coordinate_system
+  Field3D(Mesh* localmesh, COORDINATE_SYSTEM coordinate_system_in);
   /// Destructor
   ~Field3D() override;
 

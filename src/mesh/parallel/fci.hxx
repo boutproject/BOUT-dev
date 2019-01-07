@@ -65,8 +65,8 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  FCITransform(Mesh &mesh, bool zperiodic = true)
-      : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
+  FCITransform(Mesh &mesh_in, bool zperiodic = true)
+      : ParallelTransform(mesh_in), forward_map(thismesh, +1, zperiodic), backward_map(thismesh, -1, zperiodic),
         zperiodic(zperiodic) {}
 
   void calcYUpDown(Field3D &f) override;
@@ -90,8 +90,6 @@ public:
   }
 private:
   FCITransform();
-
-  Mesh& mesh;
 
   FCIMap forward_map;           /**< FCI map for field lines in +ve y */
   FCIMap backward_map;          /**< FCI map for field lines in -ve y */

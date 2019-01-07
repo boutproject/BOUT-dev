@@ -15,12 +15,13 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh &mesh_in)
+    : ParallelTransform(mesh_in), zShift(&thismesh) {
   // Read the zShift angle from the mesh
   
-  if(mesh.get(zShift, "zShift")) {
+  if(thismesh.get(zShift, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
-    mesh.get(zShift, "qinty");
+    thismesh.get(zShift, "qinty");
   }
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
@@ -41,18 +42,18 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   //As we're attached to a mesh we can expect the z direction to
   //not change once we've been created so precalculate the complex
   //phases used in transformations
-  nmodes = mesh.LocalNz / 2 + 1;
-  BoutReal zlength = mesh.getCoordinates()->zlength();
+  nmodes = thismesh.LocalNz / 2 + 1;
+  BoutReal zlength = thismesh.getCoordinates()->zlength();
 
   // Allocate storage for our 3d phase information.
-  fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
-  toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
+  fromAlignedPhs = Tensor<dcomplex>(thismesh.LocalNx, thismesh.LocalNy, nmodes);
+  toAlignedPhs = Tensor<dcomplex>(thismesh.LocalNx, thismesh.LocalNy, nmodes);
 
-  yupPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
-  ydownPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
+  yupPhs = Tensor<dcomplex>(thismesh.LocalNx, thismesh.LocalNy, nmodes);
+  ydownPhs = Tensor<dcomplex>(thismesh.LocalNx, thismesh.LocalNy, nmodes);
 
   //To/From field aligned phases
-  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+  BOUT_FOR(i, thismesh.getRegion2D("RGN_ALL")) {
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
       fromAlignedPhs(i.x(), i.y(), jz) =
@@ -63,7 +64,7 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   }
 
   //Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+  BOUT_FOR(i, thismesh.getRegion2D("RGN_NOY")) {
     BoutReal yupShift = zShift[i] - zShift[i.yp()];
     BoutReal ydownShift = zShift[i] - zShift[i.ym()];
 
@@ -82,21 +83,21 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
-  ASSERT1(&mesh == f.getMesh());
+  ASSERT1(&thismesh == f.getMesh());
 
   f.splitYupYdown();
   
   Field3D& yup = f.yup();
   yup.allocate();
 
-  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+  BOUT_FOR(i, thismesh.getRegion2D("RGN_NOY")) {
     shiftZ(&f(i.yp(), 0), &yupPhs(i.x(), i.y(), 0), &yup(i.yp(), 0));
   }
 
   Field3D& ydown = f.ydown();
   ydown.allocate();
 
-  BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+  BOUT_FOR(i, thismesh.getRegion2D("RGN_NOY")) {
     shiftZ(&f(i.ym(), 0), &ydownPhs(i.x(), i.y(), 0), &ydown(i.ym(), 0));
   }
 }
@@ -125,14 +126,14 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
 
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const REGION region) {
-  ASSERT1(&mesh == f.getMesh());
-  if(mesh.LocalNz == 1)
+  ASSERT1(&thismesh == f.getMesh());
+  if(thismesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
-  Field3D result(&mesh);
+  Field3D result(&thismesh);
   result.allocate();
 
-  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+  BOUT_FOR(i, thismesh.getRegion2D(REGION_STRING(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
   
@@ -144,7 +145,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   Array<dcomplex> cmplx(nmodes);
 
   // Take forward FFT
-  rfft(in, mesh.LocalNz, &cmplx[0]);
+  rfft(in, thismesh.LocalNz, &cmplx[0]);
 
   //Following is an algorithm approach to write a = a*b where a and b are
   //vectors of dcomplex.
@@ -155,17 +156,17 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
     cmplx[jz] *= phs[jz];
   }
 
-  irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+  irfft(&cmplx[0], thismesh.LocalNz, out); // Reverse FFT
 }
 
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, const REGION region) {
-  ASSERT1(&mesh == f.getMesh());
+  ASSERT1(&thismesh == f.getMesh());
   ASSERT1(f.getLocation() == zangle.getLocation());
-  if(mesh.LocalNz == 1)
+  if(thismesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
-  Field3D result(&mesh);
+  Field3D result(&thismesh);
   result.allocate();
 
   // We only use methods in ShiftedMetric to get fields for parallel operations
@@ -174,8 +175,8 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle, con
   // (Note valgrind complains about corner guard cells if we try to loop over
   // the whole grid, because zShift is not initialized in the corner guard
   // cells.)
-  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
-    shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
+  BOUT_FOR(i, thismesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i, 0), thismesh.LocalNz, zangle[i], &result(i, 0));
   }
   
   return result;
@@ -191,7 +192,7 @@ void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutRe
   rfft(in, len, &cmplxLoc[0]);
   
   // Apply phase shift
-  BoutReal zlength = mesh.getCoordinates()->zlength();
+  BoutReal zlength = thismesh.getCoordinates()->zlength();
   for(int jz=1;jz<nmodes;jz++) {
     BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
     cmplxLoc[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));

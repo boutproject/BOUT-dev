@@ -111,6 +111,21 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
   *this = val;
 }
 
+/// Special constructor for use in ParallelTransform constructors, before the
+/// Mesh has a 'ParallelTransform* transform'
+Field3D::Field3D(Mesh* localmesh, COORDINATE_SYSTEM coordinate_system_in)
+  : Field(localmesh), coordinate_system(coordinate_system_in) {
+#ifdef TRACK
+  name = "<F3D>";
+#endif
+
+  if (fieldmesh) {
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    nz = fieldmesh->LocalNz;
+  }
+}
+
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {
