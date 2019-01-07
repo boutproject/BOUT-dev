@@ -18,7 +18,7 @@ function usage () {
     echo "    is still called 'BOUT++-<tag>.tar.gz"
 }
 
-git_archive_all_bin=externalpackages/bin/git-archive-all.sh
+git_archive_all_bin=externalpackages/git-archive-all.sh/git-archive-all.sh
 
 # Defaults
 format=tar.gz
