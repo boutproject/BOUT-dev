@@ -114,7 +114,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Return the coordinate system of this field
    */
-  COORDINATE_SYSTEM getCoordinateSystem() const {
+  CoordinateSystem getCoordinateSystem() const {
 #if CHECK > 0
     throw BoutException("getCoordinateSystem() should not be called for Field2D");
 #endif
@@ -123,7 +123,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Reset the coordinate system of this field
    */
-  void setCoordinateSystem(COORDINATE_SYSTEM UNUSED(new_coords)) {
+  void setCoordinateSystem(CoordinateSystem UNUSED(new_coords)) {
 #if CHECK > 0
     throw BoutException("setCoordinateSystem() should not be called for Field2D");
 #endif

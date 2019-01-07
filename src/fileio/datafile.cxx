@@ -932,9 +932,9 @@ bool Datafile::write() {
     write_f3d(var.name, var.ptr, var.save_repeat);
     // Add coordinate system
     if (shiftOutput) {
-      file->setAttribute(var.name, "coordinate_system", COORDINATE_SYSTEMtoString.at(COORDINATE_SYSTEM::FieldAligned));
+      file->setAttribute(var.name, "coordinate_system", CoordinateSystemMap.at(CoordinateSystem::FieldAligned));
     } else {
-      file->setAttribute(var.name, "coordinate_system", COORDINATE_SYSTEMtoString.at(var.ptr->getCoordinateSystem()));
+      file->setAttribute(var.name, "coordinate_system", CoordinateSystemMap.at(var.ptr->getCoordinateSystem()));
     }
   }
   

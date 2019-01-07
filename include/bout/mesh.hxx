@@ -695,13 +695,13 @@ class Mesh {
     return f;
   }
 
-  COORDINATE_SYSTEM getCoordinateSystem() const {
+  CoordinateSystem getCoordinateSystem() const {
     if (transform) {
       return transform->getCoordinateSystem();
     } else {
       // ParallelTransform not initialized yet. Any Field3D created better not
       // need to know its coordinate system.
-      return COORDINATE_SYSTEM::None;
+      return CoordinateSystem::None;
     }
   }
 

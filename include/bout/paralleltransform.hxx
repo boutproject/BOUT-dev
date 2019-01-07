@@ -48,7 +48,7 @@ public:
   /*!
    * Return the default coordinate system for Field3Ds when using this ParallelTransform
    */
-  virtual COORDINATE_SYSTEM getCoordinateSystem() const = 0;
+  virtual CoordinateSystem getCoordinateSystem() const = 0;
 
   virtual bool canToFromFieldAligned() = 0;
 
@@ -89,8 +89,8 @@ public:
     return f;
   }
 
-  COORDINATE_SYSTEM getCoordinateSystem() const override {
-    return COORDINATE_SYSTEM::FieldAligned;
+  CoordinateSystem getCoordinateSystem() const override {
+    return CoordinateSystem::FieldAligned;
   }
 
   bool canToFromFieldAligned() override{
@@ -134,8 +134,8 @@ public:
    */
   const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
 
-  COORDINATE_SYSTEM getCoordinateSystem() const override {
-    return COORDINATE_SYSTEM::Orthogonal;
+  CoordinateSystem getCoordinateSystem() const override {
+    return CoordinateSystem::Orthogonal;
   }
 
   bool canToFromFieldAligned() override{

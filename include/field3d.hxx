@@ -179,7 +179,7 @@ class Field3D : public Field, public FieldData {
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Constructor specifying coordinate_system
-  Field3D(Mesh* localmesh, COORDINATE_SYSTEM coordinate_system_in);
+  Field3D(Mesh* localmesh, CoordinateSystem coordinate_system_in);
   /// Destructor
   ~Field3D() override;
 
@@ -220,12 +220,12 @@ class Field3D : public Field, public FieldData {
   /*!
    * Return the coordinate system of this field
    */
-  COORDINATE_SYSTEM getCoordinateSystem() const { return coordinate_system; }
+  CoordinateSystem getCoordinateSystem() const { return coordinate_system; }
 
   /*!
    * Reset the coordinate system of this field
    */
-  void setCoordinateSystem(COORDINATE_SYSTEM new_coords) { coordinate_system = new_coords; }
+  void setCoordinateSystem(CoordinateSystem new_coords) { coordinate_system = new_coords; }
 
   /*!
    * Ensure that this field has separate fields
@@ -491,7 +491,7 @@ private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
 
-  COORDINATE_SYSTEM coordinate_system; ///< Coordinate system used by this field, e.g. fieldaligned, orthogonal
+  CoordinateSystem coordinate_system; ///< Coordinate system used by this field, e.g. fieldaligned, orthogonal
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

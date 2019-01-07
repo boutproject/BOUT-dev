@@ -55,7 +55,7 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh),
-    y_prime(&mesh, COORDINATE_SYSTEM::FCI) {
+    y_prime(&mesh, CoordinateSystem::FCI) {
 
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);

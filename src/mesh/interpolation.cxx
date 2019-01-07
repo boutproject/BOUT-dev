@@ -161,7 +161,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc, REGION region) {
             result = var_fa; // NOTE: This is just for boundaries. FIX!
             result.allocate();
           }
-          result.setCoordinateSystem(COORDINATE_SYSTEM::FieldAligned);
+          result.setCoordinateSystem(CoordinateSystem::FieldAligned);
           if (fieldmesh->ystart > 1) {
 
             // More than one guard cell, so set pp and mm values

@@ -127,6 +127,35 @@ inline const std::string& DERIV_STRING(DERIV deriv) {
   return DERIVtoString.at(deriv);
 }
 
+/*!
+ * Coordinate systems that Field3Ds can be stored in
+ *
+ * None - special value to be used for Field3Ds initialized before the Mesh and
+ * ParallelTransform have finished being initialized, because then we cannot
+ * get the CoordinateSystem to use from the ParallelTransform, but Field3Ds
+ * created then must not need to know their CoordinateSystem, or must set it
+ * explicitly later.
+ * - FieldAligned - default type for Field3D with ParallelTransformIdentity,
+ *   valid alternative type with ShiftedMetric
+ * - Orthogonal - default type for Field3D with ShiftedMetric
+ * - Axisymmetric - default type for Field2D with ParallelTransformIdentity or
+ *   ShiftedMetric
+ * - FCI - default type for Field3D and Field2D with FCITransform
+ */
+enum class CoordinateSystem { None, FieldAligned, Orthogonal, Axisymmetric, FCI };
+
+#define BOUT_COORDENUMSTR(val) {CoordinateSystem::val, #val}
+
+const std::map<CoordinateSystem, std::string> CoordinateSystemMap = {
+  BOUT_COORDENUMSTR(None),
+  BOUT_COORDENUMSTR(FieldAligned),
+  BOUT_COORDENUMSTR(Orthogonal),
+  BOUT_COORDENUMSTR(Axisymmetric),
+  BOUT_COORDENUMSTR(FCI)
+};
+
+#undef BOUT_COORDENUMSTR
+
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
 // which can be inspected to provide the actual value of the enum
