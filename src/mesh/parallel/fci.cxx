@@ -69,10 +69,12 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   // z-index of bottom-left grid point
   auto k_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
 
-  Field3D xt_prime(&mesh), zt_prime(&mesh);
-  Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
-  Field3D R_prime(&mesh),
-      Z_prime(&mesh); // Real-space coordinates of forward/backward points
+  Field3D xt_prime(&mesh, CoordinateSystem::FCI),
+      zt_prime(&mesh, CoordinateSystem::FCI);
+  Field3D R(&mesh, CoordinateSystem::FCI),
+      Z(&mesh, CoordinateSystem::FCI); // Real-space coordinates of grid points
+  Field3D R_prime(&mesh, CoordinateSystem::FCI),
+      Z_prime(&mesh, CoordinateSystem::FCI); // Real-space coordinates of forward/backward points
 
   mesh.get(R, "R", 0.0, false);
   mesh.get(Z, "Z", 0.0, false);
@@ -100,7 +102,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   mesh.addBoundaryPar(boundary);
   
   // Cell corners
-  Field3D xt_prime_corner(&mesh), zt_prime_corner(&mesh);
+  Field3D xt_prime_corner(&mesh, CoordinateSystem::FCI),
+      zt_prime_corner(&mesh, CoordinateSystem::FCI);
   xt_prime_corner.allocate();
   zt_prime_corner.allocate();
 
