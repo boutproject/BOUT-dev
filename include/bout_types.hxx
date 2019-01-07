@@ -156,6 +156,32 @@ const std::map<CoordinateSystem, std::string> CoordinateSystemMap = {
 
 #undef BOUT_COORDENUMSTR
 
+#define BOUT_COORDUNDERLYING(val) static_cast<std::underlying_type<CoordinateSystem>::type>(val)
+
+bool operator==(CoordinateSystem lhs, CoordinateSystem rhs) {
+  // lhs and rhs are identical
+  if (BOUT_COORDUNDERLYING(lhs)
+      == BOUT_COORDUNDERLYING(rhs)) {
+    return true;
+  }
+
+  // Axisymmetric is compatible with either FieldAligned or Orthogonal
+  if (BOUT_COORDUNDERLYING(lhs) == BOUT_COORDUNDERLYING(CoordinateSystem::Axisymmetric)
+      && (BOUT_COORDUNDERLYING(rhs) == BOUT_COORDUNDERLYING(CoordinateSystem::FieldAligned)
+          || BOUT_COORDUNDERLYING(rhs) == BOUT_COORDUNDERLYING(CoordinateSystem::Orthogonal))) {
+    return true;
+  }
+  if (BOUT_COORDUNDERLYING(rhs) == BOUT_COORDUNDERLYING(CoordinateSystem::Axisymmetric)
+      && (BOUT_COORDUNDERLYING(lhs) == BOUT_COORDUNDERLYING(CoordinateSystem::FieldAligned)
+          || BOUT_COORDUNDERLYING(lhs) == BOUT_COORDUNDERLYING(CoordinateSystem::Orthogonal))) {
+    return true;
+  }
+
+  return false;
+}
+
+#undef BOUT_COORDUNDERLYING
+
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
 // which can be inspected to provide the actual value of the enum
