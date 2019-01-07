@@ -141,7 +141,8 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
-  Coordinates &coord = *(mesh.getCoordinates());
+  Field2D local_dy;
+  mesh.get(local_dy, "dy");
 
   for (int x = mesh.xstart; x <= mesh.xend; x++) {
     for (int y = mesh.ystart; y <= mesh.yend; y++) {
@@ -220,7 +221,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
           boundary->add_point(x, y, z, 
                               x + dx, y + 0.5*dir, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+                              0.5*local_dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
                               PI   // Right-angle intersection
                               );
         }

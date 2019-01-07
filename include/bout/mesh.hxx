@@ -186,6 +186,10 @@ class Mesh {
   /// @returns zero always. 
   int get(Vector3D &var, const std::string &name);
 
+  /// Method to get dz from "dz" if available, otherwise from "zperiod" if
+  /// available, otherwise from "ZMIN" and "ZMAX"
+  BoutReal getdz() const;
+
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
   

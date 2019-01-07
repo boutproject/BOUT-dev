@@ -44,6 +44,7 @@ Coordinates::Coordinates(Mesh *mesh)
 
   nz = mesh->LocalNz;
 
+  dz = mesh->getdz();
   if (mesh->get(dz, "dz")) {
     // Couldn't read dz from input
     int zperiod;

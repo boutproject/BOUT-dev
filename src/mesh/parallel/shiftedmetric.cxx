@@ -43,7 +43,7 @@ ShiftedMetric::ShiftedMetric(Mesh &mesh_in)
   //not change once we've been created so precalculate the complex
   //phases used in transformations
   nmodes = thismesh.LocalNz / 2 + 1;
-  BoutReal zlength = thismesh.getCoordinates()->zlength();
+  BoutReal zlength = thismesh.getdz() * thismesh.LocalNz;
 
   // Allocate storage for our 3d phase information.
   fromAlignedPhs = Tensor<dcomplex>(thismesh.LocalNx, thismesh.LocalNy, nmodes);
