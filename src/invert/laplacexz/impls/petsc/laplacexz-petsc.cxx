@@ -177,9 +177,9 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
     for(int i=0;i<localN;i++) {
       // Non-zero elements on this processor
-      d_nnz[i] = 5; // Star pattern in 2D
+      d_nnz[i] = 9; 
       // Non-zero elements on neighboring processor
-      o_nnz[i] = 0;
+      o_nnz[i] = 3;
     }
 
     // X boundaries
@@ -369,93 +369,209 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
 
     Coordinates *coords = mesh->getCoordinates(location);
-
-    // NOTE: For now the X-Z terms are omitted, so check that they are small
-    ASSERT2(max(abs(coords->g13)) < 1e-5);
     
     for(int x=mesh->xstart; x <= mesh->xend; x++) {
       for(int z=0; z < mesh->LocalNz; z++) {
-        // stencil entries
-        PetscScalar c, xm, xp, zm, zp;
+	// stencil entries
+	PetscScalar c, xm, xp, zm, zp, xpzp, xpzm, xmzp, xmzm;
+	PetscScalar zpxp, zpxm, zmxp, zmxm;
+	  
+	// XX component
+	  
+	// Metrics on x+1/2 boundary
+	BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+	BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x+1,y,z));
+	BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+	BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+	  
+	BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+	xp = val;
+	c  = -val;
+	  
+	// Metrics on x-1/2 boundary
+	J = 0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
+	g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x-1,y,z));
+	dx = 0.5*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
+	  
+	val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+	xm = val;
+	c  -= val;
+	  
+	// ZZ component
+	// Metrics on z+1/2 boundary
+	// Wrap around z-1 and z+1 indices
+	int zminus = (z - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+	int zplus = (z + 1) % (mesh->LocalNz);
+	  
+	J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
+	BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
+	BoutReal dz = coords->dz;
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+	  
+	val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+	zp = val;
+	c  -= val;
+	  
+	// Metrics on z-1/2 boundary
+	J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
+	g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zminus));
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+	  
+	val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+	zm = val;
+	c  -= val;
+	  
+	// XZ components
 
-        // XX component
+	// x+1/2, z+1/2 
+	J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+	BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
+	dz = 4.0*coords->dz;
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-        // Metrics on x+1/2 boundary
-        BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
-        BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
-        BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
-        BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	xpzp = val;
+	c -= val;
 
-        BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xp = val;
-        c  = -val;
+	// x+1/2, z-1/2
+	// J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+	// g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-        // Metrics on x-1/2 boundary
-        J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
-        g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
-        dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
-        Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	xpzm = val;
+	c -= val;
 
-        val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xm = val;
-        c  -= val;
+	// x-1/2, z+1/2
+	J =  0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
+	g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-        // ZZ component
-        // Note that because metrics are constant in Z many terms cancel
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	xmzp = val;
+	c -= val;
 
-        // Wrap around z-1 and z+1 indices
-        int zminus = (z - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
-        int zplus = (z + 1) % (mesh->LocalNz);
+	// x-1/2, z-1/2
+	Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-        // Metrics on z+1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	xmzm = val;
+	c -= val;
 
-        val = Acoef * coords->g33(x,y) / (coords->dz*coords->dz);
-        zp = val;
-        c -= val;
 
-        // Metrics on z-1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+	// ZX components
+	// z+1/2, x+1/2
+	J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
+	g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zplus));
+	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-        val = Acoef * coords->g33(x,y) / (coords->dz*coords->dz);
-        zm = val;
-        c -= val;
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	zpxp = val;
+	c -= val;
 
-        // B term
-        c += B(x,y,z);
+	//z+1/2, x-1/2
+	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-        /////////////////////////////////////////////////
-        // Now have a 5-point stencil for the Laplacian
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	zpxm = val;
+	c -= val;
 
-        // Set the centre (diagonal)
-        MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
+	// z-1/2, x+1/2
+	J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
+	g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zminus));
+	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-        // X + 1
-        int col = row + (mesh->LocalNz);
-        MatSetValues(it.MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	zmxp = val;
+	c -= val;
 
-        // X - 1
-        col = row - (mesh->LocalNz);
-        MatSetValues(it.MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
+	// z-1/2, x-1/2
+	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+	Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-        // Z + 1
-        col = row + 1;
-        if(z == mesh->LocalNz-1) {
-          col -= mesh->LocalNz;  // Wrap around
-        }
-        MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	zmxm = val;
+	c -= val;
 
-        // Z - 1
-        col = row - 1;
-        if(z == 0) {
-          col += mesh->LocalNz;  // Wrap around
-        }
-        MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
+ 	  
+	///////////// OLDER CODE /////////////////
+	// Note that because metrics are constant in Z many terms cancel
+	  
+	// // Wrap around z-1 and z+1 indices
+	// // int zminus = (z - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+	// // int zplus = (z + 1) % (mesh->LocalNz);
+	  
+	// // Metrics on z+1/2 boundary
+	// Acoef = 0.5*(A(x,y,z) + A(x,y,z+1));
+	  
+	// val = Acoef * coords->gzz(x,y,z) / (coords->dz(x,y,z)*coords->dz(x,y,z));
+	// zp = val;
+	// c -= val;
+	  
+	// // Metrics on z-1/2 boundary
+	// Acoef = 0.5*(A(x,y,z) + A(x,y,z-1));
+	  
+	// val = Acoef * coords->gzz(x,y,z) / (coords->dz(x,y,z)*coords->dz(x,y,z));
+	// zm = val;
+	// c -= val;
+	//////////////////////////////////////////
+	  
+	  
+	// B term
+	c += B(x,y,z);
+	  
+	/////////////////////////////////////////////////
+	// Now have a 5-point stencil for the Laplacian
+	  
+	// Set the centre (diagonal)
+	MatSetValues(it.MatA,1,&row,1,&row,&c,INSERT_VALUES);
+	  
+	// X + 1
+	int col = row + (mesh->LocalNz);
+	MatSetValues(it.MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+	  
+	// X - 1
+	col = row - (mesh->LocalNz);
+	MatSetValues(it.MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+	  
+	// Z + 1
+	col = row + 1;
+	if(z == mesh->LocalNz-1) {
+	  col -= mesh->LocalNz;  // Wrap around
+	}
+	MatSetValues(it.MatA,1,&row,1,&col,&zp,INSERT_VALUES);
 
-        row++;
+	int xzcol = col + (mesh->LocalNz); // X+1
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&xpzp,INSERT_VALUES);
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&zpxp,INSERT_VALUES);
+
+	xzcol = col - (mesh->LocalNz); // X-1
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&xmzp,INSERT_VALUES);
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&zpxm,INSERT_VALUES);
+	  
+	// Z - 1
+	col = row - 1;
+	if(z == 0) {
+	  col += mesh->LocalNz;  // Wrap around
+	}
+	MatSetValues(it.MatA,1,&row,1,&col,&zm,INSERT_VALUES);
+
+	xzcol = col + (mesh->LocalNz); // X+1
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&xpzm,INSERT_VALUES);
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&zmxp,INSERT_VALUES);
+
+	xzcol = col - (mesh->LocalNz); // X-1
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&xmzm,INSERT_VALUES);
+	MatSetValues(it.MatA,1,&row,1,&xzcol,&zmxm,INSERT_VALUES);
+	  
+	row++;
       }
     }
-
+    
     ////////////////////////////////////////////////
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
     if(mesh->lastX()) {
@@ -665,16 +781,17 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     // Set the inner points
     for(int x=mesh->xstart;x<= mesh->xend;x++) {
       for(int z=0; z < mesh->LocalNz; z++) {
-        PetscScalar val = x0(x,y,z);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = b(x,y,z);
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-        ind++;
+	PetscScalar val = x0(x,y,z);
+	VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+	  
+	val = b(x,y,z);
+	VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+	ind++;
       }
     }
 
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
+
     if(mesh->lastX()) {
       if (outer_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
