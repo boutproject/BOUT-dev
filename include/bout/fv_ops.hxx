@@ -180,39 +180,43 @@ namespace FV {
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
                         const Field3D &wave_speed, bool fixflux=true) {
 
+    ASSERT1(f_in.getMesh() == v_in.getMesh());
+    ASSERT1(wave_speed.getMesh() == v_in.getMesh());
     ASSERT2(f_in.getLocation() == v_in.getLocation());
 
+    Mesh *localmesh = f_in.getMesh();
+    
     CellEdges cellboundary;
     
-    Field3D f = mesh->toFieldAligned(f_in);
-    Field3D v = mesh->toFieldAligned(v_in);
+    Field3D f = localmesh->toFieldAligned(f_in);
+    Field3D v = localmesh->toFieldAligned(v_in);
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result = 0.0;
-    
+    Field3D result{0.0, localmesh};
+
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
-    int ys = mesh->ystart-1;
-    int ye = mesh->yend+1;
+    int ys = localmesh->ystart-1;
+    int ye = localmesh->yend+1;
 
-    for (int i = mesh->xstart; i <= mesh->xend; i++) {
+    for (int i = localmesh->xstart; i <= localmesh->xend; i++) {
 
-      if (!mesh->firstY(i) || mesh->periodicY(i)) {
+      if (!localmesh->firstY(i) || localmesh->periodicY(i)) {
         // Calculate in guard cell to get fluxes consistent between processors
-        ys = mesh->ystart - 1;
+        ys = localmesh->ystart - 1;
       } else {
         // Don't include the boundary cell. Note that this implies special
         // handling of boundaries later
-        ys = mesh->ystart;
+        ys = localmesh->ystart;
       }
 
-      if (!mesh->lastY(i) || mesh->periodicY(i)) {
+      if (!localmesh->lastY(i) || localmesh->periodicY(i)) {
         // Calculate in guard cells
-        ye = mesh->yend + 1;
+        ye = localmesh->yend + 1;
       } else {
         // Not in boundary cells
-        ye = mesh->yend;
+        ye = localmesh->yend;
       }
 
       for (int j = ys; j <= ye; j++) {
@@ -232,7 +236,7 @@ namespace FV {
         BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
         BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
         
-        for (int k = 0; k < mesh->LocalNz; k++) {
+        for (int k = localmesh->zstart; k <= localmesh->zend; k++) {
 
           ////////////////////////////////////////////
           // Reconstruct f at the cell faces
@@ -254,7 +258,7 @@ namespace FV {
           BoutReal vpar = 0.5 * (v(i, j, k) + v(i, j + 1, k));
           BoutReal flux;
 
-          if (mesh->lastY(i) && (j == mesh->yend) && !mesh->periodicY(i)) {
+          if (localmesh->lastY(i) && (j == localmesh->yend) && !localmesh->periodicY(i)) {
             // Last point in domain
 
             BoutReal bndryval = 0.5 * (s.c + s.p);
@@ -290,7 +294,7 @@ namespace FV {
           
           vpar = 0.5 * (v(i, j, k) + v(i, j - 1, k));
 
-          if (mesh->firstY(i) && (j == mesh->ystart) && !mesh->periodicY(i)) {
+          if (localmesh->firstY(i) && (j == localmesh->ystart) && !localmesh->periodicY(i)) {
             // First point in domain
             BoutReal bndryval = 0.5 * (s.c + s.m);
             if (fixflux) {
@@ -322,7 +326,7 @@ namespace FV {
         }
       }
     }
-    return mesh->fromFieldAligned(result);
+    return localmesh->fromFieldAligned(result);
   }
   
   /*!
@@ -339,151 +343,160 @@ namespace FV {
    */
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
+    ASSERT1(n_in.getMesh() == v.x.getMesh());
+    ASSERT1(n_in.getMesh() == v.y.getMesh());
+    ASSERT1(n_in.getMesh() == v.z.getMesh());
     ASSERT2(n_in.getLocation() == v.getLocation());
 
+    Mesh* localmesh = n_in.getMesh();
+    
     CellEdges cellboundary;
     
     Coordinates *coord = n_in.getCoordinates();
-    
-    if(v.covariant) {
+
+    if (v.covariant) {
       // Got a covariant vector instead
       throw BoutException("Div_f_v_XPPM passed a covariant v");
     }
-    
-    Field3D result = 0.0;
-    
+
+    Field3D result{0.0, localmesh};
+
     Field3D vx = v.x;
     Field3D vz = v.z;
     Field3D n  = n_in;
     
     // X-Z advection
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-        for(int k=0;k<mesh->LocalNz;k++) {
-          int kp = (k+1) % (mesh->LocalNz);
-          int kpp = (kp+1) % (mesh->LocalNz);
-          int km = (k-1+mesh->LocalNz) % (mesh->LocalNz);
-          int kmm = (km-1+mesh->LocalNz) % (mesh->LocalNz);
-          
-          // Calculate velocities
-          BoutReal vU = 0.5*(vz(i,j,kp) + vz(i,j,k))*coord->J(i,j);
-          BoutReal vD = 0.5*(vz(i,j,km) + vz(i,j,k))*coord->J(i,j);
-          BoutReal vL = 0.25*(vx(i-1,j,k) + vx(i,j,k))*(coord->J(i-1,j) + coord->J(i,j));
-          BoutReal vR = 0.25*(vx(i+1,j,k) + vx(i,j,k))*(coord->J(i+1,j) + coord->J(i,j));
-          
-          // X direction
-          Stencil1D s;
-          s.c  = n(i,  j,k);
-          s.m  = n(i-1,j,k);
-          s.mm = n(i-2,j,k);
-          s.p  = n(i+1,j,k);
-          s.pp = n(i+2,j,k);
-          
-          cellboundary(s);
-        
-          if((i==mesh->xend) && (mesh->lastX())) {
-            // At right boundary in X
-          
-            if(bndry_flux) {
-              BoutReal flux;
-              if(vR > 0.0) {
-                // Flux to boundary
-                flux = vR * s.R;
-              }else {
-                // Flux in from boundary
-                flux = vR * 0.5*(n(i+1,j,k) + n(i,j,k));
-              }
-              result(i,j,k)   += flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i+1,j,k) -= flux / (coord->dx(i+1,j) * coord->J(i+1,j));
-            }
-          }else {
-            // Not at a boundary
-            if(vR > 0.0) {
-              // Flux out into next cell
-              BoutReal flux = vR * s.R;
-              result(i,j,k)   += flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i+1,j,k) -= flux / (coord->dx(i+1,j) * coord->J(i+1,j));
-            }
+    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+      // Calculate offset indices
+      auto izp = i.zp();
+      auto izm = i.zm();
+      auto izpp = i.zpp();
+      auto izmm = i.zmm();
+
+      // Calculate velocities
+      BoutReal vU = 0.5 * (vz[izp] + vz[i]) * coord->J[i];
+      BoutReal vD = 0.5 * (vz[izm] + vz[i]) * coord->J[i];
+      BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
+      BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
+
+      // X direction
+      Stencil1D s;
+      s.c  = n[i];
+      s.m  = n[i.xm()];
+      s.mm = n[i.xmm()];
+      s.p  = n[i.xp()];
+      s.pp = n[i.xpp()];
+      
+      cellboundary(s);
+
+      if ((i.x() == localmesh->xend) && (localmesh->lastX())) {
+        // At right boundary in X
+
+        if (bndry_flux) {
+          BoutReal flux;
+          if (vR > 0.0) {
+            // Flux to boundary
+            flux = vR * s.R;
+          } else {
+            // Flux in from boundary
+            flux = vR * 0.5 * (n[i.xp()] + n[i]);
           }
-        
-          // Left side
-          
-          if((i==mesh->xstart) && (mesh->firstX())) {
-            // At left boundary in X
-            
-            if(bndry_flux) {
-              BoutReal flux;
-              
-              if(vL < 0.0) {
-                // Flux to boundary
-                flux = vL * s.L;
-                
-              }else {
-                // Flux in from boundary
-                flux = vL * 0.5*(n(i-1,j,k) + n(i,j,k));
-              }
-              result(i,j,k)   -= flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i-1,j,k) += flux / (coord->dx(i-1,j) * coord->J(i-1,j));
-            }
-          }else {
-            // Not at a boundary
-            
-            if(vL < 0.0) {
-              BoutReal flux = vL * s.L;
-              result(i,j,k)   -= flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i-1,j,k) += flux / (coord->dx(i-1,j) * coord->J(i-1,j));
-            }
-          }
-          
-          /// NOTE: Need to communicate fluxes
-          
-          // Z direction
-          s.m  = n(i,j,km);
-          s.mm = n(i,j,kmm);
-          s.p  = n(i,j,kp);
-          s.pp = n(i,j,kpp);
-          
-          cellboundary(s);
-          
-          if(vU > 0.0) {
-            BoutReal flux = vU * s.R / (coord->J(i,j)*coord->dz);
-            result(i,j,k)   += flux;
-            result(i,j,kp)  -= flux;
-          }
-          if(vD < 0.0) {
-            BoutReal flux = vD * s.L / (coord->J(i,j)*coord->dz);
-            result(i,j,k)   -= flux;
-            result(i,j,km)  += flux;
-          }
-          
+          result[i] += flux / (coord->dx[i] * coord->J[i]);
+          // Note: This statement might update another thread's data
+          BOUT_OMP(atomic)
+          result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
         }
+      } else {
+        // Not at a boundary
+        if (vR > 0.0) {
+          // Flux out into next cell
+          BoutReal flux = vR * s.R;
+          result[i] += flux / (coord->dx[i] * coord->J[i]);
+          // Note: This statement might update another thread's data
+          BOUT_OMP(atomic)
+          result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        }
+      }
+      
+      // Left side
+
+      if ((i.x() == localmesh->xstart) && (localmesh->firstX())) {
+        // At left boundary in X
+
+        if (bndry_flux) {
+          BoutReal flux;
+
+          if (vL < 0.0) {
+            // Flux to boundary
+            flux = vL * s.L;
+
+          } else {
+            // Flux in from boundary
+            flux = vL * 0.5 * (n[i.xm()] + n[i]);
+          }
+          result[i] -= flux / (coord->dx[i] * coord->J[i]);
+          BOUT_OMP(atomic)
+          result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        }
+      } else {
+        // Not at a boundary
+
+        if (vL < 0.0) {
+          BoutReal flux = vL * s.L;
+          result[i] -= flux / (coord->dx[i] * coord->J[i]);
+          BOUT_OMP(atomic)
+          result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        }
+      }
+
+      /// NOTE: Need to communicate fluxes
+          
+      // Z direction
+      s.m  = n[izm];
+      s.mm = n[izmm];
+      s.p  = n[izp];
+      s.pp = n[izpp];
+      
+      cellboundary(s);
+
+      if (vU > 0.0) {
+        BoutReal flux = vU * s.R / (coord->J[i] * coord->dz);
+        result[i] += flux;
+        BOUT_OMP(atomic)
+        result[izp] -= flux;
+      }
+      if (vD < 0.0) {
+        BoutReal flux = vD * s.L / (coord->J[i] * coord->dz);
+        result[i] -= flux;
+        BOUT_OMP(atomic)
+        result[izm] += flux;
+      }
+    }
     communicateFluxes(result);
     
     // Y advection
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
     
-    n = mesh->toFieldAligned(n_in);
-    Field3D vy = mesh->toFieldAligned(v.y);
-    
-    Field3D yresult = 0.0;    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-        for(int k=0;k<mesh->LocalNz;k++) {
-          
-          // Y velocities on y boundaries
-          BoutReal vU = 0.25*(vy(i,j,k) + vy(i,j+1,k))*(coord->J(i,j) + coord->J(i,j+1));
-          BoutReal vD = 0.25*(vy(i,j,k) + vy(i,j-1,k))*(coord->J(i,j) + coord->J(i,j-1));
-          
-          // n (advected quantity) on y boundaries
-          // Note: Use unshifted n_in variable
-          BoutReal nU = 0.5*(n(i,j,k) + n(i,j+1,k));
-          BoutReal nD = 0.5*(n(i,j,k) + n(i,j-1,k));
-          
-          yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
-        }
-    
-    return result + mesh->fromFieldAligned(yresult);
+    n = localmesh->toFieldAligned(n_in);
+    Field3D vy = localmesh->toFieldAligned(v.y);
+
+    Field3D yresult{0.0, localmesh};
+
+    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+      // Y velocities on y boundaries
+      BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
+      BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
+
+      // n (advected quantity) on y boundaries
+      // Note: Use unshifted n_in variable
+      BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
+      BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
+
+      yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
+    }
+
+    return result + localmesh->fromFieldAligned(yresult);
   }
 }
 
