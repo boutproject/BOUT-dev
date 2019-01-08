@@ -57,6 +57,14 @@ public:
   using metric_field_type = Field2D;
 #endif
 
+  bool is3D() {
+#ifdef COORDINATES_USE_3D
+    return true;
+#else
+    return false;
+#endif
+  }
+
   /// Standard constructor from input
   Coordinates(Mesh *mesh);
 
