@@ -298,91 +298,92 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   
   for(int x=mesh->xstart; x <= mesh->xend; x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      // stencil entries
-      PetscScalar c, xm, xp, ym, yp;
-      
-      // XX component
-      
-      // Metrics on x+1/2 boundary
-      BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
-      BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
-      BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
-      BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
-      
-      BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-      xp = val;
-      c  = -val;
-      
-      // Metrics on x-1/2 boundary
-      J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
-      g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
-      dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
-      Acoef = 0.5*(A(x,y) + A(x-1,y));
-      
-      val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-      xm = val;
-      c  -= val;
+      for(int z=0;z<=mesh->LocalNz;z++){
+	// stencil entries
+	PetscScalar c, xm, xp, ym, yp;
+	
+	// XX component
+	
+	// Metrics on x+1/2 boundary
+	BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+	BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x+1,y,z));
+	BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+	BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
+	
+	BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+	xp = val;
+	c  = -val;
+	
+	// Metrics on x-1/2 boundary
+	J = 0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
+	g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x-1,y,z));
+	dx = 0.5*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+	Acoef = 0.5*(A(x,y) + A(x-1,y));
+	
+	val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+	xm = val;
+	c  -= val;
+	
+	c += B(x,y);
+	
+	// Put values into the preconditioner, X derivatives only
+	acoef(y - mesh->ystart, x - xstart) = xm;
+	bcoef(y - mesh->ystart, x - xstart) = c;
+	ccoef(y - mesh->ystart, x - xstart) = xp;
 
-      c += B(x,y);
-      
-      // Put values into the preconditioner, X derivatives only
-      acoef(y - mesh->ystart, x - xstart) = xm;
-      bcoef(y - mesh->ystart, x - xstart) = c;
-      ccoef(y - mesh->ystart, x - xstart) = xp;
-
-      if( include_y_derivs ) {
-        // YY component
-        // Metrics at y+1/2
-        J = 0.5*(coords->J(x,y) + coords->J(x,y+1));
-        BoutReal g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y+1));
-        BoutReal g23  = 0.5*(coords->g23(x,y) + coords->g23(x,y+1));
-        BoutReal g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y+1));
-        BoutReal dy   = 0.5*(coords->dy(x,y) + coords->dy(x,y+1));
-        Acoef = 0.5*(A(x,y+1) + A(x,y));
-        
-        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
-        yp = val;
-        c -= val;
-        
-        // Metrics at y-1/2
-        J    = 0.5*(coords->J(x,y)    + coords->J(x,y-1));
-        g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y-1));
-        g23  = 0.5*(coords->g23(x,y)  + coords->g23(x,y-1));
-        g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y-1));
-        dy   = 0.5*(coords->dy(x,y)   + coords->dy(x,y-1));
-        Acoef = 0.5*(A(x,y-1) + A(x,y));
-        
-        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
-        ym = val;
-        c -= val;
+	if( include_y_derivs ) {
+	  // YY component
+	  // Metrics at y+1/2
+	  J = 0.5*(coords->J(x,y,z) + coords->J(x,y+1,z));
+	  BoutReal g_22 = 0.5*(coords->g_22(x,y,z) + coords->g_22(x,y+1,z));
+	  BoutReal g23  = 0.5*(coords->g23(x,y,z) + coords->g23(x,y+1,z));
+	  BoutReal g_23 = 0.5*(coords->g_23(x,y,z) + coords->g_23(x,y+1,z));
+	  BoutReal dy   = 0.5*(coords->dy(x,y,z) + coords->dy(x,y+1,z));
+	  Acoef = 0.5*(A(x,y+1) + A(x,y));
+	  
+	  val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y,z) * dy * coords->dy(x,y,z));
+	  yp = val;
+	  c -= val;
+	  
+	  // Metrics at y-1/2
+	  J    = 0.5*(coords->J(x,y,z)    + coords->J(x,y-1,z));
+	  g_22 = 0.5*(coords->g_22(x,y,z) + coords->g_22(x,y-1,z));
+	  g23  = 0.5*(coords->g23(x,y,z)  + coords->g23(x,y-1,z));
+	  g_23 = 0.5*(coords->g_23(x,y,z) + coords->g_23(x,y-1,z));
+	  dy   = 0.5*(coords->dy(x,y,z)   + coords->dy(x,y-1,z));
+	  Acoef = 0.5*(A(x,y-1) + A(x,y));
+	  
+	  val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y,z) * dy * coords->dy(x,y,z));
+	  ym = val;
+	  c -= val;
+	
+	}      
+	/////////////////////////////////////////////////
+	// Now have a 5-point stencil for the Laplacian
+	
+	int row = globalIndex(x,y);
+	
+	// Set the centre (diagonal)
+	MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+	
+	// X + 1
+	int col = globalIndex(x+1, y);
+	MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+	
+	// X - 1
+	col = globalIndex(x-1, y);
+	MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+	
+	if( include_y_derivs ) {
+	  // Y + 1
+	  col = globalIndex(x, y+1);
+	  MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+	  
+	  // Y - 1
+	  col = globalIndex(x, y-1);
+	  MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+	}
       }
-      
-      /////////////////////////////////////////////////
-      // Now have a 5-point stencil for the Laplacian
-      
-      int row = globalIndex(x,y);
-      
-      // Set the centre (diagonal)
-      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
-      
-      // X + 1
-      int col = globalIndex(x+1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
-      
-      // X - 1
-      col = globalIndex(x-1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
-      
-      if( include_y_derivs ) {
-        // Y + 1
-        col = globalIndex(x, y+1);
-        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
-        
-        // Y - 1
-        col = globalIndex(x, y-1);
-        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
-      }
-      
     }
   }
   
