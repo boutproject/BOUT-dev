@@ -8,6 +8,7 @@
 #include <derivs.hxx>
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
+#include <unused.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -29,13 +30,13 @@ class Interchange : public PhysicsModel {
   Field2D Rxy, Bpxy, Btxy, hthe;
 
   // Parameters
-  BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, AA, ZZ, wci;
+  BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
   int phi_flags; // Inversion flags
 
   Coordinates *coord;
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     Field2D I; // Shear factor
 
     output << "Solving 2-variable equations\n";
@@ -166,7 +167,7 @@ protected:
     return (0);
   }
 
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     // Solve EM fields
     invert_laplace(rho / Ni0, phi, phi_flags, NULL);
 
