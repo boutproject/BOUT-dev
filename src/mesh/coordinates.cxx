@@ -1000,3 +1000,11 @@ const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
 
   return result;
 }
+
+ bool Coordinates::is3D() {
+#ifdef COORDINATES_USE_3D
+  return true;
+#else
+  return false;
+#endif
+}

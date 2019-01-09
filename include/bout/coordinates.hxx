@@ -57,14 +57,6 @@ public:
   using metric_field_type = Field2D;
 #endif
 
-  bool is3D() {
-#ifdef COORDINATES_USE_3D
-    return true;
-#else
-    return false;
-#endif
-  }
-
   /// Standard constructor from input
   Coordinates(Mesh *mesh);
 
@@ -117,6 +109,9 @@ public:
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
+
+  /// Return if the metrics are 3D
+  bool is3D(); 
 
   // Operators
 
