@@ -21,8 +21,9 @@ shell_safe("make > make.log")
 exefile = "./test_delp2"
 
 # List of settings to apply
-settings = ["mxg=2 mesh:nx=36", 
-            "mxg=1 mesh:nx=34"]
+settings = ["mxg=2 mesh:nx=36 diffusion:useFFT=true", 
+            "mxg=1 mesh:nx=34 diffusion:useFFT=true", "mxg=2 mesh:nx=36 diffusion:useFFT=false", 
+            "mxg=1 mesh:nx=34 diffusion:useFFT=false"]
 
 
 success = True
@@ -42,7 +43,7 @@ for i, opts in enumerate(settings):
     shell("rm data/BOUT.dmp.*.nc")
     
     stdout.write("   %d processor...." % (nproc))
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
     with open("run.log."+str(i)+"."+str(nproc), "w") as f:
       f.write(out)
 

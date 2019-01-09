@@ -111,6 +111,25 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
+  /// Check if this field has yup and ydown fields
+  bool hasYupYdown() const {
+    return true;
+  }
+  
+  Field2D& yup() {
+    return *this;
+  }
+  const Field2D& yup() const {
+    return *this;
+  }
+
+  Field2D& ydown() {
+    return *this;
+  }
+  const Field2D& ydown() const {
+    return *this;
+  }
+  
   // Operators
   
   /*!

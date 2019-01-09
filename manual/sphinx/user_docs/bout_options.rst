@@ -77,8 +77,8 @@ are first read, and then processed afterwards.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
-:ref:`_sec-expressions` and input sources, defining grids
-:ref:`_sec-gridgen` and MMS convergence tests :ref:`_sec-mms`.
+:ref:`sec-expressions` and input sources, defining grids
+:ref:`sec-gridgen` and MMS convergence tests :ref:`sec-mms`.
 
 Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
@@ -105,7 +105,7 @@ use the ``round`` function:
     ok_integer = round(256.4)
 
 Note that it is still possible to read ``bad_integer`` as a real
-number though.
+number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
 
@@ -336,11 +336,13 @@ name, e.g. if multiple meshes are used.
 
 -  ``second``, method for second derivatives
 
+-  ``fourth``, method for fourth derivatives
+
 -  ``upwind``, method for upwinding terms
 
 -  ``flux``, for conservation law terms
 
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
+The methods which can be specified include U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
 

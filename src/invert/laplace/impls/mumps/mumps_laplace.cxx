@@ -564,6 +564,7 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b, const FieldPerp &x0) {
 
 const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   int y = b.getIndex();
   sol = 0.;

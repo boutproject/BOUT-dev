@@ -73,12 +73,14 @@ private:
   bool smooth_separatrix;
   
   FieldGroup comms;
-  
+
+  Laplacian *phiSolver; // Laplacian solver in X-Z
+  Laplacian *aparSolver; // Laplacian solver in X-Z for Apar
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     
     /////////////////////////////////////////////////////
     // Load data from the grid
@@ -171,7 +173,7 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if(lowercase(ptstr) == "shifted") {
@@ -294,6 +296,10 @@ protected:
       SAVE_ONCE(eta);
     }
     
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    
     // LaplaceXY for n=0 solve
     if (split_n0) {
       // Create an XY solver for n=0 component
@@ -301,6 +307,13 @@ protected:
       phi2D = 0.0; // Starting guess
     }
 
+    // Solver for Apar
+    // ajpar = beta_hat*apar + mu_hat*jpar
+    aparSolver = Laplacian::create();
+    aparSolver->setFlags(apar_flags);
+    aparSolver->setCoefA(beta_hat);
+    aparSolver->setCoefD(-mu_hat);
+    
     return 0;
   }
   
@@ -346,7 +359,7 @@ protected:
     return result;
   }
   
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     
     // Invert vorticity to get electrostatic potential
     if (split_n0) {
@@ -354,10 +367,10 @@ protected:
       phi2D = laplacexy->solve(Vort2D, phi2D);
       
       // Solve non-axisymmetric part using X-Z solver
-      phi = invert_laplace((Vort-Vort2D)*B0, phi_flags);
+      phi = phiSolver->solve((Vort-Vort2D)*B0);
       phi += phi2D; // Add axisymmetric part
     } else {
-      phi = invert_laplace(Vort*B0, phi_flags);
+      phi = phiSolver->solve(Vort*B0);
     }
     phi.applyBoundary();
     
@@ -386,9 +399,7 @@ protected:
       } else {
         // All terms - solve Helmholtz equation
         // ajpar = beta_hat*apar + mu_hat*jpar
-        Field2D a = beta_hat;
-        Field2D d = -mu_hat;
-        apar = invert_laplace(Ajpar, apar_flags, &a, NULL, &d);
+        apar = aparSolver->solve(Ajpar);
         apar.applyBoundary();
         
         mesh->communicate(comms);

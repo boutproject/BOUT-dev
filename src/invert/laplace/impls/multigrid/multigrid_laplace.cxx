@@ -202,6 +202,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b_in.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   checkData(b_in);
   checkData(x0);
@@ -423,16 +425,15 @@ BOUT_OMP(for)
   }
 
   FieldPerp result(localmesh);
+  result.setLocation(location);
   result.allocate();
   result.setIndex(yindex);
 
-  #if CHECK>2
+#if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them
-  const auto &region = localmesh->getRegionPerp("RGN_ALL");
-  BOUT_FOR(i, region) {
-    result[i] = BoutNaN;
-  }
-  #endif
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = BoutNaN; }
+#endif
+
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))

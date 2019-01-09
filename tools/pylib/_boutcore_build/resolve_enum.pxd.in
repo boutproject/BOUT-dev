@@ -8,7 +8,7 @@ do
     end=${file##*/}
 
     # In each file we are checking for enums, and then parse them
-    grep enum $file| \
+    grep -E "^[ \t]*\benum\b" $file| \
 	while read line
 	do
 	    # first remove the start, which is just enum

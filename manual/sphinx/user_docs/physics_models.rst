@@ -664,6 +664,28 @@ Another way to set the boundaries is to copy them from another variable::
     a.setBoundaryTo(b); // Copy b's boundaries into a
     ...
 
+Note that this will copy the value at the boundary, which is half-way between
+mesh points. This is not the same as copying the guard cells from
+field ``b`` to field ``a``. The value at the boundary cell is
+calculated using second-order central difference.  For example if
+there is one boundary cell, so that ``a(0,y,z)`` is the boundary cell,
+and ``a(1,y,z)`` is in the domain, then the boundary would be set so that::
+
+    a(0,y,z) + a(1,y,z) = b(0,y,z) + b(1,y,z)
+
+rearranged as::
+
+    a(0,y,z) = - a(1,y,z) + b(0,y,z) + b(1,y,z)
+    
+To copy the boundary cells (and communication guard cells), iterate
+over them::
+
+    BOUT_FOR(i, a.getRegion("RGN_GUARDS")) {
+      a[i] = b[i];
+    }
+    
+See :ref:`sec-iterating` for more details on iterating over custom regions.
+
 .. _sec-custom-bc:
 
 Custom boundary conditions
