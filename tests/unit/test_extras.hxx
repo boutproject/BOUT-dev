@@ -74,10 +74,10 @@ public:
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
-    coords_map.emplace(CELL_CENTRE, std::shared_ptr<Coordinates>(nullptr));
-    coords_map.emplace(CELL_XLOW, std::shared_ptr<Coordinates>(nullptr));
-    coords_map.emplace(CELL_YLOW, std::shared_ptr<Coordinates>(nullptr));
-    coords_map.emplace(CELL_ZLOW, std::shared_ptr<Coordinates>(nullptr));
+    coords_map.emplace(CELL_CENTRE, std::unique_ptr<Coordinates>(nullptr));
+    coords_map.emplace(CELL_XLOW, std::unique_ptr<Coordinates>(nullptr));
+    coords_map.emplace(CELL_YLOW, std::unique_ptr<Coordinates>(nullptr));
+    coords_map.emplace(CELL_ZLOW, std::unique_ptr<Coordinates>(nullptr));
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
