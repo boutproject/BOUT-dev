@@ -82,11 +82,11 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 
     break;
   }
-#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
   default : {
+#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
     throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
-  }
 #endif
+  }
   }
 
   //Now check we have enough points and if not throw an exception
