@@ -669,15 +669,22 @@ PetscErrorCode solver_rhsjacobian(TS UNUSED(ts), BoutReal UNUSED(t), Vec UNUSED(
   PetscFunctionReturn(0);
 }
 #else
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
+PetscErrorCode solver_rhsjacobian(MAYBE_UNUSED(TS ts), MAYBE_UNUSED(BoutReal t),
+                                  MAYBE_UNUSED(Vec globalin), Mat *J, Mat *Jpre,
+                                  MAYBE_UNUSED(MatStructure *str),
+                                  MAYBE_UNUSED(void *f_data)) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  if (*J != *Jpre){
-    ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);
+  CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);
+  CHKERRQ(ierr);
+  if (*J != *Jpre) {
+    ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);
+    CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);
+    CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -709,20 +716,23 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   PetscFunctionReturn(0);
 }
 #else
-PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
+PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
+                                MAYBE_UNUSED(Vec globalindot), MAYBE_UNUSED(PetscReal a),
+                                Mat *J, Mat *Jpre, MatStructure *str, void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_rhsjacobian(ts,t,globalin,J,Jpre,str,(void *)f_data);CHKERRQ(ierr);
+  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, str, (void *)f_data);
+  CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  PetscSolver *solver = (PetscSolver*) f_data;
+  PetscSolver *solver = (PetscSolver *)f_data;
 
-  if(solver->diagnose)
+  if (solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
 
-  solver->shift = a; // Save the shift 'a'
-  solver->state = globalin;  // Save system state
+  solver->shift = a;        // Save the shift 'a'
+  solver->state = globalin; // Save system state
   solver->ts_time = t;
 
   PetscFunctionReturn(0);
