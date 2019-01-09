@@ -1181,20 +1181,20 @@ namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
-    // Do full checks
-    const Region<Ind3D> &new_region = f.getMesh()->getRegion3D(REGION_STRING(region));
-    
-    BOUT_FOR_SERIAL(i, new_region) {
-      if (!finite(f[i])) {
-	throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
-			    i.x(), i.y(), i.z());
-      }
+void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
+  // Do full checks
+  const Region<Ind3D> &new_region = f.getMesh()->getRegion3D(REGION_STRING(region));
+
+  BOUT_FOR_SERIAL(i, new_region) {
+    if (!finite(f[i])) {
+      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+                          i.x(), i.y(), i.z());
     }
   }
-#elif CHECK > 1
-  // No-op for no checking
-  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+}
+#elif CHECK > 0
+// No-op for no checking
+void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
 
