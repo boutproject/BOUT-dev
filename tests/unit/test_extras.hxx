@@ -92,8 +92,8 @@ public:
     coords_map.emplace(CELL_ZLOW, std::unique_ptr<Coordinates>(nullptr));
   }
 
-  void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
-    coords_map[location] = coords;
+  void setCoordinates(Coordinates* coords, CELL_LOC location = CELL_CENTRE) {
+    coords_map[location].reset(coords);
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
