@@ -461,9 +461,6 @@ class Mesh {
     return coords_map.size();
   }
 
-  /// switch to pass to Coordinates objects
-  bool allow_geometry_without_recalculate_staggered;
-
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
