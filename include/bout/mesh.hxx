@@ -717,7 +717,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  std::map<CELL_LOC, std::unique_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
