@@ -845,9 +845,9 @@ int BoutMesh::load() {
   if (StaggerGrids) {
     // Add Coordinates objects at staggered locations, if there are enough grid
     // points.
-    // This is a temporary workaround. In v4.3 we will users to call
-    // REQUEST_LOCATION(location) for each location that is needed and remove
-    // this so that we don't waste memory on unneeded Coordinates.
+    // This is a temporary workaround. In v4.3 we will require users to call
+    // Mesh::addCoordinates(location) for each location that is needed and
+    // change this so that we don't waste memory on unneeded Coordinates.
     if (LocalNx >= 4) {
       addCoordinates(CELL_XLOW);
     }
