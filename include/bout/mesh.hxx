@@ -438,8 +438,8 @@ class Mesh {
 #if CHECK > 0
     if (!coords_map.count(location)) {
       throw BoutException("Error: Coordinates for %s have not been added to "
-          "this Mesh. You should use REQUEST_STAGGER(location) before "
-          "initializing fields staggered to 'CELL_LOC location'.",
+          "this Mesh. You should call the method Mesh::addCoordinates(location) "
+          "before initializing fields staggered to 'CELL_LOC location'.",
           CELL_LOC_STRING(location).c_str());
     }
 #endif
@@ -727,7 +727,7 @@ class Mesh {
   
   GridDataSource *source; ///< Source for grid data
   
-  std::map<CELL_LOC, std::unique_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
 
   Options *options; ///< Mesh options section
   
