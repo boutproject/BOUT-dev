@@ -282,11 +282,11 @@ FUNCTION analyse_equil, F, R, Z
       
       n = 100 ; Number of points
       farr = FLTARR(n)
-      dr = (xpt_ri[i] - opt_ri[ind]) / FLOAT(n)
-      dz = (xpt_zi[i] - opt_zi[ind]) / FLOAT(n)
+      dr = (xpt_ri[i] - opt_ri[primary_opt]) / FLOAT(n)
+      dz = (xpt_zi[i] - opt_zi[primary_opt]) / FLOAT(n)
       FOR j=0, n-1 DO BEGIN
         ; interpolate f at this location
-        farr[j] = INTERPOLATE(F, opt_ri[ind] + dr*FLOAT(j), opt_zi[ind] + dz*FLOAT(j))
+        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*FLOAT(j), opt_zi[primary_opt] + dz*FLOAT(j))
       ENDFOR
       
       IF farr[n-1] LT farr[0] THEN BEGIN
@@ -325,7 +325,7 @@ FUNCTION analyse_equil, F, R, Z
         IF m LT 4. THEN BEGIN
           PRINT, "Duplicates: ", i, ind
           
-          IF ABS(opt_f[ind] - xpt_f[i]) LT ABS(opt_f[ind] - xpt_f[ind]) THEN BEGIN
+          IF ABS(opt_f[primary_opt] - xpt_f[i]) LT ABS(opt_f[primary_opt] - xpt_f[ind]) THEN BEGIN
             ; i is closer to O-point than ind.
             
             xpt_ri[ind] = xpt_ri[n_xpoint-1]
@@ -346,7 +346,7 @@ FUNCTION analyse_equil, F, R, Z
     ENDIF
     
     ; Now find x-point closest to primary O-point
-    s = SORT(ABS(opt_f[ind] - xpt_f))
+    s = SORT(ABS(opt_f[primary_opt] - xpt_f))
     xpt_ri = xpt_ri[s]
     xpt_zi = xpt_zi[s]
     xpt_f = xpt_f[s]
