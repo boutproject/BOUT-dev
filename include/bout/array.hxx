@@ -69,6 +69,7 @@ template<typename T>
 class Array {
 public:
   typedef T data_type;
+  using size_type = int;
     
   /*!
    * Create an empty array
@@ -82,7 +83,7 @@ public:
   /*!
    * Create an array of given length
    */
-  Array(int len) {
+  Array(size_type len) {
     ptr = get(len);
   }
   
@@ -121,7 +122,7 @@ public:
   /*!
    * Resize the array to \p new_size
    */
-  void resize(int new_size) {
+  void resize(size_type new_size) {
     release(ptr);
     ptr = get(new_size);
   }
@@ -176,7 +177,7 @@ public:
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  int size() const noexcept {
+  size_type size() const noexcept {
     if(!ptr)
       return 0;
 #ifdef BOUT_ARRAY_WITH_VALARRAY
@@ -269,7 +270,7 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  T& operator[](int ind) {
+  T& operator[](size_type ind) {
     ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
@@ -277,7 +278,7 @@ public:
     return ptr->data[ind];
 #endif    
   }
-  const T& operator[](int ind) const {
+  const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
 #ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
@@ -303,10 +304,10 @@ private:
    * Handles the allocation and deletion of data
    */
   struct ArrayData {
-    int len;    ///< Size of the array
+    size_type len;    ///< Size of the array
     T *data;    ///< Array of data
     
-    ArrayData(int size) : len(size) {
+    ArrayData(size_type size) : len(size) {
       data = new T[len];
     }
     ~ArrayData() {
@@ -336,11 +337,11 @@ private:
    */
   dataPtrType ptr;
 
-  typedef std::map< int, std::vector<dataPtrType> > storeType;
-  typedef std::vector< storeType > arenaType;
+  using storeType = std::map<size_type, std::vector<dataPtrType>>;
+  using arenaType = std::vector<storeType>;
 
   /*!
-   * This maps from array size (int) to vectors of pointers to ArrayData objects
+   * This maps from array size (size_type) to vectors of pointers to ArrayData objects
    *
    * By putting the static store inside a function it is initialised on first use,
    * and doesn't need to be separately declared for each type T
@@ -393,7 +394,7 @@ private:
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated
    */
-  dataPtrType get(int len) {
+  dataPtrType get(size_type len) {
     dataPtrType p;
 
     auto& st = store()[len];
