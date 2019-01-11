@@ -118,7 +118,15 @@ public:
     swap(*this, other);
   }
 
- /*!
+  /*!
+   * Resize the array to \p new_size
+   */
+  void resize(int new_size) {
+    release(ptr);
+    ptr = get(new_size);
+  }
+
+  /*!
    * Holds a static variable which controls whether
    * memory blocks (ArrayData) are put into a store
    * or new/deleted each time. 
