@@ -57,8 +57,8 @@ TEST(FFTTest, irfft) {
   // Make sure fft functions are quiet by setting fft_measure to false
   bout::fft::fft_init(false);
 
-  constexpr int nmodes{5};
-  constexpr int size{(nmodes - 1) * 2};
+  constexpr int size{8};
+  constexpr int nmodes{(size / 2) + 1};
 
   // Make a spectrum with two frequencies
   Array<dcomplex> input{nmodes};
@@ -144,7 +144,7 @@ TEST(FFTTest, irfftWithArray) {
   input[2] = dcomplex{0.5, 0.};
 
   // Compute inverse real FFT
-  Array<BoutReal> output = bout::fft::irfft(input);
+  Array<BoutReal> output = bout::fft::irfft(input, size);
 
   // Make grid indices from [0, size - 1]
   Array<BoutReal> indices{size};
@@ -183,7 +183,7 @@ TEST(FFTTest, RoundTrip) {
                    return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
                  });
 
-  Array<BoutReal> output{bout::fft::irfft(bout::fft::rfft(input))};
+  Array<BoutReal> output{bout::fft::irfft(bout::fft::rfft(input), size)};
 
   EXPECT_EQ(output.size(), input.size());
 

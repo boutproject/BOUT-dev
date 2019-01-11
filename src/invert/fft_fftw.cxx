@@ -477,13 +477,13 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   return out;
 }
 
-Array<BoutReal> irfft(const Array<dcomplex>& in) {
+Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
   ASSERT1(!in.empty());
+  ASSERT1(in.size() == (length / 2) + 1);
 
-  int size{(in.size() - 1) * 2};
-  Array<BoutReal> out{size};
+  Array<BoutReal> out{length};
 
-  irfft(in.begin(), size, out.begin());
+  irfft(in.begin(), length, out.begin());
   return out;
 }
 
