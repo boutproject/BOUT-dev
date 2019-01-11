@@ -391,10 +391,14 @@ private:
   }
   
   /*!
-   * Returns a pointer to an ArrayData object with no
+   * Returns a pointer to an ArrayData object of size \p len with no
    * references. This is either from the store, or newly allocated
+   *
+   * Expects \p len >= 0
    */
   dataPtrType get(size_type len) {
+    ASSERT3(len >= 0);
+
     dataPtrType p;
 
     auto& st = store()[len];
