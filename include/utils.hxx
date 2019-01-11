@@ -103,6 +103,13 @@ public:
     data.ensureUnique();
   }
 
+  /// Resize the Matrix to \p new_size_1 by \p new_size_2
+  void resize(size_type new_size_1, size_type new_size_2) {
+    n1 = new_size_1;
+    n2 = new_size_2;
+    data.resize(new_size_1 * new_size_2);
+  }
+
   Matrix& operator=(const Matrix &other) {
     n1 = other.n1;
     n2 = other.n2;
@@ -171,6 +178,14 @@ public:
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
+  }
+
+  /// Resize the Tensor to \p new_size_1 by \p new_size_2 by \p new_size_3
+  void resize(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
+    n1 = new_size_1;
+    n2 = new_size_2;
+    n3 = new_size_3;
+    data.resize(new_size_1 * new_size_2 * new_size_3);
   }
 
   Tensor& operator=(const Tensor &other) {
