@@ -68,7 +68,7 @@
 template<typename T>
 class Array {
 public:
-  typedef T data_type;
+  using data_type = T;
   using size_type = int;
     
   /*!
@@ -225,8 +225,8 @@ public:
 
   //////////////////////////////////////////////////////////
   // Iterators
-  typedef T* iterator;
-  typedef const T* const_iterator;
+  using iterator = T*;
+  using const_iterator = const T*;
 #ifndef BOUT_ARRAY_WITH_VALARRAY
   iterator begin() noexcept {
     return (ptr) ? ptr->data : nullptr;
@@ -324,12 +324,12 @@ private:
 
     //Type defs to help keep things brief -- which backing do we use
 #ifdef BOUT_ARRAY_WITH_VALARRAY
-  typedef std::valarray<T> dataBlock;
+  using dataBlock = std::valarray<T>;
 #else
-  typedef ArrayData dataBlock;
+  using dataBlock = ArrayData;
 #endif
 
-  typedef std::shared_ptr<dataBlock>  dataPtrType;
+  using dataPtrType = std::shared_ptr<dataBlock>;
 
   /*!
    * Pointer to the data container object owned by this Array. 
