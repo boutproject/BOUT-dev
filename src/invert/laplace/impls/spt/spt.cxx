@@ -67,7 +67,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   // Temporary array for taking FFTs
   int ncz = localmesh->LocalNz;
-  dc1d = Array<dcomplex>(ncz / 2 + 1);
+  dc1d.resize(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
@@ -510,16 +510,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  bk = Matrix<dcomplex>(mm, nx);
-  xk = Matrix<dcomplex>(mm, nx);
+  bk.resize(mm, nx);
+  xk.resize(mm, nx);
 
-  gam = Matrix<dcomplex>(mm, nx);
+  gam.resize(mm, nx);
 
   // Matrix to be solved
-  avec = Matrix<dcomplex>(mm, nx);
-  bvec = Matrix<dcomplex>(mm, nx);
-  cvec = Matrix<dcomplex>(mm, nx);
+  avec.resize(mm, nx);
+  bvec.resize(mm, nx);
+  cvec.resize(mm, nx);
 
-  buffer = Array<BoutReal>(4 * mm);
+  buffer.resize(4 * mm);
 }
 

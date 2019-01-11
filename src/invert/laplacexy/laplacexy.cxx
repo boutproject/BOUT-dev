@@ -82,15 +82,15 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   //////////////////////////////////////////////////
   // Allocate storage for preconditioner
-  
-  nloc    = xend - xstart + 1; // Number of X points on this processor
+
+  nloc = xend - xstart + 1;                       // Number of X points on this processor
   nsys = localmesh->yend - localmesh->ystart + 1; // Number of separate Y slices
 
-  acoef = Matrix<BoutReal>(nsys, nloc);
-  bcoef = Matrix<BoutReal>(nsys, nloc);
-  ccoef = Matrix<BoutReal>(nsys, nloc);
-  xvals = Matrix<BoutReal>(nsys, nloc);
-  bvals = Matrix<BoutReal>(nsys, nloc);
+  acoef.resize(nsys, nloc);
+  bcoef.resize(nsys, nloc);
+  ccoef.resize(nsys, nloc);
+  xvals.resize(nsys, nloc);
+  bvals.resize(nsys, nloc);
 
   // Create a cyclic reduction object
   cr = bout::utils::make_unique<CyclicReduce<BoutReal>>(localmesh->getXcomm(), nloc);

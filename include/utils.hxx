@@ -96,7 +96,7 @@ public:
   
   Matrix() : n1(0), n2(0){};
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
-    data = Array<T>(n1*n2);
+    data.resize(n1 * n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
     // Prevent copy on write for Matrix
@@ -173,7 +173,7 @@ public:
 
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
-    data = Array<T>(n1*n2*n3);
+    data.resize(n1 * n2 * n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor

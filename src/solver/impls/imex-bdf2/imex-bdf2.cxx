@@ -127,7 +127,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   if (have_constraints) {
-    is_dae = Array<BoutReal>{nlocal};
+    is_dae.resize(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
     set_id(std::begin(is_dae));
@@ -153,7 +153,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Allocate memory and initialise structures
-  u = Array<BoutReal>{nlocal};
+  u.resize(nlocal);
   for(int i=0;i<maxOrder;i++){
     uV.emplace_back(Array<BoutReal>{nlocal});
     fV.emplace_back(Array<BoutReal>{nlocal});
@@ -163,7 +163,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
     gFac.push_back(0.0);
   }
 
-  rhs = Array<BoutReal>{nlocal};
+  rhs.resize(nlocal);
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -171,7 +171,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = Array<BoutReal>{nlocal};
+    err.resize(nlocal);
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);

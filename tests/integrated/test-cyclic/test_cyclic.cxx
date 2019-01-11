@@ -37,11 +37,11 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(BoutComm::get(), &mype);
   MPI_Comm_size(BoutComm::get(), &npe);
 
-  a   = Matrix<T>(nsys, n);
-  b   = Matrix<T>(nsys, n);
-  c   = Matrix<T>(nsys, n);
-  rhs = Matrix<T>(nsys, n);
-  x   = Matrix<T>(nsys, n);
+  a.resize(nsys, n);
+  b.resize(nsys, n);
+  c.resize(nsys, n);
+  rhs.resize(nsys, n);
+  x.resize(nsys, n);
 
   // Set coefficients to some random numbers
   for(int s=0;s<nsys;s++) {

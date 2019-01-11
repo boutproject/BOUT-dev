@@ -135,25 +135,25 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
       // Need to allocate working memory
 
       // RHS vector
-      data.bk = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.bk.resize(maxmode + 1, localmesh->LocalNx);
 
       // Matrix to be solved
-      data.avec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.bvec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.cvec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.avec.resize(maxmode + 1, localmesh->LocalNx);
+      data.bvec.resize(maxmode + 1, localmesh->LocalNx);
+      data.cvec.resize(maxmode + 1, localmesh->LocalNx);
 
       // Working vectors
-      data.v = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.w = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.v.resize(maxmode + 1, localmesh->LocalNx);
+      data.w.resize(maxmode + 1, localmesh->LocalNx);
 
       // Result
-      data.xk = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.xk.resize(maxmode + 1, localmesh->LocalNx);
 
       // Communication buffers. Space for 2 complex values for each kz
-      data.snd = Array<BoutReal>(4 * (maxmode + 1));
-      data.rcv = Array<BoutReal>(4 * (maxmode + 1));
+      data.snd.resize(4 * (maxmode + 1));
+      data.rcv.resize(4 * (maxmode + 1));
 
-      data.y2i = Array<dcomplex>(maxmode + 1);
+      data.y2i.resize(maxmode + 1);
   }
 
   /// Take FFTs of data

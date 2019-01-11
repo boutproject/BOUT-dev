@@ -52,8 +52,8 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
   // Allocate memory
 
   int ncz = localmesh->LocalNz;
-  bk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  bk1d = Array<dcomplex>(localmesh->LocalNx);
+  bk.resize(localmesh->LocalNx, ncz / 2 + 1);
+  bk1d.resize(localmesh->LocalNx);
 
   //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
   for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
@@ -62,17 +62,17 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  xk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  xk1d = Array<dcomplex>(localmesh->LocalNx);
+  xk.resize(localmesh->LocalNx, ncz / 2 + 1);
+  xk1d.resize(localmesh->LocalNx);
 
-  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<localmesh->LocalNx; ix++){
+  // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < localmesh->LocalNx; ix++) {
       xk(ix, kz) = 0.0;
     }
   }
 
-  A = Matrix<dcomplex>(localmesh->LocalNx, 5);
+  A.resize(localmesh->LocalNx, 5);
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {

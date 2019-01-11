@@ -39,11 +39,11 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 
-  /* Momory allocate for Multigrid */
-  gnx = Array<int>(mglevel);
-  gnz = Array<int>(mglevel);
-  lnx = Array<int>(mglevel);
-  lnz = Array<int>(mglevel);
+  // Memory allocate for Multigrid
+  gnx.resize(mglevel);
+  gnz.resize(mglevel);
+  lnx.resize(mglevel);
+  lnz.resize(mglevel);
 
   gnx[mglevel-1] = gx;
   gnz[mglevel-1] = gz;

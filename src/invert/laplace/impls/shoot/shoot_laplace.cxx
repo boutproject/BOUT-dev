@@ -53,9 +53,9 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   
   // Allocate memory
   int size = (localmesh->LocalNz)/2 + 1;
-  km = Array<dcomplex>(size);
-  kc = Array<dcomplex>(size);
-  kp = Array<dcomplex>(size);
+  km.resize(size);
+  kc.resize(size);
+  kp.resize(size);
 
   for(int i=0;i<size;i++) {
     km[i] = 0.0;
@@ -63,9 +63,9 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     kp[i] = 0.0;
   }
 
-  rhsk = Array<dcomplex>(size);
+  rhsk.resize(size);
 
-  buffer = Array<BoutReal>(4 * maxmode);
+  buffer.resize(4 * maxmode);
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
