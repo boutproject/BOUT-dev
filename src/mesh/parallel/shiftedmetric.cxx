@@ -109,28 +109,15 @@ void ShiftedMetric::cachePhases() {
 /*!
  * Calculate the Y up and down fields
  */
-void ShiftedMetric::calcYUpDown(Field3D &f) {
+void ShiftedMetric::calcYUpDown(Field3D& f) {
   f.splitYupYdown();
-  
-  Field3D& yup = f.yup();
-  yup.allocate();
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
-    }
-  }
+  auto results = shiftZ(f, {yupPhs, ydownPhs}, {+1, -1});
 
-  Field3D& ydown = f.ydown();
-  ydown.allocate();
-
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
-    }
-  }
+  f.yup() = results[0];
+  f.ydown() = results[1];
 }
-  
+
 /*!
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
@@ -166,7 +153,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) const
 
 }
 
-void ShiftedMetric::shiftZ(const BoutReal* in, const std::vector<dcomplex>& phs,
+void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
                            BoutReal* out) const {
 
   int nmodes = mesh.LocalNz / 2 + 1;
@@ -185,6 +172,50 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const std::vector<dcomplex>& phs,
   }
 
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+}
+
+std::vector<Field3D> ShiftedMetric::shiftZ(const Field3D& f,
+                                           const std::vector<arr3Dvec>& phases,
+                                           const std::vector<int>& y_offsets) const {
+
+  ASSERT1(phases.size() == y_offsets.size());
+
+  const int nmodes = mesh.LocalNz / 2 + 1;
+
+  // FFT in Z of input field at each (x, y) point
+  arr3Dvec f_fft(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+
+  std::vector<Field3D> results{};
+
+  for (int jx = 0; jx < mesh.LocalNx; jx++) {
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      rfft(f(jx, jy), mesh.LocalNz, &f_fft[jx][jy][0]);
+    }
+  }
+
+  for (std::size_t i = 0; i < phases.size(); ++i) {
+
+    results.emplace_back(&mesh);
+    results[i].allocate();
+    results[i].setLocation(f.getLocation());
+
+    for (int jx = 0; jx < mesh.LocalNx; jx++) {
+      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+
+        Array<dcomplex> shifted_temp(f_fft[jx][jy + y_offsets[i]]);
+        shifted_temp.ensureUnique();
+
+        for (int jz = 1; jz < nmodes; ++jz) {
+          shifted_temp[jz] *= phases[i][jx][jy][jz];
+        }
+
+        irfft(&shifted_temp[0], mesh.LocalNz, results[i](jx, jy + y_offsets[i]));
+      }
+    }
+  }
+
+  return results;
 }
 
 //Old approach retained so we can still specify a general zShift

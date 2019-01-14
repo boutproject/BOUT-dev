@@ -125,7 +125,7 @@ public:
   }
 
   /// A 3D array, implemented as nested vectors
-  using arr3Dvec = std::vector<std::vector<std::vector<dcomplex>>>;
+  using arr3Dvec = std::vector<std::vector<Array<dcomplex>>>;
 private:
   Mesh &mesh; ///< The mesh this paralleltransform is part of
 
@@ -185,11 +185,14 @@ private:
    * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
-  void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) const;
+  void shiftZ(const BoutReal *in, const Array<dcomplex> &phs, BoutReal *out) const;
 
   /// Calculate and store the phases for to/from field aligned and for
   /// the parallel slices using zShift
   void cachePhases();
+
+  std::vector<Field3D> shiftZ(const Field3D& f, const std::vector<arr3Dvec>& phases,
+                              const std::vector<int>& y_offsets) const;
 };
 
 
