@@ -619,7 +619,7 @@ struct registerMethod {
 /////////////////////////////////////////////////////////////////////////////////
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
-                        WRAP_ENUM(DIRECTION, Z)>,
+                        WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
                     Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<
@@ -640,22 +640,8 @@ produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         DerivativeType<FDDX_C4>>>
     registerDerivatives(registerMethod{});
 
-produceCombinations<Set<WRAP_ENUM(DIRECTION, YOrthogonal)>, Set<WRAP_ENUM(STAGGER, None)>,
-                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-                    Set<
-                        // Standard
-                        DerivativeType<DDX_C2>, DerivativeType<DDX_CWENO2>,
-                        // Standard 2nd order
-                        DerivativeType<D2DX2_C2>,
-                        // Standard 4th order
-                        // Upwind
-                        DerivativeType<VDDX_C2>, DerivativeType<VDDX_U1>,
-                        // Flux
-                        DerivativeType<FDDX_U1>>>
-    registerDerivativesYOrtho(registerMethod{});
-
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
-                        WRAP_ENUM(DIRECTION, Z)>,
+                        WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
                     Set<WRAP_ENUM(STAGGER, C2L), WRAP_ENUM(STAGGER, L2C)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<
@@ -669,19 +655,6 @@ produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         // Flux
                         DerivativeType<FDDX_U1_stag>>>
     registerStaggeredDerivatives(registerMethod{});
-
-produceCombinations<Set<WRAP_ENUM(DIRECTION, YOrthogonal)>,
-                    Set<WRAP_ENUM(STAGGER, C2L), WRAP_ENUM(STAGGER, L2C)>,
-                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-                    Set<
-                        // Standard
-                        DerivativeType<DDX_C2_stag>,
-                        // Standard 2nd order
-                        // Upwind
-                        DerivativeType<VDDX_C2_stag>, DerivativeType<VDDX_U1_stag>,
-                        // Flux
-                        DerivativeType<FDDX_U1_stag>>>
-    registerStaggeredDerivativesYOrtho(registerMethod{});
 
 class FFTDerivativeType {
 public:
