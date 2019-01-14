@@ -10,184 +10,105 @@
 #include <iostream>
 #include <numeric>
 
-TEST(FFTTest, rfft) {
+class FFTTest : public ::testing::TestWithParam<int> {
+public:
+  FFTTest()
+      : size(GetParam()), nmodes((size / 2) + 1), real_signal(size), fft_signal(nmodes) {
 
-  // Make sure fft functions are quiet by setting fft_measure to false
-  bout::fft::fft_init(false);
+    // Make sure fft functions are quiet by setting fft_measure to false
+    bout::fft::fft_init(false);
 
-  constexpr int size{8};
-  constexpr int nmodes{(size / 2) + 1};
+    // Make grid indices from [0, size - 1]
+    Array<BoutReal> indices{size};
+    std::iota(indices.begin(), indices.end(), 0.0);
 
-  // Make grid indices from [0, size - 1]
-  Array<BoutReal> indices{size};
-  std::iota(indices.begin(), indices.end(), 0.0);
+    // Calculate sin(x) + cos(2x) on [0, 2pi]
+    std::transform(indices.begin(), indices.end(), real_signal.begin(),
+                   [this](BoutReal i) -> BoutReal {
+                     return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
+                   });
 
-  // Calculate sin(x) + cos(2x) on [0, 2pi]
-  Array<BoutReal> input{size};
-  std::transform(indices.begin(), indices.end(), input.begin(),
-                 [](BoutReal i) -> BoutReal {
-                   return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
-                 });
+    // Make a spectrum with two frequencies
+    std::fill(fft_signal.begin(), fft_signal.end(), dcomplex{0., 0.});
+    fft_signal[1] = dcomplex{0., -0.5};
+    fft_signal[2] = dcomplex{0.5, 0.};
+  };
+
+  const int size;
+  const int nmodes;
+
+  Array<BoutReal> real_signal;
+  Array<dcomplex> fft_signal;
+
+  // FFTs have a slightly looser tolerance than other functions
+  static constexpr BoutReal fft_tolerance{1.e-12};
+};
+
+// Test the FFT functions with both even- and odd-length real signals
+INSTANTIATE_TEST_CASE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
+
+TEST_P(FFTTest, rfft) {
 
   Array<dcomplex> output{nmodes};
 
   // Compute forward real FFT
-  rfft(input.begin(), size, output.begin());
-
-  // Real part should have exactly one frequency
-  Array<BoutReal> expected_real{nmodes};
-  std::fill(expected_real.begin(), expected_real.end(), 0.);
-  expected_real[2] = 0.5;
-
-  // Imaginary part should have exactly one frequency
-  Array<BoutReal> expected_imag{nmodes};
-  std::fill(expected_imag.begin(), expected_imag.end(), 0.);
-  expected_imag[1] = -0.5;
+  rfft(real_signal.begin(), size, output.begin());
 
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), expected_real[i], BoutRealTolerance);
-    EXPECT_NEAR(imag(output[i]), expected_imag[i], BoutRealTolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
   }
 }
 
-TEST(FFTTest, irfft) {
-
-  // Make sure fft functions are quiet by setting fft_measure to false
-  bout::fft::fft_init(false);
-
-  constexpr int nmodes{5};
-  constexpr int size{(nmodes - 1) * 2};
-
-  // Make a spectrum with two frequencies
-  Array<dcomplex> input{nmodes};
-  std::fill(input.begin(), input.end(), dcomplex{0., 0.});
-  input[1] = dcomplex{0., -0.5};
-  input[2] = dcomplex{0.5, 0.};
+TEST_P(FFTTest, irfft) {
 
   Array<BoutReal> output{size};
 
   // Compute inverse real FFT
-  irfft(input.begin(), size, output.begin());
-
-  // Make grid indices from [0, size - 1]
-  Array<BoutReal> indices{size};
-  std::iota(indices.begin(), indices.end(), 0.0);
-
-  // Calculate sin(x) + cos(2x) on [0, 2pi]
-  Array<BoutReal> expected{size};
-  std::transform(indices.begin(), indices.end(), expected.begin(),
-                 [](BoutReal i) -> BoutReal {
-                   return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
-                 });
+  irfft(fft_signal.begin(), size, output.begin());
 
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], expected[i], BoutRealTolerance);
+    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
   }
 }
 
-TEST(FFTTest, rfftWithArray) {
-
-  // Make sure fft functions are quiet by setting fft_measure to false
-  bout::fft::fft_init(false);
-
-  constexpr int size{8};
-  constexpr int nmodes{(size / 2) + 1};
-
-  // Make grid indices from [0, size - 1]
-  Array<BoutReal> indices{size};
-  std::iota(indices.begin(), indices.end(), 0.0);
-
-  // Calculate sin(x) + cos(2x) on [0, 2pi]
-  Array<BoutReal> input{size};
-  std::transform(indices.begin(), indices.end(), input.begin(),
-                 [](BoutReal i) -> BoutReal {
-                   return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
-                 });
+TEST_P(FFTTest, rfftWithArray) {
 
   // Compute forward real FFT
-  Array<dcomplex> output = bout::fft::rfft(input);
-
-  // Real part should have exactly one frequency
-  Array<BoutReal> expected_real{nmodes};
-  std::fill(expected_real.begin(), expected_real.end(), 0.);
-  expected_real[2] = 0.5;
-
-  // Imaginary part should have exactly one frequency
-  Array<BoutReal> expected_imag{nmodes};
-  std::fill(expected_imag.begin(), expected_imag.end(), 0.);
-  expected_imag[1] = -0.5;
+  Array<dcomplex> output{bout::fft::rfft(real_signal)};
 
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), expected_real[i], BoutRealTolerance);
-    EXPECT_NEAR(imag(output[i]), expected_imag[i], BoutRealTolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
   }
 }
 
-TEST(FFTTest, irfftWithArray) {
-
-  // Make sure fft functions are quiet by setting fft_measure to false
-  bout::fft::fft_init(false);
-
-  constexpr int nmodes{5};
-  constexpr int size{(nmodes - 1) * 2};
-
-  // Make a spectrum with two frequencies
-  Array<dcomplex> input{nmodes};
-  std::fill(input.begin(), input.end(), dcomplex{0., 0.});
-  input[1] = dcomplex{0., -0.5};
-  input[2] = dcomplex{0.5, 0.};
+TEST_P(FFTTest, irfftWithArray) {
 
   // Compute inverse real FFT
-  Array<BoutReal> output = bout::fft::irfft(input);
-
-  // Make grid indices from [0, size - 1]
-  Array<BoutReal> indices{size};
-  std::iota(indices.begin(), indices.end(), 0.0);
-
-  // Calculate sin(x) + cos(2x) on [0, 2pi]
-  Array<BoutReal> expected{size};
-  std::transform(indices.begin(), indices.end(), expected.begin(),
-                 [](BoutReal i) -> BoutReal {
-                   return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
-                 });
+  Array<BoutReal> output{bout::fft::irfft(fft_signal, size)};
 
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], expected[i], BoutRealTolerance);
+    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
   }
 }
 
-TEST(FFTTest, RoundTrip) {
+TEST_P(FFTTest, RoundTrip) {
+
   // Checks normalisation is == 1
+  Array<BoutReal> output{bout::fft::irfft(bout::fft::rfft(real_signal), size)};
 
-  // Make sure fft functions are quiet by setting fft_measure to false
-  bout::fft::fft_init(false);
-
-  constexpr int size{8};
-
-  // Make grid indices from [0, size - 1]
-  Array<BoutReal> indices{size};
-  std::iota(indices.begin(), indices.end(), 0.0);
-
-  // Calculate sin(x) + cos(2x) on [0, 2pi]
-  Array<BoutReal> input{size};
-  std::transform(indices.begin(), indices.end(), input.begin(),
-                 [](BoutReal i) -> BoutReal {
-                   return std::sin(i * TWOPI / size) + std::cos(2. * i * TWOPI / size);
-                 });
-
-  Array<BoutReal> output{bout::fft::irfft(bout::fft::rfft(input))};
-
-  EXPECT_EQ(output.size(), input.size());
+  EXPECT_EQ(output.size(), real_signal.size());
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], input[i], BoutRealTolerance);
+    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
   }
 }
