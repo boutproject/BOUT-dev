@@ -118,15 +118,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         // At least 2 boundary cells needed for interpolation in y-direction
         ASSERT0(fieldmesh->ystart >= 2);
 
-        if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
-          // Field "var" has distinct yup and ydown fields which
-          // will be used to calculate a derivative along
-          // the magnetic field
-          throw BoutException(
-              "At the moment, fields with yup/ydown cannot use interp_to.\n"
-              "If we implement a 3-point stencil for interpolate or double-up\n"
-              "/double-down fields, then we can use this case.");
-
+        if (var.hasYupYdown()) {
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
             BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
               // Producing a stencil centred around a lower X value
