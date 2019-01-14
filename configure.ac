@@ -407,9 +407,10 @@ AS_IF([test "x$with_fftw" != "xno"], [
 AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
   AS_IF([test "x$fftw_path" != "xno"], [
-  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
-  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
-  with_fftw="$with_fftw $fftw_wisdom"
+    fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+    fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+    with_fftw="$with_fftw $fftw_wisdom"
+  ], AC_MSG_NOTICE([FFTW3 requested but fftw-wisdom not found]))
 
   BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
   BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
@@ -418,7 +419,7 @@ AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
   #add our define to CXXFLAGS
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
   HAS_FFTW="yes"
-], AC_MSG_ERROR([FFTW3 requested but fftw-wisdom not found]))],
+],
 [
 AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
 HAS_FFTW="no"

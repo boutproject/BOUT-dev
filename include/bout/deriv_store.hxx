@@ -379,9 +379,9 @@ struct DerivativeStore {
         theDefault = uppercase(theDefault);
         defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)] =
             theDefault;
-        output_info << "The default method for derivative type " << theDerivTypeString;
-        output_info << " in direction " << DIRECTION_STRING(theDirection);
-        output_info << " is " << theDefault << "\n";
+        output_verbose << "The default method for derivative type " << theDerivTypeString
+                       << " in direction " << DIRECTION_STRING(theDirection) << " is "
+                       << theDefault << "\n";
 
         //-------------------------------------------------------------
         // Staggered
@@ -403,10 +403,9 @@ struct DerivativeStore {
             theDefault;
         defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
             theDefault;
-        output_info << "The default method for staggered derivative type "
-                    << theDerivTypeString;
-        output_info << " in direction " << DIRECTION_STRING(theDirection);
-        output_info << " is " << theDefault << "\n";
+        output_verbose << "The default method for staggered derivative type "
+                       << theDerivTypeString << " in direction "
+                       << DIRECTION_STRING(theDirection) << " is " << theDefault << "\n";
       }
     }
   }

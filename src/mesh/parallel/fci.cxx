@@ -250,6 +250,7 @@ const Field3D FCIMap::integrate(Field3D &f) const {
 
   Field3D result;
   result.allocate();
+  result.setLocation(f.getLocation());
 
   int nz = mesh->LocalNz;
   

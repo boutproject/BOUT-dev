@@ -31,7 +31,8 @@ class Interchange : public PhysicsModel {
   // Parameters
   BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, AA, ZZ, wci;
 
-  int phi_flags; // Inversion flags
+  // Laplacian inversion
+  Laplacian* phi_solver;
 
   Coordinates *coord;
 protected:
@@ -84,7 +85,8 @@ protected:
     BoutReal ShearFactor;
     OPTION(options, ShearFactor, 1.0);
 
-    OPTION(options, phi_flags, 0);
+    /*************** INITIALIZE LAPLACE SOLVER ***********/
+    phi_solver = Laplacian::create();
 
     /************* SHIFTED RADIAL COORDINATES ************/
     bool ShiftXderivs;
@@ -168,7 +170,7 @@ protected:
 
   int rhs(BoutReal t) {
     // Solve EM fields
-    invert_laplace(rho / Ni0, phi, phi_flags, NULL);
+    phi = phi_solver->solve(rho / Ni0, phi);
 
     // Communicate variables
     mesh->communicate(rho, Ni, phi);

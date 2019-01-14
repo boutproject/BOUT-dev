@@ -31,6 +31,21 @@ constexpr int FakeMeshFixture::nz;
   return ::testing::AssertionSuccess();
 }
 
+::testing::AssertionResult IsField3DEqualField3D(const Field3D& lhs, const Field3D& rhs,
+                                                 const std::string& region_name,
+                                                 BoutReal tolerance) {
+  const auto& region = lhs.getMesh()->getRegion3D(region_name);
+  BOUT_FOR_SERIAL(i, region) {
+    if (std::abs(lhs[i] - rhs[i]) > tolerance) {
+      return ::testing::AssertionFailure()
+             << "Field3D(" << i.x() << ", " << i.y() << ", " << i.z() << ") == " << lhs[i]
+             << "; Expected: " << rhs[i];
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}
+
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance) {
   const auto &region = field.getMesh()->getRegion2D("RGN_ALL");
@@ -39,6 +54,21 @@ constexpr int FakeMeshFixture::nz;
       return ::testing::AssertionFailure()
              << "Field2D(" << i.x() << ", " << i.y() << ") == " << field[i]
              << "; Expected: " << number;
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult IsField2DEqualField2D(const Field2D& lhs, const Field2D& rhs,
+                                                 const std::string& region_name,
+                                                 BoutReal tolerance) {
+  const auto& region = lhs.getMesh()->getRegion2D(region_name);
+  BOUT_FOR_SERIAL(i, region) {
+    if (std::abs(lhs[i] - rhs[i]) > tolerance) {
+      return ::testing::AssertionFailure()
+             << "Field2D(" << i.x() << ", " << i.y() << ") == " << lhs[i]
+             << "; Expected: " << rhs[i];
     }
   }
 
@@ -57,4 +87,28 @@ constexpr int FakeMeshFixture::nz;
   }
 
   return ::testing::AssertionSuccess();
+}
+
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values) {
+  f.allocate();
+  Ind3D i{0};
+  for (auto& x : values) {
+    for (auto& y : x) {
+      for (auto& z : y) {
+        f[i] = z;
+        ++i;
+      }
+    }
+  }
+}
+
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values) {
+  f.allocate();
+  Ind2D i{0};
+  for (auto& x : values) {
+    for (auto& y : x) {
+      f[i] = y;
+      ++i;
+    }
+  }
 }

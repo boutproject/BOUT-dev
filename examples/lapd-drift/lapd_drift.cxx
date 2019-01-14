@@ -106,12 +106,14 @@ private:
   // Communication object
   FieldGroup comms;
 
+  // Laplacian inversion object
+  Laplacian *phiSolver;
 protected:
   
   /// Function called once at the start of the simulation
   ///
   /// @param[in] restarting  True if simulation is restarting
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     Field2D I; // Shear factor 
     
     output.write("Solving LAPD drift test case\n");
@@ -153,19 +155,18 @@ protected:
     // Get separatrix location
     mesh->get(my_ixseps, "ixseps1");
     
-    
     Ni_x *= 1.0e14;
     bmag *= 1.0e4;
 
     /*************** READ OPTIONS *************************/
     // Read some parameters
     
-    Options *globalOptions = Options::getRoot();
+    auto globalOptions = Options::root();
     
-    globalOptions->get("TIMESTEP", time_step, 1.0);
+    time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
-    Options *options = globalOptions->getSection("2fluid");
-    OPTION(options, AA, 4.0); // <=> options.get("AA", AA, 1.0);
+    auto options = globalOptions["2fluid"];
+    OPTION(options, AA, 4.0); // <=> AA = options["AA"].withDefault(1.0);
     OPTION(options, ZZ, 1.0);
     
     OPTION(options, estatic,     false);
@@ -202,7 +203,7 @@ protected:
     
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
-    Options *option_rho = globalOptions->getSection("rho");
+    auto option_rho = globalOptions["rho"];
     OPTION(option_rho, evolve_rho,    true);
     OPTION(option_rho, rho_jpar1,     false);
     OPTION(option_rho, rho_nuin_rho1, false);
@@ -214,7 +215,7 @@ protected:
     OPTION(option_rho, rho_ve2t,      false);
     OPTION(option_rho, rho_diff,      false);
     
-    Options *option_ni = globalOptions->getSection("ni");
+    auto option_ni = globalOptions["ni"];
     OPTION(option_ni, evolve_ni,   true);
     OPTION(option_ni, ni_jpar1,    false);
     OPTION(option_ni, ni_ni0_phi1, false);
@@ -223,7 +224,7 @@ protected:
     OPTION(option_ni, ni_src_ni0,  false);
     OPTION(option_ni, ni_diff,      false);
     
-    Options *option_ajpar = globalOptions->getSection("ajpar");
+    auto option_ajpar = globalOptions["ajpar"];
     OPTION(option_ajpar, evolve_ajpar,     true);
     OPTION(option_ajpar, ajpar_phi1,       false);
     OPTION(option_ajpar, ajpar_jpar1,      false);
@@ -233,7 +234,7 @@ protected:
     OPTION(option_ajpar, ajpar_ajpar1_phi1,false);
     OPTION(option_ajpar, ajpar_ve1_ve1,    false);
     
-    Options *option_te = globalOptions->getSection("te");
+    auto option_te = globalOptions["te"];
     OPTION(option_te, evolve_te,    true);
     OPTION(option_te, te_te1_phi0,  false);
     OPTION(option_te, te_te0_phi1,  false);
@@ -252,8 +253,7 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
     
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -408,17 +408,23 @@ protected:
     /*************** DUMP VARIABLES TO OUTPUT**********/
     dump.add(phi,  "phi",  1);  dump.add(jpar, "jpar", 1);
     
-    SAVE_ONCE4(Ni0,Te0,phi0,rho0);
-    SAVE_ONCE5(Rxy,Bpxy,Btxy,Zxy,hthe);
-    dump.add(coord->Bxy, "Bxy", 0);  dump.add(my_ixseps, "ixseps", 0);
+    SAVE_ONCE(Ni0,Te0,phi0,rho0);
+    SAVE_ONCE(Rxy,Bpxy,Btxy,Zxy,hthe);
+    dump.addOnce(coord->Bxy, "Bxy");
+    dump.addOnce(my_ixseps, "ixseps");
     
-    SAVE_ONCE3(Te_x,Ti_x,Ni_x);
-    SAVE_ONCE6(AA,ZZ,zeff,rho_s,wci,bmag);
-    dump.add(mesh->LocalNx, "ngx", 0);
-    dump.add(mesh->LocalNy, "ngy", 0); 
-    dump.add(mesh->LocalNz, "ngz", 0);
-    SAVE_ONCE6(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
-    SAVE_ONCE3(ni_perpdiff,rho_perpdiff,te_perpdiff);
+    SAVE_ONCE(Te_x,Ti_x,Ni_x);
+    SAVE_ONCE(AA,ZZ,zeff,rho_s,wci,bmag);
+    dump.addOnce(mesh->LocalNx, "ngx");
+    dump.addOnce(mesh->LocalNy, "ngy"); 
+    dump.addOnce(mesh->LocalNz, "ngz");
+    SAVE_ONCE(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
+    SAVE_ONCE(ni_perpdiff,rho_perpdiff,te_perpdiff);
+
+    // Laplacian inversion solver
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    phiSolver->setCoefC(Ni0);
     
     return 0;
   }
@@ -439,9 +445,9 @@ protected:
     // Arguments are:   (b,   bit-field, a,    c)
     // Passing NULL -> missing term
     if (nonlinear) {
-      phi = invert_laplace(rho/(Ni0+ni), phi_flags, NULL, &Ni0);
+      phi = phiSolver->solve(rho/(Ni0+ni));
     } else {
-      phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
+      phi = phiSolver->solve(rho/Ni0);
     }
     
     // Communicate variables
@@ -548,7 +554,7 @@ protected:
       }
       
       if (ni_diff) {
-        ddt(ni) += ni_perpdiff * Delp2(ni,-1.0);
+        ddt(ni) += ni_perpdiff * Delp2(ni);
       }
 
       if (evolve_source_ni) {
@@ -577,11 +583,11 @@ protected:
       }
       
       if (rho_rho1) {
-        ddt(rho) += mu_i*Delp2(rho,-1.0);  //Check second argument meaning in difops.cpp
+        ddt(rho) += mu_i * Delp2(rho);
       }
       
       if (rho_diff) {
-        ddt(rho) += rho_perpdiff * Delp2(rho,-1.0);
+        ddt(rho) += rho_perpdiff * Delp2(rho);
       }
       
       if (rho_rho1_phi1) {
@@ -684,7 +690,7 @@ protected:
       }
       
       if (te_diff) {
-        ddt(te) += te_perpdiff * Delp2(te,-1.0);
+        ddt(te) += te_perpdiff * Delp2(te);
       }
       
       if (remove_tor_av_te) {
