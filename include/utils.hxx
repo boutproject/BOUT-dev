@@ -96,6 +96,9 @@ public:
   
   Matrix() : n1(0), n2(0){};
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+
     data.resize(n1 * n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
@@ -107,6 +110,9 @@ public:
   ///
   /// Note that this invalidates the existing data!
   void resize(size_type new_size_1, size_type new_size_2) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+
     n1 = new_size_1;
     n2 = new_size_2;
     data.resize(new_size_1 * new_size_2);
@@ -175,6 +181,9 @@ public:
 
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+    ASSERT2(n3 >= 0);
     data.resize(n1 * n2 * n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
@@ -186,6 +195,10 @@ public:
   ///
   /// Note that this invalidates the existing data!
   void resize(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+    ASSERT2(new_size_3 >= 0);
+
     n1 = new_size_1;
     n2 = new_size_2;
     n3 = new_size_3;
