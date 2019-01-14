@@ -121,6 +121,8 @@ public:
 
   /*!
    * Resize the array to \p new_size
+   *
+   * Note that this invalidates the existing data!
    */
   void resize(size_type new_size) {
     release(ptr);

@@ -104,6 +104,8 @@ public:
   }
 
   /// Resize the Matrix to \p new_size_1 by \p new_size_2
+  ///
+  /// Note that this invalidates the existing data!
   void resize(size_type new_size_1, size_type new_size_2) {
     n1 = new_size_1;
     n2 = new_size_2;
@@ -181,6 +183,8 @@ public:
   }
 
   /// Resize the Tensor to \p new_size_1 by \p new_size_2 by \p new_size_3
+  ///
+  /// Note that this invalidates the existing data!
   void resize(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
     n1 = new_size_1;
     n2 = new_size_2;
