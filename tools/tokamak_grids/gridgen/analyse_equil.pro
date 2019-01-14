@@ -321,6 +321,7 @@ FUNCTION analyse_equil, F, R, Z
     IF n_xpoint GT 1 THEN BEGIN
       i = 1
       REPEAT BEGIN
+        ; note here MIN() sets the value of 'ind' to the index where the minimum was found
         m = MIN((xpt_ri[0:(i-1)] - xpt_ri[i])^2 + (xpt_zi[0:(i-1)] - xpt_zi[i])^2, ind)
         IF m LT 4. THEN BEGIN
           PRINT, "Duplicates: ", i, ind
