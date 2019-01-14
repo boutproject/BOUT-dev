@@ -137,6 +137,20 @@ private:
   /// Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
   arr3Dvec fromAlignedPhs;
 
+  /// Helper POD for parallel slice phase shifts
+  struct ParallelSlicePhase {
+    arr3Dvec phase_shift;
+    int y_offset;
+  };
+
+  /// Cache of phase shifts for the parallel slices. Slices are stored
+  /// in the following order:
+  ///     {+1, ..., +n, -1, ..., -n}
+  /// slice[i] stores offset i+1
+  /// slice[2*i + 1] stores offset -(i+1)
+  /// where i goes from 0 to (n-1), with n the number of y guard cells
+  std::vector<ParallelSlicePhase> parallel_slice_phases;
+
   arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
   arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
 
@@ -191,8 +205,13 @@ private:
   /// the parallel slices using zShift
   void cachePhases();
 
-  std::vector<Field3D> shiftZ(const Field3D& f, const std::vector<arr3Dvec>& phases,
-                              const std::vector<int>& y_offsets) const;
+  /// Shift a 3D field \p f in Z to all the parallel slices in \p phases
+  ///
+  /// @param[in] f      The field to shift
+  /// @param[in] phases The phase and offset information for each parallel slice
+  /// @return The shifted parallel slices
+  std::vector<Field3D> shiftZ(const Field3D& f,
+                              const std::vector<ParallelSlicePhase>& phases) const;
 };
 
 

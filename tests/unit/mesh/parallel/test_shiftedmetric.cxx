@@ -136,19 +136,28 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
+  // Use two y-guards to test multiple parallel slices
+  mesh->ystart = 2;
+  mesh->yend = mesh->LocalNy - 3;
+
+  // We don't shift in the guard cells, and the parallel slices are
+  // stored offset in y, therefore we need to make new regions that we
+  // can compare the expected and actual outputs over
   output_info.disable();
-  auto region_yup = mesh->getRegion("RGN_NOY");
-  region_yup.periodicShift(ShiftedMetricTest::nz,
-                           ShiftedMetricTest::ny * ShiftedMetricTest::nz);
-  mesh->addRegion("RGN_YUP", region_yup);
+  mesh->addRegion3D("RGN_YUP",
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 1, mesh->yend + 1,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+  mesh->addRegion3D("RGN_YUP2",
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 2, mesh->yend + 2,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
 
-  auto region_ydown = mesh->getRegion("RGN_NOY");
-  region_ydown.periodicShift(-ShiftedMetricTest::nz,
-                             ShiftedMetricTest::ny * ShiftedMetricTest::nz);
-  mesh->addRegion("RGN_YDOWN", region_ydown);
+  mesh->addRegion3D("RGN_YDOWN",
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 1, mesh->yend - 1,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+  mesh->addRegion3D("RGN_YDOWN2",
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 2, mesh->yend - 2,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
   output_info.enable();
-
-  ShiftedMetric shifted{*mesh, zShift};
 
   Field3D input{mesh};
 
@@ -170,48 +179,95 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
                      {1., 2., 3., 4., 5., 6., 7.},
                      {1., 2., 3., 4., 5., 6., 7.}}});
 
+  // Actual interesting bit here!
+  ShiftedMetric shifted{*mesh, zShift};
   shifted.calcYUpDown(input);
 
-  Field3D expected_up{mesh};
+  // Expected output values
 
-  fillField(expected_up, {{{0., 0., 0., 0., 0., 0., 0.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.}},
+  Field3D expected_up_1{mesh};
 
-                          {{0., 0., 0., 0., 0., 0., 0.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.}},
-
-                          {{0., 0., 0., 0., 0., 0., 0.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.},
-                           {2., 3., 4., 5., 6., 7., 1.}}});
-
-  Field3D expected_down{mesh};
-
-  fillField(expected_down, {{{7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
+  // Note: here zeroes are for values we don't expect to read
+  fillField(expected_up_1, {{{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {2., 3., 4., 5., 6., 7., 1.},
                              {0., 0., 0., 0., 0., 0., 0.}},
 
-                            {{7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {2., 3., 4., 5., 6., 7., 1.},
                              {0., 0., 0., 0., 0., 0., 0.}},
 
-                            {{7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
-                             {7., 1., 2., 3., 4., 5., 6.},
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {2., 3., 4., 5., 6., 7., 1.},
                              {0., 0., 0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(IsField3DEqualField3D(input.yup(), expected_up, "RGN_YUP"));
-  EXPECT_TRUE(IsField3DEqualField3D(input.ydown(), expected_down, "RGN_YDOWN"));
+  Field3D expected_up_2{mesh};
+
+  fillField(expected_up_2, {{{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {3., 4., 5., 6., 7., 1., 2.}},
+
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {3., 4., 5., 6., 7., 1., 2.}},
+
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {3., 4., 5., 6., 7., 1., 2.}}});
+
+  Field3D expected_down_1{mesh};
+
+  fillField(expected_down_1, {{{0., 0., 0., 0., 0., 0., 0.},
+                               {7., 1., 2., 3., 4., 5., 6.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
+
+                              {{0., 0., 0., 0., 0., 0., 0.},
+                               {7., 1., 2., 3., 4., 5., 6.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
+
+                              {{0., 0., 0., 0., 0., 0., 0.},
+                               {7., 1., 2., 3., 4., 5., 6.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}}});
+
+  Field3D expected_down2{mesh};
+
+  fillField(expected_down2, {{{6., 7., 1., 2., 3., 4., 5.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.}},
+
+                             {{6., 7., 1., 2., 3., 4., 5.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.}},
+
+                             {{6., 7., 1., 2., 3., 4., 5.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.},
+                              {0., 0., 0., 0., 0., 0., 0.}}});
+
+  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(1), expected_up_1, "RGN_YUP"));
+  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(2), expected_up_2, "RGN_YUP2"));
+  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(-1), expected_down_1, "RGN_YDOWN"));
+  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(-2), expected_down2, "RGN_YDOWN2"));
 }

@@ -58,21 +58,13 @@ void ShiftedMetric::cachePhases() {
   fromAlignedPhs.resize(mesh.LocalNx);
   toAlignedPhs.resize(mesh.LocalNx);
 
-  yupPhs.resize(mesh.LocalNx);
-  ydownPhs.resize(mesh.LocalNx);
-
   for (int jx = 0; jx < mesh.LocalNx; jx++) {
     fromAlignedPhs[jx].resize(mesh.LocalNy);
     toAlignedPhs[jx].resize(mesh.LocalNy);
 
-    yupPhs[jx].resize(mesh.LocalNy);
-    ydownPhs[jx].resize(mesh.LocalNy);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       fromAlignedPhs[jx][jy].resize(nmodes);
       toAlignedPhs[jx][jy].resize(nmodes);
-
-      yupPhs[jx][jy].resize(nmodes);
-      ydownPhs[jx][jy].resize(nmodes);
     }
   }
 
@@ -89,33 +81,46 @@ void ShiftedMetric::cachePhases() {
     }
   }
 
-  // Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
-      BoutReal yupShift = zShift(jx, jy) - zShift(jx, jy + 1);
-      BoutReal ydownShift = zShift(jx, jy) - zShift(jx, jy - 1);
+  // Allocate space for parallel slice caches: y-guard cells in each
+  // direction
+  parallel_slice_phases.resize(mesh.ystart * 2);
 
-      for (int jz = 0; jz < nmodes; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
+  // Careful with the indices/offsets! Offsets are 1-indexed (as 0
+  // would be the original slice), and Mesh::ystart is the number of
+  // guard cells. The parallel slice vector stores the offsets as
+  //    {+1, ..., +n, -1, ..., -n}
+  // Once parallel_slice_phases is initialised though, each element
+  // stores its phase and offset, so we don't need to faff about after
+  // this
+  for (int i = 0; i < mesh.ystart; ++i) {
+    parallel_slice_phases[i].phase_shift =
+        arr3Dvec(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+    parallel_slice_phases[i].y_offset = i + 1;
 
-        yupPhs[jx][jy][jz] = dcomplex(cos(kwave * yupShift), -sin(kwave * yupShift));
-        ydownPhs[jx][jy][jz] =
-            dcomplex(cos(kwave * ydownShift), -sin(kwave * ydownShift));
+    parallel_slice_phases[mesh.ystart + i].phase_shift =
+        arr3Dvec(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+    parallel_slice_phases[mesh.ystart + i].y_offset = -(i + 1);
+  }
+
+  // Parallel slice phases -- note we don't shift in the boundaries/guards
+  for (auto& slice : parallel_slice_phases) {
+    for (int jx = 0; jx < mesh.LocalNx; jx++) {
+      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+
+        BoutReal slice_shift = zShift(jx, jy) - zShift(jx, jy + slice.y_offset);
+
+        for (int jz = 0; jz < nmodes; jz++) {
+          // wave number is 1/[rad]
+          BoutReal kwave = jz * 2.0 * PI / zlength;
+
+          slice.phase_shift[jx][jy][jz] =
+              dcomplex(cos(kwave * slice_shift), -sin(kwave * slice_shift));
+        }
       }
     }
   }
-}
-
-/*!
- * Calculate the Y up and down fields
- */
-void ShiftedMetric::calcYUpDown(Field3D& f) {
-  f.splitYupYdown();
-
-  auto results = shiftZ(f, {yupPhs, ydownPhs}, {+1, -1});
-
-  f.yup() = results[0];
-  f.ydown() = results[1];
 }
 
 /*!
@@ -174,11 +179,23 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
-std::vector<Field3D> ShiftedMetric::shiftZ(const Field3D& f,
-                                           const std::vector<arr3Dvec>& phases,
-                                           const std::vector<int>& y_offsets) const {
 
-  ASSERT1(phases.size() == y_offsets.size());
+void ShiftedMetric::calcYUpDown(Field3D& f) {
+
+  auto results = shiftZ(f, parallel_slice_phases);
+
+  ASSERT3(results.size() == parallel_slice_phases.size());
+
+  f.splitYupYdown();
+
+  for (std::size_t i = 0; i < results.size(); ++i) {
+    f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);
+  }
+}
+
+std::vector<Field3D>
+ShiftedMetric::shiftZ(const Field3D& f,
+                      const std::vector<ParallelSlicePhase>& phases) const {
 
   const int nmodes = mesh.LocalNz / 2 + 1;
 
@@ -186,31 +203,40 @@ std::vector<Field3D> ShiftedMetric::shiftZ(const Field3D& f,
   arr3Dvec f_fft(mesh.LocalNx,
                  std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
 
-  std::vector<Field3D> results{};
-
   for (int jx = 0; jx < mesh.LocalNx; jx++) {
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       rfft(f(jx, jy), mesh.LocalNz, &f_fft[jx][jy][0]);
     }
   }
 
-  for (std::size_t i = 0; i < phases.size(); ++i) {
+  std::vector<Field3D> results{};
 
-    results.emplace_back(&mesh);
-    results[i].allocate();
-    results[i].setLocation(f.getLocation());
+  for (auto& phase : phases) {
+    // In C++17 std::vector::emplace_back returns a reference, which
+    // would be very useful here!
+
+    // FIXME: initialisation to -1 to avoid checkData choking on the
+    // uninitialised regions in assignment into the Field parallel
+    // slices in calcYUpDown
+    results.emplace_back(-1.0, &mesh);
+    auto& current_result = results.back();
+    // FIXME: uncomment the following after fixing Field3D::operator=
+    // current_result.allocate();
+    current_result.setLocation(f.getLocation());
 
     for (int jx = 0; jx < mesh.LocalNx; jx++) {
       for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
 
-        Array<dcomplex> shifted_temp(f_fft[jx][jy + y_offsets[i]]);
+        // Deep copy the FFT'd field
+        Array<dcomplex> shifted_temp(f_fft[jx][jy + phase.y_offset]);
         shifted_temp.ensureUnique();
 
         for (int jz = 1; jz < nmodes; ++jz) {
-          shifted_temp[jz] *= phases[i][jx][jy][jz];
+          shifted_temp[jz] *= phase.phase_shift[jx][jy][jz];
         }
 
-        irfft(&shifted_temp[0], mesh.LocalNz, results[i](jx, jy + y_offsets[i]));
+        irfft(shifted_temp.begin(), mesh.LocalNz,
+              current_result(jx, jy + phase.y_offset));
       }
     }
   }
