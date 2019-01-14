@@ -81,11 +81,6 @@ private:
   Field2D A, B, C, D, E;
   
   int nsys;
-  
-  Matrix<dcomplex>rhs;
-  Matrix<dcomplex>rhsk;
-  Matrix<dcomplex>xk;
-  Matrix<dcomplex> a, b, c; // Matrix coefficients
 };
 
 

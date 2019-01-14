@@ -146,6 +146,10 @@ class GEM : public PhysicsModel {
 
   FieldGroup comms; // Communications
 
+  /// Solver for inverting Laplacian
+  Laplacian *phiSolver;
+  Laplacian *aparSolver;
+  
   ////////////////////////////////////////////////////////////////////////
   // Initialisation
   
@@ -155,8 +159,8 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Read options
 
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("gem");
+    auto globalOptions = Options::root();
+    auto options = globalOptions["gem"];
     
     OPTION(options, adiabatic_electrons, false);
     OPTION(options, small_rho_e, true);
@@ -220,9 +224,11 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Pick normalisation factors
     
-    if (mesh->get(Lbar, "Lbar")) // Try to read from grid file
-      if (mesh->get(Lbar, "rmag"))
+    if (mesh->get(Lbar, "Lbar")) {// Try to read from grid file
+      if (mesh->get(Lbar, "rmag")) {
         Lbar = 1.0;
+      }
+    }
     OPTION(options, Lbar, Lbar); // Override in options file
     SAVE_ONCE(Lbar);   // Save in output file
 
@@ -330,7 +336,7 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Metric tensor components
 
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     // Normalise
     hthe /= Lbar; // parallel derivatives normalised to Lperp
@@ -524,6 +530,14 @@ class GEM : public PhysicsModel {
     phi.setBoundary("phi");
     Apar.setBoundary("Apar");
     
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+
+    aparSolver = Laplacian::create();
+    aparSolver->setFlags(apar_flags);
+    aparSolver->setCoefA(beta_e * (1./mu_e - 1./mu_i));
+    
     return 0;
   }
 
@@ -551,14 +565,14 @@ class GEM : public PhysicsModel {
       
       Field3D dn = Ne - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
       
-      phi = invert_laplace(tau_i * dn / SQ(rho_i), phi_flags);
+      phi = phiSolver->solve(tau_i * dn / SQ(rho_i));
       phi -= tau_i * dn;
     } else {
       Field3D dn = gyroPade1(Ne, rho_e) + gyroPade2(Teperp, rho_e)
         - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
       
       // Neglect electron gyroscreening
-      phi = invert_laplace(tau_i * dn / (rho_i * rho_i), phi_flags);
+      phi = phiSolver->solve(tau_i * dn / (rho_i * rho_i));
       phi -= tau_i * dn;
     }
     
@@ -568,7 +582,7 @@ class GEM : public PhysicsModel {
     // Helmholtz equation for Apar
     
     Field2D a = beta_e * (1./mu_e - 1./mu_i);
-    Apar = invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
+    Apar = aparSolver->solve(ApUe/mu_e - ApUi/mu_i);
     
     Apar.applyBoundary();
     
@@ -599,7 +613,7 @@ class GEM : public PhysicsModel {
   ////////////////////////////////////////////////////////////////////////
   // Non-stiff part of the RHS function
   
-  int convective(BoutReal time) override {
+  int convective(BoutReal UNUSED(time)) override {
     calc_aux();
     
     ////////////////////////////////////////////
@@ -933,7 +947,7 @@ class GEM : public PhysicsModel {
 
   // Stiff part of the RHS function
   // Artificial dissipation terms
-  int diffusive(BoutReal time) override {
+  int diffusive(BoutReal UNUSED(time)) override {
     Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
     
     calc_aux();

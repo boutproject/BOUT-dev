@@ -37,7 +37,6 @@
 #include "unused.hxx"
 
 // Parderiv implementations
-#define PARDERIVSERIAL "serial"
 #define PARDERIVCYCLIC "cyclic"
 
 /// Base class for parallel inversion solvers

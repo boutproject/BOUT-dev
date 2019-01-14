@@ -64,7 +64,7 @@ const char DEFAULT_LOG[] = "BOUT.log";
 
 #include <strings.h>
 #include <string>
-#include <list>
+#include <vector>
 using std::string;
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -74,7 +74,7 @@ using std::string;
 #include <omp.h>
 #endif
 
-#include <signal.h>
+#include <csignal>
 void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
@@ -112,10 +112,10 @@ int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
-  const char *data_dir; ///< Directory for data input/output
-  const char *opt_file; ///< Filename for the options file
-  const char *set_file; ///< Filename for the options file
-  const char *log_file; ///< File name for the log file
+  std::string data_dir{DEFAULT_DIR}; ///< Directory for data input/output
+  std::string opt_file{DEFAULT_OPT}; ///< Filename for the options file
+  std::string set_file{DEFAULT_SET}; ///< Filename for the options file
+  std::string log_file{DEFAULT_LOG}; ///< File name for the log file
 
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
@@ -128,12 +128,6 @@ int BoutInitialise(int &argc, char **&argv) {
 
   /// Trap SIGUSR1 to allow a clean exit after next write
   signal(SIGUSR1, bout_signal_handler);
-
-  // Set default data directory
-  data_dir = DEFAULT_DIR;
-  opt_file = DEFAULT_OPT;
-  set_file = DEFAULT_SET;
-  log_file = DEFAULT_LOG;
 
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
@@ -189,10 +183,18 @@ int BoutInitialise(int &argc, char **&argv) {
                 "physics model source (e.g. %s.cxx)\n"),
               argv[0]);
 
-      return -1;
+      std::exit(EXIT_SUCCESS);
     }
   }
+
   bool color_output = false; // Will be set true if -c is in the options
+  std::vector<std::string> original_argv;
+  original_argv.reserve(argc);
+
+  for (int i = 0; i < argc; i++) {
+    original_argv.emplace_back(argv[i]);
+  }
+
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -200,17 +202,23 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -d <data directory>\n"), argv[0]);
         return 1;
       }
-      i++;
-      data_dir = argv[i];
-      
+
+      data_dir = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
     } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, _("Usage is %s -f <options filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      opt_file = argv[i];
+
+      opt_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
       
     } else if (string(argv[i]) == "-o") {
       // Set options file
@@ -218,24 +226,34 @@ int BoutInitialise(int &argc, char **&argv) {
         fprintf(stderr, _("Usage is %s -o <settings filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      set_file = argv[i];
+
+      set_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
       if (i + 1 >= argc) {
         fprintf(stderr, _("Usage is %s -l <log filename>\n"), argv[0]);
         return 1;
       }
-      i++;
-      log_file = argv[i];
+
+      log_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
 
     } else if ( (string(argv[i]) == "-v") ||
                 (string(argv[i]) == "--verbose") ){
       verbosity++;
+
+      argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-q") ||
                 (string(argv[i]) == "--quiet")) {
       verbosity--;
+
+      argv[i][0] = 0;
       
     } else if ( (string(argv[i]) == "-c") ||
                 (string(argv[i]) == "--color") ) {
@@ -243,6 +261,8 @@ int BoutInitialise(int &argc, char **&argv) {
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       color_output = true;
+
+      argv[i][0] = 0;
     }
   }
   
@@ -253,14 +273,15 @@ int BoutInitialise(int &argc, char **&argv) {
   // Check that data_dir exists. We do not check whether we can write, as it is
   // sufficient that the files we need are writeable ...
   struct stat test;
-  if (stat(data_dir, &test) == 0){
-    if (!S_ISDIR(test.st_mode)){
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"),data_dir);
+  if (stat(data_dir.c_str(), &test) == 0) {
+    if (!S_ISDIR(test.st_mode)) {
+      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
     }
   } else {
-    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),data_dir);
+    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
+                        data_dir.c_str());
   }
-  
+
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
@@ -313,17 +334,18 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir, log_file, MYPE)) {
+    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
       return 1;
     }
   }
-  
-  output_error.enable(verbosity>0);
-  output_warn.enable(verbosity>1);
-  output_progress.enable(verbosity>2);
-  output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
-  
+
+  output_error.enable(verbosity > 0);
+  output_warn.enable(verbosity > 1);
+  output_progress.enable(verbosity > 2);
+  output_info.enable(verbosity > 3);
+  output_verbose.enable(verbosity > 4);
+  output_debug.enable(verbosity > 5); // Only actually enabled if also compiled with DEBUG
+
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
 
@@ -407,8 +429,8 @@ int BoutInitialise(int &argc, char **&argv) {
   
   // Print command line options
   output_info.write(_("\tCommand line options for this run : "));
-  for (int i=0; i<argc; i++) {
-    output_info.write("%s ", argv[i]);
+  for (auto& arg : original_argv) {
+    output_info << arg << " ";
   }
   output_info.write("\n");
 
@@ -418,7 +440,7 @@ int BoutInitialise(int &argc, char **&argv) {
   try {
     /// Load settings file
     OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", data_dir, opt_file);
+    reader->read(options, "%s/%s", data_dir.c_str(), opt_file.c_str());
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
@@ -442,7 +464,7 @@ int BoutInitialise(int &argc, char **&argv) {
     
     // Save settings
     if (BoutComm::rank() == 0) {
-      reader->write(options, "%s/%s", data_dir, set_file);
+      reader->write(options, "%s/%s", data_dir.c_str(), set_file.c_str());
     }
   } catch (BoutException &e) {
     output << _("Error encountered during initialisation\n");
@@ -475,9 +497,9 @@ int BoutInitialise(int &argc, char **&argv) {
     
     /// Open a file for the output
     if(append) {
-      dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+      dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }else {
-      dump.openw("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+      dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }
 
     /// Add book-keeping variables to the output files

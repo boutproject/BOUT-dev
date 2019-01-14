@@ -56,6 +56,9 @@ private:
   // Coordinate system metric
   Coordinates *coord;
 
+  // Inverts a Laplacian to get potential
+  Laplacian *phiSolver;
+  
 protected:
   int init(bool UNUSED(restarting)) override {
 
@@ -64,7 +67,7 @@ protected:
     Ni0 *= 1e20; // To m^-3
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
@@ -207,6 +210,10 @@ protected:
     U.setBoundary("U");
     Apar.setBoundary("Apar");
 
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    
     return 0;
   }
 
@@ -251,7 +258,7 @@ protected:
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)
-    phi = invert_laplace(coord->Bxy * U, phi_flags);
+    phi = phiSolver->solve(coord->Bxy * U);
     phi.applyBoundary(); // For target plates only
 
     mesh->communicate(U, phi, Apar);
@@ -345,7 +352,7 @@ public:
     ddt(U) = inv->solve(U1);
     ddt(U).applyBoundary();
 
-    Field3D phip = invert_laplace(coord->Bxy * ddt(U), phi_flags);
+    Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
     mesh->communicate(phip);
 
     ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par_CtoL(phip);

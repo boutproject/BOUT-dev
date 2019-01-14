@@ -244,14 +244,14 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
+DEPRECATED(int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
-                             const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
+                             const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 #endif // __LAPLACE_H__
 

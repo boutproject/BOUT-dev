@@ -5,8 +5,10 @@
 
 #include <iostream>
 #include <mpi.h>
+#include <vector>
 
 #include "bout/mesh.hxx"
+#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
 
@@ -20,14 +22,24 @@ const BoutReal BoutRealTolerance = 1e-15;
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+::testing::AssertionResult IsField3DEqualField3D(const Field3D &lhs, const Field3D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
+
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
+
+::testing::AssertionResult IsField2DEqualField2D(const Field2D &lhs, const Field2D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
 
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
 
 /// Teach googletest how to print SpecificInds
 template<IND_TYPE N>
@@ -73,6 +85,10 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+  }
+
+  void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
+    coords_map[location] = coords;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };

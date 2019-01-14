@@ -1,0 +1,22 @@
+NOUT=0
+
+[mesh]
+nx = 20
+ny = 16
+nz = 16
+
+[mesh:ddz]
+first = fft
+second = fft
+
+[laplace]
+inner_boundary_flags = 0
+outer_boundary_flags = 0
+
+[all]
+bndry_all = none
+function = 0.
+
+[n]
+scale = 1.0
+function = sin(z)

@@ -121,6 +121,37 @@ TEST_F(ArrayTest, MoveArrayConstructor) {
   EXPECT_TRUE(b.unique());
 }
 
+TEST_F(ArrayTest, Resize) {
+  Array<double> a{};
+
+  ASSERT_TRUE(a.empty());
+
+  // Resize from empty
+  a.resize(15);
+  std::iota(a.begin(), a.end(), 0);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 15);
+  EXPECT_DOUBLE_EQ(a[5], 5);
+  EXPECT_TRUE(a.unique());
+
+  // Resize to smaller
+  a.resize(7);
+  std::iota(a.begin(), a.end(), 10);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 7);
+  EXPECT_DOUBLE_EQ(a[5], 15);
+
+  // Resize to larger
+  a.resize(30);
+  std::iota(a.begin(), a.end(), 20);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 30);
+  EXPECT_DOUBLE_EQ(a[5], 25);
+}
+
 TEST_F(ArrayTest, MakeUnique) {
   Array<double> a(20);
 

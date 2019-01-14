@@ -134,8 +134,8 @@ namespace FV {
     const auto& fdown = use_yup_ydown ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
-    
-    BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       // Calculate flux at upper surface
       
       const auto iyp = i.yp();

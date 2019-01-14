@@ -52,7 +52,19 @@ public:
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const std::list<std::string> &UNUSED(args)) {
-    return nullptr;
+    throw BoutException("BoundaryOp::clone not implemented");
+  }
+
+  /// Clone using positional args and keywords
+  /// If not implemented, check if keywords are passed, then call two-argument version
+  virtual BoundaryOp *clone(BoundaryRegion *region, const std::list<std::string> &args,
+                            const std::map<std::string, std::string> &keywords) {
+    if (!keywords.empty()) {
+      // Given keywords, but not using
+      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+    }
+    
+    return clone(region, args);
   }
 
   /// Apply a boundary condition on ddt(f)

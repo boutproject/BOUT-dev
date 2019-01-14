@@ -31,6 +31,13 @@ public:
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const std::list<std::string> &UNUSED(args)) {return nullptr; }
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), Field3D *UNUSED(f)) {return nullptr; }
 
+  virtual BoundaryOpPar*
+  clone(BoundaryRegionPar* region, const std::list<std::string>& args,
+        const std::map<std::string, std::string>& UNUSED(keywords)) {
+    // If not implemented, call two-argument version
+    return clone(region, args);
+  }
+
   using BoundaryOpBase::apply;
   void apply(Field2D &UNUSED(f)) override {
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");

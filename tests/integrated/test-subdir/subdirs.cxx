@@ -9,7 +9,7 @@ private:
   Field3D n;
   
 protected:
-  int init(bool restart) override {
+  int init(bool UNUSED(restart)) override {
     n=1;
     SOLVE_FOR(n);
     // test functions
@@ -18,7 +18,7 @@ protected:
     return 0;
   }
   
-  int rhs(BoutReal time) override {
+  int rhs(BoutReal UNUSED(time)) override {
     ddt(n)=0;
     return 0;
   }
