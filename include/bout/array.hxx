@@ -94,6 +94,7 @@ template<typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
   using data_type = T;
+  using backing_type = Backing;
   using size_type = int;
     
   /*!
@@ -399,10 +400,10 @@ private:
 
 /*!
  * Create a copy of an Array, which does not share data
- */ 
-template<typename T>
-Array<T> copy(const Array<T> &other) {
-  Array<T> a(other);
+ */
+template <typename T, typename Backing>
+Array<T, Backing> copy(const Array<T, Backing>& other) {
+  Array<T, Backing> a(other);
   a.ensureUnique();
   return a;
 }
