@@ -179,14 +179,11 @@ public:
   int size() const noexcept {
     if(!ptr)
       return 0;
-#ifdef BOUT_ARRAY_WITH_VALARRAY
+
     // Note: std::valarray::size is technically not noexcept, so
     // Array::size shouldn't be either if we're using valarrays -- in
     // practice, it is so this shouldn't matter
     return ptr->size();
-#else
-    return ptr->len;
-#endif    
   }
   
   /*!
@@ -210,11 +207,7 @@ public:
     dataPtrType p = get(size());
 
     //Make copy of the underlying data
-#ifdef BOUT_ARRAY_WITH_VALARRAY    
     p->operator=((*ptr));
-#else
-    std::copy(begin(), end(), p->begin());
-#endif    
 
     //Update the local pointer and release old
     //Can't just do ptr=p as need to try to add to store.
@@ -226,41 +219,24 @@ public:
   // Iterators
   typedef T* iterator;
   typedef const T* const_iterator;
-#ifndef BOUT_ARRAY_WITH_VALARRAY
+
   iterator begin() noexcept {
-    return (ptr) ? ptr->data : nullptr;
+    return (ptr) ? std::begin(*ptr) : nullptr;
   }
 
   iterator end() noexcept {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
+    return (ptr) ? std::end(*ptr) : nullptr;
   }
 
   // Const iterators  
   const_iterator begin() const noexcept {
-    return (ptr) ? ptr->data : nullptr;
+    return (ptr) ? std::begin(*ptr) : nullptr;
   }
 
   const_iterator end() const noexcept {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
-  }
-#else
-  iterator begin() { 
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
-
-  iterator end() {
     return (ptr) ? std::end(*ptr) : nullptr;
   }
 
-  // Const iterators -- should revisit with cbegin and cend in c++14 and greater
-  const_iterator begin() const {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
-
-  const_iterator end() const {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  } 
-#endif
   //////////////////////////////////////////////////////////
   // Element access
 
@@ -271,19 +247,11 @@ public:
    */
   T& operator[](int ind) {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
   const T& operator[](int ind) const {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
 
   /*!
@@ -298,8 +266,9 @@ public:
 private:
 
 #ifndef BOUT_ARRAY_WITH_VALARRAY  
+
   /*!
-   * ArrayData holds the actual data, and reference count
+   * ArrayData holds the actual data
    * Handles the allocation and deletion of data
    */
   struct ArrayData {
@@ -312,13 +281,17 @@ private:
     ~ArrayData() {
       delete[] data;
     }
-    iterator begin() {
+    iterator begin() const {
       return data;
     }
-    iterator end() {
+    iterator end() const {
       return data + len;
     }
+    int size() const { return len;}
+    void operator=(ArrayData &in) { std::copy(std::begin(in), std::end(in), begin());}
+    T operator[](int ind){return data[ind];};
   };
+    
 #endif
 
     //Type defs to help keep things brief -- which backing do we use
@@ -432,11 +405,7 @@ private:
     if (d.use_count() == 1) {
       if (useStore()) {
         // Put back into store
-#ifdef BOUT_ARRAY_WITH_VALARRAY
         store()[d->size()].push_back(std::move(d));
-#else
-        store()[d->len].push_back(std::move(d));
-#endif
         // Could return here but seems to slow things down a lot
       }
     }
