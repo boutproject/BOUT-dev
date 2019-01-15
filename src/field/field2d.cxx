@@ -622,19 +622,20 @@ namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-  void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
-    const Region<Ind2D> &new_region = f.getMesh()->getRegion2D(REGION_STRING(region));
-    
-    // Do full checks
-    BOUT_FOR_SERIAL (i, new_region) {
-      if (!::finite(f[i])) {
-	throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
-			    i.y());
-      }
+void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
+  const Region<Ind2D> &new_region = f.getMesh()->getRegion2D(REGION_STRING(region));
+
+  // Do full checks
+  BOUT_FOR_SERIAL(i, new_region) {
+    if (!::finite(f[i])) {
+      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
+                          i.y());
     }
   }
-#else
-  void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+}
+#elif CHECK > 0
+// No-op for no checking
+void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
 

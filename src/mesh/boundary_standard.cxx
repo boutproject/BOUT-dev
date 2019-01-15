@@ -23,12 +23,9 @@
     lead to an out of bounds access error later but we add it here to provide a
     more explanatory message.
  */
+#if CHECK > 0
 void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
   TRACE("Verifying number of points available for BC");
-
-#ifndef CHECK
-  return; //No checking so just return
-#else
 
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
   string side, gridType;
@@ -85,11 +82,11 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 
     break;
   }
-#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
   default : {
+#if CHECK > 2 //Only fail on Unrecognised boundary for extreme checking
     throw BoutException("Unrecognised boundary region (%s) for verifyNumPoints.",region->location);
-  }
 #endif
+  }
   }
 
   //Now check we have enough points and if not throw an exception
@@ -97,9 +94,11 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
     throw BoutException("Too few %s grid points for %s boundary, have %d but need at least %d",
 			gridType.c_str(),side.c_str(),ptsAvail,ptsRequired);
   }
-
-#endif
 }
+#else
+// No-op for no checking
+void verifyNumPoints(BoundaryRegion*, int) {}
+#endif
 
 ///////////////////////////////////////////////////////////////
 

@@ -8,7 +8,7 @@ public:
   // We need to initialise the FCI object with the mesh
   FCISlab() {}
 
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     D = 10;
 

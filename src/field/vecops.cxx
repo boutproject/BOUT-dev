@@ -106,8 +106,9 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x, CELL_LOC outloc_y,
-                         CELL_LOC outloc_z) {
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc_x,
+                         MAYBE_UNUSED(CELL_LOC outloc_y),
+                         MAYBE_UNUSED(CELL_LOC outloc_z)) {
   TRACE("Grad_perp( Field3D )");
   ASSERT1(outloc_x == outloc_y && outloc_x == outloc_z);
   ASSERT1(outloc_x == CELL_DEFAULT || outloc_x == f.getLocation());
