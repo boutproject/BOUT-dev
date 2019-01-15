@@ -171,6 +171,60 @@ public:
 #define DEFINE_FLUX_DERIV_STAGGERED(name, key, nGuards, type) \
   DEFINE_FLUX_DERIV(name, key, nGuards, type)
 
+/// Some helper defines for now that allow us to wrap up enums
+/// and the specific methods.
+#define WRAP_ENUM(family, value) enumWrapper<family, family::value>
+
+#define REGISTER_DERIVATIVE(name)                                                     \
+  namespace {                                                                         \
+  produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),           \
+                          WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>, \
+                      Set<WRAP_ENUM(STAGGER, None)>,                                  \
+                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,            \
+                      Set<DerivativeType<name>>>                                      \
+      reg(registerMethod{});                                                          \
+  }
+#define REGISTER_STAGGERED_DERIVATIVE(name)                                           \
+  namespace {                                                                         \
+  produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),           \
+                          WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>, \
+                      Set<WRAP_ENUM(STAGGER, C2L), WRAP_ENUM(STAGGER, L2C)>,          \
+                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,            \
+                      Set<DerivativeType<name>>>                                      \
+      reg(registerMethod{});                                                          \
+  }
+
+#define REGISTER_STANDARD_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                    \
+  BoutReal name::operator()(const stencil& f) const
+
+#define REGISTER_UPWIND_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                  \
+  BoutReal name::operator()(BoutReal vc, const stencil& f) const
+
+#define REGISTER_FLUX_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)         \
+  REGISTER_DERIVATIVE(name)                                \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
+#define REGISTER_STANDARD_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)                   \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                    \
+  BoutReal name::operator()(const stencil& f) const
+
+#define REGISTER_UPWIND_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  /*Note staggered upwind looks like flux*/                            \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                     \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                  \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
+#define REGISTER_FLUX_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
+  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                   \
+  REGISTER_STAGGERED_DERIVATIVE(name)                                \
+  BoutReal name::operator()(const stencil& v, const stencil& f) const
+
 ////////////////////// FIRST DERIVATIVES /////////////////////
 
 /// central, 2nd order
@@ -558,60 +612,6 @@ struct registerMethod {
     };
   }
 };
-
-/// Some helper defines for now that allow us to wrap up enums
-/// and the specific methods.
-#define WRAP_ENUM(family, value) enumWrapper<family, family::value>
-
-#define REGISTER_DERIVATIVE(name)                                           \
-  namespace {                                                               \
-  produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y), \
-                          WRAP_ENUM(DIRECTION, Z)>,                         \
-                      Set<WRAP_ENUM(STAGGER, None)>,                        \
-                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,  \
-                      Set<DerivativeType<name>>>                            \
-      reg(registerMethod{});                                                \
-  }
-#define REGISTER_STAGGERED_DERIVATIVE(name)                                  \
-  namespace {                                                                \
-  produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),  \
-                          WRAP_ENUM(DIRECTION, Z)>,                          \
-                      Set<WRAP_ENUM(STAGGER, C2L), WRAP_ENUM(STAGGER, L2C)>, \
-                      Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,   \
-                      Set<DerivativeType<name>>>                             \
-      reg(registerMethod{});                                                 \
-  }
-
-#define REGISTER_STANDARD_DERIVATIVE(name, key, nGuards, type) \
-  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)         \
-  REGISTER_DERIVATIVE(name)                                    \
-  BoutReal name::operator()(const stencil& f) const
-
-#define REGISTER_UPWIND_DERIVATIVE(name, key, nGuards, type) \
-  DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)         \
-  REGISTER_DERIVATIVE(name)                                  \
-  BoutReal name::operator()(BoutReal vc, const stencil& f) const
-
-#define REGISTER_FLUX_DERIVATIVE(name, key, nGuards, type) \
-  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)         \
-  REGISTER_DERIVATIVE(name)                                \
-  BoutReal name::operator()(const stencil& v, const stencil& f) const
-
-#define REGISTER_STANDARD_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
-  DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)                   \
-  REGISTER_STAGGERED_DERIVATIVE(name)                                    \
-  BoutReal name::operator()(const stencil& f) const
-
-#define REGISTER_UPWIND_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
-  /*Note staggered upwind looks like flux*/                            \
-  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                     \
-  REGISTER_STAGGERED_DERIVATIVE(name)                                  \
-  BoutReal name::operator()(const stencil& v, const stencil& f) const
-
-#define REGISTER_FLUX_STAGGERED_DERIVATIVE(name, key, nGuards, type) \
-  DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)                   \
-  REGISTER_STAGGERED_DERIVATIVE(name)                                \
-  BoutReal name::operator()(const stencil& v, const stencil& f) const
 
 /////////////////////////////////////////////////////////////////////////////////
 /// Here's an example of registering a couple of DerivativeType methods
