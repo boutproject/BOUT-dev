@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/paralleltransform.hxx"
+#include "fft.hxx"
 #include "test_extras.hxx"
 
 extern Mesh* mesh;
@@ -17,6 +18,9 @@ public:
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();
+
+    // Make sure fft functions are quiet by setting fft_measure to false
+    bout::fft::fft_init(false);
 
     zShift = Field2D{mesh};
 
