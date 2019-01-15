@@ -676,15 +676,11 @@ PetscErrorCode solver_rhsjacobian(MAYBE_UNUSED(TS ts), MAYBE_UNUSED(BoutReal t),
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);
-  CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);
-  CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   if (*J != *Jpre) {
-    ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);
-    CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);
-    CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -722,8 +718,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, str, (void *)f_data);
-  CHKERRQ(ierr);
+  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, str, (void *)f_data);CHKERRQ(ierr);
 
   ////// Save data for preconditioner
   PetscSolver *solver = (PetscSolver *)f_data;
