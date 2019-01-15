@@ -160,9 +160,13 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       coef2 *= Dcoef(ix,jy);
       coef3 *= Dcoef(ix,jy);
 
-      if(all_terms) {
-        coef4 = coord->G1(ix,jy);
-        coef5 = coord->G3(ix,jy);
+      if (all_terms) {
+        if (!coord->hasChristoffelSymbols) {
+          coord->calcChristoffelSymbols();
+        }
+
+        coef4 = coord->G1(ix, jy);
+        coef5 = coord->G3(ix, jy);
       }
 
       if(nonuniform) {

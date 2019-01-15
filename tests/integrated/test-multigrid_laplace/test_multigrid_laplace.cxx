@@ -52,8 +52,14 @@ int main(int argc, char** argv) {
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
   BoutReal nz = mesh->GlobalNz;
 
-  dump.add(mesh->getCoordinates()->G1,"G1");
-  dump.add(mesh->getCoordinates()->G3,"G3");
+  auto coord = mesh->getCoordinates();
+
+  if (!coord->hasChristoffelSymbols) {
+    coord->calcChristoffelSymbols();
+  }
+
+  dump.add(coord->G1,"G1");
+  dump.add(coord->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries

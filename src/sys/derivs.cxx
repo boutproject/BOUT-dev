@@ -152,14 +152,19 @@ const Vector2D DDZ(const Vector2D &v, CELL_LOC UNUSED(outloc), DIFF_METHOD UNUSE
 
 ////////////// X DERIVATIVE /////////////////
 
-const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                    REGION region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field3D result = f.getMesh()->indexD2DX2(f, outloc, method, region) / SQ(coords->dx);
-  
-  if(coords->non_uniform) {
+
+  if (coords->non_uniform) {
+    if (!coords->hasNonUniformCorrections) {
+      coords->calcNonUniformCorrections();
+    }
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT, region)/coords->dx;
+    result += coords->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT, region) /
+              coords->dx;
   }
 
   ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
@@ -168,14 +173,19 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
   return result;
 }
 
-const Field2D D2DX2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DX2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                    REGION region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field2D result = f.getMesh()->indexD2DX2(f, outloc, method, region) / SQ(coords->dx);
 
-  if(coords->non_uniform) {
+  if (coords->non_uniform) {
+    if (!coords->hasNonUniformCorrections) {
+      coords->calcNonUniformCorrections();
+    }
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT, region) / coords->dx;
+    result += coords->d1_dx * f.getMesh()->indexDDX(f, outloc, DIFF_DEFAULT, region) /
+              coords->dx;
   }
 
   return result;
@@ -183,14 +193,19 @@ const Field2D D2DX2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
 
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
+                    REGION region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field3D result = f.getMesh()->indexD2DY2(f, outloc, method, region) / SQ(coords->dy);
 
-  if(coords->non_uniform) {
+  if (coords->non_uniform) {
+    if (!coords->hasNonUniformCorrections) {
+      coords->calcNonUniformCorrections();
+    }
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT, region) / coords->dy;
+    result += coords->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT, region) /
+              coords->dy;
   }
 
   ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
@@ -199,15 +214,21 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, REGIO
   return result;
 }
 
-const Field2D D2DY2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method, REGION region) {
+const Field2D D2DY2(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method,
+                    REGION region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field2D result = f.getMesh()->indexD2DY2(f, outloc, method, region) / SQ(coords->dy);
-  if(coords->non_uniform) {
+
+  if (coords->non_uniform) {
+    if (!coords->hasNonUniformCorrections) {
+      coords->calcNonUniformCorrections();
+    }
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT, region) / coords->dy;
+    result += coords->d1_dy * f.getMesh()->indexDDY(f, outloc, DIFF_DEFAULT, region) /
+              coords->dy;
   }
-  
+
   return result;
 }
 

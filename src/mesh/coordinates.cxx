@@ -149,12 +149,6 @@ Coordinates::Coordinates(Mesh *mesh)
     }
   }
 
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
   if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
@@ -168,6 +162,8 @@ Coordinates::Coordinates(Mesh *mesh)
       IntShiftTorsion = 0.0;
     }
   }
+
+  OPTION(Options::getRoot(), non_uniform, true);
 }
 
 // use anonymous namespace so this utility function is not available outside this file
@@ -218,8 +214,9 @@ namespace {
   }
 }
 
-Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates *coords_in)
+    : dx(1, mesh), dy(1, mesh), dz(1), non_uniform(coords_in->non_uniform), d1_dx(mesh),
+      d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
       g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
@@ -266,12 +263,6 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   /// Calculate Jacobian and Bxy
   if (jacobian())
     throw BoutException("Error in jacobian call");
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
 
   ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
 
@@ -339,6 +330,176 @@ int Coordinates::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
+  calcChristoffelSymbols();
+
+  calcNonUniformCorrections();
+
+  return 0;
+}
+
+int Coordinates::calcCovariant() {
+  TRACE("Coordinates::calcCovariant");
+
+  // Make sure metric elements are allocated
+  g_11.allocate();
+  g_22.allocate();
+  g_33.allocate();
+  g_12.allocate();
+  g_13.allocate();
+  g_23.allocate();
+
+  g_11.setLocation(location);
+  g_22.setLocation(location);
+  g_33.setLocation(location);
+  g_12.setLocation(location);
+  g_13.setLocation(location);
+  g_23.setLocation(location);
+
+  // Perform inversion of g^{ij} to get g_{ij}
+  // NOTE: Currently this bit assumes that metric terms are Field2D objects
+
+  auto a = Matrix<BoutReal>(3, 3);
+
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+      // set elements of g
+      a(0, 0) = g11(jx, jy);
+      a(1, 1) = g22(jx, jy);
+      a(2, 2) = g33(jx, jy);
+
+      a(0, 1) = a(1, 0) = g12(jx, jy);
+      a(1, 2) = a(2, 1) = g23(jx, jy);
+      a(0, 2) = a(2, 0) = g13(jx, jy);
+
+      // invert
+      if (invert3x3(a)) {
+        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
+      }
+
+      // put elements into g_{ij}
+      g_11(jx, jy) = a(0, 0);
+      g_22(jx, jy) = a(1, 1);
+      g_33(jx, jy) = a(2, 2);
+
+      g_12(jx, jy) = a(0, 1);
+      g_13(jx, jy) = a(0, 2);
+      g_23(jx, jy) = a(1, 2);
+    }
+  }
+
+  BoutReal maxerr;
+  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
+                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
+                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
+
+  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
+
+  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
+                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
+                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
+
+  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
+
+  hasChristoffelSymbols = false;
+
+  return 0;
+}
+
+int Coordinates::calcContravariant() {
+  TRACE("Coordinates::calcContravariant");
+
+  // Make sure metric elements are allocated
+  g11.allocate();
+  g22.allocate();
+  g33.allocate();
+  g12.allocate();
+  g13.allocate();
+  g23.allocate();
+
+  // Perform inversion of g_{ij} to get g^{ij}
+  // NOTE: Currently this bit assumes that metric terms are Field2D objects
+
+  auto a = Matrix<BoutReal>(3, 3);
+
+  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+      // set elements of g
+      a(0, 0) = g_11(jx, jy);
+      a(1, 1) = g_22(jx, jy);
+      a(2, 2) = g_33(jx, jy);
+
+      a(0, 1) = a(1, 0) = g_12(jx, jy);
+      a(1, 2) = a(2, 1) = g_23(jx, jy);
+      a(0, 2) = a(2, 0) = g_13(jx, jy);
+
+      // invert
+      if (invert3x3(a)) {
+        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
+      }
+
+      // put elements into g_{ij}
+      g11(jx, jy) = a(0, 0);
+      g22(jx, jy) = a(1, 1);
+      g33(jx, jy) = a(2, 2);
+
+      g12(jx, jy) = a(0, 1);
+      g13(jx, jy) = a(0, 2);
+      g23(jx, jy) = a(1, 2);
+    }
+  }
+
+  BoutReal maxerr;
+  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
+                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
+                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
+
+  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+
+  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
+                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
+                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
+
+  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+
+  hasChristoffelSymbols = false;
+
+  return 0;
+}
+
+int Coordinates::jacobian() {
+  TRACE("Coordinates::jacobian");
+  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
+
+  Field2D g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 -
+              g22 * g13 * g13 - g33 * g12 * g12;
+
+  // Check that g is positive
+  if (min(g) < 0.0) {
+    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
+  }
+  J = 1. / sqrt(g);
+
+  // Check jacobian
+  if (!finite(J, RGN_NOBNDRY)) {
+    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
+  }
+  if (min(abs(J)) < 1.0e-10) {
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
+  }
+
+  if (min(g_22) < 0.0) {
+    throw BoutException("g_22 is somewhere less than 0.0");
+  }
+  Bxy = sqrt(g_22) / J;
+
+  hasChristoffelSymbols = false;
+
+  return 0;
+}
+
+void Coordinates::calcChristoffelSymbols() {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
@@ -437,10 +598,12 @@ int Coordinates::geometry() {
 
   localmesh->communicate(com);
 
+  hasChristoffelSymbols = true;
+}
+
+void Coordinates::calcNonUniformCorrections() {
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
-
-  OPTION(Options::getRoot(), non_uniform, true);
 
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
@@ -460,162 +623,7 @@ int Coordinates::geometry() {
     d1_dy = -d2y / (dy * dy);
   }
 
-  return 0;
-}
-
-int Coordinates::calcCovariant() {
-  TRACE("Coordinates::calcCovariant");
-
-  // Make sure metric elements are allocated
-  g_11.allocate();
-  g_22.allocate();
-  g_33.allocate();
-  g_12.allocate();
-  g_13.allocate();
-  g_23.allocate();
-
-  g_11.setLocation(location);
-  g_22.setLocation(location);
-  g_33.setLocation(location);
-  g_12.setLocation(location);
-  g_13.setLocation(location);
-  g_23.setLocation(location);
-
-  // Perform inversion of g^{ij} to get g_{ij}
-  // NOTE: Currently this bit assumes that metric terms are Field2D objects
-
-  auto a = Matrix<BoutReal>(3, 3);
-
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g11(jx, jy);
-      a(1, 1) = g22(jx, jy);
-      a(2, 2) = g33(jx, jy);
-
-      a(0, 1) = a(1, 0) = g12(jx, jy);
-      a(1, 2) = a(2, 1) = g23(jx, jy);
-      a(0, 2) = a(2, 0) = g13(jx, jy);
-
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
-      }
-
-      // put elements into g_{ij}
-      g_11(jx, jy) = a(0, 0);
-      g_22(jx, jy) = a(1, 1);
-      g_33(jx, jy) = a(2, 2);
-
-      g_12(jx, jy) = a(0, 1);
-      g_13(jx, jy) = a(0, 2);
-      g_23(jx, jy) = a(1, 2);
-    }
-  }
-
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
-                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
-                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
-
-  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
-
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
-
-  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
-
-  return 0;
-}
-
-int Coordinates::calcContravariant() {
-  TRACE("Coordinates::calcContravariant");
-
-  // Make sure metric elements are allocated
-  g11.allocate();
-  g22.allocate();
-  g33.allocate();
-  g12.allocate();
-  g13.allocate();
-  g23.allocate();
-
-  // Perform inversion of g_{ij} to get g^{ij}
-  // NOTE: Currently this bit assumes that metric terms are Field2D objects
-
-  auto a = Matrix<BoutReal>(3, 3);
-
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g_11(jx, jy);
-      a(1, 1) = g_22(jx, jy);
-      a(2, 2) = g_33(jx, jy);
-
-      a(0, 1) = a(1, 0) = g_12(jx, jy);
-      a(1, 2) = a(2, 1) = g_23(jx, jy);
-      a(0, 2) = a(2, 0) = g_13(jx, jy);
-
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
-      }
-
-      // put elements into g_{ij}
-      g11(jx, jy) = a(0, 0);
-      g22(jx, jy) = a(1, 1);
-      g33(jx, jy) = a(2, 2);
-
-      g12(jx, jy) = a(0, 1);
-      g13(jx, jy) = a(0, 2);
-      g23(jx, jy) = a(1, 2);
-    }
-  }
-
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
-                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
-                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
-
-  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
-
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
-
-  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-  return 0;
-}
-
-int Coordinates::jacobian() {
-  TRACE("Coordinates::jacobian");
-  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-
-  Field2D g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 -
-              g22 * g13 * g13 - g33 * g12 * g12;
-
-  // Check that g is positive
-  if (min(g) < 0.0) {
-    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
-  }
-  J = 1. / sqrt(g);
-
-  // Check jacobian
-  if (!finite(J, RGN_NOBNDRY)) {
-    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
-  }
-  if (min(abs(J)) < 1.0e-10) {
-    throw BoutException("\tERROR: Jacobian becomes very small\n");
-  }
-
-  if (min(g_22) < 0.0) {
-    throw BoutException("g_22 is somewhere less than 0.0");
-  }
-  Bxy = sqrt(g_22) / J;
-
-  return 0;
+  hasNonUniformCorrections = true;
 }
 
 /*******************************************************************************

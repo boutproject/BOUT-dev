@@ -945,6 +945,9 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if (all_terms) {
+    if (!coord->hasChristoffelSymbols) {
+      coord->calcChristoffelSymbols();
+    }
     coef4 = coord->G1(x,y); // X 1st derivative
     coef5 = coord->G3(x,y); // Z 1st derivative
 

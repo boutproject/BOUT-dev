@@ -68,7 +68,7 @@ public:
   BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform;
+  bool non_uniform{true};
   Field2D d1_dx, d1_dy;  ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
   Field2D J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
@@ -94,9 +94,31 @@ public:
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry();
-  int calcCovariant(); ///< Inverts contravatiant metric to get covariant
-  int calcContravariant(); ///< Invert covariant metric to get contravariant
-  int jacobian(); ///< Calculate J and Bxy
+  /// Inverts contravatiant metric to get covariant
+  int calcCovariant();
+  /// Invert covariant metric to get contravariant
+  int calcContravariant();
+  /// Calculate J and Bxy
+  int jacobian();
+
+  /// True if the Christoffel symbols have already been calculated
+  ///
+  /// WARNING: Changing the metric coefficients without calling one of
+  /// `geometry()`, `calcCovariant()`, `calcContravariant`,
+  /// `jacobian()`, or `calcChristoffelSymbols()` is an error
+  bool hasChristoffelSymbols{false};
+
+  /// Calculate the Christoffel Symbols
+  void calcChristoffelSymbols();
+
+  /// True if the non-uniform corrections have already been calculated
+  ///
+  /// WARNING: Changing the grid spacing without calling either
+  /// `geometry()` or calcNonUniformCorrections()` is an error
+  bool hasNonUniformCorrections{false};
+
+  /// Calculate the non-uniform corrections
+  void calcNonUniformCorrections();
 
   // Operators
 

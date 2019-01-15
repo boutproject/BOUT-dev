@@ -305,9 +305,13 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
-  if(all_terms) {
-    coef4 = coord->G1(jx,jy); // X 1st derivative
-    coef5 = coord->G3(jx,jy); // Z 1st derivative
+  if (all_terms) {
+    if (!coord->hasChristoffelSymbols) {
+      coord->calcChristoffelSymbols();
+    }
+
+    coef4 = coord->G1(jx, jy); // X 1st derivative
+    coef5 = coord->G3(jx, jy); // Z 1st derivative
   }
 
   if (d != nullptr) {

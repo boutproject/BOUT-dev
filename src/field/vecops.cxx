@@ -387,6 +387,10 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
 
   auto metric = v.x.getCoordinates();
 
+  if (!metric->hasChristoffelSymbols) {
+    metric->calcChristoffelSymbols();
+  }
+
   Vector2D vcn = v;
   vcn.toContravariant();
 
@@ -443,6 +447,10 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
 
   auto metric = v.x.getCoordinates();
 
+  if (!metric->hasChristoffelSymbols) {
+    metric->calcChristoffelSymbols();
+  }
+
   Vector2D vcn = v;
   vcn.toContravariant();
 
@@ -497,6 +505,10 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
 
   auto metric = v.x.getCoordinates();
 
+  if (!metric->hasChristoffelSymbols) {
+    metric->calcChristoffelSymbols();
+  }
+
   Vector3D vcn = v;
   vcn.toContravariant();
 
@@ -550,6 +562,10 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
   Vector3D result{v.x.getMesh()};
 
   auto metric = v.x.getCoordinates();
+
+  if (!metric->hasChristoffelSymbols) {
+    metric->calcChristoffelSymbols();
+  }
 
   Vector3D vcn = v;
   vcn.toContravariant();
