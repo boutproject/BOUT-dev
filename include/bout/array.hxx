@@ -41,6 +41,31 @@
 #include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
 
+namespace {
+template <typename T>
+using iterator = T*;
+template <typename T>
+using const_iterator = const T*;
+}
+
+/*!
+ * ArrayData holds the actual data
+ * Handles the allocation and deletion of data
+ */
+template <typename T>
+struct ArrayData {
+  int len; ///< Size of the array
+  T* data; ///< Array of data
+
+  ArrayData(int size) : len(size) { data = new T[len]; }
+  ~ArrayData() { delete[] data; }
+  iterator<T> begin() const { return data; }
+  iterator<T> end() const { return data + len; }
+  int size() const { return len; }
+  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  T& operator[](int ind) { return data[ind]; };
+};
+
 /*!
  * Data array type with automatic memory management
  *
@@ -217,25 +242,15 @@ public:
 
   //////////////////////////////////////////////////////////
   // Iterators
-  typedef T* iterator;
-  typedef const T* const_iterator;
 
-  iterator begin() noexcept {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  iterator end() noexcept {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  // Const iterators  
-  const_iterator begin() const noexcept {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  // Const iterators
+  const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  const_iterator end() const noexcept {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
   //////////////////////////////////////////////////////////
   // Element access
@@ -265,40 +280,11 @@ public:
 
 private:
 
-#ifndef BOUT_ARRAY_WITH_VALARRAY  
-
-  /*!
-   * ArrayData holds the actual data
-   * Handles the allocation and deletion of data
-   */
-  struct ArrayData {
-    int len;    ///< Size of the array
-    T *data;    ///< Array of data
-    
-    ArrayData(int size) : len(size) {
-      data = new T[len];
-    }
-    ~ArrayData() {
-      delete[] data;
-    }
-    iterator begin() const {
-      return data;
-    }
-    iterator end() const {
-      return data + len;
-    }
-    int size() const { return len;}
-    void operator=(ArrayData &in) { std::copy(std::begin(in), std::end(in), begin());}
-    T operator[](int ind){return data[ind];};
-  };
-    
-#endif
-
     //Type defs to help keep things brief -- which backing do we use
 #ifdef BOUT_ARRAY_WITH_VALARRAY
   typedef std::valarray<T> dataBlock;
 #else
-  typedef ArrayData dataBlock;
+  typedef ArrayData<T> dataBlock;
 #endif
 
   typedef std::shared_ptr<dataBlock>  dataPtrType;
