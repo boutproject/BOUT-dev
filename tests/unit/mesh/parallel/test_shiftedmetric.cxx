@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "bout/paralleltransform.hxx"
 #include "fft.hxx"
 #include "test_extras.hxx"
+#include "bout/paralleltransform.hxx"
 
 extern Mesh* mesh;
 
@@ -105,8 +105,8 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 2., 3.},
                         {2., 3., 4., 5., 1.}}});
 
-  EXPECT_TRUE(
-      IsField3DEqualField3D(shifted.toFieldAligned(input), expected, "RGN_ALL", 1.e-12));
+  EXPECT_TRUE(IsField3DEqualField3D(shifted.toFieldAligned(input), expected, "RGN_ALL",
+                                    FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
@@ -140,7 +140,7 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsField3DEqualField3D(shifted.fromFieldAligned(input), expected, "RGN_ALL",
-                                    1.e-12));
+                                    FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
@@ -278,8 +278,12 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
                               {0., 0., 0., 0., 0.},
                               {0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(1), expected_up_1, "RGN_YUP"));
-  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(2), expected_up_2, "RGN_YUP2"));
-  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(-1), expected_down_1, "RGN_YDOWN"));
-  EXPECT_TRUE(IsField3DEqualField3D(input.ynext(-2), expected_down2, "RGN_YDOWN2"));
+  EXPECT_TRUE(
+      IsField3DEqualField3D(input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
+  EXPECT_TRUE(
+      IsField3DEqualField3D(input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
+  EXPECT_TRUE(
+      IsField3DEqualField3D(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
+  EXPECT_TRUE(
+      IsField3DEqualField3D(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
 }
