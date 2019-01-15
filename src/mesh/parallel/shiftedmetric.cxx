@@ -93,11 +93,15 @@ void ShiftedMetric::cachePhases() {
   // stores its phase and offset, so we don't need to faff about after
   // this
   for (int i = 0; i < mesh.ystart; ++i) {
+    // NOTE: std::vector constructor here takes a **copy** of the
+    // Array! We *must* call `Array::ensureUnique` on each element
+    // before using it!
     parallel_slice_phases[i].phase_shift =
         arr3Dvec(mesh.LocalNx,
                  std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
     parallel_slice_phases[i].y_offset = i + 1;
 
+    // Backwards parallel slices
     parallel_slice_phases[mesh.ystart + i].phase_shift =
         arr3Dvec(mesh.LocalNx,
                  std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
@@ -109,6 +113,7 @@ void ShiftedMetric::cachePhases() {
     for (int jx = 0; jx < mesh.LocalNx; jx++) {
       for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
 
+        slice.phase_shift[jx][jy].ensureUnique();
         BoutReal slice_shift = zShift(jx, jy) - zShift(jx, jy + slice.y_offset);
 
         for (int jz = 0; jz < nmodes; jz++) {
@@ -205,7 +210,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
   for (int jx = 0; jx < mesh.LocalNx; jx++) {
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
-      rfft(f(jx, jy), mesh.LocalNz, &f_fft[jx][jy][0]);
+      f_fft[jx][jy].ensureUnique();
+      rfft(f(jx, jy), mesh.LocalNz, f_fft[jx][jy].begin());
     }
   }
 
