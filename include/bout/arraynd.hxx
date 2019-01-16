@@ -93,9 +93,10 @@ public:
    */
   void ensureUnique() { data.ensureUnique(); }
 
+  Array<slice_type> data;
+
 private:
   size_type len;
-  Array<slice_type> data;
 };
 
 template <typename T>
@@ -173,9 +174,10 @@ public:
    */
   void ensureUnique() { data.ensureUnique(); }
 
+  Array<T> data;
+
 private:
   size_type len;
-  Array<T> data;
 };
 
 template <typename T>
