@@ -1,6 +1,7 @@
 #ifndef __ARRAYND_HXX__
 #define __ARRAYND_HXX__
 
+#include "output.hxx"
 #include "bout/array.hxx"
 
 template <typename T, int ndim>
@@ -18,10 +19,7 @@ public:
 
   template <typename... allSizes>
   ArrayND(size_type n1, allSizes... sizes) : n1(n1) {
-    // Note we compare against ndim rather than ndim-1 here.
-    // Not clear exactly why this is the case currently but perhaps
-    // is including n1 as well?
-    static_assert(sizeof...(sizes) != ndim,
+    static_assert(sizeof...(sizes) == ndim - 1,
                   "Incorrect number of dimension sizes passed as arguments to ArrayND.");
 
     data = Array<slice_type>(n1);
@@ -115,11 +113,8 @@ public:
   // Should only end up calling this if we pass too many dimension sizes
   template <typename... allSizes>
   ArrayND(size_type n1, allSizes... sizes) : n1(n1) {
-    // Note we compare against ndim rather than ndim-1 here.
-    // Not clear exactly why this is the case currently but perhaps
-    // is including n1 as well?
     static_assert(
-        sizeof...(sizes) != ndim,
+        sizeof...(sizes) == ndim - 1,
         "Incorrect number of dimension sizes passed as arguments to ArrayND<T, 1>.");
   }
 
