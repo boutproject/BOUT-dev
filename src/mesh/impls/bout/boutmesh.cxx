@@ -839,6 +839,9 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
+  // Initialize default coordinates
+  getCoordinates();
+
   output_info.write(_("\tdone\n"));
 
   return 0;
