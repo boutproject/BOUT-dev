@@ -130,9 +130,8 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
 
-    fieldCoordinates = getCoordinates();
-
     location = new_location;
+    fieldCoordinates = getCoordinates();
 
   } else {
 #if CHECK > 0

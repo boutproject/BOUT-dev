@@ -72,11 +72,10 @@ void FieldPerp::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-
-    fieldCoordinates = getCoordinates();
     
     location = new_location;
-
+    fieldCoordinates = getCoordinates();
+    
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
