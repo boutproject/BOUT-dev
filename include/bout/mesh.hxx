@@ -444,7 +444,8 @@ class Mesh {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
+      coords_map[location] = std::shared_ptr<Coordinates>(nullptr);
+      coords_map[location] = createDefaultCoordinates(location);
       return coords_map[location].get();
     }
   }
