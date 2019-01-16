@@ -28,17 +28,14 @@ public:
     }
   }
   ArrayND(const ArrayND& other) : len(other.len), data(other.data) {
-    // Prevent copy on write for ArrayND
-    data.ensureUnique();
   }
 
   ArrayND& operator=(const ArrayND& other) {
     len = other.len;
     data = other.data;
-    // Prevent copy on write for ArrayND
-    data.ensureUnique();
     return *this;
   }
+
   template <typename... allSizes>
   inline T& operator()(size_type i1, allSizes... sizes) {
     ASSERT2(0 <= i1 && i1 < len);
@@ -52,6 +49,7 @@ public:
     ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
+
   template <typename... allSizes>
   inline const T& operator()(size_type i1, allSizes... sizes) const {
     ASSERT2(0 <= i1 && i1 < len);
@@ -85,6 +83,23 @@ public:
   size_type size() const { return len * data[0].size(); }
 
   bool empty() const { return size() == 0; }
+
+  bool unique() const {
+    bool res = data.unique();
+    for (const auto& i : data) {
+      res = res && i.unique();
+      if (!res)
+        return res;
+    };
+    return res;
+  }
+
+  void ensureUnique() {
+    data.ensureUnique();
+    for (auto& i : data) {
+      i.ensureUnique();
+    };
+  }
 
   void pack(ArrayND<T, 1>& flat) {
     ASSERT1(size() == flat.size());
@@ -135,13 +150,6 @@ public:
     return result;
   };
 
-  /*!
-   * Ensures that this ArrayND does not share data with another
-   * This should be called before performing any write operations
-   * on the data.
-   */
-  void ensureUnique() { data.ensureUnique(); }
-
   Array<slice_type> data;
 
 private:
@@ -169,15 +177,11 @@ public:
   }
 
   ArrayND(const ArrayND& other) : len(other.len), data(other.data) {
-    // Prevent copy on write for ArrayND
-    data.ensureUnique();
   }
 
   ArrayND& operator=(const ArrayND& other) {
     len = other.len;
     data = other.data;
-    // Prevent copy on write for ArrayND
-    data.ensureUnique();
     return *this;
   }
 
@@ -215,6 +219,8 @@ public:
   size_type size() const { return len; }
 
   bool empty() const { return size() == 0; }
+
+  bool unique() const { return data.unique(); }
 
   /*!
    * Ensures that this ArrayND does not share data with another
