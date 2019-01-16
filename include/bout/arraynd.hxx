@@ -78,13 +78,62 @@ public:
   slice_type* end() { return std::end(data); };
   const slice_type* end() const { return std::end(data); };
 
-  auto shape() const -> shape_type {
+  constexpr auto shape() const -> shape_type {
     return std::tuple_cat(std::make_tuple(len), data[0].shape());
   }
 
   size_type size() const { return len * data[0].size(); }
 
   bool empty() const { return size() == 0; }
+
+  void pack(ArrayND<T, 1>& flat) {
+    ASSERT1(size() == flat.size());
+    size_type currentPosition = 0;
+    currentPosition = setFromFlatArray(flat, currentPosition);
+    ASSERT1(currentPosition == size());
+  };
+
+  void pack(Array<T>& flat) {
+    ASSERT1(size() == flat.size());
+    size_type currentPosition = 0;
+    currentPosition = setFromFlatArray(flat, currentPosition);
+    ASSERT1(currentPosition == size());
+  };
+
+  template <int newDim>
+  void pack(ArrayND<T, newDim>& out) {
+    ASSERT1(size() == out.size());
+    size_type currentPosition = 0;
+    currentPosition = out.setFromFlatArray(data, currentPosition);
+    ASSERT1(currentPosition == size());
+  };
+
+  size_type setFromFlatArray(Array<T>& flat, size_type currentPos = 0) {
+    ArrayND<T, 1> tmp(flat.size());
+    tmp.data = flat;
+    return this->setFromFlatArray(tmp, currentPos);
+  }
+
+  size_type setFromFlatArray(ArrayND<T, 1>& flat, size_type currentPos = 0) {
+    ASSERT1(flat.size() >= size());
+
+    for (auto& i : data) {
+      currentPos = i.setFromFlatArray(flat, currentPos);
+    }
+
+    return currentPos;
+  };
+
+  ArrayND<T, 1> flatten() {
+    ArrayND<T, 1> result(size());
+    size_type start = 0;
+    for (auto& i : data) {
+      result.setSpan(start, i.size(), i.flatten());
+      start += i.size();
+    }
+
+    return result;
+  };
 
   /*!
    * Ensures that this ArrayND does not share data with another
@@ -161,7 +210,7 @@ public:
   T* end() { return std::end(data); };
   const T* end() const { return std::end(data); };
 
-  std::tuple<size_type> shape() const { return std::make_tuple(len); }
+  constexpr std::tuple<size_type> shape() const { return std::make_tuple(len); }
 
   size_type size() const { return len; }
 
@@ -173,6 +222,45 @@ public:
    * on the data.
    */
   void ensureUnique() { data.ensureUnique(); }
+
+  size_type setFromFlatArray(Array<T>& flat, size_type currentPos = 0) {
+    ArrayND<T, 1> tmp(flat.size());
+    tmp.data = flat;
+    return this->setFromFlatArray(tmp, currentPos);
+  }
+
+  size_type setFromFlatArray(ArrayND<T, 1>& flat, size_type currentPos = 0) {
+    ASSERT1(flat.size() >= size());
+    setSpan(0, size(), flat.getSpan(currentPos, size()));
+    return currentPos + size();
+  };
+
+  ArrayND<T, 1> flatten() { return *this; }
+
+  void setSpan(size_type start, size_type count, ArrayND<T, 1> source) {
+    this->setSpan(start, count, source.data);
+  }
+
+  void setSpan(size_type start, size_type count, Array<T> source) {
+    ASSERT1(start >= 0);
+    ASSERT1(start < len);
+    ASSERT1(start + count - 1 <= len);
+    ASSERT1(source.size() >= count);
+    for (size_type i = 0; i < count; i++) {
+      data[start + i] = source[i];
+    }
+  };
+
+  Array<T> getSpan(size_type start, size_type count) {
+    ASSERT1(start >= 0);
+    ASSERT1(start < len);
+    ASSERT1(start + count - 1 <= len);
+    Array<T> result{count};
+    for (size_type i = 0; i < count; i++) {
+      result[i] = data[start + i];
+    }
+    return result;
+  };
 
   Array<T> data;
 
