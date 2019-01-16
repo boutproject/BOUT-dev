@@ -15,25 +15,25 @@ public:
 
   constexpr static int ndims = ndim;
 
-  ArrayND() : n1(0){};
+  ArrayND() : len(0){};
 
   template <typename... allSizes>
-  ArrayND(size_type n1, allSizes... sizes) : n1(n1) {
+  ArrayND(size_type len, allSizes... sizes) : len(len) {
     static_assert(sizeof...(sizes) == ndim - 1,
                   "Incorrect number of dimension sizes passed as arguments to ArrayND.");
 
-    data = Array<slice_type>(n1);
+    data = Array<slice_type>(len);
     for (auto& i : data) {
       i = slice_type(sizes...);
     }
   }
-  ArrayND(const ArrayND& other) : n1(other.n1), data(other.data) {
+  ArrayND(const ArrayND& other) : len(other.len), data(other.data) {
     // Prevent copy on write for ArrayND
     data.ensureUnique();
   }
 
   ArrayND& operator=(const ArrayND& other) {
-    n1 = other.n1;
+    len = other.len;
     data = other.data;
     // Prevent copy on write for ArrayND
     data.ensureUnique();
@@ -41,28 +41,28 @@ public:
   }
   template <typename... allSizes>
   inline T& operator()(size_type i1, allSizes... sizes) {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1](sizes...);
   }
   inline slice_type& operator[](size_type i1) {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   inline slice_type& operator()(size_type i1) {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   template <typename... allSizes>
   inline const T& operator()(size_type i1, allSizes... sizes) const {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1](sizes...);
   }
   inline const slice_type& operator[](size_type i1) const {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   inline const slice_type& operator()(size_type i1) const {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
 
@@ -79,10 +79,10 @@ public:
   const slice_type* end() const { return std::end(data); };
 
   auto shape() const -> shape_type {
-    return std::tuple_cat(std::make_tuple(n1), data[0].shape());
+    return std::tuple_cat(std::make_tuple(len), data[0].shape());
   }
 
-  size_type size() const { return n1 * data[0].size(); }
+  size_type size() const { return len * data[0].size(); }
 
   bool empty() const { return size() == 0; }
 
@@ -94,7 +94,7 @@ public:
   void ensureUnique() { data.ensureUnique(); }
 
 private:
-  size_type n1;
+  size_type len;
   Array<slice_type> data;
 };
 
@@ -108,23 +108,23 @@ public:
 
   constexpr static int ndims = ndim;
 
-  ArrayND() : n1(0){};
-  ArrayND(size_type n1) : n1(n1) { data = Array<T>(n1); }
+  ArrayND() : len(0){};
+  ArrayND(size_type len) : len(len) { data = Array<T>(len); }
   // Should only end up calling this if we pass too many dimension sizes
   template <typename... allSizes>
-  ArrayND(size_type n1, allSizes... sizes) : n1(n1) {
+  ArrayND(size_type len, allSizes... sizes) : len(len) {
     static_assert(
         sizeof...(sizes) == ndim - 1,
         "Incorrect number of dimension sizes passed as arguments to ArrayND<T, 1>.");
   }
 
-  ArrayND(const ArrayND& other) : n1(other.n1), data(other.data) {
+  ArrayND(const ArrayND& other) : len(other.len), data(other.data) {
     // Prevent copy on write for ArrayND
     data.ensureUnique();
   }
 
   ArrayND& operator=(const ArrayND& other) {
-    n1 = other.n1;
+    len = other.len;
     data = other.data;
     // Prevent copy on write for ArrayND
     data.ensureUnique();
@@ -132,19 +132,19 @@ public:
   }
 
   inline T& operator()(size_type i1) {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   inline T& operator[](size_type i1) {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   inline const T& operator()(size_type i1) const {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
   inline const T& operator[](size_type i1) const {
-    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i1 && i1 < len);
     return data[i1];
   }
 
@@ -160,9 +160,9 @@ public:
   T* end() { return std::end(data); };
   const T* end() const { return std::end(data); };
 
-  std::tuple<size_type> shape() const { return std::make_tuple(n1); }
+  std::tuple<size_type> shape() const { return std::make_tuple(len); }
 
-  size_type size() const { return n1; }
+  size_type size() const { return len; }
 
   bool empty() const { return size() == 0; }
 
@@ -174,7 +174,7 @@ public:
   void ensureUnique() { data.ensureUnique(); }
 
 private:
-  size_type n1;
+  size_type len;
   Array<T> data;
 };
 
