@@ -20,6 +20,9 @@ int main() {
   Field3D f(0., mesh);
   f.applyBoundary("neumann");
 
+  // Synchronise all processors
+  MPI_Barrier(BoutComm::get());
+
   // Test CELL_YLOW
   Field3D f_ylow(0., mesh);
   f_ylow.setLocation(CELL_YLOW);
