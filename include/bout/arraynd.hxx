@@ -76,10 +76,14 @@ public:
   slice_type* end() { return std::end(data); };
   const slice_type* end() const { return std::end(data); };
 
+  // Note we assume a non-jagged array, i.e. we assume
+  // data[0].shape() == data[j].shape() for 0 <= j < len
   constexpr auto shape() const -> shape_type {
     return std::tuple_cat(std::make_tuple(len), data[0].shape());
   }
 
+  // Note we assume a non-jagged array, i.e. we assume
+  // data[0].size() == data[j].size() for 0 <= j < len
   size_type size() const { return len * data[0].size(); }
 
   bool empty() const { return size() == 0; }
