@@ -92,6 +92,7 @@ public:
     bool res = data.unique();
     for (const auto& i : data) {
       res = res && i.unique();
+      // Try to return early if we can.
       if (!res)
         return res;
     };
@@ -116,14 +117,6 @@ public:
     ASSERT1(size() == flat.size());
     size_type currentPosition = 0;
     currentPosition = setFromFlatArray(flat, currentPosition);
-    ASSERT1(currentPosition == size());
-  };
-
-  template <int newDim>
-  void pack(ArrayND<T, newDim>& out) {
-    ASSERT1(size() == out.size());
-    size_type currentPosition = 0;
-    currentPosition = out.setFromFlatArray(data, currentPosition);
     ASSERT1(currentPosition == size());
   };
 
