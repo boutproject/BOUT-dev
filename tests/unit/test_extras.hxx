@@ -14,6 +14,12 @@
 
 const BoutReal BoutRealTolerance = 1e-15;
 
+#ifndef GLOBALORIGIN
+extern Mesh* mesh_staggered;
+#else
+Mesh* mesh_staggered = nullptr;
+#endif
+
 /// Does \p str contain \p substring?
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring);
@@ -85,6 +91,8 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+
+    setCoordinates(nullptr);
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -179,7 +187,8 @@ private:
 };
 
 /// Test fixture to make sure the global mesh is our fake
-/// one. Multiple tests have exactly the same fixture, so use a type
+/// one. Also initialize the global mesh_staggered for use in tests with
+/// staggering. Multiple tests have exactly the same fixture, so use a type
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
@@ -194,6 +203,18 @@ public:
     mesh = new FakeMesh(nx, ny, nz);
     output_info.disable();
     mesh->createDefaultRegions();
+    output_info.enable();
+
+    // Delete any existing mesh_staggered
+    if (mesh_staggered != nullptr) {
+      delete mesh_staggered;
+      mesh_staggered = nullptr;
+    }
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    output_info.disable();
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    mesh_staggered->createDefaultRegions();
     output_info.enable();
   }
 

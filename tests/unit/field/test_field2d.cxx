@@ -1083,11 +1083,8 @@ TEST_F(Field2DTest, Max) {
 }
 
 TEST_F(Field2DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1125,7 +1122,7 @@ TEST_F(Field2DTest, Swap) {
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1140,16 +1137,11 @@ TEST_F(Field2DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1164,7 +1156,7 @@ TEST_F(Field2DTest, MoveCtor) {
   EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field2DTest::nx);
   EXPECT_EQ(second.getNy(), Field2DTest::ny);
@@ -1174,8 +1166,6 @@ TEST_F(Field2DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, FillField) {

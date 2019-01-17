@@ -128,9 +128,8 @@ TEST_F(Vector2DTest, SetLocationNonStaggered) {
 }
 
 TEST_F(Vector2DTest, SetLocationXLOW) {
-  Vector2D vector;
+  Vector2D vector(mesh_staggered);
   CELL_LOC targetLoc = CELL_XLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -140,9 +139,11 @@ TEST_F(Vector2DTest, SetLocationXLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationYLOW) {
-  Vector2D vector;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_YLOW);
+  Vector2D vector(&local_mesh);
   CELL_LOC targetLoc = CELL_YLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -152,9 +153,11 @@ TEST_F(Vector2DTest, SetLocationYLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationZLOW) {
-  Vector2D vector;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_ZLOW);
+  Vector2D vector(&local_mesh);
   CELL_LOC targetLoc = CELL_ZLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -164,8 +167,12 @@ TEST_F(Vector2DTest, SetLocationZLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationVSHIFT) {
-  Vector2D vector;
-  vector.x.getMesh()->StaggerGrids = true;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_XLOW);
+  local_mesh.setCoordinates(nullptr, CELL_YLOW);
+  local_mesh.setCoordinates(nullptr, CELL_ZLOW);
+  Vector2D vector(&local_mesh);
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_VSHIFT));
   EXPECT_EQ(vector.getLocation(), CELL_VSHIFT);
@@ -197,9 +204,7 @@ TEST_F(Vector2DTest, AssignFromBoutReal) {
 }
 
 TEST_F(Vector2DTest, AssignFromVector2D) {
-  Vector2D vector1, vector2;
-
-  vector1.x.getMesh()->StaggerGrids = true;
+  Vector2D vector1(mesh_staggered), vector2(mesh_staggered);
 
   vector1.x = 1.0;
   vector1.y = 2.0;
@@ -215,14 +220,12 @@ TEST_F(Vector2DTest, AssignFromVector2D) {
 }
 
 TEST_F(Vector2DTest, CreateFromVector2D) {
-  Vector2D vector1;
-
-  vector1.x.getMesh()->StaggerGrids = true;
+  Vector2D vector1(mesh_staggered);
 
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
-  vector1.setLocation(CELL_YLOW);
+  vector1.setLocation(CELL_XLOW);
 
   Vector2D vector2{vector1};
 

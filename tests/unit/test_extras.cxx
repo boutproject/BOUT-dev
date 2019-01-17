@@ -3,6 +3,11 @@
 
 #include <cmath>
 
+// Need to declare variable in exactly one source file
+#ifndef GLOBALORIGIN
+Mesh* mesh_staggered;
+#endif
+
 // Need to provide a redundant declaration because C++
 constexpr int FakeMeshFixture::nx;
 constexpr int FakeMeshFixture::ny;
