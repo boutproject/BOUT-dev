@@ -40,6 +40,16 @@ protected:
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+    if (mesh_staggered != nullptr) {
+      delete mesh_staggered;
+      mesh_staggered = nullptr;
+    }
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    output_info.disable();
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    mesh_staggered->createDefaultRegions();
   }
 
   ~Vector3DTest() {
@@ -51,12 +61,16 @@ protected:
     }
     delete mesh;
     mesh = nullptr;
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
 public:
   static const int nx;
   static const int ny;
   static const int nz;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 const int Vector3DTest::nx = 5;

@@ -14,12 +14,6 @@
 
 const BoutReal BoutRealTolerance = 1e-15;
 
-#ifndef GLOBALORIGIN
-extern Mesh* mesh_staggered;
-#else
-Mesh* mesh_staggered = nullptr;
-#endif
-
 /// Does \p str contain \p substring?
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring);
@@ -221,11 +215,15 @@ public:
   ~FakeMeshFixture() {
     delete mesh;
     mesh = nullptr;
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
   static constexpr int nx = 3;
   static constexpr int ny = 5;
   static constexpr int nz = 7;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 #endif //  TEST_EXTRAS_H__

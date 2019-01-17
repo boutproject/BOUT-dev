@@ -41,6 +41,16 @@ protected:
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+    if (mesh_staggered != nullptr) {
+      delete mesh_staggered;
+      mesh_staggered = nullptr;
+    }
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    output_info.disable();
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    mesh_staggered->createDefaultRegions();
   }
 
   ~Vector2DTest() {
@@ -52,12 +62,16 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
 public:
   static constexpr int nx = 5;
   static constexpr int ny = 5;
   static constexpr int nz = 1;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 constexpr int Vector2DTest::nx;
