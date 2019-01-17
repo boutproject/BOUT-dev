@@ -74,8 +74,6 @@ void FieldPerp::setLocation(CELL_LOC new_location) {
     }
     
     location = new_location;
-    fieldCoordinates = getCoordinates();
-    
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -86,6 +84,9 @@ void FieldPerp::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  // Ensures Coordinates object is initialized for this Field's location
+  getCoordinates();
 }
 
 CELL_LOC FieldPerp::getLocation() const {
