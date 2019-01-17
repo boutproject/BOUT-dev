@@ -1,7 +1,7 @@
 
 [mesh]
 staggergrids = true
-nx = 12
+nx = 10
 ny = 2
 nz = 1
 

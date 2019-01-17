@@ -4,4 +4,4 @@ set -e
 
 make
 # Kill the test after 3 seconds, if it hasn't already exited
-mpirun -n 4 timeout 3s ./test-coordinates-initialization
+OMP_NUM_THREADS=1 mpirun -n 3 timeout 3s ./test-coordinates-initialization
