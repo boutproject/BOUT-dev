@@ -126,6 +126,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   TRACE("OptionsINI::write");
   
   std::ofstream fout;
+  backupfile(filename.c_str());
   fout.open(filename, ios::out | ios::trunc);
 
   if (!fout.good()) {

@@ -50,6 +50,7 @@ int Output::open(const char *fname, ...) {
 
   close();
 
+  backupfile(buffer);
   file.open(buffer);
 
   if (!file.is_open()) {
