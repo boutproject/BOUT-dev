@@ -7,7 +7,10 @@ make
 rm -rf data/BOUT.log*
 rm -rf data/BOUT.set*
 
-./test
+
+# make some old files
+touch -r runtest data/BOUT.log.0
+touch -r runtest data/BOUT.settings
 ./test
 
 # ensure both logs are still present
