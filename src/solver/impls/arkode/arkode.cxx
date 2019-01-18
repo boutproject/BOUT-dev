@@ -156,8 +156,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       BoutReal tempabstol;
       if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
         throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
-      vector<BoutReal> f2dtols;
-      vector<BoutReal> f3dtols;
+      std::vector<BoutReal> f2dtols;
+      std::vector<BoutReal> f3dtols;
       BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
       for (const auto& f2 : f2d) {
 	abstol_options = Options::getRoot()->getSection(f2.name);
@@ -706,7 +706,9 @@ static int arkode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
  * vector abstol functions
  **************************************************************************/
 
-void ArkodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
+void ArkodeSolver::set_abstol_values(BoutReal *abstolvec_data,
+                                     std::vector<BoutReal> &f2dtols,
+                                     std::vector<BoutReal> &f3dtols) {
   int p = 0; // Counter for location in abstolvec_data array
 
   // All boundaries
@@ -721,10 +723,10 @@ void ArkodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> 
 
 void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
                                          BoutReal *abstolvec_data, int &p,
-                                         vector<BoutReal> &f2dtols,
-                                         vector<BoutReal> &f3dtols, bool bndry) {
+                                         std::vector<BoutReal> &f2dtols,
+                                         std::vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
+  for(std::vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry)
       continue;
     abstolvec_data[p] = f2dtols[i];
@@ -733,7 +735,7 @@ void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
 
   for (int jz=0; jz < mesh->LocalNz; jz++) {
     // Loop over 3D variables
-    for(vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
+    for(std::vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry)
         continue;
       abstolvec_data[p] = f3dtols[i];

@@ -178,7 +178,7 @@ private:
     Field2D Rxy, Bpxy, Btxy, hthe;
     Field2D I; // Shear factor
     
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     if (mesh->get(Rxy,  "Rxy")) { // m
       output_error.write("Error: Cannot read Rxy from grid\n");
@@ -246,7 +246,7 @@ private:
     // SHIFTED RADIAL COORDINATES
     
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {
@@ -466,7 +466,7 @@ private:
       {
         TRACE("Flux vExB");
         // ExB velocity
-        vExB = (B0vec ^ Grad_perp(phi))/(B0*B0);
+        vExB = (cross(B0vec, Grad_perp(phi)))/(B0*B0);
         vExB.applyBoundary();
       }
       

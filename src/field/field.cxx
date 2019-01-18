@@ -25,8 +25,6 @@
 
 //#include <globals.hxx>
 
-#include <stdarg.h>
-
 #include <field.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
@@ -34,13 +32,7 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
-}
-
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
+Field::Field(Mesh *localmesh) : fieldmesh(localmesh) {
   if (fieldmesh == nullptr) {
     fieldmesh = mesh;
   }
@@ -50,10 +42,6 @@ Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) 
 // call fieldmesh->coordinates, which would create fields, which would then call
 // getCoordinates again etc.). This also requires care in the derived class
 // constructors.
-  
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
 }
 
 Coordinates *Field::getCoordinates() const {

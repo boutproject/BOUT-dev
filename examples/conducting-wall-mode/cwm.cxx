@@ -76,7 +76,7 @@ private:
     mesh->get(rho0,   "rho0");
     mesh->get(Ajpar0, "Ajpar0");
 
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
     
     // Load magnetic curvature term
     b0xcv.covariant = false; // Read contravariant components
@@ -125,7 +125,7 @@ private:
     
     /************* SHIFTED RADIAL COORDINATES ************/
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {
@@ -245,7 +245,7 @@ private:
   // Time derivatives calculated here
   int rhs(BoutReal t) {
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Invert vorticity to get phi
     

@@ -65,7 +65,7 @@ protected:
     GRID_LOAD(Ajpar0);
 
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load magnetic curvature term
     b0xcv.covariant = false;  // Read contravariant components
@@ -110,7 +110,7 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {

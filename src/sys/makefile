@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../..
 DIRS		= options
-SOURCEC		= boutexception.cxx comm_group.cxx derivs.cxx \
+SOURCEC		= boutexception.cxx derivs.cxx \
 		  msg_stack.cxx options.cxx output.cxx \
 		  utils.cxx optionsreader.cxx boutcomm.cxx \
 		  timer.cxx range.cxx petsclib.cxx expressionparser.cxx \

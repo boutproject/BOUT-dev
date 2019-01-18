@@ -22,8 +22,8 @@
 
 #include <boutcomm.hxx>
 #include <bout/solver.hxx>
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 
 #include <initialprofiles.hxx>
 #include <interpolation.hxx>
@@ -623,7 +623,7 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
     
     if(mms) {
       // Add an error variable
-      outputfile.add(*(f.MMS_err), (string("E_")+f.name).c_str(), save_repeat);
+      outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
     }
   }
 }
@@ -1282,7 +1282,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(const auto& f : f3d) {
+  for (MAYBE_UNUSED(const auto& f) : f3d) {
     ASSERT1(f.var->getLocation() == f.F_var->getLocation());
     ASSERT1(f.var->getMesh() == f.F_var->getMesh());
   }
@@ -1308,7 +1308,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #endif
 }
 
-bool Solver::varAdded(const string &name) {
+bool Solver::varAdded(const std::string &name) {
   for(const auto& f : f2d) {
     if(f.name == name)
       return true;

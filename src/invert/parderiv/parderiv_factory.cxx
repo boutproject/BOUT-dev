@@ -7,7 +7,6 @@
 
 #include "parderiv_factory.hxx"
 
-#include "impls/serial/serial.hxx"
 #include "impls/cyclic/cyclic.hxx"
 
 ParDerivFactory *ParDerivFactory::instance = nullptr;
@@ -37,9 +36,7 @@ InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt, Mesh
   if (opt == nullptr)
     opt = Options::getRoot()->getSection(default_section);
 
-  if(!strcasecmp(type, PARDERIVSERIAL)) {
-    return new InvertParSerial(opt, mesh_in);
-  }else if(!strcasecmp(type, PARDERIVCYCLIC)) {
+  if (!strcasecmp(type, PARDERIVCYCLIC)) {
     return new InvertParCR(opt, mesh_in);
   }
   
@@ -47,7 +44,7 @@ InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt, Mesh
 }
 
 InvertPar* ParDerivFactory::createInvertPar(Options *opts, Mesh *mesh_in) {
-  string type;
+  std::string type;
   opts->get("type", type, "cyclic");
   
   return createInvertPar(type.c_str(), opts, mesh_in);

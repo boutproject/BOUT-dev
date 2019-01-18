@@ -29,7 +29,7 @@ RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("solver");
   
-  string scheme;
+  std::string scheme;
   options->get("scheme", scheme, "");
 
   if(!scheme.empty()) type = scheme.c_str();

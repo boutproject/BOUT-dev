@@ -91,6 +91,8 @@ LaplaceCyclic::~LaplaceCyclic() {
 
 const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
   ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   FieldPerp x(localmesh); // Result
   x.allocate();

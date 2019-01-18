@@ -29,12 +29,13 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
-#include "boutexception.hxx"
 
 #include "unused.hxx"
 
@@ -53,16 +54,19 @@ extern Mesh * mesh; ///< Global mesh
  */
 class Field {
  public:
-  Field();
+  Field() = default;
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  virtual void setLocation(CELL_LOC loc) {
-    if (loc != CELL_CENTRE)
-      throw BoutException("not implemented!");
+  virtual void setLocation(CELL_LOC UNUSED(loc)) {
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::setLocation which is intentionally not fully implemented.");
   }
   virtual CELL_LOC getLocation() const {
-    return CELL_CENTRE;
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::getLocation which is intentionally not fully implemented.");
   }
 
   std::string name;
@@ -82,9 +86,10 @@ class Field {
     return true;
   }
   
-  // Status of the 4 boundaries
-  bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
+  /// Status of the 4 boundaries
+  bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
+
   virtual Mesh * getMesh() const{
     if (fieldmesh){
       return fieldmesh;
@@ -115,9 +120,9 @@ class Field {
    */
   virtual int getNz() const;
 
- protected:
-  Mesh * fieldmesh;
-  mutable Coordinates * fieldCoordinates = nullptr;
+protected:
+  Mesh* fieldmesh{nullptr};
+  mutable Coordinates* fieldCoordinates{nullptr};
 };
 
 /// Unary + operator. This doesn't do anything

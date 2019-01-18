@@ -217,7 +217,7 @@ public:
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
-  void force(T val, const string source = "") {
+  void force(T val, const std::string source = "") {
     is_value = false; // Invalidates any existing setting
     assign(val, source);
   }

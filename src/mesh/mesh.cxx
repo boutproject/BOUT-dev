@@ -49,7 +49,7 @@ Mesh::~Mesh() {
  **************************************************************************/
 
 /// Get an integer
-int Mesh::get(int &ival, const string &name) {
+int Mesh::get(int &ival, const std::string &name) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
 
   if (source == nullptr or !source->get(this, ival, name))
@@ -59,7 +59,7 @@ int Mesh::get(int &ival, const string &name) {
 }
 
 /// A BoutReal number
-int Mesh::get(BoutReal &rval, const string &name) {
+int Mesh::get(BoutReal &rval, const std::string &name) {
   TRACE("Mesh::get(rval, %s)", name.c_str());
 
   if (source == nullptr or !source->get(this, rval, name))
@@ -68,7 +68,7 @@ int Mesh::get(BoutReal &rval, const string &name) {
   return 0;
 }
 
-int Mesh::get(Field2D &var, const string &name, BoutReal def) {
+int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -86,7 +86,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
+int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
   // Ensure data allocated
@@ -110,7 +110,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const string &name) {
+int Mesh::get(Vector2D &var, const std::string &name) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -131,7 +131,7 @@ int Mesh::get(Vector2D &var, const string &name) {
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const string &name) {
+int Mesh::get(Vector3D &var, const std::string &name) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
@@ -152,7 +152,7 @@ int Mesh::get(Vector3D &var, const string &name) {
   return 0;
 }
 
-bool Mesh::sourceHasVar(const string &name) {
+bool Mesh::sourceHasVar(const std::string &name) {
   TRACE("Mesh::sourceHasVar(%s)", name.c_str());
   if (source == nullptr)
     return false;
@@ -209,7 +209,7 @@ void Mesh::communicate(FieldPerp &f) {
   wait(recv[1]);
 }
 
-int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
   int len = 0;
 
   /// Loop over variables
@@ -262,7 +262,7 @@ bool Mesh::hasBndryUpperY() {
   return answer;
 }
 
-const vector<int> Mesh::readInts(const string &name, int n) {
+const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   TRACE("Mesh::readInts(%s)", name.c_str());
 
   if (source == nullptr) {
@@ -270,7 +270,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
                         name.c_str());
   }
 
-  vector<int> result;
+  std::vector<int> result;
 
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
@@ -287,7 +287,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
 
 void Mesh::setParallelTransform() {
 
-  string ptstr;
+  std::string ptstr;
   options->get("paralleltransform", ptstr, "identity");
 
   // Convert to lower case for comparison
@@ -295,11 +295,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
+    transform = bout::utils::make_unique<ParallelTransformIdentity>();
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
+  transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -307,7 +307,7 @@ void Mesh::setParallelTransform() {
     // Flux Coordinate Independent method
     bool fci_zperiodic;
     fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
+    transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
       
   }else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
@@ -359,13 +359,25 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
   return found->second;
 }
 
+bool Mesh::hasRegion3D(const std::string& region_name) const {
+  return regionMap3D.find(region_name) != std::end(regionMap3D);
+}
+
+bool Mesh::hasRegion2D(const std::string& region_name) const {
+  return regionMap2D.find(region_name) != std::end(regionMap2D);
+}
+
+bool Mesh::hasRegionPerp(const std::string& region_name) const {
+  return regionMapPerp.find(region_name) != std::end(regionMapPerp);
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
-  output_info << _("Registered region 3D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region 3D ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
@@ -373,8 +385,8 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
     throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
-  output_info << _("Registered region 2D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region 2D ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
@@ -382,8 +394,8 @@ void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &
     throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
   }
   regionMapPerp[region_name] = region;
-  output_info << _("Registered region Perp ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose << _("Registered region Perp ") << region_name << ": \n"
+                 << "\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){

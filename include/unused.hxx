@@ -35,4 +35,22 @@
 # define UNUSED(x) x
 #endif
 
+/// Mark a function parameter as possibly unused in the function body
+///
+/// Unlike `UNUSED`, this has to go around the type as well:
+///
+///    MAYBE_UNUSED(int foo);
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(maybe_unused)
+# define MAYBE_UNUSED(x) [[maybe_unused]] x
+#endif
+#endif
+#ifndef MAYBE_UNUSED
+#if defined(__GNUC__)
+# define MAYBE_UNUSED(x) [[gnu::unused]] x
+#else
+# define MAYBE_UNUSED(x) x
+#endif
+#endif
+
 #endif //__UNUSED_H__

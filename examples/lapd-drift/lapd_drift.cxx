@@ -133,7 +133,7 @@ protected:
     b0xcv.covariant = false; // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Load metrics
     mesh->get(Rxy,  "Rxy");
@@ -252,7 +252,7 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
     
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {
@@ -431,7 +431,7 @@ protected:
   /// Time derivatives calculated here
   int rhs(BoutReal t) {
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Invert vorticity to get phi
     
@@ -548,7 +548,7 @@ protected:
       }
       
       if (ni_diff) {
-        ddt(ni) += ni_perpdiff * Delp2(ni,-1.0);
+        ddt(ni) += ni_perpdiff * Delp2(ni);
       }
 
       if (evolve_source_ni) {
@@ -577,11 +577,11 @@ protected:
       }
       
       if (rho_rho1) {
-        ddt(rho) += mu_i*Delp2(rho,-1.0);  //Check second argument meaning in difops.cpp
+        ddt(rho) += mu_i * Delp2(rho);
       }
       
       if (rho_diff) {
-        ddt(rho) += rho_perpdiff * Delp2(rho,-1.0);
+        ddt(rho) += rho_perpdiff * Delp2(rho);
       }
       
       if (rho_rho1_phi1) {
@@ -684,7 +684,7 @@ protected:
       }
       
       if (te_diff) {
-        ddt(te) += te_perpdiff * Delp2(te,-1.0);
+        ddt(te) += te_perpdiff * Delp2(te);
       }
       
       if (remove_tor_av_te) {
@@ -727,7 +727,7 @@ protected:
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
   const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
     
-    return DDX(p)*DDX(f)*mesh->coordinates()->g11;
+    return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
   
@@ -743,13 +743,13 @@ protected:
     } else {
       // Use full expression with all terms
       
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
 
   const Field3D vE_Grad(const Field2D &f, const Field3D &p) {
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     Field3D result;
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
@@ -803,7 +803,7 @@ protected:
       result = VDDZ(-DDX(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
@@ -811,7 +811,7 @@ protected:
   const Field3D vE_Grad(const Field3D &f, const Field3D &p) {
     Field3D result;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
       

@@ -350,11 +350,6 @@ The current source code files are:
    - :doc:`boutexception.cxx<../_breathe_autogen/file/boutexception_8cxx>`
      is an exception class which are used for error handling
 
-   - :doc:`comm_group.cxx<../_breathe_autogen/file/comm__group_8cxx>`
-     provides routines for non-blocking collective MPI
-     operations. These are not available in MPI-2, though are planned
-     for MPI-3.
-
    - :doc:`derivs.cxx<../_breathe_autogen/file/derivs_8cxx>` contains
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by

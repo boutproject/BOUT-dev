@@ -9,6 +9,10 @@ from libcpp cimport bool
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
+
+cdef extern from "boutexception_helper.hxx":
+     cdef void raise_bout_py_error()
+
 EOF
 for ftype in "Field3D" "Field2D"
 do
@@ -127,7 +131,7 @@ cdef extern from "difops.hxx":
     Field3D Laplace(Field3D)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D,double)
+    Field3D Delp2(Field3D)
 
 cdef extern from "options.hxx":
     cppclass Options:
@@ -155,12 +159,12 @@ do
     for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
     done
     for f in VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +"
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
     done
 done
 cat <<EOF

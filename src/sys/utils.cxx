@@ -24,10 +24,9 @@
  **************************************************************************/
 
 #include <utils.hxx>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
 #include <vector>
 #include <algorithm>
 #include <sstream>
@@ -54,16 +53,24 @@ char* copy_string(const char* s) {
 }
 
 // Convert a string to lower case
-const string lowercase(const string &str) {
-  string strlow(str);
+const std::string lowercase(const std::string &str) {
+  std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
   return strlow;
 }
 
+// Convert a string to upper case
+const std::string uppercase(const std::string& str) {
+  std::string strup(str);
+
+  std::transform(strup.begin(), strup.end(), strup.begin(), ::toupper);
+  return strup;
+}
+
 // Convert to lowercase, except for inside strings
-const string lowercasequote(const string &str) {
-  string strlow(str);
+const std::string lowercasequote(const std::string &str) {
+  std::string strlow(str);
 
   bool quote = false, dquote = false;
   for (char &i : strlow) {
@@ -132,7 +139,7 @@ std::string trimComments(const std::string &s, const std::string &c) {
 }
 
 template <>
-const std::string toString<>(const time_t& time) {
+std::string toString<>(const time_t& time) {
   // Get local time
   std::tm *tm = std::localtime(&time);
 
@@ -143,6 +150,6 @@ const std::string toString<>(const time_t& time) {
 
   // Older compilers
   char buffer[80];
-  strftime(buffer, 80, "%Ec %Z", tm);
+  strftime(buffer, 80, "%Ec", tm);
   return std::string(buffer);
 }

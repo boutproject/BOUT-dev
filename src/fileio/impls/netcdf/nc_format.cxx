@@ -31,6 +31,9 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
+using std::string;
+using std::vector;
+
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
@@ -569,11 +572,6 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   // Check for valid name
   checkName(name);
 
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-
   TRACE("NcFormat::write(int)");
 
 #ifdef NCDF_VERBOSE
@@ -617,11 +615,6 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   TRACE("NcFormat::write(BoutReal)");
 
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-  
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
 #else
@@ -768,11 +761,6 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   // Check for valid name
   checkName(name);
 
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
 #else
@@ -819,11 +807,6 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   checkName(name);
 
   TRACE("NcFormat::write_rec(BoutReal*)");
-
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
 
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);

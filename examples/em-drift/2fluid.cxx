@@ -55,7 +55,7 @@ private:
     
     /************* LOAD DATA FROM GRID FILE ****************/
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Load 2D profiles (set to zero if not found)
     mesh->get(Ni0,    "Ni0");
@@ -107,7 +107,7 @@ private:
     /************* SHIFTED RADIAL COORDINATES ************/
   
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if (lowercase(ptstr) == "shifted") {
@@ -243,7 +243,7 @@ private:
   
   int rhs(BoutReal t) override {
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Solve EM fields
     

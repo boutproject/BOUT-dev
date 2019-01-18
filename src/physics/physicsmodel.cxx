@@ -97,8 +97,8 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   solver->outputVars(restart, false);
 
-  string restart_dir;  ///< Directory for restart files
-  string dump_ext, restart_ext;  ///< Dump, Restart file extension
+  std::string restart_dir;  ///< Directory for restart files
+  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
   
   Options *options = Options::getRoot();
   if (options->isSet("restartdir")) {
@@ -112,7 +112,7 @@ int PhysicsModel::postInit(bool restarting) {
   options->get("dump_format", dump_ext, "nc");
   options->get("restart_format", restart_ext, dump_ext);
 
-  string filename = restart_dir + "/BOUT.restart."+restart_ext;
+  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 
