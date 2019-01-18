@@ -28,6 +28,7 @@
 #include <cstring>
 #include <output.hxx>
 #include <utils.hxx>
+#include <sys/stat.h>
 
 void Output::enable() {
   add(std::cout);
@@ -152,5 +153,22 @@ ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
+
+void backupfile(const char* filename) {
+  struct stat buffer;
+  if (stat(filename, &buffer) == 0){
+    char filename_[strlen(filename)+10];
+    int j=0;
+    do {
+      if (j > 1000000) {
+	throw BoutException("Failed to move %s to a backupfile. Apparently over a million backup files already exist.",filename);
+      }
+      sprintf(filename_,"%s~%d",filename,j);
+      j+=1;
+    }
+    while (stat(filename_, &buffer) == 0);
+    rename(filename,filename_);
+  }
+}
 
 #undef bout_vsnprint_pre

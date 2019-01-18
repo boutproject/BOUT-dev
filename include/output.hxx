@@ -259,4 +259,9 @@ extern ConditionalOutput output_verbose; ///< less interesting messages
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
 
+
+/// move old file to numbered backup
+
+void backupfile(const char* filename);
+
 #endif // __OUTPUT_H__
