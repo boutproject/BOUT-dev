@@ -1,0 +1,35 @@
+timestep = 1.
+nout = 1
+
+MZ = 1
+zmin = 0
+zmax = 8
+
+mxg = 0
+myg = 0  # No need for Y communications
+
+[mesh]
+
+nx = 1
+ny = 1
+
+dx = 0.2
+dy = 1.
+
+[solver]
+#type=karniadakis
+timestep = 0.001
+
+[diffusion]
+
+D = 1.e-1
+
+[All]
+scale = 0.
+
+bndry_all = dirichlet
+
+[n]
+
+scale = 0.1
+function = gauss(x-0.5, 0.2) * gauss(z - pi, 0.2*pi)

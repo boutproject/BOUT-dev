@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+set -ex
+
+make
+
+rm -rf data/BOUT.log*
+rm -rf data/BOUT.set*
+
+./test
+./test
+
+# ensure both logs are still present
+test -f data/BOUT.log.0
+test -f data/BOUT.log.0~0
+
+# ensure the backup is older
+test data/BOUT.log.0 -nt data/BOUT.log.0~0
+
+# same for settings file
+test -f data/BOUT.settings
+test -f data/BOUT.settings~0
+
+test data/BOUT.settings -nt data/BOUT.settings~0
