@@ -194,38 +194,6 @@ Field3D &Field3D::ynext(int dir) {
   return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
-void Field3D::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field3D: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
-
-  // Ensures Coordinates object is initialized for this Field's location
-  getCoordinates();
-}
-
-CELL_LOC Field3D::getLocation() const {
-  AUTO_TRACE();
-  return location;
-}
-
 // Not in header because we need to access fieldmesh
 BoutReal &Field3D::operator()(const IndPerp &d, int jy) {
   return operator[](fieldmesh->indPerpto3D(d, jy));

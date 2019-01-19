@@ -117,36 +117,6 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
 };
 
-void Field2D::setLocation(CELL_LOC new_location) {
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field2D: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field2D: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggerGrids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
-
-  // Ensures Coordinates object is initialized for this Field's location
-  getCoordinates();
-}
-
-CELL_LOC Field2D::getLocation() const {
-  return location;
-}
-
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));

@@ -59,16 +59,14 @@ class Field {
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  virtual void setLocation(CELL_LOC UNUSED(loc)) {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::setLocation which is intentionally not fully implemented.");
-  }
-  virtual CELL_LOC getLocation() const {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::getLocation which is intentionally not fully implemented.");
-  }
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location);
+  /// Get variable location
+  CELL_LOC getLocation() const;
 
   std::string name;
 
@@ -124,6 +122,9 @@ class Field {
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
 };
 
 /// Unary + operator. This doesn't do anything

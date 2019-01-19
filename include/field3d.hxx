@@ -261,15 +261,6 @@ class Field3D : public Field, public FieldData {
   /// \p offset of 0 returns the main field itself
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
-
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
   
   /////////////////////////////////////////////////////////
   // Data access
@@ -485,9 +476,6 @@ private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
-  
   /// Time derivative (may be nullptr)
   Field3D *deriv{nullptr};
 
