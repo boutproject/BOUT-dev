@@ -63,41 +63,6 @@ void FieldPerp::allocate() {
     data.ensureUnique();
 }
 
-void FieldPerp::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "FieldPerp: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    // Invalidate the coordinates pointer
-    if (new_location != location) {
-      fieldCoordinates = nullptr;
-    }
-
-    location = new_location;
-
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("FieldPerp: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
-}
-
-CELL_LOC FieldPerp::getLocation() const {
-  AUTO_TRACE();
-  return location;
-}
-
 /***************************************************************
  *                         ASSIGNMENT 
  ***************************************************************/
