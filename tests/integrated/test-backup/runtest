@@ -1,8 +1,14 @@
 #!/usr/bin/env sh
 
+#requires: all_tests
+
 set -ex
 
-make
+make -s
+
+
+rm -rf test_backup
+ln -s ../test-datadir/test test_backup
 
 rm -rf data/BOUT.log*
 rm -rf data/BOUT.set*
@@ -11,7 +17,7 @@ rm -rf data/BOUT.set*
 # make some old files
 touch -r runtest data/BOUT.log.0
 touch -r runtest data/BOUT.settings
-./test
+./test_backup
 
 # ensure both logs are still present
 test -f data/BOUT.log.0
