@@ -50,7 +50,7 @@ int MsgStack::push(const char *s, ...) {
 
     position++;
   };
-  return position;
+  return position - 1;
 }
 
 int MsgStack::setPoint() {
