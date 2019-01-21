@@ -521,7 +521,10 @@ DiffLookup lookupFunc(DiffLookup *table, const std::string & label){
   // No exact match, so throw
   std::string avail{};
   for (int i = 0; DiffNameTable[i].method != DIFF_DEFAULT; ++i) {
-    avail += DiffNameTable[i].label;
+    if (!isImplemented(table, DiffNameTable[i].method)) {
+      continue;
+    }
+    avail += DiffNameTable[i].label + std::string(": ") + DiffNameTable[i].name;
     avail += "\n";
   }
   throw BoutException("Unknown option %s.\nAvailable options are:\n%s", label.c_str(),
