@@ -33,7 +33,7 @@
 #if CHECK > 1
 int MsgStack::push(const char *s, ...) {
   va_list ap; // List of arguments
-  BOUT_OMP(critical) {
+  BOUT_OMP(critical(MsgStack_push)) {
     if (s != nullptr) {
       va_start(ap, s);
       vsnprintf(buffer, MSG_MAX_SIZE, s, ap);
@@ -69,12 +69,10 @@ void MsgStack::pop(int id) {
   if (id < 0)
     id = 0;
 
-  BOUT_OMP(critical) {
+  BOUT_OMP(critical(MsgStack_pop)) {
     if (id <= static_cast<int>(position))
       position = id;
   };
-
-  return;
 }
 
 void MsgStack::clear() {
