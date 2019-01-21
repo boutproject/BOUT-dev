@@ -146,7 +146,7 @@ version: 4.2.1
 date-released: 2019-01-??
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: ???
+doi: 10.5281/zenodo.2530733
 license: 'LGPL-3.0-or-later'
 references:
   - type: article
