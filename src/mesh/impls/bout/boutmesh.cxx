@@ -842,21 +842,6 @@ int BoutMesh::load() {
   // Initialize default coordinates
   getCoordinates();
 
-  // Initialize Coordinates at all locations, temporary fix for bug causing
-  // BOUT++ to hang
-  getCoordinates(CELL_CENTRE);
-  if (StaggerGrids) {
-    if (xstart >= 2) {
-      getCoordinates(CELL_XLOW);
-    }
-    if (ystart >= 2) {
-      getCoordinates(CELL_YLOW);
-    }
-    if (LocalNz > 3) {
-      getCoordinates(CELL_ZLOW);
-    }
-  }
-
   output_info.write(_("\tdone\n"));
 
   return 0;
