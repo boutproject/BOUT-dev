@@ -480,6 +480,11 @@ int Coordinates::geometry() {
     d1_dy = -d2y / (dy * dy);
   }
 
+  if (location == CELL_CENTRE) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
+  }
+
   return 0;
 }
 
