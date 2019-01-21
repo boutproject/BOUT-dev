@@ -262,6 +262,6 @@ extern ConditionalOutput output;
 
 /// move old file to numbered backup
 
-void backupfile(const char* filename);
+void backupFile(const std::string & filename);
 
 #endif // __OUTPUT_H__

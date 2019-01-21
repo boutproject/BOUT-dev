@@ -50,7 +50,7 @@ int Output::open(const char *fname, ...) {
 
   close();
 
-  backupfile(buffer);
+  backupFile(buffer);
   file.open(buffer);
 
   if (!file.is_open()) {
@@ -155,20 +155,23 @@ ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
 
-void backupfile(const char* filename) {
+
+
+void backupFile(const std::string& filename) {
   struct stat buffer;
-  if (stat(filename, &buffer) == 0){
-    char filename_[strlen(filename)+10];
+  if (stat(filename.c_str(), &buffer) == 0){
+    std::string filename_;
     int j=0;
     do {
-      if (j > 1000000) {
-	throw BoutException("Failed to move %s to a backupfile. Apparently over a million backup files already exist.",filename);
-      }
-      sprintf(filename_,"%s~%d",filename,j);
+      filename_=filename + "~" + std::to_string(j);
       j+=1;
     }
-    while (stat(filename_, &buffer) == 0);
-    rename(filename,filename_);
+    while (stat(filename_.c_str(), &buffer) == 0);
+    constexpr int backup_files_warning = 10;
+    if (j > backup_files_warning) {
+      printf("There are currently %d backup files for %s - please delete them if you don't need them anymore.",j,filename.c_str());
+    }
+    rename(filename.c_str(),filename_.c_str());
   }
 }
 
