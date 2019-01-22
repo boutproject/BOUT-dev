@@ -1,5 +1,6 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
+  SCOREP0();
   {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
 #if CHECK > 0
   if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
@@ -55,6 +56,7 @@
 {% if out.field_type == lhs.field_type %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
+  SCOREP0();
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
