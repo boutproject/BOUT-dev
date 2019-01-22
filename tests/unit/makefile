@@ -6,8 +6,8 @@ BOUT_TOP = ../..
 
 BOUT_TEST_DIR = .
 
-GTEST_DIR = $(BOUT_TOP)/googletest/googletest
-GMOCK_DIR = $(BOUT_TOP)/googletest/googlemock
+GTEST_DIR = $(BOUT_TOP)/externalpackages/googletest/googletest
+GMOCK_DIR = $(BOUT_TOP)/externalpackages/googletest/googlemock
 
 GTEST_SOURCES = $(GTEST_DIR)/src/gtest-all.cc
 
@@ -31,7 +31,7 @@ include $(BOUT_TOP)/make.config
 LDFLAGS += -pthread
 
 # Existence of this file indicates that GTEST has been downloaded
-GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
+GTEST_SENTINEL = $(BOUT_TOP)/externalpackages/googletest/README.md
 
 # House-keeping build targets.
 
