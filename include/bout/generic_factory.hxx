@@ -60,7 +60,6 @@ public:
       return index->second(std::forward<Args>(args) ...);
     }
     // List available options in error
-    const char* const delim = "\n";
     std::string available;
     auto available_list = listAvailable();
     for (auto i : available_list) {
