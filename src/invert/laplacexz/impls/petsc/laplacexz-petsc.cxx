@@ -373,9 +373,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
     Coordinates *coords = localmesh->getCoordinates(location);
-
-    // NOTE: For now the X-Z terms are omitted, so check that they are small
-    ASSERT2(max(abs(coords->g13)) < 1e-5);
     
     for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
       for(int z=0; z < localmesh->LocalNz; z++) {
