@@ -34,12 +34,33 @@
 #include <omp.h>
 #endif
 
-#ifdef BOUT_ARRAY_WITH_VALARRAY
-#include <valarray>
-#endif
-
 #include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
+
+namespace {
+template <typename T>
+using iterator = T*;
+template <typename T>
+using const_iterator = const T*;
+}
+
+/*!
+ * ArrayData holds the actual data
+ * Handles the allocation and deletion of data
+ */
+template <typename T>
+struct ArrayData {
+  ArrayData(int size) : len(size) { data = new T[len]; }
+  ~ArrayData() { delete[] data; }
+  iterator<T> begin() const { return data; }
+  iterator<T> end() const { return data + len; }
+  int size() const { return len; }
+  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  T& operator[](int ind) { return data[ind]; };
+private:
+  int len; ///< Size of the array
+  T* data; ///< Array of data  
+};
 
 /*!
  * Data array type with automatic memory management
@@ -55,7 +76,7 @@
  * vals[10] = 1.0;  // ok
  * 
  * When an Array goes out of scope or is deleted,
- * the underlying memory (ArrayData) is put into
+ * the underlying memory (dataBlock/Backing) is put into
  * a map, rather than being freed. 
  * If the same size arrays are used repeatedly then this
  * avoids the need to use new and delete.
@@ -64,11 +85,17 @@
  *
  * Array<dcomplex>::useStore(false); // Disables memory store
  * 
+ * The second template argument determines what type of container to use to
+ * store data. This defaults to a custom struct but can be std::valarray (
+ * provided T is a compatible type), std::vector etc. Must provide the following :
+ *  size, operator=, operator[], begin, end
  */
-template<typename T>
+template<typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using backing_type = Backing;
+  using size_type = int;
     
   /*!
    * Create an empty array
@@ -87,7 +114,7 @@ public:
   }
   
   /*!
-   * Destructor. Releases the underlying ArrayData
+   * Destructor. Releases the underlying dataBlock
    */
   ~Array() noexcept {
     release(ptr);
@@ -102,7 +129,7 @@ public:
 
   /*!
    * Assignment operator
-   * After this both Arrays share the same ArrayData
+   * After this both Arrays share the same dataBlock
    *
    * Uses copy-and-swap idiom
    */
@@ -128,7 +155,7 @@ public:
 
   /*!
    * Holds a static variable which controls whether
-   * memory blocks (ArrayData) are put into a store
+   * memory blocks (dataBlock) are put into a store
    * or new/deleted each time. 
    *
    * The variable is initialised to true on first use,
@@ -179,14 +206,11 @@ public:
   int size() const noexcept {
     if(!ptr)
       return 0;
-#ifdef BOUT_ARRAY_WITH_VALARRAY
+
     // Note: std::valarray::size is technically not noexcept, so
     // Array::size shouldn't be either if we're using valarrays -- in
     // practice, it is so this shouldn't matter
     return ptr->size();
-#else
-    return ptr->len;
-#endif    
   }
   
   /*!
@@ -210,11 +234,7 @@ public:
     dataPtrType p = get(size());
 
     //Make copy of the underlying data
-#ifdef BOUT_ARRAY_WITH_VALARRAY    
     p->operator=((*ptr));
-#else
-    std::copy(begin(), end(), p->begin());
-#endif    
 
     //Update the local pointer and release old
     //Can't just do ptr=p as need to try to add to store.
@@ -224,43 +244,16 @@ public:
 
   //////////////////////////////////////////////////////////
   // Iterators
-  typedef T* iterator;
-  typedef const T* const_iterator;
-#ifndef BOUT_ARRAY_WITH_VALARRAY
-  iterator begin() noexcept {
-    return (ptr) ? ptr->data : nullptr;
-  }
 
-  iterator end() noexcept {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
-  }
+  iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  // Const iterators  
-  const_iterator begin() const noexcept {
-    return (ptr) ? ptr->data : nullptr;
-  }
+  iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  const_iterator end() const noexcept {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
-  }
-#else
-  iterator begin() { 
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  // Const iterators
+  const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  iterator end() {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  // Const iterators -- should revisit with cbegin and cend in c++14 and greater
-  const_iterator begin() const {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
-
-  const_iterator end() const {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  } 
-#endif
   //////////////////////////////////////////////////////////
   // Element access
 
@@ -271,19 +264,11 @@ public:
    */
   T& operator[](int ind) {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
   const T& operator[](int ind) const {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
 
   /*!
@@ -297,38 +282,9 @@ public:
 
 private:
 
-#ifndef BOUT_ARRAY_WITH_VALARRAY  
-  /*!
-   * ArrayData holds the actual data, and reference count
-   * Handles the allocation and deletion of data
-   */
-  struct ArrayData {
-    int len;    ///< Size of the array
-    T *data;    ///< Array of data
-    
-    ArrayData(int size) : len(size) {
-      data = new T[len];
-    }
-    ~ArrayData() {
-      delete[] data;
-    }
-    iterator begin() {
-      return data;
-    }
-    iterator end() {
-      return data + len;
-    }
-  };
-#endif
-
-    //Type defs to help keep things brief -- which backing do we use
-#ifdef BOUT_ARRAY_WITH_VALARRAY
-  typedef std::valarray<T> dataBlock;
-#else
-  typedef ArrayData dataBlock;
-#endif
-
-  typedef std::shared_ptr<dataBlock>  dataPtrType;
+  //Type defs to help keep things brief -- which backing do we use
+  using dataBlock = Backing;
+  using dataPtrType = std::shared_ptr<dataBlock>;
 
   /*!
    * Pointer to the data container object owned by this Array. 
@@ -340,7 +296,7 @@ private:
   typedef std::vector< storeType > arenaType;
 
   /*!
-   * This maps from array size (int) to vectors of pointers to ArrayData objects
+   * This maps from array size (int) to vectors of pointers to dataBlock objects
    *
    * By putting the static store inside a function it is initialised on first use,
    * and doesn't need to be separately declared for each type T
@@ -348,7 +304,7 @@ private:
    * Inputs
    * ------
    *
-   * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
+   * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
   static storeType& store(bool cleanup=false) {
 #ifdef _OPENMP    
@@ -390,7 +346,7 @@ private:
   }
   
   /*!
-   * Returns a pointer to an ArrayData object with no
+   * Returns a pointer to an dataBlock object with no
    * references. This is either from the store, or newly allocated
    */
   dataPtrType get(int len) {
@@ -413,7 +369,7 @@ private:
   }
 
   /*!
-   * Release an ArrayData object, reducing its reference count by one.
+   * Release an dataBlock object, reducing its reference count by one.
    * If no more references, then put back into the store.
    * It's important to pass a reference to the pointer, otherwise we get
    * a copy of the shared_ptr, which therefore increases the use count
@@ -432,11 +388,7 @@ private:
     if (d.use_count() == 1) {
       if (useStore()) {
         // Put back into store
-#ifdef BOUT_ARRAY_WITH_VALARRAY
         store()[d->size()].push_back(std::move(d));
-#else
-        store()[d->len].push_back(std::move(d));
-#endif
         // Could return here but seems to slow things down a lot
       }
     }
@@ -448,10 +400,10 @@ private:
 
 /*!
  * Create a copy of an Array, which does not share data
- */ 
-template<typename T>
-Array<T> copy(const Array<T> &other) {
-  Array<T> a(other);
+ */
+template <typename T, typename Backing>
+Array<T, Backing> copy(const Array<T, Backing>& other) {
+  Array<T, Backing> a(other);
   a.ensureUnique();
   return a;
 }

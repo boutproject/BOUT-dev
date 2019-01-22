@@ -7,12 +7,15 @@ try:
   from builtins import str
 except:
   pass
-tol = 1e-10                  # Absolute tolerance
+
+#requires: fftw
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
+
+tol = 1e-10                  # Absolute tolerance
 
 MPIRUN=getmpirun()
 
