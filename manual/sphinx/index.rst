@@ -90,6 +90,7 @@ The documentation is divided into the following sections:
    developer_docs/mesh
    developer_docs/file_io
    developer_docs/natural_language
+   developer_docs/performance_profiling
 
    api_reference
 
