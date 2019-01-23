@@ -1,11 +1,14 @@
 # Changelog
 
-## [v4.2.1](https://github.com/boutproject/BOUT-dev/tree/v4.2.0) (2019-01-21)
+## [v4.2.1](https://github.com/boutproject/BOUT-dev/tree/v4.2.1) (2019-01-23)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.0...v4.2.1)
 
 **Merged pull requests:**
 
+- Fix MAYBE_UNUSED for some compilers [\#1520](https://github.com/boutproject/BOUT-dev/pull/1520) ([ZedThree](https://github.com/ZedThree))
+- Try to provide some thread safety to msg_stack [\#1517](https://github.com/boutproject/BOUT-dev/pull/1517) ([d7919](https://github.com/d7919))
+- Fix listing available derivative methods [\#1515](https://github.com/boutproject/BOUT-dev/pull/1515) ([ZedThree](https://github.com/ZedThree))
 - Initialize Coordinates objects in BoutMesh::load() [\#1509](https://github.com/boutproject/BOUT-dev/pull/1509) ([johnomotani](https://github.com/johnomotani))
 - Use localmesh for d2x and d2y, and interpolate them to location [\#1496](https://github.com/boutproject/BOUT-dev/pull/1496) ([johnomotani](https://github.com/johnomotani))
 - Hypnotoad fixes [\#1487](https://github.com/boutproject/BOUT-dev/pull/1487) ([bendudson](https://github.com/bendudson))
