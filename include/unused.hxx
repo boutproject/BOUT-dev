@@ -44,10 +44,13 @@
 #if __has_cpp_attribute(maybe_unused)
 # define MAYBE_UNUSED(x) [[maybe_unused]] x
 #endif
-#elif defined(__GNUC__)
-# define MAYBE_UNUSED(x) x __attribute__((unused))
+#endif
+#ifndef MAYBE_UNUSED
+#if defined(__GNUC__)
+# define MAYBE_UNUSED(x) [[gnu::unused]] x
 #else
 # define MAYBE_UNUSED(x) x
+#endif
 #endif
 
 #endif //__UNUSED_H__
