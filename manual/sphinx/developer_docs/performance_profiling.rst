@@ -12,8 +12,8 @@ using tools that report the amount of time each processor spends in functions,
 on communications, etc.
 
 This section describes how to compile and run BOUT++ using the 
-`Scorep <http://www.vi-hps.org/projects/score-p/>`_/
-`Scalasca <http://www.scalasca.org/>`_ tool chain.
+`Scorep <http://www.vi-hps.org/projects/score-p/>`_/`Scalasca <http://www.scalasca.org/>`_
+tool chain.
 
 Scorep/Scalasca profiling
 -------------------------
