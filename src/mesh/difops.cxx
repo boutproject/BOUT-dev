@@ -785,6 +785,76 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   return result;
 }
 
+
+const Field3D Div_Perp_Lap_FV(const Field3D &a, const Field3D &f, CELL_LOC outloc) {
+  
+  Field3D result = 0.0;
+
+  //////////////////////////////////////////
+  // X-Z diffusion
+  // 
+  //            Z
+  //            |
+  // 
+  //     o --- gU --- o
+  //     |     nU     |
+  //     |            |
+  //    gL nL      nR gR    -> X
+  //     |            |
+  //     |     nD     |
+  //     o --- gD --- o
+  //
+  Coordinates *coords = a.getCoordinates(outloc);
+
+  
+  Field3D fs = f;
+  Field3D as = a;
+
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++)
+      for(int k=0;k<mesh->LocalNz;k++) {
+
+	// wrap k-index around as Z is (currently) periodic.
+	int kp = (k+1) % (mesh->LocalNz);
+	int km = (k-1+mesh->LocalNz) % (mesh->LocalNz);
+        
+        // Calculate gradients on cell faces -- assumes constant grid spacing
+        
+        BoutReal gR = (coords->g11(i,j,k) + coords->g11(i+1,j,k)) * (fs(i+1,j,k) - fs(i,j,k))/(coords->dx(i+1,j,k) + coords->dx(i,j,k))
+          + 0.5*(coords->g13(i,j,k) + coords->g13(i+1,j,k))*(fs(i+1,j,kp) - fs(i+1,j,km) + fs(i,j,kp) - fs(i,j,km))/(4.*coords->dz);
+        
+	BoutReal gL = (coords->g11(i-1,j,k) + coords->g11(i,j,k))*(fs(i,j,k) - fs(i-1,j,k))/(coords->dx(i-1,j,k) + coords->dx(i,j,k))
+	  + 0.5*(coords->g13(i-1,j,k) + coords->g13(i,j,k))*(fs(i-1,j,kp) - fs(i-1,j,km) + f(i,j,kp) - f(i,j,km))/(4.*coords->dz);
+	
+	BoutReal gD = coords->g13(i,j,k)*(fs(i+1,j,km) - fs(i-1,j,km) + fs(i+1,j,k) - fs(i-1,j,k))/(4.*coords->dx(i,j,k))
+	  + coords->g33(i,j,k)*(fs(i,j,k) - fs(i,j,km))/coords->dz;
+        
+        BoutReal gU = coords->g13(i,j,k)*(fs(i+1,j,kp) - fs(i-1,j,kp) + fs(i+1,j,k) - fs(i-1,j,k))/(4.*coords->dx(i,j,k))
+          + coords->g33(i,j,k)*(fs(i,j,kp) - fs(i,j,k))/coords->dz;
+          
+        
+        // Flow right
+        BoutReal flux = gR * 0.25*(coords->J(i+1,j,k) + coords->J(i,j,k)) *(as(i+1,j,k) + as(i,j,k));
+        result(i,j,k)   += flux / (coords->dx(i,j,k)*coords->J(i,j,k));
+        
+        // Flow left
+        flux = gL * 0.25*(coords->J(i-1,j,k) + coords->J(i,j,k)) *(as(i-1,j,k) + as(i,j,k));
+        result(i,j,k)   -= flux / (coords->dx(i,j,k)*coords->J(i,j,k));
+        
+        
+        // Flow up
+        flux = gU * 0.5*(as(i,j,k) + as(i,j,kp)) / coords->dz;
+        result(i,j,k) += flux;
+
+	// Flow down
+        flux = gD * 0.5*(as(i,j,k) + as(i,j,km)) / coords->dz;
+        result(i,j,k) -= flux;
+      }
+
+  return result;
+}
+
+
 /*******************************************************************************
  * Poisson bracket
  * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
