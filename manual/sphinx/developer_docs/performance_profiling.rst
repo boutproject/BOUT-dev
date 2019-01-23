@@ -8,13 +8,12 @@ Performance profiling
 
 Analyzing code behaviour is vital for getting the best performance from BOUT++.
 This is done by profiling the code, that is, building and running the code 
-using tools that report the time each processor spends in functions, on 
-communications, etc.
+using tools that report the amount of time each processor spends in functions,
+on communications, etc.
 
 This section describes how to compile and run BOUT++ using the 
-[Scorep](http://www.vi-hps.org/projects/score-p/)/
-[Scalasca](http://www.scalasca.org/)
-tool chain.
+`Scorep <http://www.vi-hps.org/projects/score-p/>`_/
+`Scalasca <http://www.scalasca.org/>`_ tool chain.
 
 Scorep/Scalasca profiling
 -------------------------
@@ -26,6 +25,7 @@ desirable to profile the optimized code, configuring with the flags
 normal.
 
 When running the code, prepend the run command with ``scalasca -analyze``, e.g.
+
 .. code-block:: bash
 
     $ scalasca -analyze mpirun -np 2 elm_pb
@@ -33,11 +33,12 @@ When running the code, prepend the run command with ``scalasca -analyze``, e.g.
 The run then produces an "archive" containing profiling data in a directory
 called ``scorep_<exec_name>_<proc_info>_sum``.  To view the profiling 
 information with the cube viewer, do
+
 .. code-block:: bash
 
     $ cube scorep_<exec_name>_<proc_info>_sum/profile.cubex
 
-Note that Scorep does not run if does so would produce an archive with the 
+Note that Scorep does not run if doing so would produce an archive with the 
 same name as an existing archive. Therefore to rerun an executable on the same
 number of processors, it is necessary to move or delete the first archive.
 
