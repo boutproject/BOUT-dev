@@ -23,8 +23,8 @@ Instrumentation
 
 Scorep automatically reports the time spend in MPI communications and OpenMP
 loops. However, to obtain information on the time spent in specific functions,
-it is necessary to instrument the source. The tools to do this are provided in
-``scorepwrapper.hxx``.
+it is necessary to instrument the source code. The macros to do this are 
+provided in ``scorepwrapper.hxx``.
 
 To include a function in Scorep's timing, include the scorep wrapper in the 
 source code
@@ -47,8 +47,8 @@ result in misleading profiling information, particularly if
 fast-but-frequently-called functions are instrumented. Try to instrument 
 significant functions only.
 
-This warning notwithstanding, it is reasonable to expect sensibly-instrumented
-code to run ~50% to 100% slower than the uninstrumented code.
+This notwithstanding, it is reasonable to expect sensibly-instrumented code to
+run about 50% to 100% slower than the uninstrumented code.
 
 Configure and build
 ~~~~~~~~~~~~~~~~~~~
