@@ -308,7 +308,7 @@ DEFINE_UPWIND_DERIV(VDDX_WENO3, "W3", 2, DERIV::Upwind) { // No vec
     r = (WENO_SMALL + SQ(f.pp - 2.0 * f.p + f.c))
         / (WENO_SMALL + SQ(f.p - 2.0 * f.c + f.m));
 
-    deriv = (-f.m + 3. * f.c - 3. * f.p + f.pp);
+    deriv = -(-f.m + 3. * f.c - 3. * f.p + f.pp);
   }
 
   w = 1.0 / (1.0 + 2.0 * r * r);
