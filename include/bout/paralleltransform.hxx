@@ -151,9 +151,6 @@ private:
   /// where i goes from 0 to (n-1), with n the number of y guard cells
   std::vector<ParallelSlicePhase> parallel_slice_phases;
 
-  arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
-  arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
-
   /*!
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
