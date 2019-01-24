@@ -18,9 +18,17 @@ symmetricGlobalX = true
 ny = 1
 
 [mesh:ddx]
+first = C4
+second = C4
 upwind=c2
 
+[mesh:ddy]
+first = C4
+second = C4
+
 [mesh:ddz]
+first = C4
+second = C4
 upwind=c2
 
 [solver]
