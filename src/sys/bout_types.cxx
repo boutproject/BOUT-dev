@@ -47,7 +47,8 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
       {DIRECTION::Y, "Y"},
       {DIRECTION::Z, "Z"},
       {DIRECTION::YAligned, "Y - field aligned"},
-      {DIRECTION::YOrthogonal, "Y - orthogonal"}};
+      {DIRECTION::YOrthogonal, "Y - orthogonal"},
+      {DIRECTION::Special, "Special"}};
 
   return safeAt(DIRECTIONtoString, direction);
 }
