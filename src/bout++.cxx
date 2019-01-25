@@ -52,6 +52,7 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include <msg_stack.hxx>
 
 #include <bout/sys/timer.hxx>
+#include <bout/run_metrics.hxx>
 
 #include <boundary_factory.hxx>
 
@@ -83,7 +84,7 @@ void bout_signal_handler(int sig);  // Handles signals
 
 #include <output.hxx>
 
-BoutReal simtime;
+RunMetrics run_data;
 int iteration;
 bool user_requested_exit=false;
 
@@ -504,7 +505,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Add book-keeping variables to the output files
     dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
+    run_data.outputVars(dump);          // Add wall clock time etc to dump file
     dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
@@ -617,23 +618,20 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
-  simtime = t;
+  run_data.simtime = t;
   iteration = iter;
 
-  /// Write dump file
-  dump.write();
-
   /// Collect timing information
-  BoutReal wtime        = Timer::resetTime("run");
-  int ncalls            = solver->resetRHSCounter();
-  int ncalls_e		= solver->resetRHSCounter_e();
-  int ncalls_i		= solver->resetRHSCounter_i();
+  run_data.wtime        = Timer::resetTime("run");
+  run_data.ncalls       = solver->resetRHSCounter();
+  run_data.ncalls_e	= solver->resetRHSCounter_e();
+  run_data.ncalls_i	= solver->resetRHSCounter_i();
 
   bool output_split     = solver->splitOperator();
-  BoutReal wtime_rhs    = Timer::resetTime("rhs");
-  BoutReal wtime_invert = Timer::resetTime("invert");
-  BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
-  BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
+  run_data.wtime_rhs    = Timer::resetTime("rhs");
+  run_data.wtime_invert = Timer::resetTime("invert");
+  run_data.wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
+  run_data.wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
   output_progress.print("\r"); // Only goes to screen
 
@@ -656,7 +654,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     }
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime() - wtime;
+    mpi_start_time = MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
@@ -670,36 +668,23 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     }
   }
 
-  if (!output_split) {
-    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
-               simtime, ncalls, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-
-  } else {
-    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
-               simtime, ncalls_e, ncalls_i, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  }
+  run_data.writeProgress(output_split);
 
   // This bit only to screen, not log file
 
-  BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output_progress.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+  run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
+
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print(" ETA %s", (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+
+  /// Write dump file
+  dump.write();
 
   if (wall_limit > 0.0) {
     // Check if enough time left
 
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
-    if (t_remain < wtime) {
+    if (t_remain < run_data.wtime) {
       // Less than 1 time-step left
       output_warn.write(_("Only %e seconds left. Quitting\n"), t_remain);
 
