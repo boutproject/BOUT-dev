@@ -28,7 +28,6 @@
  * Adds variables to the output file, for post-processing
  */
 void RunMetrics::outputVars(Datafile &file) {
-  file.add(simtime, "t_array", true);
   file.add(t_elapsed, "wall_time", true);
   file.add(wtime, "wtime", true);
   file.add(ncalls, "ncalls", true);
@@ -40,7 +39,7 @@ void RunMetrics::outputVars(Datafile &file) {
   file.add(wtime_io, "wtime_io", true);
 }
 
-void RunMetrics::writeProgress(bool output_split) {
+void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
 
   if (!output_split) {
     output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 

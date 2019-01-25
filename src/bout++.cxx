@@ -84,6 +84,7 @@ void bout_signal_handler(int sig);  // Handles signals
 
 #include <output.hxx>
 
+BoutReal simtime;
 RunMetrics run_data;
 int iteration;
 bool user_requested_exit=false;
@@ -505,6 +506,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Add book-keeping variables to the output files
     dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
     run_data.outputVars(dump);          // Add wall clock time etc to dump file
     dump.add(iteration, "iteration", false);
 
@@ -618,7 +620,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
-  run_data.simtime = t;
+  simtime = t;
   iteration = iter;
 
   /// Collect timing information
@@ -668,7 +670,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     }
   }
 
-  run_data.writeProgress(output_split);
+  run_data.writeProgress(simtime, output_split);
 
   // This bit only to screen, not log file
 

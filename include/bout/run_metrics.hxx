@@ -35,8 +35,6 @@
 
 class RunMetrics {
   public:
-  /// cumulative simulation time
-  BoutReal simtime;
   /// cumulative wall clock time in seconds
   BoutReal t_elapsed;
   /// time step's wall clock time in seconds
@@ -66,7 +64,7 @@ class RunMetrics {
   /*!
    * Write job progress to screen 
    */
-  void writeProgress(bool output_split);
+  void writeProgress(BoutReal simtime, bool output_split);
 
 };
 
