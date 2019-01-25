@@ -1,6 +1,7 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 #include <map>
 
 template <typename T>
@@ -73,4 +74,89 @@ const std::string& DERIV_STRING(DERIV deriv) {
       {DERIV::Flux, "Flux"}};
 
   return safeAt(DERIVtoString, deriv);
+}
+
+bool isXDirectionType(DIRECTION x) {
+  switch (x) {
+  case (DIRECTION::X):
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool isYDirectionType(DIRECTION y) {
+  switch (y) {
+  case (DIRECTION::Y):
+  case (DIRECTION::YAligned):
+  case (DIRECTION::YOrthogonal):
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool isZDirectionType(DIRECTION z) {
+  switch (z) {
+  case (DIRECTION::Z):
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool compatibleDirections(DIRECTION d1, DIRECTION d2) {
+  switch (d1) {
+  case (DIRECTION::X): {
+    switch (d2) {
+    case (DIRECTION::X):
+    case (DIRECTION::Special):
+      return true;
+    default:
+      return false;
+    }
+  }
+  case (DIRECTION::Y):
+    switch (d2) {
+    case (DIRECTION::Y):
+    case (DIRECTION::YAligned):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::Special):
+      return true;
+    default:
+      return false;
+    }
+  case (DIRECTION::YAligned):
+    switch (d2) {
+    case (DIRECTION::Y):
+    case (DIRECTION::YAligned):
+    case (DIRECTION::Special):
+      return true;
+    default:
+      return false;
+    }
+  case (DIRECTION::YOrthogonal):
+    switch (d2) {
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::Special):
+      return true;
+    default:
+      return false;
+    }
+  case (DIRECTION::Z):
+    switch (d2) {
+    case (DIRECTION::Z):
+    case (DIRECTION::Special):
+      return true;
+    default:
+      return false;
+    }
+  case (DIRECTION::Special):
+    return true;
+  default:
+    // Shouldn't reach this due to checks at start but in case
+    // of future changes good to handle here.
+    throw BoutException("Invalid y direction value");
+  }
 }

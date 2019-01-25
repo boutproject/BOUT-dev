@@ -121,6 +121,22 @@ class Field {
    */
   virtual int getNz() const;
 
+  friend bool fieldsCompatible(const Field& field1, const Field& field2) {
+    return
+        // The following is a possible alternative to
+        // checking the two meshes and location are the same
+        // It is slightly stricter if we decide that coordinates
+        // could differ in more than just location.
+        field1.getCoordinates() == field2.getCoordinates() &&
+        // In the unit tests fieldCoordinates get set to nullptr, so we still
+        // need to check fieldmesh and location, at least for now
+        field1.getMesh() == field2.getMesh() &&
+        field1.getLocation() == field2.getLocation() &&
+        // Compatible directions
+        compatibleDirections(field1.xDirectionType, field2.xDirectionType)
+        && compatibleDirections(field1.yDirectionType, field2.yDirectionType)
+        && compatibleDirections(field1.zDirectionType, field2.zDirectionType);
+  }
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};

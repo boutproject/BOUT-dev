@@ -77,4 +77,9 @@ struct enumWrapper {
 /// Boundary condition function
 using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
+bool compatibleDirections(DIRECTION d1, DIRECTION d2);
+bool isXDirectionType(DIRECTION x);
+bool isYDirectionType(DIRECTION y);
+bool isZDirectionType(DIRECTION z);
+
 #endif // __BOUT_TYPES_H__
