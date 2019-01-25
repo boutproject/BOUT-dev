@@ -32,6 +32,8 @@
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>
 
+#include <vector>
+
 /*!
  * Field line map - contains the coefficients for interpolation
  */
@@ -40,24 +42,21 @@ class FCIMap {
   Interpolation *interp;        // Cell centre
   Interpolation *interp_corner; // Cell corner at (x+1, z+1)
 
-  /// Private constructor - must be initialised with mesh
-  FCIMap();
 public:
-  /// dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool zperiodic);
+  FCIMap() = delete;
+  FCIMap(Mesh& mesh, int offset, BoundaryRegionPar* boundary, bool zperiodic);
 
-  int dir;                     /**< Direction of map */
+  /// Direction of map
+  const int offset;
 
   BoutMask boundary_mask;      /**< boundary mask - has the field line left the domain */
   BoutMask corner_boundary_mask; ///< If any of the integration area has left the domain
   
   Field3D y_prime;             /**< distance to intersection with boundary */
 
-  BoundaryRegionPar* boundary; /**< boundary region */
+  Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
 
-  const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
-
-  const Field3D integrate(Field3D &f) const;
+  Field3D integrate(Field3D &f) const;
 };
 
 /*!
@@ -65,9 +64,21 @@ public:
  */
 class FCITransform : public ParallelTransform {
 public:
-  FCITransform(Mesh &mesh, bool zperiodic = true)
-      : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
-        zperiodic(zperiodic) {}
+  FCITransform() = delete;
+  FCITransform(Mesh& mesh, bool zperiodic = true) : mesh(mesh), zperiodic(zperiodic) {
+    auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
+    auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
+
+    // Add the boundary region to the mesh's vector of parallel boundaries
+    mesh.addBoundaryPar(forward_boundary);
+    mesh.addBoundaryPar(backward_boundary);
+
+    field_line_maps.reserve(mesh.ystart * 2);
+    for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
+      field_line_maps.emplace_back(mesh, offset, forward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, -offset, backward_boundary, zperiodic);
+    }
+  }
 
   void calcYUpDown(Field3D &f) override;
   
@@ -85,14 +96,13 @@ public:
     return false;
   }
 private:
-  FCITransform();
-
   Mesh& mesh;
 
-  FCIMap forward_map;           /**< FCI map for field lines in +ve y */
-  FCIMap backward_map;          /**< FCI map for field lines in -ve y */
+  /// FCI maps for field lines in +ve y
+  std::vector<FCIMap> field_line_maps;
 
-  bool zperiodic;               /**< Is the z-direction periodic? */
+  /// Is the z-direction periodic?
+  bool zperiodic;
 };
 
 #endif // __FCITRANSFORM_H__
