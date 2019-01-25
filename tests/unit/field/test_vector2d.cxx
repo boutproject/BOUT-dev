@@ -36,7 +36,7 @@ protected:
     mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
-    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+    static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
@@ -49,7 +49,7 @@ protected:
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
     output_info.disable();
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     mesh_staggered->createDefaultRegions();
   }
 
