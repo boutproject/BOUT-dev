@@ -235,7 +235,7 @@ class Field3D : public Field, public FieldData {
 
   /// Return reference to yup field
   Field3D &yup(std::vector<Field3D>::size_type index = 0) {
-    ASSERT2(index < yup_fields.size()); // Check for communicate
+    ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
   /// Return const reference to yup field
@@ -256,9 +256,11 @@ class Field3D : public Field, public FieldData {
     return ydown_fields[index];
   }
 
-  /// Return yup if dir=+1, and ydown if dir=-1
-  Field3D& ynext(int dir);
-  const Field3D& ynext(int dir) const;
+  /// Return the parallel slice at \p offset
+  ///
+  /// \p offset of 0 returns the main field itself
+  Field3D& ynext(int offset);
+  const Field3D& ynext(int offset) const;
 
   /// Set variable location for staggered grids to @param new_location
   ///
