@@ -65,7 +65,8 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, bool zperiodic = true) : mesh(mesh), zperiodic(zperiodic) {
+  FCITransform(Mesh& mesh, bool zperiodic = true) {
+
     auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
     auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
 
@@ -96,13 +97,8 @@ public:
     return false;
   }
 private:
-  Mesh& mesh;
-
   /// FCI maps for field lines in +ve y
   std::vector<FCIMap> field_line_maps;
-
-  /// Is the z-direction periodic?
-  bool zperiodic;
 };
 
 #endif // __FCITRANSFORM_H__

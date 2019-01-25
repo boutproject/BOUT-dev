@@ -58,6 +58,8 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperiodic)
   : offset(offset_), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
 
+  TRACE("Creating FCIMAP for direction %d", offset);
+
   if (offset == 0) {
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
@@ -67,7 +69,7 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 
   interp_corner = InterpolationFactory::getInstance()->create(&mesh);
   interp_corner->setYOffset(offset);
-  
+
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
   auto i_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
@@ -91,10 +93,26 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     return direction + "_" + field + slice_suffix;
   };
 
-  mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false);
-  mesh.get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false);
-  mesh.get(R_prime, parallel_slice_field_name("R"), 0.0, false);
-  mesh.get(Z_prime, parallel_slice_field_name("Z"), 0.0, false);
+  if (mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("xt_prime").c_str());
+  }
+  if (mesh.get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("zt_prime").c_str());
+  }
+  if (mesh.get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("R").c_str());
+  }
+  if (mesh.get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("Z").c_str());
+  }
 
   // Cell corners
   Field3D xt_prime_corner(&mesh), zt_prime_corner(&mesh);
@@ -110,12 +128,12 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
             (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
           // Hit a boundary
           corner_boundary_mask(x, y, z) = true;
-          
+
           xt_prime_corner(x, y, z) = -1.0;
           zt_prime_corner(x, y, z) = -1.0;
           continue;
         }
-        
+
         xt_prime_corner(x, y, z) =
             0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
                     xt_prime(x + 1, y, z + 1));
@@ -126,12 +144,12 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
       }
     }
   }
-  
+
   interp_corner->setMask(corner_boundary_mask);
   interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  
+
   interp->calcWeights(xt_prime, zt_prime);
-  
+
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
@@ -212,7 +230,7 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z, 
+          boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
                               0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
                               PI   // Right-angle intersection
@@ -236,10 +254,10 @@ FCIMap::FCIMap(Mesh &mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
-  
+
   // Cell centre values
   Field3D centre = interp->interpolate(f);
-  
+
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
@@ -248,23 +266,23 @@ Field3D FCIMap::integrate(Field3D &f) const {
   result.setLocation(f.getLocation());
 
   int nz = mesh->LocalNz;
-  
+
   for(int x = mesh->xstart; x <= mesh->xend; x++) {
     for(int y = mesh->ystart; y <= mesh->yend; y++) {
-      
+
       int ynext = y+offset;
-      
+
       for(int z = 0; z < nz; z++) {
         if (boundary_mask(x,y,z))
           continue;
-        
+
         int zm = z - 1;
         if (z == 0) {
           zm = nz-1;
         }
-        
+
         BoutReal f_c  = centre(x,ynext,z);
-        
+
         if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
             corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm) ||
             (x == mesh->xstart)) {
