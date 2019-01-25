@@ -152,7 +152,8 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
 
 
 def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
-               new_names=False, metric2d=True, format="NETCDF3_64BIT"):
+               new_names=False, metric2d=True, format="NETCDF3_64BIT",
+               quiet=False):
     """Write FCI maps to BOUT++ grid file
 
     Parameters
@@ -169,8 +170,10 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         Write "g_yy" rather than "g_22"
     metric2d : bool, optional
         Output only 2D metrics
-    format : str
+    format : str, optional
         Specifies file format to use, passed to boutdata.DataFile
+    quiet : bool, optional
+        Don't warn about 2D metrics
 
     Returns
     -------
@@ -186,14 +189,14 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
     # Check if the magnetic field is in cylindrical coordinates
     # If so, we need to change the gyy and g_yy metrics
-    pol_grid,ypos = grid.getPoloidalGrid(0)
+    pol_grid, ypos = grid.getPoloidalGrid(0)
     Rmaj = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
     if Rmaj is not None:
         # In cylindrical coordinates
         Rmaj = np.zeros(grid.shape)
         for yindex in range(grid.numberOfPoloidalGrids()):
-            pol_grid,ypos = grid.getPoloidalGrid(yindex)
-            Rmaj[:,yindex,:] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
+            pol_grid, ypos = grid.getPoloidalGrid(yindex)
+            Rmaj[:, yindex, :] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
         metric["gyy"] = 1./Rmaj**2
         metric["g_yy"] = Rmaj**2
 
@@ -201,9 +204,9 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
     Bmag = np.zeros(grid.shape)
     pressure = np.zeros(grid.shape)
     for yindex in range(grid.numberOfPoloidalGrids()):
-        pol_grid,ypos = grid.getPoloidalGrid(yindex)
-        Bmag[:,yindex,:] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
-        pressure[:,yindex,:] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
+        pol_grid, ypos = grid.getPoloidalGrid(yindex)
+        Bmag[:, yindex, :] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
+        pressure[:, yindex, :] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
 
     # Get attributes from magnetic field (e.g. psi)
     attributes = {}
@@ -211,23 +214,24 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         attribute = np.zeros(grid.shape)
         for yindex in range(grid.numberOfPoloidalGrids()):
             pol_grid, ypos = grid.getPoloidalGrid(yindex)
-            attribute[:,yindex,:] = magnetic_field.attributes[name](pol_grid.R, pol_grid.Z, ypos)
+            attribute[:, yindex, :] = magnetic_field.attributes[name](pol_grid.R, pol_grid.Z, ypos)
             attributes[name] = attribute
 
     # Metric is now 3D
     if metric2d:
         # Remove the Z dimension from metric components
-        print("WARNING: Outputting 2D metrics, discarding metric information.")
+        if not quiet:
+            print("WARNING: Outputting 2D metrics, discarding metric information.")
         for key in metric:
             try:
-                metric[key] = metric[key][:,:,0]
-            except:
+                metric[key] = metric[key][:, :, 0]
+            except TypeError:
                 pass
         # Make dz a constant
-        metric["dz"] = metric["dz"][0,0]
+        metric["dz"] = metric["dz"][0, 0]
         # Add Rxy, Bxy
-        metric["Rxy"] = maps["R"][:,:,0]
-        metric["Bxy"] = Bmag[:,:,0]
+        metric["Rxy"] = maps["R"][:, :, 0]
+        metric["Bxy"] = Bmag[:, :, 0]
 
     with bdata.DataFile(gridfile, write=True, create=True, format=format) as f:
         ixseps = nx+1
@@ -239,8 +243,8 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         f.write("dy", metric["dy"])
         f.write("dz", metric["dz"])
 
-        f.write("ixseps1",ixseps)
-        f.write("ixseps2",ixseps)
+        f.write("ixseps1", ixseps)
+        f.write("ixseps2", ixseps)
 
         # Metric tensor
 
@@ -251,14 +255,14 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
             # Translate between output variable names and metric names
             # Map from new to old names. Anything not in this dict
             # is output unchanged
-            name_changes = {"g_yy":"g_22",
-                            "gyy":"g22",
-                            "gxx":"g11",
-                            "gxz":"g13",
-                            "gzz":"g33",
-                            "g_xx":"g_11",
-                            "g_xz":"g_13",
-                            "g_zz":"g_33"}
+            name_changes = {"g_yy": "g_22",
+                            "gyy": "g22",
+                            "gxx": "g11",
+                            "gxz": "g13",
+                            "gzz": "g33",
+                            "g_xx": "g_11",
+                            "g_xz": "g_13",
+                            "g_zz": "g_33"}
             for key in metric:
                 name = key
                 if name in name_changes:
