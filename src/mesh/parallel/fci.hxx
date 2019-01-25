@@ -32,36 +32,41 @@
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>
 
+#include <memory>
 #include <vector>
 
-/*!
- * Field line map - contains the coefficients for interpolation
- */
+
+/// Field line map - contains the coefficients for interpolation
 class FCIMap {
-  /// Interpolation object
-  Interpolation *interp;        // Cell centre
-  Interpolation *interp_corner; // Cell corner at (x+1, z+1)
+  /// Interpolation objects
+  std::unique_ptr<Interpolation> interp;        // Cell centre
+  std::unique_ptr<Interpolation> interp_corner; // Cell corner at (x+1, z+1)
 
 public:
   FCIMap() = delete;
   FCIMap(Mesh& mesh, int offset, BoundaryRegionPar* boundary, bool zperiodic);
 
+  // The mesh this map was created on
+  Mesh& map_mesh;
+
   /// Direction of map
   const int offset;
 
-  BoutMask boundary_mask;      /**< boundary mask - has the field line left the domain */
-  BoutMask corner_boundary_mask; ///< If any of the integration area has left the domain
+  /// boundary mask - has the field line left the domain
+  BoutMask boundary_mask;
+  /// If any of the integration area has left the domain
+  BoutMask corner_boundary_mask;
   
-  Field3D y_prime;             /**< distance to intersection with boundary */
-
-  Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
+  Field3D interpolate(Field3D& f) const {
+    ASSERT3(&map_mesh == f.getMesh());
+    return interp->interpolate(f);
+  }
 
   Field3D integrate(Field3D &f) const;
 };
 
-/*!
- * Flux Coordinate Independent method for parallel derivatives
- */
+
+/// Flux Coordinate Independent method for parallel derivatives
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
@@ -93,11 +98,10 @@ public:
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  bool canToFromFieldAligned() override{
-    return false;
-  }
+  bool canToFromFieldAligned() override { return false; }
+
 private:
-  /// FCI maps for field lines in +ve y
+  /// FCI maps for each of the parallel slices
   std::vector<FCIMap> field_line_maps;
 };
 
