@@ -27,8 +27,6 @@
 /// The `Run Metrics` class holds non-physics information about the job execution,
 /// such as wall clock times and number of iterations.
 
-class RunMetrics;
-
 #ifndef __RUNMETRICS_H__
 #define __RUNMETRICS_H__
 
