@@ -37,18 +37,28 @@ class RunMetrics;
 
 class RunMetrics {
   public:
-  BoutReal simtime;      // cumulative simulation time
-  BoutReal t_elapsed;    // cumulative wall clock time in seconds
-  BoutReal wtime;        // time step's wall clock time in seconds
+  /// cumulative simulation time
+  BoutReal simtime;
+  /// cumulative wall clock time in seconds
+  BoutReal t_elapsed;
+  /// time step's wall clock time in seconds
+  BoutReal wtime;
 
-  int ncalls;            // number of RHS calls
-  int ncalls_e;          // number of RHS calls for fast timescale
-  int ncalls_i;          // number of RHS calls for slow timescale
+  /// number of RHS calls
+  int ncalls;
+  /// number of RHS calls for fast timescale
+  int ncalls_e;
+  /// number of RHS calls for slow timescale
+  int ncalls_i;
 
-  BoutReal wtime_rhs;    // wall time spent calculating RHS
-  BoutReal wtime_invert; // wall time spent inverting Laplacian
-  BoutReal wtime_comms;  // wall time spent communicating (part of RHS)
-  BoutReal wtime_io;     // wall time spent on I/O
+  /// wall time spent calculating RHS
+  BoutReal wtime_rhs;
+  /// wall time spent inverting Laplacian
+  BoutReal wtime_invert;
+  /// wall time spent communicating (part of RHS)
+  BoutReal wtime_comms;
+  /// wall time spent on I/O
+  BoutReal wtime_io;
 
   /*!
    * Adds variables to the output file, for post-processing
