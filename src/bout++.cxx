@@ -635,6 +635,8 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   run_data.wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
   run_data.wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
+  run_data.calculateDerivedMetrics();
+
   output_progress.print("\r"); // Only goes to screen
 
   if (first_time) {

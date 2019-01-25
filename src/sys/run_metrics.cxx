@@ -28,6 +28,7 @@
  * Adds variables to the output file, for post-processing
  */
 void RunMetrics::outputVars(Datafile &file) {
+
   file.add(t_elapsed, "wall_time", true);
   file.add(wtime, "wtime", true);
   file.add(ncalls, "ncalls", true);
@@ -37,6 +38,16 @@ void RunMetrics::outputVars(Datafile &file) {
   file.add(wtime_invert, "wtime_invert", true);
   file.add(wtime_comms, "wtime_comms", true);
   file.add(wtime_io, "wtime_io", true);
+  file.add(wtime_per_rhs, "wtime_per_rhs", true);
+  file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
+  file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
+}
+
+void RunMetrics::calculateDerivedMetrics() {
+
+  wtime_per_rhs = wtime / ncalls;
+  wtime_per_rhs_e = wtime / ncalls_e;
+  wtime_per_rhs_i = wtime / ncalls_i;
 }
 
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {

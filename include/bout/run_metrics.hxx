@@ -56,10 +56,24 @@ class RunMetrics {
   /// wall time spent on I/O
   BoutReal wtime_io;
 
+  // Derived metrics
+
+  /// wall time per RHS evaluation
+  BoutReal wtime_per_rhs;
+  /// wall time per fast timescale RHS evaluation
+  BoutReal wtime_per_rhs_e;
+  /// wall time per slow timescale RHS evaluation
+  BoutReal wtime_per_rhs_i;
+
   /*!
    * Adds variables to the output file, for post-processing
    */
   void outputVars(Datafile &file);
+
+  /*!
+   * Calculates derived metrics
+   */
+  void calculateDerivedMetrics();
 
   /*!
    * Write job progress to screen 
