@@ -30,7 +30,9 @@
 #ifndef __RUNMETRICS_H__
 #define __RUNMETRICS_H__
 
-#include "datafile.hxx"
+
+class Datafile;
+#include "bout_types.hxx"
 
 
 class RunMetrics {
