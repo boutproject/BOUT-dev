@@ -284,7 +284,9 @@ TEST_F(Field3DTest, Ynext) {
   EXPECT_NE(&field, &ydown);
   EXPECT_NE(&yup, &ydown);
 
+#if CHECK > 0
   EXPECT_THROW(field.ynext(99), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, ConstYnext) {
@@ -300,7 +302,9 @@ TEST_F(Field3DTest, ConstYnext) {
   EXPECT_NE(&field2, &ydown);
   EXPECT_NE(&yup, &ydown);
 
+#if CHECK > 0
   EXPECT_THROW(field2.ynext(99), BoutException);
+#endif
 }
 
 TEST_F(Field3DTest, GetGlobalMesh) {
