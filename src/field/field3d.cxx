@@ -135,6 +135,13 @@ Field3D* Field3D::timeDeriv() {
 void Field3D::splitYupYdown() {
   TRACE("Field3D::splitYupYdown");
   
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
+
   if (!yup_fields.empty()) {
     return;
   }
@@ -148,6 +155,13 @@ void Field3D::splitYupYdown() {
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
 
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::mergeYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
+
   if (yup_fields.empty() && ydown_fields.empty()) {
     return;
   }
@@ -157,12 +171,14 @@ void Field3D::mergeYupYdown() {
 }
 
 const Field3D& Field3D::ynext(int dir) const {
+#if CHECK > 0
   // Asked for more than yguards
   if (std::abs(dir) > fieldmesh->ystart) {
     throw BoutException(
         "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
         fieldmesh->ystart);
   }
+#endif
 
   // ynext uses 1-indexing, but yup wants 0-indexing
   if (dir > 0) {
