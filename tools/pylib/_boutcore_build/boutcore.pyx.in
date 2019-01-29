@@ -28,7 +28,9 @@ do
     fi
 done
 
-# needed sometimes to add include dir ...
+# needed sometimes to add include dir
+# We need the header files for numpy, which are (hopefully) somewhere
+# in the python directories.
 python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
 numpyheader=$(for d in $python_dirs
               do
@@ -65,37 +67,13 @@ cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
 EOF
 
-# make a list of the format "nx, ny, nz" or something similar
-# 'n$d' gets expaneded to "nx, ny, nz"
-# 'f[$i]' to "f[0], f[1], f[2]"
-# NB: use single ticks to prevent to early expansion
-makelist () {
-    format="$1"
-    test $# -gt 1 &&
-	spacing="$2" || spacing=", "
-    start="" ; i=0
-    for d in ${dims[@]} ; do
-	echo -n "$start" ;
-	eval echo -n "\"$format\""
-	start="$spacing" ; i=$(( i + 1 ))
-    done ; }
+# Include list of fields, and some functions
 
 . common.sh
 
-for ftype in "Field3D" "Field2D"
+for ftype in $fields
 do
-  if [ $ftype = "Field3D" ]; then
-    fdd="f3d"
-    ndim=3
-    dims=(x y z)
-  elif [ $ftype = "Field2D" ]; then
-    fdd="f2d"
-    ndim=2
-    dims=(x y)
-  else
-    echo "Error, unimplemented ftype"
-    exit 1
-  fi
+    setvars $ftype
 cat <<EOF
 
 cdef extern from "helper.h":
