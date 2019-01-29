@@ -1157,7 +1157,9 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_ = method.encode('ascii')
     cdef benum.REGION region_=benum.resolve_region(region)
     return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
 EOF
@@ -1205,7 +1207,9 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_=method.encode('ascii')
     return ${rdd}FromObj(c.$DD($in2,outloc_,method_))
 EOF
 }
