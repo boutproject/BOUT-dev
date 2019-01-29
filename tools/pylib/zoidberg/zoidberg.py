@@ -88,7 +88,7 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
     }
 
     # A helper data structure that groups the various field line maps along with the offset
-    ParallelSlice = namedtuple('ParallelSlice', ['R', 'Z', 'xt_prime', 'zt_prime', 'offset'])
+    ParallelSlice = namedtuple('ParallelSlice', ['offset', 'R', 'Z', 'xt_prime', 'zt_prime'])
     # A list of the above data structures for each offset we want
     parallel_slices = []
 
@@ -104,7 +104,7 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
 
         # Get the field arrays we just made and wrap them up in our helper tuple
         fields = map(lambda x: maps[x], field_names)
-        parallel_slices.append(ParallelSlice(*fields, offset))
+        parallel_slices.append(ParallelSlice(offset, *fields))
 
     # Total size of the progress bar
     total_work = float((len(parallel_slices) - 1) * (ny-1))
