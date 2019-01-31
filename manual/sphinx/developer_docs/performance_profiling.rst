@@ -47,8 +47,8 @@ result in misleading profiling information, particularly if
 fast-but-frequently-called functions are instrumented. Try to instrument 
 significant functions only.
 
-This notwithstanding, it is reasonable to expect sensibly-instrumented code to
-run about 50% to 100% slower than the uninstrumented code.
+The profiling overhead in sensibly-instrumented code should be only a few
+percent of runtime.
 
 Configure and build
 ~~~~~~~~~~~~~~~~~~~
