@@ -80,13 +80,13 @@ number of processors, it is necessary to move or delete the first archive.
 .. _sec-machine-specific:
 
 Machine-specific installation
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These are some configurations which have been found to work on
 particular machines.
 
 Archer
-~~~~~~
+^^^^^^
 
 As of 23rd January 2019, the following configuration should work
 
