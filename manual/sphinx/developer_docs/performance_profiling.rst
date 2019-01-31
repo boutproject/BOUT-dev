@@ -59,6 +59,9 @@ desirable to profile the optimized code, configuring with the flags
 ``--enable-optimize=3 --enable-checks=0``. Build the code with ``make`` as
 normal.
 
+Running
+~~~~~~~
+
 When running the code, prepend the run command with ``scalasca -analyze``, e.g.
 
 .. code-block:: bash
@@ -76,8 +79,6 @@ information with the cube viewer, do
 Note that Scorep does not run if doing so would produce an archive with the 
 same name as an existing archive. Therefore to rerun an executable on the same
 number of processors, it is necessary to move or delete the first archive.
-
-.. _sec-machine-specific:
 
 Machine-specific installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,5 +104,56 @@ Note that due to a bug in the ``CC`` compiler, it is necessary to modify
 * add the flag ``-fopenmp`` to ``BOUT_FLAGS``
 * add the flag ``--thread=omp:ancestry`` as an argument to ``scorep`` in ``CXX`` 
 
+
+Extrae/Paraver profiling
+------------------------
+
+[Extrae](https://tools.bsc.es/extrae) is a powerful tool allowing visualization
+of commumication and computation in parallel codes. It requires minimal 
+instrumentation; however the trace files produced can be extremely large. 
+
+Instrumentation, configure and build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+No changes to the code are necessary. On some systems, environment variables
+must be set before building.  Otherwise, compile and build as normal.
+
+Running
+~~~~~~~
+
+To run, add a trace script into the normal run command, so that for example
+
+.. code-block:: bash
+
+    $ aprun -n 16 blob2d -d delta_1
+
+becomes
+
+.. code-block:: bash
+
+    $ aprun -n 16 ./trace.sh blob2d -d delta_1
+
+where ``trace.sh`` is the script file
+
+.. code-block:: bash
+
+    #!/bin/bash
+
+    export EXTRAE_CONFIG_FILE=./extrae.xml
+    export LD_PRELOAD=${EXTRAE_HOME}/lib/libmpitrace.so
+
+    $*
+
+The run directory must also contain the file ``extrae.xml``, which configures
+which data Extrae collects. Example ``extrae.xml`` files may be found in
+``${EXTRAE_HOME}/share/example/*/extrae.xml``
+
+Running produces a file called ``TRACE.mpits``. To generate the ``.prv`` trace
+file that can be read by Paraver, do
+
+.. code-block:: bash
+
+    TRACE_NAME=bout.prv
+    ${EXTRAE_HOME}/bin/mpi2prv -f ${EXTRAE_WORK_DIR}/TRACE.mpits -o ${TRACE_NAME}
 
 
