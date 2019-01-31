@@ -108,7 +108,7 @@ Note that due to a bug in the ``CC`` compiler, it is necessary to modify
 Extrae/Paraver profiling
 ------------------------
 
-[Extrae](https://tools.bsc.es/extrae) is a powerful tool allowing visualization
+`Extrae <https://tools.bsc.es/extrae/>`_ is a powerful tool allowing visualization
 of commumication and computation in parallel codes. It requires minimal 
 instrumentation; however the trace files produced can be extremely large. 
 
