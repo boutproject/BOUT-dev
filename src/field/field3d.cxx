@@ -62,10 +62,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
-#if CHECK > 2
-  checkData(f);
-#endif
-
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -269,9 +265,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
     return(*this); // skip this assignment
 
   TRACE("Field3D: Assignment from Field3D");
-  
-  /// Check that the data is valid
-  checkData(rhs);
   
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;

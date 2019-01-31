@@ -107,8 +107,6 @@ FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
     return (*this); // skip this assignment
   }
 
-  checkData(rhs);
-
   nx = rhs.nx;
   nz = rhs.nz;
   yindex = rhs.yindex;
