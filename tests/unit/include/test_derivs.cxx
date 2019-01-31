@@ -13,6 +13,22 @@
 #include <tuple>
 #include <vector>
 
+// Some basic sanity checks for the derivative kernels. Checks the
+// derivatives of sin(R) where R = {X, Y, Z} for each R
+// individually. To make this as fast as possible, we use only a
+// couple of points in the non-tested directions -- not just one
+// though, as this allows us to check we're not introducing spurious
+// variation in the other directions.
+//
+// This is one of the more complicated uses of googletest! We need to
+// all combinations of methods and directions. Unfortunately, Z has
+// one more method than X and Y -- FFT. This means we can't just use
+// the provided `Combine` to produce the Cartesian product of
+// directions and methods as the latter depends on the
+// former. Instead, we instantiate the tests separately for each
+// direction and test all the methods for that direction in that
+// instantiation.
+
 namespace {
 // These are merely sanity checks, so don't expect them to agree very well!
 constexpr BoutReal derivatives_tolerance{1.e-2};
@@ -42,6 +58,8 @@ public:
     constexpr int grid_size{64};
     const BoutReal box_length{TWOPI / grid_size};
 
+    // Set all the variables for this direction
+    // In C++14 this can be the more explicit std::get<DIRECTION>()
     switch (std::get<0>(GetParam())) {
     case DIRECTION::X:
       nx = grid_size;
@@ -80,37 +98,23 @@ public:
     mesh->createDefaultRegions();
     output_info.enable();
 
-    Field3D input_{mesh};
-    input_.allocate();
+    // Make the input and expected output fields
+    // Weird `(i.*dir)()` syntax here in order to call the direction method
+    // C++17 makes this nicer with std::invoke
+    input = makeField<Field3D>([&](Index& i) { return std::sin((i.*dir)() * box_length); }, mesh);
 
-    for (auto i : input_) {
-      input_[i] = std::sin((i.*dir)() * box_length);
-    }
+    first_order_expected = makeField<Field3D>(
+        [&](Index& i) { return std::cos((i.*dir)() * box_length) * box_length; }, mesh);
 
-    input = input_;
+    second_order_expected = makeField<Field3D>(
+        [&](Index& i) { return -std::sin((i.*dir)() * box_length) * pow(box_length, 2); },
+        mesh);
 
     // We need the parallel slices for the y-direction
     ParallelTransformIdentity identity{};
     identity.calcYUpDown(input);
 
-    Field3D first_order_expected_{mesh};
-    first_order_expected_.allocate();
-
-    for (auto i : first_order_expected_) {
-      first_order_expected_[i] = std::cos((i.*dir)() * box_length) * box_length;
-    }
-
-    first_order_expected = first_order_expected_;
-
-    Field3D second_order_expected_{mesh};
-    second_order_expected_.allocate();
-
-    for (auto i : second_order_expected_) {
-      second_order_expected_[i] = -std::sin((i.*dir)() * box_length) * pow(box_length, 2);
-    }
-
-    second_order_expected = second_order_expected_;
-
+    // FIXME: remove when defaults are set in the DerivativeStore ctor
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
   };
 
@@ -153,6 +157,7 @@ auto methodDirectionPairToString(
   return std::get<1>(param.param);
 }
 
+// Use an alias to distinguish the first and second derivative tests
 using FirstDerivatives = DerivativesTest;
 
 // Instantiate the test for X, Y, Z for first derivatives
@@ -184,6 +189,7 @@ TEST_P(FirstDerivatives, FirstOrder) {
                                     derivatives_tolerance));
 }
 
+// Use an alias to distinguish the first and second derivative tests
 using SecondDerivatives = DerivativesTest;
 
 // Instantiate the test for X, Y, Z for second derivatives
