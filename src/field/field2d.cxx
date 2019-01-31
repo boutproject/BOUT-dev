@@ -64,6 +64,10 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
   name = f.name;
 #endif
 
+#if CHECK > 2
+  checkData(f);
+#endif
+
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -166,6 +170,8 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
     return (*this); // skip this assignment
 
   TRACE("Field2D: Assignment from Field2D");
+
+  checkData(rhs);
 
 #ifdef TRACK
   name = rhs.name;
