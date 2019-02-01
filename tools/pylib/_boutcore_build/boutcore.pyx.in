@@ -80,6 +80,8 @@ makelist () {
 	start="$spacing" ; i=$(( i + 1 ))
     done ; }
 
+. common.sh
+
 for ftype in "Field3D" "Field2D"
 do
   if [ $ftype = "Field3D" ]; then
@@ -622,7 +624,55 @@ cat <<EOF
             self.cobj=NULL
 EOF
 done
+
+
+for vec in $vecs
+do
+    setvars $vec
+    cat <<EOF
+
+cdef extern from "helper.h":
+    c.$field c_mul_${vec}_${vec}(c.$vec *, c.$vec *) except +
+
+cdef class $vec:
+    """
+    $vec class
+
+    A vector of $field
+    """
+    cdef c.$vec * cobj
+EOF
+    for d in x y z
+    do
+        cat <<EOF
+    @property
+    def $d(self):
+        """
+        The $field in $d direction
+        """
+        return ${fdd}FromObj(self.cobj.$d)
+
+EOF
+    done
+    cat <<EOF
+    def __mul__(self, rhs):
+        if isinstance(rhs, $vec) and isinstance(self,$vec):
+            return ${fdd}FromObj(c_mul_${vec}_${vec}((<$vec?>self).cobj, (<$vec?>rhs).cobj))
+        else:
+            raise NotImplementedError("unexpected argument type '"+
+                                      str(type(self))+"' and '"+str(type(rhs))+
+                                      "' - not supported (yet?).")
+
+cdef $vec ${vdd}FromObj(c.$vec i):
+    v=$vec()
+    v.cobj = new c.$vec(<const c.$vec & ?> i)
+    return v
+EOF
+done
+
+
 cat <<EOF
+
 
 cdef extern from "helper.h":
     c.Mesh * c_get_global_mesh()
@@ -1184,13 +1234,13 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
 
     Returns
     -------
-    Field3D
+    $ret
         The computed $DD derivative
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    return f3dFromObj(c.$DD($in2,outloc_,method_))
+    return ${rdd}FromObj(c.$DD($in2,outloc_,method_))
 EOF
 }
 
@@ -1198,6 +1248,8 @@ for DD in Div_par Grad_par
 do
     in1="Field3D field"
     in2="field.cobj[0]"
+    ret=Field3D
+    rdd=f3d
     f_desc="$f_desc_f"
     funbad
 done
@@ -1207,10 +1259,21 @@ do
     in1="Field3D velocity, Field3D field"
     in2="velocity.cobj[0], field.cobj[0]"
     f_desc="$f_desc_vf"
+    ret=Field3D
+    rdd=f3d
+    funbad
+done
+
+for DD in Grad_perp
+do
+    in1="Field3D field"
+    in2="field.cobj[0]"
+    f_desc="$f_desc_f"
+    ret=Vector3D
+    rdd=v3d
     funbad
 done
 cat <<EOF
-
 def Laplace(Field3D a):
     """
     Compute the full Laplacian \\nabla^2(a)

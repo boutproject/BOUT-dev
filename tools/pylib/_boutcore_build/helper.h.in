@@ -1,3 +1,5 @@
+. common.sh
+
 cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
@@ -33,6 +35,13 @@ do
     fi
 done
     echo "$ftype c_minus($ftype a){return -a;};"
+done
+for vec in $vecs
+do
+    setvars $vec
+    cat <<EOF
+$field c_mul_${vec}_${vec}(const $vec * a, const $vec * b){ return (*a) * (*b) ;};
+EOF
 done
 cat <<EOF
 void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
@@ -101,15 +110,12 @@ public:
     _rhs=__rhs;
   };
   void solve(){
-    //solver->outputVars(dump);
     solver->solve();
   }
   Solver * getSolver(){
     return solver;
   };
 private:
-  //void (*init_func)(bool);
-  //void (*rhs_func)(BoutReal time);
   PythonModelCallback * _init;
   PythonModelCallback * _rhs;
   Solver * solver;
