@@ -65,8 +65,8 @@ desirable to profile the optimized code, configuring with the flags
 ``--enable-optimize=3 --enable-checks=0``. Build the code with ``make`` as
 normal.
 
-Running
-~~~~~~~
+Run and analysis
+~~~~~~~~~~~~~~~~
 
 When running the code, prepend the run command with ``scalasca -analyze``, e.g.
 
@@ -124,8 +124,8 @@ Instrumentation, configure and build
 No changes to the code are necessary. On some systems, environment variables
 must be set before building.  Otherwise, compile and build as normal.
 
-Running
-~~~~~~~
+Run
+~~~
 
 To run, add a trace script into the normal run command, so that for example
 
@@ -162,6 +162,48 @@ file that can be read by Paraver, do
     TRACE_NAME=bout.prv
     ${EXTRAE_HOME}/bin/mpi2prv -f ${EXTRAE_WORK_DIR}/TRACE.mpits -o ${TRACE_NAME}
 
+Analysis
+~~~~~~~~
+
+Open the trace file in `Paraver <https://tools.bsc.es/paraver/>`_ with
+
+.. code-block:: bash
+
+    $ wxparaver ${TRACE_NAME}
+
+To view time traces, go to ``File -> Load Congifuration``.  There are many 
+configurations to choose from!  Two useful configurations are:
+
+* ``mpi/views/MPI_call.cfg`` to show when MPI calls are made
+* ``General/views/useful_duration.cfg`` to show continuous bursts of compuation
+
+Reducing trace file size
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When trace files are very large, Paraver will prompt the user to filter or cut
+the file to reduce its size.
+Filtering removes some information from the trace, making it small enough to 
+open and allow the user to select a region of interest.
+Cutting crops the trace to a region of interest.
+Both operations create new trace files, and never overwrite the original trace.
+
+The following prescription should work for manipulating large trace files:
+
+1. Open the large trace file in Paraver and click 'Yes' to filter it
+2. Click on the tick box 'Filter'
+3. Filter the trace file:
+        a) select box for Events
+        b) select box for Communications
+        c) in 'Keep States' select box for 'Running'
+        d) in 'Keep States' select box for 'IO'
+        e) select a min duration of 1000
+        f) click 'Apply' 
+4. View 'useful duration' configuration and locate the region of interest
+5. Zoom into the region of interest, and start and end the zoom on equivalent
+   large sections of computation (blue/green) 
+6. Right click -> Run -> Cutter
+7. Change the 'Input' trace file to cut from the filtered to the original one.
+8. Click cut.
 
 Machine-specific installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
