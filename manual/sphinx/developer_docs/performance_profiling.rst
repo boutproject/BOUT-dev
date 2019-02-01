@@ -12,8 +12,14 @@ using tools that report the amount of time each processor spends in functions,
 on communications, etc.
 
 This section describes how to compile and run BOUT++ using the 
-`Scorep <http://www.vi-hps.org/projects/score-p/>`_/`Scalasca <http://www.scalasca.org/>`_
-tool chain.
+`Scorep <http://www.vi-hps.org/projects/score-p/>`_+`Scalasca <http://www.scalasca.org/>`_
+and 
+`Extrae <https://tools.bsc.es/extrae/>`_+`Paraver <https://tools.bsc.es/paraver/>`_
+tool chains.
+Both are suitable for analyzing code parallelized with MPI and/or OpenMP.
+Scorep+Scalasca gives timings and call trees for each processor/thread,
+while Extrae/Paraver produces visualizations showing what each processor/thread
+is doing at a point in time.
 
 Scorep/Scalasca profiling
 -------------------------
