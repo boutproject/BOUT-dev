@@ -279,10 +279,10 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
-  
-  /// Check that the data is valid
-  checkData(rhs);
- 
+
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -299,8 +299,8 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
   ASSERT1(location == rhs.getLocation());
 
-  /// Check that the data is valid
-  checkData(rhs);
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
 
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -315,8 +315,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
-  /// Check that the data is valid
-  checkData(val);
 
   allocate();
 

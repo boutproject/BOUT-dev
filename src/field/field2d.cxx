@@ -193,11 +193,6 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
   TRACE("Field2D = BoutReal");
   allocate();
 
-#if CHECK > 0
-  if (!finite(rhs))
-    throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
-#endif
-
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;

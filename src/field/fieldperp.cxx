@@ -121,8 +121,6 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
   allocate();
 
-  checkData(rhs);
-
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;
