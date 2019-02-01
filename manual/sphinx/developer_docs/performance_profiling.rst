@@ -205,6 +205,9 @@ The following prescription should work for manipulating large trace files:
 7. Change the 'Input' trace file to cut from the filtered to the original one.
 8. Click cut.
 
+This produces a trace file which has all the original profiling information, 
+but is much smaller as it is limited in time to a region of interest.
+
 Machine-specific installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
