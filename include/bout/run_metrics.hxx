@@ -38,34 +38,34 @@ class Datafile;
 class RunMetrics {
   public:
   /// cumulative wall clock time in seconds
-  BoutReal t_elapsed;
+  BoutReal t_elapsed = 0;
   /// time step's wall clock time in seconds
-  BoutReal wtime;
+  BoutReal wtime = 0;
 
   /// number of RHS calls
-  int ncalls;
+  int ncalls = 0;
   /// number of RHS calls for fast timescale
-  int ncalls_e;
+  int ncalls_e = 0;
   /// number of RHS calls for slow timescale
-  int ncalls_i;
+  int ncalls_i = 0;
 
   /// wall time spent calculating RHS
-  BoutReal wtime_rhs;
+  BoutReal wtime_rhs = 0;
   /// wall time spent inverting Laplacian
-  BoutReal wtime_invert;
+  BoutReal wtime_invert = 0;
   /// wall time spent communicating (part of RHS)
-  BoutReal wtime_comms;
+  BoutReal wtime_comms = 0;
   /// wall time spent on I/O
-  BoutReal wtime_io;
+  BoutReal wtime_io = 0;
 
   // Derived metrics
 
   /// wall time per RHS evaluation
-  BoutReal wtime_per_rhs;
+  BoutReal wtime_per_rhs = 0;
   /// wall time per fast timescale RHS evaluation
-  BoutReal wtime_per_rhs_e;
+  BoutReal wtime_per_rhs_e = 0;
   /// wall time per slow timescale RHS evaluation
-  BoutReal wtime_per_rhs_i;
+  BoutReal wtime_per_rhs_i = 0;
 
   /*!
    * Adds variables to the output file, for post-processing
