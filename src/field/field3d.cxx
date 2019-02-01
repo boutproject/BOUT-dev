@@ -305,6 +305,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
   ASSERT1(location == rhs.getLocation());
+  ASSERT1(getMesh() == rhs.getMesh());
 
   /// Check that the data is valid
   checkData(rhs);
@@ -314,10 +315,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
-
-  // Alternative to setting the location of *this, is to ASSERT on input
-  // that rhs.getLocation() == location;
-  setLocation(rhs.getLocation());
 }
 
 Field3D & Field3D::operator=(const BoutReal val) {
