@@ -22,8 +22,6 @@ adaptive = false
 mms = true
 
 [f]
-#solution = sin(t)
-#source = cos(t)
 
 solution = exp(t)
 source = 0
