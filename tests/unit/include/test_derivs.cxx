@@ -21,23 +21,26 @@
 // variation in the other directions.
 //
 // This is one of the more complicated uses of googletest! We need to
-// test all combinations of methods and directions. Unfortunately, Z
-// has one more method than X and Y -- FFT. This means we can't just
-// use the provided `Combine` to produce the Cartesian product of
-// directions and methods as the latter depends on the
-// former. Instead, we instantiate the tests separately for each
-// direction and test all the methods for that direction in that
-// instantiation.
+// test all combinations of methods, directions and (standard)
+// derivative types. Unfortunately, Z has one more method than X and Y
+// (FFT), and the different orders have different sets of
+// methods. This means we can't just use the provided `Combine` to
+// produce the Cartesian product of methods, directions, and types as
+// the first depends on the second two. Instead, we instantiate the
+// tests separately for each direction and order and test all the
+// methods for that direction in that instantiation.
 
 namespace {
-// These are merely sanity checks, so don't expect them to agree very well!
-constexpr BoutReal derivatives_tolerance{1.e-2};
+// These are merely sanity checks, so don't expect them to agree very
+// well! This has to be sufficiently loose for the least accurate
+// method to pass, or we need to also match up tolerances to methods
+constexpr BoutReal derivatives_tolerance{5.e-3};
 }
 
 class DerivativesTest
-    : public ::testing::TestWithParam<std::pair<DIRECTION, std::string>> {
+    : public ::testing::TestWithParam<std::tuple<DIRECTION, DERIV, std::string>> {
 public:
-  DerivativesTest() : input{mesh}, first_order_expected{mesh} {
+  DerivativesTest() : input{mesh}, expected{mesh} {
 
     // Make sure fft functions are both quiet and deterministic by
     // setting fft_measure to false
@@ -45,7 +48,7 @@ public:
 
     using Index = Field3D::ind_type;
 
-    // Pointer to index method that converts to index-space
+    // Pointer to index method that converts single-index to 3-index space
     using DirectionFunction = int (Index::*)() const;
     DirectionFunction dir;
 
@@ -53,6 +56,11 @@ public:
     // have none
     int x_guards{0};
     int y_guards{0};
+
+    // Grid sizes
+    int nx{3};
+    int ny{3};
+    int nz{2};
 
     // This must be a balance between getting any kind of accuracy and
     // each derivative running in ~1ms or less
@@ -104,12 +112,26 @@ public:
     // C++17 makes this nicer with std::invoke
     input = makeField<Field3D>([&](Index& i) { return std::sin((i.*dir)() * box_length); }, mesh);
 
-    first_order_expected = makeField<Field3D>(
+    // Get the expected result for this order of derivative
+    // Again, could be nicer in C++17 with std::get<DERIV>(GetParam())
+    switch (std::get<1>(GetParam())) {
+    case DERIV::Standard:
+      expected = makeField<Field3D>(
         [&](Index& i) { return std::cos((i.*dir)() * box_length) * box_length; }, mesh);
-
-    second_order_expected = makeField<Field3D>(
+      break;
+    case DERIV::StandardSecond:
+      expected = makeField<Field3D>(
         [&](Index& i) { return -std::sin((i.*dir)() * box_length) * pow(box_length, 2); },
         mesh);
+      break;
+    case DERIV::StandardFourth:
+      expected = makeField<Field3D>(
+        [&](Index& i) { return std::sin((i.*dir)() * box_length) * pow(box_length, 4); },
+        mesh);
+      break;
+    default:
+      throw BoutException("Sorry, don't we test that type of derivative yet!");
+    }
 
     // We need the parallel slices for the y-direction
     ParallelTransformIdentity identity{};
@@ -120,104 +142,99 @@ public:
   };
 
   Field3D input;
-  Field3D first_order_expected;
-  Field3D second_order_expected;
+  Field3D expected;
 
-  int nx{3};
-  int ny{3};
-  int nz{2};
-
+  // Region not including the guard cells in current direction
   REGION region;
 };
 
 // Get all the available methods for this direction and turn it from a
-// collection of strings to a collection of pairs of the direction and
-// strings so that the test fixture knows which direction we're using
+// collection of strings to a collection of tuples of the direction,
+// order, and strings so that the test fixture knows which direction
+// we're using
 auto getMethodsForDirection(DERIV derivative_order, DIRECTION direction)
-    -> std::vector<std::pair<DIRECTION, std::string>> {
+    -> std::vector<std::tuple<DIRECTION, DERIV, std::string>> {
 
   auto available_methods = DerivativeStore<Field3D>::getInstance().getAvailableMethods(
       derivative_order, direction);
 
-  // Method names paired with the current direction
-  std::vector<std::pair<DIRECTION, std::string>> methods{};
+  // Method names together with the current direction and derivative type
+  std::vector<std::tuple<DIRECTION, DERIV, std::string>> methods{};
 
   std::transform(std::begin(available_methods), std::end(available_methods),
-                 std::back_inserter(methods), [&direction](std::string method) {
-                   return std::make_pair(direction, method);
+                 std::back_inserter(methods), [&](std::string method) {
+                   return std::make_tuple(direction, derivative_order, method);
                  });
 
   return methods;
 };
 
-// Returns the method out of the direction/method pair for printing
-// the test name
-auto methodDirectionPairToString(
-    const ::testing::TestParamInfo<std::pair<DIRECTION, std::string>>& param)
+// Returns the method out of the direction/order/method tuple for
+// printing the test name
+auto methodDirectionTupleToString(
+    const ::testing::TestParamInfo<std::tuple<DIRECTION, DERIV, std::string>>& param)
     -> std::string {
-  return std::get<1>(param.param);
+  return std::get<2>(param.param);
 }
-
-// Use an alias to distinguish the first and second derivative tests
-using FirstDerivatives = DerivativesTest;
 
 // Instantiate the test for X, Y, Z for first derivatives
-INSTANTIATE_TEST_CASE_P(X, FirstDerivatives,
+INSTANTIATE_TEST_CASE_P(FirstX, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
                                                                    DIRECTION::X)),
-                        methodDirectionPairToString);
+                        methodDirectionTupleToString);
 
-INSTANTIATE_TEST_CASE_P(Y, FirstDerivatives,
+INSTANTIATE_TEST_CASE_P(FirstY, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
                                                                    DIRECTION::Y)),
-                        methodDirectionPairToString);
+                        methodDirectionTupleToString);
 
-INSTANTIATE_TEST_CASE_P(Z, FirstDerivatives,
+INSTANTIATE_TEST_CASE_P(FirstZ, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
                                                                    DIRECTION::Z)),
-                        methodDirectionPairToString);
-
-// The actual first derivative test!
-TEST_P(FirstDerivatives, FirstOrder) {
-  auto derivative = DerivativeStore<Field3D>::getInstance().getStandardDerivative(
-      std::get<1>(GetParam()), std::get<0>(GetParam()));
-
-  Field3D result{mesh};
-  result.allocate();
-  derivative(input, result, region);
-
-  EXPECT_TRUE(IsField3DEqualField3D(result, first_order_expected, "RGN_NOBNDRY",
-                                    derivatives_tolerance));
-}
-
-// Use an alias to distinguish the first and second derivative tests
-using SecondDerivatives = DerivativesTest;
+                        methodDirectionTupleToString);
 
 // Instantiate the test for X, Y, Z for second derivatives
-INSTANTIATE_TEST_CASE_P(X, SecondDerivatives,
+INSTANTIATE_TEST_CASE_P(SecondX, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
                                                                    DIRECTION::X)),
-                        methodDirectionPairToString);
+                        methodDirectionTupleToString);
 
-INSTANTIATE_TEST_CASE_P(Y, SecondDerivatives,
+INSTANTIATE_TEST_CASE_P(SecondY, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
                                                                    DIRECTION::Y)),
-                        methodDirectionPairToString);
+                        methodDirectionTupleToString);
 
-INSTANTIATE_TEST_CASE_P(Z, SecondDerivatives,
+INSTANTIATE_TEST_CASE_P(SecondZ, DerivativesTest,
                         ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
                                                                    DIRECTION::Z)),
-                        methodDirectionPairToString);
+                        methodDirectionTupleToString);
 
-// The actual second derivative test!
-TEST_P(SecondDerivatives, SecondOrder) {
-  auto derivative = DerivativeStore<Field3D>::getInstance().getStandard2ndDerivative(
-      std::get<1>(GetParam()), std::get<0>(GetParam()));
+// Instantiate the test for X, Y, Z for fourth derivatives
+INSTANTIATE_TEST_CASE_P(FourthX, DerivativesTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FourthY, DerivativesTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FourthZ, DerivativesTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+// All standard derivatives have the same signature, so we can use a
+// single test, just instantiate it for each direction/order combination
+TEST_P(DerivativesTest, Sanity) {
+  auto derivative = DerivativeStore<Field3D>::getInstance().getStandardDerivative(
+    std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None, std::get<1>(GetParam()));
 
   Field3D result{mesh};
   result.allocate();
   derivative(input, result, region);
 
-  EXPECT_TRUE(IsField3DEqualField3D(result, second_order_expected, "RGN_NOBNDRY",
+  EXPECT_TRUE(IsField3DEqualField3D(result, expected, "RGN_NOBNDRY",
                                     derivatives_tolerance));
 }
