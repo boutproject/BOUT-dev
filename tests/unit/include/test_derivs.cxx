@@ -21,9 +21,9 @@
 // variation in the other directions.
 //
 // This is one of the more complicated uses of googletest! We need to
-// all combinations of methods and directions. Unfortunately, Z has
-// one more method than X and Y -- FFT. This means we can't just use
-// the provided `Combine` to produce the Cartesian product of
+// test all combinations of methods and directions. Unfortunately, Z
+// has one more method than X and Y -- FFT. This means we can't just
+// use the provided `Combine` to produce the Cartesian product of
 // directions and methods as the latter depends on the
 // former. Instead, we instantiate the tests separately for each
 // direction and test all the methods for that direction in that
@@ -39,7 +39,8 @@ class DerivativesTest
 public:
   DerivativesTest() : input{mesh}, first_order_expected{mesh} {
 
-    // Make sure fft functions are quiet by setting fft_measure to false
+    // Make sure fft functions are both quiet and deterministic by
+    // setting fft_measure to false
     bout::fft::fft_init(false);
 
     using Index = Field3D::ind_type;
