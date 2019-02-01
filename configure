@@ -6027,16 +6027,36 @@ $as_echo "$as_me: Field name tracking disabled" >&6;}
 
 fi
 
-if test "x$enable_sigfpe" = "xyes"; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions enabled" >&5
-$as_echo "$as_me: Signaling floating point exceptions enabled" >&6;}
-  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-
-else
+if test "x$enable_sigfpe" = "xno"; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions disabled" >&5
 $as_echo "$as_me: Signaling floating point exceptions disabled" >&6;}
+
+else
+
+  ac_fn_cxx_check_header_mongrel "$LINENO" " fenv.h " "ac_cv_header__fenv_h_" "$ac_includes_default"
+if test "x$ac_cv_header__fenv_h_" = xyes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions enabled" >&5
+$as_echo "$as_me: Signaling floating point exceptions enabled" >&6;}
+    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+
+else
+
+    if test "x$enable_sigfpe" = "xyes"; then :
+
+      as_fn_error $? "Signaling floating point exceptions requested, but required <fenv.h> not found" "$LINENO" 5
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Signaling floating point exceptions disabled" >&5
+$as_echo "$as_me: Signaling floating point exceptions disabled" >&6;}
+
+fi
+
+fi
+
+
 
 fi
 

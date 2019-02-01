@@ -330,11 +330,19 @@ AS_IF([test "x$enable_track" = "xyes"], [
   AC_MSG_NOTICE([Field name tracking disabled])
 ])
 
-AS_IF([test "x$enable_sigfpe" = "xyes"], [
-  AC_MSG_NOTICE([Signaling floating point exceptions enabled])
-  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
-], [
+AS_IF([test "x$enable_sigfpe" = "xno"], [
   AC_MSG_NOTICE([Signaling floating point exceptions disabled])
+], [
+  AC_CHECK_HEADER([ fenv.h ], [
+    AC_MSG_NOTICE([Signaling floating point exceptions enabled])
+    CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+  ], [
+    AS_IF([test "x$enable_sigfpe" = "xyes"], [
+      AC_MSG_ERROR([Signaling floating point exceptions requested, but required <fenv.h> not found])
+    ], [
+      AC_MSG_NOTICE([Signaling floating point exceptions disabled])
+    ])
+  ])
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
