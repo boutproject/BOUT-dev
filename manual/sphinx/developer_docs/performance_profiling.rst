@@ -163,3 +163,27 @@ file that can be read by Paraver, do
     ${EXTRAE_HOME}/bin/mpi2prv -f ${EXTRAE_WORK_DIR}/TRACE.mpits -o ${TRACE_NAME}
 
 
+Machine-specific installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These are some configurations which have been found to work on
+particular machines.
+
+Archer
+^^^^^^
+
+As of 1st February 2019, the following configuration should work
+
+.. code-block:: bash
+
+    $ module swap PrgEnv-cray PrgEnv-gnu
+    $ module load fftw
+    $ module load archer-netcdf/4.1.3
+    $ module load papi
+    $ module load bsctools/extrae
+    $
+    $ export CRAYPE_LINK_TYPE=dynamic
+
+Note that due to a bug in the ``CC`` compiler, it is necessary to modify 
+``make.config`` after configuration to add the flag  ``-fopenmp`` to 
+``BOUT_FLAGS``, when profiling OpenMP-parallelized code.
