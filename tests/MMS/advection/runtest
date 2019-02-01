@@ -99,7 +99,7 @@ def run_mms(options,exit=True):
         order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
         print("Convergence order = %f" % (order))
 
-        if exp_order-.25 < order < exp_order+.25:
+        if exp_order-.25 < order < exp_order+0.75:
             print("............ PASS")
         else:
             success = False
