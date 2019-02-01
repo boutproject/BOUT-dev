@@ -175,7 +175,7 @@ To view time traces, go to ``File -> Load Congifuration``.  There are many
 configurations to choose from!  Two useful configurations are:
 
 * ``mpi/views/MPI_call.cfg`` to show when MPI calls are made
-* ``General/views/useful_duration.cfg`` to show continuous bursts of compuation
+* ``General/views/useful_duration.cfg`` to show continuous bursts of computation
 
 Reducing trace file size
 ^^^^^^^^^^^^^^^^^^^^^^^^
