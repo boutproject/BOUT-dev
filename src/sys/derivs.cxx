@@ -50,6 +50,7 @@
 #include <cmath>
 
 #include <output.hxx>
+#include <unused.hxx>
 
 /*******************************************************************************
  * First central derivatives
@@ -335,7 +336,8 @@ const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
   return tmp;
 }
 
-const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, const std::string &method, REGION UNUSED(region)) {
+const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
+                     MAYBE_UNUSED(const std::string& method), REGION UNUSED(region)) {
   Coordinates *coords = f.getCoordinates(outloc);
 
   Field3D result(f.getMesh());

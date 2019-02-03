@@ -900,7 +900,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // variable attribute
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -933,7 +933,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // attribute of variable
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -966,7 +966,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // attribute of variable
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -995,7 +995,7 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     return true;
   } else {
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 

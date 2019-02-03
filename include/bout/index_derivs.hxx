@@ -760,7 +760,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, REGION region) const {
     AUTO_TRACE();
-    ASSERT2(meta.derivType == DERIV::Standard)
+    ASSERT2(meta.derivType == DERIV::StandardSecond);
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported

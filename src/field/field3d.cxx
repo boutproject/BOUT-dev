@@ -302,6 +302,7 @@ void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
   ASSERT1(location == rhs.getLocation());
+  ASSERT1(getMesh() == rhs.getMesh());
 
   /// Check that the data is valid
   checkData(rhs);
@@ -311,10 +312,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
-
-  // Alternative to setting the location of *this, is to ASSERT on input
-  // that rhs.getLocation() == location;
-  setLocation(rhs.getLocation());
 }
 
 Field3D & Field3D::operator=(const BoutReal val) {
@@ -1024,18 +1021,18 @@ namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
-    // Do full checks
-    BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-      if (!finite(f[i])) {
-	throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
-			    i.x(), i.y(), i.z());
-      }
+void checkDataIsFiniteOnRegion(const Field3D& f, REGION region) {
+  // Do full checks
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (!finite(f[i])) {
+      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+                          i.x(), i.y(), i.z());
     }
   }
-#elif CHECK > 1
-  // No-op for no checking
-  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+}
+#elif CHECK > 0
+// No-op for no checking
+void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
 
