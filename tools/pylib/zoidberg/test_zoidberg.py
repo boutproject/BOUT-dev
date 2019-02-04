@@ -34,7 +34,7 @@ def test_make_maps_slab():
         assert var in maps
 
         # Each map should have the same shape as the grid
-        maps[var].shape == (nx, ny, nz)
+        assert maps[var].shape == (nx, ny, nz)
 
         # The first/last abs(offset) points are not valid, so ignore those
         interior_range = range(ny-abs(offset)) if offset > 0 else range(abs(offset), ny)
