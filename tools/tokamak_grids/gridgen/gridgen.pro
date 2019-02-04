@@ -60,6 +60,6 @@ PRO gridgen, debug=debug, settings=settings
               nrad:nrad, npol:npol, $    ; Number of radial and poloidal points
               rad_peaking:rad_peaking, pol_peaking:pol_peaking}
 
-  grid = create_grid(F, R, Z, settings)
+  grid = create_grid(F, R, Z, settings, /simple)
 
 END

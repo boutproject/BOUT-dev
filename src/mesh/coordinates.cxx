@@ -462,13 +462,16 @@ int Coordinates::geometry() {
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Field2D d2x, d2y; // d^2 x / d i^2
+  Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
+    // Shift d2x to our location
+    d2x = interp_to(d2x, location);
+
     d1_dx = -d2x / (dx * dx);
   }
 
@@ -477,7 +480,15 @@ int Coordinates::geometry() {
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
     d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
   } else {
+    // Shift d2y to our location
+    d2y = interp_to(d2y, location);
+
     d1_dy = -d2y / (dy * dy);
+  }
+
+  if (location == CELL_CENTRE) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
   }
 
   return 0;
@@ -653,7 +664,7 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, const std::string
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), CELL_LOC loc,
+const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), MAYBE_UNUSED(CELL_LOC loc),
                                const std::string &UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);

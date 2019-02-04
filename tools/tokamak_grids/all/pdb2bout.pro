@@ -979,9 +979,10 @@ PRO pdb2bout, file, uedge=uedge, output=output, input=input, _extra=_extra
               ni_x = max(a.mu0p) / (2.*Te_x* 1.602e-19*1.0e20)
               
               PRINT, "Maximum density [10^20 m^-3]:", ni_x
-              
-              Te = te_x * a.mu0p / max(a.mu0p)
-              Ni = ni_x * a.mu0p / max(a.mu0p)
+
+              shape = sqrt(a.mu0p / max(a.mu0p))
+              Te = te_x * shape
+              Ni = ni_x * shape
           ENDREP UNTIL get_yesno("Is this ok?") EQ 1
           Ti = Te
       ENDELSE

@@ -3,8 +3,10 @@
 
 #include "gtest/gtest.h"
 
+#include <functional>
 #include <iostream>
 #include <mpi.h>
+#include <vector>
 
 #include "bout/mesh.hxx"
 #include "bout/coordinates.hxx"
@@ -21,14 +23,42 @@ const BoutReal BoutRealTolerance = 1e-15;
 ::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+::testing::AssertionResult IsField3DEqualField3D(const Field3D &lhs, const Field3D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
+
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
+
+::testing::AssertionResult IsField2DEqualField2D(const Field2D &lhs, const Field2D &rhs,
+                                                 const std::string& region = "RGN_ALL",
+                                                 BoutReal tolerance = BoutRealTolerance);
 
 /// Is \p field equal to \p number, with a tolerance of \p tolerance?
 ::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
                                                   BoutReal tolerance = BoutRealTolerance);
 
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
+
+/// Enable a function if T is a subclass of Field
+template <class T>
+using EnableIfField = typename std::enable_if<std::is_base_of<Field, T>::value>::type;
+
+/// Returns a field filled with the result of \p fill_function at each point
+/// Arbitrary arguments can be passed to the field constructor
+template <class T, class... Args, typename = EnableIfField<T>>
+T makeField(std::function<BoutReal(typename T::ind_type&)> fill_function, Args... args) {
+  T result{std::forward<Args>(args)...};
+  result.allocate();
+
+  for (auto i: result) {
+    result[i] = fill_function(i);
+  }
+
+  return result;
+}
 
 /// Teach googletest how to print SpecificInds
 template<IND_TYPE N>

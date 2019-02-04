@@ -1,3 +1,6 @@
+
+. common.sh
+
 cat <<EOF
 #include <field3d.hxx>
 #include <globals.hxx>
@@ -6,7 +9,7 @@ cat <<EOF
 #include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 EOF
-for ftype in "Field3D" "Field2D"
+for ftype in $fields
 do
   if [ $ftype = "Field3D" ]; then fdd="f3d";
   elif [ $ftype = "Field2D" ]; then fdd="f2d";

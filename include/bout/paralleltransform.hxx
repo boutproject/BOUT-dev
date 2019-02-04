@@ -93,7 +93,10 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
+  /// Read zShift from the mesh
   ShiftedMetric(Mesh &mesh);
+  /// Use an existing zShift
+  ShiftedMetric(Mesh &mesh, Field2D zShift);
   
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -122,18 +125,17 @@ public:
   }
 
   /// A 3D array, implemented as nested vectors
-  typedef std::vector<std::vector<std::vector<dcomplex>>> arr3Dvec;
+  using arr3Dvec = std::vector<std::vector<std::vector<dcomplex>>>;
 private:
   Mesh &mesh; ///< The mesh this paralleltransform is part of
 
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
-  std::vector<dcomplex> cmplx; ///< A temporary array, used for input/output to fft routines
-  std::vector<dcomplex> cmplxLoc; ///< A temporary array, used for input/output to fft routines
-
-  arr3Dvec toAlignedPhs; ///< Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
-  arr3Dvec fromAlignedPhs; ///< Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
+  /// Cache of phase shifts for transforming from X-Z orthogonal coordinates to field-aligned coordinates
+  arr3Dvec toAlignedPhs;
+  /// Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
+  arr3Dvec fromAlignedPhs;
 
   arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
   arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
@@ -142,7 +144,9 @@ private:
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle)){return f;};
+  const Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle)) const {
+    return f;
+  };
 
   /*!
    * Shift a 3D field \p f in Z by the given \p zangle
@@ -151,7 +155,7 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */ 
-  const Field3D shiftZ(const Field3D &f, const Field2D &zangle);
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle) const;
 
   /*!
    * Shift a 3D field \p f by the given phase \p phs in Z
@@ -162,7 +166,7 @@ private:
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
    */
-  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs);
+  const Field3D shiftZ(const Field3D &f, const arr3Dvec &phs) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
@@ -172,7 +176,7 @@ private:
    * @param[in] zangle  The angle (z coordinate) to shift by
    * @param[out] out  A 1D array of length \p len, already allocated
    */
-  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
+  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
@@ -181,7 +185,11 @@ private:
    * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
-  void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out);
+  void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) const;
+
+  /// Calculate and store the phases for to/from field aligned and for
+  /// the parallel slices using zShift
+  void cachePhases();
 };
 
 

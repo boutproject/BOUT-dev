@@ -63,7 +63,8 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-int phi_flags;
+Laplacian* phi_solver;
+
 bool nonlinear;
 BoutReal g; // Only if compressible
 bool phi_curv;
@@ -273,9 +274,6 @@ int physics_init(bool restarting) {
   OPTION(options, phi_curv,          true);
   options->get("gamma",             g,                 5.0/3.0);
 
-  // Field inversion flags
-  OPTION(options, phi_flags,         0);
-
   OPTION(globalOptions->getSection("solver"), mms, false);
 
   if(!include_curvature)
@@ -283,6 +281,11 @@ int physics_init(bool restarting) {
 
   if(!include_jpar0)
     J0 = 0.0;
+
+  //////////////////////////////////////////////////////////////
+  // INITIALIZE LAPLACIAN SOLVER
+
+  phi_solver = Laplacian::create();
 
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
@@ -468,7 +471,7 @@ int physics_init(bool restarting) {
     U = where(P0 - vacuum_pressure, U, 0.0);
 
     // Phi should be consistent with U
-    phi = invert_laplace(U, phi_flags, NULL);
+    phi = phi_solver->solve(U);
 
     //if(diamag) {
     //phi -= 0.5*dnorm * P / B0;
@@ -530,9 +533,9 @@ int physics_run(BoutReal t) {
   if(mms) {
     // Solve for potential, adding a source term
     Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, t);
-    phi = invert_laplace(U + phiS, phi_flags, NULL);
+    phi = phi_solver->solve(U + phiS, phi);
   }else {
-    phi = invert_laplace(U, phi_flags, NULL);
+    phi = phi_solver->solve(U, phi);
   }
 
   if(diamag) {
