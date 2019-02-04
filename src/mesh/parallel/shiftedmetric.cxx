@@ -220,14 +220,9 @@ ShiftedMetric::shiftZ(const Field3D& f,
   for (auto& phase : phases) {
     // In C++17 std::vector::emplace_back returns a reference, which
     // would be very useful here!
-
-    // FIXME: initialisation to -1 to avoid checkData choking on the
-    // uninitialised regions in assignment into the Field parallel
-    // slices in calcYUpDown
-    results.emplace_back(-1.0, &mesh);
+    results.emplace_back(&mesh);
     auto& current_result = results.back();
-    // FIXME: uncomment the following after fixing Field3D::operator=
-    // current_result.allocate();
+    current_result.allocate();
     current_result.setLocation(f.getLocation());
 
     for (int jx = 0; jx < mesh.LocalNx; jx++) {
