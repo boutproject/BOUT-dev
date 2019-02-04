@@ -35,23 +35,18 @@ shell_safe("make > make.log")
 # List of options to be passed for each test
 if "only_petsc" in sys.argv:
     # this requires petsc:
-    options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]# What's the expected order?
-    # should petsc solver also be added?
-    #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
+    options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]
 else:
     options = [
         ("solver:type=euler", "Euler", "-^",1)
         ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
         ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
         ,("solver:type=rk4", "RK4", "-o",4)
-        ,("solver:type=rkgeneric solver:adaptive=false", "RK-generic", "-o",4)
-        #,("solver:type=pvode solver:", "P-Vode", "-o",2)
+        ,("solver:type=rkgeneric", "RK-generic", "-o",4)
     ]
 
 #Missing: cvode, ida, slepc, power, arkode, snes
 # Is there a better way to check a certain solver should be enabled?
-
-#options.append(("solver:type=power",    "power",     "-+",2))# What's the expected order?
 
 # List of NX values to use
 timesteps = [4, 8, 16, 32, 64, 128, 256]
