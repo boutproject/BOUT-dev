@@ -650,11 +650,8 @@ TEST_F(Field2DTest, AssignFromBoutReal) {
 TEST_F(Field2DTest, AssignFromInvalid) {
   Field2D field;
 
-#if CHECK > 0
-  EXPECT_THROW(field = std::nan(""), BoutException);
-#else
   EXPECT_NO_THROW(field = std::nan(""));
-#endif
+  EXPECT_TRUE(IsField2DEqualBoutReal(field, std::nan("")));  
 }
 
 TEST_F(Field2DTest, UnaryMinus) {

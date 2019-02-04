@@ -62,10 +62,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
-#if CHECK > 2
-  checkData(f);
-#endif
-
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -270,9 +266,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
   
-  /// Check that the data is valid
-  checkData(rhs);
-  
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
@@ -286,10 +279,10 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
-  
-  /// Check that the data is valid
-  checkData(rhs);
- 
+
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -307,8 +300,8 @@ void Field3D::operator=(const FieldPerp &rhs) {
   ASSERT1(location == rhs.getLocation());
   ASSERT1(getMesh() == rhs.getMesh());
 
-  /// Check that the data is valid
-  checkData(rhs);
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
 
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -319,8 +312,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
-  /// Check that the data is valid
-  checkData(val);
 
   allocate();
 
