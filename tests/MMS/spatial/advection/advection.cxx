@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
   mesh->communicate(f, g);
 
-  auto method{static_cast<BRACKET_METHOD>(Options::root()["method"].as<int>())};
+  auto method = static_cast<BRACKET_METHOD>(Options::root()["method"].as<int>());
 
   Field3D result{bracket(g, f, method)};
   Field3D error{result - solution};
