@@ -5,7 +5,7 @@
 # Tests a range of different schemes
 #
 
-# requires: all_tests
+#requires: all_tests
 
 from __future__ import division
 from __future__ import print_function
@@ -16,8 +16,6 @@ from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 from numpy import array, log, pi
-
-import matplotlib.pyplot as plt
 
 import pickle
 
@@ -107,6 +105,7 @@ for opts, label, sym, exp_ord in options:
 
     # plot errors
     if False:
+        import matplotlib.pyplot as plt
         plt.figure()
 
         plt.plot(dx, error_2, '-o', label=r'$l^2$')
@@ -134,6 +133,7 @@ with open("advection.pkl", "wb") as output:
 
 # Plot all errors
 if False:
+    import matplotlib.pyplot as plt
     # Plot all results for comparison
     plt.figure()
     for e, label, sym in err_2_all:
