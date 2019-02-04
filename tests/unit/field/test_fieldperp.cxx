@@ -678,11 +678,8 @@ TEST_F(FieldPerpTest, AssignFromBoutReal) {
 TEST_F(FieldPerpTest, AssignFromInvalid) {
   FieldPerp field;
 
-#if CHECK > 0
-  EXPECT_THROW(field = std::nan(""), BoutException);
-#else
   EXPECT_NO_THROW(field = std::nan(""));
-#endif
+  EXPECT_TRUE(IsFieldPerpEqualBoutReal(field, std::nan("")));
 }
 
 TEST_F(FieldPerpTest, UnaryMinus) {

@@ -1000,11 +1000,8 @@ TEST_F(Field3DTest, AssignFromBoutReal) {
 TEST_F(Field3DTest, AssignFromInvalid) {
   Field3D field;
 
-#if CHECK > 0
-  EXPECT_THROW(field = std::nan(""), BoutException);
-#else
   EXPECT_NO_THROW(field = std::nan(""));
-#endif
+  EXPECT_TRUE(IsField3DEqualBoutReal(field, std::nan("")));  
 }
 
 TEST_F(Field3DTest, AssignFromField2D) {
@@ -1055,10 +1052,8 @@ TEST_F(Field3DTest, AssignFromField3D) {
 
   EXPECT_TRUE(IsField3DEqualBoutReal(field, -99.0));
 
-#if CHECK > 0
   Field3D field3;
-  EXPECT_THROW(field = field3, BoutException);
-#endif
+  EXPECT_NO_THROW(field = field3);
 }
 
 //-------------------- Arithmetic tests --------------------

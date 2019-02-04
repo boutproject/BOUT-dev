@@ -29,9 +29,7 @@
 #define __FFT_H__
 
 #include "dcomplex.hxx"
-
-template <typename T>
-class Array;
+#include <bout/array.hxx>
 
 class Options;
 
