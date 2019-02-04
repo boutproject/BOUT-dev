@@ -26,7 +26,7 @@ Bpx = Bp + (x-0.5)*Lx * Bpprime  # Note: x in range [0,1]
 B = sqrt(Bpx**2 + Bt**2)
 
 def FCI_ddy(f):
-    return ( Bt * diff(f, y)*2.*pi/Ly + Bpx * diff(f, z)*2.*pi/Lz )
+    return ( Bt * diff(f, y)*2.*pi/Ly + Bpx * diff(f, z)*2.*pi/Lz ) / B
 
 ############################################
 # Equations solved

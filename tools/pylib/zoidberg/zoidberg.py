@@ -208,6 +208,13 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
         Bmag[:, yindex, :] = magnetic_field.Bmag(pol_grid.R, pol_grid.Z, ypos)
         pressure[:, yindex, :] = magnetic_field.pressure(pol_grid.R, pol_grid.Z, ypos)
 
+        metric["g_yy"][:, yindex, :] = (metric["g_yy"][:, yindex, :]
+                                        * (Bmag[:, yindex, :]
+                                           / magnetic_field.Byfunc(pol_grid.R, pol_grid.Z, ypos))**2)
+        metric["gyy"][:, yindex, :] = (metric["gyy"][:, yindex, :]
+                                       * (magnetic_field.Byfunc(pol_grid.R, pol_grid.Z, ypos)
+                                          / Bmag[:, yindex, :])**2)
+
     # Get attributes from magnetic field (e.g. psi)
     attributes = {}
     for name in magnetic_field.attributes:
