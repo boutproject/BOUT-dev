@@ -171,7 +171,7 @@ Open the trace file in `Paraver <https://tools.bsc.es/paraver/>`_ with
 
     $ wxparaver ${TRACE_NAME}
 
-To view time traces, go to ``File -> Load Congifuration``.  There are many 
+To view time traces, go to ``File -> Load Configuration``.  There are many
 configurations to choose from!  Two useful configurations are:
 
 * ``mpi/views/MPI_call.cfg`` to show when MPI calls are made
