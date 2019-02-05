@@ -112,6 +112,9 @@ public:
     // C++17 makes this nicer with std::invoke
     input = makeField<Field3D>([&](Index& i) { return std::sin((i.*dir)() * box_length); }, mesh);
 
+    // Make the velocity field
+    velocity = makeField<Field3D>([&](Index& UNUSED(i)) { return 2.0; }, mesh);
+
     // Get the expected result for this order of derivative
     // Again, could be nicer in C++17 with std::get<DERIV>(GetParam())
     switch (std::get<1>(GetParam())) {
@@ -129,6 +132,14 @@ public:
         [&](Index& i) { return std::sin((i.*dir)() * box_length) * pow(box_length, 4); },
         mesh);
       break;
+    // For now advection derivatives (upwind, flux) can have the same expected
+    // result as the velocity field is constant
+    case DERIV::Upwind:
+    case DERIV::Flux:
+      expected = makeField<Field3D>(
+          [&](Index& i) { return 2.0 * std::cos((i.*dir)() * box_length) * box_length; },
+          mesh);
+      break;
     default:
       throw BoutException("Sorry, don't we test that type of derivative yet!");
     }
@@ -141,12 +152,14 @@ public:
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
   };
 
-  Field3D input;
+  Field3D input, velocity;
   Field3D expected;
 
   // Region not including the guard cells in current direction
   REGION region;
 };
+
+using DerivativesTestAdvection = DerivativesTest;
 
 // Get all the available methods for this direction and turn it from a
 // collection of strings to a collection of tuples of the direction,
@@ -225,6 +238,38 @@ INSTANTIATE_TEST_CASE_P(FourthZ, DerivativesTest,
                                                                    DIRECTION::Z)),
                         methodDirectionTupleToString);
 
+// Instantiate the test for X, Y, Z for upwind derivatives
+INSTANTIATE_TEST_CASE_P(UpwindX, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(UpwindY, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(UpwindZ, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+// Instantiate the test for X, Y, Z for flux derivatives
+INSTANTIATE_TEST_CASE_P(FluxX, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FluxY, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FluxZ, DerivativesTestAdvection,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
 // All standard derivatives have the same signature, so we can use a
 // single test, just instantiate it for each direction/order combination
 TEST_P(DerivativesTest, Sanity) {
@@ -237,4 +282,19 @@ TEST_P(DerivativesTest, Sanity) {
 
   EXPECT_TRUE(IsField3DEqualField3D(result, expected, "RGN_NOBNDRY",
                                     derivatives_tolerance));
+}
+
+// All advection (upwind/flux) derivatives have the same signature, so we can use a
+// single test, just instantiate it for each direction/order combination
+TEST_P(DerivativesTestAdvection, Sanity) {
+  auto derivative = DerivativeStore<Field3D>::getInstance().getFlowDerivative(
+      std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None,
+      std::get<1>(GetParam()));
+
+  Field3D result{mesh};
+  result.allocate();
+  derivative(velocity, input, result, region);
+
+  EXPECT_TRUE(
+      IsField3DEqualField3D(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
 }
