@@ -30,6 +30,7 @@ class Field;
 #define __FIELD_H__
 
 #include <stdio.h>
+#include <memory>
 
 #include "bout_types.hxx"
 #include "stencils.hxx"
@@ -133,7 +134,7 @@ class Field {
   virtual const IndexRange region(REGION rgn) const = 0;
  protected:
   Mesh * fieldmesh;
-  mutable Coordinates * fieldCoordinates = nullptr;
+  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
   DEPRECATED(void error(const char *s, ...) const);
