@@ -12,7 +12,7 @@ class LaplaceFactory {
   static LaplaceFactory* getInstance();
 
   Laplacian *createLaplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE,
-      Mesh *mesh_in = bout::globals::mesh);
+      Mesh *mesh_in = nullptr);
 
 private:
   LaplaceFactory() {} // Prevent instantiation of this class

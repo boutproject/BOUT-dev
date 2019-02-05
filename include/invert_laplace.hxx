@@ -192,7 +192,7 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = bout::globals::mesh);
+  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
