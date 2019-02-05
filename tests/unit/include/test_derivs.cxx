@@ -64,7 +64,7 @@ public:
 
     // This must be a balance between getting any kind of accuracy and
     // each derivative running in ~1ms or less
-    constexpr int grid_size{64};
+    constexpr int grid_size{128};
     const BoutReal box_length{TWOPI / grid_size};
 
     // Set all the variables for this direction
