@@ -327,8 +327,9 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
-          bcmplx((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
+        for (int kz = 0; kz < nmode; kz++) {
+          bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -368,8 +369,9 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         int ix = xs + ind / ny;
         int iy = ys + ind % ny;
 
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
+        }
 
         for (int kz = nmode; kz < localmesh->LocalNz; kz++)
           k1d[kz] = 0.0; // Filtering out all higher harmonics
