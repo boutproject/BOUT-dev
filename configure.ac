@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.0],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.1],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -230,15 +230,24 @@ AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
 
-# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
-# we cast a function to the wrong type in MatFDColoringSetFunction
-
   AX_APPEND_COMPILE_FLAGS([ dnl
      -Wall dnl
      -Wextra dnl
      -Wnull-dereference dnl
-     -Wno-cast-function-type dnl
   ], [CXXFLAGS], [$extra_compiler_flags_test])
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+# Also note that gcc ignores unknown flags of the form "-Wno-warning"
+# for backwards compatibility. Therefore we need to add the positive
+# form as an additional flag which it will choke on (if it doesn't
+# exist). See: https://gcc.gnu.org/wiki/FAQ#wnowarning
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test "-Wcast-function-type"])
+
 ], [
   AC_MSG_NOTICE([Compiler warnings disabled])
 ])

@@ -50,6 +50,7 @@
 #include <cmath>
 
 #include <output.hxx>
+#include <unused.hxx>
 
 /*******************************************************************************
  * First central derivatives
@@ -336,7 +337,7 @@ const Coordinates::metric_field_type D2DYDZ(const Field2D& f, CELL_LOC outloc,
 #endif
 }
 
-const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, const std::string &method, REGION UNUSED(region)) {
+const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc, MAYBE_UNUSED(const std::string &method), REGION UNUSED(region)) {
 #ifndef COORDINATES_USE_3D
   Coordinates *coords = f.getCoordinates(outloc);
 

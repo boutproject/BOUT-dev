@@ -5,7 +5,7 @@ FUNCTION interp_smooth, f, x, x2
   ; First differentiate original, then interpolate
   d = interpol(DERIV(x, f), x, x2,/spline)
   ; Integrate up to get profile
-  p = int_func(x2, d)
+  p = int_func(x2, d, /simple)
 
   ; Now p may not quite match f.
   

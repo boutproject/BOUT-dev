@@ -470,7 +470,8 @@ int Coordinates::geometry() {
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Coordinates::metric_field_type d2x, d2y; // d^2 x / d i^2
+  Coordinates::metric_field_type d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
+
   // Read correction for non-uniform meshes
   if (localmesh->get(d2x, "d2x", 0.0, false)) {
     output_warn.write(
@@ -478,6 +479,10 @@ int Coordinates::geometry() {
     d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
     localmesh->communicateXZ(d2x);
+
+    // Shift d2x to our location
+    d2x = interp_to(d2x, location);
+
     d1_dx = -d2x / (dx * dx);
   }
 
@@ -489,9 +494,18 @@ int Coordinates::geometry() {
     d1_dy = bout::derivatives::index::DDY(tmp2); // d/di(1/dy)
   } else {
     localmesh->communicateXZ(d2y);
+
+    // Shift d2y to our location
+    d2y = interp_to(d2y, location);
+
     d1_dy = -d2y / (dy * dy);
   }
   localmesh->communicateXZ(d1_dx, d1_dy);
+
+  if (location == CELL_CENTRE) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
+  }
 
   return 0;
 }
@@ -698,13 +712,14 @@ const Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
+
 const Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, REGION region) {
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
 const Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f),
-                                                      CELL_LOC loc,
+                                                      MAYBE_UNUSED(CELL_LOC loc),
                                                       const std::string& UNUSED(method),
                                                       REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);

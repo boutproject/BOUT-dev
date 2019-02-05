@@ -512,6 +512,20 @@ class Mesh {
     }
   };
 
+  /// Re-calculate staggered Coordinates, useful if CELL_CENTRE Coordinates are changed
+  void recalculateStaggeredCoordinates() {
+    for (auto& i : coords_map) {
+      CELL_LOC location = i.first;
+
+      if (location == CELL_CENTRE) {
+        // Only reset staggered locations
+        continue;
+      }
+
+      i.second = createDefaultCoordinates(location);
+    }
+  }
+
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS
   ///////////////////////////////////////////////////////////
