@@ -229,12 +229,12 @@ INSTANTIATE_TEST_CASE_P(FourthZ, DerivativesTest,
 // single test, just instantiate it for each direction/order combination
 TEST_P(DerivativesTest, Sanity) {
   auto derivative = DerivativeStore<Field3D>::getInstance().getStandardDerivative(
-    std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None, std::get<1>(GetParam()));
+      std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None,
+      std::get<1>(GetParam()));
 
   Field3D result{mesh};
   result.allocate();
   derivative(input, result, region);
 
-  EXPECT_TRUE(IsField3DEqualField3D(result, expected, "RGN_NOBNDRY",
-                                    derivatives_tolerance));
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
 }
