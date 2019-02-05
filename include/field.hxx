@@ -33,6 +33,7 @@ class Field;
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
+#include <globals.hxx>
 #include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
@@ -41,7 +42,6 @@ class Field;
 
 class Mesh;
 class Coordinates;
-extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
 #include <string>
@@ -94,7 +94,7 @@ class Field {
     if (fieldmesh){
       return fieldmesh;
     } else {
-      return mesh;
+      return bout::globals::mesh;
     }
   }
 

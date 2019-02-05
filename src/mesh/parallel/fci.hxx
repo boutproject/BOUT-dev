@@ -40,11 +40,13 @@ class FCIMap {
   Interpolation *interp;        // Cell centre
   Interpolation *interp_corner; // Cell corner at (x+1, z+1)
 
+  Mesh& mesh;
+
   /// Private constructor - must be initialised with mesh
   FCIMap();
 public:
   /// dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool zperiodic);
+  FCIMap(Mesh& mesh_in, int dir, bool zperiodic);
 
   int dir;                     /**< Direction of map */
 

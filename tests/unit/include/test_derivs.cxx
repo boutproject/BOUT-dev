@@ -13,6 +13,9 @@
 #include <tuple>
 #include <vector>
 
+// The unit tests use the global mesh
+using namespace bout::globals;
+
 // Some basic sanity checks for the derivative kernels. Checks the
 // derivatives of sin(R) where R = {X, Y, Z} for each R
 // individually. To make this as fast as possible, we use only a

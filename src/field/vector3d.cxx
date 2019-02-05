@@ -472,7 +472,9 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Field3D result(x.getMesh());
+  Mesh* mesh = x.getMesh();
+
+  Field3D result(mesh);
   ASSERT2(location == rhs.getLocation())
 
   if(rhs.covariant ^ covariant) {

@@ -12,6 +12,7 @@
 
 #include <boutexception.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 #include <cstring>
 
 FormatFactory *FormatFactory::instance = nullptr;
@@ -25,27 +26,29 @@ FormatFactory* FormatFactory::getInstance() {
 }
 
 // Work out which data format to use for given filename
-std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename, bool parallel) {
+std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename,
+                                                            bool parallel,
+                                                            Mesh* mesh_in) {
   if ((filename == nullptr) || (strcasecmp(filename, "default") == 0)) {
     // Return default file format
     
 
     if (parallel) {
 #ifdef PNCDF
-      return bout::utils::make_unique<PncFormat>();
+      return bout::utils::make_unique<PncFormat>(mesh_in);
 #else
     }
 
 #ifdef NCDF4
-    return bout::utils::make_unique<Ncxx4>();
+    return bout::utils::make_unique<Ncxx4>(mesh_in);
 #else
 
 #ifdef NCDF
-    return bout::utils::make_unique<NcFormat>();
+    return bout::utils::make_unique<NcFormat>(mesh_in);
 #else
 
 #ifdef HDF5
-    return bout::utils::make_unique<H5Format>();
+    return bout::utils::make_unique<H5Format>(mesh_in);
 #else
 
 #error No file format available; aborting.

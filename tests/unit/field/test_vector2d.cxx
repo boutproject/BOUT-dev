@@ -10,7 +10,14 @@
 #include "vector3d.hxx"
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {

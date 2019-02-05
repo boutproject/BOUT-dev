@@ -206,19 +206,19 @@ class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
     // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
+    if (bout::globals::mesh != nullptr) {
+      delete bout::globals::mesh;
+      bout::globals::mesh = nullptr;
     }
-    mesh = new FakeMesh(nx, ny, nz);
+    bout::globals::mesh = new FakeMesh(nx, ny, nz);
     output_info.disable();
-    mesh->createDefaultRegions();
+    bout::globals::mesh->createDefaultRegions();
     output_info.enable();
   }
 
   ~FakeMeshFixture() {
-    delete mesh;
-    mesh = nullptr;
+    delete bout::globals::mesh;
+    bout::globals::mesh = nullptr;
   }
 
   static constexpr int nx = 3;
