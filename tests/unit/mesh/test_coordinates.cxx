@@ -34,6 +34,8 @@ TEST_F(CoordinatesTest, Jacobian) {
   EXPECT_TRUE(IsField3DEqualBoutReal(coords.Bxy, 1.0));
 }
 
+/// To do generalise these tests
+#ifndef COORDINATES_USE_3D
 TEST_F(CoordinatesTest, CalcContravariant) {
   Coordinates coords{
       mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
@@ -71,3 +73,4 @@ TEST_F(CoordinatesTest, CalcCovariant) {
   EXPECT_TRUE(IsField2DEqualBoutReal(coords.g13, 0.0));
   EXPECT_TRUE(IsField2DEqualBoutReal(coords.g23, 0.0));
 }
+#endif
