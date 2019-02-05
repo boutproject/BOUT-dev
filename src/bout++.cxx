@@ -52,7 +52,6 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include <msg_stack.hxx>
 
 #include <bout/sys/timer.hxx>
-#include <bout/run_metrics.hxx>
 
 #include <boundary_factory.hxx>
 
@@ -784,4 +783,56 @@ char get_spin() {
   }
   i = (i+1) % 4;
   return c;
+}
+
+/**************************************************************************
+ * Functions for writing run information
+ **************************************************************************/
+
+/*!
+ * Adds variables to the output file, for post-processing
+ */
+void RunMetrics::outputVars(Datafile &file) {
+
+  file.add(t_elapsed, "wall_time", true);
+  file.add(wtime, "wtime", true);
+  file.add(ncalls, "ncalls", true);
+  file.add(ncalls_e, "ncalls_e", true);
+  file.add(ncalls_i, "ncalls_i", true);
+  file.add(wtime_rhs, "wtime_rhs", true);
+  file.add(wtime_invert, "wtime_invert", true);
+  file.add(wtime_comms, "wtime_comms", true);
+  file.add(wtime_io, "wtime_io", true);
+  file.add(wtime_per_rhs, "wtime_per_rhs", true);
+  file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
+  file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
+}
+
+void RunMetrics::calculateDerivedMetrics() {
+
+  wtime_per_rhs = wtime / ncalls;
+  wtime_per_rhs_e = wtime / ncalls_e;
+  wtime_per_rhs_i = wtime / ncalls_i;
+}
+
+void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
+
+  if (!output_split) {
+    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+               simtime, ncalls, wtime,
+               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+               100.*wtime_invert/wtime,  // Inversions
+               100.0*wtime_comms/wtime,  // Communications
+               100.* wtime_io / wtime,      // I/O
+               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+
+  } else {
+    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+               simtime, ncalls_e, ncalls_i, wtime,
+               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+               100.*wtime_invert/wtime,  // Inversions
+               100.0*wtime_comms/wtime,  // Communications
+               100.* wtime_io / wtime,      // I/O
+               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+  }
 }
