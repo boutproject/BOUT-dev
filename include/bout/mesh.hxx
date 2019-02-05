@@ -435,17 +435,22 @@ class Mesh {
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    return getCoordinatesSmart(location).get();
+  };
+
+  std::shared_ptr<Coordinates>
+  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
     if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
+      return coords_map[location];
     } else {
       // No coordinate system set. Create default
       // Note that this can't be allocated here due to incomplete type
       // (circular dependency between Mesh and Coordinates)
       coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
+      return coords_map[location];
     }
   }
 
@@ -513,7 +518,7 @@ class Mesh {
         continue;
       }
 
-      i.second = createDefaultCoordinates(location);
+      std::swap(*coords_map[location], *createDefaultCoordinates(location));
     }
   }
 
