@@ -1168,8 +1168,17 @@ AS_IF([test "$with_pybind11" != "no"], [
                                 [AC_MSG_ERROR([Failed to get pybind11])])
   ])
   #Note the following overlap with --enable-shared, we should probably force enabled_shared here 
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC" 
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC"
+
+  #We require python if using pybind11 so check we have access to it
+  #Note strictly pybind11 can work with python 2 and 3, but here we
+  #restrict ourselves to >= v3.0. This will abort configure if a suitable
+  #interpreter isn't found
+  AM_PATH_PYTHON([3],AC_MSG_NOTICE([Found python version $PYTHON_VERSION]))
   EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/${PYBIND_TARGET_DIR} python3 -m pybind11 --includes)"
+  EXTRA_LIBS="$EXTRA_LIBS $(python3-config --libs)"
+  LDFLAGS="$LDFLAGS $(python3-config --ldflags)"
+  
   HAS_PYBIND11="yes"
 
   #Now copy/link the pybind headers into bout includes
