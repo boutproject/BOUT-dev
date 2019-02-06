@@ -24,6 +24,7 @@ int main() {
     auto message = "Hello, {name}! The answer is {number} and not {floatNumber}"_s.format(**kwargs);
     // Display message
     py::print(message);
+    py::print();    
   }
 
   {
@@ -33,6 +34,22 @@ int main() {
     py::module sys = py::module::import("sys");
     py::print("The python path is:");
     py::print(sys.attr("path"));
+    py::print("");
+
+    py::module np = py::module::import("numpy");
+    py::print(np);
+    py::print("Numpy version is", np.attr("__version__"));
+    auto linspaceTest = np.attr("linspace")(0.0,1.0,20);
+    py::print(linspaceTest);
+    py::print();    
+    py::print(linspaceTest[py::make_tuple(2)]);
+    linspaceTest[py::make_tuple(2)] = 2.0;
+    py::print(linspaceTest[py::make_tuple(2)]);
+    py::print();
+    for(int i=0; i<20; i++) {
+      linspaceTest[py::make_tuple(i)] = i;
+    }
+    py::print(linspaceTest);    
   }
 }
 #else
