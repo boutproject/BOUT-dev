@@ -160,22 +160,22 @@ private:
     // Read some parameters
     auto globalOptions = Options::root();
     auto options = globalOptions["2fluid"];
-    
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
-    
-    OPTION(options, estatic,     false);
-    OPTION(options, ZeroElMass,  false);
-    OPTION(options, zeff,        1.0);
-    OPTION(options, nu_perp,     0.0);
-    OPTION(options, ShearFactor, 1.0);
-    OPTION(options, OhmPe,       true);
-    OPTION(options, bout_jpar,   false);
-    OPTION(options, curv_upwind, false);
-    
+
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
+
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    OhmPe = options["OhmPe"].withDefault(true);
+    bout_jpar = options["bout_jpar"].withDefault(false);
+    curv_upwind = options["curv_upwind"].withDefault(false);
+
     // Choose method to use for Poisson bracket advection terms
     int bracket_method;
-    OPTION(options, bracket_method, 0);
+    bracket_method = options["bracket_method"].withDefault(0);
     switch(bracket_method) {
     case 0: {
       bm = BRACKET_STD; 
@@ -201,21 +201,21 @@ private:
       output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
       return 1;
     }
-    
-    OPTION(options, nuIonNeutral, -1.); 
-    
-    OPTION(options, bkgd,      2);
-    OPTION(options, iTe_dc,    2);
-    
-    OPTION(options, stagger, false);
-    
-    OPTION(options, laplace_extra_rho_term, false);
-    OPTION(options, vort_include_pi, false);
-    
-    OPTION(options, lowPass_z,  -1);
-  
-    OPTION(options, phi_flags,   0);
-    OPTION(options, apar_flags,  0);
+
+    nuIonNeutral = options["nuIonNeutral"].withDefault(-1.);
+
+    bkgd = options["bkgd"].withDefault(2);
+    iTe_dc = options["iTe_dc"].withDefault(2);
+
+    stagger = options["stagger"].withDefault(false);
+
+    laplace_extra_rho_term = options["laplace_extra_rho_term"].withDefault(false);
+    vort_include_pi = options["vort_include_pi"].withDefault(false);
+
+    lowPass_z = options["lowPass_z"].withDefault(-1);
+
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
 
     evolve_ni = globalOptions["Ni"]["evolve"].withDefault(true);
     evolve_rho = globalOptions["rho"]["evolve"].withDefault(true);

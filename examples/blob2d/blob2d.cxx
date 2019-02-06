@@ -65,14 +65,16 @@ protected:
 
     R_c = options["R_c"].withDefault(1.5);    // Radius of curvature
     L_par = options["L_par"].withDefault(10); // Parallel connection length
-    
-    OPTION(options, B0, 0.35);             // Value of magnetic field strength
+
+    B0 = options["B0"].withDefault(0.35); // Value of magnetic field strength
 
     // System option switches
 
-    OPTION(options, compressible, false); // Compressible ExB term in density equation
-    OPTION(options, boussinesq, true); // Use Boussinesq approximation in vorticity
-    OPTION(options, sheath, true);     // Sheath closure
+    compressible = options["compressible"].withDefault(
+        false); // Compressible ExB term in density equation
+    boussinesq = options["boussinesq"].withDefault(
+        true); // Use Boussinesq approximation in vorticity
+    sheath = options["sheath"].withDefault(true); // Sheath closure
 
     /***************Calculate the Parameters **********/
 

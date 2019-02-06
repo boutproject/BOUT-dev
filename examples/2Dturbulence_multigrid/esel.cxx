@@ -20,17 +20,17 @@ private:
 
 protected:
   int init(bool restart) {
-    
-    Options *options = Options::getRoot()->getSection("esel");
-    
-    OPTION(options, zeta, 2.15e-3) ;
-    OPTION(options, D, 1.97e-3) ;
-    //   OPTION(options, chi, 4.61e-3) ;
-    OPTION(options, mu, 3.88e-2) ; 
-    int bracket; 
-    OPTION(options, bracket, 2);
-    OPTION(options, test_laplacian, false);
-    
+
+    auto options = Options::root()["esel"];
+
+    zeta = options["zeta"].withDefault(2.15e-3);
+    D = options["D"].withDefault(1.97e-3);
+    //   chi = options["chi"].withDefault(4.61e-3) ;
+    mu = options["mu"].withDefault(3.88e-2);
+    int bracket;
+    bracket = options["bracket"].withDefault(2);
+    test_laplacian = options["test_laplacian"].withDefault(false);
+
     // Set sources and sinks from input profile
     initial_profile("sigma_n", sigma_n);
     initial_profile("sigma_T", sigma_T);

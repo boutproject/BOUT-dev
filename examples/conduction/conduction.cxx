@@ -21,7 +21,7 @@ protected:
     auto options = Options::root()["conduction"];
     
     // Read from BOUT.inp, setting default to 1.0
-    OPTION(options, chi, 1.0);
+    chi = options["chi"].withDefault(1.0);
 
     // Tell BOUT++ to solve T
     SOLVE_FOR(T);

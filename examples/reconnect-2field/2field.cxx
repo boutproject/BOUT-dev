@@ -74,22 +74,22 @@ protected:
     mesh->get(coord->Bxy, "Bxy");
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2field");
+    auto globalOptions = Options::root();
+    auto options = globalOptions["2field"];
 
     // normalisation values
-    OPTION(options, nonlinear, false);
-    OPTION(options, parallel_lc, true);
-    OPTION(options, include_jpar0, true);
-    OPTION(options, jpar_bndry, 0);
+    nonlinear = options["nonlinear"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    include_jpar0 = options["include_jpar0"].withDefault(true);
+    jpar_bndry = options["jpar_bndry"].withDefault(0);
 
-    OPTION(options, eta, 1e-3); // Normalised resistivity
-    OPTION(options, mu, 1.e-3); // Normalised vorticity
+    eta = options["eta"].withDefault(1e-3); // Normalised resistivity
+    mu = options["mu"].withDefault(1.e-3);  // Normalised vorticity
 
-    OPTION(options, phi_flags, 0);
+    phi_flags = options["phi_flags"].withDefault(0);
 
     int bracket_method;
-    OPTION(options, bracket_method, 0);
+    bracket_method = options["bracket_method"].withDefault(0);
     switch (bracket_method) {
     case 0: {
       bm = BRACKET_STD;
