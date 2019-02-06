@@ -167,6 +167,9 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -279,6 +282,9 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   if (mesh->IncIntShear) {
     IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
