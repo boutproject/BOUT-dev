@@ -13,9 +13,8 @@ TARGET ?= $(SOURCEC:%.cxx=%)
 CXX:=$(shell bout-config --cxx)
 
 ifneq "$(.SHELLSTATUS)" "0"
-which=$(shell which bout-config)
-$(info Output of which bout-config: $(which))
-$(error Failed to run bout-config.)
+which=$(shell which bout-config 2>&1 )
+$(error Is bout-config in $$PATH? $(which))
 endif
 
 CFLAGS:=$(shell bout-config --cflags)
