@@ -6490,6 +6490,7 @@ $as_echo "$as_me: Found python version $PYTHON_VERSION" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $(python3-config --libs)"
   LDFLAGS="$LDFLAGS $(python3-config --ldflags)"
 
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
   HAS_PYBIND11="yes"
 
   #Now copy/link the pybind headers into bout includes

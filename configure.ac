@@ -403,6 +403,7 @@ AS_IF([test "$with_pybind11" != "no"], [
   EXTRA_LIBS="$EXTRA_LIBS $(python3-config --libs)"
   LDFLAGS="$LDFLAGS $(python3-config --ldflags)"
   
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
   HAS_PYBIND11="yes"
 
   #Now copy/link the pybind headers into bout includes
