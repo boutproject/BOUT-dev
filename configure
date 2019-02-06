@@ -12265,7 +12265,8 @@ else
 fi
 
 fi
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC"
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/externalpackages/pybind11 python3 -m pybind11 --includes)"
   HAS_PYBIND11="yes"
 
 else

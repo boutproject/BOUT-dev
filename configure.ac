@@ -1166,7 +1166,8 @@ AS_IF([test "$with_pybind11" != "no"], [
                                 [AC_MSG_NOTICE([Success in getting pybind11])],
                                 [AC_MSG_ERROR([Failed to get pybind11])])
   ])
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC"
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/externalpackages/pybind11 python3 -m pybind11 --includes)"
   HAS_PYBIND11="yes"
 ], [AC_MSG_NOTICE([Building without pybind11 submodule])])
 
