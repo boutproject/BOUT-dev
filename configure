@@ -12246,9 +12246,10 @@ fi
 #############################################################
 
 HAS_PYBIND11="no"
+PYBIND_TARGET_DIR=externalpackages/pybind11
 if test "$with_pybind11" != "no"; then :
 
-  if test -f externalpackages/pybind11/README.md; then :
+  if test -f ${PYBIND_TARGET_DIR}/README.md; then :
 
      { $as_echo "$as_me:${as_lineno-$LINENO}: Using existing pybind11 submodule" >&5
 $as_echo "$as_me: Using existing pybind11 submodule" >&6;}
@@ -12257,7 +12258,7 @@ else
 
      { $as_echo "$as_me:${as_lineno-$LINENO}: Getting pybind11 submodule" >&5
 $as_echo "$as_me: Getting pybind11 submodule" >&6;}
-              	if git submodule update --init --recursive -- externalpackages/pybind11; then :
+              	if git submodule update --init --recursive -- ${PYBIND_TARGET_DIR}; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: Success in getting pybind11" >&5
 $as_echo "$as_me: Success in getting pybind11" >&6;}
 else
@@ -12265,9 +12266,15 @@ else
 fi
 
 fi
+  #Note the following overlap with --enable-shared, we should probably force enabled_shared here
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC"
-  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/externalpackages/pybind11 python3 -m pybind11 --includes)"
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/${PYBIND_TARGET_DIR} python3 -m pybind11 --includes)"
   HAS_PYBIND11="yes"
+
+  #Now copy the pybind headers into bout includes
+  #AS_MKDIR_P(include/pybind11)
+  ac_config_links="$ac_config_links include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/"
+
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: Building without pybind11 submodule" >&5
@@ -15092,6 +15099,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -15116,6 +15124,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -15250,6 +15261,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "include/pybind11") CONFIG_LINKS="$CONFIG_LINKS include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/" ;;
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
 
@@ -15264,6 +15276,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -15453,7 +15466,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -15673,7 +15686,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;
@@ -16460,6 +16504,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -16484,6 +16529,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -16618,6 +16666,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "include/pybind11") CONFIG_LINKS="$CONFIG_LINKS include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/" ;;
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
@@ -16633,6 +16682,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -16822,7 +16872,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -17042,7 +17092,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;

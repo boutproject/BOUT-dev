@@ -1157,18 +1157,24 @@ AS_IF([test "$with_pvode" != "no"], [
 #############################################################
 
 HAS_PYBIND11="no"
+PYBIND_TARGET_DIR=externalpackages/pybind11
 AS_IF([test "$with_pybind11" != "no"], [
-  AS_IF([test -f externalpackages/pybind11/README.md], [
+  AS_IF([test -f ${PYBIND_TARGET_DIR}/README.md], [
      AC_MSG_NOTICE([Using existing pybind11 submodule])
   ], [
      AC_MSG_NOTICE([Getting pybind11 submodule])
-              	AS_IF([git submodule update --init --recursive -- externalpackages/pybind11],
+              	AS_IF([git submodule update --init --recursive -- ${PYBIND_TARGET_DIR}],
                                 [AC_MSG_NOTICE([Success in getting pybind11])],
                                 [AC_MSG_ERROR([Failed to get pybind11])])
   ])
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC"
-  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/externalpackages/pybind11 python3 -m pybind11 --includes)"
+  #Note the following overlap with --enable-shared, we should probably force enabled_shared here 
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11 -fPIC" 
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/${PYBIND_TARGET_DIR} python3 -m pybind11 --includes)"
   HAS_PYBIND11="yes"
+
+  #Now copy/link the pybind headers into bout includes
+  AC_CONFIG_LINKS(include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/)
+  
 ], [AC_MSG_NOTICE([Building without pybind11 submodule])])
 
 #############################################################
