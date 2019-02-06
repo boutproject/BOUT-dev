@@ -299,5 +299,5 @@ TEST_P(DerivativesTestAdvection, Sanity) {
   derivative(velocity, input, result, region);
 
   EXPECT_TRUE(
-      IsField3DEqualField3D(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+      IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
 }
