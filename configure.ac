@@ -56,6 +56,8 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[with_slepc=no])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
+AC_ARG_WITH(pybind11,        [AS_HELP_STRING([--with-pybind11],
+        [Enable pybind11 bindings (DEFAULT)])],,[with_pybind11=yes])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
@@ -1151,6 +1153,24 @@ AS_IF([test "$with_pvode" != "no"], [
 ])
 
 #############################################################
+# Enable pybind11 -- fetch submodule if required
+#############################################################
+
+HAS_PYBIND11="no"
+AS_IF([test "$with_pybind11" != "no"], [
+  AS_IF([test -f externalpackages/pybind11/README.md], [
+     AC_MSG_NOTICE([Using existing pybind11 submodule])
+  ], [
+     AC_MSG_NOTICE([Getting pybind11 submodule])
+              	AS_IF([git submodule update --init --recursive -- externalpackages/pybind11],
+                                [AC_MSG_NOTICE([Success in getting pybind11])],
+                                [AC_MSG_ERROR([Failed to get pybind11])])
+  ])
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  HAS_PYBIND11="yes"
+], [AC_MSG_NOTICE([Building without pybind11 submodule])])
+
+#############################################################
 # Localisation (i18n) with gettext
 #############################################################
 
@@ -1293,6 +1313,7 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_PYBIND11)
 AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
@@ -1311,6 +1332,7 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
 AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
 AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
+AC_MSG_NOTICE([  PVODE support           : $HAS_PVODE])
 AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
@@ -1320,6 +1342,7 @@ AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
 AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
+AC_MSG_NOTICE([  PyBind11 support        : $HAS_PYBIND11])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 

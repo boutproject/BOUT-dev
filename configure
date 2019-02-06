@@ -624,6 +624,7 @@ ac_includes_default="\
 gt_needs=
 ac_subst_vars='HAS_FFTW
 HAS_NLS
+HAS_PYBIND11
 HAS_OPENMP
 SLEPC_ARCH
 SLEPC_DIR
@@ -767,6 +768,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -799,6 +801,7 @@ with_lapack
 with_petsc
 with_slepc
 with_pvode
+with_pybind11
 with_mumps
 with_arkode
 with_scorep
@@ -879,6 +882,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1131,6 +1135,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1268,7 +1281,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1421,6 +1434,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1486,6 +1500,7 @@ Optional Packages:
   --with-petsc            Enable PETSc interface
   --with-slepc            Enable SLEPc interface
   --with-pvode            Build and enable PVODE 98 (DEFAULT)
+  --with-pybind11         Enable pybind11 bindings (DEFAULT)
   --with-mumps            Link with MUMPS library for direct matrix inversions
   --with-arkode           Use the SUNDIALS ARKODE solver
   --with-scorep           Enable support for scorep based instrumentation
@@ -2607,6 +2622,14 @@ fi
 # Check whether --with-pvode was given.
 if test "${with_pvode+set}" = set; then :
   withval=$with_pvode;
+fi
+
+
+# Check whether --with-pybind11 was given.
+if test "${with_pybind11+set}" = set; then :
+  withval=$with_pybind11;
+else
+  with_pybind11=yes
 fi
 
 
@@ -12219,6 +12242,38 @@ fi
 fi
 
 #############################################################
+# Enable pybind11 -- fetch submodule if required
+#############################################################
+
+HAS_PYBIND11="no"
+if test "$with_pybind11" != "no"; then :
+
+  if test -f externalpackages/pybind11/README.md; then :
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: Using existing pybind11 submodule" >&5
+$as_echo "$as_me: Using existing pybind11 submodule" >&6;}
+
+else
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: Getting pybind11 submodule" >&5
+$as_echo "$as_me: Getting pybind11 submodule" >&6;}
+              	if git submodule update --init --recursive -- externalpackages/pybind11; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Success in getting pybind11" >&5
+$as_echo "$as_me: Success in getting pybind11" >&6;}
+else
+  as_fn_error $? "Failed to get pybind11" "$LINENO" 5
+fi
+
+fi
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  HAS_PYBIND11="yes"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Building without pybind11 submodule" >&5
+$as_echo "$as_me: Building without pybind11 submodule" >&6;}
+fi
+
+#############################################################
 # Localisation (i18n) with gettext
 #############################################################
 
@@ -13437,21 +13492,16 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern int *_nl_domain_bindings;
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_domain_bindings)
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_domain_bindings
 
   ;
   return 0;
@@ -14204,25 +14254,20 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -14241,25 +14286,20 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -15847,6 +15887,7 @@ BOUT_INCLUDE_PATH=$PWD/include
 
 
 
+
 ac_config_files="$ac_config_files bin/bout-config"
 
 cat >confcache <<\_ACEOF
@@ -17179,6 +17220,8 @@ $as_echo "$as_me:   PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_H
 $as_echo "$as_me:   SLEPc support           : $HAS_SLEPC" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   IDA support             : $HAS_IDA" >&5
 $as_echo "$as_me:   IDA support             : $HAS_IDA" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   PVODE support           : $HAS_PVODE" >&5
+$as_echo "$as_me:   PVODE support           : $HAS_PVODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   CVODE support           : $HAS_CVODE" >&5
 $as_echo "$as_me:   CVODE support           : $HAS_CVODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   ARKODE support          : $HAS_ARKODE" >&5
@@ -17197,6 +17240,8 @@ $as_echo "$as_me:   MUMPS support           : $HAS_MUMPS" >&6;}
 $as_echo "$as_me:   Lapack support          : $HAS_LAPACK" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Scorep support          : $HAS_SCOREP" >&5
 $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   PyBind11 support        : $HAS_PYBIND11" >&5
+$as_echo "$as_me:   PyBind11 support        : $HAS_PYBIND11" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&5
 $as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS (path: $localedir)" >&5
