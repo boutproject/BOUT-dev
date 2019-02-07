@@ -89,6 +89,14 @@ int main() {
     std::cout<<"The value is "<<theValue<<std::endl;    
     getVal(linspaceTest[py::make_tuple(5)], theValue);
     std::cout<<"The value is "<<theValue<<std::endl;
+    auto tmp = linspaceTest.cast<py::array_t<double>>();
+    for (const auto &i: tmp){
+      std::cout<<" with value "<< i.cast<double>() << std::endl;
+    }
+
+    // Here's another way of indexing the python array
+    auto buf = tmp.request();
+    std::cout<<((double *) buf.ptr)[3]<<std::endl;
   }
 }
 #else
