@@ -29,11 +29,12 @@ using EnableIfField = typename std::enable_if<std::is_base_of<Field, T>::value>:
 /// Returns a field filled with the result of \p fill_function at each point
 /// Arbitrary arguments can be passed to the field constructor
 template <class T, class... Args, typename = EnableIfField<T>>
-T makeField(std::function<BoutReal(typename T::ind_type&)> fill_function, Args... args) {
+T makeField(const std::function<BoutReal(typename T::ind_type&)>& fill_function,
+            Args&&... args) {
   T result{std::forward<Args>(args)...};
   result.allocate();
 
-  for (auto i: result) {
+  for (auto i : result) {
     result[i] = fill_function(i);
   }
 
