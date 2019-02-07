@@ -1,12 +1,46 @@
 #ifdef BOUT_HAS_PYBIND11
 #include <pybind11/embed.h>
 
+#include <iostream>
+#include <type_traits>
+
 namespace py = pybind11;
 using namespace py::literals;
 
 // Provide a simple function that returns an int
 int myFunc(){
   return 42;
+};
+
+template<typename In, typename Out>
+struct has_cast {
+private:
+  // Routine to check if the result of the cast of In to Out works --
+  // this fails if the types are different but also if In doesn't have
+  // a template cast method.  The type of this will either be
+  // std::false_type or std::true_type depending on if In and Out are
+  // compatible
+  template<typename T>
+  static constexpr typename std::is_same<decltype( std::declval<T>().template cast<Out>()), Out>::type check(T*);
+
+  // Fall back check type should the above check fail to be
+  // available (i.e. because In doesn't have a valid cast method)
+  template<typename>
+  static constexpr std::false_type check(...);
+
+  // Find the type of invoking the check, this will either be true
+  // or false.
+  using type = decltype(check<In>(nullptr));
+
+public:
+  static constexpr bool value = type::value;
+};
+
+template<typename U, typename T>
+void getVal(U in, T& out) {
+  static_assert(has_cast<U, T>::value,"Error: Can't cast U to T in getVal, did you pass a pybind11 object as the first argument?");
+  out = in.template cast<T>();
+  return;
 };
 
 int main() {
@@ -49,7 +83,12 @@ int main() {
     for(int i=0; i<20; i++) {
       linspaceTest[py::make_tuple(i)] = i;
     }
-    py::print(linspaceTest);    
+    py::print(linspaceTest);
+
+    double theValue = linspaceTest[py::make_tuple(10)].cast<double>();
+    std::cout<<"The value is "<<theValue<<std::endl;    
+    getVal(linspaceTest[py::make_tuple(5)], theValue);
+    std::cout<<"The value is "<<theValue<<std::endl;
   }
 }
 #else
