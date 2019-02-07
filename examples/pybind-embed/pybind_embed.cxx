@@ -95,9 +95,15 @@ int main() {
     }
 
     // Here's another way of indexing the python array
-    auto buf = tmp.request();
-    std::cout<<((double *) buf.ptr)[3]<<std::endl;
+    auto ndArray = np.attr("ones")(py::make_tuple(20,30,40,50));    
+    auto buf = ndArray.cast<py::array_t<double>>().request();
+    std::cout<<"Element 3 from buffer with shape [ ";
+    for(const auto &i: buf.shape){
+      std::cout<<i<<", ";
+    }
+    std::cout<<"] is "<<((double *) buf.ptr)[3]<<std::endl;    
   }
+
 }
 #else
 #error Must configure with `--with-pybind11` to be able to build pybind_embed example.
