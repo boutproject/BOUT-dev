@@ -98,12 +98,12 @@ msgstr "\tzu überprüfender Wert: %d\n"
 
 #: ../src/bout++.cxx:387
 msgid "\tChecking disabled\n"
-msgstr "\tChecks deaktiviert\n"
+msgstr "\tChecks sind deaktiviert\n"
 
 #: ../src/bout++.cxx:385
 #, c-format
 msgid "\tChecking enabled, level %d\n"
-msgstr "\tChecks aktiviert, Stufe %d\n"
+msgstr "\tChecks der Stufe %d sind aktiviert\n"
 
 #. Print command line options
 #: ../src/bout++.cxx:431
@@ -170,12 +170,12 @@ msgstr "\t'=' darf nicht mehrfach vorkommen: '%s'\n"
 
 #: ../src/bout++.cxx:415
 msgid "\tOpenMP parallelisation disabled\n"
-msgstr "\tOpenMP Parallelisierung deaktiviert\n"
+msgstr "\tOpenMP Parallelisierung ist deaktiviert\n"
 
 #: ../src/bout++.cxx:413
 #, c-format
 msgid "\tOpenMP parallelisation enabled, using %d threads\n"
-msgstr "\tOpenMP Parallelisierung aktiviert mit %d Threads\n"
+msgstr "\tOpenMP Parallelisierung mit %d Threads ist aktiviert\n"
 
 #. Mark the option as used
 #. Option not found
@@ -227,11 +227,11 @@ msgstr "\tKovariantevektoren werden gelesen "
 
 #: ../src/bout++.cxx:393
 msgid "\tSignal handling disabled\n"
-msgstr "\tSignalverarbeitung deaktiviert\n"
+msgstr "\tSignalverarbeitung ist deaktiviert\n"
 
 #: ../src/bout++.cxx:391
 msgid "\tSignal handling enabled\n"
-msgstr "\tSignalverarbeitung aktiviert\n"
+msgstr "\tSignalverarbeitung ist aktiviert\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:858
 msgid "\tdone\n"
@@ -239,15 +239,15 @@ msgstr "\tfertig\n"
 
 #: ../src/bout++.cxx:402
 msgid "\tnetCDF support disabled\n"
-msgstr "\tNetCDF Unterstützung deaktiviert\n"
+msgstr "\tNetCDF Unterstützung ist deaktiviert\n"
 
 #: ../src/bout++.cxx:397
 msgid "\tnetCDF support enabled\n"
-msgstr "\tNetCDF Unterstützung aktiviert\n"
+msgstr "\tNetCDF Unterstützung ist aktiviert\n"
 
 #: ../src/bout++.cxx:400
 msgid "\tnetCDF4 support enabled\n"
-msgstr "\tNetCDF4 Unterstützung aktiviert\n"
+msgstr "\tNetCDF4 Unterstützung ist aktiviert\n"
 
 #: ../src/bout++.cxx:166
 #, c-format
@@ -339,7 +339,7 @@ msgid ""
 "Code compiled on %s at %s\n"
 "\n"
 msgstr ""
-"Der Code wurde auf %s um %s kompiliert\n"
+"Der Code wurde am %s um %s kompiliert\n"
 "\n"
 
 #: ../src/sys/optionsreader.cxx:142
