@@ -75,9 +75,10 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       oplot, bndry[0,*], bndry[1,*], color=2, thick=2
     ENDIF
 
-    cpos = line_crossings(sep_ri, sep_zi, 0, $
+    cpos = line_crossings(sep_ri, sep_zi, info[i].type, $
                           ri, zi, 1, $
                           ncross=ncross, inds1=inds)
+
     PRINT, "Intersections: ", ncross
     FOR j = 0, ncross-1 DO BEGIN
       ; Intersection. Get location
@@ -100,10 +101,19 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       si = [inds[j]]
       IF dir GT 0 THEN BEGIN
         in = CEIL(si[0])
-        si = [si, in + indgen(N_ELEMENTS(sep_ri) - in)]
+        IF in LT N_ELEMENTS(sep_ri) THEN BEGIN
+          ; normal case
+          si = [si, in + indgen(N_ELEMENTS(sep_ri) - in), indgen(in - 1)]
+        ENDIF ELSE BEGIN
+          ; can't call indgen(0) so handle this specially
+          si = [si, indgen(in - 1)]
+        ENDELSE
       ENDIF ELSE BEGIN
         in = FLOOR(si[0])
-        si = [si, reverse(indgen(in+1))]
+        ; contour is closed, so we can loop around: start at si, add elements
+        ; until the beginning of the contour, then add elements starting from the
+        ; end of the contour
+        si = [si, reverse(indgen(in+1)), reverse(indgen(N_ELEMENTS(sep_ri)-in-1)) + in + 1]
       ENDELSE
       sepri = INTERPOLATE(sep_ri, si)
       sepzi = INTERPOLATE(sep_zi, si)
@@ -124,8 +134,11 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
         dz = dz[1:*] * dz[0:(n-2)]
         in = MIN(WHERE((dr[1:*] LE 0.0) OR (dz[1:*] LE 0.0))) + 1
         
-        sepri = sepri[0:in]
-        sepzi = sepzi[0:in]
+        if in GT 0 THEN BEGIN
+          ; if in<=0 then there is no extremum, so don't truncate sepri/sepzi
+          sepri = sepri[0:in]
+          sepzi = sepzi[0:in]
+        ENDIF
         
         IF KEYWORD_SET(debug) THEN OPLOT, sepri, sepzi, color=4
         
