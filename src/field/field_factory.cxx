@@ -93,6 +93,11 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   // TanhHat function
   addGenerator("tanhhat",
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
+
+  // Python function
+  addGenerator("python",
+               std::make_shared<FieldPython>(nullptr));
+
 }
 
 FieldFactory::~FieldFactory() {

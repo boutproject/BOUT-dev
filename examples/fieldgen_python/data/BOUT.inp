@@ -1,0 +1,22 @@
+
+NOUT = 0
+TIMESTEP = 0.0
+
+MZ = 8
+MXG = 1
+MYG = 1
+
+[mesh]
+nx = 3
+ny = 1
+symmetricGlobalX = true
+
+[solver]
+type = rkgeneric
+
+[all]
+bndry_all = none
+
+[f]
+scale = 1
+function = python(\{z\}-\{y\})

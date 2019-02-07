@@ -58,7 +58,7 @@ namespace { // These classes only visible in this file
     }
     const std::string str() override { return std::string("y"); }
   };
-
+  
   class FieldZ : public FieldGenerator {
   public:
     FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
@@ -81,6 +81,54 @@ namespace { // These classes only visible in this file
       return t;
     }
     const std::string str() override { return std::string("t"); }
+  };
+
+  class FieldPyX : public FieldGenerator {
+  public:
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
+      return std::make_shared<FieldPyX>();
+    }
+    double generate(double x, UNUSED(double) y, double UNUSED(z),
+                    double UNUSED(t)) override {
+      return x;
+    }
+    const std::string str() override { return std::string("{x}"); }
+  };
+
+  class FieldPyY : public FieldGenerator {
+  public:
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
+      return std::make_shared<FieldPyY>();
+    }
+    double generate(double UNUSED(x), double y, double UNUSED(z),
+                    double UNUSED(t)) override {
+      return y;
+    }
+    const std::string str() override { return std::string("{y}"); }
+  };
+
+  class FieldPyZ : public FieldGenerator {
+  public:
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
+      return std::make_shared<FieldPyZ>();
+    }
+    double generate(double UNUSED(x), double UNUSED(y), double z,
+                    double UNUSED(t)) override {
+      return z;
+    }
+    const std::string str() override { return std::string("{z}"); }
+  };
+
+  class FieldPyT : public FieldGenerator {
+  public:
+    FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
+      return std::make_shared<FieldPyT>();
+    }
+    double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
+                    double t) override {
+      return t;
+    }
+    const std::string str() override { return std::string("{t}"); }
   };
 }
 
@@ -120,6 +168,12 @@ ExpressionParser::ExpressionParser() {
   addGenerator("y", std::make_shared<FieldY>());
   addGenerator("z", std::make_shared<FieldZ>());
   addGenerator("t", std::make_shared<FieldT>());
+
+  addGenerator("{y}", std::make_shared<FieldPyX>());    
+  addGenerator("{y}", std::make_shared<FieldPyY>());  
+  addGenerator("{z}", std::make_shared<FieldPyZ>());
+  addGenerator("{t}", std::make_shared<FieldPyT>());  
+
 }
 
 void ExpressionParser::addGenerator(const string &name, FieldGeneratorPtr g) {
@@ -147,7 +201,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   string name = lowercase(lex.curident);
   lex.nextToken();
   
-  if(lex.curtok == '(') {
+  if(lex.curtok == '(' || lex.curtok == '{') {
     // Argument list. Find if a generator or function
     
     auto it = gen.find(name);
@@ -158,7 +212,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
     list<FieldGeneratorPtr> args;
     
     lex.nextToken();
-    if(lex.curtok == ')') {
+    if(lex.curtok == ')' || lex.curtok == '}') {
       // Empty list
       lex.nextToken();
       return it->second->clone(args);
@@ -169,7 +223,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
       
       // Now either a comma or ')'
       
-      if(lex.curtok == ')') {
+      if(lex.curtok == ')' || lex.curtok == '}') {
         // Finished list
         lex.nextToken();
         return it->second->clone(args);

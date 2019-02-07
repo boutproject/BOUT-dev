@@ -337,4 +337,19 @@ private:
   FieldGeneratorPtr width, center, steepness;
 };
 
+//////////////////////////////////////////////////////////
+// Python
+class FieldPython : public FieldGenerator {
+public:
+  // Constructor
+  FieldPython(): gen(nullptr) {};
+  FieldPython(FieldGeneratorPtr g) : gen(g) {};
+  
+  // Clone containing the list of arguments
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
+  BoutReal generate(double x, double y, double z, double t);
+private:
+  FieldGeneratorPtr gen = nullptr;  
+};
+
 #endif // __FIELDGENERATORS_H__
