@@ -181,3 +181,9 @@ used in the creation of [configure](configure) from
 [configure.ac](configure.ac), and are provided as a courtesy to
 developers. You are free to substitute them with other autoconf macros
 that provide equivalent functionality.
+
+The natural language support (NLS) extension uses gettext, which is
+licensed as GPL. Thus if you compile BOUT++ with NLS, BOUT++ is
+automatically licensed as GPL. Thus if you want to use BOUT++ with
+non-GPL compatible code, make sure to compile without NLS by
+configuring as: `./configure --disable-nls`
