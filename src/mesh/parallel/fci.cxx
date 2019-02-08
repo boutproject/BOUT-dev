@@ -53,8 +53,9 @@ inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
-  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
+FCIMap::FCIMap(Mesh &mesh_in, int dir, bool zperiodic)
+  : mesh(mesh_in), dir(dir), boundary_mask(mesh_in), corner_boundary_mask(mesh_in),
+    y_prime(&mesh_in) {
 
   interp = InterpolationFactory::getInstance()->create(&mesh);
   interp->setYOffset(dir);
@@ -249,10 +250,10 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   result.allocate();
   result.setLocation(f.getLocation());
 
-  int nz = mesh->LocalNz;
+  int nz = mesh.LocalNz;
   
-  for(int x = mesh->xstart; x <= mesh->xend; x++) {
-    for(int y = mesh->ystart; y <= mesh->yend; y++) {
+  for(int x = mesh.xstart; x <= mesh.xend; x++) {
+    for(int y = mesh.ystart; y <= mesh.yend; y++) {
       
       int ynext = y+dir;
       
@@ -269,7 +270,7 @@ const Field3D FCIMap::integrate(Field3D &f) const {
         
         if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
             corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm) ||
-            (x == mesh->xstart)) {
+            (x == mesh.xstart)) {
           // One of the corners leaves the domain.
           // Use the cell centre value, since boundary conditions are not
           // currently applied to corners.

@@ -9,7 +9,14 @@
 #include "vector3d.hxx"
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Vector3DTest : public ::testing::Test {
@@ -211,9 +218,9 @@ TEST_F(Vector3DTest, AssignFromBoutReal) {
 
   vector = 0.0;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 0.0));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 0.0));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 0.0));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 0.0));
 }
 
 TEST_F(Vector3DTest, AssignFromVector2D) {
@@ -227,9 +234,9 @@ TEST_F(Vector3DTest, AssignFromVector2D) {
 
   vector2 = vector1;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, 1.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, 2.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, 3.0));
   EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
@@ -243,9 +250,9 @@ TEST_F(Vector3DTest, AssignFromVector3D) {
 
   vector2 = vector1;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 2.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 3.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, 1.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, 2.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, 3.0));
   EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
@@ -259,9 +266,9 @@ TEST_F(Vector3DTest, CreateFromVector3D) {
 
   Vector3D vector2{vector1};
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 4.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 5.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 6.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, 4.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, 5.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, 6.0));
   EXPECT_EQ(vector1.getLocation(), vector2.getLocation());
 }
 
@@ -275,9 +282,9 @@ TEST_F(Vector3DTest, UnaryMinus) {
 
   vector2 = -vector1;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, -7.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, -8.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, -9.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, -7.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, -8.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, -9.0));
 }
 
 TEST_F(Vector3DTest, AddEqualsVector3D) {
@@ -293,9 +300,9 @@ TEST_F(Vector3DTest, AddEqualsVector3D) {
 
   vector2 += vector1;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, 11.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, 13.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, 15.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, 11.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, 13.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, 15.0));
 }
 
 TEST_F(Vector3DTest, AddVector3DVector2D) {
@@ -311,9 +318,9 @@ TEST_F(Vector3DTest, AddVector3DVector2D) {
 
   Vector3D result = vector1 + vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 17.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 19.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 21.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 17.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 19.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 21.0));
 }
 
 TEST_F(Vector3DTest, AddVector3DVector3D) {
@@ -329,9 +336,9 @@ TEST_F(Vector3DTest, AddVector3DVector3D) {
 
   Vector3D result = vector1 + vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 7.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 9.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 11.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 7.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 9.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 11.0));
 }
 
 TEST_F(Vector3DTest, MinusEqualsVector3D) {
@@ -347,9 +354,9 @@ TEST_F(Vector3DTest, MinusEqualsVector3D) {
 
   vector2 -= vector1;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.x, -97.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.y, -99.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector2.z, -101.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.x, -97.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.y, -99.0));
+  EXPECT_TRUE(IsFieldEqual(vector2.z, -101.0));
 }
 
 TEST_F(Vector3DTest, MinusVector3DVector2D) {
@@ -365,9 +372,9 @@ TEST_F(Vector3DTest, MinusVector3DVector2D) {
 
   Vector3D result = vector1 - vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, -3.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, -1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 1.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, -3.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, -1.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 1.0));
 }
 
 TEST_F(Vector3DTest, MinusVector3DVector3D) {
@@ -383,9 +390,9 @@ TEST_F(Vector3DTest, MinusVector3DVector3D) {
 
   Vector3D result = vector1 - vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 7.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 9.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 11.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 7.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 9.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 11.0));
 }
 
 TEST_F(Vector3DTest, MultiplyEqualsBoutReal) {
@@ -398,9 +405,9 @@ TEST_F(Vector3DTest, MultiplyEqualsBoutReal) {
 
   vector *= real;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 16.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 20.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 24.0));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 16.0));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 20.0));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 24.0));
 }
 
 TEST_F(Vector3DTest, MultiplyEqualsField2D) {
@@ -413,9 +420,9 @@ TEST_F(Vector3DTest, MultiplyEqualsField2D) {
 
   vector *= field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 160.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 200.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 240.0));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 160.0));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 200.0));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 240.0));
 }
 
 TEST_F(Vector3DTest, MultiplyVector3DBoutReal) {
@@ -428,9 +435,9 @@ TEST_F(Vector3DTest, MultiplyVector3DBoutReal) {
 
   Vector3D result = vector * real;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 2.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 4.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 6.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 2.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 6.0));
 }
 
 TEST_F(Vector3DTest, MultiplyVector3DField2D) {
@@ -443,9 +450,9 @@ TEST_F(Vector3DTest, MultiplyVector3DField2D) {
 
   Vector3D result = vector * field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 3.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 6.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 9.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 3.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 6.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 9.0));
 }
 
 TEST_F(Vector3DTest, MultiplyVector3DField3D) {
@@ -458,9 +465,9 @@ TEST_F(Vector3DTest, MultiplyVector3DField3D) {
 
   Vector3D result = vector * field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 4.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 8.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 12.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 8.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 12.0));
 }
 
 TEST_F(Vector3DTest, DivideEqualsBoutReal) {
@@ -473,9 +480,9 @@ TEST_F(Vector3DTest, DivideEqualsBoutReal) {
 
   vector /= real;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 0.1));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 0.2));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 0.3));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 0.1));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 0.2));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 0.3));
 }
 
 TEST_F(Vector3DTest, DivideEqualsConstField2D) {
@@ -488,9 +495,9 @@ TEST_F(Vector3DTest, DivideEqualsConstField2D) {
 
   vector /= field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 0.2));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 0.4));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 0.6));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 0.2));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 0.4));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 0.6));
 }
 
 TEST_F(Vector3DTest, DivideVector3DBoutReal) {
@@ -503,9 +510,9 @@ TEST_F(Vector3DTest, DivideVector3DBoutReal) {
 
   Vector3D result = vector / real;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 0.5));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 1.5));
+  EXPECT_TRUE(IsFieldEqual(result.x, 0.5));
+  EXPECT_TRUE(IsFieldEqual(result.y, 1.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 1.5));
 }
 
 TEST_F(Vector3DTest, DivideVector3DField2D) {
@@ -518,9 +525,9 @@ TEST_F(Vector3DTest, DivideVector3DField2D) {
 
   Vector3D result = vector / field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 0.25));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 0.5));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 0.75));
+  EXPECT_TRUE(IsFieldEqual(result.x, 0.25));
+  EXPECT_TRUE(IsFieldEqual(result.y, 0.5));
+  EXPECT_TRUE(IsFieldEqual(result.z, 0.75));
 }
 
 TEST_F(Vector3DTest, DivideVector3DField3D) {
@@ -533,9 +540,9 @@ TEST_F(Vector3DTest, DivideVector3DField3D) {
 
   Vector3D result = vector / field;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 2.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 3.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 1.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 2.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 3.0));
 }
 
 TEST_F(Vector3DTest, ToCovariant) {
@@ -547,9 +554,9 @@ TEST_F(Vector3DTest, ToCovariant) {
 
   vector.toCovariant();
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 48.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 52.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 52.0));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 48.0));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 52.0));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 52.0));
 }
 
 TEST_F(Vector3DTest, ToContravariant) {
@@ -561,9 +568,9 @@ TEST_F(Vector3DTest, ToContravariant) {
 
   vector.toContravariant();
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.x, 48.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.y, 52.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(vector.z, 52.0));
+  EXPECT_TRUE(IsFieldEqual(vector.x, 48.0));
+  EXPECT_TRUE(IsFieldEqual(vector.y, 52.0));
+  EXPECT_TRUE(IsFieldEqual(vector.z, 52.0));
 }
 
 TEST_F(Vector3DTest, Cross3D3D) {
@@ -579,9 +586,9 @@ TEST_F(Vector3DTest, Cross3D3D) {
 
   auto result = cross(vector1, vector2);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 0.0));
 }
 
 TEST_F(Vector3DTest, Cross3D2D) {
@@ -597,9 +604,9 @@ TEST_F(Vector3DTest, Cross3D2D) {
 
   auto result = cross(vector1, vector2);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.x, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.y, 0.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(result.z, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.x, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 0.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 0.0));
 }
 
 TEST_F(Vector3DTest, Dot3D3DCoContra) {
@@ -616,7 +623,7 @@ TEST_F(Vector3DTest, Dot3D3DCoContra) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 28.0));
+  EXPECT_TRUE(IsFieldEqual(result, 28.0));
 }
 
 TEST_F(Vector3DTest, Dot3D2DCoContra) {
@@ -633,7 +640,7 @@ TEST_F(Vector3DTest, Dot3D2DCoContra) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 28.0));
+  EXPECT_TRUE(IsFieldEqual(result, 28.0));
 }
 
 TEST_F(Vector3DTest, Dot3D3DCoCo) {
@@ -649,7 +656,7 @@ TEST_F(Vector3DTest, Dot3D3DCoCo) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+  EXPECT_TRUE(IsFieldEqual(result, 308.0));
 }
 
 TEST_F(Vector3DTest, Dot3D2DCoCo) {
@@ -665,7 +672,7 @@ TEST_F(Vector3DTest, Dot3D2DCoCo) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+  EXPECT_TRUE(IsFieldEqual(result, 308.0));
 }
 
 TEST_F(Vector3DTest, Dot3D3DContraContra) {
@@ -683,7 +690,7 @@ TEST_F(Vector3DTest, Dot3D3DContraContra) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+  EXPECT_TRUE(IsFieldEqual(result, 308.0));
 }
 
 TEST_F(Vector3DTest, Dot3D2DContraContra) {
@@ -701,7 +708,7 @@ TEST_F(Vector3DTest, Dot3D2DContraContra) {
 
   auto result = vector1 * vector2;
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 308.0));
+  EXPECT_TRUE(IsFieldEqual(result, 308.0));
 }
 
 TEST_F(Vector3DTest, AbsCo) {
@@ -712,7 +719,7 @@ TEST_F(Vector3DTest, AbsCo) {
 
   auto result = abs(vector1);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 24.819347291981714));
+  EXPECT_TRUE(IsFieldEqual(result, 24.819347291981714));
 }
 
 TEST_F(Vector3DTest, AbsContra) {
@@ -724,5 +731,5 @@ TEST_F(Vector3DTest, AbsContra) {
 
   auto result = abs(vector1);
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(result, 24.819347291981714));
+  EXPECT_TRUE(IsFieldEqual(result, 24.819347291981714));
 }

@@ -28,7 +28,11 @@
  *
  **************************************************************************/
 
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include <bout/physicsmodel.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#include <bout/mesh.hxx>
 
 PhysicsModel::PhysicsModel()
     : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
@@ -127,7 +131,7 @@ int PhysicsModel::postInit(bool restarting) {
   // Add mesh information to restart file
   // Note this is done after reading, so mesh variables
   // are not overwritten.
-  mesh->outputVars(restart);
+  bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 

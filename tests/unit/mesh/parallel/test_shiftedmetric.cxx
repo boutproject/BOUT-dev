@@ -3,7 +3,14 @@
 #include "bout/paralleltransform.hxx"
 #include "test_extras.hxx"
 
-extern Mesh* mesh;
+// The unit tests use the global mesh
+using namespace bout::globals;
+
+namespace bout{
+namespace globals{
+extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
 
 class ShiftedMetricTest : public ::testing::Test {
 public:
@@ -84,7 +91,7 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {5., 6., 7., 1., 2., 3., 4.},
                         {6., 7., 1., 2., 3., 4., 5.}}});
 
-  EXPECT_TRUE(IsField3DEqualField3D(shifted.toFieldAligned(input), expected));
+  EXPECT_TRUE(IsFieldEqual(shifted.toFieldAligned(input), expected));
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
@@ -131,8 +138,7 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {3., 4., 5., 6., 7., 1., 2.}}});
 
   // Loosen tolerance a bit due to FFTs
-  EXPECT_TRUE(IsField3DEqualField3D(shifted.fromFieldAligned(input), expected, "RGN_ALL",
-                                    1.e-12));
+  EXPECT_TRUE(IsFieldEqual(shifted.fromFieldAligned(input), expected, "RGN_ALL", 1.e-12));
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
@@ -212,6 +218,6 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
                              {7., 1., 2., 3., 4., 5., 6.},
                              {0., 0., 0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(IsField3DEqualField3D(input.yup(), expected_up, "RGN_YUP"));
-  EXPECT_TRUE(IsField3DEqualField3D(input.ydown(), expected_down, "RGN_YDOWN"));
+  EXPECT_TRUE(IsFieldEqual(input.yup(), expected_up, "RGN_YUP"));
+  EXPECT_TRUE(IsFieldEqual(input.ydown(), expected_down, "RGN_YDOWN"));
 }

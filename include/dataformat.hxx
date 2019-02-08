@@ -40,9 +40,12 @@ class DataFormat;
 #include <memory>
 #include <vector>
 
+class Mesh;
+
 // Can't copy, to control access to file
 class DataFormat {
  public:
+  DataFormat(Mesh* mesh_in = nullptr);
   virtual ~DataFormat() { }
   // File opening routines
   virtual bool openr(const char *name) = 0;
@@ -195,6 +198,9 @@ class DataFormat {
   /// -------
   /// value                  A BoutReal attribute of the variable
   virtual bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) = 0;
+
+ protected:
+  Mesh* mesh;
 };
 
 // For backwards compatability. In formatfactory.cxx
