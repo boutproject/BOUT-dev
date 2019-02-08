@@ -238,7 +238,8 @@ namespace {
   }
 }
 
-Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in)
+Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in,
+      bool force_interpolate_from_centre)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -249,57 +250,155 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolateAndNeumann(coords_in->dx, location);
-  dy = interpolateAndNeumann(coords_in->dy, location);
+  std::string suffix = "";
+  switch (location) {
+  case CELL_XLOW: {
+      suffix = "_xlow";
+      break;
+    }
+  case CELL_YLOW: {
+      suffix = "_ylow";
+      break;
+    }
+  case CELL_ZLOW: {
+      // geometrical quantities are Field2D, so CELL_ZLOW version is the same
+      // as CELL_CENTRE
+      suffix = "";
+      break;
+    }
+  default: {
+      throw BoutException("Incorrect location passed to "
+          "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
+    }
+  }
 
-  nz = mesh->LocalNz;
+  if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
+    // grid data source has staggered fields, so read instead of interpolating
+    // Diagonal components of metric tensor g^{ij} (default to 1)
+    mesh->get(g11, "g11"+suffix, 1.0);
+    g11.setLocation(location);
+    mesh->get(g22, "g22"+suffix, 1.0);
+    g22.setLocation(location);
+    mesh->get(g33, "g33"+suffix, 1.0);
+    g33.setLocation(location);
 
-  dz = coords_in->dz;
+    // Off-diagonal elements. Default to 0
+    mesh->get(g12, "g12"+suffix, 0.0);
+    g12.setLocation(location);
+    mesh->get(g13, "g13"+suffix, 0.0);
+    g13.setLocation(location);
+    mesh->get(g23, "g23"+suffix, 0.0);
+    g23.setLocation(location);
 
-  // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndNeumann(coords_in->g11, location);
-  g22 = interpolateAndNeumann(coords_in->g22, location);
-  g33 = interpolateAndNeumann(coords_in->g33, location);
+    /// Find covariant metric components
+    // Check if any of the components are present
+    if (mesh->sourceHasVar("g_11"+suffix) or mesh->sourceHasVar("g_22"+suffix) or
+        mesh->sourceHasVar("g_33"+suffix) or mesh->sourceHasVar("g_12"+suffix) or
+        mesh->sourceHasVar("g_13"+suffix) or mesh->sourceHasVar("g_23"+suffix)) {
+      // Check that all components are present
+      if (mesh->sourceHasVar("g_11"+suffix) and mesh->sourceHasVar("g_22"+suffix) and
+          mesh->sourceHasVar("g_33"+suffix) and mesh->sourceHasVar("g_12"+suffix) and
+          mesh->sourceHasVar("g_13"+suffix) and mesh->sourceHasVar("g_23"+suffix)) {
+        mesh->get(g_11, "g_11"+suffix);
+        g_11.setLocation(location);
+        mesh->get(g_22, "g_22"+suffix);
+        g_22.setLocation(location);
+        mesh->get(g_33, "g_33"+suffix);
+        g_33.setLocation(location);
+        mesh->get(g_12, "g_12"+suffix);
+        g_12.setLocation(location);
+        mesh->get(g_13, "g_13"+suffix);
+        g_13.setLocation(location);
+        mesh->get(g_23, "g_23"+suffix);
+        g_23.setLocation(location);
 
-  // Off-diagonal elements.
-  g12 = interpolateAndNeumann(coords_in->g12, location);
-  g13 = interpolateAndNeumann(coords_in->g13, location);
-  g23 = interpolateAndNeumann(coords_in->g23, location);
+        output_warn.write("\tWARNING! Staggered covariant components of metric tensor set manually. "
+                          "Contravariant components NOT recalculated\n");
+
+      } else {
+        output_warn.write("Not all staggered covariant components of metric tensor found. "
+                          "Calculating all from the contravariant tensor\n");
+        /// Calculate contravariant metric components if not found
+        if (calcCovariant()) {
+          throw BoutException("Error in staggered calcCovariant call");
+        }
+      }
+    } else {
+      /// Calculate contravariant metric components if not found
+      if (calcCovariant()) {
+        throw BoutException("Error in staggered calcCovariant call");
+      }
+    }
+
+    if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
+      output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+      ShiftTorsion = 0.0;
+    }
+    ShiftTorsion.setLocation(location);
+
+    //////////////////////////////////////////////////////
+
+    if (mesh->IncIntShear) {
+      if (mesh->get(IntShiftTorsion, "IntShiftTorsion"+suffix)) {
+        output_warn.write("\tWARNING: No Integrated torsion specified\n");
+        IntShiftTorsion = 0.0;
+      }
+      IntShiftTorsion.setLocation(location);
+    }
+  } else {
+    // Interpolate fields from coords_in
+
+    dx = interpolateAndNeumann(coords_in->dx, location);
+    dy = interpolateAndNeumann(coords_in->dy, location);
+
+    nz = mesh->LocalNz;
+
+    dz = coords_in->dz;
+
+    // Diagonal components of metric tensor g^{ij}
+    g11 = interpolateAndNeumann(coords_in->g11, location);
+    g22 = interpolateAndNeumann(coords_in->g22, location);
+    g33 = interpolateAndNeumann(coords_in->g33, location);
+
+    // Off-diagonal elements.
+    g12 = interpolateAndNeumann(coords_in->g12, location);
+    g13 = interpolateAndNeumann(coords_in->g13, location);
+    g23 = interpolateAndNeumann(coords_in->g23, location);
+
+    ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
+
+    if (mesh->IncIntShear) {
+      IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+    }
+
+    /// Always calculate contravariant metric components so that they are
+    /// consistent with the interpolated covariant components
+    if (calcCovariant()) {
+      throw BoutException("Error in calcCovariant call while constructing staggered Coordinates");
+    }
+  }
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Staggered diagonal metrics are not finite!\n");
   }
   if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Staggered diagonal metrics are negative!\n");
   }
   if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
-  }
-
-  /// Always calculate contravariant metric components so that they are
-  /// consistent with the interpolated covariant components
-  if (calcCovariant()) {
-    throw BoutException("Error in calcCovariant call");
+    throw BoutException("\tERROR: Staggered off-diagonal metrics are not finite!\n");
   }
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
-    throw BoutException("Error in jacobian call");
+    throw BoutException("Error in jacobian call while constructing staggered Coordinates");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
   if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
+    throw BoutException("Differential geometry failed while constructing staggered Coordinates");
   }
 
-  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
-
-  //////////////////////////////////////////////////////
-
-  if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
-  }
 }
 
 void Coordinates::outputVars(Datafile &file) {
@@ -324,7 +423,7 @@ void Coordinates::outputVars(Datafile &file) {
   file.add(J, "J", false);
 }
 
-int Coordinates::geometry() {
+int Coordinates::geometry(bool recalculate_staggered) {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -486,7 +585,7 @@ int Coordinates::geometry() {
     d1_dy = -d2y / (dy * dy);
   }
 
-  if (location == CELL_CENTRE) {
+  if (location == CELL_CENTRE && recalculate_staggered) {
     // Re-calculate interpolated Coordinates at staggered locations
     localmesh->recalculateStaggeredCoordinates();
   }

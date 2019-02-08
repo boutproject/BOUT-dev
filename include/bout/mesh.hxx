@@ -513,7 +513,7 @@ class Mesh {
         continue;
       }
 
-      i.second = createDefaultCoordinates(location);
+      i.second = createDefaultCoordinates(location, true);
     }
   }
 
@@ -823,7 +823,13 @@ class Mesh {
 private:
 
   /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location,
+      bool force_interpolate_from_centre=false);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
