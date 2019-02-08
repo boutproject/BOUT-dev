@@ -201,9 +201,9 @@ int BoutMesh::load() {
     jyseps1_1 = -1;
   }
 
-  if (jyseps2_1 <= jyseps1_1) {
+  if (jyseps2_1 < jyseps1_1) {
     output_warn.write(
-        "\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
+        "\tWARNING: jyseps2_1 (%d) must be >= jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
         jyseps1_1, jyseps1_1 + 1);
     jyseps2_1 = jyseps1_1 + 1;
   }
@@ -689,24 +689,34 @@ int BoutMesh::load() {
 
     // Core region
     TRACE("Creating core communicators");
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
+    if (jyseps2_1 > jyseps1_1) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 
-    output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
+      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
 
-    if ((proc[0] < 0) || (proc[1] < 0))
-      throw BoutException("Invalid processor range for core processors");
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-    output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-    if ((proc[0] < 0) || (proc[1] < 0)) {
-      group_tmp2 = MPI_GROUP_EMPTY;
+      if ((proc[0] < 0) || (proc[1] < 0))
+        throw BoutException("Invalid processor range for core processors");
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
     } else {
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      // no core region between jyseps1_1 and jyseps2_1
+      group_tmp1 = MPI_GROUP_EMPTY;
+    }
+
+    if (jyseps2_2 > jyseps1_2) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+
+      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
+
+      if ((proc[0] < 0) || (proc[1] < 0)) {
+        group_tmp2 = MPI_GROUP_EMPTY;
+      } else {
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      }
+    } else {
+      // no core region between jyseps1_2 and jyseps2_2
+      group_tmp2 = MPI_GROUP_EMPTY;
     }
 
     MPI_Group_union(group_tmp1, group_tmp2, &group);
