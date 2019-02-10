@@ -1606,7 +1606,7 @@ retrybetacalc:
     PRINT, "ERROR: Unrecognized orthogonal_coordinates_output value", $
            orthogonal_coordinates_output
   ENDELSE
-  s = file_write(handle, "coordinates_type", coordinates_type)
+  s = file_write_string(handle, "coordinates_type", coordinates_type)
 
   ; Metric tensor terms
   s = file_write(handle, "g11", g11)
