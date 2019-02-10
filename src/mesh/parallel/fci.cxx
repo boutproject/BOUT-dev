@@ -294,6 +294,26 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
+FCITransform::FCITransform(Mesh &mesh, bool zperiodic)
+    : ParallelTransform(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
+      zperiodic(zperiodic) {
+  // check the coordinate system used for the grid data source
+  checkInputGrid();
+}
+
+void FCITransform::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (mesh.get(coordinates_type, "coordinates_type")) {
+    // coordinate_system variable not found in grid input
+    return;
+  } else {
+    if (coordinates_type != "fci") {
+      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+          "to generate metric components for FCITransform. Should be 'fci.");
+    }
+  }
+}
+
 void FCITransform::calcYUpDown(Field3D &f) {
   TRACE("FCITransform::calcYUpDown");
 

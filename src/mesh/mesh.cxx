@@ -295,11 +295,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 

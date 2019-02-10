@@ -15,7 +15,10 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : ParallelTransform(m), zShift(&m) {
+  // check the coordinate system used for the grid data source
+  checkInputGrid();
+
   // Read the zShift angle from the mesh
   if (mesh.get(zShift, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
@@ -35,8 +38,24 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   cachePhases();
 }
 
-ShiftedMetric::ShiftedMetric(Mesh &m, Field2D zShift_) : mesh(m), zShift(std::move(zShift_)) {
+ShiftedMetric::ShiftedMetric(Mesh &m, Field2D zShift_) : ParallelTransform(m), zShift(std::move(zShift_)) {
+  // check the coordinate system used for the grid data source
+  checkInputGrid();
+
   cachePhases();
+}
+
+void ShiftedMetric::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (mesh.get(coordinates_type, "coordinates_type")) {
+    // coordinate_system variable not found in grid input
+    return;
+  } else {
+    if (coordinates_type != "orthogonal") {
+      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+          "to generate metric components for ShiftedMetric. Should be 'orthogonal.");
+    }
+  }
 }
 
 void ShiftedMetric::cachePhases() {
