@@ -48,6 +48,16 @@ Mesh::~Mesh() {
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
+
 /// Get an integer
 int Mesh::get(int &ival, const std::string &name) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
