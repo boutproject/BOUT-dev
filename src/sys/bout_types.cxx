@@ -1,5 +1,5 @@
 #include <bout_types.hxx>
-
+#include <bout/assert.hxx>
 #include <map>
 
 const std::string& CELL_LOC_STRING(CELL_LOC location) {
@@ -20,6 +20,7 @@ const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
 }
 
 const std::string& REGION_STRING(REGION region) {
+  ASSERT2(region >= 0 && region <= 4);
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
       ENUMSTR(RGN_NOZ)};
