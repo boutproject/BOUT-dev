@@ -28,7 +28,11 @@
  *
  **************************************************************************/
 
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include <bout/physicsmodel.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#include <bout/mesh.hxx>
 
 PhysicsModel::PhysicsModel()
     : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
@@ -97,8 +101,8 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   solver->outputVars(restart, false);
 
-  string restart_dir;  ///< Directory for restart files
-  string dump_ext, restart_ext;  ///< Dump, Restart file extension
+  std::string restart_dir;  ///< Directory for restart files
+  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
   
   Options *options = Options::getRoot();
   if (options->isSet("restartdir")) {
@@ -112,7 +116,7 @@ int PhysicsModel::postInit(bool restarting) {
   options->get("dump_format", dump_ext, "nc");
   options->get("restart_format", restart_ext, dump_ext);
 
-  string filename = restart_dir + "/BOUT.restart."+restart_ext;
+  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 
@@ -127,7 +131,7 @@ int PhysicsModel::postInit(bool restarting) {
   // Add mesh information to restart file
   // Note this is done after reading, so mesh variables
   // are not overwritten.
-  mesh->outputVars(restart);
+  bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 

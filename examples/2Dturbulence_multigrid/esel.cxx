@@ -69,7 +69,7 @@ protected:
       return 1;
     }
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // generate coordinate system 
     // coord->J = R0/B0 ;

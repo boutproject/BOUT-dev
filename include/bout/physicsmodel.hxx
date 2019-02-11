@@ -43,6 +43,7 @@ class PhysicsModel;
 #include "solver.hxx"
 #include "unused.hxx"
 #include "bout/macro_for_each.hxx"
+
 /*!
   Base class for physics models
  */
@@ -310,14 +311,14 @@ private:
       solver->setModel(model);                        \
       Monitor * bout_monitor = new BoutMonitor();     \
       solver->addMonitor(bout_monitor, Solver::BACK); \
-      solver->outputVars(dump);                       \
+      solver->outputVars(bout::globals::dump);        \
       solver->solve();                                \
       delete model;                                   \
       delete solver;                                  \
       delete bout_monitor;                            \
-    }catch (BoutException &e) {                       \
+    } catch (const BoutException &e) {                \
       output << "Error encountered\n";                \
-      output << e.what() << endl;                     \
+      output << e.getBacktrace() << endl;             \
       MPI_Abort(BoutComm::get(), 1);                  \
     }                                                 \
     BoutFinalise();                                   \

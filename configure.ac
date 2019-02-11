@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.1.2],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.1],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -87,7 +87,7 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
-AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
+AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
@@ -228,15 +228,24 @@ AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
 
-# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
-# we cast a function to the wrong type in MatFDColoringSetFunction
-
   AX_APPEND_COMPILE_FLAGS([ dnl
      -Wall dnl
      -Wextra dnl
      -Wnull-dereference dnl
-     -Wno-cast-function-type dnl
   ], [CXXFLAGS], [$extra_compiler_flags_test])
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+# Also note that gcc ignores unknown flags of the form "-Wno-warning"
+# for backwards compatibility. Therefore we need to add the positive
+# form as an additional flag which it will choke on (if it doesn't
+# exist). See: https://gcc.gnu.org/wiki/FAQ#wnowarning
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test "-Wcast-function-type"])
+
 ], [
   AC_MSG_NOTICE([Compiler warnings disabled])
 ])
@@ -392,16 +401,27 @@ AS_IF([test $? = 0], [
 # FFT routines
 #############################################################
 
+AS_IF([test "x$with_fftw" != "xno"], [
 AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
-AS_IF([test "x$fftw_path" != "xno"], [
-  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
-  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
-  with_fftw="$with_fftw $fftw_wisdom"
-])
+  AS_IF([test "x$fftw_path" != "xno"], [
+    fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+    fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+    with_fftw="$with_fftw $fftw_wisdom"
+  ], AC_MSG_NOTICE([FFTW3 requested but fftw-wisdom not found]))
 
-BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
-BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
+  BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
+  BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
+
+  #If we've reached this point then we're happy that we have FFTW so
+  #add our define to CXXFLAGS
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
+  HAS_FFTW="yes"
+],
+[
+AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
+HAS_FFTW="no"
+])
 
 #############################################################
 # netCDF support
@@ -1131,6 +1151,33 @@ AS_IF([test "$with_pvode" != "no"], [
 ])
 
 #############################################################
+# Localisation (i18n) with gettext
+#############################################################
+
+HAS_NLS="no"
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
+AM_GNU_GETTEXT([external])
+AS_IF([test "$USE_NLS" = "yes"], [
+  AC_MSG_NOTICE([Enabling language support with gettext])
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
+
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
+
+  # Set variable substituted into bout-config 
+  HAS_NLS="yes"
+],[
+  AC_MSG_NOTICE([Language support with gettext not available])
+]) 
+
+#############################################################
 # Check environment
 #############################################################
 
@@ -1246,6 +1293,8 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_NLS)
+AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
@@ -1264,6 +1313,7 @@ AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
 AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
+AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
 AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
 AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
@@ -1271,6 +1321,7 @@ AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
+AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

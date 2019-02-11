@@ -88,7 +88,7 @@ BoutMesh::~BoutMesh() {
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
-  output_progress << "Loading mesh" << endl;
+  output_progress << _("Loading mesh") << endl;
 
   // Use root level options
   Options *options = Options::getRoot();
@@ -103,10 +103,10 @@ int BoutMesh::load() {
   // Grid sizes
 
   if (Mesh::get(nx, "nx"))
-    throw BoutException("Mesh must contain nx");
+    throw BoutException(_("Mesh must contain nx"));
 
   if (Mesh::get(ny, "ny"))
-    throw BoutException("Mesh must contain ny");
+    throw BoutException(_("Mesh must contain ny"));
 
   int MZ;
 
@@ -116,15 +116,15 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write("WARNING: Number of toroidal points should be 2^n for efficient "
-                        "FFT performance -- consider changing MZ if using FFTs\n",
+      output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
+                          "FFT performance -- consider changing MZ if using FFTs\n"),
                         MZ);
     }
   } else {
-    output_info.write("\tRead nz from input grid file\n");
+    output_info.write(_("\tRead nz from input grid file\n"));
   }
 
-  output_info << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << MZ << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
@@ -140,11 +140,11 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  output_info << "\tGuard cells (x,y): " << MXG << ", " << MYG << std::endl;
+  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException("Error: nx must be greater than 2 times MXG (2 * %d)", MXG);
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
   // Set global grid sizes
@@ -153,7 +153,7 @@ int BoutMesh::load() {
   GlobalNz = MZ;
 
   if (2 * MXG >= nx)
-    throw BoutException("nx must be greater than 2*MXG");
+    throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
   if (Mesh::get(ixseps1, "ixseps1")) {
@@ -231,7 +231,7 @@ int BoutMesh::load() {
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
     if ((NPES % NXPE) != 0) {
       throw BoutException(
-          "Number of processors (%d) not divisible by NPs in x direction (%d)\n", NPES,
+          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
           NXPE);
     }
 
@@ -301,28 +301,28 @@ int BoutMesh::load() {
     
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
-    output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
+    output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
 
     for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
       if ((NPES % i == 0) &&          // Processors divide equally
           (MX % i == 0) &&            // Mesh in X divides equally
           (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
-        output_info.write("\tCandidate value: %d\n", i);
+        output_info.write(_("\tCandidate value: %d\n"), i);
 
         int nyp = NPES / i;
         int ysub = ny / nyp;
 
         // Check size of Y mesh
         if (ysub < MYG) {
-          output_info.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+          output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
         }
         // Check branch cuts
         if ((jyseps1_1 + 1) % ysub != 0) {
           output_info.write(
-              "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+			    _("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"),
               jyseps1_1 + 1, ysub);
           continue;
         }
@@ -331,49 +331,49 @@ int BoutMesh::load() {
           // Double Null
 
           if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
             continue;
           }
 
           if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
             continue;
           }
 
           // Check upper legs
           if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-            output_info.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
+                              "be a multiple of MYSUB (%d)\n"),
                               ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
             continue;
           }
           if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-            output_info.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
             continue;
           }
         } else {
           // Single Null
           if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
             continue;
           }
         }
 
         if ((ny - jyseps2_2 - 1) % ysub != 0) {
-          output_info.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-                            "multiple of MYSUB (%d)\n",
+          output_info.write(_("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
+			      "multiple of MYSUB (%d)\n"),
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
-        output_info.write("\t -> Good value\n");
+        output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
         if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
           NXPE = i; // Keep value nearest to the ideal
@@ -381,14 +381,14 @@ int BoutMesh::load() {
     }
 
     if (NXPE < 1)
-      throw BoutException(
-          "Could not find a valid value for NXPE. Try a different number of processors.");
+      throw BoutException(_("Could not find a valid value for NXPE. Try a different "
+                            "number of processors."));
 
     NYPE = NPES / NXPE;
 
     output_progress.write(
-        "\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n", NXPE,
-        NYPE, MX / NXPE, ny / NYPE);
+        _("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"),
+        NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
   /// Get X and Y processor indices
@@ -403,7 +403,7 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException("Cannot split %d X points equally between %d processors\n", MX,
+    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
                         NXPE);
   }
 
@@ -412,7 +412,7 @@ int BoutMesh::load() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        "\tERROR: Cannot split %d Y points equally between %d processors\n", MY, NYPE);
+        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
   }
 
   /// Get mesh options
@@ -824,22 +824,37 @@ int BoutMesh::load() {
   }
 
   if (!boundary.empty()) {
-    output_info << "Boundary regions in this processor: ";
+    output_info << _("Boundary regions in this processor: ");
     for (const auto &bndry : boundary) {
       output_info << bndry->label << ", ";
     }
     output_info << endl;
   } else {
-    output_info << "No boundary regions in this processor" << endl;
+    output_info << _("No boundary regions in this processor") << endl;
   }
   
-  output_info << "Constructing default regions" << endl;
+  output_info << _("Constructing default regions") << endl;
   createDefaultRegions();
 
   // Add boundary regions
   addBoundaryRegions();
 
-  output_info.write("\tdone\n");
+  // Initialize Coordinates at all locations, temporary fix for bug causing
+  // BOUT++ to hang
+  getCoordinates(CELL_CENTRE);
+  if (StaggerGrids) {
+    if (xstart >= 2) {
+      getCoordinates(CELL_XLOW);
+    }
+    if (ystart >= 2) {
+      getCoordinates(CELL_YLOW);
+    }
+    if (LocalNz > 3) {
+      getCoordinates(CELL_ZLOW);
+    }
+  }
+
+  output_info.write(_("\tdone\n"));
 
   return 0;
 }
@@ -1925,7 +1940,7 @@ void BoutMesh::clear_handles() {
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
                         int ylt, BoutReal *buffer) {
 
   int len = 0;
@@ -1958,7 +1973,7 @@ int BoutMesh::pack_data(const vector<FieldData *> &var_list, int xge, int xlt, i
   return (len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData *> &var_list, int xge, int xlt, int yge,
+int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
                           int ylt, BoutReal *buffer) {
 
   int len = 0;
@@ -2208,7 +2223,7 @@ void BoutMesh::addBoundaryRegions() {
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2225,7 +2240,7 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   // Outer X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2379,9 +2394,9 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 
-vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
+std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
@@ -2553,5 +2568,5 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps2_1, "jyseps2_1", false);
   file.add(jyseps2_2, "jyseps2_2", false);
 
-  coordinates()->outputVars(file);
+  getCoordinates()->outputVars(file);
 }

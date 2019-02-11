@@ -18,37 +18,17 @@
 #include <vector>
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
 
-/// Test fixture to make sure the global mesh is our fake one
-class Field2DTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
+// The unit tests use the global mesh
+using namespace bout::globals;
 
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int Field2DTest::nx = 3;
-const int Field2DTest::ny = 5;
-const int Field2DTest::nz = 7;
+// Reuse the "standard" fixture for FakeMesh
+using Field2DTest = FakeMeshFixture;
 
 TEST_F(Field2DTest, IsReal) {
   Field2D field;
@@ -256,43 +236,7 @@ TEST_F(Field2DTest, IterateOverWholeField) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
-      ++found_sentinels;
-    }
-  }
-
-  EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(test_indices == result_indices);
-}
-
-TEST_F(Field2DTest, IterateOverRGN_ALL) {
-  Field2D field = 1.0;
-
-  const BoutReal sentinel = -99.0;
-
-  // We use a set in case for some reason the iterator doesn't visit
-  // each point in the order we expect
-  std::set<std::vector<int>> test_indices;
-  test_indices.insert({0, 0});
-  test_indices.insert({0, 1});
-  test_indices.insert({1, 0});
-  test_indices.insert({1, 1});
-  const int num_sentinels = test_indices.size();
-
-  // Assign sentinel value to watch out for to our chosen points
-  for (auto index : test_indices) {
-    field(index[0], index[1]) = sentinel;
-  }
-
-  int found_sentinels = 0;
-  BoutReal sum = 0.0;
-  std::set<std::vector<int>> result_indices;
-
-  for (auto &i : field.region(RGN_ALL)) {
-    sum += field[i];
-    if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -321,7 +265,40 @@ TEST_F(Field2DTest, IterateOverRegionInd2D_RGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.getMesh()->getRegion2D("RGN_ALL")) {
+  for (auto &i : field.getRegion("RGN_ALL")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.y()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * ny) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(test_indices == result_indices);
+}
+
+
+TEST_F(Field2DTest, IterateOverRegionInd2D_RGN_NOZ) {
+  Field2D field{1.0};
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect
+  std::set<std::vector<int>> test_indices{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  const int num_sentinels = test_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto &index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (auto &i : field.getRegion("RGN_NOZ")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y()});
@@ -394,10 +371,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOBNDRY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOBNDRY)) {
+  for (auto &i : field.getRegion(RGN_NOBNDRY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -435,10 +412,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOX)) {
+  for (auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -476,10 +453,10 @@ TEST_F(Field2DTest, IterateOverRGN_NOY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOY)) {
+  for (auto &i : field.getRegion(RGN_NOY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.y});
+      result_indices.insert({i.x(), i.y()});
       ++found_sentinels;
     }
   }
@@ -489,11 +466,13 @@ TEST_F(Field2DTest, IterateOverRGN_NOY) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
-TEST_F(Field2DTest, IterateOverRGN_NOZ) {
+
+TEST_F(Field2DTest, IterateOverInvalid) {
   Field2D field = 1.0;
+  REGION invalid = static_cast<REGION>(99999);
 
   // This is not a valid region for Field2D
-  EXPECT_THROW(field.region(RGN_NOZ), BoutException);
+  EXPECT_THROW(field.getRegion(invalid), BoutException);
 }
 
 TEST_F(Field2DTest, Indexing) {
@@ -656,7 +635,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
   const int nmesh = nx * ny;
 
   int sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -664,7 +643,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.region(RGN_NOBNDRY)) {
+  for (const auto &i : field.getRegion(RGN_NOBNDRY)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -680,7 +659,7 @@ TEST_F(Field2DTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart)));
 
   sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     if (!finite(field[i]))
       sum++;
   }
@@ -692,14 +671,14 @@ TEST_F(Field2DTest, InvalidateGuards) {
 TEST_F(Field2DTest, CreateFromBoutReal) {
   Field2D field(1.0);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, 1.0));
+  EXPECT_TRUE(IsFieldEqual(field, 1.0));
 }
 
 TEST_F(Field2DTest, CreateFromField2D) {
   Field2D field(99.0);
   Field2D result(field);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(result, 99.0));
+  EXPECT_TRUE(IsFieldEqual(result, 99.0));
 }
 
 TEST_F(Field2DTest, AssignFromBoutReal) {
@@ -707,17 +686,14 @@ TEST_F(Field2DTest, AssignFromBoutReal) {
 
   field = 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, 2.0));
+  EXPECT_TRUE(IsFieldEqual(field, 2.0));
 }
 
 TEST_F(Field2DTest, AssignFromInvalid) {
   Field2D field;
 
-#if CHECK > 0
-  EXPECT_THROW(field = std::nan(""), BoutException);
-#else
   EXPECT_NO_THROW(field = std::nan(""));
-#endif
+  EXPECT_TRUE(IsFieldEqual(field, std::nan("")));
 }
 
 TEST_F(Field2DTest, UnaryMinus) {
@@ -726,7 +702,7 @@ TEST_F(Field2DTest, UnaryMinus) {
   field = 2.0;
   field = -field;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, -2.0));
+  EXPECT_TRUE(IsFieldEqual(field, -2.0));
 }
 
 TEST_F(Field2DTest, AddEqualsBoutReal) {
@@ -735,14 +711,14 @@ TEST_F(Field2DTest, AddEqualsBoutReal) {
   a = 1.0;
   a += 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
 
   // Check case where field is not unique
   auto c = a;
   c += 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 11.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(c, 11.0));
 }
 
 TEST_F(Field2DTest, AddEqualsField2D) {
@@ -752,14 +728,14 @@ TEST_F(Field2DTest, AddEqualsField2D) {
   b = 3.0;
   a += b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
 
   // Check case where field is not unique
   auto c = a;
   c += b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 8.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(c, 8.0));
 }
 
 TEST_F(Field2DTest, AddField2DBoutReal) {
@@ -768,7 +744,7 @@ TEST_F(Field2DTest, AddField2DBoutReal) {
   a = 1.0;
   b = a + 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(Field2DTest, AddBoutRealField2D) {
@@ -777,7 +753,7 @@ TEST_F(Field2DTest, AddBoutRealField2D) {
   a = 1.0;
   b = 3.0 + a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(Field2DTest, AddField2DField2D) {
@@ -787,7 +763,7 @@ TEST_F(Field2DTest, AddField2DField2D) {
   b = 2.0;
   c = a + b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
@@ -796,14 +772,14 @@ TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
   a = 2.0;
   a *= 1.5;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= 1.5;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.5));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.5));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsField2D) {
@@ -813,14 +789,14 @@ TEST_F(Field2DTest, MultiplyEqualsField2D) {
   b = 4.0;
   a *= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 40.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(c, 40.0));
 }
 
 TEST_F(Field2DTest, MultiplyField2DBoutReal) {
@@ -829,7 +805,7 @@ TEST_F(Field2DTest, MultiplyField2DBoutReal) {
   a = 1.5;
   b = a * 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(Field2DTest, MultiplyBoutRealField2D) {
@@ -838,7 +814,7 @@ TEST_F(Field2DTest, MultiplyBoutRealField2D) {
   a = 2.5;
   b = 3.0 * a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 7.5));
+  EXPECT_TRUE(IsFieldEqual(b, 7.5));
 }
 
 TEST_F(Field2DTest, MultiplyField2DField2D) {
@@ -848,7 +824,7 @@ TEST_F(Field2DTest, MultiplyField2DField2D) {
   b = 8.0;
   c = a * b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 32.0));
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsBoutReal) {
@@ -857,14 +833,14 @@ TEST_F(Field2DTest, SubtractEqualsBoutReal) {
   a = 1.0;
   a -= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -9.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(c, -9.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsField2D) {
@@ -874,14 +850,14 @@ TEST_F(Field2DTest, SubtractEqualsField2D) {
   b = 7.0;
   a -= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -12.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(c, -12.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DBoutReal) {
@@ -890,7 +866,7 @@ TEST_F(Field2DTest, SubtractField2DBoutReal) {
   a = 10.0;
   b = a - 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 8.0));
+  EXPECT_TRUE(IsFieldEqual(b, 8.0));
 }
 
 TEST_F(Field2DTest, SubtractBoutRealField2D) {
@@ -899,7 +875,7 @@ TEST_F(Field2DTest, SubtractBoutRealField2D) {
   a = 10.0;
   b = 3.0 - a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, -7.0));
+  EXPECT_TRUE(IsFieldEqual(b, -7.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DField2D) {
@@ -909,7 +885,7 @@ TEST_F(Field2DTest, SubtractField2DField2D) {
   b = 20.0;
   c = a - b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -10.0));
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
 TEST_F(Field2DTest, DivideEqualsBoutReal) {
@@ -918,14 +894,14 @@ TEST_F(Field2DTest, DivideEqualsBoutReal) {
   a = 2.5;
   a /= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
 
   // Check case where field is not unique
   auto c = a;
   c /= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.1));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(c, 0.1));
 }
 
 TEST_F(Field2DTest, DivideEqualsField2D) {
@@ -935,14 +911,14 @@ TEST_F(Field2DTest, DivideEqualsField2D) {
   b = 2.5;
   a /= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
 
   // Check case where field is not unique
   auto c = a;
   c /= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.8));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(c, 0.8));
 }
 
 TEST_F(Field2DTest, DivideField2DBoutReal) {
@@ -951,7 +927,7 @@ TEST_F(Field2DTest, DivideField2DBoutReal) {
   a = 3.0;
   b = a / 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 1.5));
+  EXPECT_TRUE(IsFieldEqual(b, 1.5));
 }
 
 TEST_F(Field2DTest, DivideBoutRealField2D) {
@@ -960,7 +936,7 @@ TEST_F(Field2DTest, DivideBoutRealField2D) {
   a = 2.5;
   b = 10.0 / a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(Field2DTest, DivideField2DField2D) {
@@ -970,7 +946,7 @@ TEST_F(Field2DTest, DivideField2DField2D) {
   b = 8.0;
   c = a / b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
 TEST_F(Field2DTest, PowBoutRealField2D) {
@@ -978,7 +954,7 @@ TEST_F(Field2DTest, PowBoutRealField2D) {
   a = 5.0;
   b = pow(2.0, a);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 32.0));
+  EXPECT_TRUE(IsFieldEqual(b, 32.0));
 }
 
 TEST_F(Field2DTest, PowField2DBoutReal) {
@@ -986,7 +962,7 @@ TEST_F(Field2DTest, PowField2DBoutReal) {
   a = 5.0;
   b = pow(a, 2.0);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 25.0));
+  EXPECT_TRUE(IsFieldEqual(b, 25.0));
 }
 
 TEST_F(Field2DTest, PowField2DField2D) {
@@ -995,21 +971,21 @@ TEST_F(Field2DTest, PowField2DField2D) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
 TEST_F(Field2DTest, Sqrt) {
   Field2D field;
 
   field = 16.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sqrt(field), 4.0));
+  EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
 TEST_F(Field2DTest, Abs) {
   Field2D field;
 
   field = -31.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(abs(field), 31.0));
+  EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
 }
 
 TEST_F(Field2DTest, Exp) {
@@ -1017,7 +993,7 @@ TEST_F(Field2DTest, Exp) {
 
   field = 2.5;
   const BoutReal expected = 12.182493960703473;
-  EXPECT_TRUE(IsField2DEqualBoutReal(exp(field), expected));
+  EXPECT_TRUE(IsFieldEqual(exp(field), expected));
 }
 
 TEST_F(Field2DTest, Log) {
@@ -1025,7 +1001,7 @@ TEST_F(Field2DTest, Log) {
 
   field = 12.182493960703473;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsField2DEqualBoutReal(log(field), expected));
+  EXPECT_TRUE(IsFieldEqual(log(field), expected));
 }
 
 TEST_F(Field2DTest, LogExp) {
@@ -1033,37 +1009,37 @@ TEST_F(Field2DTest, LogExp) {
 
   field = 2.5;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsField2DEqualBoutReal(log(exp(field)), expected));
+  EXPECT_TRUE(IsFieldEqual(log(exp(field)), expected));
 }
 
 TEST_F(Field2DTest, Sin) {
   Field2D field;
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sin(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sin(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 0.0));
 }
 
 TEST_F(Field2DTest, Cos) {
   Field2D field;
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cos(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), 0.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cos(field), -1.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), -1.0));
 }
 
 TEST_F(Field2DTest, Tan) {
   Field2D field;
 
   field = PI / 4.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tan(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tan(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 0.0));
 }
 
 TEST_F(Field2DTest, Sinh) {
@@ -1071,10 +1047,10 @@ TEST_F(Field2DTest, Sinh) {
 
   field = 1.0;
   const BoutReal expected = 1.1752011936438014;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sinh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sinh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), -expected));
 }
 
 TEST_F(Field2DTest, Cosh) {
@@ -1082,10 +1058,10 @@ TEST_F(Field2DTest, Cosh) {
 
   field = 1.0;
   const BoutReal expected = 1.5430806348152437;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 }
 
 TEST_F(Field2DTest, Tanh) {
@@ -1093,10 +1069,10 @@ TEST_F(Field2DTest, Tanh) {
 
   field = 1.0;
   const BoutReal expected = 0.761594155955764;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tanh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tanh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), -expected));
 }
 
 TEST_F(Field2DTest, Floor) {
@@ -1108,7 +1084,7 @@ TEST_F(Field2DTest, Floor) {
 
   const BoutReal floor_value = 50.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(floor(field, floor_value), floor_value));
+  EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
 TEST_F(Field2DTest, Min) {
@@ -1143,6 +1119,118 @@ TEST_F(Field2DTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(Field2DTest, Swap) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Mesh for second field
+  constexpr int second_nx = Field2DTest::nx + 2;
+  constexpr int second_ny = Field2DTest::ny + 2;
+  constexpr int second_nz = Field2DTest::nz + 2;
+
+  FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.StaggerGrids = false;
+  output_info.disable();
+  second_mesh.createDefaultRegions();
+  output_info.enable();
+
+  // Second field
+  Field2D second(2., &second_mesh);
+
+  ddt(second) = 2.4;
+
+  // Basic sanity check
+  EXPECT_TRUE(IsFieldEqual(first, 1.0));
+  EXPECT_TRUE(IsFieldEqual(second, 2.0));
+
+  // swap is marked noexcept, so absolutely should not throw!
+  ASSERT_NO_THROW(swap(first, second));
+
+  // Values
+  EXPECT_TRUE(IsFieldEqual(first, 2.0));
+  EXPECT_TRUE(IsFieldEqual(second, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(ddt(first), 2.4));
+  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(first.getMesh(), &second_mesh);
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(first.getNx(), second_nx);
+  EXPECT_EQ(first.getNy(), second_ny);
+  EXPECT_EQ(first.getNz(), 1);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(first.getLocation(), CELL_CENTRE);
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
+TEST_F(Field2DTest, MoveCtor) {
+  auto backup = mesh->StaggerGrids;
+  mesh->StaggerGrids = true;
+
+  // First field
+  Field2D first(1., mesh);
+
+  first.setLocation(CELL_XLOW);
+
+  ddt(first) = 1.1;
+
+  // Second field
+  Field2D second{std::move(first)};
+
+  // Values
+  EXPECT_TRUE(IsFieldEqual(second, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
+
+  // Mesh properties
+  EXPECT_EQ(second.getMesh(), mesh);
+
+  EXPECT_EQ(second.getNx(), Field2DTest::nx);
+  EXPECT_EQ(second.getNy(), Field2DTest::ny);
+  EXPECT_EQ(second.getNz(), 1);
+
+  EXPECT_EQ(second.getLocation(), CELL_XLOW);
+
+  // We don't check the boundaries, but the data is protected and
+  // there are no inquiry functions
+
+  mesh->StaggerGrids = backup;
+}
+
+TEST_F(Field2DTest, FillField) {
+  Field2D f{mesh};
+
+  fillField(f, {{1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}});
+
+  EXPECT_TRUE(IsFieldEqual(f, 1.));
+
+  fillField(f, {{0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}});
+
+  Field2D g{mesh};
+  g.allocate();
+  BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.y(); }
+
+  EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
 #pragma GCC diagnostic pop

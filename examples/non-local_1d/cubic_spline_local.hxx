@@ -29,9 +29,14 @@
 
 #include <bout/constants.hxx>
 #include <bout.hxx>
+#include <bout_types.hxx>
 #include <derivs.hxx>
 #include <cmath>
 
+struct bindex{
+  int jx, jy, jz;  
+};
+  
 class CubicSpline {
 public:
   CubicSpline();

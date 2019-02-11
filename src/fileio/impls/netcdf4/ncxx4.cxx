@@ -24,6 +24,7 @@
 
 #ifdef NCDF4
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
 #include <cmath>
@@ -38,7 +39,7 @@ using namespace netCDF;
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-Ncxx4::Ncxx4() {
+Ncxx4::Ncxx4(Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -51,7 +52,7 @@ Ncxx4::Ncxx4() {
   fname = nullptr;
 }
 
-Ncxx4::Ncxx4(const char *name) {
+Ncxx4::Ncxx4(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -267,13 +268,13 @@ void Ncxx4::close() {
 void Ncxx4::flush() {
 }
 
-const vector<int> Ncxx4::getSize(const char *name) {
+const std::vector<int> Ncxx4::getSize(const char *name) {
   TRACE("Ncxx4::getSize");
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: getSize(%s)\n", name); 
 #endif
-  vector<int> size;
+  std::vector<int> size;
 
   if(!is_valid())
     return size;
@@ -437,9 +438,9 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
   
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
   
   var.getVar(start, counts, data);
@@ -469,9 +470,9 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
   
   var.getVar(start, counts, data);
@@ -505,9 +506,9 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
   output.write("Ncxx4:: write { Writing Variable } \n");
 #endif
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
 
   var.putVar(start, counts, data);
@@ -541,9 +542,9 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     return false;
   }
 
-  vector<size_t> start(3);
+  std::vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
-  vector<size_t> counts(3);
+  std::vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
 
   if(lowPrecision) {
@@ -594,9 +595,9 @@ bool Ncxx4::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   
   // NOTE: Probably should do something here to check t0
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
   
   var.getVar(start, counts, data);
@@ -625,9 +626,9 @@ bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   // NOTE: Probably should do something here to check t0
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
   
   var.getVar(start, counts, data);
@@ -662,9 +663,9 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
     }
   }
   
-  vector<size_t> start(1);
+  std::vector<size_t> start(1);
   start[0] = rec_nr[name];
-  vector<size_t> counts(1);
+  std::vector<size_t> counts(1);
   counts[0] = 1;
 
 #ifdef NCDF_VERBOSE
@@ -732,9 +733,9 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
       data[i] = 0.0;
   }
 
-  vector<size_t> start(4);
+  std::vector<size_t> start(4);
   start[0] = t; start[1] = x0; start[2] = y0; start[3] = z0;
-  vector<size_t> counts(4);
+  std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
 
   // Add the record
@@ -759,11 +760,6 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
                          const std::string &text) {
   TRACE("Ncxx4::setAttribute(string)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-
   std::string existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (text != existing_att) {
@@ -772,19 +768,25 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     }
   }
   // else: attribute does not exist, so just write it
-  
-  var.putAtt(attrname, text);
+
+  if (varname == "") {
+    // write attribute of file
+    dataFile->putAtt(attrname, text);
+  } else {
+    // write attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var.putAtt(attrname, text);
+  }
 }
 
 void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname,
                          int value) {
   TRACE("Ncxx4::setAttribute(int)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
-  
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
@@ -794,46 +796,147 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   }
   // else: attribute does not exist, so just write it
 
-  var.putAtt(attrname, NcType::nc_INT, value);
+  if (varname == "") {
+    // write attribute of file
+    dataFile->putAtt(attrname, NcType::nc_INT, value);
+  } else {
+    // write attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var.putAtt(attrname, NcType::nc_INT, value);
+  }
+}
+
+void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname,
+                         BoutReal value) {
+  TRACE("Ncxx4::setAttribute(BoutReal)");
+
+  BoutReal existing_att;
+  if (getAttribute(varname, attrname, existing_att)) {
+    if (value != existing_att) {
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+          attrname.c_str(), varname.c_str(), value, existing_att);
+    }
+  }
+  // else: attribute does not exist, so just write it
+
+  if (varname == "") {
+    // write attribute of file
+    dataFile->putAtt(attrname, NcType::nc_DOUBLE, value);
+  } else {
+    // write attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    var.putAtt(attrname, NcType::nc_DOUBLE, value);
+  }
 }
 
 bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, std::string &text) {
-  TRACE("Ncxx4::getStringAttribute(string)");
+  TRACE("Ncxx4::getAttribute(string)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  if (varname == "") {
+    // attribute of file
+    // Check if attribute exists without throwing exception when it doesn't
+    std::multimap<std::string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
+      return false;
+    } else {
+      NcGroupAtt fileAtt = dataFile->getAtt(attrname);
+      fileAtt.getValues(text);
 
-  // Check if attribute exists without throwing exception when it doesn't
-  map<string, NcVarAtt> varAtts_list = var.getAtts();
-  if (varAtts_list.find(attrname) == varAtts_list.end()) {
-    return false;
+      return true;
+    }
   } else {
-    NcVarAtt varAtt = var.getAtt(attrname);
-    varAtt.getValues(text);
+    // attribute of variable
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
 
-    return true;
+    // Check if attribute exists without throwing exception when it doesn't
+    auto varAtts_list = var.getAtts();
+    if (varAtts_list.find(attrname) == varAtts_list.end()) {
+      return false;
+    } else {
+      NcVarAtt varAtt = var.getAtt(attrname);
+      varAtt.getValues(text);
+
+      return true;
+    }
   }
 }
 
 bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, int &value) {
-  TRACE("Ncxx4::getIntAttribute(string)");
+  TRACE("Ncxx4::getAttribute(int)");
 
-  NcVar var = dataFile->getVar(varname);
-  if (var.isNull()) {
-    throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
-  }
+  if (varname == "") {
+    // attribute of file
+    // Check if attribute exists without throwing exception when it doesn't
+    std::multimap<string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
+      return false;
+    } else {
+      NcGroupAtt fileAtt = dataFile->getAtt(attrname);
+      fileAtt.getValues(&value);
 
-  // Check if attribute exists without throwing exception when it doesn't
-  map<string, NcVarAtt> varAtts_list = var.getAtts();
-  if (varAtts_list.find(attrname) == varAtts_list.end()) {
-    return false;
+      return true;
+    }
   } else {
-    NcVarAtt varAtt = var.getAtt(attrname);
-    varAtt.getValues(&value);
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
 
-    return true;
+    // Check if attribute exists without throwing exception when it doesn't
+    auto varAtts_list = var.getAtts();
+    if (varAtts_list.find(attrname) == varAtts_list.end()) {
+      return false;
+    } else {
+      NcVarAtt varAtt = var.getAtt(attrname);
+      varAtt.getValues(&value);
+
+      return true;
+    }
+  }
+}
+
+bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) {
+  TRACE("Ncxx4::getAttribute(BoutReal)");
+
+  if (varname == "") {
+    // attribute of file
+    // Check if attribute exists without throwing exception when it doesn't
+    std::multimap<std::string, NcGroupAtt> fileAtts_list = dataFile->getAtts();
+    if (fileAtts_list.find(attrname) == fileAtts_list.end()) {
+      return false;
+    } else {
+      NcGroupAtt fileAtt = dataFile->getAtt(attrname);
+      fileAtt.getValues(&value);
+
+      return true;
+    }
+  } else {
+    NcVar var = dataFile->getVar(varname);
+    if (var.isNull()) {
+      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+    }
+
+    // Check if attribute exists without throwing exception when it doesn't
+    auto varAtts_list = var.getAtts();
+    if (varAtts_list.find(attrname) == varAtts_list.end()) {
+      return false;
+    } else {
+      NcVarAtt varAtt = var.getAtt(attrname);
+      varAtt.getValues(&value);
+
+      return true;
+    }
   }
 }
 
@@ -842,15 +945,15 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
  * Private functions
  ***************************************************************************/
 
-vector<NcDim> Ncxx4::getDimVec(int nd) {
-  vector<NcDim> vec(nd);
+std::vector<NcDim> Ncxx4::getDimVec(int nd) {
+  std::vector<NcDim> vec(nd);
   for(int i=0;i<nd;i++)
     vec[i] = *dimList[i];
   return vec;
 }
 
-vector<NcDim> Ncxx4::getRecDimVec(int nd) {
-  vector<NcDim> vec(nd);
+std::vector<NcDim> Ncxx4::getRecDimVec(int nd) {
+  std::vector<NcDim> vec(nd);
   for(int i=0;i<nd;i++)
     vec[i] = *recDimList[i];
   return vec;

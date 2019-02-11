@@ -8,7 +8,7 @@
 #include <sstream>
 
 /// The source label given to default values
-const std::string Options::DEFAULT_SOURCE{"default"};
+const std::string Options::DEFAULT_SOURCE{_("default")};
 Options *Options::root_instance{nullptr};
 
 Options &Options::root() {
@@ -56,7 +56,7 @@ const Options &Options::operator[](const std::string &name) const {
   TRACE("Options::operator[] const");
   
   if (!is_section) {
-    throw BoutException("Option %s is not a section", full_name.c_str());
+    throw BoutException(_("Option %s is not a section"), full_name.c_str());
   }
 
   if (name.empty()) {
@@ -67,7 +67,7 @@ const Options &Options::operator[](const std::string &name) const {
   auto it = children.find(lowercase(name));
   if (it == children.end()) {
     // Doesn't exist
-    throw BoutException("Option %s:%s does not exist", full_name.c_str(), name.c_str());
+    throw BoutException(_("Option %s:%s does not exist"), full_name.c_str(), name.c_str());
   }
 
   return it->second;
@@ -88,18 +88,18 @@ template <> void Options::assign<BoutReal>(BoutReal val, const std::string sourc
   _set(ss.str(), source, false);
 }
 
-void Options::_set(string val, std::string source, bool force) {
+void Options::_set(std::string val, std::string source, bool force) {
   if (isSet()) {
     // Check if current value the same as new value
     if (value.value != val) {
       if (force or value.source != source) {
-        output_warn << "\tOption " << full_name << " = " << value.value << " ("
-                    << value.source << ") overwritten with:"
-                    << "\n"
-                    << "\t\t" << full_name << " = " << val << " (" << source << ")\n";
+        output_warn.write(
+            _("\tOption %s = %s (%s) overwritten with:\n\t\t%s = %s (%s)\n"),
+            full_name.c_str(), value.value.c_str(), value.source.c_str(),
+            full_name.c_str(), val.c_str(), source.c_str());
       } else {
-        throw BoutException("Options: Setting a value from same source (%s) to new value "
-                            "'%s' - old value was '%s'.",
+        throw BoutException(_("Options: Setting a value from same source (%s) to new value "
+                              "'%s' - old value was '%s'."),
                             source.c_str(), val.c_str(), value.value.c_str());
       }
     }
@@ -127,13 +127,13 @@ bool Options::isSet() const {
 
 template <> std::string Options::as<std::string>() const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
   // Mark this option as used
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << value.value;
+  output_info << _("\tOption ") << full_name << " = " << value.value;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -145,7 +145,7 @@ template <> std::string Options::as<std::string>() const {
 
 template <> int Options::as<int>() const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
   // Use FieldFactory to evaluate expression
@@ -153,7 +153,7 @@ template <> int Options::as<int>() const {
   // then generate a value at t,x,y,z = 0,0,0,0
   auto gen = FieldFactory::get()->parse(value.value, this);
   if (!gen) {
-    throw BoutException("Couldn't get integer from %s = '%s'", full_name.c_str(),
+    throw BoutException(_("Couldn't get integer from option %s = '%s'"), full_name.c_str(),
                         value.value.c_str());
   }
   BoutReal rval = gen->generate(0, 0, 0, 0);
@@ -163,12 +163,13 @@ template <> int Options::as<int>() const {
 
   // Check that the value is close to an integer
   if (fabs(rval - static_cast<BoutReal>(val)) > 1e-3) {
-    throw BoutException("Value for %s = %e is not an integer", full_name.c_str(), rval);
+    throw BoutException(_("Value for option %s = %e is not an integer"),
+                        full_name.c_str(), rval);
   }
 
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << val;
+  output_info << _("\tOption ") << full_name << " = " << val;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -180,7 +181,7 @@ template <> int Options::as<int>() const {
 
 template <> BoutReal Options::as<BoutReal>() const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
   // Use FieldFactory to evaluate expression
@@ -188,7 +189,7 @@ template <> BoutReal Options::as<BoutReal>() const {
   // then generate a value at t,x,y,z = 0,0,0,0
   std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(value.value, this);
   if (!gen) {
-    throw BoutException("Couldn't get BoutReal from %s = '%s'", full_name.c_str(),
+    throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
                         value.value.c_str());
   }
   BoutReal val = gen->generate(0, 0, 0, 0);
@@ -196,7 +197,7 @@ template <> BoutReal Options::as<BoutReal>() const {
   // Mark this option as used
   value.used = true;
 
-  output_info << "\tOption " << full_name << " = " << val;
+  output_info << _("\tOption ") << full_name << " = " << val;
   if (!value.source.empty()) {
     // Specify the source of the setting
     output_info << " (" << value.source << ")";
@@ -208,7 +209,7 @@ template <> BoutReal Options::as<BoutReal>() const {
 
 template <> bool Options::as<bool>() const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
   value.used = true;
@@ -217,12 +218,12 @@ template <> bool Options::as<bool>() const {
   char c = static_cast<char>(toupper((value.value)[0]));
   if ((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
-    output_info << "\tOption " << full_name << " = true";
+    output_info << _("\tOption ") << full_name << " = true";
   } else if ((c == 'N') || (c == 'F') || (c == '0')) {
     val = false;
-    output_info << "\tOption " << full_name << " = false";
+    output_info << _("\tOption ") << full_name << " = false";
   } else {
-    throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", full_name.c_str(),
+    throw BoutException(_("\tOption '%s': Boolean expected. Got '%s'\n"), full_name.c_str(),
                         value.value.c_str());
   }
   if (!value.source.empty()) {
@@ -244,9 +245,9 @@ void Options::printUnused() const {
     }
   }
   if (allused) {
-    output_info << "All options used\n";
+    output_info << _("All options used\n");
   } else {
-    output_info << "Unused options:\n";
+    output_info << _("Unused options:\n");
     for (const auto &it : children) {
       if (it.second.is_value && !it.second.value.used) {
         output_info << "\t" << full_name << ":" << it.first << " = "
@@ -266,8 +267,8 @@ void Options::printUnused() const {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<string, Options::OptionValue> Options::values() const {
-  std::map<string, OptionValue> options;
+std::map<std::string, Options::OptionValue> Options::values() const {
+  std::map<std::string, OptionValue> options;
   for (const auto &it : children) {
     if (it.second.is_value) {
       options[it.first] = it.second.value;
@@ -276,8 +277,8 @@ std::map<string, Options::OptionValue> Options::values() const {
   return options;
 }
 
-std::map<string, const Options *> Options::subsections() const {
-  std::map<string, const Options *> sections;
+std::map<std::string, const Options *> Options::subsections() const {
+  std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
     if (it.second.is_section) {
       sections[it.first] = &it.second;

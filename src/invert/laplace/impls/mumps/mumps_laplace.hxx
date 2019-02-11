@@ -36,7 +36,7 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
+  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = nullptr) {
     throw BoutException("Mumps library not available");
   }
 
@@ -76,7 +76,7 @@ public:
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);
@@ -88,72 +88,86 @@ public:
   
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     issetC = true;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     issetC = true;
   }
   void setCoefC2(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
     issetC = true;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true;
   }
   void setCoefEx(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true;
   }
   void setCoefEz(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true;
   }
 
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     issetC = true;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     issetC = true;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
     issetC = true;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true;
   }
   void setCoefEx(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true;
   }
   void setCoefEz(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true;
   }

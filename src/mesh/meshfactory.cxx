@@ -27,14 +27,14 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
     options = Options::getRoot()->getSection("mesh");
 
   if (source == nullptr) {
-    string grid_name;
+    std::string grid_name;
     if(options->isSet("file")) {
       // Specified mesh file
       options->get("file", grid_name, "");
       output << "\nGetting grid data from file " << grid_name << endl; 
 
       /// Create a grid file, using specified format if given
-      string grid_ext;
+      std::string grid_ext;
       options->get("format", grid_ext, "");
       
       /// Create a grid file
@@ -45,7 +45,7 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
       // Get the global option
       Options::getRoot()->get("grid", grid_name, "");
       output << "\nGetting grid data from file " << grid_name << endl; 
-      string grid_ext;
+      std::string grid_ext;
       Options::getRoot()->get("format", grid_ext, "");
 
       source = static_cast<GridDataSource *>(new GridFile(
@@ -58,7 +58,7 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
   }
 
   // Get the type of mesh
-  string type;
+  std::string type;
   options->get("type", type, MESH_BOUT);
   
   if(!strcasecmp(type.c_str(), MESH_BOUT)) {

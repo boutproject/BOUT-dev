@@ -60,8 +60,8 @@ int physics_init(bool restarting) {
         // The boundary lies (1/2)*dx away from the last point As there
         // are 2 boundaries there will effectively add one more line
         // segment in the domain. Hence
-        mesh->coordinates()->dx = Lx/(internal_x_points);
-        mesh->coordinates()->dy = Ly/(internal_y_points);
+        mesh->getCoordinates()->dx = Lx/(internal_x_points);
+        mesh->getCoordinates()->dy = Ly/(internal_y_points);
     }
     // ************************************************************************
 

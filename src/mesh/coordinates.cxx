@@ -17,6 +17,26 @@
 
 #include <globals.hxx>
 
+Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
+                         Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
+                         Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
+                         Field2D g_33, Field2D g_12, Field2D g_13, Field2D g_23,
+                         Field2D ShiftTorsion, Field2D IntShiftTorsion,
+                         bool calculate_geometry)
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
+      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
+      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
+      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
+      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
+      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
+      location(CELL_CENTRE) {
+  if (calculate_geometry) {
+    if (geometry()) {
+      throw BoutException("Differential geometry failed\n");
+    }
+  }
+}
+
 Coordinates::Coordinates(Mesh *mesh)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
@@ -440,24 +460,35 @@ int Coordinates::geometry() {
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
 
-  OPTION(Options::getRoot(), non_uniform, false);
+  OPTION(Options::getRoot(), non_uniform, true);
 
-  Field2D d2x, d2y; // d^2 x / d i^2
+  Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = localmesh->indexDDX(1. / dx); // d/di(1/dx)
+    d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
+    // Shift d2x to our location
+    d2x = interp_to(d2x, location);
+
     d1_dx = -d2x / (dx * dx);
   }
 
   if (localmesh->get(d2y, "d2y")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = localmesh->indexDDY(1. / dy); // d/di(1/dy)
+    d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
   } else {
+    // Shift d2y to our location
+    d2y = interp_to(d2y, location);
+
     d1_dy = -d2y / (dy * dy);
+  }
+
+  if (location == CELL_CENTRE) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
   }
 
   return 0;
@@ -623,16 +654,19 @@ int Coordinates::jacobian() {
  *
  *******************************************************************************/
 
-const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
-  return localmesh->indexDDX(f, loc, method, region) / dx;
+const Field2D Coordinates::DDX(const Field2D &f, CELL_LOC loc, const std::string &method, REGION region) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
 
-const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, DIFF_METHOD method, REGION region) {
-  return localmesh->indexDDY(f, loc, method, region) / dy;
+const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, const std::string &method, REGION region) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
-                               DIFF_METHOD UNUSED(method), REGION UNUSED(region)) {
+const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), MAYBE_UNUSED(CELL_LOC loc),
+                               const std::string &UNUSED(method), REGION UNUSED(region)) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
   auto result = Field2D(0.0, localmesh);
   result.setLocation(location);
@@ -644,16 +678,18 @@ const Field2D Coordinates::DDZ(const Field2D &f, CELL_LOC UNUSED(loc),
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC UNUSED(outloc),
-                                    DIFF_METHOD UNUSED(method)) {
+const Field2D Coordinates::Grad_par(const Field2D &var, MAYBE_UNUSED(CELL_LOC outloc),
+                                    const std::string &UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
   return DDY(var) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
-                                    DIFF_METHOD method) {
+                                    const std::string &method) {
   TRACE("Coordinates::Grad_par( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return ::DDY(var, outloc, method) / sqrt(g_22);
 }
@@ -663,13 +699,15 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
-                                         CELL_LOC UNUSED(outloc),
-                                         DIFF_METHOD UNUSED(method)) {
+                                         MAYBE_UNUSED(CELL_LOC outloc),
+                                         const std::string &UNUSED(method)) {
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
   return VDDY(v, f) / sqrt(g_22);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                                         DIFF_METHOD method) {
+                                         const std::string &method) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return VDDY(v, f, outloc, method) / sqrt(g_22);
 }
 
@@ -677,84 +715,81 @@ const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CEL
 // Parallel divergence
 
 const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+                                   const std::string &method) {
   TRACE("Coordinates::Div_par( Field2D )");
-  // Perversely the relevant coordinates object might not be `this` if
-  // f isn't at the same location.
-  if (f.getLocation() != location)
-    return f.getCoordinates()->Div_par(f, outloc, method);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return Bxy * Grad_par(f / Bxy, outloc, method);
+  // Need Bxy at location of f, which might be different from location of this
+  // Coordinates object
+  Field2D Bxy_floc = f.getCoordinates()->Bxy;
+
+  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+                                   const std::string &method) {
   TRACE("Coordinates::Div_par( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   
-  // Perversely the relevant coordinates object might not be `this` if
-  // f isn't at the same location.
-  if (f.getLocation() != location)
-    return f.getCoordinates()->Div_par(f, outloc, method);
+  // Need Bxy at location of f, which might be different from location of this
+  // Coordinates object
+  Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (f.hasYupYdown()) {
-    // Need to modify yup and ydown fields
-    Field3D f_B = f / Bxy;
-    if (&f.yup() == &f) {
-      // Identity, yup and ydown point to same field
-      f_B.mergeYupYdown();
-    } else {
-      // Distinct fields
-      f_B.splitYupYdown();
-      f_B.yup() = f.yup() / Bxy;
-      f_B.ydown() = f.ydown() / Bxy;
-    }
-    return Bxy * Grad_par(f_B, outloc, method);
+  if (!f.hasYupYdown()) {
+    // No yup/ydown fields. The Grad_par operator will
+    // shift to field aligned coordinates
+    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
-  // No yup/ydown fields. The Grad_par operator will
-  // shift to field aligned coordinates
-  return Bxy * Grad_par(f / Bxy, outloc, method);
+  // Need to modify yup and ydown fields
+  Field3D f_B = f / Bxy_floc;
+  if (&f.yup() == &f) {
+    // Identity, yup and ydown point to same field
+    f_B.mergeYupYdown();
+  } else {
+    // Distinct fields
+    f_B.splitYupYdown();
+    f_B.yup() = f.yup() / Bxy_floc;
+    f_B.ydown() = f.ydown() / Bxy_floc;
+  }
+  return Bxy * Grad_par(f_B, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
 // second parallel derivative (b dot Grad)(b dot Grad)
 // Note: For parallel Laplacian use Laplace_par
 
-const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc) {
+const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, const std::string &method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1. / sg, outloc) * DDY(f, outloc) / sg + D2DY2(f, outloc) / g_22;
+  Field2D result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
 
-const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const std::string &method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(location == outloc);
 
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
 
   sg = sqrt(g_22);
-  sg = DDY(1. / sg) / sg;
+  sg = DDY(1. / sg, outloc, method) / sg;
 
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
 
-  if (sg.getLocation() != outloc) {
-    localmesh->communicate(sg);
-    sg = interp_to(sg, outloc);
-  }
+  result = ::DDY(f, outloc, method);
 
-  result = ::DDY(f, outloc);
-
-  r2 = D2DY2(f, outloc) / interp_to(g_22, outloc);
+  r2 = D2DY2(f, outloc, method) / g_22;
 
   result = sg * result + r2;
 
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -764,16 +799,24 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-const Field2D Coordinates::Delp2(const Field2D &f, CELL_LOC outloc) {
+const Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
 
   return result;
 }
 
-const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
+const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field3D )");
+
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+
+  ASSERT1(location == outloc);
+  ASSERT1(f.getLocation() == outloc);
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
@@ -781,69 +824,70 @@ const Field3D Coordinates::Delp2(const Field3D &f, CELL_LOC outloc) {
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
-  ASSERT2(f.getLocation() == outloc);
-
   Field3D result(localmesh);
   result.allocate();
-  result.setLocation(f.getLocation());
+  result.setLocation(outloc);
 
-  int ncz = localmesh->LocalNz;
+  if (useFFT) {
+    int ncz = localmesh->LocalNz;
 
-  // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-  // Loop over all y indices
-  for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+    // Loop over all y indices
+    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
 
-    // Take forward FFT
+      // Take forward FFT
 
-    for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+      for (int jx = 0; jx < localmesh->LocalNx; jx++)
+        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
 
-    // Loop over kz
-    for (int jz = 0; jz <= ncz / 2; jz++) {
-      dcomplex a, b, c;
+      // Loop over kz
+      for (int jz = 0; jz <= ncz / 2; jz++) {
 
-      // No smoothing in the x direction
+        // No smoothing in the x direction
+        for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
+          // Perform x derivative
+
+          dcomplex a, b, c;
+          laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+
+          delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        }
+      }
+
+      // Reverse FFT
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-        // Perform x derivative
 
-        laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
-
-        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
       }
     }
+  } else {
+    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+             + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+  };
 
-    // Reverse FFT
-    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-
-      irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
-    }
-
-    // Boundaries
-    for (int jz = 0; jz < ncz; jz++) {
-      for (int jx = 0; jx < localmesh->xstart; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
-      for (int jx = localmesh->xend + 1; jx < localmesh->LocalNx; jx++) {
-        result(jx, jy, jz) = 0.0;
-      }
-    }
-  }
-
-  ASSERT2(result.getLocation() == f.getLocation());
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
 
-const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
+const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( FieldPerp )");
 
-  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
 
-  ASSERT2(f.getLocation() == outloc);
+  ASSERT1(location == outloc);
+  ASSERT1(f.getLocation() == outloc);
+
+  if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
+    // copy mesh, location, etc
+    return f * 0;
+  }
+  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
   FieldPerp result(localmesh);
   result.allocate();
@@ -852,49 +896,54 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f, CELL_LOC outloc) {
   int jy = f.getIndex();
   result.setIndex(jy);
 
-  int ncz = localmesh->LocalNz;
+  if (useFFT) {
+    int ncz = localmesh->LocalNz;
 
-  // Allocate memory
-  auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    // Allocate memory
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-  // Take forward FFT
-  for (int jx = 0; jx < localmesh->LocalNx; jx++)
-    rfft(&f(jx, 0), ncz, &ft(jx, 0));
+    // Take forward FFT
+    for (int jx = 0; jx < localmesh->LocalNx; jx++)
+      rfft(&f(jx, 0), ncz, &ft(jx, 0));
 
-  // Loop over kz
-  for (int jz = 0; jz <= ncz / 2; jz++) {
+    // Loop over kz
+    for (int jz = 0; jz <= ncz / 2; jz++) {
 
-    // No smoothing in the x direction
-    for (int jx = 2; jx < (localmesh->LocalNx - 2); jx++) {
-      // Perform x derivative
+      // No smoothing in the x direction
+      for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
+        // Perform x derivative
 
-      dcomplex a, b, c;
-      laplace_tridag_coefs(jx, jy, jz, a, b, c);
+        dcomplex a, b, c;
+        laplace_tridag_coefs(jx, jy, jz, a, b, c);
 
-      delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+      }
     }
-  }
 
-  // Reverse FFT
-  for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
-    irfft(&delft(jx, 0), ncz, &result(jx, 0));
-  }
+    // Reverse FFT
+    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
+      irfft(&delft(jx, 0), ncz, &result(jx, 0));
+    }
 
-  // Boundaries
-  for (int jz = 0; jz < ncz; jz++) {
-    result(0, jz) = 0.0;
-    result(localmesh->LocalNx - 1, jz) = 0.0;
-  }
+  } else {
+    throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
+    // Would be the following but don't have standard derivative operators for FieldPerps
+    // yet
+    // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+    //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+  };
 
   return result;
 }
 
 const Field2D Coordinates::Laplace_par(const Field2D &f, CELL_LOC outloc) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
 
 const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
@@ -902,15 +951,19 @@ const Field3D Coordinates::Laplace_par(const Field3D &f, CELL_LOC outloc) {
 
 const Field2D Coordinates::Laplace(const Field2D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field2D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field2D result =
       G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f, CELL_LOC outloc) {
   TRACE("Coordinates::Laplace( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * D2DX2(f, outloc) +
                    g22 * D2DY2(f, outloc) + g33 * D2DZ2(f, outloc) +

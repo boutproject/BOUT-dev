@@ -131,15 +131,26 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   bool use_precon, use_jacobian, use_vector_abstol, stablimdet;
   BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
+
   int mxsteps; // Maximum number of steps to take between outputs
   int mxorder; // Maximum lmm order to be used by the solver
   int lmm = CV_BDF;
   int iter = CV_NEWTON;
 
   {TRACE("Getting options");
-    options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
-    options->get("mldq", mldq, n3Dvars()*(MXSUB+2));
+    options->get("mudq", mudq, band_width_default);
+    options->get("mldq", mldq, band_width_default);
     options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
     options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
     options->get("ATOL", abstol, 1.0e-12);
@@ -152,8 +163,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       BoutReal tempabstol;
       if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
         throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
-      vector<BoutReal> f2dtols;
-      vector<BoutReal> f3dtols;
+      std::vector<BoutReal> f2dtols;
+      std::vector<BoutReal> f3dtols;
       BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
       for (const auto& f : f2d) {
 	abstol_options = Options::getRoot()->getSection(f.name);
@@ -577,25 +588,25 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
  * vector abstol functions
  **************************************************************************/
 
-void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
+void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal> &f2dtols, std::vector<BoutReal> &f3dtols) {
   int p = 0; // Counter for location in abstolvec_data array
 
   // All boundaries
-  for (const auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
   }
   // Bulk of points
-  for (const auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
   }
 }
 
 void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
                                         BoutReal *abstolvec_data, int &p,
-                                        vector<BoutReal> &f2dtols,
-                                        vector<BoutReal> &f3dtols, bool bndry) {
+                                        std::vector<BoutReal> &f2dtols,
+                                        std::vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
+  for(std::vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry) {
       continue;
     }
@@ -603,9 +614,9 @@ void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
     p++;
   }
   
-  for (int jz=0; jz < mesh->LocalNz; jz++) {
+  for (int jz=0; jz < bout::globals::mesh->LocalNz; jz++) {
     // Loop over 3D variables
-    for(vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
+    for(std::vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry) {
         continue;
       }

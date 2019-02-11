@@ -8,11 +8,11 @@ public:
   // We need to initialise the FCI object with the mesh
   FCISlab() {}
 
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     D = 10;
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
     mesh->get(coord->g_22, "g_22");
 
@@ -40,7 +40,7 @@ BOUTMAIN(FCISlab);
 int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
 
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = mesh->getCoordinates();
 
   f.applyParallelBoundary(time);
   g.applyParallelBoundary(time);

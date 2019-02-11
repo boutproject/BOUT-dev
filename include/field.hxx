@@ -29,22 +29,19 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "bout_types.hxx"
+#include "boutexception.hxx"
+#include <globals.hxx>
+#include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
-#include "boutexception.hxx"
-
-#include "bout/deprecated.hxx"
-
-#include "bout/dataiterator.hxx"
 
 #include "unused.hxx"
 
 class Mesh;
 class Coordinates;
-extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
 #include <string>
@@ -57,28 +54,21 @@ extern Mesh * mesh; ///< Global mesh
  */
 class Field {
  public:
-  Field();
+  Field() = default;
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  // Data access
-  virtual const BoutReal& operator[](const Indices &i) const = 0;
-
-  virtual void setLocation(CELL_LOC loc) {
-    if (loc != CELL_CENTRE)
-      throw BoutException("not implemented!");
+  virtual void setLocation(CELL_LOC UNUSED(loc)) {
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::setLocation which is intentionally not fully implemented.");
   }
   virtual CELL_LOC getLocation() const {
-    return CELL_CENTRE;
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::getLocation which is intentionally not fully implemented.");
   }
 
-#ifdef TRACK
-  DEPRECATED(std::string getName() const) { return name; }
-  DEPRECATED(void setName(std::string s)) { name = s; }
-#else
-  DEPRECATED(std::string getName()) const { return ""; }
-  DEPRECATED(void setName(std::string UNUSED(s))) {}
-#endif
   std::string name;
 
 #if CHECK > 0
@@ -96,14 +86,15 @@ class Field {
     return true;
   }
   
-  // Status of the 4 boundaries
-  bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
+  /// Status of the 4 boundaries
+  bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
+
   virtual Mesh * getMesh() const{
     if (fieldmesh){
       return fieldmesh;
     } else {
-      return mesh;
+      return bout::globals::mesh;
     }
   }
 
@@ -129,14 +120,13 @@ class Field {
    */
   virtual int getNz() const;
 
-  /// Make region mendatory for all fields
-  virtual const IndexRange region(REGION rgn) const = 0;
- protected:
-  Mesh * fieldmesh;
-  mutable Coordinates * fieldCoordinates = nullptr;
-  /// Supplies an error method. Currently just prints and exits, but
-  /// should do something more cunning...
-  DEPRECATED(void error(const char *s, ...) const);
+protected:
+  Mesh* fieldmesh{nullptr};
+  mutable Coordinates* fieldCoordinates{nullptr};
 };
+
+/// Unary + operator. This doesn't do anything
+template<typename T>
+T operator+(const T& f) {return f;}
 
 #endif /* __FIELD_H__ */

@@ -3,18 +3,6 @@
 
 #include <string>
 
-// We know stuff might be deprecated, but we still want to test it
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-TEST(OldMatrixTest, CreateAndFree) {
-  BoutReal **test_matrix = matrix<BoutReal>(5, 10);
-
-  EXPECT_NE(nullptr, test_matrix);
-
-  free_matrix(test_matrix);
-}
-#pragma GCC diagnostic pop
-
 TEST(MatrixTest, DefaultShape) {
   Matrix<int> matrix;
 
@@ -528,6 +516,24 @@ TEST(StringUtilitiesTest, StringToIntFail) {
   std::string number_string = "Not a number";
 
   EXPECT_THROW(stringToInt(number_string), BoutException);
+}
+
+TEST(StringUtilitiesTest, BoolToString) {
+  std::string true_string = "true";
+  std::string false_string = "false";
+
+  EXPECT_EQ(true_string, toString(true));
+  EXPECT_EQ(false_string, toString(false));
+}
+
+TEST(StringUtilitiesTest, ConstCharToString) {
+  EXPECT_EQ(std::string("hello"), toString("hello"));
+}
+
+TEST(StringUtilitiesTest, StringToString) {
+  std::string test_string = "dlkjl872kj";
+
+  EXPECT_EQ( test_string, toString(test_string) );
 }
 
 TEST(StringUtilitiesTest, IntToString) {

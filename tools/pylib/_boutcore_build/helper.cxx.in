@@ -1,11 +1,15 @@
+
+. common.sh
+
 cat <<EOF
 #include <field3d.hxx>
 #include <globals.hxx>
 #include <derivs.hxx>
 #include <difops.hxx>
+#include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 EOF
-for ftype in "Field3D" "Field2D"
+for ftype in $fields
 do
   if [ $ftype = "Field3D" ]; then fdd="f3d";
   elif [ $ftype = "Field2D" ]; then fdd="f2d";
@@ -160,12 +164,12 @@ void c_set_f2d_part_(Field2D * f2d, const double data,int xs,int xe, int dx,int 
 }
 
 Mesh * c_get_global_mesh(){
-  return mesh;
+  return bout::globals::mesh;
 }
 
 void c_mesh_normalise(Mesh * msh, double norm){
   //printf("%g\n",norm);
-  auto coord = msh->coordinates();
+  auto coord = msh->getCoordinates();
   coord->dx/=norm;
   coord->dy/=norm;
   coord->dz/=norm;

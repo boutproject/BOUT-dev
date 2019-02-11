@@ -23,7 +23,9 @@ The text input file ``BOUT.inp`` is always in a subdirectory called
 ``data`` for all examples. The files include comments (starting with
 either ``;`` or ``#``) and should be fairly self-explanatory. The format is
 the same as a windows INI file, consisting of ``name = value`` pairs.
-Supported value types are:
+Any type which can be read from a stream using the ``>>`` operator can
+be stored in an option (see later for the implementation details).
+Supported value types include:
 
 -  Integers
 
@@ -41,8 +43,13 @@ name in square brackets.
     [section1]
     something = 132         # an integer
     another = 5.131         # a real value
-    yetanother = true       # a boolean
-    finally = "some text"   # a string
+    工作的 = true            # a boolean
+    इनपुट = "some text"      # a string
+
+Option names can contain almost any character except ’=’ and ’:’, including unicode.
+If they start with a number or ``.``, contain arithmetic symbols
+(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
+to be escaped in expressions. See below for how this is done. 
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -67,6 +74,23 @@ Variables can even reference other variables:
 
 Note that variables can be used before their definition; all variables
 are first read, and then processed afterwards.
+The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
+
+Uses for expressions include initialising variables
+:ref:`sec-expressions` and input sources, defining grids
+:ref:`sec-gridgen` and MMS convergence tests :ref:`sec-mms`.
+
+Expressions can include addition (``+``), subtraction (``-``),
+multiplication (``*``), division (``/``) and exponentiation (``^``)
+operators, with the usual precedence rules. In addition to ``π``,
+expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
+to refer to the spatial and time coordinates.
+A number of functions are defined, listed in table
+:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
+number comes before a symbol or an opening bracket (``(``)
+then a multiplication is assumed: ``2x+3y^2`` is the same as
+``2*x + 3*y^2``, which with the usual precedence rules is the same as
+``(2*x) + (3*(y^2))``. 
 
 All expressions are calculated in floating point and then converted to
 an integer when read inside BOUT++. The conversion is done by rounding
@@ -81,9 +105,37 @@ use the ``round`` function:
     ok_integer = round(256.4)
 
 Note that it is still possible to read ``bad_integer`` as a real
-number though.
+number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
+
+Special symbols in Option names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If option names start with numbers or ``.`` or contain symbols such as
+``+`` and ``-`` then these symbols need to be escaped in expressions
+or they will be treated as arithmetic operators like addition or
+subtraction. To escape a single character 
+``\`` (backslash) can be used, for example ``plasma\-density * 10``
+would read the option ``plasma-density`` and multiply it
+by 10 e.g
+
+.. code-block:: cfg
+
+    plasma-density = 1e19
+    2ndvalue = 10
+    value = plasma\-density * \2ndvalue
+
+To escape multiple characters, ` (backquote) can be used:
+
+.. code-block:: cfg
+
+    plasma-density = 1e19
+    2ndvalue = 10
+    value = `plasma-density` * `2ndvalue`
+
+The character ``:`` cannot be part of an option or section name, and cannot be escaped,
+as it is always used to separate sections.
 
 Command line options
 --------------------
@@ -284,11 +336,13 @@ name, e.g. if multiple meshes are used.
 
 -  ``second``, method for second derivatives
 
+-  ``fourth``, method for fourth derivatives
+
 -  ``upwind``, method for upwinding terms
 
 -  ``flux``, for conservation law terms
 
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
+The methods which can be specified include U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
 

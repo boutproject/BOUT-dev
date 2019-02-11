@@ -7,6 +7,8 @@
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
+  Mesh* mesh = bndry->localmesh;
+
   BoutReal xnorm;
   BoutReal ynorm;
   BoutReal znorm;
@@ -34,6 +36,8 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 }
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
+
+  Mesh* mesh = bndry.localmesh;
 
   BoutReal xnorm;
   BoutReal ynorm;
@@ -63,7 +67,7 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary
 
-BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -108,7 +112,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary - Third order
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -160,7 +164,7 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet with interpolation
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -209,7 +213,7 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Neumann boundary
 
-BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());

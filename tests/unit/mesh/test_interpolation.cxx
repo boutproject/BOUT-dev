@@ -19,7 +19,14 @@
 ///////
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Field3DInterpToTest : public ::testing::Test {
@@ -42,6 +49,7 @@ protected:
   }
 
   static void SetUpTestCase() {
+
     // Delete any existing mesh
     if (mesh != nullptr) {
       delete mesh;
@@ -53,8 +61,7 @@ protected:
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
-    mesh->setParallelTransform(
-        std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity()));
+    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>());
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();

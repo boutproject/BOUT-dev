@@ -38,3 +38,5 @@ aclocal.m4
 bout-coverage/
 src/.libfast
 .*.mk
+*.mo
+

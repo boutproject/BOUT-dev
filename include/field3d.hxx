@@ -33,12 +33,9 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 
-#include "bout/deprecated.hxx"
 #include "bout/assert.hxx"
 
 #include "bout/field_visitor.hxx"
@@ -113,15 +110,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 
   `data` now points to `f(0,1,0)` and can be incremented to move in Z.
 
-  Indexing can also be done using DataIterator or Indices objects,
-  defined in bout/dataiterator.hxx:
-
-      Indices i = {0,1,0};
-
-      f[i] = 1.0;  // Equivalent to f(0,1,0)
-
-  This is primarily used to allow convenient iteration over fields
-
   Iteration
   ---------
 
@@ -183,7 +171,9 @@ class Field3D : public Field, public FieldData {
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /// Move constructor
+  Field3D(Field3D&& f) noexcept { swap(*this, f); }
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
@@ -279,74 +269,27 @@ class Field3D : public Field, public FieldData {
   
   /////////////////////////////////////////////////////////
   // Data access
+
+  /// Return a Region<Ind3D> reference to use to iterate over this field
+  ///
+  /// Example
+  /// -------
+  /// 
+  /// This loops over the interior points, not the boundary
+  /// and inside the loop the index is used to calculate the difference
+  /// between the point one index up in x (i.xp()) and one index down
+  /// in x (i.xm()), putting the result into a different field 'g'
+  /// 
+  /// for(const auto &i : f.getRegion(RGN_NOBNDRY)) {
+  ///   g[i] = f[i.xp()] - f[i.xm()];
+  /// }
+  /// 
+  const Region<Ind3D>& getRegion(REGION region) const;  
+  const Region<Ind3D>& getRegion(const std::string &region_name) const;
   
-  const DataIterator DEPRECATED(iterator() const);
-
-  /*!
-   * These begin and end functions are used to iterate over
-   * the indices of a field. Indices are used rather than
-   * values since this allows expressions involving multiple fields.
-   *
-   * Example
-   * -------
-   *
-   * Field3D objects f and g can be modified by 
-   * 
-   * for(const auto &i : f) {
-   *   f[i] = 2.*f[i] + g[i];
-   * }
-   * 
-   */
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
+  Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   * 
-   * Example
-   * -------
-   * 
-   * This loops over the interior points, not the boundary
-   * and inside the loop the index is used to calculate the difference
-   * between the point one index up in x (i.xp()) and one index down
-   * in x (i.xm()), putting the result into a different field 'g'
-   * 
-   * for(const auto &i : f.region(RGN_NOBNDRY)) {
-   *   g[i] = f[i.xp()] - f[i.xm()];
-   * }
-   * 
-   */
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
-
-  /*!
-   * Like Field3D::region(REGION rgn), but returns range
-   * to iterate over only x-y, not z.
-   * This is useful in the Fourier transform functions
-   * which need an explicit loop in z.
-   *
-   */
-  const IndexRange DEPRECATED(region2D(REGION rgn)) const;
-
-  /*!
-   * Direct data access using DataIterator object.
-   * This uses operator(x,y,z) so checks will only be
-   * performed if CHECK > 2.
-   */
-  BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.y, d.z);
-  }
-  const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.y, d.z);
-  }
-  BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.y, i.z);
-  }
-  const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
-    return operator()(i.x, i.y, i.z);
-  }
-  
-
   BoutReal& operator[](const Ind3D &d) {
     return data[d.ind];
   }
@@ -433,8 +376,6 @@ class Field3D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Operators
   
-  const Field3D operator+() const {return *this;}
-  
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
@@ -490,37 +431,64 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
-  DEPRECATED(void setBackground(const Field2D &f2d)); ///< Boundary is applied to the total of this and f2d
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
-  void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+  
+  /// Copy the boundary values half-way between cells
+  /// This uses 2nd order central differences to set the value
+  /// on the boundary to the value on the boundary in field \p f3d.
+  /// Note: does not just copy values in boundary region.
+  void setBoundaryTo(const Field3D &f3d); 
 
   void applyParallelBoundary();
   void applyParallelBoundary(BoutReal t);
-  void applyParallelBoundary(const string &condition);
-  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
-  void applyParallelBoundary(const string &region, const string &condition);
-  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
+  void applyParallelBoundary(const std::string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(std::string(condition)); }
+  void applyParallelBoundary(const std::string &region, const std::string &condition);
+  void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
+
+  friend void swap(Field3D& first, Field3D& second) noexcept {
+    using std::swap;
+    swap(first.data, second.data);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.background, second.background);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.nz, second.nz);
+    swap(first.location, second.location);
+    swap(first.deriv, second.deriv);
+    swap(first.yup_field, second.yup_field);
+    swap(first.ydown_field, second.ydown_field);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
   
 private:
   /// Boundary - add a 2D field
-  const Field2D *background;
+  const Field2D *background{nullptr};
 
-  int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1}, nz{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
   
-  Field3D *deriv; ///< Time derivative (may be NULL)
+  /// Time derivative (may be nullptr)
+  Field3D *deriv{nullptr};
 
   /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  Field3D *yup_field{nullptr}, *ydown_field{nullptr};
 };
 
 // Non-member overloaded operators
