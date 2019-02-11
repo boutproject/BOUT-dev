@@ -116,7 +116,7 @@ then
     find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
 
     #Upload for codecov
-    bash <(curl -s https://codecov.io/bash)
+    bash <(curl -s https://codecov.io/bash) -a '-r' -X fix
 
     #For codacy
     bash ./.codacy_coverage.sh
