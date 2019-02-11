@@ -13,6 +13,7 @@ addons:
     packages: &standard_packages
     - libfftw3-dev
     - libnetcdf-dev
+    - libnetcdf-c++4-dev
     - netcdf-bin
     - hdf5-tools
     - python3
