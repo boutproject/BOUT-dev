@@ -68,7 +68,7 @@ msgid ""
 "\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB "
 "(%d)\n"
 msgstr ""
-"\t -> La región `Leg` ny-jyseps2_2-1 (%d-%d-1 = %d) debe ser un múltiplo de  MYSUB "
+"\t -> La región `Leg` ny-jyseps2_2-1 (%d-%d-1 = %d) debe ser un múltiplo de MYSUB "
 "(%d)\n"
 
 #: ..//src/mesh/impls/bout/boutmesh.cxx:349
@@ -77,7 +77,7 @@ msgid ""
 "\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of "
 "MYSUB (%d)\n"
 msgstr ""
-"\t -> La región `Leg` nyi_inner--jyseps2_1-1 (%d-%d-1 = %d) debe ser un múltiplo de "
+"\t -> La región `Leg` nyi_inner-jyseps2_1-1 (%d-%d-1 = %d) debe ser un múltiplo de "
 "MYSUB (%d)\n"
 
 #: ..//src/mesh/impls/bout/boutmesh.cxx:318
@@ -92,7 +92,7 @@ msgstr "\t -> ny/NYPE (%d/%d = %d) debe ser >= MYG (%d)\n"
 #: ..//src/mesh/impls/bout/boutmesh.cxx:311
 #, c-format
 msgid "\tCandidate value: %d\n"
-msgstr "\tValor candidat: %d\n"
+msgstr "\tValor candidato: %d\n"
 
 #: ..//src/bout++.cxx:390
 msgid "\tChecking disabled\n"
@@ -113,7 +113,7 @@ msgstr "\tParámetros de línea de comandos para esta ejecución :"
 #: ..//src/bout++.cxx:431
 #, c-format
 msgid "\tCompiled with flags : %s\n"
-msgstr "\tCompilado con los `flags` : %s\n"
+msgstr "\tCompilado con las opciones `flags` : %s\n"
 
 #: ..//src/mesh/impls/bout/boutmesh.cxx:390
 #, c-format
@@ -187,7 +187,7 @@ msgid ""
 "\tOption %s = %s (%s) overwritten with:\n"
 "\t\t%s = %s (%s)\n"
 msgstr ""
-"\tOpción %s = %s (%s) sobreescrita with:\n"
+"\tOpción %s = %s (%s) sobreescrita con:\n"
 "\t\t%s = %s (%s)\n"
 
 #: ..//src/sys/options.cxx:226
@@ -210,7 +210,7 @@ msgstr "\tSoporte para NetCDF paralelo activado\n"
 
 #: ..//src/mesh/impls/bout/boutmesh.cxx:124
 msgid "\tRead nz from input grid file\n"
-msgstr "\tLeer nz del archivo malla `grid`de entrada\n"
+msgstr "\tLeer nz del archivo input de la malla `grid`\n"
 
 #: ..//src/mesh/mesh.cxx:124
 msgid "\tReading contravariant vector "
@@ -307,7 +307,7 @@ msgstr ""
 
 #: ..//src/sys/options.cxx:248
 msgid "All options used\n"
-msgstr "Todas las opciones usadas\n"
+msgstr "Usando todas las opciones\n"
 
 #. / Print intro
 #: ..//src/bout++.cxx:368
@@ -330,7 +330,7 @@ msgid ""
 "Code compiled on %s at %s\n"
 "\n"
 msgstr ""
-"Código compilado en %s a %s\n"
+"Código compilado en %s en %s\n"
 "\n"
 
 #: ..//src/sys/optionsreader.cxx:142
@@ -429,7 +429,7 @@ msgstr "Error durante el paso de opciones"
 #: ..//src/mesh/impls/bout/boutmesh.cxx:147
 #, c-format
 msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
-msgstr "Error: nx debe mayor que 2 veces MXG (2 * %d)"
+msgstr "Error: nx debe ser mayor que 2 veces MXG (2 * %d)"
 
 #: ..//src/solver/solver.cxx:528
 msgid "Failed to initialise solver-> Aborting\n"
@@ -487,13 +487,13 @@ msgstr "Sin regiones de frontera en este procesador"
 #: ..//src/mesh/impls/bout/boutmesh.cxx:234
 #, c-format
 msgid "Number of processors (%d) not divisible by NPs in x direction (%d)\n"
-msgstr "Número de procesadores (%d) no divisible para NPs in la dirección x (%d)\n"
+msgstr "Número de procesadores (%d) no divisible para NPs en la dirección x (%d)\n"
 
 #. Less than 1 time-step left
 #: ..//src/bout++.cxx:707
 #, c-format
 msgid "Only %e seconds left. Quitting\n"
-msgstr "Solo faltan %e segundos. Suspendiendo\n"
+msgstr "Solo faltan %e segundos. Saliendo\n"
 
 #: ..//src/sys/options.cxx:130 ..//src/sys/options.cxx:148
 #: ..//src/sys/options.cxx:184 ..//src/sys/options.cxx:212
@@ -518,7 +518,8 @@ msgid ""
 "Options: Setting a value from same source (%s) to new value '%s' - old value "
 "was '%s'."
 msgstr ""
-"Opciones: Cambiando valor de la misma fuente (%s) al valor nuevo '%s' - valor anterior era '%s'."
+"Opciones: Cambiando valor de la misma fuente (%s) al valor nuevo '%s' - valor anterior "
+"era '%s'."
 
 #: ..//src/bout++.cxx:379
 #, c-format
