@@ -77,7 +77,7 @@ msgid ""
 "\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of "
 "MYSUB (%d)\n"
 msgstr ""
-"\t -> La región `Leg` nyi_inner-jyseps2_1-1 (%d-%d-1 = %d) debe ser un múltiplo de "
+"\t -> La región `Leg` ny_inner-jyseps2_1-1 (%d-%d-1 = %d) debe ser un múltiplo de "
 "MYSUB (%d)\n"
 
 #: ..//src/mesh/impls/bout/boutmesh.cxx:318
