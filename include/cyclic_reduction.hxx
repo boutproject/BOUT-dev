@@ -222,6 +222,7 @@ public:
     int nsextra = Nsys % nprocs; // Number of processors with 1 extra
 
     MPI_Request *req = new MPI_Request[nprocs];
+    MPI_Request *sendreq = new MPI_Request[nprocs];
 
     if (myns > 0) {
       // Post receives from all other processors
@@ -264,12 +265,16 @@ public:
         for (int i = 0; i < 8; i++)
           output << "value " << i << " : " << myif(s0, i) << endl;
 #endif
-        MPI_Send(&myif(s0, 0),        // Data pointer
+        MPI_Isend(&myif(s0, 0),       // Data pointer
                  8 * nsp * sizeof(T), // Number
                  MPI_BYTE,            // Type
                  p,                   // Destination
                  myproc,              // Message identifier
-                 comm);               // Communicator
+                 comm,                // Communicator
+                 &sendreq[p]);        // Request handle
+      }
+      else {
+          sendreq[p] = MPI_REQUEST_NULL;
       }
       s0 += nsp;
     }
@@ -383,6 +388,7 @@ public:
       }
 
       if (myns > 0) {
+
         // Send data
         for (int p = 0; p < nprocs; p++) { // Loop over processor
           if (p != myproc) {
@@ -395,9 +401,13 @@ public:
                      << p << endl;
 #endif
             }
-            MPI_Send(std::begin(ifp), 2 * myns * sizeof(T), MPI_BYTE, p,
+            MPI_Isend(std::begin(ifp), 2 * myns * sizeof(T), MPI_BYTE, p,
                      myproc, // Message identifier
-                     comm);
+                     comm,
+                     &sendreq[p]); // Request handle
+          }
+          else {
+            sendreq[p] = MPI_REQUEST_NULL;
           }
         }
       }
