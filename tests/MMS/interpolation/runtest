@@ -7,8 +7,8 @@
 # Exits with status 1 if any test failed
 
 import numpy as np
-
 import boutcore as bc
+import sys
 
 #Requires: boutcore
 
