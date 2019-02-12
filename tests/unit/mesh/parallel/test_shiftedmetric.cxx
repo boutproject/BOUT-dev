@@ -117,7 +117,7 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 2., 3.},
                         {2., 3., 4., 5., 1.}}});
 
-  EXPECT_TRUE(IsFieldEqual(shifted.toFieldAligned(input), expected, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(shifted.toFieldAligned(input, RGN_ALL), expected, "RGN_ALL",
                                     FFTTolerance));
 }
 
@@ -151,7 +151,7 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {5., 1., 2., 3., 4.}}});
 
   // Loosen tolerance a bit due to FFTs
-  EXPECT_TRUE(IsFieldEqual(shifted.fromFieldAligned(input), expected, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(shifted.fromFieldAligned(input, RGN_ALL), expected, "RGN_ALL",
                                     FFTTolerance));
 }
 
