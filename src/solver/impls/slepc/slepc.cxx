@@ -606,10 +606,10 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
       output<<formatEig(reEigBout,imEigBout)<<endl;
       if(eigenValOnly){
         simtime=reEigBout;
-        dump.write();
+        bout::globals::dump.write();
         iteration++;
         simtime=imEigBout;
-        dump.write();
+        bout::globals::dump.write();
         iteration++;
       }
     }
@@ -747,7 +747,7 @@ void SlepcSolver::analyseResults(){
       run_rhs(0.0);
 
       //Write to file
-      dump.write();
+      bout::globals::dump.write();
       iteration++;
 
       //Now write imaginary part of eigen data
@@ -757,7 +757,7 @@ void SlepcSolver::analyseResults(){
       simtime=imEigBout;
 
       //Write to file
-      dump.write();
+      bout::globals::dump.write();
       iteration++;
     }
 

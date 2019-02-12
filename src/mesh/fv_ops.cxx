@@ -180,6 +180,9 @@ namespace FV {
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
     ASSERT2(d_in.getLocation() == f_in.getLocation());
 
+    Mesh* mesh = d_in.getMesh();
+    ASSERT1(mesh = f_in.getMesh());
+
     Field3D result = 0.0;
     result.setLocation(f_in.getLocation());
     
@@ -233,6 +236,8 @@ namespace FV {
     Field3D result = 0.0;
     result.setLocation(f_in.getLocation());
     
+    Mesh* mesh = f_in.getMesh();
+
     // Convert to field aligned coordinates
     Field3D f = mesh->toFieldAligned(f_in);
 
@@ -339,6 +344,7 @@ namespace FV {
   }
 
   void communicateFluxes(Field3D &f) {
+    Mesh* mesh = f.getMesh();
 
     // Use X=0 as temporary buffer
     if (mesh->xstart != 2)

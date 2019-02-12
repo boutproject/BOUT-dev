@@ -29,9 +29,7 @@
 #define __FFT_H__
 
 #include "dcomplex.hxx"
-
-template <typename T>
-class Array;
+#include <bout/array.hxx>
 
 class Options;
 
@@ -97,8 +95,16 @@ void fft_init(Options* options = nullptr);
 /// Returns the fft of a real signal \p in using fftw_forward
 Array<dcomplex> rfft(const Array<BoutReal>& in);
 
-/// Take the inverse fft of signal \p in where the outputs are only reals
-Array<BoutReal> irfft(const Array<dcomplex>& in);
+/// Take the inverse fft of signal \p in where the outputs are only reals.
+/// Requires the \p length of the original real signal
+///
+/// \p length is required because input signals to the forward
+/// transform of length `n` and `n + 1` both produce ffts of length
+/// `(n / 2) + 1` -- i.e. it's not possible to recover the length of
+/// the original signal from the fft alone.
+///
+/// Expects that `in.size() == (length / 2) + 1`
+Array<BoutReal> irfft(const Array<dcomplex>& in, int length);
 
 } // namespace fft
 } // namespace bout

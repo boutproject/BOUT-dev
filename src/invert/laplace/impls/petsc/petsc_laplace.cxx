@@ -27,6 +27,7 @@
 
 #include "petsc_laplace.hxx"
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>

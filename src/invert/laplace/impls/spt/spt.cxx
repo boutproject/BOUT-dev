@@ -32,6 +32,7 @@
  */
 
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>

@@ -31,6 +31,7 @@
  *
  */
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <invert_laplace.hxx>
 #include <bout_types.hxx>
@@ -52,7 +53,7 @@
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
-  : location(loc), localmesh(mesh_in) {
+  : location(loc), localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {
 
   if (options == nullptr) {
     // Use the default options
@@ -289,23 +290,29 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
    */
 
-  if (loc == CELL_DEFAULT) loc = location;
+  Coordinates* localcoords;
+  if (loc == CELL_DEFAULT) {
+    loc = location;
+    localcoords = coords;
+  } else {
+    localcoords = localmesh->getCoordinates(loc);
+  }
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  coef1=coords->g11(jx,jy);     ///< X 2nd derivative coefficient
-  coef2=coords->g33(jx,jy);     ///< Z 2nd derivative coefficient
-  coef3=2.*coords->g13(jx,jy);  ///< X-Z mixed derivative coefficient
+  coef1=localcoords->g11(jx,jy);     ///< X 2nd derivative coefficient
+  coef2=localcoords->g33(jx,jy);     ///< Z 2nd derivative coefficient
+  coef3=2.*localcoords->g13(jx,jy);  ///< X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if(all_terms) {
-    coef4 = coords->G1(jx,jy); // X 1st derivative
-    coef5 = coords->G3(jx,jy); // Z 1st derivative
+    coef4 = localcoords->G1(jx,jy); // X 1st derivative
+    coef5 = localcoords->G3(jx,jy); // Z 1st derivative
   }
 
   if (d != nullptr) {
@@ -320,26 +327,26 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   if(nonuniform) {
     // non-uniform mesh correction
     if((jx != 0) && (jx != (localmesh->LocalNx-1))) {
-      coef4 -= 0.5*((coords->dx(jx+1,jy) - coords->dx(jx-1,jy))/SQ(coords->dx(jx,jy)))*coef1;
+      coef4 -= 0.5*((localcoords->dx(jx+1,jy) - localcoords->dx(jx-1,jy))/SQ(localcoords->dx(jx,jy)))*coef1;
     }
   }
 
   if (ccoef != nullptr) {
     // A first order derivative term
     if((jx > 0) && (jx < (localmesh->LocalNx-1)))
-      coef4 += coords->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coords->dx(jx,jy)*((*ccoef)(jx,jy)));
+      coef4 += localcoords->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*ccoef)(jx,jy)));
   }
 
   if(localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11(jx,jy) * coords->IntShiftTorsion(jx,jy) * coords->IntShiftTorsion(jx,jy);
+    coef2 += localcoords->g11(jx,jy) * localcoords->IntShiftTorsion(jx,jy) * localcoords->IntShiftTorsion(jx,jy);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
 
-  coef1 /= SQ(coords->dx(jx,jy));
-  coef3 /= 2.*coords->dx(jx,jy);
-  coef4 /= 2.*coords->dx(jx,jy);
+  coef1 /= SQ(localcoords->dx(jx,jy));
+  coef3 /= 2.*localcoords->dx(jx,jy);
+  coef4 /= 2.*localcoords->dx(jx,jy);
 
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);

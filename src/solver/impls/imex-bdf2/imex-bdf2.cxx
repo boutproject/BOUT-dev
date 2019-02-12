@@ -3,6 +3,7 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -204,6 +205,9 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
 //Set up a snes object stored at the specified location
 void IMEXBDF2::constructSNES(SNES *snesIn){
+
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),snesIn);
@@ -1310,6 +1314,9 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
  */
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
+
   // Loop over 2D variables
   for(auto it = f2d.begin(); it != f2d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator

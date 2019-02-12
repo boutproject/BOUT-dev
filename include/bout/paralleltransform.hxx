@@ -58,7 +58,7 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &f) override;
   
   /*!
    * The field is already aligned in Y, so this
@@ -92,7 +92,10 @@ public:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
+  /// Read zShift from the mesh
   ShiftedMetric(Mesh &mesh);
+  /// Use an existing zShift
+  ShiftedMetric(Mesh &mesh, Field2D zShift);
   
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -135,14 +138,28 @@ private:
                                    ///field-aligned coordinates to X-Z orthogonal
                                    ///coordinates
 
-  Tensor<dcomplex> yupPhs;   ///< Cache of phase shifts for calculating yup fields
-  Tensor<dcomplex> ydownPhs; ///< Cache of phase shifts for calculating ydown fields
+  /// Helper POD for parallel slice phase shifts
+  struct ParallelSlicePhase {
+    Tensor<dcomplex> phase_shift;
+    int y_offset;
+  };
+
+  /// Cache of phase shifts for the parallel slices. Slices are stored
+  /// in the following order:
+  ///     {+1, ..., +n, -1, ..., -n}
+  /// slice[i] stores offset i+1
+  /// slice[2*i + 1] stores offset -(i+1)
+  /// where i goes from 0 to (n-1), with n the number of y guard cells
+  std::vector<ParallelSlicePhase> parallel_slice_phases;
 
   /*!
    * Shift a 2D field in Z. 
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle), const REGION UNUSED(region)=RGN_NOX){return f;};
+  const Field2D shiftZ(const Field2D &f, const Field2D &UNUSED(zangle),
+      const REGION UNUSED(region)=RGN_NOX) const {
+    return f;
+  };
 
   /*!
    * Shift a 3D field \p f in Z by the given \p zangle
@@ -151,7 +168,8 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */ 
-  const Field3D shiftZ(const Field3D &f, const Field2D &zangle, const REGION region=RGN_NOX);
+  const Field3D shiftZ(const Field3D &f, const Field2D &zangle,
+      const REGION region=RGN_NOX) const;
 
   /*!
    * Shift a 3D field \p f by the given phase \p phs in Z
@@ -163,7 +181,7 @@ private:
    * @param[in] phs  The phase to shift by
    */
   const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
-                       const REGION region = RGN_NOX);
+                       const REGION region = RGN_NOX) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
@@ -173,7 +191,7 @@ private:
    * @param[in] zangle  The angle (z coordinate) to shift by
    * @param[out] out  A 1D array of length \p len, already allocated
    */
-  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
+  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
@@ -182,7 +200,19 @@ private:
    * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
-  void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out);
+  void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const;
+
+  /// Calculate and store the phases for to/from field aligned and for
+  /// the parallel slices using zShift
+  void cachePhases();
+
+  /// Shift a 3D field \p f in Z to all the parallel slices in \p phases
+  ///
+  /// @param[in] f      The field to shift
+  /// @param[in] phases The phase and offset information for each parallel slice
+  /// @return The shifted parallel slices
+  std::vector<Field3D> shiftZ(const Field3D& f,
+                              const std::vector<ParallelSlicePhase>& phases) const;
 };
 
 

@@ -15,7 +15,7 @@ rz_grid = {nr:g.nx, nz:g.ny, $  ; Number of grid points
 
 settings = {nrad:64, npol:64, psi_inner:0.8, psi_outer:1.1}
 boundary = TRANSPOSE([[rz_grid.rlim], [rz_grid.zlim]])
-mesh = create_grid(rz_grid.psi, rz_grid.r, rz_grid.z, settings, boundary=boundary, /strict)
+mesh = create_grid(rz_grid.psi, rz_grid.r, rz_grid.z, settings, boundary=boundary, /strict, /simple)
 
 ;process_grid, rz_grid, mesh
 

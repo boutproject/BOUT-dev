@@ -41,6 +41,10 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
+  if (mesh_in == nullptr) {
+    mesh_in = bout::globals::mesh;
+  }
+
   std::string type;
 
   if(mesh_in->firstX() && mesh_in->lastX()) {

@@ -125,7 +125,16 @@ IdaSolver::~IdaSolver() { }
   set_id(NV_DATA_P(id));
   
   /// Get options
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
 
   BoutReal abstol, reltol;
   int maxl;
@@ -134,8 +143,8 @@ IdaSolver::~IdaSolver() { }
   bool use_precon;
   bool correct_start;
 
-  OPTION(options, mudq, n3d*(MXSUB+2));
-  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mudq, band_width_default);
+  OPTION(options, mldq, band_width_default);
   OPTION(options, mukeep, n3d);
   OPTION(options, mlkeep, n3d);
   options->get("ATOL", abstol, 1.0e-12);

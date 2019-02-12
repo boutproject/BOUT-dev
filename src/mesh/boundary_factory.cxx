@@ -1,6 +1,7 @@
 #include <globals.hxx>
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
+#include <options.hxx>
 #include <utils.hxx>
 
 #include <list>

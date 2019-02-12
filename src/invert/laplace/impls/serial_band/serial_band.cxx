@@ -27,6 +27,7 @@
 #include <globals.hxx>
 #include "serial_band.hxx"
 
+#include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>

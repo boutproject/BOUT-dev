@@ -9,6 +9,7 @@
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
 #include <interpolation.hxx>
+#include <invert_laplace.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -51,12 +52,9 @@ BoutReal zeff, nu_perp;
 bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
 BoutReal ShearFactor;
 
-int phi_flags, apar_flags; // Inversion flags
-
-// Field routines
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
-
+// Inversion objects
+Laplacian* phi_solver;
+Laplacian* apar_solver;
 
 FieldGroup comms; // Group of variables for communications
 
@@ -119,9 +117,6 @@ int physics_init(bool UNUSED(restarting)) {
   OPTION(options, nu_perp,     0.0);
   OPTION(options, ShearFactor, 1.0);
   
-  OPTION(options, phi_flags,   0);
-  OPTION(options, apar_flags,  0);
-  
   (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
   (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
   (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
@@ -131,6 +126,12 @@ int physics_init(bool UNUSED(restarting)) {
   
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
+
+  /*************** INITIALIZE LAPLACIAN SOLVERS ********/
+  phi_solver = Laplacian::create(globalOptions->getSection("phisolver"));
+  if (!estatic && !ZeroElMass) {
+    apar_solver = Laplacian::create(globalOptions->getSection("aparsolver"));
+  }
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -314,13 +315,13 @@ int physics_init(bool UNUSED(restarting)) {
 int physics_run(BoutReal UNUSED(t)) {
   // Solve EM fields
 
-  solve_phi_tridag(rho, phi, phi_flags);
+  phi = phi_solver->solve(rho, phi);
 
   if(estatic || ZeroElMass) {
     // Electrostatic operation
     Apar = 0.0;
   }else {
-    solve_apar_tridag(Ajpar, Apar, apar_flags); // Linear Apar solver
+    Apar = apar_solver->solve(Ajpar, Apar); // Linear Apar solver
   }
 
   // Communicate variables
@@ -418,42 +419,6 @@ int physics_run(BoutReal UNUSED(t)) {
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
     ddt(Ajpar) += 0.51*interp_to(nu, maybe_ylow)*jpar/Ni0_maybe_ylow;
   }
-
-  return(0);
-}
-
-/*******************************************************************************
- *                       FAST LINEAR FIELD SOLVERS
- *******************************************************************************/
-
-#include <invert_laplace.hxx>
-
-// Performs inversion of rho (r) to get phi (p)
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {
-  
-  //output.write("Solving phi: %e, %e -> %e\n", max(abs(r)), min(Ni0), max(abs(r/Ni0)));
-
-  if(invert_laplace(r/Ni0, p, flags, NULL)) {
-    return 1;
-  }
-
-  //Field3D pertPi = Ti*Ni0 + Ni*Ti0;
-  //p -= pertPi/Ni0;
-  return(0);
-}
-
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags) {
-  static Field2D a;
-  static int set = 0;
-
-  if(set == 0) {
-    // calculate a
-    a = (-0.5*beta_p/fmei)*Ni0;
-    set = 1;
-  }
-
-  if(invert_laplace(a*(Vi - aj), ap, flags, &a))
-    return 1;
 
   return(0);
 }

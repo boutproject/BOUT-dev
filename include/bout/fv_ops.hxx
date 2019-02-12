@@ -10,6 +10,7 @@
 #include "../vector2d.hxx"
 
 #include "../utils.hxx"
+#include <bout/mesh.hxx>
 
 namespace FV {
   /*!
@@ -182,6 +183,10 @@ namespace FV {
 
     ASSERT2(f_in.getLocation() == v_in.getLocation());
 
+    Mesh* mesh = f_in.getMesh();
+    ASSERT1(mesh == v_in.getMesh());
+    ASSERT1(mesh == wave_speed.getMesh());
+
     CellEdges cellboundary;
     
     Field3D f = mesh->toFieldAligned(f_in);
@@ -340,6 +345,9 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     ASSERT2(n_in.getLocation() == v.getLocation());
+
+    Mesh* mesh = n_in.getMesh();
+    ASSERT1(mesh == v.x.getMesh());
 
     CellEdges cellboundary;
     
