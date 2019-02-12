@@ -22,6 +22,11 @@ public:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+
+    // Use two y-guards to test multiple parallel slices
+    mesh->ystart = 2;
+    mesh->yend = mesh->LocalNy - 3;
+
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();
@@ -151,10 +156,6 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
-  // Use two y-guards to test multiple parallel slices
-  mesh->ystart = 2;
-  mesh->yend = mesh->LocalNy - 3;
-
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
