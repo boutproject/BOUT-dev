@@ -121,8 +121,8 @@ then
     # for of the unit test sources (i.e. `cd tests/unit/; gcov
     # sys/test_utils.cxx`). This is the difference between the
     # `-execdir` and `-exec` arguments to `find`
-    bash <(curl -s https://codecov.io/bash) -X fix |\
-        -a '-r {} +; find ./tests/unit -type f -name '*.gcno' -exec gcov -pbr {} +'
+    bash <(curl -s https://codecov.io/bash) -X fix \
+        -a '-r {} +; find ./tests/unit -type f -name "*.gcno" -exec gcov -pbr {} +'
 
     #For codacy
     bash ./.codacy_coverage.sh
