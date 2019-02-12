@@ -462,7 +462,19 @@ class Field3D : public Field, public FieldData {
     swap(first.nz, second.nz);
     swap(first.location, second.location);
     swap(first.deriv, second.deriv);
+    if (first.yup_field == &first){
+      first.yup_field = &second;
+    }
+    if (second.yup_field == &second){
+      second.yup_field = &first;
+    }
     swap(first.yup_field, second.yup_field);
+    if (first.ydown_field == &first){
+      first.ydown_field = &second;
+    }
+    if (second.ydown_field == &second){
+      second.ydown_field = &first;
+    }
     swap(first.ydown_field, second.ydown_field);
     swap(first.bndry_op, second.bndry_op);
     swap(first.boundaryIsCopy, second.boundaryIsCopy);
