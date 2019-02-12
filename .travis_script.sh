@@ -114,8 +114,15 @@ then
     # It still won't include, e.g. any solvers we don't build with though
     find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
 
-    #Upload for codecov
-    bash <(curl -s https://codecov.io/bash) -a '-r' -X fix
+    # Upload for codecov. Slightly hacky: for each source file,
+    # codecov runs gcov in that directory (i.e. essentially `cd
+    # src/sys && gcov utils.cxx`). This is mostly fine, but it seems
+    # we also need to run it just in the unit tests directory for each
+    # for of the unit test sources (i.e. `cd tests/unit/; gcov
+    # sys/test_utils.cxx`). This is the difference between the
+    # `-execdir` and `-exec` arguments to `find`
+    bash <(curl -s https://codecov.io/bash) -X fix |\
+        -a '-r {} +; find ./tests/unit -type f -name '*.gcno' -exec gcov -pbr {} +'
 
     #For codacy
     bash ./.codacy_coverage.sh
