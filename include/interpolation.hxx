@@ -100,13 +100,26 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         // At least 2 boundary cells needed for interpolation in x-direction
         ASSERT0(fieldmesh->xstart >= 2);
 
+	REGION realregion;
+	switch (region){
+	case RGN_ALL:
+	case RGN_NOZ:
+	  realregion = RGN_NOX;
+	  break;
+	case RGN_NOX:
+	  realregion = RGN_NOBNDRY;
+	  break;
+	default:
+	  realregion = region;
+	  break;
+	}
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion(realregion)) {
             // Producing a stencil centred around a lower X value
             result[i] = interp(populateStencil<DIRECTION::X, STAGGER::C2L, 2>(var, i));
           }
         } else if (location == CELL_XLOW) { // L2C
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion(realregion)) {
             // Stencil centred around a cell centre
             result[i] = interp(populateStencil<DIRECTION::X, STAGGER::L2C, 2>(var, i));
           }
@@ -118,6 +131,19 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         // At least 2 boundary cells needed for interpolation in y-direction
         ASSERT0(fieldmesh->ystart >= 2);
 
+	REGION realregion;
+	switch (region){
+	case RGN_ALL:
+	case RGN_NOZ:
+	  realregion = RGN_NOY;
+	  break;
+	case RGN_NOX:
+	  realregion = RGN_NOBNDRY;
+	  break;
+	default:
+	  realregion = region;
+	  break;
+	}
         if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
           // Field "var" has distinct yup and ydown fields which
           // will be used to calculate a derivative along
@@ -128,13 +154,13 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
               "/double-down fields, then we can use this case.");
 
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+            BOUT_FOR(i, result.getRegion(realregion)) {
               // Producing a stencil centred around a lower X value
               result[i] = interp(
                   populateStencil<DIRECTION::YOrthogonal, STAGGER::C2L, 2>(var, i));
             }
           } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+            BOUT_FOR(i, result.getRegion(realregion)) {
               // Stencil centred around a cell centre
               result[i] = interp(
                   populateStencil<DIRECTION::YOrthogonal, STAGGER::L2C, 2>(var, i));
@@ -158,13 +184,13 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
           }
 
           if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+            BOUT_FOR(i, result.getRegion(realregion)) {
               // Producing a stencil centred around a lower X value
               result[i] = interp(
                   populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
             }
           } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+            BOUT_FOR(i, result.getRegion(realregion)) {
               // Stencil centred around a cell centre
               result[i] = interp(
                   populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
@@ -178,12 +204,12 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       case CELL_ZLOW: {
 
         if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion(region)) {
             // Producing a stencil centred around a lower X value
             result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(var, i));
           }
         } else if (location == CELL_ZLOW) { // L2C
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          BOUT_FOR(i, result.getRegion(region)) {
             // Stencil centred around a cell centre
             result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(var, i));
           }
@@ -202,14 +228,14 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         fieldmesh->communicate(result);
       }
 
+      return result;
     } else {
       // Shifted -> shifted
       // For now, shift to centre then to final location loc
       // We probably should not rely on this, but it might work if one of the
       // shifts is in the z-direction where guard cells aren't needed.
-      result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
+      return interp_to(interp_to(var,CELL_CENTRE,RGN_ALL), loc, region);
     }
-    return result;
   } else {
     // Nothing to do - just return unchanged
     // Copying into result to return as returning var may increase the number of
