@@ -272,7 +272,30 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     }
   }
 
+  nz = mesh->LocalNz;
+
+  dz = coords_in->dz;
+
   if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
+
+    if (mesh->get(dx, "dx"+suffix)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix);
+      dx = 1.0;
+    }
+    dx.setLocation(location);
+
+    if (mesh->periodicX) {
+      mesh->communicate(dx);
+    }
+
+    if (mesh->get(dy, "dy"+suffix)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix);
+      dy = 1.0;
+    }
+    dy.setLocation(location);
+
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     mesh->get(g11, "g11"+suffix, 1.0);
@@ -350,10 +373,6 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
     dx = interpolateAndNeumann(coords_in->dx, location);
     dy = interpolateAndNeumann(coords_in->dy, location);
-
-    nz = mesh->LocalNz;
-
-    dz = coords_in->dz;
 
     // Diagonal components of metric tensor g^{ij}
     g11 = interpolateAndNeumann(coords_in->g11, location);
