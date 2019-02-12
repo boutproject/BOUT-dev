@@ -7,6 +7,8 @@
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
+  Mesh* mesh = bndry->localmesh;
+
   BoutReal xnorm;
   BoutReal ynorm;
   BoutReal znorm;
@@ -34,6 +36,8 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 }
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
+
+  Mesh* mesh = bndry.localmesh;
 
   BoutReal xnorm;
   BoutReal ynorm;

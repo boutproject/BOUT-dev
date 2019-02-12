@@ -39,6 +39,7 @@
 
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/mesh.hxx>
 
 #include <cmath>
 #include <output.hxx>
@@ -89,7 +90,7 @@ void Field2D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
@@ -549,8 +550,6 @@ void checkData(const Field2D &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(Field2D &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

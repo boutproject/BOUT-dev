@@ -8,6 +8,7 @@
 #include <bout/assert.hxx>
 
 #include <boutcomm.hxx>
+#include <globals.hxx>
 #include <utils.hxx>
 #include <bout/sys/timer.hxx>
 
@@ -26,7 +27,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : localmesh(m==nullptr ? mesh : m), location(loc) {
+    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {

@@ -28,6 +28,7 @@
 
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <fieldperp.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -50,7 +51,7 @@ void FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
     }
@@ -538,8 +539,6 @@ void checkData(const FieldPerp &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(FieldPerp &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

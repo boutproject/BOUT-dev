@@ -36,6 +36,9 @@
  *
  **************************************************************************/
 
+#include <bout/mesh.hxx>
+#include <field2d.hxx>
+#include <field3d.hxx>
 #include <globals.hxx>
 #include <initialprofiles.hxx>
 #include <boutexception.hxx>

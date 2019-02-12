@@ -220,7 +220,7 @@ protected:
 
 public:
   Interpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
-      : localmesh(localmeshIn == nullptr ? mesh : localmeshIn),
+      : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
         skip_mask(*localmesh, false), y_offset(y_offset) {}
   Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : Interpolation(y_offset, mesh) {

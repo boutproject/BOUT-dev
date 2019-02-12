@@ -173,10 +173,19 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = VecDestroy(&rhs_vec);
 
   ///////////// GET OPTIONS /////////////
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
 
-  OPTION(options, mudq, n3d*(MXSUB+2));
-  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mudq, band_width_default);
+  OPTION(options, mldq, band_width_default);
   OPTION(options, mukeep, 0);
   OPTION(options, mlkeep, 0);
   OPTION(options, use_precon, false);
@@ -376,14 +385,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     PetscInt dof = n3Dvars();
 
     // Maximum allowable size of stencil in x is the number of guard cells
-    PetscInt stencil_width = mesh->xstart;
+    PetscInt stencil_width_estimate = options->operator[]("stencil_width_estimate").withDefault(bout::globals::mesh->xstart);
     // This is the stencil in each direction (*2) along each dimension
     // (*3), plus the point itself. Not sure if this is correct
     // though, on several levels:
     //   1. Ignores corner points used in e.g. brackets
     //   2. Could have different stencil widths in each dimension
     //   3. FFTs couple every single point together
-    PetscInt cols = stencil_width*2*3+1;
+    PetscInt cols = stencil_width_estimate*2*3+1;
     PetscInt prealloc; // = cols*dof;
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);

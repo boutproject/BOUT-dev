@@ -24,6 +24,7 @@
  *
  **************************************************************************/
 
+#include <bout/mesh.hxx>
 #include <bout/scorepwrapper.hxx>
 
 #include <globals.hxx>
@@ -31,6 +32,7 @@
 #include <derivs.hxx>
 #include <msg_stack.hxx>
 #include <unused.hxx>
+#include <utils.hxx>
 
 /**************************************************************************
  * Gradient operators

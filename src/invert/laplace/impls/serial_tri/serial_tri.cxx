@@ -27,6 +27,7 @@
 #include "globals.hxx"
 #include "serial_tri.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <fft.hxx>

@@ -55,9 +55,10 @@ class NcFormat;
 
 class NcFormat : public DataFormat {
  public:
-  NcFormat();
-  NcFormat(const char *name);
-  NcFormat(const std::string &name) : NcFormat(name.c_str()) {}
+  NcFormat(Mesh* mesh_in = nullptr);
+  NcFormat(const char *name, Mesh* mesh_in = nullptr);
+  NcFormat(const std::string &name, Mesh* mesh_in = nullptr)
+    : NcFormat(name.c_str(), mesh_in) {}
   ~NcFormat();
 
   using DataFormat::openr;
