@@ -27,6 +27,8 @@ addons:
     - libopenmpi-dev
     - libpetsc3.6.2-dev
     - libslepc3.6.1-dev
+    - liblapack-dev
+    - libparpack2-dev
 
 matrix:
   fast_finish: true
@@ -72,8 +74,6 @@ matrix:
       apt:
         packages:
           - *standard_packages
-          - liblapack-dev
-          - libparpack2-dev
           - jq
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
