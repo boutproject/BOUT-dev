@@ -27,6 +27,7 @@
 #include <globals.hxx>
 #include "serial_band.hxx"
 
+#include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -81,8 +82,11 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   FieldPerp x(localmesh);
+  x.setLocation(location);
   x.allocate();
 
   int jy = b.getIndex();

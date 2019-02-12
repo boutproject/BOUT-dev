@@ -32,6 +32,7 @@
  */
 
 #include "shoot_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
@@ -70,8 +71,10 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   ASSERT1(localmesh = rhs.getMesh());
+  ASSERT1(rhs.getLocation() == location);
 
   FieldPerp x(localmesh); // Result
+  x.setLocation(location);
   x.allocate();
   
   int jy = rhs.getIndex();  // Get the Y index

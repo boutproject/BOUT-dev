@@ -28,7 +28,9 @@ do
     fi
 done
 
-# needed sometimes to add include dir ...
+# needed sometimes to add include dir
+# We need the header files for numpy, which are (hopefully) somewhere
+# in the python directories.
 python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
 numpyheader=$(for d in $python_dirs
               do
@@ -65,35 +67,13 @@ cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
 EOF
 
-# make a list of the format "nx, ny, nz" or something similar
-# 'n$d' gets expaneded to "nx, ny, nz"
-# 'f[$i]' to "f[0], f[1], f[2]"
-# NB: use single ticks to prevent to early expansion
-makelist () {
-    format="$1"
-    test $# -gt 1 &&
-	spacing="$2" || spacing=", "
-    start="" ; i=0
-    for d in ${dims[@]} ; do
-	echo -n "$start" ;
-	eval echo -n "\"$format\""
-	start="$spacing" ; i=$(( i + 1 ))
-    done ; }
+# Include list of fields, and some functions
 
-for ftype in "Field3D" "Field2D"
+. common.sh
+
+for ftype in $fields
 do
-  if [ $ftype = "Field3D" ]; then
-    fdd="f3d"
-    ndim=3
-    dims=(x y z)
-  elif [ $ftype = "Field2D" ]; then
-    fdd="f2d"
-    ndim=2
-    dims=(x y)
-  else
-    echo "Error, unimplemented ftype"
-    exit 1
-  fi
+    setvars $ftype
 cat <<EOF
 
 cdef extern from "helper.h":
@@ -249,7 +229,6 @@ cdef class $ftype:
         kwargs = outputs._kwargs
         kwargs['xguards']=True
         kwargs['yguards']=True
-        kwargs['tind']=tind
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
@@ -268,8 +247,21 @@ cdef class $ftype:
             ny_=ny-2*nyg
             ystart=ny_*nyi
             kwargs['yind']=[ystart,ystart+ny]
-        data=outputs[name]
         dims=outputs.dimensions[name]
+        if outputs._caching:
+            # if BoutOutputs object is caching the arrays, let it collect all
+            # time points, then slice here
+            if dims[0] == 't':
+                # Use slice with one element here so shape of 'data' is as if
+                # we had passed argument 'tind=tind' to collect (with
+                # one-element t-dimension)
+                data=outputs[name][tind:tind+1]
+            else:
+                data=outputs[name]
+        else:
+            # otherwise only collect data for tind
+            kwargs['tind']=tind
+            data=outputs[name]
         # restore original _kwargs
         outputs._kwargs=orig_kwargs
         if dims[0] == 't':
@@ -610,7 +602,55 @@ cat <<EOF
             self.cobj=NULL
 EOF
 done
+
+
+for vec in $vecs
+do
+    setvars $vec
+    cat <<EOF
+
+cdef extern from "helper.h":
+    c.$field c_mul_${vec}_${vec}(c.$vec *, c.$vec *) except +
+
+cdef class $vec:
+    """
+    $vec class
+
+    A vector of $field
+    """
+    cdef c.$vec * cobj
+EOF
+    for d in x y z
+    do
+        cat <<EOF
+    @property
+    def $d(self):
+        """
+        The $field in $d direction
+        """
+        return ${fdd}FromObj(self.cobj.$d)
+
+EOF
+    done
+    cat <<EOF
+    def __mul__(self, rhs):
+        if isinstance(rhs, $vec) and isinstance(self,$vec):
+            return ${fdd}FromObj(c_mul_${vec}_${vec}((<$vec?>self).cobj, (<$vec?>rhs).cobj))
+        else:
+            raise NotImplementedError("unexpected argument type '"+
+                                      str(type(self))+"' and '"+str(type(rhs))+
+                                      "' - not supported (yet?).")
+
+cdef $vec ${vdd}FromObj(c.$vec i):
+    v=$vec()
+    v.cobj = new c.$vec(<const c.$vec & ?> i)
+    return v
+EOF
+done
+
+
 cat <<EOF
+
 
 cdef extern from "helper.h":
     c.Mesh * c_get_global_mesh()
@@ -1129,7 +1169,9 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_ = method.encode('ascii')
     cdef benum.REGION region_=benum.resolve_region(region)
     return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
 EOF
@@ -1172,13 +1214,15 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
 
     Returns
     -------
-    Field3D
+    $ret
         The computed $DD derivative
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    cdef benum.DIFF_METHOD method_=benum.resolve_diff_method(method)
-    return f3dFromObj(c.$DD($in2,outloc_,method_))
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_=method.encode('ascii')
+    return ${rdd}FromObj(c.$DD($in2,outloc_,method_))
 EOF
 }
 
@@ -1186,6 +1230,8 @@ for DD in Div_par Grad_par
 do
     in1="Field3D field"
     in2="field.cobj[0]"
+    ret=Field3D
+    rdd=f3d
     f_desc="$f_desc_f"
     funbad
 done
@@ -1195,10 +1241,21 @@ do
     in1="Field3D velocity, Field3D field"
     in2="velocity.cobj[0], field.cobj[0]"
     f_desc="$f_desc_vf"
+    ret=Field3D
+    rdd=f3d
+    funbad
+done
+
+for DD in Grad_perp
+do
+    in1="Field3D field"
+    in2="field.cobj[0]"
+    f_desc="$f_desc_f"
+    ret=Vector3D
+    rdd=v3d
     funbad
 done
 cat <<EOF
-
 def Laplace(Field3D a):
     """
     Compute the full Laplacian \\nabla^2(a)
@@ -1216,10 +1273,10 @@ def Laplace(Field3D a):
     checkInit()
     return f3dFromObj(c.Laplace(a.cobj[0]))
 
-def Delp2(Field3D a, zsmooth=-1):
-#    """Delp2(Field3D a, zsmooth=-1)"""
+def Delp2(Field3D a):
+#    """Delp2(Field3D a)"""
     checkInit()
-    return f3dFromObj(c.Delp2(a.cobj[0],float(zsmooth)))
+    return f3dFromObj(c.Delp2(a.cobj[0]))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     """

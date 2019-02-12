@@ -24,7 +24,7 @@
 **************************************************************************/
 
 #include <globals.hxx>
-#include <bout.hxx>
+#include <bout/solver.hxx>
 #include <difops.hxx>
 #include <vecops.hxx>
 #include <utils.hxx>
@@ -340,8 +340,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 
   result.allocate();
 
-  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
-  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+  bool vUseUpDown = v.hasYupYdown();
+  bool fUseUpDown = f.hasYupYdown();
 
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
@@ -449,7 +449,9 @@ const Field2D Div_par_LtoC(const Field2D &var) {
 }
 
 const Field3D Div_par_LtoC(const Field3D &var) {
-  Field3D result;
+  Mesh* mesh = var.getMesh();
+
+  Field3D result(mesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
@@ -478,7 +480,9 @@ const Field2D Div_par_CtoL(const Field2D &var) {
 }
 
 const Field3D Div_par_CtoL(const Field3D &var) {
-  Field3D result;
+  Mesh* mesh = var.getMesh();
+
+  Field3D result(mesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
@@ -552,16 +556,16 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
 * perpendicular Laplacian operator
 *******************************************************************************/
 
-const Field2D Delp2(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field2D Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
 /*******************************************************************************
@@ -1044,7 +1048,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
+    vx.setLocation(outloc);
     vz.allocate();
+    vz.setLocation(outloc);
     
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {

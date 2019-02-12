@@ -44,12 +44,15 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include "mpi.h"
 
 #include <boutcomm.hxx>
-#include <bout.hxx>
 #include <datafile.hxx>
 #include <bout/solver.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 #include <msg_stack.hxx>
+
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+#include <bout.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/sys/timer.hxx>
 
@@ -338,13 +341,14 @@ int BoutInitialise(int &argc, char **&argv) {
       return 1;
     }
   }
-  
-  output_error.enable(verbosity>0);
-  output_warn.enable(verbosity>1);
-  output_progress.enable(verbosity>2);
-  output_info.enable(verbosity>3);
-  output_debug.enable(verbosity>4); //Only actually enabled if also compiled with DEBUG
-  
+
+  output_error.enable(verbosity > 0);
+  output_warn.enable(verbosity > 1);
+  output_progress.enable(verbosity > 2);
+  output_info.enable(verbosity > 3);
+  output_verbose.enable(verbosity > 4);
+  output_debug.enable(verbosity > 5); // Only actually enabled if also compiled with DEBUG
+
   // The backward-compatible output object same as output_progress
   output.enable(verbosity>2);
 
@@ -474,9 +478,9 @@ int BoutInitialise(int &argc, char **&argv) {
   try {
     /////////////////////////////////////////////
     
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
-    mesh->setParallelTransform(); ///< Set the parallel transform from options
+    bout::globals::mesh = Mesh::create();  ///< Create the mesh
+    bout::globals::mesh->load();           ///< Load from sources. Required for Field initialisation
+    bout::globals::mesh->setParallelTransform(); ///< Set the parallel transform from options
     /////////////////////////////////////////////
     /// Get some settings
 
@@ -492,23 +496,23 @@ int BoutInitialise(int &argc, char **&argv) {
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
 
-    dump = Datafile(options->getSection("output"));
+    bout::globals::dump = Datafile(options->getSection("output"), bout::globals::mesh);
     
     /// Open a file for the output
     if(append) {
-      dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }else {
-      dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }
 
     /// Add book-keeping variables to the output files
-    dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
-    dump.add(iteration, "iteration", false);
+    bout::globals::dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+    bout::globals::dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
+    bout::globals::dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
 
-    mesh->outputVars(dump); ///< Save mesh configuration into output file
+    bout::globals::mesh->outputVars(bout::globals::dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
@@ -555,10 +559,10 @@ int BoutFinalise() {
   }
 
   // Delete the mesh
-  delete mesh;
+  delete bout::globals::mesh;
 
   // Close the output file
-  dump.close();
+  bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
@@ -620,7 +624,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   iteration = iter;
 
   /// Write dump file
-  dump.write();
+  bout::globals::dump.write();
 
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");

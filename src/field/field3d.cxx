@@ -62,10 +62,6 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
-#if CHECK > 2
-  checkData(f);
-#endif
-
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -104,30 +100,15 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {
-    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
-    // only delete once
-    // Also need to check that separate yup_field exists
-    if ((yup_field != this) && (yup_field != nullptr))
-      yup_field->deriv = nullptr;
-    if ((ydown_field != this) && (ydown_field != nullptr))
-      ydown_field->deriv = nullptr;
-
-    // Now delete them as part of the deriv vector
     delete deriv;
   }
-  
-  if((yup_field != this) && (yup_field != nullptr))
-    delete yup_field;
-  
-  if((ydown_field != this) && (ydown_field != nullptr))
-    delete ydown_field;
 }
 
 void Field3D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
       nz = fieldmesh->LocalNz;
@@ -150,55 +131,71 @@ Field3D* Field3D::timeDeriv() {
 void Field3D::splitYupYdown() {
   TRACE("Field3D::splitYupYdown");
   
-  if((yup_field != this) && (yup_field != nullptr))
-    return;
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
 
-  // yup_field and ydown_field null
-  yup_field = new Field3D(fieldmesh);
-  ydown_field = new Field3D(fieldmesh);
+  if (!yup_fields.empty()) {
+    return;
+  }
+
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields.emplace_back(fieldmesh);
+    ydown_fields.emplace_back(fieldmesh);
+  }
 }
 
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
-  
-  if(yup_field == this && ydown_field == this)
+
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::mergeYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
+
+  if (yup_fields.empty() && ydown_fields.empty()) {
     return;
-
-  if(yup_field != nullptr){
-    delete yup_field;
   }
 
-  if(ydown_field != nullptr) {
-    delete ydown_field;
-  }
-
-  yup_field = this;
-  ydown_field = this;
-}
-
-Field3D& Field3D::ynext(int dir) {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
-  }
+  yup_fields.clear();
+  ydown_fields.clear();
 }
 
 const Field3D& Field3D::ynext(int dir) const {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+#if CHECK > 0
+  // Asked for more than yguards
+  if (std::abs(dir) > fieldmesh->ystart) {
+    throw BoutException(
+        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
+        fieldmesh->ystart);
+  }
+#endif
+
+  // ynext uses 1-indexing, but yup wants 0-indexing
+  if (dir > 0) {
+    return yup(dir - 1);
+  } else if (dir < 0) {
+    return ydown(std::abs(dir) - 1);
+  } else {
+    return *this;
   }
 }
 
+Field3D &Field3D::ynext(int dir) {
+  // Call the `const` version: need to add `const` to `this` to call
+  // it, then throw it away after. This is ok because `this` wasn't
+  // `const` to begin with.
+  // See Effective C++, Scott Meyers, p23, for a better explanation
+  return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
+}
+
 void Field3D::setLocation(CELL_LOC new_location) {
+  AUTO_TRACE();
   if (getMesh()->StaggerGrids) {
     if (new_location == CELL_VSHIFT) {
       throw BoutException(
@@ -228,6 +225,7 @@ void Field3D::setLocation(CELL_LOC new_location) {
 }
 
 CELL_LOC Field3D::getLocation() const {
+  AUTO_TRACE();
   return location;
 }
 
@@ -268,9 +266,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
   
-  /// Check that the data is valid
-  checkData(rhs);
-  
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
   nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
@@ -284,27 +279,29 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
-  
-  /// Check that the data is valid
-  checkData(rhs);
- 
+
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
   /// Copy data
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
 
-  /// Only 3D fields have locations for now
-  //location = CELL_CENTRE;
-  
+  setLocation(rhs.getLocation());
+
   return *this;
 }
 
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  /// Check that the data is valid
-  checkData(rhs);
+  ASSERT1(location == rhs.getLocation());
+  ASSERT1(getMesh() == rhs.getMesh());
+
+  /// Check that the data is allocated
+  ASSERT1(rhs.isAllocated());
 
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -315,8 +312,6 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
-  /// Check that the data is valid
-  checkData(val);
 
   allocate();
 
@@ -598,16 +593,6 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
-#define F3D_OP_FPERP(op)                                                                 \
-  FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) {                      \
-    FieldPerp result;                                                                    \
-    result.allocate();                                                                   \
-    result.setIndex(rhs.getIndex());                                                     \
-    BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {                                              \
-      result[i] = lhs(i, rhs.getIndex()) op rhs[i];                                      \
-      return result;                                                                     \
-    }
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
@@ -652,16 +637,16 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(lhs);
   checkData(rhs);
   ASSERT1(lhs.getMesh() == rhs.getMesh());
+  ASSERT1(lhs.getLocation() == rhs.getLocation());  
 
   FieldPerp result{rhs.getMesh()};
   result.allocate();
   result.setIndex(rhs.getIndex());
-
+  result.setLocation(rhs.getLocation());
+  
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
   }
-
-  result.setLocation( lhs.getLocation() );
 
   checkData(result);
   return result;
@@ -1030,18 +1015,18 @@ namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-  void checkDataIsFiniteOnRegion(const Field3D &f, REGION region) {
-    // Do full checks
-    BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-      if (!finite(f[i])) {
-	throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
-			    i.x(), i.y(), i.z());
-      }
+void checkDataIsFiniteOnRegion(const Field3D& f, REGION region) {
+  // Do full checks
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (!finite(f[i])) {
+      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+                          i.x(), i.y(), i.z());
     }
   }
-#elif CHECK > 1
-  // No-op for no checking
-  void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+}
+#elif CHECK > 0
+// No-op for no checking
+void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
 
@@ -1097,8 +1082,6 @@ Field2D DC(const Field3D &f, REGION rgn) {
 
 #if CHECK > 2
 void invalidateGuards(Field3D &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

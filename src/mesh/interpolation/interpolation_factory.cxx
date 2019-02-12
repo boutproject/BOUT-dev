@@ -47,16 +47,19 @@ Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
 Interpolation* InterpolationFactory::create(const std::string &name, Options *options, Mesh *localmesh) {
   // If no options section passed (e.g. for a variable), then use the
   // "interpolation" section
-  if (options == nullptr)
+  if (options == nullptr) {
     options = Options::getRoot()->getSection("interpolation");
+  }
 
   // Use the global mesh if none passed
-  if (localmesh == nullptr)
-    localmesh = mesh;
+  if (localmesh == nullptr) {
+    localmesh = bout::globals::mesh;
+  }
 
   auto interp = findInterpolation(name);
-  if (interp == nullptr)
+  if (interp == nullptr) {
     throw BoutException("Could not find interpolation method '%s'", name.c_str());
+  }
 
   return interp(localmesh);
 }

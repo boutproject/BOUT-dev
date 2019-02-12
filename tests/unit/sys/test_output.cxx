@@ -271,11 +271,11 @@ TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
   DummyOutput dummy;
 
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(), BoutException);
+  dummy.enable();
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(true), BoutException);
+  dummy.enable(true);
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_NO_THROW(dummy.enable(false));
+  dummy.enable(false);
   EXPECT_FALSE(dummy.isEnabled());
   dummy.disable();
   EXPECT_FALSE(dummy.isEnabled());

@@ -52,9 +52,18 @@ public:
 
   /// Constructor interpolating from another Coordinates object
   Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
-  
-  ~Coordinates() {}
-  
+
+  /// A constructor useful for testing purposes. To use it, inherit
+  /// from Coordinates. If \p calculate_geometry is true (default),
+  /// calculate the non-uniform variables, Christoffel symbols
+  Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J, Field2D Bxy,
+              Field2D g11, Field2D g22, Field2D g33, Field2D g12, Field2D g13,
+              Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
+              Field2D g_13, Field2D g_23, Field2D ShiftTorsion, Field2D IntShiftTorsion,
+              bool calculate_geometry = true);
+
+  ~Coordinates() = default;
+
   /*!
    * Adds variables to the output file, for post-processing
    * 
@@ -180,10 +189,13 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-  const Field3D Delp2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  const FieldPerp Delp2(const FieldPerp &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+  const Field2D Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
+  const Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
+  const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
+                        bool useFFT = true);
+
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) ) 
   const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);

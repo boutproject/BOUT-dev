@@ -139,7 +139,7 @@ std::string trimComments(const std::string &s, const std::string &c) {
 }
 
 template <>
-const std::string toString<>(const time_t& time) {
+std::string toString<>(const time_t& time) {
   // Get local time
   std::tm *tm = std::localtime(&time);
 
@@ -150,6 +150,6 @@ const std::string toString<>(const time_t& time) {
 
   // Older compilers
   char buffer[80];
-  strftime(buffer, 80, "%Ec %Z", tm);
+  strftime(buffer, 80, "%Ec", tm);
   return std::string(buffer);
 }

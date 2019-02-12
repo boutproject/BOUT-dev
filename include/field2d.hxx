@@ -129,7 +129,10 @@ class Field2D : public Field, public FieldData {
   const Field2D& ydown() const {
     return *this;
   }
-  
+
+  Field2D& ynext(int UNUSED(dir)) { return *this; }
+  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+
   // Operators
   
   /*!

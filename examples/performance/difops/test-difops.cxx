@@ -29,7 +29,7 @@
 const Field3D DDX_C2(const Field3D &f) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = DDX_C2(f, i);
   }
   return result;
@@ -42,7 +42,7 @@ const Field3D DDX_C2(const Field3D &f) {
 const Field3D DDY_C2(const Field3D &f) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = DDY_C2(f, i);
   }
   return result;
@@ -55,7 +55,7 @@ const Field3D DDY_C2(const Field3D &f) {
 const Field3D DDZ_C2(const Field3D &f) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = DDZ_C2(f, i);
   }
   return result;
@@ -71,7 +71,7 @@ const Field3D DDZ_C2(const Field3D &f) {
 const Field3D DDX_C4(const Field3D &f) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = DDX_C4(f, i);
   }
   return result;
@@ -84,7 +84,7 @@ const Field3D DDX_C4(const Field3D &f) {
 const Field3D DDZ_C4(const Field3D &f) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = DDZ_C4(f, i);
   }
   return result;
@@ -101,7 +101,7 @@ const Field3D DDX_test(const Field3D &f) {
   
   if(!func) {
     // Not defined yet
-    string setting;
+    std::string setting;
     Options::getRoot()->getSection("operators")->get("ddx", setting, "c2");
     setting = lowercase(setting);
     
@@ -125,7 +125,7 @@ const Field3D DDX_test(const Field3D &f) {
 const Field3D bracket_arakawa(const Field3D &f, const Field3D &g) {
   Field3D result;
   result.allocate();
-  for(auto i : result.region(RGN_NOBNDRY)) {
+  for(auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = bracket_arakawa(f, g, i);
   }
   return result;
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
   // Note: Need to allocate ddt() fields before [] access
   ddt(n).allocate();
   ddt(vort).allocate();
-  for(auto i : n.region(RGN_NOBNDRY)) {
+  for(auto i : n.getRegion(RGN_NOBNDRY)) {
     
     ddt(n)[i] = 
       - bracket_arakawa(phi, n, i) 
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
   /////////////////////////////////////////////////
   // Check results
   
-  for(auto i : n.region(RGN_NOBNDRY)) {
+  for(auto i : n.getRegion(RGN_NOBNDRY)) {
     if(abs(ddt(n)[i] - dn_2[i]) > 1e-5) {
       output.write("Difference in ddt(n) at (%d,%d,%d): %e, %e\n", 
                    i.x, i.y, i.z, ddt(n)[i], dn_2[i]);

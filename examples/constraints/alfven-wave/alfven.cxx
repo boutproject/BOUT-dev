@@ -166,7 +166,7 @@ protected:
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
     
     // Get the coordinates object
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx; 
@@ -188,7 +188,7 @@ protected:
     coord->Bxy  /= Bnorm;
     
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if(lowercase(ptstr) == "shifted") {
