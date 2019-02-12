@@ -26,7 +26,7 @@ addons:
     - openmpi-bin
     - libopenmpi-dev
     - libpetsc3.6.2-dev
-    - libslepc3.6.2-dev
+    - libslepc3.6.1-dev
 
 matrix:
   fast_finish: true
