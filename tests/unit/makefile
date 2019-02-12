@@ -57,7 +57,7 @@ $(GTEST_SENTINEL) :
 # this rule just depends on the sentinel file.
 gtest-all.o : $(GTEST_SENTINEL)
 	@echo "  Compiling" $@
-	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(CXXFLAGS) -c \
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_FLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
 bout_test_main.o : $(GTEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
