@@ -236,6 +236,24 @@ namespace {
 
     return result;
   }
+
+  // If the CELL_CENTRE variable was read, the staggered version is required to
+  // also exist for consistency
+  void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
+    if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name+suffix)) {
+      throw BoutException("Attempting to read staggered fields from grid, but " + name
+          + " is not present in both CELL_CENTRE and staggered versions.");
+    }
+  }
+
+  // convenience function for repeated code
+  void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
+      CELL_LOC location, BoutReal default_value = 0.) {
+
+    checkStaggeredGet(mesh, name, suffix);
+    mesh->get(var, name+suffix, default_value);
+    var.setLocation(location);
+  }
 }
 
 Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in,
@@ -278,6 +296,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
 
+    checkStaggeredGet(mesh, "dx", suffix);
     if (mesh->get(dx, "dx"+suffix)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix);
@@ -289,6 +308,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       mesh->communicate(dx);
     }
 
+    checkStaggeredGet(mesh, "dy", suffix);
     if (mesh->get(dy, "dy"+suffix)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix);
@@ -298,20 +318,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
-    mesh->get(g11, "g11"+suffix, 1.0);
-    g11.setLocation(location);
-    mesh->get(g22, "g22"+suffix, 1.0);
-    g22.setLocation(location);
-    mesh->get(g33, "g33"+suffix, 1.0);
-    g33.setLocation(location);
-
-    // Off-diagonal elements. Default to 0
-    mesh->get(g12, "g12"+suffix, 0.0);
-    g12.setLocation(location);
-    mesh->get(g13, "g13"+suffix, 0.0);
-    g13.setLocation(location);
-    mesh->get(g23, "g23"+suffix, 0.0);
-    g23.setLocation(location);
+    getAtLoc(mesh, g11, "g11", suffix, location, 1.0);
+    getAtLoc(mesh, g22, "g22", suffix, location, 1.0);
+    getAtLoc(mesh, g33, "g33", suffix, location, 1.0);
+    getAtLoc(mesh, g12, "g12", suffix, location, 0.0);
+    getAtLoc(mesh, g13, "g13", suffix, location, 0.0);
+    getAtLoc(mesh, g23, "g23", suffix, location, 0.0);
 
     /// Find covariant metric components
     // Check if any of the components are present
@@ -322,18 +334,13 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       if (mesh->sourceHasVar("g_11"+suffix) and mesh->sourceHasVar("g_22"+suffix) and
           mesh->sourceHasVar("g_33"+suffix) and mesh->sourceHasVar("g_12"+suffix) and
           mesh->sourceHasVar("g_13"+suffix) and mesh->sourceHasVar("g_23"+suffix)) {
-        mesh->get(g_11, "g_11"+suffix);
-        g_11.setLocation(location);
-        mesh->get(g_22, "g_22"+suffix);
-        g_22.setLocation(location);
-        mesh->get(g_33, "g_33"+suffix);
-        g_33.setLocation(location);
-        mesh->get(g_12, "g_12"+suffix);
-        g_12.setLocation(location);
-        mesh->get(g_13, "g_13"+suffix);
-        g_13.setLocation(location);
-        mesh->get(g_23, "g_23"+suffix);
-        g_23.setLocation(location);
+
+        getAtLoc(mesh, g_11, "g_11", suffix, location);
+        getAtLoc(mesh, g_22, "g_22", suffix, location);
+        getAtLoc(mesh, g_33, "g_33", suffix, location);
+        getAtLoc(mesh, g_12, "g_12", suffix, location);
+        getAtLoc(mesh, g_13, "g_13", suffix, location);
+        getAtLoc(mesh, g_23, "g_23", suffix, location);
 
         output_warn.write("\tWARNING! Staggered covariant components of metric tensor set manually. "
                           "Contravariant components NOT recalculated\n");
@@ -353,6 +360,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       }
     }
 
+    checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
       output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
       ShiftTorsion = 0.0;
@@ -362,6 +370,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     //////////////////////////////////////////////////////
 
     if (mesh->IncIntShear) {
+      checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
       if (mesh->get(IntShiftTorsion, "IntShiftTorsion"+suffix)) {
         output_warn.write("\tWARNING: No Integrated torsion specified\n");
         IntShiftTorsion = 0.0;
