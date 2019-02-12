@@ -40,6 +40,8 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+#include <vector>
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.
@@ -228,35 +230,37 @@ class Field3D : public Field, public FieldData {
   
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+    return !yup_fields.empty() and !ydown_fields.empty();
   }
 
   /// Return reference to yup field
-  Field3D& yup() { 
-    ASSERT2(yup_field != nullptr); // Check for communicate
-    return *yup_field; 
+  Field3D &yup(std::vector<Field3D>::size_type index = 0) {
+    ASSERT2(index < yup_fields.size());
+    return yup_fields[index];
   }
   /// Return const reference to yup field
-  const Field3D& yup() const { 
-    ASSERT2(yup_field != nullptr);
-    return *yup_field; 
-  }
-  
-  /// Return reference to ydown field
-  Field3D& ydown() { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field;
-  }
-  
-  /// Return const reference to ydown field
-  const Field3D& ydown() const { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field; 
+  const Field3D &yup(std::vector<Field3D>::size_type index = 0) const {
+    ASSERT2(index < yup_fields.size());
+    return yup_fields[index];
   }
 
-  /// Return yup if dir=+1, and ydown if dir=-1
-  Field3D& ynext(int dir);
-  const Field3D& ynext(int dir) const;
+  /// Return reference to ydown field
+  Field3D &ydown(std::vector<Field3D>::size_type index = 0) {
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
+  }
+
+  /// Return const reference to ydown field
+  const Field3D &ydown(std::vector<Field3D>::size_type index = 0) const {
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
+  }
+
+  /// Return the parallel slice at \p offset
+  ///
+  /// \p offset of 0 returns the main field itself
+  Field3D& ynext(int offset);
+  const Field3D& ynext(int offset) const;
 
   /// Set variable location for staggered grids to @param new_location
   ///
@@ -462,20 +466,8 @@ class Field3D : public Field, public FieldData {
     swap(first.nz, second.nz);
     swap(first.location, second.location);
     swap(first.deriv, second.deriv);
-    if (first.yup_field == &first){
-      first.yup_field = &second;
-    }
-    if (second.yup_field == &second){
-      second.yup_field = &first;
-    }
-    swap(first.yup_field, second.yup_field);
-    if (first.ydown_field == &first){
-      first.ydown_field = &second;
-    }
-    if (second.ydown_field == &second){
-      second.ydown_field = &first;
-    }
-    swap(first.ydown_field, second.ydown_field);
+    swap(first.yup_fields, second.yup_fields);
+    swap(first.ydown_fields, second.ydown_fields);
     swap(first.bndry_op, second.bndry_op);
     swap(first.boundaryIsCopy, second.boundaryIsCopy);
     swap(first.boundaryIsSet, second.boundaryIsSet);
@@ -499,8 +491,8 @@ private:
   /// Time derivative (may be nullptr)
   Field3D *deriv{nullptr};
 
-  /// Pointers to fields containing values along Y
-  Field3D *yup_field{nullptr}, *ydown_field{nullptr};
+  /// Fields containing values along Y
+  std::vector<Field3D> yup_fields{}, ydown_fields{};
 };
 
 // Non-member overloaded operators

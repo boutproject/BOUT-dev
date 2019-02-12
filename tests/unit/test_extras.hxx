@@ -13,7 +13,9 @@
 #include "field3d.hxx"
 #include "unused.hxx"
 
-const BoutReal BoutRealTolerance = 1e-15;
+static constexpr BoutReal BoutRealTolerance{1e-15};
+// FFTs have a slightly looser tolerance than other functions
+static constexpr BoutReal FFTTolerance{1.e-12};
 
 /// Does \p str contain \p substring?
 ::testing::AssertionResult IsSubString(const std::string &str,

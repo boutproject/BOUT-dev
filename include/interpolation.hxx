@@ -144,61 +144,39 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
 	  realregion = region;
 	  break;
 	}
-        if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
-          // Field "var" has distinct yup and ydown fields which
-          // will be used to calculate a derivative along
-          // the magnetic field
-          throw BoutException(
-              "At the moment, fields with yup/ydown cannot use interp_to.\n"
-              "If we implement a 3-point stencil for interpolate or double-up\n"
-              "/double-down fields, then we can use this case.");
 
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion(realregion)) {
-              // Producing a stencil centred around a lower X value
-              result[i] = interp(
-                  populateStencil<DIRECTION::YOrthogonal, STAGGER::C2L, 2>(var, i));
-            }
-          } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion(realregion)) {
-              // Stencil centred around a cell centre
-              result[i] = interp(
-                  populateStencil<DIRECTION::YOrthogonal, STAGGER::L2C, 2>(var, i));
-            }
-          }
-        } else {
-          // var has no yup/ydown fields, so we need to shift into field-aligned
-          // coordinates
+        // We can't interpolate in y unless we're field-aligned
+        // FIXME: Add check once we label fields as orthogonal/aligned
 
-          const T var_fa = fieldmesh->toFieldAligned(var);
-          if (region != RGN_NOBNDRY) {
-            // repeat the hack above for boundary points
-            // this avoids a duplicate toFieldAligned call if we had called
-            // result = toFieldAligned(result)
-            // to get the boundary cells
-            //
-            // result is requested in some boundary region(s)
-            result = var_fa; // NOTE: This is just for boundaries. FIX!
-            result.allocate();
-            result.setLocation(loc);
-          }
-
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion(realregion)) {
-              // Producing a stencil centred around a lower X value
-              result[i] = interp(
-                  populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
-            }
-          } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion(realregion)) {
-              // Stencil centred around a cell centre
-              result[i] = interp(
-                  populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
-            }
-          }
-
-          result = fieldmesh->fromFieldAligned(result);
+        const T var_fa = fieldmesh->toFieldAligned(var);
+        if (region != RGN_NOBNDRY) {
+          // repeat the hack above for boundary points
+          // this avoids a duplicate toFieldAligned call if we had called
+          // result = toFieldAligned(result)
+          // to get the boundary cells
+          //
+          // result is requested in some boundary region(s)
+          result = var_fa; // NOTE: This is just for boundaries. FIX!
+          result.allocate();
+          result.setLocation(loc);
         }
+
+        if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
+          BOUT_FOR(i, result.getRegion(realregion)) {
+            // Producing a stencil centred around a lower X value
+            result[i] =
+                interp(populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
+          }
+        } else if (location == CELL_YLOW) { // L2C
+          BOUT_FOR(i, result.getRegion(realregion)) {
+            // Stencil centred around a cell centre
+            result[i] =
+                interp(populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
+          }
+        }
+
+        result = fieldmesh->fromFieldAligned(result);
+
         break;
       }
       case CELL_ZLOW: {
