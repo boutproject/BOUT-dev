@@ -25,14 +25,20 @@ addons:
     - libhdf5-mpi-dev
     - openmpi-bin
     - libopenmpi-dev
+    - libpetsc3.6.2-dev
+    - libslepc3.6.2-dev
 
 matrix:
   fast_finish: true
   include:
   - env: &default_env
-      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace'
+      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc'
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython netcdf4 sympy'
+      - PETSC_DIR=/usr/lib/petscdir/3.6.2
+      - PETSC_ARCH=x86_64-linux-gnu-real
+      - SLEPC_DIR=/usr/lib/slepcdir/3.6.2
+      - SLEPC_ARCH=x86_64-linux-gnu-real
   - addons:
       apt:
         sources:
@@ -42,21 +48,21 @@ matrix:
           - *standard_packages
     env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-debug'
+      - CONFIGURE_OPTIONS='--enable-debug --with-petsc --with-slepc'
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-shared'
+      - CONFIGURE_OPTIONS='--enable-shared --with-petsc --with-slepc'
       - SCRIPT_FLAGS="-uim -t python -t shared"
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-openmp'
+      - CONFIGURE_OPTIONS='--enable-openmp --with-petsc --with-slepc'
       - OMP_NUM_THREADS=2
 #CLANG
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-debug'
+      - CONFIGURE_OPTIONS='--enable-debug --with-petsc --with-slepc'
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
@@ -66,18 +72,12 @@ matrix:
       apt:
         packages:
           - *standard_packages
-          - libpetsc3.4.2-dev
-          - libslepc3.4.2-dev
           - liblapack-dev
           - libparpack2-dev
           - jq
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
       - OMP_NUM_THREADS=2
-      - PETSC_DIR=/usr/lib/petscdir/3.4.2
-      - PETSC_ARCH=linux-gnu-c-opt
-      - SLEPC_DIR=/usr/lib/slepcdir/3.4.2
-      - SLEPC_ARCH=linux-gnu-c-opt
       - SCRIPT_FLAGS='-cu'
       - PIP_PACKAGES='gcovr'
       - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
