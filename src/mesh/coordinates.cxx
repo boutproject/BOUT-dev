@@ -299,7 +299,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     checkStaggeredGet(mesh, "dx", suffix);
     if (mesh->get(dx, "dx"+suffix)) {
       output_warn.write(
-          "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix);
+          "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix.c_str());
       dx = 1.0;
     }
     dx.setLocation(location);
@@ -311,7 +311,7 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     checkStaggeredGet(mesh, "dy", suffix);
     if (mesh->get(dy, "dy"+suffix)) {
       output_warn.write(
-          "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix);
+          "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix.c_str());
       dy = 1.0;
     }
     dy.setLocation(location);
