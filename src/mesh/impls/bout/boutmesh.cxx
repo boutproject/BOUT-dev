@@ -844,13 +844,13 @@ int BoutMesh::load() {
   getCoordinates(CELL_CENTRE);
   if (StaggerGrids) {
     if (xstart >= 2) {
-      //getCoordinates(CELL_XLOW);
+      getCoordinates(CELL_XLOW);
     }
     if (ystart >= 2) {
       getCoordinates(CELL_YLOW);
     }
     if (LocalNz > 3) {
-      //getCoordinates(CELL_ZLOW);
+      getCoordinates(CELL_ZLOW);
     }
   }
 
