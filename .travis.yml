@@ -34,10 +34,10 @@ matrix:
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc'
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython netcdf4 sympy'
-      - PETSC_DIR=/usr/lib/petscdir/3.6.2
-      - PETSC_ARCH=x86_64-linux-gnu-real
-      - SLEPC_DIR=/usr/lib/slepcdir/3.6.2
-      - SLEPC_ARCH=x86_64-linux-gnu-real
+      - PETSC_DIR=/usr/lib/petscdir/3.6.2/x86_64-linux-gnu-real
+      - PETSC_ARCH=
+      - SLEPC_DIR=/usr/lib/slepcdir/3.6.1/x86_64-linux-gnu-real
+      - SLEPC_ARCH=
   - addons:
       apt:
         sources:
