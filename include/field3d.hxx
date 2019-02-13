@@ -705,13 +705,6 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 /// @param[in] rgn The region to calculate the result over
 const Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 
-/// Fourier low pass filtering. Removes modes higher than \p zmax
-///
-/// @param[in] var   Variable to apply filter to
-/// @param[in] zmax  Maximum mode in Z
-/// @param[in] rgn   The region to calculate the result over
-const Field3D lowPass(const Field3D &var, int zmax, REGION rgn = RGN_ALL);
-
 /// Fourier low pass filtering. Removes modes
 /// lower than \p zmin and higher than \p zmax
 ///
@@ -720,6 +713,15 @@ const Field3D lowPass(const Field3D &var, int zmax, REGION rgn = RGN_ALL);
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] rgn   The region to calculate the result over
 const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn = RGN_ALL);
+
+/// Fourier low pass filtering. Removes modes higher than \p zmax
+///
+/// @param[in] var   Variable to apply filter to
+/// @param[in] zmax  Maximum mode in Z
+/// @param[in] rgn   The region to calculate the result over
+inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn = RGN_ALL) {
+  return lowPass(var, zmax, true, rgn);
+}
 
 /// Perform a shift by a given angle in Z
 ///
