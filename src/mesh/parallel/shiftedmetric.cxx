@@ -202,7 +202,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
-      Array<dcomplex> shifted_temp(f_fft(i.x(), i.y()));
+      Array<dcomplex> shifted_temp(f_fft(i.x(), i.y() + phase.y_offset));
       shifted_temp.ensureUnique();
 
       for (int jz = 1; jz < nmodes; ++jz) {
