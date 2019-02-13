@@ -182,10 +182,12 @@ ShiftedMetric::shiftZ(const Field3D& f,
   const int nmodes = mesh.LocalNz / 2 + 1;
 
   // FFT in Z of input field at each (x, y) point
-  Tensor<dcomplex> f_fft(mesh.LocalNx, mesh.LocalNy, nmodes);
+  Matrix< Array<dcomplex> > f_fft(mesh.LocalNx, mesh.LocalNy);
+  f_fft = Array<dcomplex>(nmodes);
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
-    rfft(&f(i, 0), mesh.LocalNz, &f_fft(i.x(), i.y(), 0));
+    f_fft(i.x(), i.y()).ensureUnique();
+    rfft(&f(i, 0), mesh.LocalNz, f_fft(i.x(), i.y()).begin());
   }
 
   std::vector<Field3D> results{};
@@ -200,11 +202,11 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
-      Array<dcomplex> shifted_temp(nmodes);
+      Array<dcomplex> shifted_temp(f_fft(i.x(), i.y()));
+      shifted_temp.ensureUnique();
 
       for (int jz = 1; jz < nmodes; ++jz) {
-        shifted_temp[jz] = f_fft(i.x(), i.y() + phase.y_offset, jz)
-                           * phase.phase_shift(i.x(), i.y(), jz);
+        shifted_temp[jz] *= phase.phase_shift(i.x(), i.y(), jz);
       }
 
       irfft(shifted_temp.begin(), mesh.LocalNz,
