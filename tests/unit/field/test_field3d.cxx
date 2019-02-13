@@ -2054,5 +2054,121 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
+namespace bout {
+namespace testing {
+
+// Amplitudes for the nth wavenumber
+constexpr int k0{1};
+constexpr int k1{2};
+constexpr int k2{3};
+
+const auto box_size{TWOPI / Field3DTest::nz};
+
+// Helper function for the filter and lowpass tests
+BoutReal zWaves(Field3D::ind_type& i) {
+  return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size)
+         + std::sin(k2 * i.z() * box_size);
+}
+} // namespace testing
+} // namespace bout
+
+TEST_F(Field3DTest, Filter) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) { return std::cos(k1 * i.z() * box_size); },
+      bout::globals::mesh);
+
+  auto output = filter(input, 2);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(Field3DTest, LowPassOneArg) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(Field3DTest, LowPassOneArgNothing) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto output = lowPass(input, 20);
+
+  EXPECT_TRUE(IsFieldEqual(output, input));
+}
+
+TEST_F(Field3DTest, LowPassTwoArg) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2, false);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+
+  // Check passing int still works
+  auto output2 = lowPass(input, 2, 0);
+
+  EXPECT_TRUE(IsFieldEqual(output2, expected));
+}
+
+TEST_F(Field3DTest, LowPassTwoArgKeepZonal) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2, true);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+
+  // Check passing int still works
+  auto output2 = lowPass(input, 2, 1);
+
+  EXPECT_TRUE(IsFieldEqual(output2, expected));
+}
+
+TEST_F(Field3DTest, LowPassTwoArgNothing) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto output = lowPass(input, 20, true);
+
+  EXPECT_TRUE(IsFieldEqual(output, input));
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop
