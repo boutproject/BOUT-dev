@@ -580,14 +580,14 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Absolute value (modulus, |f|) of \p f over region \p rgn
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
 /// \p rgn
@@ -595,7 +595,7 @@ const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
@@ -606,7 +606,7 @@ const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
 /// default (can be changed using the rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 ///
-const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Sine trigonometric function.
 ///
@@ -616,7 +616,7 @@ const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Cosine trigonometric function.
 ///
@@ -626,7 +626,7 @@ const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Tangent trigonometric function.
 ///
@@ -636,7 +636,7 @@ const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Hyperbolic sine trigonometric function.
 ///
@@ -646,7 +646,7 @@ const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Hyperbolic cosine trigonometric function.
 ///
@@ -656,7 +656,7 @@ const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Hyperbolic tangent trigonometric function.
 ///
@@ -666,7 +666,7 @@ const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
+Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
 
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by
@@ -688,7 +688,7 @@ inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region) = RGN_NOBN
 
 /// Makes a copy of a field \p f, ensuring that the underlying data is
 /// not shared.
-const Field3D copy(const Field3D &f);
+Field3D copy(const Field3D &f);
 
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
@@ -696,14 +696,14 @@ const Field3D copy(const Field3D &f);
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
-const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
+Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 
 /// Fourier filtering, removes all except one mode
 ///
 /// @param[in] var Variable to apply filter to
 /// @param[in] N0  The component to keep
 /// @param[in] rgn The region to calculate the result over
-const Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
+Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 
 /// Fourier low pass filtering. Removes modes
 /// higher than \p zmax and optionally the zonal component
@@ -712,7 +712,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] keep_zonal  Keep the zonal component if true
 /// @param[in] rgn   The region to calculate the result over
-const Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn = RGN_ALL);
+Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn = RGN_ALL);
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax
 ///

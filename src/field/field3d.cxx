@@ -778,7 +778,7 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
  *
  */
 #define F3D_FUNC(name, func)                                                             \
-  const Field3D name(const Field3D &f, REGION rgn) {                                     \
+  Field3D name(const Field3D &f, REGION rgn) {                                     \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
     checkData(f);                                                                        \
@@ -805,7 +805,7 @@ F3D_FUNC(sinh, ::sinh);
 F3D_FUNC(cosh, ::cosh);
 F3D_FUNC(tanh, ::tanh);
 
-const Field3D filter(const Field3D &var, int N0, REGION rgn) {
+Field3D filter(const Field3D &var, int N0, REGION rgn) {
   TRACE("filter(Field3D, int)");
   
   checkData(var);
@@ -856,7 +856,7 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
 }
 
 // Fourier filter in z with zmin
-const Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
+Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
@@ -992,13 +992,13 @@ void checkData(const Field3D &f, REGION region) {
 }
 #endif
 
-const Field3D copy(const Field3D &f) {
+Field3D copy(const Field3D &f) {
   Field3D result = f;
   result.allocate();
   return result;
 }
 
-const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
+Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   checkData(var);
   Field3D result = copy(var);
 
