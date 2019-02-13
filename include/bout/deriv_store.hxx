@@ -322,6 +322,45 @@ struct DerivativeStore {
     return getFlowDerivative(name, direction, stagger, DERIV::Flux);
   };
 
+  void setDefaults() {
+    std::map<DERIV, std::string> initialDefaultMethods = {{DERIV::Standard, "C2"},
+                                                          {DERIV::StandardSecond, "C2"},
+                                                          {DERIV::StandardFourth, "C2"},
+                                                          {DERIV::Upwind, "U1"},
+                                                          {DERIV::Flux, "U1"}};
+
+    std::map<DIRECTION, std::string> directions = {{DIRECTION::X, "ddx"},
+                                                   {DIRECTION::Y, "ddy"},
+                                                   {DIRECTION::YOrthogonal, "ddy"},
+                                                   {DIRECTION::Z, "ddz"}};
+
+    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "First"},
+                                               {DERIV::StandardSecond, "Second"},
+                                               {DERIV::StandardFourth, "Fourth"},
+                                               {DERIV::Upwind, "Upwind"},
+                                               {DERIV::Flux, "Flux"}};
+
+    for (const auto& direction : directions) {
+      for (const auto& deriv : derivTypes) {
+        const auto theDirection = direction.first;
+        const auto theDerivTypeString = DERIV_STRING(deriv.first);
+        const std::string theDefault{uppercase(initialDefaultMethods[deriv.first])};
+
+        //-------------------------------------------------------------
+        // Unstaggered and Staggered -- both get same default currently
+        //-------------------------------------------------------------
+
+        // Now we have the default method we should store it in defaultMethods
+        defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)] =
+            theDefault;
+        defaultMethods[getKey(theDirection, STAGGER::L2C, theDerivTypeString)] =
+            theDefault;
+        defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
+            theDefault;
+      }
+    }
+  };
+
   void initialise(Options* options) {
     AUTO_TRACE();
 
@@ -431,7 +470,11 @@ struct DerivativeStore {
 private:
   // Make empty constructor private so we can't make instances outside
   // of the struct
-  DerivativeStore() = default;
+  DerivativeStore() {
+    // Ensure the default methods are set on construction
+    // This populates the defaultMethods map
+    setDefaults();
+  }
 
   storageType<std::size_t, standardFunc> standard;
   storageType<std::size_t, standardFunc> standardSecond;
