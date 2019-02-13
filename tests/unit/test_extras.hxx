@@ -259,7 +259,7 @@ public:
     output_info.enable();
   }
 
-  ~FakeMeshFixture() {
+  virtual ~FakeMeshFixture() {
     delete bout::globals::mesh;
     bout::globals::mesh = nullptr;
   }
