@@ -706,13 +706,13 @@ const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 const Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 
 /// Fourier low pass filtering. Removes modes
-/// lower than \p zmin and higher than \p zmax
+/// higher than \p zmax and optionally the zonal component
 ///
 /// @param[in] var   Variable to apply filter to
-/// @param[in] zmin  Minimum mode in Z
 /// @param[in] zmax  Maximum mode in Z
+/// @param[in] keep_zonal  Keep the zonal component if true
 /// @param[in] rgn   The region to calculate the result over
-const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn = RGN_ALL);
+const Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn = RGN_ALL);
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax
 ///

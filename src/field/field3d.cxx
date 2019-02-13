@@ -856,14 +856,14 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
 }
 
 // Fourier filter in z with zmin
-const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
-  TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
+const Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
+  TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
   Mesh *localmesh = var.getMesh();
   int ncz = localmesh->LocalNz;
 
-  if (((zmax >= ncz / 2) || (zmax < 0)) && (zmin < 0)) {
+  if (((zmax >= ncz / 2) || (zmax < 0)) && keep_zonal) {
     // Removing nothing
     return var;
   }
@@ -891,7 +891,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
         f[jz] = 0.0;
 
       // Filter zonal mode
-      if (zmin == 0) {
+      if (!keep_zonal) {
         f[0] = 0.0;
       }
       // Reverse FFT
