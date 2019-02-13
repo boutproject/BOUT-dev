@@ -30,15 +30,14 @@
  *
  **************************************************************************/
 
-class Coordinates;
-
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "mesh.hxx"
 #include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
+
+class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
