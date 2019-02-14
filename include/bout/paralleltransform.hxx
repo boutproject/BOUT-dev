@@ -25,6 +25,7 @@ class Mesh;
  */
 class ParallelTransform {
 public:
+  ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
   virtual ~ParallelTransform() {}
 
   /// Given a 3D field, calculate and set the Y up down fields
@@ -45,6 +46,13 @@ public:
   virtual const Field3D fromFieldAligned(const Field3D &f) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
+
+protected:
+  /// This method should be called in the constructor to check that if the grid
+  /// has a 'coordinates_type' variable, it has the correct value
+  virtual void checkInputGrid() = 0;
+
+  Mesh &mesh; ///< The mesh this paralleltransform is part of
 };
 
 
@@ -55,6 +63,11 @@ public:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
+  ParallelTransformIdentity(Mesh& mesh_in) : ParallelTransform(mesh_in) {
+    // check the coordinate system used for the grid data source
+    checkInputGrid();
+  }
+
   /*!
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
@@ -80,6 +93,8 @@ public:
   bool canToFromFieldAligned() override{
     return true;
   }
+protected:
+  void checkInputGrid() override;
 };
 
 /*!
@@ -126,9 +141,10 @@ public:
 
   /// A 3D array, implemented as nested vectors
   using arr3Dvec = std::vector<std::vector<Array<dcomplex>>>;
-private:
-  Mesh &mesh; ///< The mesh this paralleltransform is part of
+protected:
+  void checkInputGrid() override;
 
+private:
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;

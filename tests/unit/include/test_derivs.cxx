@@ -148,7 +148,7 @@ public:
     }
 
     // We need the parallel slices for the y-direction
-    ParallelTransformIdentity identity{};
+    ParallelTransformIdentity identity{*mesh};
     identity.calcYUpDown(input);
 
     // FIXME: remove when defaults are set in the DerivativeStore ctor

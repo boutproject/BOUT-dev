@@ -1614,6 +1614,17 @@ retrybetacalc:
   s = file_write(handle, "bxcvy", bxcvy)
   s = file_write(handle, "bxcvz", bxcvz)
 
+  ; type of coordinate system used to calculate metric tensor terms
+  IF orthogonal_coordinates_output EQ 0 THEN BEGIN
+    coordinates_type = "field_aligned"
+  ENDIF ELSE IF orthogonal_coordinates_output EQ 1 THEN BEGIN
+    coordinates_type = "orthogonal"
+  ENDIF ELSE BEGIN
+    PRINT, "ERROR: Unrecognized orthogonal_coordinates_output value", $
+           orthogonal_coordinates_output
+  ENDELSE
+  s = file_write_string(handle, "coordinates_type", coordinates_type)
+
   ; Metric tensor terms
   s = file_write(handle, "g11", g11)
   s = file_write(handle, "g22", g22)

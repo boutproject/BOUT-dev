@@ -70,7 +70,10 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, bool zperiodic = true) {
+  FCITransform(Mesh& mesh, bool zperiodic = true) : ParallelTransform(mesh) {
+
+    // check the coordinate system used for the grid data source
+    checkInputGrid();
 
     auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
     auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
@@ -99,6 +102,10 @@ public:
   }
 
   bool canToFromFieldAligned() override { return false; }
+
+protected:
+  void checkInputGrid() override;
+
 
 private:
   /// FCI maps for each of the parallel slices
