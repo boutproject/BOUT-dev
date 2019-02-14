@@ -39,9 +39,6 @@ public:
 
   Array<BoutReal> real_signal;
   Array<dcomplex> fft_signal;
-
-  // FFTs have a slightly looser tolerance than other functions
-  static constexpr BoutReal fft_tolerance{1.e-12};
 };
 
 // Test the FFT functions with both even- and odd-length real signals
@@ -57,8 +54,8 @@ TEST_P(FFTTest, rfft) {
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
-    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), FFTTolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), FFTTolerance);
   }
 }
 
@@ -72,7 +69,7 @@ TEST_P(FFTTest, irfft) {
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
 
@@ -84,8 +81,8 @@ TEST_P(FFTTest, rfftWithArray) {
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
-    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), FFTTolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), FFTTolerance);
   }
 }
 
@@ -97,7 +94,7 @@ TEST_P(FFTTest, irfftWithArray) {
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
 
@@ -109,6 +106,6 @@ TEST_P(FFTTest, RoundTrip) {
   EXPECT_EQ(output.size(), real_signal.size());
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }

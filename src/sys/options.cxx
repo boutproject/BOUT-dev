@@ -93,10 +93,10 @@ void Options::_set(std::string val, std::string source, bool force) {
     // Check if current value the same as new value
     if (value.value != val) {
       if (force or value.source != source) {
-        output_warn << _("\tOption ") << full_name << " = " << value.value << " ("
-                    << value.source << _(") overwritten with:")
-                    << "\n"
-                    << "\t\t" << full_name << " = " << val << " (" << source << ")\n";
+        output_warn.write(
+            _("\tOption %s = %s (%s) overwritten with:\n\t\t%s = %s (%s)\n"),
+            full_name.c_str(), value.value.c_str(), value.source.c_str(),
+            full_name.c_str(), val.c_str(), source.c_str());
       } else {
         throw BoutException(_("Options: Setting a value from same source (%s) to new value "
                               "'%s' - old value was '%s'."),

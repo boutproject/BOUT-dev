@@ -36,8 +36,8 @@ TEST_F(CoordinatesTest, Jacobian) {
 
   EXPECT_NO_THROW(coords.jacobian());
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(coords.J, 1.0));
-  EXPECT_TRUE(IsField3DEqualBoutReal(coords.Bxy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.J, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
 }
 
 TEST_F(CoordinatesTest, CalcContravariant) {
@@ -51,12 +51,12 @@ TEST_F(CoordinatesTest, CalcContravariant) {
   coords.calcCovariant();
   output_info.enable();
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_11, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_22, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_33, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_12, 0.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_13, 0.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g_23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_11, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_23, 0.0));
 }
 
 TEST_F(CoordinatesTest, CalcCovariant) {
@@ -70,10 +70,10 @@ TEST_F(CoordinatesTest, CalcCovariant) {
   coords.calcContravariant();
   output_info.enable();
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g11, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g22, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g33, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g12, 0.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g13, 0.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(coords.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23, 0.0));
 }

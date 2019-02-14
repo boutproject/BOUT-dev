@@ -702,11 +702,10 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     // Check if enough time left
 
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
-    if (t_remain < wtime) {
+    if (t_remain < wtime*2) {
       // Less than 1 time-step left
-      output_warn.write(_("Only %e seconds left. Quitting\n"), t_remain);
-
-      return 1; // Return an error code to quit
+      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,t_remain/wtime);
+      user_requested_exit=true;
     } else {
       output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
@@ -718,7 +717,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     if (f.good()) {
       output << "\n" << "File " << stopCheckName
              << " exists -- triggering exit." << endl;
-      return 1;
+      user_requested_exit=true;
     }
   }
 

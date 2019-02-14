@@ -649,6 +649,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   str_check_present, settings, 'calcbt', -1
   str_check_present, settings, 'calchthe', -1
   str_check_present, settings, 'calcjpar', -1
+  str_check_present, settings, 'orthogonal_coordinates_output', -1
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -1155,7 +1156,21 @@ retrybetacalc:
   ENDREP UNTIL last
 
   ; Calculate metrics - check jacobian
-  I = sinty
+
+  orthogonal_coordinates_output = settings.orthogonal_coordinates_output
+  IF orthogonal_coordinates_output EQ -1 THEN orthogonal_coordinates_output = get_yesno("Output for simulations in orthogonal coordinates using ShiftedMetric?", gui=gui, dialog_parent=parent)
+  IF orthogonal_coordinates_output EQ 1 THEN BEGIN
+    print,""
+    print,"*******************WARNING****************************************"
+    print,"Calculating metrics for ShiftedMetric style orthogonal coordinates"
+    print,"******************************************************************"
+    print,""
+    ; for orthogonal coordinates
+    I = 0.
+  ENDIF ELSE BEGIN
+    ; for field-aligned coordinates
+    I = sinty
+  ENDELSE
 
   g11 = (Rxy*Bpxy)^2;
   g22 = G^2/hthe^2 + eta^2*g11;
