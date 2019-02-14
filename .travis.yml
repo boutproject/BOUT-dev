@@ -6,10 +6,29 @@ compiler: gcc
 git:
   depth: 3
 
+# Define some aliases for some repeated config variables
+# Note &<name> creates a reference that we can refer to later using
+# *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
+aliases:
+  - &petsc_vars
+    - PETSC_DIR=/usr/lib/petscdir/3.6.2/x86_64-linux-gnu-real
+    - PETSC_ARCH=""
+    - SLEPC_DIR=/usr/lib/slepcdir/3.6.1/x86_64-linux-gnu-real
+    - SLEPC_ARCH=""
+  - &codecov_secure
+    - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="    
+  - &coverage_packages
+    addons:
+    apt:
+      packages:
+        - *standard_packages
+        - jq
+  - &coverage_vars
+    - SCRIPT_FLAGS='-cu'
+    - PIP_PACKAGES='gcovr'
+
 addons:
   apt:
-    # Note &<name> creates a reference that we can refer to later using
-    # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
     packages: &standard_packages
     - libfftw3-dev
     - libnetcdf-dev
@@ -36,10 +55,7 @@ matrix:
       - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc'
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython netcdf4 sympy'
-      - PETSC_DIR=/usr/lib/petscdir/3.6.2/x86_64-linux-gnu-real
-      - PETSC_ARCH=
-      - SLEPC_DIR=/usr/lib/slepcdir/3.6.1/x86_64-linux-gnu-real
-      - SLEPC_ARCH=
+      - *petsc_vars
   - addons:
       apt:
         sources:
@@ -70,40 +86,26 @@ matrix:
     compiler: clang
 #COVERAGE
   - if: branch IN (master, next) OR commit_message =~ /build coverage/
-    addons:
-      apt:
-        packages:
-          - *standard_packages
-          - jq
+    *coverage_packages
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
       - OMP_NUM_THREADS=2
-      - SCRIPT_FLAGS='-cu'
-      - PIP_PACKAGES='gcovr'
-      - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+      - *coverage_vars
+      - *petsc_vars
+      - *codecov_secure
   - if: branch IN (master, next) OR commit_message =~ /build coverage/
-    addons:
-      apt:
-        packages:
-          - *standard_packages
-          - jq
+    *coverage_packages
     env:
       - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
-      - SCRIPT_FLAGS='-cu'
-      - PIP_PACKAGES='gcovr'
-      - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+      - *coverage_vars
+      - *codecov_secure
 
   - stage: Finalise Coverage
     if: branch IN (master, next) OR commit_message =~ /build coverage/
-    addons:
-      apt:
-        packages:
-          - *standard_packages
-          - jq
+    *coverage_packages
     env:
-      - SCRIPT_FLAGS='-cu'
-      - PIP_PACKAGES='gcovr'
-      - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="
+      - *coverage_vars
+      - *codecov_secure
     script: wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar ; java -jar ~/codacy-coverage-reporter-assembly-latest.jar final
 
 before_install:
