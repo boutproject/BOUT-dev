@@ -9,6 +9,15 @@
 #include <bout/mesh.hxx>
 #include <bout/paralleltransform.hxx>
 
+void ParallelTransformIdentity::calcYUpDown(Field3D& f) {
+  f.splitYupYdown();
+
+  for (int i = 0; i < f.getMesh()->ystart; ++i) {
+    f.yup(i) = f;
+    f.ydown(i) = f;
+  }
+}
+
 void ParallelTransformIdentity::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {

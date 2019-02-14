@@ -125,7 +125,7 @@ PRO popup_event, event
                          boundary=boundary, strict=base_info.strict_bndry, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         fast=base_info.fast, xpt_mul=xpt_mul)
+                         fast=base_info.fast, xpt_mul=xpt_mul, /simple)
       
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
@@ -357,7 +357,7 @@ PRO event_handler, event
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
                          fast=info.fast, xpt_mul=xpt_mul, $
-                         fpsi = fpsi)
+                         fpsi = fpsi, /simple)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -416,7 +416,7 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"

@@ -72,7 +72,7 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */ 
-  void calcYUpDown(Field3D &f) override {f.mergeYupYdown();}
+  void calcYUpDown(Field3D &f) override;
   
   /*!
    * The field is already aligned in Y, so this
@@ -140,7 +140,7 @@ public:
   }
 
   /// A 3D array, implemented as nested vectors
-  using arr3Dvec = std::vector<std::vector<std::vector<dcomplex>>>;
+  using arr3Dvec = std::vector<std::vector<Array<dcomplex>>>;
 protected:
   void checkInputGrid() override;
 
@@ -153,8 +153,19 @@ private:
   /// Cache of phase shifts for transforming from field-aligned coordinates to X-Z orthogonal coordinates
   arr3Dvec fromAlignedPhs;
 
-  arr3Dvec yupPhs; ///< Cache of phase shifts for calculating yup fields
-  arr3Dvec ydownPhs; ///< Cache of phase shifts for calculating ydown fields
+  /// Helper POD for parallel slice phase shifts
+  struct ParallelSlicePhase {
+    arr3Dvec phase_shift;
+    int y_offset;
+  };
+
+  /// Cache of phase shifts for the parallel slices. Slices are stored
+  /// in the following order:
+  ///     {+1, ..., +n, -1, ..., -n}
+  /// slice[i] stores offset i+1
+  /// slice[2*i + 1] stores offset -(i+1)
+  /// where i goes from 0 to (n-1), with n the number of y guard cells
+  std::vector<ParallelSlicePhase> parallel_slice_phases;
 
   /*!
    * Shift a 2D field in Z. 
@@ -201,11 +212,19 @@ private:
    * @param[in] phs Phase shift, assumed to have length (mesh.LocalNz/2 + 1) i.e. the number of modes
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
-  void shiftZ(const BoutReal *in, const std::vector<dcomplex> &phs, BoutReal *out) const;
+  void shiftZ(const BoutReal *in, const Array<dcomplex> &phs, BoutReal *out) const;
 
   /// Calculate and store the phases for to/from field aligned and for
   /// the parallel slices using zShift
   void cachePhases();
+
+  /// Shift a 3D field \p f in Z to all the parallel slices in \p phases
+  ///
+  /// @param[in] f      The field to shift
+  /// @param[in] phases The phase and offset information for each parallel slice
+  /// @return The shifted parallel slices
+  std::vector<Field3D> shiftZ(const Field3D& f,
+                              const std::vector<ParallelSlicePhase>& phases) const;
 };
 
 

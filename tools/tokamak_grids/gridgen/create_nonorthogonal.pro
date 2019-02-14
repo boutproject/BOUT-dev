@@ -164,7 +164,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     dzdi = DERIV(INTERPOLATE(Z, zi))
     
     dldi = SQRT(drdi^2 + dzdi^2)
-    poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
+    poldist = int_func(findgen(np), dldi, /simple) ; Poloidal distance along line
   ENDIF ELSE BEGIN
     rpos = INTERPOLATE(R, ri)
     zpos = INTERPOLATE(Z, zi)
@@ -332,8 +332,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
 
-  ;rii = int_func(SMOOTH(deriv(rii), 3)) + rii[0]
-  ;zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
+  ;rii = int_func(SMOOTH(deriv(rii), 3), /simple) + rii[0]
+  ;zii = int_func(SMOOTH(deriv(zii), 3), /simple) + zii[0]
   ;STOP
   
   ; Refine the location of the starting point
@@ -568,7 +568,7 @@ FUNCTION line_dist, R, Z, ri, zi
   drdi = DERIV(INTERPOLATE(R, ri))
   dzdi = DERIV(INTERPOLATE(Z, zi))
   dldi = SQRT(drdi^2 + dzdi^2)
-  RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi)
+  RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -813,7 +813,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, $
                       single_rad_grid=single_rad_grid, fast=fast, $
-                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul, xpt_only=xpt_only
+                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul, xpt_only=xpt_only, $
+                      simple = simple
 
 
   strictbndry=0
@@ -1520,7 +1521,11 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       drdi = DERIV(INTERPOLATE(R, ri))
       dzdi = DERIV(INTERPOLATE(Z, zi))
       dldi = SQRT(drdi^2 + dzdi^2)
-      length = INT_TABULATED(findgen(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        length = INT_TRAPEZOID(findgen(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        length = INT_TABULATED(findgen(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
 
       ; Change the grid in the far SOL
       w = WHERE(ci EQ primary_xpt)
@@ -1553,7 +1558,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
-                            single_rad_grid=single_rad_grid, fast=fast)
+                            single_rad_grid=single_rad_grid, fast=fast, simple=simple)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1685,9 +1690,17 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       ; Calculate length of each section
       dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0))^2 + DERIV(INTERPOLATE(Z, tmp.zi0))^2)
-      len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        len0 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
       dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1))^2 + DERIV(INTERPOLATE(Z, tmp.zi1))^2)
-      len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        len1 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
       tmp = CREATE_STRUCT(tmp, 'len0', len0, 'len1', len1)
       
       PTR_FREE, pf_info[xind]
@@ -2288,7 +2301,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
-                          single_rad_grid=single_rad_grid, fast=fast)
+                          single_rad_grid=single_rad_grid, fast=fast, simple=simple)
       
     ENDIF
     

@@ -57,7 +57,7 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   bout_vsnprintf(filename,buf_len, file);
   
-  output_info << _("Writing options to file ") << filename << "\n";
+  output_info.write(_("Writing options to file %s\n"),filename);
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();

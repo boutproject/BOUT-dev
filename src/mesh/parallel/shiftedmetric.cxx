@@ -75,21 +75,13 @@ void ShiftedMetric::cachePhases() {
   fromAlignedPhs.resize(mesh.LocalNx);
   toAlignedPhs.resize(mesh.LocalNx);
 
-  yupPhs.resize(mesh.LocalNx);
-  ydownPhs.resize(mesh.LocalNx);
-
   for (int jx = 0; jx < mesh.LocalNx; jx++) {
     fromAlignedPhs[jx].resize(mesh.LocalNy);
     toAlignedPhs[jx].resize(mesh.LocalNy);
 
-    yupPhs[jx].resize(mesh.LocalNy);
-    ydownPhs[jx].resize(mesh.LocalNy);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       fromAlignedPhs[jx][jy].resize(nmodes);
       toAlignedPhs[jx][jy].resize(nmodes);
-
-      yupPhs[jx][jy].resize(nmodes);
-      ydownPhs[jx][jy].resize(nmodes);
     }
   }
 
@@ -106,48 +98,53 @@ void ShiftedMetric::cachePhases() {
     }
   }
 
-  // Yup/Ydown phases -- note we don't shift in the boundaries/guards
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
-      BoutReal yupShift = zShift(jx, jy) - zShift(jx, jy + 1);
-      BoutReal ydownShift = zShift(jx, jy) - zShift(jx, jy - 1);
+  // Allocate space for parallel slice caches: y-guard cells in each
+  // direction
+  parallel_slice_phases.resize(mesh.ystart * 2);
 
-      for (int jz = 0; jz < nmodes; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
+  // Careful with the indices/offsets! Offsets are 1-indexed (as 0
+  // would be the original slice), and Mesh::ystart is the number of
+  // guard cells. The parallel slice vector stores the offsets as
+  //    {+1, ..., +n, -1, ..., -n}
+  // Once parallel_slice_phases is initialised though, each element
+  // stores its phase and offset, so we don't need to faff about after
+  // this
+  for (int i = 0; i < mesh.ystart; ++i) {
+    // NOTE: std::vector constructor here takes a **copy** of the
+    // Array! We *must* call `Array::ensureUnique` on each element
+    // before using it!
+    parallel_slice_phases[i].phase_shift =
+        arr3Dvec(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+    parallel_slice_phases[i].y_offset = i + 1;
 
-        yupPhs[jx][jy][jz] = dcomplex(cos(kwave * yupShift), -sin(kwave * yupShift));
-        ydownPhs[jx][jy][jz] =
-            dcomplex(cos(kwave * ydownShift), -sin(kwave * ydownShift));
+    // Backwards parallel slices
+    parallel_slice_phases[mesh.ystart + i].phase_shift =
+        arr3Dvec(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+    parallel_slice_phases[mesh.ystart + i].y_offset = -(i + 1);
+  }
+
+  // Parallel slice phases -- note we don't shift in the boundaries/guards
+  for (auto& slice : parallel_slice_phases) {
+    for (int jx = 0; jx < mesh.LocalNx; jx++) {
+      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+
+        slice.phase_shift[jx][jy].ensureUnique();
+        BoutReal slice_shift = zShift(jx, jy) - zShift(jx, jy + slice.y_offset);
+
+        for (int jz = 0; jz < nmodes; jz++) {
+          // wave number is 1/[rad]
+          BoutReal kwave = jz * 2.0 * PI / zlength;
+
+          slice.phase_shift[jx][jy][jz] =
+              dcomplex(cos(kwave * slice_shift), -sin(kwave * slice_shift));
+        }
       }
     }
   }
 }
 
-/*!
- * Calculate the Y up and down fields
- */
-void ShiftedMetric::calcYUpDown(Field3D &f) {
-  f.splitYupYdown();
-  
-  Field3D& yup = f.yup();
-  yup.allocate();
-
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy+1,0)), yupPhs[jx][jy], &(yup(jx,jy+1,0)));
-    }
-  }
-
-  Field3D& ydown = f.ydown();
-  ydown.allocate();
-
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=mesh.ystart;jy<=mesh.yend;jy++) {
-      shiftZ(&(f(jx,jy-1,0)), ydownPhs[jx][jy], &(ydown(jx,jy-1,0)));
-    }
-  }
-}
-  
 /*!
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
@@ -183,7 +180,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) const
 
 }
 
-void ShiftedMetric::shiftZ(const BoutReal* in, const std::vector<dcomplex>& phs,
+void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
                            BoutReal* out) const {
 
   int nmodes = mesh.LocalNz / 2 + 1;
@@ -202,6 +199,67 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const std::vector<dcomplex>& phs,
   }
 
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+}
+
+
+void ShiftedMetric::calcYUpDown(Field3D& f) {
+
+  auto results = shiftZ(f, parallel_slice_phases);
+
+  ASSERT3(results.size() == parallel_slice_phases.size());
+
+  f.splitYupYdown();
+
+  for (std::size_t i = 0; i < results.size(); ++i) {
+    f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);
+  }
+}
+
+std::vector<Field3D>
+ShiftedMetric::shiftZ(const Field3D& f,
+                      const std::vector<ParallelSlicePhase>& phases) const {
+
+  const int nmodes = mesh.LocalNz / 2 + 1;
+
+  // FFT in Z of input field at each (x, y) point
+  arr3Dvec f_fft(mesh.LocalNx,
+                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+
+  for (int jx = 0; jx < mesh.LocalNx; jx++) {
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      f_fft[jx][jy].ensureUnique();
+      rfft(f(jx, jy), mesh.LocalNz, f_fft[jx][jy].begin());
+    }
+  }
+
+  std::vector<Field3D> results{};
+
+  for (auto& phase : phases) {
+    // In C++17 std::vector::emplace_back returns a reference, which
+    // would be very useful here!
+    results.emplace_back(&mesh);
+    auto& current_result = results.back();
+    current_result.allocate();
+    current_result.setLocation(f.getLocation());
+
+    for (int jx = 0; jx < mesh.LocalNx; jx++) {
+      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+
+        // Deep copy the FFT'd field
+        Array<dcomplex> shifted_temp(f_fft[jx][jy + phase.y_offset]);
+        shifted_temp.ensureUnique();
+
+        for (int jz = 1; jz < nmodes; ++jz) {
+          shifted_temp[jz] *= phase.phase_shift[jx][jy][jz];
+        }
+
+        irfft(shifted_temp.begin(), mesh.LocalNz,
+              current_result(jx, jy + phase.y_offset));
+      }
+    }
+  }
+
+  return results;
 }
 
 //Old approach retained so we can still specify a general zShift
