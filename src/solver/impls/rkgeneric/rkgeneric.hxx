@@ -34,10 +34,17 @@ class RKGenericSolver;
 #include <bout/solver.hxx>
 #include <bout/rkscheme.hxx>
 
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
+}
+
 class RKGenericSolver : public Solver {
  public:
   RKGenericSolver(Options *options);
   ~RKGenericSolver();
+  
+  void resetInternalFields() override;
   
   //Utilities only used by the CTU bracket approach
   void setMaxTimestep(BoutReal dt) override;

@@ -242,6 +242,8 @@ TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
   ConditionalOutput local_output_first(&local_output_base);
   ConditionalOutput local_output_second(&local_output_first);
 
+  EXPECT_EQ(local_output_first.getBase(), &local_output_base);
+  EXPECT_NE(local_output_second.getBase(), &local_output_first);
   EXPECT_EQ(local_output_second.getBase(), &local_output_base);
 }
 
@@ -269,11 +271,11 @@ TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
   DummyOutput dummy;
 
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(), BoutException);
+  dummy.enable();
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(true), BoutException);
+  dummy.enable(true);
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_NO_THROW(dummy.enable(false));
+  dummy.enable(false);
   EXPECT_FALSE(dummy.isEnabled());
   dummy.disable();
   EXPECT_FALSE(dummy.isEnabled());

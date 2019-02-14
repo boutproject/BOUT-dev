@@ -9,7 +9,6 @@ timestep = 0.1  #Time between outputs
 MZ = 1 # Number of points in z
 
 #number of guard cells
-MYG = 1
 MXG = 0
 
 [output]

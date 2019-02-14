@@ -12,10 +12,11 @@
 
 #include <output.hxx>
 
-OptionsReader* OptionsReader::instance = NULL;
+OptionsReader *OptionsReader::instance = nullptr;
 
 OptionsReader* OptionsReader::getInstance() {
-  if (instance == NULL) instance = new OptionsReader(); // Create the singleton object
+  if (instance == nullptr)
+    instance = new OptionsReader(); // Create the singleton object
 
   return instance;
 }
@@ -56,7 +57,7 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   bout_vsnprintf(filename,buf_len, file);
   
-  output_info << "Writing options to file " << filename << "\n";
+  output_info.write(_("Writing options to file %s\n"),filename);
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
@@ -77,7 +78,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
 
-  string buffer;
+  std::string buffer;
 
   // Go through command-line arguments
   for (int i=1;i<argc;i++) {
@@ -113,32 +114,32 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       }
     }
     
-    size_t startpos = buffer.find_first_of("=");
+    size_t startpos = buffer.find_first_of('=');
 
-    if (startpos == string::npos) {
+    if (startpos == std::string::npos) {
       // Just set a flag to true
       // e.g. "restart" or "append" on command line
 
       options->set(buffer, true, "Command line");
     } else {
-      size_t endpos = buffer.find_last_of("=");
+      size_t endpos = buffer.find_last_of('=');
 
-      if(startpos != endpos) throw BoutException("\tMultiple '=' in command-line argument '%s'\n", buffer.c_str());
+      if(startpos != endpos) throw BoutException(_("\tMultiple '=' in command-line argument '%s'\n"), buffer.c_str());
 
-      string key = trim(buffer.substr(0, startpos));
-      string value = trim(buffer.substr(startpos+1));
+      std::string key = trim(buffer.substr(0, startpos));
+      std::string value = trim(buffer.substr(startpos+1));
       
       size_t scorepos;
-      while((scorepos = key.find_first_of(":")) != string::npos) {
+      while((scorepos = key.find_first_of(':')) != std::string::npos) {
 	// sub-section
-	string section = key.substr(0,scorepos);
+	std::string section = key.substr(0,scorepos);
 	key = trim(key.substr(scorepos+1));
 	options = options->getSection(section);
       }
       
-      if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value in command line '%s'\n", buffer.c_str());
+      if(key.empty() || value.empty()) throw BoutException(_("\tEmpty key or value in command line '%s'\n"), buffer.c_str());
 
-      options->set(key, value, "Command line");
+      options->set(key, value, _("Command line"));
     }
   }
 }

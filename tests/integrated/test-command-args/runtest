@@ -1,95 +1,127 @@
-#!/bin/bash
+#!/usr/bin/env python3
+from boututils.run_wrapper import shell_safe
 
-# Compile command-args
-make || exit 1
+import os
+import shutil
+import unittest
 
-# Remove directories which may be left from previous run
-rm -rf data
-rm -rf test
 
-# Run without any directory, check that an exception is thrown
-echo "=========== Running without input directory =============="
-if ./command-args 2> stderr.log; then
-    cat stderr.log
-    echo "FAIL: Run should fail when no input directory"
-    exit 1
-fi
+class TestCommandLineArgs(unittest.TestCase):
+    command = "./command-args 2>stderr.log"
 
-# Check that an error message was output
-if ! grep "\"data\" does not exist" stderr.log > output.log ; then
-    cat stderr.log
-    echo "FAIL: Error message not printed when missing input directory"
-    exit 1
-fi
+    def makeDirAndCopyInput(self, path):
+        os.mkdir(path)
+        shutil.copy("BOUT.inp", path)
 
-# Run tests in "data" directory
-echo
-echo "=========== Running without args in data directory =============="
+    def setUp(self):
+        try:
+            os.remove("stderr.log")
+        except OSError:
+            pass
+        shutil.rmtree("./data", ignore_errors=True)
+        shutil.rmtree("./test", ignore_errors=True)
+        shutil.rmtree("./test_copy", ignore_errors=True)
 
-mkdir -p data
-cp BOUT.inp data
-./command-args 
+    # Teardown same as setup in case something went wrong with last run
+    tearDown = setUp
 
-# Check that we have a BOUT.settings and BOUT.log.0 file
+    def testNoArgumentsNoDirectory(self):
+        with self.assertRaises(RuntimeError):
+            shell_safe(self.command, pipe=True)
+        with open("stderr.log") as f:
+            contents = f.read()
+            self.assertIn('"data" does not exist', contents,
+                          msg="FAIL: Error message not printed when missing input directory")
 
-if ! [ -f "data/BOUT.settings" ] ; then
-    echo "FAIL: No BOUT.settings file in data directory"
-    exit 1
-fi
+    def testHelpArgument(self):
+        self.makeDirAndCopyInput("data")
+        _, out = shell_safe(self.command + " --help", pipe=True)
+        # Not a great test!
+        self.assertNotIn("Writing options", out,
+                         msg="FAIL: Attempting to write options")
 
-if ! [ -f "data/BOUT.log.0" ] ; then
-    echo "FAIL: No BOUT.log.0 file in data directory"
-    exit 1
-fi
+    def testNoArgumentsDefaultDirectory(self):
+        self.makeDirAndCopyInput("data")
+        shell_safe(self.command, pipe=True)
+        self.assertTrue(os.path.exists("data/BOUT.settings"),
+                        msg="FAIL: No BOUT.settings file in data directory")
+        self.assertTrue(os.path.exists("data/BOUT.log.0"),
+                        msg="FAIL: No BOUT.log.0 file in data directory")
 
-# Change the log file name
-echo
-echo "=========== Running with -l arg in data directory =============="
-rm -r data
-mkdir -p data
-cp BOUT.inp data
-./command-args -l different.log
+    def testShortLogArgument(self):
+        self.makeDirAndCopyInput("data")
+        shell_safe(self.command + " -l different.log", pipe=True)
+        self.assertFalse(os.path.exists("data/BOUT.log.0"),
+                         msg="FAIL: BOUT.log.0 file in data directory")
+        self.assertTrue(os.path.exists("data/different.log.0"),
+                        msg="FAIL: no different.log.0 file in data directory")
 
-if [ -f "data/BOUT.log.0" ] ; then
-    echo "FAIL: BOUT.log.0 file in data directory"
-    exit 1
-fi
+    def testLongLogArgument(self):
+        self.makeDirAndCopyInput("data")
+        shell_safe(self.command + " --log log", pipe=True)
+        self.assertFalse(os.path.exists("data/BOUT.log.0"),
+                         msg="FAIL: BOUT.log.0 file in data directory")
+        self.assertTrue(os.path.exists("data/log.0"),
+                        msg="FAIL: no log.0 file in data directory")
 
-if ! [ -f "data/different.log.0" ] ; then
-    echo "FAIL: no different.log.0 file in data directory"
-    exit 1
-fi
+    def testDirectoryArgument(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        self.assertTrue(os.path.exists("test/BOUT.settings"),
+                        msg="FAIL: No BOUT.settings file in test directory")
+        self.assertTrue(os.path.exists("test/BOUT.log.0"),
+                        msg="FAIL: No BOUT.log.0 file in data directory")
 
-# Change the log file name using long option
-echo
-echo "=========== Running with --log arg in data directory =============="
-rm -r data
-mkdir -p data
-cp BOUT.inp data
-./command-args --log log
+    def testDirectoryArgumentOldSettingsFile(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
-if [ -f "data/BOUT.log.0" ] ; then
-    echo "FAIL: BOUT.log.0 file in data directory"
-    exit 1
-fi
+        with open("test_copy/testsettings") as f:
+            contents = f.readlines()
 
-if ! [ -f "data/log.0" ] ; then
-    echo "FAIL: no log.0 file in data directory"
-    exit 1
-fi
+            datadir = ""
+            for line in contents:
+                if line.startswith("datadir"):
+                    # Assuming that this line looks like "datadir = <something> # comment"
+                    datadir = line.split()[2]
+                    break
 
-echo
-echo "=========== Running with -d arg in test directory =============="
-rm -r data
-mkdir -p test
-cp BOUT.inp test
+            self.assertIn("test_copy", datadir,
+                          msg="FAIL: datadir from command line clobbered by BOUT.settings")
 
-if ! ./command-args -d test 2> stderr.log ; then
-    cat stderr.log
-    echo "FAIL: Run fails with '-d test' command-line arg"
-    exit 1
-fi
+    def testShortOptionsAreCleaned(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        shell_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
 
-echo "=> All passed"
+        with open("test_copy/testsettings") as f:
+            contents = f.read()
+            self.assertNotIn("Command line", contents,
+                             msg="FAIL: command line short options written to BOUT.settings")
 
-exit 0
+    def testCommandLineOptionsArePrinted(self):
+        self.makeDirAndCopyInput("test")
+        shell_safe(self.command + " -d test", pipe=True)
+        shutil.copytree("test", "test_copy")
+        extra_options = ["-d", "test_copy", "-f", "BOUT.settings", "-o",
+                         "testsettings", "-l", "bout.log", "--foo_flag", "some:option=value"]
+        _, out = shell_safe(self.command + " " + " ".join(extra_options), pipe=True)
+
+        command_line_options = None
+        for line in out.splitlines():
+            if line.lstrip().startswith("Command line"):
+                command_line_options = line
+
+        for option in extra_options:
+            self.assertIn(option, command_line_options,
+                          msg="FAIL: option {} not printed out".format(option))
+
+
+if __name__ == "__main__":
+    shell_safe("make")
+    unittest.main(verbosity=2)

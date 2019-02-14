@@ -65,9 +65,9 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
-  
-  jacfunc = NULL;
-  
+
+  jacfunc = nullptr;
+
   canReset = true;
 }
 
@@ -111,7 +111,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Allocate memory
   {TRACE("Allocating memory with N_VNew_Parallel");
-    if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+    if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
       throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   }
 
@@ -131,15 +131,26 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   bool use_precon, use_jacobian, use_vector_abstol, stablimdet;
   BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
+
   int mxsteps; // Maximum number of steps to take between outputs
   int mxorder; // Maximum lmm order to be used by the solver
   int lmm = CV_BDF;
   int iter = CV_NEWTON;
 
   {TRACE("Getting options");
-    options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
-    options->get("mldq", mldq, n3Dvars()*(MXSUB+2));
+    options->get("mudq", mudq, band_width_default);
+    options->get("mldq", mldq, band_width_default);
     options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
     options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
     options->get("ATOL", abstol, 1.0e-12);
@@ -150,10 +161,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if (use_vector_abstol) {
       Options *abstol_options = Options::getRoot();
       BoutReal tempabstol;
-      if((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-	throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
-      vector<BoutReal> f2dtols;
-      vector<BoutReal> f3dtols;
+      if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+        throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
+      std::vector<BoutReal> f2dtols;
+      std::vector<BoutReal> f3dtols;
       BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
       for (const auto& f : f2d) {
 	abstol_options = Options::getRoot()->getSection(f.name);
@@ -196,7 +207,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Call CVodeCreate
   {TRACE("Calling CVodeCreate");
-    if((cvode_mem = CVodeCreate(lmm, iter)) == NULL)
+    if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
       throw BoutException("CVodeCreate failed\n");
   }
 
@@ -274,14 +285,14 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       if (!have_user_precon()) {
         output_info.write("\tUsing BBD preconditioner\n");
 
-        if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
-              mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
+        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
+                          cvode_bbd_rhs, nullptr))
           throw BoutException("ERROR: CVBBDPrecInit failed\n");
 
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
+        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre))
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
       }
     }else {
@@ -295,7 +306,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
     /// Set Jacobian-vector multiplication function
 
-    if((use_jacobian) && (jacfunc != NULL)) {
+    if ((use_jacobian) && (jacfunc != nullptr)) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
@@ -396,8 +407,6 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run(%e)", tout);
 
   MPI_Barrier(BoutComm::get());
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
@@ -500,8 +509,8 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 
 void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata) {
   TRACE("Running Jacobian: CvodeSolver::jac(%e)", t);
-  
-  if(jacfunc == NULL)
+
+  if (jacfunc == nullptr)
     throw BoutException("ERROR: No jacobian function supplied!\n");
   
   // Load state from ydate
@@ -579,50 +588,25 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
  * vector abstol functions
  **************************************************************************/
 
-void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
-  int jx, jy;
+void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal> &f2dtols, std::vector<BoutReal> &f3dtols) {
   int p = 0; // Counter for location in abstolvec_data array
 
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX() && !mesh->periodicX) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols, true);
+  // All boundaries
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
+    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
   }
-
-  // Lower Y boundary region
-  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
-  }
-
   // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, false);
-  
-  // Upper Y boundary condition
-  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    for(jy=mesh->yend+1;jy<mesh->LocalNy;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
-  }
-
-  // Outer X boundary
-  if(mesh->lastX() && !mesh->periodicX) {
-    for(jx=mesh->xend+1;jx<mesh->LocalNx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
+    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
+void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
                                         BoutReal *abstolvec_data, int &p,
-                                        vector<BoutReal> &f2dtols,
-                                        vector<BoutReal> &f3dtols, bool bndry) {
+                                        std::vector<BoutReal> &f2dtols,
+                                        std::vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
+  for(std::vector<BoutReal>::size_type i=0; i<f2dtols.size(); i++) {
     if(bndry && !f2d[i].evolve_bndry) {
       continue;
     }
@@ -630,9 +614,9 @@ void CvodeSolver::loop_abstol_values_op(int UNUSED(jx), int UNUSED(jy),
     p++;
   }
   
-  for (int jz=0; jz < mesh->LocalNz; jz++) {
+  for (int jz=0; jz < bout::globals::mesh->LocalNz; jz++) {
     // Loop over 3D variables
-    for(vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
+    for(std::vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry) {
         continue;
       }

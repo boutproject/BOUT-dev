@@ -11,16 +11,13 @@
 #include <vector>
 #include <cmath>
 
-using std::list;
-using std::vector;
-
 /// Implementation of Mesh (mostly) compatible with BOUT
 ///
 /// Topology and communications compatible with BOUT
 /// conventions.
 class BoutMesh : public Mesh {
  public:
-  BoutMesh(GridDataSource *s, Options *options = NULL);
+  BoutMesh(GridDataSource *s, Options *options = nullptr);
   ~BoutMesh();
 
   /// Read in the mesh from data sources
@@ -138,8 +135,8 @@ class BoutMesh : public Mesh {
 
 
   // Boundary regions
-  vector<BoundaryRegion*> getBoundaries();
-  vector<BoundaryRegionPar*> getBoundariesPar();
+  std::vector<BoundaryRegion*> getBoundaries();
+  std::vector<BoundaryRegionPar*> getBoundariesPar();
   void addBoundaryPar(BoundaryRegionPar* bndry);
 
   const Field3D smoothSeparatrix(const Field3D &f);
@@ -163,7 +160,7 @@ class BoutMesh : public Mesh {
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
  private:
-  string gridname;
+  std::string gridname;
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
 
@@ -182,7 +179,7 @@ class BoutMesh : public Mesh {
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
   int ny_inner;
 
-  vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
+  std::vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
@@ -216,9 +213,11 @@ class BoutMesh : public Mesh {
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
   void topology();
-
-  vector<BoundaryRegion*> boundary; // Vector of boundary regions
-  vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
+  
+  void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
+  
+  std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  std::vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
 
   //////////////////////////////////////////////////
   // Communications
@@ -243,7 +242,7 @@ class BoutMesh : public Mesh {
   void free_handle(CommHandle *h);
   CommHandle* get_handle(int xlen, int ylen);
   void clear_handles();
-  list<CommHandle*> comm_list; // List of allocated communication handles
+  std::list<CommHandle*> comm_list; // List of allocated communication handles
 
   //////////////////////////////////////////////////
   // X communicator
@@ -262,9 +261,9 @@ class BoutMesh : public Mesh {
   void post_receive(CommHandle &ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int pack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+  int unpack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
 };
 
 #endif // __BOUTMESH_H__

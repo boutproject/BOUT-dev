@@ -10,9 +10,10 @@ class LaplaceFactory {
  public:
   /// Return a pointer to the only instance
   static LaplaceFactory* getInstance();
-  
-  Laplacian* createLaplacian(Options *options = NULL);
-  
+
+  Laplacian *createLaplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE,
+      Mesh *mesh_in = nullptr);
+
 private:
   LaplaceFactory() {} // Prevent instantiation of this class
   static LaplaceFactory* instance; ///< The only instance of this class (Singleton)

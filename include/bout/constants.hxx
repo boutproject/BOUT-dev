@@ -10,6 +10,7 @@
 
 /// Mathematical constant pi
 const BoutReal PI = 3.141592653589793;
+/// Mathematical constant 2 * pi
 const BoutReal TWOPI = 2 * PI;
 
 namespace SI {
@@ -21,6 +22,10 @@ namespace SI {
   const BoutReal Me  = 9.10938356e-31;  ///< Electron mass
   const BoutReal Mp  = 1.672621898e-27; ///< Proton mass
   const BoutReal kb  = 1.38064852e-23;  ///< Boltzmanns constant
+  const BoutReal amu = 1.660539040e-27;          ///< Unified atomic mass unit
+  const BoutReal M_Hydrogen = 1.008 * amu;       ///< Mass of a Hydrogen atom
+  const BoutReal M_Deuterium = 2.01410178 * amu; ///< Mass of a Deuterium atom
+  const BoutReal M_Tritium = 3.0160492 * amu;    ///< Mass of a Tritium atom
 }
 
 #endif // __CONSTANTS_H__

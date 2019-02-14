@@ -1,12 +1,15 @@
+import numpy as np
+from boutdata.collect import collect
+import pickle
+
 try:
         from past.utils import old_div
-except:
+except ImportError:
         def old_div(a,b):
                 return a/b
 
 
 def blob_velocity(n,**kwargs):
-        import numpy as np
 
         from boututils import calculus as Calc
         # Calculate blob velocity in normalized time and normalized grid spacing
@@ -62,10 +65,6 @@ def blob_velocity(n,**kwargs):
 
 
 
-import numpy as np
-from boutdata.collect import collect
-import pickle
-
 data='data'
 
 if True:
@@ -95,5 +94,5 @@ try:
         import matplotlib.pyplot as plt
         plt.plot(vx)
         plt.show()
-except:
+except ImportError:
         pass

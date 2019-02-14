@@ -5,8 +5,16 @@ class BoundaryRegion;
 #define __BNDRY_REGION_H__
 
 #include <string>
-using std::string;
+#include <utility>
 
+class Mesh;
+namespace bout {
+namespace globals {
+  extern Mesh* mesh; ///< Global mesh
+} // namespace bout
+} // namespace globals
+
+/// Location of boundary
 enum BndryLoc {BNDRY_XIN=1,
                BNDRY_XOUT=2,
                BNDRY_YDOWN=4,
@@ -17,91 +25,105 @@ enum BndryLoc {BNDRY_XIN=1,
 
 class BoundaryRegionBase {
 public:
-  BoundaryRegionBase() {}
-  BoundaryRegionBase(const string &name) : label(name) {}
-  BoundaryRegionBase(const string &name, BndryLoc loc) : label(name), location(loc) {}
+
+  BoundaryRegionBase() = delete;
+  BoundaryRegionBase(std::string name, Mesh *passmesh = nullptr)
+      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
+  BoundaryRegionBase(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
+      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)), location(loc) {}
+
   virtual ~BoundaryRegionBase() {}
 
-  string label; // Label for this boundary region
+  Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
-  BndryLoc location;         // Which side of the domain is it on?
-  bool isParallel = false;   // Is this a parallel boundary?
+  std::string label; ///< Label for this boundary region
 
-  virtual void first() = 0;
-  virtual void next() = 0;   // Loop over every element from inside out (in X or Y first)
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+  BndryLoc location;         ///< Which side of the domain is it on?
+  bool isParallel = false;   ///< Is this a parallel boundary?
+
+  virtual void first() = 0;  ///< Move the region iterator to the start
+  virtual void next() = 0;   ///< Get the next element in the loop
+                             ///  over every element from inside out (in
+                             ///  X or Y first)
+  virtual bool isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
 };
 
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion : public BoundaryRegionBase {
 public:
-  BoundaryRegion() {}
-  BoundaryRegion(const string &name, BndryLoc loc) : BoundaryRegionBase(name, loc) {}
-  BoundaryRegion(const string &name, int xd, int yd) : BoundaryRegionBase(name), bx(xd), by(yd), width(2) {}
-  virtual ~BoundaryRegion() {}
+  BoundaryRegion() = delete;
+  BoundaryRegion(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
+      : BoundaryRegionBase(name, loc, passmesh) {}
+  BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
+      : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
+  ~BoundaryRegion() override {}
 
-  int x,y; // Indices of the point in the boundary
-  int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
+  int x,y; ///< Indices of the point in the boundary
+  int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
 
-  int width; // Width of the boundary
+  int width; ///< Width of the boundary
 
-  virtual void next1d() = 0; // Loop over the innermost elements
-  virtual void nextX() = 0; // Just loop over X
-  virtual void nextY() = 0; // Just loop over Y
+  virtual void next1d() = 0; ///< Loop over the innermost elements
+  virtual void nextX() = 0;  ///< Just loop over X
+  virtual void nextY() = 0;  ///< Just loop over Y
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {
 public:
-  BoundaryRegionXIn(const string &name, int ymin, int ymax);
+  BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
 
 class BoundaryRegionXOut : public BoundaryRegion {
 public:
-  BoundaryRegionXOut(const string &name, int ymin, int ymax);
+  BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh = nullptr);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int ys, ye;
 };
 
 class BoundaryRegionYDown : public BoundaryRegion {
 public:
-  BoundaryRegionYDown(const string &name, int xmin, int xmax);
+  BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };
 
 class BoundaryRegionYUp : public BoundaryRegion {
 public:
-  BoundaryRegionYUp(const string &name, int xmin, int xmax);
+  BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh = nullptr);
 
-  void first();
-  void next();
-  void next1d();
-  void nextX();
-  void nextY();
-  bool isDone();
+  void first() override;
+  void next() override;
+  void next1d() override;
+  void nextX() override;
+  void nextY() override;
+  bool isDone() override;
+
 private:
   int xs, xe;
 };

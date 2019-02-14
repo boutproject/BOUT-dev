@@ -305,6 +305,38 @@ TEST_F(OptionsReaderTest, ReadBadFile) {
   EXPECT_THROW(reader.read(options, filename), BoutException);
 }
 
+TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
+  const std::string text = R"(
+[section1
+int_key = 34
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename), BoutException);
+};
+
+TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
+  const std::string text = R"(
+[]
+int_key = 34
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  Options *options = Options::getRoot();
+  EXPECT_THROW(reader.read(options, filename), BoutException);
+};
+
 TEST_F(OptionsReaderTest, WriteFile) {
   char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
@@ -325,7 +357,7 @@ TEST_F(OptionsReaderTest, WriteFile) {
   test_file.close();
 
   std::vector<std::string> expected = {"bool_key = true",        "[section1]",
-                                       "int_key = 17",           "real_key = 6.17e+23",
+                                       "int_key = 17",           "real_key = 6.17000000000000006e+23",
                                        "[section1:subsection2]", "string_key = BOUT++"};
 
   for (auto &result : expected) {
@@ -348,4 +380,106 @@ TEST_F(OptionsReaderTest, WriteBadFile) {
   EXPECT_THROW(reader.write(options, filename.c_str()), BoutException);
 
   std::remove(filename.c_str());
+}
+
+TEST_F(OptionsReaderTest, ReadEmptyString) {
+const std::string text = R"(
+value =
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+  
+  Options opt;
+  OptionsReader reader;
+
+  reader.read(&opt, filename);
+
+  std::string val = opt["value"];
+  EXPECT_TRUE(val.empty());
+}
+
+TEST_F(OptionsReaderTest, ReadFileEscapedChars) {
+  const std::string text = R"(
+some-value = 3  # Names can contain symbols, but need to be escaped
+
+[h2+]           # Sections can contain symbols
+another = 5
+one-more = 2
+
+[tests]
+test1 = some\-value                  # Escaping of single characters
+test2 = h2\+:another * some\-value   # Including in section names
+test3 = `some-value` + 1             # Escaping character sequence
+test4 = `h2+:one-more` * 2           # Escape sequence including :
+test5 = `h2+`:another                # Escape only start of sequence
+test6 = h2`+`:on`e-`more             # Escape sequences in the middle
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), filename);
+  std::remove(filename);
+
+  auto options = Options::root()["tests"];
+  
+  EXPECT_EQ(options["test1"].as<int>(), 3);
+  EXPECT_EQ(options["test2"].as<int>(), 15);
+  EXPECT_EQ(options["test3"].as<int>(), 4);
+  EXPECT_EQ(options["test4"].as<int>(), 4);
+  EXPECT_EQ(options["test5"].as<int>(), 5);
+  EXPECT_EQ(options["test6"].as<int>(), 2);
+}
+
+// Variable names must not contain colons, escaped or otherwise
+// Sections can contain colons, where they indicate subsections.
+// That is tested elsewhere.
+TEST_F(OptionsReaderTest, ReadFileVariablesNoColons) {
+  const std::string text = R"(
+some:value = 3 
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  
+  EXPECT_THROW(reader.read(Options::getRoot(), filename), BoutException);
+  std::remove(filename);
+}
+
+TEST_F(OptionsReaderTest, ReadUnicodeNames) {
+  const std::string text = R"(
+
+α = 1.3
+重要的數字 = 3
+
+[tests]
+結果 = 重要的數字 + 5
+value = α*(1 + 重要的數字)
+twopi = 2 * π   # Unicode symbol defined for pi
+)";
+
+  char *filename = std::tmpnam(nullptr);
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), filename);
+  std::remove(filename);
+
+  auto options = Options::root()["tests"];
+  
+  EXPECT_EQ(options["結果"].as<int>(), 8);
+  EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3*(1+3));
+  EXPECT_DOUBLE_EQ(options["twopi"].as<BoutReal>(), 2 * 3.141592653589793);
 }

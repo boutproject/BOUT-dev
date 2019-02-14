@@ -41,8 +41,6 @@ class RKScheme;
 
 #include <iomanip>
 #include <string>
-using std::string;
-using std::setw;
 
 #define RKSchemeType const char*
 #define RKSCHEME_RKF45       "rkf45"
@@ -53,12 +51,13 @@ using std::setw;
 class RKScheme {
  public:
 
-  RKScheme(Options *opts = NULL); //Options picks the scheme, pretty much everything else is automated
+  //Options picks the scheme, pretty much everything else is automated
+  RKScheme(Options *opts = nullptr);
   virtual ~RKScheme();
 
   //Finish generic initialisation
-  void init(int nlocalIn,int neqIn,bool adaptiveIn,BoutReal atolIn,
-	    BoutReal rtolIn, Options *options=NULL);
+  void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
+            BoutReal rtolIn, Options *options = nullptr);
 
   //Get the time at given stage
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
@@ -74,7 +73,7 @@ class RKScheme {
   virtual BoutReal updateTimestep(BoutReal dt,BoutReal err);
 
   //Returns the string name for the given scheme
-  virtual string getType(){return label;};
+  virtual std::string getType(){return label;};
 
   //Returns the number of stages for the current scheme
   int getStageCount(){return numStages;};
@@ -88,7 +87,7 @@ class RKScheme {
  protected:
   //Information about scheme
   bool followHighOrder; //If true the recommended solution is the higher order one.
-  string label;
+  std::string label;
   int numStages; //Number of stages in the scheme
   int numOrders; //Number of orders in the scheme
   int order; //Order of scheme

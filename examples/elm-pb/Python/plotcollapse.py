@@ -7,7 +7,6 @@ from boututils.moment_xyzt import moment_xyzt
 from boututils.file_import import file_import
 from boutdata.collect import collect
 import os
-from scipy.io import readsav
 
 #Dynamic matplotlib settings
 from matplotlib import rcParams
@@ -25,10 +24,8 @@ path = './data'
 
 plt.figure()
 
-#p0 = transpose(readsav(os.path.join(path, 'p0.idl.dat'))['p0'])
 p0=collect('P0', path=path)
 
-#dcp = transpose(readsav(os.path.join(path, 'dcp.idl.dat'))['dcp'])
 p=collect('P', path=path)
 res = moment_xyzt(p,'RMS','DC')
 rmsp = res.rms

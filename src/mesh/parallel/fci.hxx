@@ -27,50 +27,69 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
-#include <bout/deprecated.hxx>
 #include <interpolation.hxx>
 #include <mask.hxx>
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>
 
-/*!
- * Field line map - contains the coefficients for interpolation
- */
+#include <memory>
+#include <vector>
+
+
+/// Field line map - contains the coefficients for interpolation
 class FCIMap {
-  /// Interpolation object
-  Interpolation *interp;
+  /// Interpolation objects
+  std::unique_ptr<Interpolation> interp;        // Cell centre
+  std::unique_ptr<Interpolation> interp_corner; // Cell corner at (x+1, z+1)
 
-  /// Private constructor - must be initialised with mesh
-  FCIMap();
 public:
-  /// dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool zperiodic);
-  DEPRECATED(FCIMap(Mesh &mesh, int dir, bool UNUSED(yperiodic), bool zperiodic))
-      : FCIMap(mesh, dir, zperiodic) {}
+  FCIMap() = delete;
+  FCIMap(Mesh& mesh, int offset, BoundaryRegionPar* boundary, bool zperiodic);
 
-  int dir;                     /**< Direction of map */
+  // The mesh this map was created on
+  Mesh& map_mesh;
 
-  BoutMask boundary_mask;      /**< boundary mask - has the field line left the domain */
-  Field3D y_prime;             /**< distance to intersection with boundary */
+  /// Direction of map
+  const int offset;
 
-  BoundaryRegionPar* boundary; /**< boundary region */
+  /// boundary mask - has the field line left the domain
+  BoutMask boundary_mask;
+  /// If any of the integration area has left the domain
+  BoutMask corner_boundary_mask;
+  
+  Field3D interpolate(Field3D& f) const {
+    ASSERT3(&map_mesh == f.getMesh());
+    return interp->interpolate(f);
+  }
 
-  const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
+  Field3D integrate(Field3D &f) const;
 };
 
-/*!
- * Flux Coordinate Independent method for parallel derivatives
- */
+
+/// Flux Coordinate Independent method for parallel derivatives
 class FCITransform : public ParallelTransform {
 public:
-  DEPRECATED(FCITransform(Mesh &mesh, bool UNUSED(yperiodic), bool zperiodic))
-      : FCITransform(mesh, zperiodic) {}
-  FCITransform(Mesh &mesh, bool zperiodic = true)
-      : mesh(mesh), forward_map(mesh, +1, zperiodic), backward_map(mesh, -1, zperiodic),
-        zperiodic(zperiodic) {}
+  FCITransform() = delete;
+  FCITransform(Mesh& mesh, bool zperiodic = true) {
+
+    auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
+    auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
+
+    // Add the boundary region to the mesh's vector of parallel boundaries
+    mesh.addBoundaryPar(forward_boundary);
+    mesh.addBoundaryPar(backward_boundary);
+
+    field_line_maps.reserve(mesh.ystart * 2);
+    for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
+      field_line_maps.emplace_back(mesh, offset, forward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, -offset, backward_boundary, zperiodic);
+    }
+  }
 
   void calcYUpDown(Field3D &f) override;
-
+  
+  void integrateYUpDown(Field3D &f) override;
+  
   const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
@@ -79,18 +98,11 @@ public:
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  bool canToFromFieldAligned() override{
-    return false;
-  }
+  bool canToFromFieldAligned() override { return false; }
+
 private:
-  FCITransform();
-
-  Mesh& mesh;
-
-  FCIMap forward_map;           /**< FCI map for field lines in +ve y */
-  FCIMap backward_map;          /**< FCI map for field lines in -ve y */
-
-  bool zperiodic;               /**< Is the z-direction periodic? */
+  /// FCI maps for each of the parallel slices
+  std::vector<FCIMap> field_line_maps;
 };
 
 #endif // __FCITRANSFORM_H__

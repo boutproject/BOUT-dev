@@ -10,11 +10,11 @@ Field3D N;
 BoutReal Dx, Dy, Dz;
 BoutReal Lx, Ly, Lz;
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = mesh->getCoordinates();
 
   meshoptions->get("Lx",Lx,1.0);
   meshoptions->get("Ly",Ly,1.0);
@@ -57,7 +57,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   mesh->communicate(N); // Communicate guard cells
 
   ddt(N) = 0.0;

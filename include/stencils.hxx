@@ -1,11 +1,8 @@
 /*!************************************************************************
  * \file stencils.hxx
  * 
- * Sets stencils for differencing, and handles indexing
+ * Sets stencils for differencing
  * 
- * NOTE: These methods, classes are all deprecated, and should be replaced
- *       with DataIterator iterations and indexing
- *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -35,57 +32,96 @@
 
 /// Defines a set of values in 1D in the neighbourhood of an index
 /// Used for calculating derivatives
-class stencil {
- public:
-  int jx, jy, jz; ///< central location
-  
-  BoutReal c, p, m, pp, mm; ///< stencil 2 each side of the centre
-  
-  /// constructor
-  stencil();
-  /// Constructor like pre r115 upwind methods (debugging)
-  stencil(BoutReal fc);
-  /// Constructor like pre r115 derivative methods
-  stencil(BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp);
-
-  /// Copy constructor
-  stencil(const stencil &s);
-
-  // operators
-  
-  stencil & operator=(const stencil &rhs);
-  stencil & operator=(BoutReal rhs);
-
-  stencil & operator+=(const stencil &rhs);
-  stencil & operator+=(BoutReal rhs);
-  stencil & operator-=(const stencil &rhs);
-  stencil & operator-=(BoutReal rhs);
-  stencil & operator*=(const stencil &rhs);
-  stencil & operator*=(BoutReal rhs);
-  stencil & operator/=(const stencil &rhs);
-  stencil & operator/=(BoutReal rhs);
-
-  const stencil operator+(const stencil &other) const;
-  const stencil operator+(BoutReal other) const;
-  const stencil operator-(const stencil &other) const;
-  const stencil operator-(BoutReal other) const;
-  const stencil operator*(const stencil &other) const;
-  const stencil operator*(BoutReal other) const;
-  const stencil operator/(const stencil &other) const;
-  const stencil operator/(BoutReal other) const;
-
-  friend const stencil operator+(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator-(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator*(BoutReal lhs, const stencil &rhs);
-  friend const stencil operator/(BoutReal lhs, const stencil &rhs);
-  
-  BoutReal min() const; ///< Minimum value over stencil
-  BoutReal max() const; ///< Maximum value over stencil
-  const stencil abs() const; ///< Stencil with all values replaced by absolute values
+struct stencil {
+  /// stencil 2 each side of the centre -- in effect means M?G > 2 is not supported
+  BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN; 
 };
 
-BoutReal min(const stencil &s); ///< Minimum value over a stencil
-BoutReal max(const stencil &s); ///< Maximum value over a stencil
-const stencil abs(const stencil &s);  ///< Copy of stencil with all values replaced by absolute values
 
+template<DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1, typename FieldType>
+void inline populateStencil(stencil &s, const FieldType& f, const typename FieldType::ind_type i){
+  static_assert(nGuard == 1 || nGuard == 2,
+		"populateStencil currently only supports one or two guard cells"
+		);
+  
+  switch(stagger) {
+  case(STAGGER::None):
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.mm = f.ynext(-2)[i.template minus<2, direction>()];
+      } else {
+        s.mm = f[i.template minus<2, direction>()];
+      }
+    }
+    if (direction == DIRECTION::YOrthogonal) {
+      s.m = f.ynext(-1)[i.template minus<1, direction>()];
+    } else {
+      s.m = f[i.template minus<1, direction>()];
+    }
+    s.c = f[i];
+    if (direction == DIRECTION::YOrthogonal) {
+      s.p = f.ynext(1)[i.template plus<1, direction>()];
+    } else {
+      s.p = f[i.template plus<1, direction>()];
+    }
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.pp = f.ynext(2)[i.template plus<2, direction>()];
+      } else {
+        s.pp = f[i.template plus<2, direction>()];
+      }
+    }
+    break;
+  case(STAGGER::C2L):
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.mm = f.ynext(-2)[i.template minus<2, direction>()];
+      } else {
+        s.mm = f[i.template minus<2, direction>()];
+      }
+    }
+    if (direction == DIRECTION::YOrthogonal) {
+      s.m = f.ynext(-1)[i.template minus<1, direction>()];
+    } else {
+      s.m = f[i.template minus<1, direction>()];
+    }
+    s.c = f[i];
+    s.p = s.c;
+    if (direction == DIRECTION::YOrthogonal) {
+      s.pp = f.ynext(1)[i.template plus<1, direction>()];
+    } else {
+      s.pp = f[i.template plus<1, direction>()];
+    }
+    break;
+  case(STAGGER::L2C):
+    if (direction == DIRECTION::YOrthogonal) {
+      s.mm = f.ynext(-1)[i.template minus<1, direction>()];
+    } else {
+      s.mm = f[i.template minus<1, direction>()];
+    }
+    s.m = f[i];
+    s.c = s.m;
+    if (direction == DIRECTION::YOrthogonal) {
+      s.p = f.ynext(1)[i.template plus<1, direction>()];
+    } else {
+      s.p = f[i.template plus<1, direction>()];
+    }
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.pp = f.ynext(2)[i.template plus<2, direction>()];
+      } else {
+        s.pp = f[i.template plus<2, direction>()];
+      }
+    }
+    break;
+  }
+  return;
+}
+
+template<DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1, typename FieldType >
+stencil inline populateStencil(const FieldType& f, const typename FieldType::ind_type i){
+  stencil s;
+  populateStencil<direction, stagger, nGuard, FieldType>(s, f, i);
+  return s;
+}
 #endif /* __STENCILS_H__ */

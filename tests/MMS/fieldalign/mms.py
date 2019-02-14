@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 # Test
-from sympy import symbols, cos, sin, diff
+from sympy import symbols, cos, diff
 from numpy import pi as pin
 from boutdata.mms import exprToStr
 

@@ -14,21 +14,14 @@
 
 #include "petscsnes.h"
 
-SNESSolver::SNESSolver(Options *opt) : Solver(opt) {
-  
-}
-
-SNESSolver::~SNESSolver() {
-}
-
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
  *
  * This function assumes the context void pointer is a pointer
  * to an SNESSolver object.
- */ 
-static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
+ */
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 
@@ -123,8 +116,8 @@ int SNESSolver::run() {
   SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
   MatView(Jmf, 	PETSC_VIEWER_STDOUT_SELF);
   */
-  SNESSolve(snes,NULL,snes_x);
-  
+  SNESSolve(snes, nullptr, snes_x);
+
   // Find out if converged
   SNESConvergedReason reason;
   SNESGetConvergedReason(snes,&reason);
@@ -139,12 +132,12 @@ int SNESSolver::run() {
   //output << "Number of SNES iterations: " << its << endl;
   
   // Put the result into variables
-  BoutReal *xdata;
+  const BoutReal *xdata;
   int ierr;
-  ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  load_vars(xdata);
-  ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
+  ierr = VecGetArrayRead(snes_x,&xdata);CHKERRQ(ierr);
+  load_vars(const_cast<BoutReal*>(xdata));
+  ierr = VecRestoreArrayRead(snes_x,&xdata);CHKERRQ(ierr);
+
   run_rhs(0.0); // Run RHS to calculate auxilliary variables
     
   /// Call the monitor function
@@ -158,13 +151,14 @@ int SNESSolver::run() {
 
 // f = rhs
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
-  BoutReal *xdata, *fdata;
+  const BoutReal *xdata;
+  BoutReal *fdata;
   int ierr;
-  
+
   // Get data from PETSc into BOUT++ fields
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_vars(xdata);  
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_vars(const_cast<BoutReal*>(xdata));
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   // Call RHS function
   run_rhs(0.0);

@@ -27,12 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_IDA
+#ifdef BOUT_HAS_IDA
 
-#include "../emptysolver.hxx"
-typedef EmptySolver IdaSolver;
- 
-#else
 class IdaSolver;
 
 #ifndef __IDA_SOLVER_H__
@@ -52,11 +48,15 @@ class IdaSolver;
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
-using std::vector;
+
+#include <bout/solverfactory.hxx>
+namespace {
+RegisterSolver<IdaSolver> registersolverida("ida");
+}
 
 class IdaSolver : public Solver {
  public:
-  IdaSolver(Options *opts = NULL);
+  IdaSolver(Options *opts = nullptr);
   ~IdaSolver();
   
   int init(int nout, BoutReal tstep) override;

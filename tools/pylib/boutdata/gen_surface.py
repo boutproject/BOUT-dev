@@ -1,29 +1,26 @@
+"""Flux surface generator for tokamak grid files
+
+"""
 from __future__ import print_function
-# Flux surface generator for tokamak grid files
 
-try:
-    import os
-    import sys
-    import glob
-except ImportError:
-    print("ERROR: os, sys or glob modules not available")
-    raise
+import numpy as np
 
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
-
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: boututils.DataFile not available")
-    print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
-    raise SystemExit
 
 def gen_surface(grid):
-    """Generator of flux surface indices"""
+    """Generator for iterating over flux surfaces
+
+    Parameters
+    ----------
+    grid : DataFile
+        An input grid file to read to find flux surfaces
+
+    Yields
+    ------
+    tuple : (int, list of int, bool)
+        A tuple containing the x index, list of y indices and whether
+        this flux surface is periodic
+
+    """
     # Read the grid data
     nx = grid.read("nx")
     ny = grid.read("ny")

@@ -41,17 +41,17 @@
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-PncFormat::PncFormat() {
+PncFormat::PncFormat(Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;
   default_rec = 0;
   rec_nr.clear();
 
-  fname = NULL;
+  fname = nullptr;
 }
 
-PncFormat::PncFormat(const char *name) {
+PncFormat::PncFormat(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;
@@ -194,7 +194,7 @@ void PncFormat::close() {
 
   int ret = ncmpi_close(ncfile);
   free(fname);
-  fname = NULL;
+  fname = nullptr;
 }
 
 void PncFormat::flush() {

@@ -104,12 +104,12 @@ IdaSolver::~IdaSolver() { }
 	       n3d, n2d, neq, local_N);
 
   // Allocate memory
-  
-  if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  if((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  if((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec
@@ -125,7 +125,16 @@ IdaSolver::~IdaSolver() { }
   set_id(NV_DATA_P(id));
   
   /// Get options
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
 
   BoutReal abstol, reltol;
   int maxl;
@@ -133,10 +142,9 @@ IdaSolver::~IdaSolver() { }
   int mukeep, mlkeep;
   bool use_precon;
   bool correct_start;
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
-  OPTION(options, mudq, n3d*(MXSUB+2));
-  OPTION(options, mldq, n3d*(MXSUB+2));
+
+  OPTION(options, mudq, band_width_default);
+  OPTION(options, mldq, band_width_default);
   OPTION(options, mukeep, n3d);
   OPTION(options, mlkeep, n3d);
   options->get("ATOL", abstol, 1.0e-12);
@@ -149,7 +157,7 @@ IdaSolver::~IdaSolver() { }
 
   // Call IDACreate and IDAMalloc to initialise
 
-  if((idamem = IDACreate()) == NULL)
+  if ((idamem = IDACreate()) == nullptr)
     throw BoutException("ERROR: IDACreate failed\n");
   
   if( IDASetUserData(idamem, this) < 0 ) // For callbacks, need pointer to solver object
@@ -173,13 +181,13 @@ IdaSolver::~IdaSolver() { }
   if(use_precon) {
     if(!have_user_precon()) {
       output.write("\tUsing BBD preconditioner\n");
-      if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
-			 ZERO, ida_bbd_res, NULL) )
-	throw BoutException("ERROR: IDABBDPrecInit failed\n");
+      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
+                         nullptr))
+        throw BoutException("ERROR: IDABBDPrecInit failed\n");
     }else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if( IDASpilsSetPreconditioner(idamem, NULL, ida_pre) )
-	throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
+      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre))
+        throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
     }
   }
 
@@ -230,8 +238,6 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
   if(!initialised)
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
-  
-  rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;

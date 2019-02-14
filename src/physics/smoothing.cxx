@@ -30,8 +30,9 @@
  *
  **************************************************************/
 
-#include <math.h>
+#include <cmath>
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <smoothing.hxx>
 #include <bout_types.hxx>
@@ -327,7 +328,7 @@ BoutReal Average_XY(const Field2D &var) {
 BoutReal Vol_Integral(const Field2D &var) {
   Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = var.getCoordinates();
 
   Field2D result = metric->J * var * metric->dx * metric->dy;
 
@@ -461,6 +462,6 @@ const Field3D nl_filter(const Field3D &f, BoutReal w) {
   /// Perform filtering in Z, Y then X
   Field3D result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
   /// Communicate boundaries
-  mesh->communicate(result);
+  f.getMesh()->communicate(result);
   return result;
 }

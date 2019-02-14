@@ -29,15 +29,13 @@
 
 #include "multigrid_laplace.hxx"
 #include <bout/openmpwrap.hxx>
+#include "unused.hxx"
 
 // Define basic multigrid algorithm
 
-MultigridAlg::MultigridAlg(int level,int lx,int lz, int gx, int gz, 
-			   MPI_Comm comm,int check) {
-
-  mglevel = level;
-  commMG = comm;
-  pcheck = check;
+MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm,
+                           int check)
+    : mglevel(level), pcheck(check), commMG(comm) {
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 
@@ -69,10 +67,6 @@ MultigridAlg::MultigridAlg(int level,int lx,int lz, int gx, int gz,
 
 MultigridAlg::~MultigridAlg() {
   output<<"End deconstruction Malg AAAA "<<numP<<endl;
-}
-
-void MultigridAlg::cleanMem() {
-  // Finalize, deallocate memory, etc.
   for(int i = 0;i<mglevel;i++) delete [] matmg[i];
   delete [] matmg;
 }
@@ -150,9 +144,11 @@ BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
     for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) pr[i] = 0.;
+    int xend = lnx[level-1]+1;
+    int zend = lnz[level-1]+1;
 BOUT_OMP(for collapse(2))
-    for (int i=1; i<lnx[level-1]+1; i++) {
-      for (int k=1; k<lnz[level-1]+1; k++) {
+    for (int i=1; i< xend; i++) {
+      for (int k=1; k< zend; k++) {
         int i2 = 2*i-1;
         int k2 = 2*k-1;
         int nn = i*(lnz[level-1]+2)+k;
@@ -175,9 +171,12 @@ BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
     for(int i=0;i<(lnx[level+1]+2)*(lnz[level+1]+2);i++) ix[i] = 0.;
+
+    int xend = lnx[level]+1;
+    int zend = lnz[level]+1;
 BOUT_OMP(for collapse(2))
-    for (int i=1; i<lnx[level]+1; i++) {
-      for (int k=1; k<lnz[level]+1; k++) {
+    for (int i=1; i< xend; i++) {
+      for (int k=1; k< zend; k++) {
         int i2 = 2*i-1;
         int k2 = 2*k-1;
         int nn = i*(lnz[level]+2)+k;
@@ -208,9 +207,12 @@ BOUT_OMP(parallel default(shared))
     for(int num =0;num < 2;num++) {
 BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
+
+      int xend = lnx[level]+1;
+      int zend = lnz[level]+1;
 BOUT_OMP(for collapse(2))
-      for(int i = 1;i<lnx[level]+1;i++)
-        for(int k=1;k<lnz[level]+1;k++) {
+      for(int i=1;i<xend;i++)
+        for(int k=1;k<zend;k++) {
           int nn = i*mm+k;
           BoutReal val = b[nn] - matmg[level][nn*9+3]*x0[nn-1]
 	   - matmg[level][nn*9+5]*x0[nn+1] - matmg[level][nn*9+1]*x0[nn-mm]
@@ -482,12 +484,17 @@ BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
   BoutReal val;
   BoutReal ini_e = 0.0;
 BOUT_OMP(parallel default(shared) )
+  {
+    int xend = lnx[level]+1;
+    int zend = lnz[level]+1;
 BOUT_OMP(for reduction(+:ini_e) collapse(2))
-  for(int i= 1;i<lnx[level]+1;i++)
-    for(int k=1;k<lnz[level]+1;k++) {
-      int ii = i*(lnz[level]+2)+k;
-      ini_e += x[ii]*y[ii];
+    for(int i= 1;i<xend;i++){
+      for(int k=1;k<zend;k++) {
+        int ii = i*(lnz[level]+2)+k;
+        ini_e += x[ii]*y[ii];
+      }
     }
+  }
   if(numP > 1) 
     MPI_Allreduce(&ini_e,&val,1,MPI_DOUBLE,MPI_SUM,commMG);
   else val = ini_e;
@@ -503,9 +510,12 @@ BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
     for(int i = 0;i<mm*(lnx[level]+2);i++) b[i] = 0.0;
+
+    int xend = lnx[level]+1;
+    int zend = lnz[level]+1;
 BOUT_OMP(for collapse(2))
-    for(int i = 1;i<lnx[level]+1;i++)
-      for(int k=1;k<lnz[level]+1;k++) {
+    for(int i=1;i<xend;i++) {
+      for(int k=1;k<zend;k++) {
         int nn = i*mm+k;
         b[nn] = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
           +matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
@@ -513,6 +523,7 @@ BOUT_OMP(for collapse(2))
           +matmg[level][nn*9+2]*x[nn-mm+1] + matmg[level][nn*9+6]*x[nn+mm-1]
           +matmg[level][nn*9+8]*x[nn+mm+1];
       } 
+    }
   }
   communications(b,level);
 }
@@ -527,9 +538,12 @@ BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
     for(int i = 0;i<mm*(lnx[level]+2);i++) r[i] = 0.0;
+
+    int xend = lnx[level]+1;
+    int zend = lnz[level]+1;
 BOUT_OMP(for collapse(2))
-    for(int i = 1;i<lnx[level]+1;i++)
-      for(int k=1;k<lnz[level]+1;k++) {
+    for(int i=1;i<xend;i++) {
+      for(int k=1;k<zend;k++) {
         int nn = i*mm+k;
         BoutReal val = matmg[level][nn*9+4]*x[nn] + matmg[level][nn*9+3]*x[nn-1]
           +matmg[level][nn*9+5]*x[nn+1] + matmg[level][nn*9+1]*x[nn-mm]
@@ -538,6 +552,7 @@ BOUT_OMP(for collapse(2))
           +matmg[level][nn*9+8]*x[nn+mm+1];
         r[nn] = b[nn]-val;
       } 
+    }
   }
   communications(r,level);
 
@@ -552,9 +567,12 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2)*9;i++)
       matmg[level-1][i] = 0.0;
+
+    int xend = lnx[level-1]+1;
+    int zend = lnz[level-1]+1;
 BOUT_OMP(for collapse(2))
-    for(int i = 1;i<lnx[level-1]+1;i++) {
-      for(int k = 1;k<lnz[level-1]+1;k++) {
+    for(int i=1;i<xend;i++) {
+      for(int k = 1;k<zend;k++) {
         int i2 = 2*i-1;
         int k2 = 2*k-1;
         int mm = i*(lnz[level-1]+2)+k;
@@ -594,9 +612,10 @@ BOUT_OMP(for collapse(2))
 }
 
 void MultigridAlg::communications(BoutReal* x, int level) {
- 
-  MPI_Status  status[4];
-  int stag,rtag,ierr;
+
+  MPI_Status status[4];
+  int stag, rtag;
+  MAYBE_UNUSED(int ierr);
 
   if(zNP > 1) {
     MPI_Datatype xvector;

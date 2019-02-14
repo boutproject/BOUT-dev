@@ -1,7 +1,7 @@
 
 BOUT_TOP	= ..
 
-DIRS			= field fileio invert mesh physics precon solver sys
+DIRS			= field fileio invert mesh physics solver sys
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
@@ -40,10 +40,11 @@ include $(BOUT_TOP)/make.config
 # certain if all directories are finished
 bout++.o: $(BOUT_TOP)/lib/.last.o.file .dummy
 
-# Catch the case of out-of-date make.config
-# This should be removed soon ...
-$(BOUT_TOP)/lib/.last.o.file:
-	@echo "make.config is out ouf date - run ./configure"
+# The recipie could be removed, as it only catches the case of
+# out-of-date make.config
+# The rest is needed to tell make that .last.o.file will be created
+$(BOUT_TOP)/lib/.last.o.file: .dummy
+	@echo "make.config is out of date - run ./configure"
 	@exit 1
 
 # make .libfast a real target - similar to .dummy to avoid that a

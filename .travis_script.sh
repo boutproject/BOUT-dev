@@ -58,21 +58,44 @@ time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS"
 conf=$?
 if test $conf -gt 0
 then
-    echo
+    RED_FG="\033[031m"
+    RESET_FG="\033[039m"
+    echo -e $RED_FG
+    echo "**************************************************"
     echo "Printing config.log:"
-    echo
+    echo "**************************************************"
+    echo -e $RESET_FG
     echo
     cat config.log
     echo
+    echo -e $RED_FG
+    echo "**************************************************"
     echo "Printing config-build.log:"
-    echo
+    echo "**************************************************"
+    echo -e $RESET_FG
     echo
     cat config-build.log
     exit $conf
 fi
 export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
-time make $MAIN_TARGET|| exit
+for target in ${MAIN_TARGET[@]}
+do
+    time make $target
+    make_exit=$?
+    if [[ $make_exit -gt 0 ]]; then
+	make clean > /dev/null
+	echo -e $RED_FG
+	echo "**************************************************"
+	echo "Printing make commands:"
+	echo "**************************************************"
+	echo -e $RESET_FG
+	echo
+	make -n $target
+	exit $make_exit
+    fi
+done
+
 if [[ ${TESTS} == 1 ]]
 then
     time make build-check || exit
@@ -86,6 +109,7 @@ fi
 if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests || exit
+    time py.test-3 tools/pylib/ || exit
 fi
 
 if [[ ${MMS} == 1 ]]
@@ -95,9 +119,15 @@ fi
 
 if [[ ${COVERAGE} == 1 ]]
 then
-   # Ensure that there is a corresponding .gcda file for every .gcno file
-   # This is to try and make the coverage report slightly more accurate
-   # It still won't include, e.g. any solvers we don't build with though
-   find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-   bash <(curl -s https://codecov.io/bash)
+    # Ensure that there is a corresponding .gcda file for every .gcno file
+    # This is to try and make the coverage report slightly more accurate
+    # It still won't include, e.g. any solvers we don't build with though
+    find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+
+    #Upload for codecov
+    bash <(curl -s https://codecov.io/bash)
+
+    #For codacy
+    bash ./.codacy_coverage.sh
+    
 fi

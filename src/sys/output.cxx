@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <output.hxx>
 #include <utils.hxx>
 
@@ -41,7 +41,7 @@ void Output::disable() {
 
 int Output::open(const char *fname, ...) {
 
-  if (fname == (const char *)NULL) {
+  if (fname == (const char *)nullptr) {
     return 1;
   }
 
@@ -89,7 +89,7 @@ void Output::write(const char *string, ...) {
 }
 
 void Output::vwrite(const char *string, va_list va) {
-  if (string == (const char *)NULL) {
+  if (string == (const char *)nullptr) {
     return;
   }
 
@@ -110,11 +110,12 @@ void Output::vprint(const char *string, va_list ap) {
     return; // Only output if to screen
   }
 
-  if (string == (const char *)NULL) {
+  if (string == (const char *)nullptr) {
     return;
   }
   bout_vsnprintf_(buffer, buffer_len, string, ap);
   std::cout << std::string(buffer);
+  std::cout.flush();
 }
 
 Output *Output::getInstance() {
@@ -149,6 +150,7 @@ ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
 ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
+ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
 
 #undef bout_vsnprint_pre

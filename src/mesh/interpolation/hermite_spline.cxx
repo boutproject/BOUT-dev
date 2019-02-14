@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright 2015 B.D.Dudson, P. Hill
+ * Copyright 2015-2018 B.D.Dudson, P. Hill
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -20,9 +20,10 @@
  *
  **************************************************************************/
 
-#include "bout/mesh.hxx"
 #include "globals.hxx"
 #include "interpolation.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mesh.hxx"
 
 #include <vector>
 
@@ -72,6 +73,10 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
           i_corner(x, y, z) = localmesh->xend - 1;
           t_x = 1.0;
         }
+        if (i_corner(x, y, z) < localmesh->xstart) {
+          i_corner(x, y, z) = localmesh->xstart;
+          t_x = 0.0;
+        }
 
         // Check that t_x and t_z are in range
         if ((t_x < 0.0) || (t_x > 1.0))
@@ -96,7 +101,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
   }
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
 }
@@ -109,11 +114,11 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
-  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", RGN_ALL);
   localmesh->communicateXZ(fz);
-  Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
@@ -158,6 +163,8 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
         // Interpolate in Z
         f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z) +
                                  fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
+
+        ASSERT2(finite(f_interp(x, y_next, z)));
       }
     }
   }
@@ -169,7 +176,7 @@ Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, con
   return interpolate(f);
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

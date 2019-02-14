@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from boututils.run_wrapper import shell, shell_safe
 
+#requires: all_tests
+
 print("Making test-attribs test")
 shell_safe("make > make.log")
 

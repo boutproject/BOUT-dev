@@ -37,8 +37,6 @@ int PowerSolver::init(int nout, BoutReal tstep) {
   // Allocate memory
   f0 = Array<BoutReal>(nlocal);
 
-  // Save the eigenvalue to the output
-  dump.add(eigenvalue, "eigenvalue", 1);
   eigenvalue = 0.0;
   
   // Put starting values into f0
@@ -74,9 +72,6 @@ int PowerSolver::run() {
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;

@@ -9,12 +9,13 @@
 
 #include "impls/bout/boutmesh.hxx"
 
-MeshFactory *MeshFactory::instance = NULL;
+MeshFactory *MeshFactory::instance = nullptr;
 
+/// Name of BoutMesh for Options
 #define MESH_BOUT  "bout"
 
 MeshFactory* MeshFactory::getInstance() {
-  if(instance == NULL) {
+  if (instance == nullptr) {
     // Create the singleton object
     instance = new MeshFactory();
   }
@@ -22,18 +23,18 @@ MeshFactory* MeshFactory::getInstance() {
 }
 
 Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
-  if(options == NULL)
+  if (options == nullptr)
     options = Options::getRoot()->getSection("mesh");
-  
-  if(source == NULL) {
-    string grid_name;
+
+  if (source == nullptr) {
+    std::string grid_name;
     if(options->isSet("file")) {
       // Specified mesh file
       options->get("file", grid_name, "");
       output << "\nGetting grid data from file " << grid_name << endl; 
 
       /// Create a grid file, using specified format if given
-      string grid_ext;
+      std::string grid_ext;
       options->get("format", grid_ext, "");
       
       /// Create a grid file
@@ -44,7 +45,7 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
       // Get the global option
       Options::getRoot()->get("grid", grid_name, "");
       output << "\nGetting grid data from file " << grid_name << endl; 
-      string grid_ext;
+      std::string grid_ext;
       Options::getRoot()->get("format", grid_ext, "");
 
       source = static_cast<GridDataSource *>(new GridFile(
@@ -57,7 +58,7 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
   }
 
   // Get the type of mesh
-  string type;
+  std::string type;
   options->get("type", type, MESH_BOUT);
   
   if(!strcasecmp(type.c_str(), MESH_BOUT)) {

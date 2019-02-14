@@ -56,9 +56,10 @@ class Ncxx4;
 
 class Ncxx4 : public DataFormat {
  public:
-  Ncxx4();
-  Ncxx4(const char *name);
-  Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
+  Ncxx4(Mesh* mesh_in = nullptr);
+  Ncxx4(const char *name, Mesh* mesh_in = nullptr);
+  Ncxx4(const std::string &name, Mesh* mesh_in = nullptr)
+    : Ncxx4(name.c_str(), mesh_in) {}
   ~Ncxx4();
 
   using DataFormat::openr;
@@ -74,8 +75,8 @@ class Ncxx4 : public DataFormat {
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var) override;
-  const vector<int> getSize(const string &var) override;
+  const std::vector<int> getSize(const char *var) override;
+  const std::vector<int> getSize(const std::string &var) override;
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
@@ -84,6 +85,12 @@ class Ncxx4 : public DataFormat {
     return setGlobalOrigin(x, y, z);
   }
   bool setRecord(int t) override; // negative -> latest
+
+  // Add a variable to the file
+  bool addVarInt(const std::string &name, bool repeat) override;
+  bool addVarBoutReal(const std::string &name, bool repeat) override;
+  bool addVarField2D(const std::string &name, bool repeat) override;
+  bool addVarField3D(const std::string &name, bool repeat) override;
 
   // Read / Write simple variables up to 3D
 
@@ -113,10 +120,17 @@ class Ncxx4 : public DataFormat {
 
   // Attributes
 
-  void setAttribute(const string &varname, const string &attrname, const string &text) override;
-  void setAttribute(const string &varname, const string &attrname, int value) override;
-  
- private:
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    const std::string &text) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    int value) override;
+  void setAttribute(const std::string &varname, const std::string &attrname,
+                    BoutReal value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, int &value) override;
+  bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) override;
+
+private:
 
   char *fname; ///< Current file name
 

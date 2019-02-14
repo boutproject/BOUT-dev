@@ -59,10 +59,10 @@ private:
 
   // Helper functions for reading
   void parse(const std::string &, std::string &, std::string &);
-  string getNextLine(std::ifstream &fin);
+  std::string getNextLine(std::ifstream &fin);
 
   // Helper functions for writing
-  void writeSection(Options *options, std::ofstream &fout);
+  void writeSection(const Options *options, std::ofstream &fout);
 };
 
 #endif // __OPTIONS_INI_H__

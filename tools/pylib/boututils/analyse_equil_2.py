@@ -1,37 +1,52 @@
+"""Equilibrium analysis routine
+
+Takes a RZ psi grid, and finds x-points and o-points
+"""
+
 from __future__ import print_function
 from __future__ import division
+
 from builtins import zip
 from builtins import str
 from builtins import range
 from past.utils import old_div
-#;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-# Equilibrium analysis routine
-# 
-# Takes a RZ psi grid, and finds x-points and o-points
-# 
-# F - F(nr, nz) 2D array of psi values
-# R - R(nr) 1D array of major radii
-# Z - Z(nz) 1D array of heights
-#
-# Returns a structure of critical points containing:
-#
-#   n_opoint, n_xpoint   - Number of O- and X-points
-#   primary_opt          - Index of plasma centre O-point
-#   inner_sep            - X-point index of inner separatrix
-#   opt_ri, opt_zi       - R and Z indices for each O-point
-#   opt_f                - Psi value at each O-point
-#   xpt_ri, xpt_zi       - R and Z indices for each X-point
-#   xpt_f                - Psi value of each X-point
-# 
 
-import numpy 
+import numpy
 from bunch import Bunch
-import local_min_max
+from . import local_min_max
 from scipy.interpolate import RectBivariateSpline
-from pylab import contour, gradient,  annotate, plot, draw
+from matplotlib.pyplot import contour, gradient,  annotate, plot, draw
 from crosslines import find_inter
 
-def analyse_equil ( F, R, Z):
+
+def analyse_equil(F, R, Z):
+    """Takes an RZ psi grid, and finds x-points and o-points
+
+    Parameters
+    ----------
+    F : array_like
+        2-D array of psi values
+    R : array_like
+        1-D array of major radii, its length should be the same as the
+        first dimension of F
+    Z : array_like
+        1-D array of heights, its length should be the same as the
+        second dimension of F
+
+    Returns
+    -------
+    bunch
+        A structure of critical points containing:
+
+          n_opoint, n_xpoint   - Number of O- and X-points
+          primary_opt          - Index of plasma centre O-point
+          inner_sep            - X-point index of inner separatrix
+          opt_ri, opt_zi       - R and Z indices for each O-point
+          opt_f                - Psi value at each O-point
+          xpt_ri, xpt_zi       - R and Z indices for each X-point
+          xpt_f                - Psi value of each X-point
+
+    """
     s = numpy.shape(F)
     nx = s[0]
     ny = s[1]

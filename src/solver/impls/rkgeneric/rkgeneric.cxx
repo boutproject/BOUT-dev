@@ -15,6 +15,7 @@
 RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+  canReset = true;
 }
 
 RKGenericSolver::~RKGenericSolver() {
@@ -36,10 +37,6 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
     return 1;
-
-  //Read options
-  if(options == nullptr)
-    options = Options::getRoot()->getSection("solver");
 
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
@@ -80,6 +77,17 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   scheme->init(nlocal,neq,adaptive,atol,rtol,options);
 
   return 0;
+}
+
+void RKGenericSolver::resetInternalFields(){
+  //Zero out history
+  BOUT_OMP(parallel for)
+  for(int i=0;i<nlocal;i++){
+    tmpState[i]=0; f2[i]=0;
+  }
+  
+  //Copy fields into current step
+  save_vars(std::begin(f0));
 }
 
 int RKGenericSolver::run() {
@@ -155,9 +163,6 @@ int RKGenericSolver::run() {
     
     /// Call the output step monitor function
     if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
-    
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
   }
   
   return 0;

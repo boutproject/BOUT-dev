@@ -71,7 +71,7 @@ class Vector3D : public FieldData {
    * used, then some book-keeping is needed to ensure
    * that fields are only destroyed once.
    */
-  ~Vector3D();
+  ~Vector3D() override;
 
   /*!
    * The components of the vector. These can be 
@@ -149,9 +149,6 @@ class Vector3D : public FieldData {
   Vector3D & operator/=(BoutReal rhs);
   Vector3D & operator/=(const Field2D &rhs);
   Vector3D & operator/=(const Field3D &rhs);
-
-  Vector3D & operator^=(const Vector3D &rhs); // Cross product
-  Vector3D & operator^=(const Vector2D &rhs);
   
   // Binary operators
 
@@ -171,27 +168,14 @@ class Vector3D : public FieldData {
 
   const Field3D operator*(const Vector3D &rhs) const; // Dot product
   const Field3D operator*(const Vector2D &rhs) const;
-  
-  /*!
-   * Cross product
-   *
-   * Note: This operator has low precedence in C++,
-   *       lower than multiplication for example
-   */ 
-  const Vector3D operator^(const Vector3D &rhs) const; 
-  
-  /*!
-   * Cross product
-   *
-   * Note: This operator has low precedence in C++,
-   *       lower than multiplication for example
-   */
-  const Vector3D operator^(const Vector2D &rhs) const;
-  
+
   /*!
    * Set variable cell location
    */ 
   void setLocation(CELL_LOC loc); 
+
+  // Get variable cell location
+  CELL_LOC getLocation() const;
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;
@@ -204,15 +188,16 @@ class Vector3D : public FieldData {
   int  BoutRealSize() const override { return 3; }
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition) {
+  void applyBoundary(const std::string &condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL
+  CELL_LOC location; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
@@ -221,12 +206,19 @@ const Vector3D operator*(BoutReal lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
 
+/// Cross-product of two vectors
+const Vector3D cross(const Vector3D & lhs, const Vector3D &rhs);
+
+/// Cross-product of two vectors
+const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
+
+
 /*!
  * Absolute magnitude (modulus) of a vector  |v|
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
-const Field3D abs(const Vector3D &v);
+const Field3D abs(const Vector3D &v, REGION region = RGN_ALL);
 
 /*!
  * @brief Time derivative of 3D vector field

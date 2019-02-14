@@ -39,7 +39,7 @@
  *     // Set an index to true to skip this index
  *     mask(3, 4, 5) = true;
  *     // Iterate over field
- *     for (auto index : field) {
+ *     for (const auto &index : field) {
  *       // Skip any indices which are set to true in the mask
  *       if (mask(index.x, index.y, index.z)) continue;
  *       ...
@@ -61,7 +61,7 @@ public:
   BoutMask(Mesh& mesh, bool value=false) :
     BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   // Default constructor uses global mesh
-  BoutMask() : BoutMask(*mesh) {}
+  BoutMask() : BoutMask(*bout::globals::mesh) {}
 
   // Assignment from bool
   BoutMask& operator=(bool value) {

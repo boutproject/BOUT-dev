@@ -29,21 +29,19 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "bout_types.hxx"
+#include "boutexception.hxx"
+#include <globals.hxx>
+#include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
-#include "boutexception.hxx"
-
-#include "bout/deprecated.hxx"
-
-#include "bout/dataiterator.hxx"
 
 #include "unused.hxx"
 
 class Mesh;
-extern Mesh * mesh;
+class Coordinates;
 
 #ifdef TRACK
 #include <string>
@@ -56,28 +54,21 @@ extern Mesh * mesh;
  */
 class Field {
  public:
-  Field();
+  Field() = default;
   Field(Mesh * localmesh);
   virtual ~Field() { }
 
-  // Data access
-  virtual const BoutReal& operator[](const Indices &i) const = 0;
-
-  virtual void setLocation(CELL_LOC loc) {
-    if (loc != CELL_CENTRE)
-      throw BoutException("not implemented!");
+  virtual void setLocation(CELL_LOC UNUSED(loc)) {
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::setLocation which is intentionally not fully implemented.");
   }
   virtual CELL_LOC getLocation() const {
-    return CELL_CENTRE;
+    AUTO_TRACE();
+    throw BoutException(
+        "Calling Field::getLocation which is intentionally not fully implemented.");
   }
 
-#ifdef TRACK
-  std::string getName() const { return name; }
-  void setName(std::string s) { name = s; }
-#else
-  std::string getName() const { return ""; }
-  void setName(std::string UNUSED(s)) {}
-#endif
   std::string name;
 
 #if CHECK > 0
@@ -95,16 +86,27 @@ class Field {
     return true;
   }
   
-  // Status of the 4 boundaries
-  bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
+  /// Status of the 4 boundaries
+  bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
+
   virtual Mesh * getMesh() const{
     if (fieldmesh){
       return fieldmesh;
     } else {
-      return mesh;
+      return bout::globals::mesh;
     }
   }
+
+  /// Returns a pointer to the coordinates object at this field's
+  /// location from the mesh this field is on.
+  virtual Coordinates *getCoordinates() const;
+  
+  /// Returns a pointer to the coordinates object at the requested
+  /// location from the mesh this field is on. If location is CELL_DEFAULT
+  /// then return coordinates at field location
+  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
+  
   /*!
    * Return the number of nx points
    */
@@ -118,13 +120,13 @@ class Field {
    */
   virtual int getNz() const;
 
-  /// Make region mendatory for all fields
-  virtual const IndexRange region(REGION rgn) const = 0;
- protected:
-  Mesh * fieldmesh;
-  /// Supplies an error method. Currently just prints and exits, but
-  /// should do something more cunning...
-  DEPRECATED(void error(const char *s, ...) const);
+protected:
+  Mesh* fieldmesh{nullptr};
+  mutable Coordinates* fieldCoordinates{nullptr};
 };
+
+/// Unary + operator. This doesn't do anything
+template<typename T>
+T operator+(const T& f) {return f;}
 
 #endif /* __FIELD_H__ */

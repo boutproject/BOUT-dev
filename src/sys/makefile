@@ -1,9 +1,9 @@
 
 BOUT_TOP = ../..
 DIRS		= options
-SOURCEC		= boutexception.cxx comm_group.cxx derivs.cxx \
+SOURCEC		= bout_types.cxx boutexception.cxx derivs.cxx \
 		  msg_stack.cxx options.cxx output.cxx \
-		  stencils.cxx utils.cxx optionsreader.cxx boutcomm.cxx \
+		  utils.cxx optionsreader.cxx boutcomm.cxx \
 		  timer.cxx range.cxx petsclib.cxx expressionparser.cxx \
 	          slepclib.cxx
 

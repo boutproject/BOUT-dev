@@ -6,8 +6,9 @@ BOUT_TOP = ../..
 
 BOUT_TEST_DIR = .
 
-GTEST_DIR = $(BOUT_TOP)/googletest/googletest
-GMOCK_DIR = $(BOUT_TOP)/googletest/googlemock
+GTEST_BASE = $(BOUT_TOP)/externalpackages/googletest
+GTEST_DIR = $(GTEST_BASE)/googletest
+GMOCK_DIR = $(GTEST_BASE)/googlemock
 
 GTEST_SOURCES = $(GTEST_DIR)/src/gtest-all.cc
 
@@ -31,7 +32,7 @@ include $(BOUT_TOP)/make.config
 LDFLAGS += -pthread
 
 # Existence of this file indicates that GTEST has been downloaded
-GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
+GTEST_SENTINEL = $(GTEST_BASE)/README.md
 
 # House-keeping build targets.
 
@@ -90,7 +91,8 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 #       The GTEST_SENTINEL dependency cannot be added to the %.o target, since this results in the %.o
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
-	./serial_tests
+	@echo "Running unit test"
+	@./quiet.sh ./serial_tests
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.

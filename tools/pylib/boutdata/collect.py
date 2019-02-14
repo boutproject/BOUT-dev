@@ -1,47 +1,37 @@
 from __future__ import print_function
 from __future__ import division
-try:
-    from builtins import str
-except:
-    print("Warning: No str in builtins")
 
-try:
-    from builtins import range
-except:
-    print("Warning: No range in builtins")
+from builtins import str, range
 
-# Requires:
-#  - boututils
-#  - NumPy
+import os
+import sys
+import glob
 
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: boututils.DataFile couldn't be loaded")
-    raise
+import numpy as np
 
-try:
-    import os
-    import sys
-    import glob
-except ImportError:
-    print("ERROR: os, sys or glob modules not available")
-    raise
+from boututils.datafile import DataFile
+from boututils.boutarray import BoutArray
 
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
 
 def findVar(varname, varlist):
-    """
-    Find variable name in a list
+    """Find variable name in a list
 
     First does case insensitive comparison, then
     checks for abbreviations.
 
     Returns the matched string, or raises a ValueError
+
+    Parameters
+    ----------
+    varname : str
+        Variable name to look for
+    varlist : list of str
+        List of possible variable names
+
+    Returns
+    -------
+    str
+        The closest match to varname in varlist
 
     """
     # Try a variation on the case
@@ -51,103 +41,278 @@ def findVar(varname, varlist):
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
         return v[0]
     elif len(v) > 1:
-        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        print("Variable '"+varname +
+              "' not found, and is ambiguous. Could be one of: "+str(v))
         raise ValueError("Variable '"+varname+"' not found")
 
     # None found. Check if it's an abbreviation
-    v = [name for name in varlist if name[:len(varname)].lower() == varname.lower()]
+    v = [name for name in varlist
+         if name[:len(varname)].lower() == varname.lower()]
     if len(v) == 1:
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
         return v[0]
 
     if len(v) > 1:
-        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        print("Variable '"+varname +
+              "' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found")
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp",strict=False,tind_auto=False):
+
+def _convert_to_nice_slice(r, N, name="range"):
+    """Convert r to a "sensible" slice in range [0, N]
+
+    If r is None, the slice corresponds to the full range.
+
+    Lists or tuples of one or two ints are converted to slices.
+
+    Slices with None for one or more arguments have them replaced with
+    sensible values.
+
+    Private helper function for collect
+
+    Parameters
+    ----------
+    r : None, int, slice or list of int
+        Range-like to check/convert to slice
+    N : int
+        Size of range
+    name : str, optional
+        Name of range for error message
+
+    Returns
+    -------
+    slice
+        "Sensible" slice with no Nones for start, stop or step
+    """
+
+    if N == 0:
+        raise ValueError("No data available in %s"%name)
+    if r is None:
+        temp_slice = slice(N)
+    elif isinstance(r, slice):
+        temp_slice = r
+    elif isinstance(r, (int, np.integer)):
+        if r >= N or r <-N:
+            # raise out of bounds error as if we'd tried to index the array with r
+            # without this, would return an empty array instead
+            raise IndexError(name+" index out of range, value was "+str(r))
+        elif r == -1:
+            temp_slice = slice(r, None)
+        else:
+            temp_slice = slice(r, r + 1)
+    elif len(r) == 0:
+        return _convert_to_nice_slice(None, N, name)
+    elif len(r) == 1:
+        return _convert_to_nice_slice(r[0], N, name)
+    elif len(r) == 2:
+        r2 = list(r)
+        if r2[0] < 0:
+            r2[0] += N
+        if r2[1] < 0:
+            r2[1] += N
+        if r2[0] > r2[1]:
+            raise ValueError("{} start ({}) is larger than end ({})"
+                             .format(name, *r2))
+        # Lists uses inclusive end, we need exclusive end
+        temp_slice = slice(r2[0], r2[1] + 1)
+    elif len(r) == 3:
+        # Convert 3 element list to slice object
+        temp_slice = slice(r[0],r[1],r[2])
+    else:
+        raise ValueError("Couldn't convert {} ('{}') to slice".format(name, r))
+
+    # slice.indices converts None to actual values
+    return slice(*temp_slice.indices(N))
+
+
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
+            yguards=False, xguards=True, info=True, prefix="BOUT.dmp",
+            strict=False, tind_auto=False, datafile_cache=None):
     """Collect a variable from a set of BOUT++ outputs.
 
-    data = collect(name)
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    xind, yind, zind, tind : int, slice or list of int, optional
+        Range of X, Y, Z or time indices to collect. Either a single
+        index to collect, a list containing [start, end] (inclusive
+        end), or a slice object (usual python indexing). Default is to
+        fetch all indices
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
+    yguards : bool, optional
+        Collect Y boundary guard cells? (default: False)
+    xguards : bool, optional
+        Collect X boundary guard cells? (default: True)
+        (Set to True to be consistent with the definition of nx)
+    info : bool, optional
+        Print information about collect? (default: True)
+    strict : bool, optional
+        Fail if the exact variable name is not found? (default: False)
+    tind_auto : bool, optional
+        Read all files, to get the shortest length of time_indices.
+        Useful if writing got interrupted (default: False)
+    datafile_cache : datafile_cache_tuple, optional
+        Optional cache of open DataFile instances: namedtuple as returned
+        by create_cache. Used by BoutOutputs to pass in a cache so that we
+        do not have to re-open the dump files to read another variable
+        (default: None)
 
-    varname   Name of the variable (string)
+    Examples
+    --------
 
-    Optional arguments:
+    >>> collect(name)
+    BoutArray([[[[...]]]])
 
-    xind = [min,max]   Range of X indices to collect
-    yind = [min,max]   Range of Y indices to collect
-    zind = [min,max]   Range of Z indices to collect
-    tind = [min,max]   Range of T indices to collect
-
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
-    yguards = False        Collect Y boundary guard cells?
-    xguards = True         Collect X boundary guard cells?
-                           (Set to True to be consistent with the
-                           definition of nx)
-    info    = True         Print information about collect?
-    strict  = False        Fail if the exact variable name is not found?
-    tind_auto = False      Read all files, to get the shortest length of time_indices
-                           useful if writing got interrupted.
     """
-    # Search for BOUT++ dump files
-    file_list,parallel,suffix=findFiles(path,prefix)
-    if parallel:
-        print("Single (parallel) data file")
-        f = DataFile(file_list[0]) # Open the file
 
-        data = f.read(varname)
-        return data
+    if datafile_cache is None:
+        # Search for BOUT++ dump files
+        file_list, parallel, _ = findFiles(path, prefix)
+    else:
+        parallel = datafile_cache.parallel
+        file_list = datafile_cache.file_list
+
+    def getDataFile(i):
+        """Get the DataFile from the cache, if present, otherwise open the
+        DataFile
+
+        """
+        if datafile_cache is not None:
+            return datafile_cache.datafile_list[i]
+        else:
+            return DataFile(file_list[i])
+
+    if parallel:
+        if info:
+            print("Single (parallel) data file")
+
+        f = getDataFile(0)
+
+        try:
+            mxg = f["MXG"]
+        except KeyError:
+            mxg = 0
+            print("MXG not found, setting to {}".format(mxg))
+        try:
+            myg = f["MYG"]
+        except KeyError:
+            myg = 0
+            print("MYG not found, setting to {}".format(myg))
+
+        if xguards:
+            nx = f["nx"]
+        else:
+            nx = f["nx"] - 2*mxg
+        if yguards:
+            ny = f["ny"] + 2*myg
+        else:
+            ny = f["ny"]
+        nz = f["MZ"]
+        t_array = f.read("t_array")
+        if t_array is None:
+            nt = 1
+            t_array = np.zeros(1)
+        else:
+            try:
+                nt = len(t_array)
+            except TypeError:
+                # t_array is not an array here, which probably means it was a
+                # one-element array and has been read as a scalar.
+                nt = 1
+
+        xind = _convert_to_nice_slice(xind, nx, "xind")
+        yind = _convert_to_nice_slice(yind, ny, "yind")
+        zind = _convert_to_nice_slice(zind, nz, "zind")
+        tind = _convert_to_nice_slice(tind, nt, "tind")
+
+        if not xguards:
+            xind = slice(xind.start+mxg, xind.stop+mxg, xind.step)
+        if not yguards:
+            yind = slice(yind.start+myg, yind.stop+myg, yind.step)
+
+        ndims = f.ndims(varname)
+        if ndims == 0:
+            ranges = []
+        elif ndims == 1:
+            ranges = [tind]
+        elif ndims == 2:
+            # Field2D
+            ranges = [xind, yind]
+        elif ndims == 3:
+            if f.dimensions(varname)[2] == 'z':
+                # Field3D
+                ranges = [xind, yind, zind]
+            else:
+                # evolving Field2D
+                ranges = [tind, xind, yind]
+        elif ndims == 4:
+            # evolving Field3D
+            ranges = [tind, xind, yind, zind]
+        else:
+            raise ValueError("Variable has too many dimensions ({}), expected at most 4"
+                             .format(ndims))
+
+        data = f.read(varname, ranges)
+        var_attributes = f.attributes(varname)
+        return BoutArray(data, attributes=var_attributes)
+
     nfiles = len(file_list)
 
     # Read data from the first file
-    f = DataFile(file_list[0])
+    f = getDataFile(0)
 
-    try:
-        dimens = f.dimensions(varname)
-        #ndims = len(dimens)
-        ndims = f.ndims(varname)
-    except:
+    if varname not in f.keys():
         if strict:
-            raise
+            raise ValueError("Variable '{}' not found".format(varname))
         else:
-            # Find the variable
             varname = findVar(varname, f.list())
 
-            dimens = f.dimensions(varname)
-            #ndims = len(dimens)
-            ndims = f.ndims(varname)
+    var_attributes = f.attributes(varname)
+    dimens = f.dimensions(varname)
+    ndims = f.ndims(varname)
 
     # ndims is 0 for reals, and 1 for f.ex. t_array
-    if ndims < 2:
+    if ndims == 0:
         # Just read from file
-        if varname != 't_array':
-            data = f.read(varname)
-        elif (varname == 't_array') and (tind is None):
-            data = f.read(varname)
-        elif (varname == 't_array') and (tind is not None):
-            data = f.read(varname, ranges=[tind[0],tind[1]+1])
-        f.close()
-        return data
+        data = f.read(varname)
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
+        return BoutArray(data, attributes=var_attributes)
 
     if ndims > 4:
         raise ValueError("ERROR: Too many dimensions")
 
-    mxsub = f.read("MXSUB")
-    if mxsub is None:
-        raise ValueError("Missing MXSUB variable")
-    mysub = f.read("MYSUB")
-    mz    = f.read("MZ")
-    myg   = f.read("MYG")
+    def load_and_check(varname):
+        var = f.read(varname)
+        if var is None:
+            raise ValueError("Missing " + varname + " variable")
+        return var
+
+    mxsub = load_and_check("MXSUB")
+    mysub = load_and_check("MYSUB")
+    mz = load_and_check("MZ")
+    mxg = load_and_check("MXG")
+    myg = load_and_check("MYG")
     t_array = f.read("t_array")
     if t_array is None:
         nt = 1
         t_array = np.zeros(1)
     else:
-        nt = len(t_array)
+        try:
+            nt = len(t_array)
+        except TypeError:
+            # t_array is not an array here, which probably means it was a
+            # one-element array and has been read as a scalar.
+            nt = 1
         if tind_auto:
-            for file in file_list:
-                t_array_=DataFile(file).read("t_array")
-                nt = min(len(t_array_),nt)
+            for i in range(nfiles):
+                t_array_ = getDataFile(i).read("t_array")
+                nt = min(len(t_array_), nt)
 
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
@@ -170,11 +335,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     except KeyError:
         nxpe = 1
         print("NXPE not found, setting to {}".format(nxpe))
-    try:
-        mxg  = f["MXG"]
-    except KeyError:
-        mxg = 0
-        print("MXG not found, setting to {}".format(mxg))
     try:
         nype = f["NYPE"]
     except KeyError:
@@ -199,56 +359,32 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     else:
         ny = mysub * nype
 
-    f.close();
+    xind = _convert_to_nice_slice(xind, nx, "xind")
+    yind = _convert_to_nice_slice(yind, ny, "yind")
+    zind = _convert_to_nice_slice(zind, nz, "zind")
+    tind = _convert_to_nice_slice(tind, nt, "tind")
 
-    # Check ranges
+    xsize = xind.stop - xind.start
+    ysize = yind.stop - yind.start
+    zsize = int(np.ceil(float(zind.stop - zind.start)/zind.step))
+    tsize = int(np.ceil(float(tind.stop - tind.start)/tind.step))
 
-    def check_range(r, low, up, name="range"):
-        r2 = r
-        if r is not None:
-            try:
-                n = len(r2)
-            except:
-                # No len attribute, so probably a single number
-                r2 = [r2,r2]
-            if (len(r2) < 1) or (len(r2) > 2):
-                print("WARNING: "+name+" must be [min, max]")
-                r2 = None
-            else:
-                if len(r2) == 1:
-                    r2 = [r2,r2]
-                if r2[0] < 0 and low >= 0:
-                    r2[0]+=(up-low+1)
-                if r2[1] < 0 and low >= 0:
-                    r2[1]+=(up-low+1)
-                if r2[0] < low:
-                    r2[0] = low
-                if r2[0] > up:
-                    r2[0] = up
-                if r2[1] < low:
-                    r2[1] = low
-                if r2[1] > up:
-                    r2[1] = up
-                if r2[0] > r2[1]:
-                    tmp = r2[0]
-                    r2[0] = r2[1]
-                    r2[1] = tmp
+    if ndims == 1:
+        if tind is None:
+            data = f.read(varname)
         else:
-            r2 = [low, up]
-        return r2
+            data = f.read(varname, ranges=[tind])
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
+        return BoutArray(data, attributes=var_attributes)
 
-    xind = check_range(xind, 0, nx-1, "xind")
-    yind = check_range(yind, 0, ny-1, "yind")
-    zind = check_range(zind, 0, nz-1, "zind")
-    tind = check_range(tind, 0, nt-1, "tind")
-
-    xsize = xind[1] - xind[0] + 1
-    ysize = yind[1] - yind[0] + 1
-    zsize = zind[1] - zind[0] + 1
-    tsize = tind[1] - tind[0] + 1
+    if datafile_cache is None:
+        # close the DataFile if we are not keeping it in a cache
+        f.close()
 
     # Map between dimension names and output size
-    sizes = {'x':xsize, 'y':ysize, 'z':zsize, 't':tsize}
+    sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
 
     # Create a list with size of each dimension
     ddims = [sizes[d] for d in dimens]
@@ -265,139 +401,171 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if yguards:
             # Get local ranges
-            ymin = yind[0] - pe_yind*mysub
-            ymax = yind[1] - pe_yind*mysub
+            ystart = yind.start - pe_yind*mysub
+            ystop = yind.stop - pe_yind*mysub
 
             # Check lower y boundary
             if pe_yind == 0:
                 # Keeping inner boundary
-                if ymax < 0: inrange = False
-                if ymin < 0: ymin = 0
+                if ystop <= 0:
+                    inrange = False
+                if ystart < 0:
+                    ystart = 0
             else:
-                if ymax < myg: inrange = False
-                if ymin < myg: ymin = myg
+                if ystop < myg-1:
+                    inrange = False
+                if ystart < myg:
+                    ystart = myg
 
             # Upper y boundary
             if pe_yind == (nype - 1):
                 # Keeping outer boundary
-                if ymin >= (mysub + 2*myg): inrange = False
-                if ymax > (mysub + 2*myg - 1): ymax = (mysub + 2*myg - 1)
+                if ystart >= (mysub + 2*myg):
+                    inrange = False
+                if ystop > (mysub + 2*myg):
+                    ystop = (mysub + 2*myg)
             else:
-                if ymin >= (mysub + myg): inrange = False
-                if ymax >= (mysub + myg): ymax = (mysub+myg-1)
+                if ystart >= (mysub + myg):
+                    inrange = False
+                if ystop > (mysub + myg):
+                    ystop = (mysub + myg)
 
             # Calculate global indices
-            ygmin = ymin + pe_yind * mysub
-            ygmax = ymax + pe_yind * mysub
+            ygstart = ystart + pe_yind * mysub
+            ygstop = ystop + pe_yind * mysub
 
         else:
             # Get local ranges
-            ymin = yind[0] - pe_yind*mysub + myg
-            ymax = yind[1] - pe_yind*mysub + myg
+            ystart = yind.start - pe_yind*mysub + myg
+            ystop = yind.stop - pe_yind*mysub + myg
 
-            if (ymin >= (mysub + myg)) or (ymax < myg):
-                inrange = False # Y out of range
+            if (ystart >= (mysub + myg)) or (ystop <= myg):
+                inrange = False  # Y out of range
 
-            if ymin < myg:
-                ymin = myg
-            if ymax >= mysub+myg:
-                ymax = myg + mysub - 1
+            if ystart < myg:
+                ystart = myg
+            if ystop > mysub + myg:
+                ystop = myg + mysub
 
             # Calculate global indices
-            ygmin = ymin + pe_yind * mysub - myg
-            ygmax = ymax + pe_yind * mysub - myg
+            ygstart = ystart + pe_yind * mysub - myg
+            ygstop = ystop + pe_yind * mysub - myg
 
         if xguards:
             # Get local ranges
-            xmin = xind[0] - pe_xind*mxsub
-            xmax = xind[1] - pe_xind*mxsub
+            xstart = xind.start - pe_xind*mxsub
+            xstop = xind.stop - pe_xind*mxsub
 
             # Check lower x boundary
             if pe_xind == 0:
                 # Keeping inner boundary
-                if xmax < 0: inrange = False
-                if xmin < 0: xmin = 0
+                if xstop <= 0:
+                    inrange = False
+                if xstart < 0:
+                    xstart = 0
             else:
-                if xmax < mxg: inrange = False
-                if xmin < mxg: xmin = mxg
+                if xstop <= mxg:
+                    inrange = False
+                if xstart < mxg:
+                    xstart = mxg
 
             # Upper x boundary
             if pe_xind == (nxpe - 1):
                 # Keeping outer boundary
-                if xmin >= (mxsub + 2*mxg): inrange = False
-                if xmax > (mxsub + 2*mxg - 1): xmax = (mxsub + 2*mxg - 1)
+                if xstart >= (mxsub + 2*mxg):
+                    inrange = False
+                if xstop > (mxsub + 2*mxg):
+                    xstop = (mxsub + 2*mxg)
             else:
-                if xmin >= (mxsub + mxg): inrange = False
-                if xmax >= (mxsub + mxg): xmax = (mxsub+mxg-1)
+                if xstart >= (mxsub + mxg):
+                    inrange = False
+                if xstop > (mxsub + mxg):
+                    xstop = (mxsub+mxg)
 
             # Calculate global indices
-            xgmin = xmin + pe_xind * mxsub
-            xgmax = xmax + pe_xind * mxsub
+            xgstart = xstart + pe_xind * mxsub
+            xgstop = xstop + pe_xind * mxsub
 
         else:
             # Get local ranges
-            xmin = xind[0] - pe_xind*mxsub + mxg
-            xmax = xind[1] - pe_xind*mxsub + mxg
+            xstart = xind.start - pe_xind*mxsub + mxg
+            xstop = xind.stop - pe_xind*mxsub + mxg
 
-            if (xmin >= (mxsub + mxg)) or (xmax < mxg):
-                inrange = False # X out of range
+            if (xstart >= (mxsub + mxg)) or (xstop <= mxg):
+                inrange = False  # X out of range
 
-            if xmin < mxg:
-                xmin = mxg
-            if xmax >= mxsub+mxg:
-                xmax = mxg + mxsub - 1
+            if xstart < mxg:
+                xstart = mxg
+            if xstop > mxsub + mxg:
+                xstop = mxg + mxsub
 
             # Calculate global indices
-            xgmin = xmin + pe_xind * mxsub - mxg
-            xgmax = xmax + pe_xind * mxsub - mxg
-
+            xgstart = xstart + pe_xind * mxsub - mxg
+            xgstop = xstop + pe_xind * mxsub - mxg
 
         # Number of local values
-        nx_loc = xmax - xmin + 1
-        ny_loc = ymax - ymin + 1
+        nx_loc = xstop - xstart
+        ny_loc = ystop - ystart
 
         if not inrange:
-            continue # Don't need this file
+            continue  # Don't need this file
 
-        filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
-            sys.stdout.write("\rReading from " + filename + ": [" + \
-                                 str(xmin) + "-" + str(xmax) + "][" + \
-                                 str(ymin) + "-" + str(ymax) + "] -> [" + \
-                                 str(xgmin) + "-" + str(xgmax) + "][" + \
-                                 str(ygmin) + "-" + str(ygmax) + "]")
+            sys.stdout.write("\rReading from " + file_list[i] + ": [" +
+                             str(xstart) + "-" + str(xstop-1) + "][" +
+                             str(ystart) + "-" + str(ystop-1) + "] -> [" +
+                             str(xgstart) + "-" + str(xgstop-1) + "][" +
+                             str(ygstart) + "-" + str(ygstop-1) + "]")
 
-        f = DataFile(filename)
+        f = getDataFile(i)
 
         if ndims == 4:
-            d = f.read(varname, ranges=[tind[0],tind[1]+1,
-                                        xmin, xmax+1,
-                                        ymin, ymax+1,
-                                        zind[0],zind[1]+1])
-            data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
+            d = f.read(varname, ranges=[tind,
+                                        slice(xstart, xstop),
+                                        slice(ystart, ystop),
+                                        zind])
+            data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
         elif ndims == 3:
             # Could be xyz or txy
 
-            if dimens[2] == 'z': # xyz
-                d = f.read(varname, ranges=[xmin, xmax+1,
-                                            ymin, ymax+1,
-                                            zind[0],zind[1]+1])
-                data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
-            else: # txy
-                d = f.read(varname, ranges=[tind[0],tind[1]+1,
-                                            xmin, xmax+1,
-                                            ymin, ymax+1])
-                data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+            if dimens[2] == 'z':  # xyz
+                d = f.read(varname, ranges=[slice(xstart, xstop),
+                                            slice(ystart, ystop),
+                                            zind])
+                data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                     (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
+            else:  # txy
+                d = f.read(varname, ranges=[tind,
+                                            slice(xstart, xstop),
+                                            slice(ystart, ystop)])
+                data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                     (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
         elif ndims == 2:
             # xy
-            d = f.read(varname, ranges=[xmin, xmax+1,
-                                        ymin, ymax+1])
-            data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+            d = f.read(varname, ranges=[slice(xstart, xstop),
+                                        slice(ystart, ystop)])
+            data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
 
-        f.close()
+        if datafile_cache is None:
+            # close the DataFile if we are not keeping it in a cache
+            f.close()
+
+    # if a step was requested in x or y, need to apply it here
+    if xind.step is not None or yind.step is not None:
+        if ndims == 4:
+            data = data[:, ::xind.step, ::yind.step]
+        elif ndims == 3:
+            if dimens[2] == 'z':
+                data = data[::xind.step, ::yind.step, :]
+            else:
+                data = data[:, ::xind.step, ::yind.step]
+        elif ndims == 2:
+            data = data[::xind.step, ::yind.step]
 
     # Force the precision of arrays of dimension>1
-    if ndims>1:
+    if ndims > 1:
         try:
             data = data.astype(t_array.dtype, copy=False)
         except TypeError:
@@ -406,23 +574,28 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")
-    return data
+    return BoutArray(data, attributes=var_attributes)
 
 
 def attributes(varname, path=".", prefix="BOUT.dmp"):
-    """
-    Returns a dictionary of variable attributes
+    """Return a dictionary of variable attributes in an output file
 
-    varname   Name of the variable (string)
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
 
-    Optional arguments:
-
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
-    
+    Returns
+    -------
+    dict
+        A dictionary of attributes of varname
     """
     # Search for BOUT++ dump files in NetCDF format
-    file_list,_,_=findFiles(path,prefix)
+    file_list, _, _ = findFiles(path, prefix)
 
     # Read data from the first file
     f = DataFile(file_list[0])
@@ -431,56 +604,121 @@ def attributes(varname, path=".", prefix="BOUT.dmp"):
 
 
 def dimensions(varname, path=".", prefix="BOUT.dmp"):
+    """Return the names of dimensions of a variable in an output file
+
+    Parameters
+    ----------
+    varname : str
+        Name of the variable
+    path : str, optional
+        Path to data files (default: ".")
+    prefix : str, optional
+        File prefix (default: "BOUT.dmp")
+
+    Returns
+    -------
+    tuple of strs
+        The elements of the tuple give the names of corresponding variable
+        dimensions
+
     """
-    Returns a list of dimensions
-
-    varname   Name of the variable (string)
-
-    Optional arguments:
-
-    path    = "."          Path to data files
-    prefix  = "BOUT.dmp"   File prefix
-    """
-    file_list,_,_=findFiles(path,prefix)
+    file_list, _, _ = findFiles(path, prefix)
     return DataFile(file_list[0]).dimensions(varname)
 
 
-def findFiles(path,prefix):
+def findFiles(path, prefix):
+    """Find files matching prefix in path.
+
+    Netcdf (".nc", ".ncdf", ".cdl") and HDF5 (".h5", ".hdf5", ".hdf")
+    files are searched.
+
+    Parameters
+    ----------
+    path : str
+        Path to data files
+    prefix : str
+        File prefix
+
+    Returns
+    -------
+    tuple : (list of str, bool, str)
+        The first element of the tuple is the list of files, the second is
+        whether the files are a parallel dump file and the last element is
+        the file suffix.
+
     """
-    Find files matching prefix in path.
 
-    Netcdf (nc) and HDF5 (hdf5) files are searched.
+    # Make sure prefix does not have a trailing .
+    if prefix[-1] == ".":
+        prefix = prefix[:-1]
 
-    Returns the list of files, whether the files are a parallel dump file and
-    the file suffix.
+    # Look for parallel dump files
+    suffixes = [".nc", ".ncdf", ".cdl", ".h5", ".hdf5", ".hdf"]
+    file_list_parallel = None
+    suffix_parallel = ""
+    for test_suffix in suffixes:
+        files = glob.glob(os.path.join(path, prefix+test_suffix))
+        if files:
+            if file_list_parallel:  # Already had a list of files
+                raise IOError("Parallel dump files with both {0} and {1} extensions are present. Do not know which to read.".format(
+                    suffix, test_suffix))
+            suffix_parallel = test_suffix
+            file_list_parallel = files
+
+    file_list = None
+    suffix = ""
+    for test_suffix in suffixes:
+        files = glob.glob(os.path.join(path, prefix+".*"+test_suffix))
+        if files:
+            if file_list:  # Already had a list of files
+                raise IOError("Dump files with both {0} and {1} extensions are present. Do not know which to read.".format(
+                    suffix, test_suffix))
+            suffix = test_suffix
+            file_list = files
+
+    if file_list_parallel and file_list:
+        raise IOError("Both regular (with suffix {0}) and parallel (with suffix {1}) dump files are present. Do not know which to read.".format(
+            suffix_parallel, suffix))
+    elif file_list_parallel:
+        return file_list_parallel, True, suffix_parallel
+    elif file_list:
+        # make sure files are in the right order
+        nfiles = len(file_list)
+        file_list = [os.path.join(path, prefix+"."+str(i)+suffix)
+                     for i in range(nfiles)]
+        return file_list, False, suffix
+    else:
+        raise IOError("ERROR: No data files found in path {0}".format(path))
+
+
+def create_cache(path, prefix):
+    """Create a list of DataFile objects to be passed repeatedly to
+    collect.
+
+    Parameters
+    ----------
+    path : str
+        Path to data files
+    prefix : str
+        File prefix
+
+    Returns
+    -------
+    namedtuple : (list of str, bool, str, list of :py:obj:`~boututils.datafile.DataFile`)
+        The cache of DataFiles in a namedtuple along with the file_list,
+        and parallel and suffix attributes
 
     """
 
-    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
-    if file_list != []:
-        return file_list,True,suffix
+    # define namedtuple to return as the result
+    from collections import namedtuple
+    datafile_cache_tuple = namedtuple(
+        "datafile_cache", ["file_list", "parallel", "suffix", "datafile_list"])
 
-    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
-    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
-    if file_list_nc != [] and file_list_h5 != []:
-        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
-    elif file_list_h5 != []:
-        suffix = ".hdf5"
-        file_list = file_list_h5
-    else:
-        suffix = ".nc"
-        file_list = file_list_nc
+    file_list, parallel, suffix = findFiles(path, prefix)
 
-    file_list.sort()
-    if file_list == []:
-        raise IOError("ERROR: No data files found in path {0}".format(path) )
-    return file_list,False,suffix
+    cache = []
+    for f in file_list:
+        cache.append(DataFile(f))
+
+    return datafile_cache_tuple(file_list=file_list, parallel=parallel, suffix=suffix, datafile_list=cache)

@@ -8,11 +8,8 @@ from __future__ import print_function
 from __future__ import division
 from past.utils import old_div
 
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
+import numpy as np
+
 
 def contour(f, level):
     """Return a list of contours matching the given level"""

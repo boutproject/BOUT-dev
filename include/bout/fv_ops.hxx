@@ -10,6 +10,7 @@
 #include "../vector2d.hxx"
 
 #include "../utils.hxx"
+#include <bout/mesh.hxx>
 
 namespace FV {
   /*!
@@ -42,7 +43,7 @@ namespace FV {
    */
   const Field3D D4DY4(const Field3D &d, const Field3D &f);
 
-  /*
+  /*!
    * 4th-order dissipation term
    *
    *
@@ -160,30 +161,38 @@ namespace FV {
    * Takes values in guard cells, and adds them to cells
    */
   void communicateFluxes(Field3D &f);
-  
-  /*!
-   * Finite volume parallel divergence
-   * 
-   * Preserves the sum of f*J*dx*dy*dz over the domain
-   * 
-   * @param[in] f_in  The field being advected. 
-   *                   This will be reconstructed at cell faces
-   *                   using the given CellEdges method
-   * @param[in] v_in   The advection velocity. 
-   *                   This will be interpolated to cell boundaries 
-   *                   using linear interpolation
-   *
-   * NB: Uses to/from FieldAligned coordinates
-   */
+
+  /// Finite volume parallel divergence
+  ///
+  /// Preserves the sum of f*J*dx*dy*dz over the domain
+  ///
+  /// @param[in] f_in   The field being advected.
+  ///                   This will be reconstructed at cell faces
+  ///                   using the given CellEdges method
+  /// @param[in] v_in   The advection velocity.
+  ///                   This will be interpolated to cell boundaries
+  ///                   using linear interpolation
+  /// @param[in] wave_speed  Maximum wave speed in the system
+  /// @param[in] fixflux     Fix the flux at the boundary to be the value at the
+  ///                        midpoint (for boundary conditions)
+  ///
+  /// NB: Uses to/from FieldAligned coordinates
   template<typename CellEdges = MC>
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
-                        const Field3D &a, bool fixflux=true) {
+                        const Field3D &wave_speed, bool fixflux=true) {
+
+    ASSERT2(f_in.getLocation() == v_in.getLocation());
+
+    Mesh* mesh = f_in.getMesh();
+    ASSERT1(mesh == v_in.getMesh());
+    ASSERT1(mesh == wave_speed.getMesh());
+
     CellEdges cellboundary;
     
     Field3D f = mesh->toFieldAligned(f_in);
     Field3D v = mesh->toFieldAligned(v_in);
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = f_in.getCoordinates();
 
     Field3D result = 0.0;
     
@@ -259,14 +268,13 @@ namespace FV {
               flux = bndryval * vpar;
             } else {
               // Add flux due to difference in boundary values
-              
-              flux = s.R * vpar + a(i, j, k) * (s.R - bndryval);
+              flux = s.R * vpar + wave_speed(i, j, k) * (s.R - bndryval);
             }
           } else {
             
             // Maximum wave speed in the two cells
-            BoutReal amax = BOUTMAX(a(i, j, k), a(i, j + 1, k));
-            
+            BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k));
+
             if (vpar > amax) {
               // Supersonic flow out of this cell
               flux = s.R * vpar;
@@ -295,14 +303,13 @@ namespace FV {
               flux = bndryval * vpar;
             } else {
               // Add flux due to difference in boundary values
-              
-              flux = s.L * vpar - a(i, j, k) * (s.L - bndryval);
+              flux = s.L * vpar - wave_speed(i, j, k) * (s.L - bndryval);
             }
           } else {
             
             // Maximum wave speed in the two cells
-            BoutReal amax = BOUTMAX(a(i, j, k), a(i, j - 1, k));
-            
+            BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k));
+
             if (vpar < -amax) {
               // Supersonic out of this cell
               flux = s.L * vpar;
@@ -337,9 +344,14 @@ namespace FV {
    */
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
+    ASSERT2(n_in.getLocation() == v.getLocation());
+
+    Mesh* mesh = n_in.getMesh();
+    ASSERT1(mesh == v.x.getMesh());
+
     CellEdges cellboundary;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = n_in.getCoordinates();
     
     if(v.covariant) {
       // Got a covariant vector instead

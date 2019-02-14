@@ -23,7 +23,8 @@ scalar field :math:`T`:
 There are several files involved:
 
 -  ``conduction.cxx`` contains the source code which specifies the
-   equation to solve
+   equation to solve. See :ref:`sec-heat-conduction-model` for a
+   line-by-line walkthrough of this file
 
 -  ``conduct_grid.nc`` is the grid file, which in this case just
    specifies the number of grid points in :math:`X` and :math:`Y`
@@ -112,6 +113,13 @@ subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-i
 
 Analysing the output Using python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to analyse the output of the simulation using Python, you
+will first need to have set up python to use the BOUT++ libraries
+``boutdata`` and ``boututils``; see section
+:ref:`sec-config-python` for how to do this. The analysis routines have
+some requirements such as SciPy; see section
+:ref:`sec-python-requirements` for details. 
 
 To print a list of variables in the output files, one way is to use the ``DataFile``
 class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
@@ -202,6 +210,27 @@ and to make this a coloured contour plot
 
 The equivalent commands in Python are as follows. 
 
+.. _sec-run-nls:
+
+Natural language support
+------------------------
+
+If you have locales installed, and configured the ``locale`` path
+correctly (see :ref:`sec-config-nls`), then the ``LANG`` environment
+variable selects the language to use. Currently BOUT++ only has limited support
+for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
+
+    LANG=zh_TW.utf8 ./conduction
+
+which should produce an output like::
+
+  BOUT++ 版 4.2.0
+  版: dc95c252d9447ca72d27d4cc0d30f4d9c8a91a41
+  MD5 checksum: 086b600cc54f9c0eb0ee9338dbba71a6
+  代碼於 Nov  1 2018 17:41:02 编译
+  ...
+
+  
 Further examples
 ----------------
 
@@ -640,18 +669,18 @@ just remember to delete the file afterwards.
 Send signal USR1
 ~~~~~~~~~~~~~~~~
 
-Another option is to send signal `user defined signal 1`::
+Another option is to send signal ``user defined signal 1``::
 
     $ mpirun -np 4 ./conduction &
     ...
     $ killall -s USR1 conduction
 
-Note that this will stop all conduction simulation on this node.
-Many HPC systems provide tools to send signals to the simulation
-nodes, such as `qsig` on archer.
+Note that this will stop all conduction simulation on this node.  Many
+HPC systems provide tools to send signals to the simulation nodes,
+such as ``qsig`` on archer.
 
-To just stop one simulation, the `bout-stop-script` can send a signal
-based on the path of the simulation data dir::
+To just stop one simulation, the ``bout-stop-script`` can send a
+signal based on the path of the simulation data dir::
 
     $ mpirun -np 4 ./conduction &
     ...
