@@ -1,5 +1,5 @@
 #First install the reporter tool
-wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar > /dev/null
+wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar > /dev/null
 
 #Analyse the existing gcov files and output in compatible xml format
 #The -g option says to use the existing gcov files, the -k options says to not delete the gcov files
