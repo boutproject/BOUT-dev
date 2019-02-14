@@ -20,9 +20,8 @@ Timer::~Timer() {
 }
 
 double Timer::getTime() {
-  if (timing.running)
-    return timing.time + (MPI_Wtime() - timing.started);
-  return timing.time;
+  // If we've got a Timer by value, it must be running
+  return timing.time + (MPI_Wtime() - timing.started);
 }
 
 double Timer::resetTime() {
