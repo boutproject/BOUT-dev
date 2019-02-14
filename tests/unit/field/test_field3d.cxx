@@ -2074,7 +2074,7 @@ constexpr int k0{1};
 constexpr int k1{2};
 constexpr int k2{3};
 
-const auto box_size{TWOPI / Field3DTest::nz};
+const BoutReal box_size{TWOPI / Field3DTest::nz};
 
 // Helper function for the filter and lowpass tests
 BoutReal zWaves(Field3D::ind_type& i) {
