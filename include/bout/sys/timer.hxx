@@ -83,11 +83,11 @@ private:
     double started; ///< Start time
   };
   
-  static std::map<std::string, timer_info*> info;
+  static std::map<std::string, timer_info> info;
   
-  static timer_info *getInfo(const std::string &label);
+  static timer_info& getInfo(const std::string &label);
   
-  timer_info* timing;
+  timer_info& timing;
 };
 
 #endif // __TIMER_H__
