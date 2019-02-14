@@ -186,6 +186,43 @@ TEST_F(Field2DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(field)), deriv);
 }
 
+TEST_F(Field2DTest, SetGetLocation) {
+  Field2D field;
+
+  field.getMesh()->StaggerGrids = true;
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field2DTest, SetGetLocationNonStaggered) {
+  Field2D field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
+}
+
 /// This test is split into two parts: a very basic sanity check first
 /// (do we visit the right number of elements?), followed by a
 /// slightly more complex check one which checks certain indices are
