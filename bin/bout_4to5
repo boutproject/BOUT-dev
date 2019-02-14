@@ -201,19 +201,19 @@ then
 fi
 
 
-# clang-format everything
-if test $# -eq 0
-then
-    for dir in $work
-    do
-        files=$(find $dir|grep xx\$ )
-        if test "$files"
-        then
-            verbose "  Running clang-format on all files in $dir"
-            clang-format -i $files
-        fi
-    done
-fi
+# # clang-format everything - disabled due to issue https://github.com/boutproject/BOUT-dev/issues/1017
+# if test $# -eq 0
+# then
+#     for dir in $work
+#     do
+#         files=$(find $dir|grep xx\$ )
+#         if test "$files"
+#         then
+#             verbose "  Running clang-format on all files in $dir"
+#             clang-format -i $files
+#         fi
+#     done
+# fi
 
 
 #Further changes:
