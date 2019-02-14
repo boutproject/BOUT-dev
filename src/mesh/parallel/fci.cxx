@@ -165,6 +165,19 @@ FCIMap::FCIMap(Mesh &mesh_in, int dir, bool zperiodic)
         t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
         t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
+        // Check that t_x and t_z are in range
+        if ((t_x < 0.0) || (t_x > 1.0)) {
+          throw BoutException(
+              "t_x=%e out of range at (%d,%d,%d) (xt_prime=%e, i_corner=%d)", t_x, x, y,
+              z, xt_prime(x, y, z), i_corner(x, y, z));
+        }
+
+        if ((t_z < 0.0) || (t_z > 1.0)) {
+          throw BoutException(
+              "t_z=%e out of range at (%d,%d,%d) (zt_prime=%e, k_corner=%d)", t_z, x, y,
+              z, zt_prime(x, y, z), k_corner(x, y, z));
+        }
+
         //----------------------------------------
         // Boundary stuff
         //
@@ -221,15 +234,6 @@ FCIMap::FCIMap(Mesh &mesh_in, int dir, bool zperiodic)
                               PI   // Right-angle intersection
                               );
         }
-
-        //----------------------------------------
-
-        // Check that t_x and t_z are in range
-        if ((t_x < 0.0) || (t_x > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
-
-        if ((t_z < 0.0) || (t_z > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
       }
     }
   }
