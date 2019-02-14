@@ -61,11 +61,17 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
         BoutReal t_z1 = 1.0 - t_z;
 
         // Check that t_x and t_z are in range
-        if( (t_x < 0.0) || (t_x > 1.0) )
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
+        if ((t_x < 0.0) || (t_x > 1.0)) {
+          throw BoutException(
+              "t_x=%e out of range at (%d,%d,%d) (delta_x=%e, i_corner=%d)", t_x, x, y,
+              z, delta_x(x, y, z), i_corner(x, y, z));
+        }
 
-        if( (t_z < 0.0) || (t_z > 1.0) )
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
+        if ((t_z < 0.0) || (t_z > 1.0)) {
+          throw BoutException(
+              "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z, x, y,
+              z, delta_z(x, y, z), k_corner(x, y, z));
+        }
 
         w0(x,y,z) = t_x1 * t_z1;
         w1(x,y,z) = t_x  * t_z1;

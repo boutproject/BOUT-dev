@@ -129,12 +129,22 @@ FCIMap::FCIMap(Mesh &mesh_in, int dir, bool zperiodic)
       }
     }
   }
-  
+
   interp_corner->setMask(corner_boundary_mask);
-  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  
-  interp->calcWeights(xt_prime, zt_prime);
-  
+  try {
+    interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  } catch (BoutException& e) {
+    output_error << "Error while calculating corner interpolation weights for FCI\n";
+    throw;
+  }
+
+  try {
+    interp->calcWeights(xt_prime, zt_prime);
+  } catch (BoutException& e) {
+    output_error << "Error while calculating interpolation weights for FCI\n";
+    throw;
+  }
+
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
 
