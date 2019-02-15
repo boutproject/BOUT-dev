@@ -45,10 +45,6 @@ class DerivativesTest
 public:
   DerivativesTest() : input{mesh}, expected{mesh} {
 
-    // Make sure fft functions are both quiet and deterministic by
-    // setting fft_measure to false
-    bout::fft::fft_init(false);
-
     using Index = Field3D::ind_type;
 
     // Pointer to index method that converts single-index to 3-index space
