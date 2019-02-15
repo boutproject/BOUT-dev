@@ -6,6 +6,7 @@
 #include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/deriv_store.hxx"
+#include "bout/index_derivs_interface.hxx"
 #include "bout/paralleltransform.hxx"
 
 #include <algorithm>
@@ -145,6 +146,7 @@ public:
     // We need the parallel slices for the y-direction
     ParallelTransformIdentity identity{*mesh};
     identity.calcYUpDown(input);
+    identity.calcYUpDown(velocity);
 
     // FIXME: remove when defaults are set in the DerivativeStore ctor
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
@@ -300,4 +302,195 @@ TEST_P(DerivativesTestAdvection, Sanity) {
 
   EXPECT_TRUE(
       IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+}
+
+/////////////////////////////////////////////////////////////////////
+// The following tests are essentially identical to the above, expect
+// that we test the derivatives through the actual (index) derivative
+// interface. This makes things a little more awkward to do completely
+// generically, so let's not bother
+
+using FirstDerivativesInterfaceTest = DerivativesTest;
+
+INSTANTIATE_TEST_CASE_P(X, FirstDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FirstY, FirstDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(FirstZ, FirstDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Standard,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+TEST_P(FirstDerivativesInterfaceTest, Sanity) {
+  Field3D result;
+  switch (std::get<0>(GetParam())) {
+    case DIRECTION::X:
+      result = bout::derivatives::index::DDX(input);
+      break;
+    case DIRECTION::Y:
+      result = bout::derivatives::index::DDY(input);
+      break;
+    case DIRECTION::Z:
+      result = bout::derivatives::index::DDZ(input);
+      break;
+  default:
+    break;
+  }
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+}
+
+using SecondDerivativesInterfaceTest = DerivativesTest;
+
+INSTANTIATE_TEST_CASE_P(X, SecondDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Y, SecondDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Z, SecondDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardSecond,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+TEST_P(SecondDerivativesInterfaceTest, Sanity) {
+  Field3D result;
+  switch (std::get<0>(GetParam())) {
+    case DIRECTION::X:
+      result = bout::derivatives::index::D2DX2(input);
+      break;
+    case DIRECTION::Y:
+      result = bout::derivatives::index::D2DY2(input);
+      break;
+    case DIRECTION::Z:
+      result = bout::derivatives::index::D2DZ2(input);
+      break;
+  default:
+    break;
+  }
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+}
+
+using FourthDerivativesInterfaceTest = DerivativesTest;
+
+INSTANTIATE_TEST_CASE_P(X, FourthDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Y, FourthDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Z, FourthDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::StandardFourth,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+TEST_P(FourthDerivativesInterfaceTest, Sanity) {
+  Field3D result;
+  switch (std::get<0>(GetParam())) {
+    case DIRECTION::X:
+      result = bout::derivatives::index::D4DX4(input);
+      break;
+    case DIRECTION::Y:
+      result = bout::derivatives::index::D4DY4(input);
+      break;
+    case DIRECTION::Z:
+      result = bout::derivatives::index::D4DZ4(input);
+      break;
+  default:
+    break;
+  }
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+}
+
+
+using UpwindDerivativesInterfaceTest = DerivativesTest;
+
+// Instantiate the test for X, Y, Z for upwind derivatives
+INSTANTIATE_TEST_CASE_P(X, UpwindDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Y, UpwindDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Z, UpwindDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Upwind,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+TEST_P(UpwindDerivativesInterfaceTest, Sanity) {
+  Field3D result;
+
+  switch (std::get<0>(GetParam())) {
+  case DIRECTION::X:
+    result = bout::derivatives::index::VDDX(velocity, input);
+    break;
+  case DIRECTION::Y:
+    result = bout::derivatives::index::VDDY(velocity, input);
+    break;
+  case DIRECTION::Z:
+    result = bout::derivatives::index::VDDZ(velocity, input);
+    break;
+  default:
+    break;
+  }
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
+}
+
+using FluxDerivativesInterfaceTest = DerivativesTest;
+
+// Instantiate the test for X, Y, Z for flux derivatives
+INSTANTIATE_TEST_CASE_P(X, FluxDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::X)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Y, FluxDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::Y)),
+                        methodDirectionTupleToString);
+
+INSTANTIATE_TEST_CASE_P(Z, FluxDerivativesInterfaceTest,
+                        ::testing::ValuesIn(getMethodsForDirection(DERIV::Flux,
+                                                                   DIRECTION::Z)),
+                        methodDirectionTupleToString);
+
+TEST_P(FluxDerivativesInterfaceTest, Sanity) {
+  Field3D result;
+
+  switch (std::get<0>(GetParam())) {
+  case DIRECTION::X:
+    result = bout::derivatives::index::FDDX(velocity, input);
+    break;
+  case DIRECTION::Y:
+    result = bout::derivatives::index::FDDY(velocity, input);
+    break;
+  case DIRECTION::Z:
+    result = bout::derivatives::index::FDDZ(velocity, input);
+    break;
+  default:
+    break;
+  }
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOBNDRY", derivatives_tolerance));
 }
