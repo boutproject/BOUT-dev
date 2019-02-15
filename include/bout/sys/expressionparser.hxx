@@ -194,7 +194,8 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char *, ...);
+  ParseException(const char *, ...)
+    __attribute__ ((format (printf, 2, 3)));
   ~ParseException() override {}
 
   const char *what() const noexcept override;

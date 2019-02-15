@@ -15,7 +15,8 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char *, ...);
+  BoutException(const char *, ...)
+    __attribute__ ((format (printf, 2, 3)));
   BoutException(const std::string&);
   ~BoutException() override;
 
@@ -38,12 +39,14 @@ protected:
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char *, ...);
+  BoutRhsFail(const char *, ...)
+    __attribute__ ((format (printf, 2, 3)));
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char *, ...);
+  BoutIterationFail(const char *, ...)
+    __attribute__ ((format (printf, 2, 3)));
 };
 
 #endif

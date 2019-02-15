@@ -83,12 +83,15 @@ public:
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
 
-  int open(const char *fname, ...); ///< Open an output log file
+  int open(const char *fname, ...)
+    __attribute__ ((format (printf, 2, 3))); ///< Open an output log file
   void close();                     ///< Close the log file
 
-  virtual void write(const char *string, ...); ///< Write a string using C printf format
+  virtual void write(const char *string, ...)
+    __attribute__ ((format (printf, 2, 3))); ///< Write a string using C printf format
 
-  virtual void print(const char *string, ...); ///< Same as write, but only to screen
+  virtual void print(const char *string, ...)
+    __attribute__ ((format (printf, 2, 3))); ///< Same as write, but only to screen
 
   virtual void vwrite(const char *string,
                       va_list args); ///< Write a string using C vprintf format
@@ -159,7 +162,8 @@ public:
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
-  void write(const char *str, ...) override;
+  void write(const char *str, ...) override
+    __attribute__ ((format (printf, 2, 3)));
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
       ASSERT1(base != nullptr);
@@ -169,7 +173,8 @@ public:
 
   /// If enabled, print a string to stdout using C printf formatting
   /// note: unlike write, this is not also sent to log files
-  void print(const char *str, ...) override;
+  void print(const char *str, ...) override
+    __attribute__ ((format (printf, 2, 3)));
   void vprint(const char *str, va_list va) override {
     if (enabled) {
       ASSERT1(base != nullptr);

@@ -57,7 +57,8 @@ public:
   ~MsgStack() { clear(); }
 
 #if CHECK > 1
-  int push(const char *s, ...); ///< Add a message to the stack. Returns a message id
+  int push(const char *s, ...)
+    __attribute__ ((format (printf, 2, 3))); ///< Add a message to the stack. Returns a message id
 
   int setPoint(); ///< get a message point
 
@@ -119,7 +120,8 @@ public:
   MsgStackItem(const char *msg, const char *file, int line) {
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
   }
-  MsgStackItem(const char *file, int line, const char *msg, ...) {
+  MsgStackItem(const char *file, int line, const char *msg, ...)
+    __attribute__ ((format (printf, 4, 5))) {
     va_list args;
     va_start(args, msg);
     vsnprintf(buffer, MSG_MAX_SIZE, msg, args);
