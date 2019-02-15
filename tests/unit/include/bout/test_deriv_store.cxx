@@ -123,6 +123,24 @@ TEST(DerivativeStoreTest, RegisterStandardSecond) {
   store.reset();
 }
 
+TEST(DerivativeStoreTest, RegisterMatchingMethodStandardSecondMethodTwice) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+
+  store.registerDerivative(standardType{}, DERIV::StandardSecond, DIRECTION::X,
+                           STAGGER::None, "SecondStandard");
+
+  // Try to register another method with the same key
+  EXPECT_THROW(store.registerDerivative(standardType{}, DERIV::StandardSecond,
+                                        DIRECTION::X, STAGGER::None, "SecondStandard"),
+               BoutException);
+
+  auto methods = store.getAvailableMethods(DERIV::StandardSecond, DIRECTION::X);
+  EXPECT_EQ(methods.size(), 1);
+  EXPECT_NE(methods.find("SecondStandard"), methods.end());
+
+  store.reset();
+}
+
 TEST(DerivativeStoreTest, RegisterStandardFourth) {
   auto& store = DerivativeStore<FieldType>::getInstance();
   const DERIV type = DERIV::StandardFourth;
@@ -132,6 +150,24 @@ TEST(DerivativeStoreTest, RegisterStandardFourth) {
   auto methods = store.getAvailableMethods(type, dir);
   EXPECT_EQ(methods.size(), 1);
   EXPECT_NE(methods.find("FirstStandard"), methods.end());
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, RegisterMatchingMethodStandardFourthMethodTwice) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+
+  store.registerDerivative(standardType{}, DERIV::StandardFourth, DIRECTION::X,
+                           STAGGER::None, "FourthStandard");
+
+  // Try to register another method with the same key
+  EXPECT_THROW(store.registerDerivative(standardType{}, DERIV::StandardFourth,
+                                        DIRECTION::X, STAGGER::None, "FourthStandard"),
+               BoutException);
+
+  auto methods = store.getAvailableMethods(DERIV::StandardFourth, DIRECTION::X);
+  EXPECT_EQ(methods.size(), 1);
+  EXPECT_NE(methods.find("FourthStandard"), methods.end());
+
   store.reset();
 }
 
