@@ -17,8 +17,11 @@ bool sentinel_set{false};
 
 class InterpolationFactoryTest : public FakeMeshFixture {
 public:
-  InterpolationFactoryTest() : FakeMeshFixture() {}
+  InterpolationFactoryTest() : FakeMeshFixture() {
+    output_info.disable();
+  }
   ~InterpolationFactoryTest() {
+    output_info.enable();
     InterpolationFactory::getInstance()->cleanup();
     bout::testing::sentinel_set = false;
   }
