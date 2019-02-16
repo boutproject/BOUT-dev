@@ -90,9 +90,10 @@ namespace { // These classes only visible in this file
 }
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
-  if(args.size() != 2)
-    throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
-  
+  if (args.size() != 2)
+    throw ParseException("Binary operator expecting 2 arguments. Got '%lu'",
+                         static_cast<unsigned long>(args.size()));
+
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 

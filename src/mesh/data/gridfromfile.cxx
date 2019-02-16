@@ -154,8 +154,8 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     break;
   }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D, but has %d dimensions. Ignored\n", 
-                      name.c_str(), size.size());
+    output_warn.write("WARNING: Variable '%s' should be 2D, but has %lu dimensions. Ignored\n",
+                      name.c_str(), static_cast<unsigned long>(size.size()));
     var = def;
     return false;
   }
@@ -313,8 +313,8 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
     break;
   }
   default: {
-    throw BoutException("Error: Variable '%s' should be 3D, but has %d dimensions\n", 
-			name.c_str(), size.size());
+    throw BoutException("Error: Variable '%s' should be 3D, but has %lu dimensions\n",
+			name.c_str(), static_cast<unsigned long>(size.size()));
   }
   };
 

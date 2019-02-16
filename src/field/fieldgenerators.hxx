@@ -63,9 +63,11 @@ template<single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
   FieldGenOneArg(FieldGeneratorPtr g) : gen(g) {}
-  FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
-    if(args.size() != 1) {
-      throw ParseException("Incorrect number of arguments to function. Expecting 1, got %d", args.size());
+  FieldGeneratorPtr clone(const list<FieldGeneratorPtr> args) {
+    if (args.size() != 1) {
+      throw ParseException(
+          "Incorrect number of arguments to function. Expecting 1, got %lu",
+          static_cast<unsigned long>(args.size()));
     }
     return std::make_shared<FieldGenOneArg<Op>>(args.front());
   }
@@ -84,15 +86,20 @@ class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument fu
 public:
   FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b) : A(a), B(b) {}
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr > args) {
-    if(args.size() != 2) {
-      throw ParseException("Incorrect number of arguments to function. Expecting 2, got %d", args.size());
+    if (args.size() != 2) {
+      throw ParseException(
+          "Incorrect number of arguments to function. Expecting 2, got %lu",
+          static_cast<unsigned long>(args.size()));
     }
     return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back());
   }
   BoutReal generate(double x, double y, double z, double t) {
     return Op(A->generate(x,y,z,t), B->generate(x,y,z,t));
   }
-  const std::string str() {return std::string("cos(")+A->str()+","+B->str()+std::string(")");}
+  const std::string str() {
+    return std::string("cos(") + A->str() + "," + B->str() + std::string(")");
+  }
+
 private:
   FieldGeneratorPtr A, B;
 };
@@ -107,7 +114,9 @@ public:
     }else if(args.size() == 2) {
       return std::make_shared<FieldATan>(args.front(), args.back());
     }
-    throw ParseException("Incorrect number of arguments to atan function. Expecting 1 or 2, got %d", args.size());
+    throw ParseException(
+        "Incorrect number of arguments to atan function. Expecting 1 or 2, got %lu",
+        static_cast<unsigned long>(args.size()));
   }
   BoutReal generate(double x, double y, double z, double t) {
     if(B == nullptr)
