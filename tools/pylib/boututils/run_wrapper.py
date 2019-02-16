@@ -28,7 +28,7 @@ def getmpirun(default="mpirun -np"):
   """
   MPIRUN = os.getenv("MPIRUN")
 
-  if MPIRUN is None:
+  if MPIRUN is None or MPIRUN == "":
     MPIRUN = default
     print("getmpirun: using the default " + str(default))
 
