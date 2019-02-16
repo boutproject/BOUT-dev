@@ -426,3 +426,16 @@ void Mesh::createDefaultRegions(){
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    std::swap(*coords_map[location], *createDefaultCoordinates(location));
+  }
+}
