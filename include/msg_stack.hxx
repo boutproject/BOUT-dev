@@ -116,7 +116,7 @@ GLOBAL MsgStack msg_stack;
 class MsgStackItem {
 public:
   // Not currently used anywhere
-  MsgStackItem(const char *msg) { point = msg_stack.push(msg); }
+  MsgStackItem(const char *msg) { point = msg_stack.push("%s",msg); }
   // Not currently used anywhere
   MsgStackItem(const char *msg, const char *file, int line) {
     point = msg_stack.push("%s on line %d of '%s'", msg, line, file);

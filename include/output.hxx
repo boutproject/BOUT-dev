@@ -74,7 +74,7 @@ public:
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
     enable();
-    open(fname);
+    open("%s",fname);
   }
   ~Output() override {
     close();
