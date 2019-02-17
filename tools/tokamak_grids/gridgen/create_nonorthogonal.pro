@@ -2176,11 +2176,18 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1,pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
       
+      ; vec_in_down3 and vec_out_down3 are unit vectors parallel to the boundaries of this section of the grid at the X-point
+      ; vec_in_up3 and vec_out_up3 are unit vectors parallel to the wall where the separatrix meets the wall
       IF critical.n_xpoint EQ 1 THEN BEGIN
          vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
          vec_out_down3 = TRANSPOSE(vec1[0,*])
-         vec_in_up3 = [1,0]
-         vec_out_up3 = [1,0]
+         vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+         vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+         veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+         vec_in_up_r = vec_in_up_r / veclength
+         vec_in_up_z = vec_in_up_z / veclength
+         vec_in_up3 = [vec_in_up_r, vec_in_up_z]
+         vec_out_up3 = vec_in_up3
       ENDIF ELSE BEGIN
          IF i EQ 0 THEN BEGIN
              vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
