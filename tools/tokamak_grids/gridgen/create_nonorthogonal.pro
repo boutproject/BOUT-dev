@@ -1558,7 +1558,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02), $
                         nrad:nrad, npol:settings.npol, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
-        RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
+        RETURN, create_nonorthogonal(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
                             single_rad_grid=single_rad_grid, fast=fast, simple=simple)
       ENDIF
