@@ -10,7 +10,8 @@
 ;  o Automatic default settings when not
 ;    supplied. 
 ;
-; Author: Ben Dudson, University of York, Nov 2009
+; Author: Jarrod Leddy, Brendan Shanahan, Ben Dudson, University of York,
+;         2015-2016
 ; 
 ;
 ; NOTE: Throughout, "F" means un-normalised psi,
@@ -1963,6 +1964,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ypos = 0
     rerun = 0   ; Flag. If 1 then have to re-run the grid generator
     FOR i=0, critical.n_xpoint-1 DO BEGIN
+       ; This section grids the first divertor leg associated with this X-point
+
        pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]] 
        pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]] 
 
@@ -1978,6 +1981,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
        bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1, pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
 
+       ; vec_in_down1 and vec_out_down1 are a unit vector parallel to the wall
+       ; where the separatrix intersects the wall, it gives the angle of the
+       ; line where this section of grid begins.
+       ; vec_in_up1 is a unit vector along the line from the X-point into the
+       ; private flux region where this section of the grid ends
+       ; vec_out_up1 is a unit vector along the line from the X-point into the
+       ; SOL where this section of the grid ends
        IF i EQ 0 THEN BEGIN
           vec_in_down_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
           vec_in_down_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
@@ -2069,6 +2079,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         rerun = 1  ; Signal that the grid needs to be rerun
       ENDIF
 
+      ; This part grids the region around the core, including SOL field lines
+      ; radially outside the core
+
       ; SOL region
       solid = (*pf_info[xpt]).sol[0]
       
@@ -2094,6 +2107,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       sep_line_up[1,*] = (*sep_info[xpt2]).core1_zi
       
       
+      ; vec_in_down2 is a unit vector along the line from the X-point into the
+      ; core where this section of the grid begins
+      ; vec_out_down2 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid begins
+      ; vec_in_up2 is a unit vector along the line from the X-point into the
+      ; core where this section of the grid ends
+      ; vec_out_up2 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid ends
       vec_in_down2 = TRANSPOSE(veccore[xpt,*])
       vec_out_down2 = TRANSPOSE(vec2[xpt,*])
       vec_in_up2 = TRANSPOSE(veccore[xpt2,*])
@@ -2158,7 +2179,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          vec_in_up1=[1,0]
          vec_out_up1=[1,0]
       END
-      ; Second PF region
+      ; This section grids the second divertor leg associated with this X-point
       xpt = (*sol_info[solid]).xpt2
 
       pvtfluxliner = [R[(*pf_info[xpt]).ri1[N_ELEMENTS((*pf_info[xpt]).ri1)-1]], R[(*pf_info[xpt]).ri1[0]]] 
@@ -2176,8 +2197,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1,pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
       
-      ; vec_in_down3 and vec_out_down3 are unit vectors parallel to the boundaries of this section of the grid at the X-point
-      ; vec_in_up3 and vec_out_up3 are unit vectors parallel to the wall where the separatrix meets the wall
+      ; vec_in_down3 is a unit vector along the line from the X-point into the
+      ; private flux region where this section of the grid begins
+      ; vec_out_down3 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid begins
+      ; vec_in_up3 and vec_out_up3 are a unit vector parallel to the wall
+      ; where the separatrix intersects the wall, it gives the angle of the
+      ; line where this section of grid ends.
       IF critical.n_xpoint EQ 1 THEN BEGIN
          vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
          vec_out_down3 = TRANSPOSE(vec1[0,*])
