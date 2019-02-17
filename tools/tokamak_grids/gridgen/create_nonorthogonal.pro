@@ -2037,7 +2037,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       IF (flast1 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (1)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0
@@ -2134,7 +2134,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       IF (flast2 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (2)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0
@@ -2245,7 +2245,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       IF (flast3 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (3)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0
