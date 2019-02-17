@@ -1325,8 +1325,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; oplot, centerliner, centerlinez, thick=5
       ;; stop
 
-      nflux_leg1 = n_elements(legsep.leg1[*,0])
-      nflux_leg2 = n_elements(legsep.leg2[*,0])
+      ;; set nflux_* here to the minimum of the number of points in the leg and core
+      ;; lines, because we need elements from both at each step when we loop below
+      nflux_leg1 = min([n_elements(legsep.leg1[*,0]), n_elements(legsep.core2[*,0])])
+      nflux_leg2 = min([n_elements(legsep.leg2[*,0]), n_elements(legsep.core1[*,0])])
       meanr1 = fltarr(nflux_leg1)
       meanz1 = fltarr(nflux_leg1)
 
