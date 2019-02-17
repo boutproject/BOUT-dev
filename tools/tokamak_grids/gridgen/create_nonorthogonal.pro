@@ -818,6 +818,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
 
   strictbndry=0
+  nboundary = N_ELEMENTS(boundary[0,*])
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
 
@@ -904,6 +905,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     IF (N_ELEMENTS(s) NE 2) OR (s[0] NE 2) THEN BEGIN
       PRINT, "WARNING: boundary must be a 2D array: [2, n]. Ignoring"
       boundary = 0
+      nboundary = 0
     ENDIF ELSE BEGIN
     
       ; Calculate indices
@@ -1977,8 +1979,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
        bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1, pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
 
        IF i EQ 0 THEN BEGIN
-          vec_in_down_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-          vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
+          vec_in_down_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+          vec_in_down_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
           vec_length = SQRT(vec_in_down_r^2 + vec_in_down_z^2)
           vec_in_down_r = vec_in_down_r / vec_length
           vec_in_down_z = vec_in_down_z / vec_length
@@ -1988,8 +1990,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
           vec_out_up1 = TRANSPOSE(vec2[0,*])
           sp_loc = -1
        ENDIF ELSE BEGIN
-          vec_in_down_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-          vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
+          vec_in_down_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+          vec_in_down_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
           vec_length = SQRT(vec_in_down_r^2 + vec_in_down_z^2)
           vec_in_down_r = vec_in_down_r / vec_length
           vec_in_down_z = vec_in_down_z / vec_length
@@ -2181,8 +2183,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          vec_out_up3 = [1,0]
       ENDIF ELSE BEGIN
          IF i EQ 0 THEN BEGIN
-             vec_in_up_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-             vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
+             vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+             vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
              veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
              vec_in_up_r = vec_in_up_r / veclength
              vec_in_up_z = vec_in_up_z / veclength
@@ -2196,8 +2198,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          IF i EQ 1 THEN BEGIN
             vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
             vec_out_down3 = TRANSPOSE(vec1[0,*])
-            vec_in_up_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-            vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
+            vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+            vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
             veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
             vec_in_up_r = vec_in_up_r / veclength
             vec_in_up_z = vec_in_up_z / veclength
