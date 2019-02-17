@@ -1794,7 +1794,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
 
-      xpt_dist[xpt, 0] = 0.03 ;;xdist
+      xpt_dist[xpt, 0] = xdist
       
       ; SOL
       solid = (*pf_info[xpt]).sol[0]
@@ -1804,8 +1804,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       xpt2 = (*sol_info[solid]).xpt2
       
-      xpt_dist[xpt, 1] = 0.03 ;;xdist
-      xpt_dist[xpt2, 2] =0.03 ;;xdist
+      xpt_dist[xpt, 1] = xdist
+      xpt_dist[xpt2, 2] = xdist
 
       ; Second PF region
       xpt = xpt2
@@ -1813,7 +1813,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0)
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i])
       
-      xpt_dist[xpt, 3] = 0.03 ;;xdist
+      xpt_dist[xpt, 3] = xdist
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
