@@ -94,7 +94,7 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
     if (buffer[0] == '-') {
       buffer = buffer.substr(1); // Remove the first character (-)
       if (buffer.length() == 0) {
-        throw BoutException(_("single `-` found - do not know what to do"));
+        throw BoutException(_("Invalid command line option '-' found - maybe check whitespace?"));
       }
     }
     // Test to see if the user put spaces around the '=' sign
