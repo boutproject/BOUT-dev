@@ -140,13 +140,21 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       IF d GT 0 THEN BEGIN
         ; Core
         
-        ; find where either ri or zi has an extrema
+        ; Find where both ri and zi have had an extrema.
+        ; This will take the contour at most half way around the closed part of
+        ; the separatrix.
+        ; Taking the first extremum in ri or zi (old behaviour) risks having a
+        ; very short contour on one leg if the X-point is not quite at the
+        ; bottom or top of the core region
         n = N_ELEMENTS(sepri)
         dr = DERIV(sepri)
         dr = dr[1:*] * dr[0:(n-2)]
         dz = DERIV(sepzi)
         dz = dz[1:*] * dz[0:(n-2)]
-        in = MIN(WHERE((dr[1:*] LE 0.0) OR (dz[1:*] LE 0.0))) + 1
+
+        inr = MIN(WHERE(dr[1:*] LE 0.0)) + 1
+        inz = MIN(WHERE(dz[1:*] LE 0.0)) + 1
+        in = MAX([inr, inz])
         
         if in GT 0 THEN BEGIN
           ; if in<=0 then there is no extremum, so don't truncate sepri/sepzi
