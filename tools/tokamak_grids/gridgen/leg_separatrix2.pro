@@ -121,7 +121,13 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
         ; contour is closed, so we can loop around: start at si, add elements
         ; until the beginning of the contour, then add elements starting from the
         ; end of the contour
-        si = [si, reverse(indgen(in+1)), reverse(indgen(N_ELEMENTS(sep_ri)-in-1)) + in + 1]
+        IF in LT N_ELEMENTS(sep_ri)-1 THEN BEGIN
+          ; normal case
+          si = [si, reverse(indgen(in+1)), reverse(indgen(N_ELEMENTS(sep_ri)-in-1)) + in + 1]
+        ENDIF ELSE BEGIN
+          ; can't call indgen(0) so handle this specially
+          si = [si, reverse(indgen(in+1))]
+        ENDELSE
       ENDELSE
       sepri = INTERPOLATE(sep_ri, si)
       sepzi = INTERPOLATE(sep_zi, si)
