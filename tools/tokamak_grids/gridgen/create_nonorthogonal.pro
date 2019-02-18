@@ -1399,16 +1399,17 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; stop
 
       ; Go a little way along each core separatrix and follow
+      ; Note: add starting point to end of 'boundary' so we find intersections with a closed contour
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind1
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind1
       follow_gradient, interp_data, R, Z, $
                        legsep.core2[2,0], legsep.core2[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind2
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind2
       
       ni = N_ELEMENTS(start_ri)
       
