@@ -171,6 +171,34 @@ TEST(DerivativeStoreTest, RegisterMatchingMethodStandardFourthMethodTwice) {
   store.reset();
 }
 
+TEST(DerivativeStoreTest, RegisterUpwindAsStandard) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  const DERIV type = DERIV::Standard;
+  const DIRECTION dir = DIRECTION::X;
+
+  EXPECT_THROW(
+      store.registerDerivative(flowType{}, type, dir, STAGGER::None, "BadSignature"),
+      BoutException);
+  auto methods = store.getAvailableMethods(type, dir);
+  EXPECT_EQ(methods.size(), 0);
+  EXPECT_EQ(methods.find("BadSignature"), methods.end());
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, RegisterStandardAsUpwind) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  const DERIV type = DERIV::Upwind;
+  const DIRECTION dir = DIRECTION::X;
+
+  EXPECT_THROW(
+      store.registerDerivative(standardType{}, type, dir, STAGGER::None, "BadSignature"),
+      BoutException);
+  auto methods = store.getAvailableMethods(type, dir);
+  EXPECT_EQ(methods.size(), 0);
+  EXPECT_EQ(methods.find("BadSignature"), methods.end());
+  store.reset();
+}
+
 TEST(DerivativeStoreTest, RegisterUpwind) {
   auto& store = DerivativeStore<FieldType>::getInstance();
   const DERIV type = DERIV::Upwind;
@@ -183,12 +211,46 @@ TEST(DerivativeStoreTest, RegisterUpwind) {
   store.reset();
 }
 
+TEST(DerivativeStoreTest, RegisterUpwindTwice) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  const DERIV type = DERIV::Upwind;
+  const DIRECTION dir = DIRECTION::X;
+
+  store.registerDerivative(flowType{}, type, dir, STAGGER::None, "FirstStandard");
+
+  EXPECT_THROW(
+      store.registerDerivative(flowType{}, type, dir, STAGGER::None, "FirstStandard"),
+      BoutException);
+
+  auto methods = store.getAvailableMethods(type, dir);
+  EXPECT_EQ(methods.size(), 1);
+  EXPECT_NE(methods.find("FirstStandard"), methods.end());
+  store.reset();
+}
+
 TEST(DerivativeStoreTest, RegisterFlux) {
   auto& store = DerivativeStore<FieldType>::getInstance();
   const DERIV type = DERIV::Flux;
   const DIRECTION dir = DIRECTION::X;
 
   store.registerDerivative(flowType{}, type, dir, STAGGER::None, "FirstStandard");
+  auto methods = store.getAvailableMethods(type, dir);
+  EXPECT_EQ(methods.size(), 1);
+  EXPECT_NE(methods.find("FirstStandard"), methods.end());
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, RegisterFluxTwice) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  const DERIV type = DERIV::Flux;
+  const DIRECTION dir = DIRECTION::X;
+
+  store.registerDerivative(flowType{}, type, dir, STAGGER::None, "FirstStandard");
+
+  EXPECT_THROW(
+      store.registerDerivative(flowType{}, type, dir, STAGGER::None, "FirstStandard"),
+      BoutException);
+
   auto methods = store.getAvailableMethods(type, dir);
   EXPECT_EQ(methods.size(), 1);
   EXPECT_NE(methods.find("FirstStandard"), methods.end());
@@ -214,7 +276,7 @@ TEST(DerivativeStoreTest, RegisterStandardAndGetBack) {
   standardType returned = store.getStandardDerivative(firstName, dir);
 
   FieldType inOrig, outOrig;
-  standardReturnTenSetToOne(inOrig, outOrig);
+  standardReturnTenSetToOne({}, outOrig);
 
   FieldType outRet;
   returned(inOrig, outRet, RGN_ALL);
@@ -222,9 +284,7 @@ TEST(DerivativeStoreTest, RegisterStandardAndGetBack) {
   EXPECT_EQ(outOrig.size(), 10);
   ASSERT_EQ(outRet.size(), outOrig.size());
 
-  for (unsigned int i = 0; i < outOrig.size(); i++) {
-    EXPECT_EQ(outOrig[i], outRet[i]);
-  };
+  EXPECT_EQ(outOrig, outRet);
 
   store.reset();
 }
@@ -255,9 +315,64 @@ TEST(DerivativeStoreTest, RegisterFlowAndGetBack) {
   EXPECT_EQ(outOrig.size(), 6);
   ASSERT_EQ(outRet.size(), outOrig.size());
 
-  for (unsigned int i = 0; i < outOrig.size(); i++) {
-    EXPECT_EQ(outOrig[i], outRet[i]);
-  };
+  EXPECT_EQ(outOrig, outRet);
 
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, GetUnknownDerivativeFromStandard) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  // Register something we're not just throwing because the store is empty
+  store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X, STAGGER::None,
+                           "something");
+  EXPECT_THROW(store.getStandardDerivative("unknown", DIRECTION::X), BoutException);
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, GetUnknownDerivativeFromFlow) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  // Register something we're not just throwing because the store is empty
+  store.registerDerivative(flowType{}, DERIV::Flux, DIRECTION::X, STAGGER::None,
+                           "something");
+  EXPECT_THROW(store.getFlowDerivative("unknown", DIRECTION::X), BoutException);
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, GetUpwindFromStandardDerivative) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  // Register something we're not just throwing because the store is empty
+  store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  store.registerDerivative(flowType{}, DERIV::Flux, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  EXPECT_THROW(
+      store.getStandardDerivative("bad type", DIRECTION::X, STAGGER::None, DERIV::Upwind),
+      BoutException);
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, GetFluxFromStandardDerivative) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  // Register something we're not just throwing because the store is empty
+  store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  store.registerDerivative(flowType{}, DERIV::Flux, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  EXPECT_THROW(
+      store.getStandardDerivative("bad type", DIRECTION::X, STAGGER::None, DERIV::Flux),
+      BoutException);
+  store.reset();
+}
+
+TEST(DerivativeStoreTest, GetStandardFromFlowDerivative) {
+  auto& store = DerivativeStore<FieldType>::getInstance();
+  // Register something we're not just throwing because the store is empty
+  store.registerDerivative(standardType{}, DERIV::Standard, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  store.registerDerivative(flowType{}, DERIV::Flux, DIRECTION::X, STAGGER::None,
+                           "bad type");
+  EXPECT_THROW(
+      store.getFlowDerivative("bad type", DIRECTION::X, STAGGER::None, DERIV::Standard),
+      BoutException);
   store.reset();
 }
