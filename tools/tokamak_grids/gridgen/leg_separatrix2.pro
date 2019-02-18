@@ -88,8 +88,16 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       IF KEYWORD_SET(debug) THEN oplot, [cri], [czi], psym=2
 
       ;Get direction of line
-      drdi = INTERPOLATE(DERIV(sep_ri), inds[j])
-      dzdi = INTERPOLATE(DERIV(sep_zi), inds[j])
+      ; DERIV uses one-sided differences at the ends of the array. These may be
+      ; very inaccurate because the separatrix points are not evenly spaced.
+      ; Therefore extend the ends of the array by cycling around a couple of
+      ; points from the other end. This is incorrect for the leg contours,
+      ; which are open, but since they are open they should not have ends near
+      ; the X-point, so this should not affect them.
+      ; Need to add +2 to inds[j] because we added two points onto the
+      ; beginning of sep_ri/sep_zi.
+      drdi = INTERPOLATE(DERIV([sep_ri[-2:*],sep_ri,sep_ri[0:2]]), inds[j]+2)
+      dzdi = INTERPOLATE(DERIV([sep_zi[-2:*],sep_zi,sep_zi[0:2]]), inds[j]+2)
       
       ; First check if this is towards or away from the X-point
       dir = 1 ; direction to go away from x-point
