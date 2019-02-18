@@ -413,7 +413,7 @@ struct DerivativeStore {
   }
 
   /// Empty all member storage
-  void reset() {
+  void clear() {
     defaultMethods.clear();
     standard.clear();
     standardSecond.clear();
@@ -421,6 +421,13 @@ struct DerivativeStore {
     upwind.clear();
     flux.clear();
     registeredMethods.clear();
+  }
+
+  /// Reset to initial state
+  void reset() {
+    clear();
+
+    setDefaults();
   }
 
 private:
