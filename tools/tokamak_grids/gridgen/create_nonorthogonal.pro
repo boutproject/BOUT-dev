@@ -1902,7 +1902,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       line = get_line_nonorth(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
-                      0.95*f_cont + 0.05*faxis, npt=20, $
+                      0.95*f_cont + 0.05*faxis, npt=30, $
                       vec=vec_in_up2, weight=1)
       
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
