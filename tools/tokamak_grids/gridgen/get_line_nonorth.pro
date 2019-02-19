@@ -1,4 +1,4 @@
-FUNCTION get_line_nonorth, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, weight=weight
+FUNCTION get_line_nonorth, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec_up=vec_up, weight_up=weight_up, vec_down=vec_down, weight_down=weight_down
   IF NOT KEYWORD_SET(npt) THEN npt=10
   ; Get starting f
   
@@ -8,6 +8,8 @@ FUNCTION get_line_nonorth, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, w
     RETURN, [[ri0,ri0],[zi0,zi0]]
   ENDIF
 
+  IF NOT KEYWORD_SET(weight_up) THEN weight_up = 0.
+  IF NOT KEYWORD_SET(weight_down) THEN weight_down = 0.
   rixpt = FLTARR(npt+1)
   zixpt = rixpt
   rixpt[0] = ri0
@@ -16,7 +18,8 @@ FUNCTION get_line_nonorth, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, w
     d = FLOAT(j+1)/FLOAT(npt)
     ftarg = d*fto + (1.0 - d)*ffrom
     follow_gradient_nonorth, interp_data, R, Z, rixpt[j], zixpt[j], $
-      ftarg, rinext, zinext, vec=vec, weight=weight
+      ftarg, rinext, zinext, vec_up=vec_up, weight_up=weight_up, $
+      vec_down=vec_down, weight_down=weight_down
     rixpt[j+1] = rinext
     zixpt[j+1] = zinext
   ENDFOR

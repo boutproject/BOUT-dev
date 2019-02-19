@@ -6,7 +6,7 @@
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 FUNCTION radial_differential_nonorth, fcur, pos
-  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec, weightc, bndry_periodic
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec_comm_up, weightc_up, vec_comm_down, weightc_down, bndry_periodic
   
   local_gradient, idata, pos[0], pos[1], status=status, dfdr=dfdr, dfdz=dfdz
   
@@ -44,12 +44,22 @@ FUNCTION radial_differential_nonorth, fcur, pos
   Bz = -dfdr/dRdi
   B2 = Br^2 + Bz^2
 
-  IF KEYWORD_SET(vec) THEN BEGIN
+  IF KEYWORD_SET(vec_comm_up) AND KEYWORD_SET(vec_comm_down) THEN BEGIN
   ;; V*mod(R)/mod(V) w + (1-w) vec(r)
-     newvec = vec * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc + (1-weightc)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     newvec = vec_comm_up * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_up $
+              + vec_comm_down * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_down $
+              + (1-weightc_up-weightc_down)*[-Bz/B2/dRdi, Br/B2/dZdi]
      RETURN, newvec
      ;;RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
      
+  ENDIF ELSE IF KEYWORD_SET(vec_comm_up) THEN BEGIN
+     newvec = vec_comm_up * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_up $
+              + (1-weightc_up)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     RETURN, newvec
+  ENDIF ELSE IF KEYWORD_SET(vec_comm_down) THEN BEGIN
+     newvec = vec_comm_down * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_down $
+              + (1-weightc_down)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     RETURN, newvec
   ENDIF ELSE BEGIN
   ;; stop
      RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
@@ -70,8 +80,10 @@ END
 ;
 PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
                      boundary=boundary, fbndry=fbndry, ibndry=ibndry, $
-                     vec=vec, weight=weight, bndry_noperiodic=bndry_noperiodic
-  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol, vec_comm, weightc, bndry_periodic
+                     vec_up=vec_up, weight_up=weight_up, $
+                     vec_down=vec_down, weight_down=weight_down, $
+                     bndry_noperiodic=bndry_noperiodic
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol, vec_comm_up, weightc_up, vec_comm_down, weightc_down, bndry_periodic
   
   tol = 0.1
 
@@ -92,14 +104,23 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
   bndry_periodic = 1
   IF KEYWORD_SET(bndry_noperiodic) THEN bndry_periodic = 0
 
-  IF NOT KEYWORD_SET(weight) THEN BEGIN
-     weight = 0.
+  IF NOT KEYWORD_SET(weight_up) THEN BEGIN
+     weight_up = 0.
+     weightc_up = weight_up*1.0
   ENDIF
-  
-  IF KEYWORD_SET(vec) THEN BEGIN
-     vec_comm = vec
-     weightc = weight*1.0
-  ENDIF 
+  IF NOT KEYWORD_SET(weight_down) THEN BEGIN
+     weight_down = 0.
+     weightc_down = weight_down*1.0
+  ENDIF
+
+  IF KEYWORD_SET(vec_up) THEN BEGIN
+     vec_comm_up = vec_up
+     weightc_up = weight_up*1.0
+  ENDIF
+  IF KEYWORD_SET(vec_down) THEN BEGIN
+     vec_comm_down = vec_down
+     weightc_down = weight_down*1.0
+  ENDIF
 
   IF SIZE(ftarget, /TYPE) EQ 0 THEN PRINT, ftarget
 
