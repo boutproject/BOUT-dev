@@ -48,6 +48,16 @@ Mesh::~Mesh() {
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
+
 /// Get an integer
 int Mesh::get(int &ival, const std::string &name) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
@@ -295,11 +305,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -376,8 +386,8 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
-  output_verbose << _("Registered region 3D ") << region_name << ": \n"
-                 << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
@@ -385,8 +395,8 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
     throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
-  output_verbose << _("Registered region 2D ") << region_name << ": \n"
-                 << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
@@ -394,8 +404,8 @@ void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &
     throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
   }
   regionMapPerp[region_name] = region;
-  output_verbose << _("Registered region Perp ") << region_name << ": \n"
-                 << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region Perp %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){

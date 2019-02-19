@@ -24,7 +24,7 @@
 **************************************************************************/
 
 #include <globals.hxx>
-#include <bout.hxx>
+#include <bout/solver.hxx>
 #include <difops.hxx>
 #include <vecops.hxx>
 #include <utils.hxx>
@@ -340,8 +340,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 
   result.allocate();
 
-  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
-  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
+  bool vUseUpDown = v.hasYupYdown();
+  bool fUseUpDown = f.hasYupYdown();
 
   if (vUseUpDown && fUseUpDown) {
     // Both v and f have up/down fields
@@ -449,7 +449,9 @@ const Field2D Div_par_LtoC(const Field2D &var) {
 }
 
 const Field3D Div_par_LtoC(const Field3D &var) {
-  Field3D result;
+  Mesh* mesh = var.getMesh();
+
+  Field3D result(mesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
@@ -478,7 +480,9 @@ const Field2D Div_par_CtoL(const Field2D &var) {
 }
 
 const Field3D Div_par_CtoL(const Field3D &var) {
-  Field3D result;
+  Mesh* mesh = var.getMesh();
+
+  Field3D result(mesh);
   result.allocate();
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
