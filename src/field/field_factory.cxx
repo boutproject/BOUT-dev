@@ -117,8 +117,9 @@ const Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CEL
     throw BoutException("Couldn't create 2D field from null generator");
   }
   
-  Field2D result(0., localmesh);
+  Field2D result{localmesh};
 
+  result.allocate();
   result.setLocation(loc);
   
   switch(loc)  {
