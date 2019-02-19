@@ -47,7 +47,8 @@ matrix:
       #disable a noisy message arising from the relatively old version of openmpi
       #in use in combination with the relatively new version of gcc. We should be able
       #to remove this if a newer openmpi version is introduced.
-      - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra"
+      # The -Werror=format to make sure printf-like statements are not missing arguments
+      - CXXFLAGS="-Wno-literal-suffix -Wall -Wextra -Werror=format"
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared'
