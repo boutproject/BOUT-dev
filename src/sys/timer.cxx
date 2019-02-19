@@ -3,12 +3,12 @@
 
 using namespace std;
 
-Timer::Timer() : timing{getInfo("")} {
+Timer::Timer() : timing(getInfo("")) {
   timing.started = MPI_Wtime();
   timing.running = true;
 }
 
-Timer::Timer(const std::string& label) : timing{getInfo(label)} {
+Timer::Timer(const std::string& label) : timing(getInfo(label)) {
   timing.started = MPI_Wtime();
   timing.running = true;
 }
