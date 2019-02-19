@@ -18,7 +18,7 @@ void BoutParallelThrowRhsFail(int status, const char *message) {
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
   if (allstatus) {
-    throw BoutRhsFail(message);
+    throw BoutRhsFail("%s",message);
   }
 }
 
