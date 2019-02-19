@@ -119,9 +119,6 @@ const Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CEL
   
   Field2D result(0., localmesh);
 
-  if (localmesh->StaggerGrids == false) {
-    loc = CELL_CENTRE;
-  }
   result.setLocation(loc);
   
   switch(loc)  {
