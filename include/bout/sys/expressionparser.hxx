@@ -41,6 +41,8 @@ class ParseException;
 #include <memory>
 #include <exception>
 
+#include "bout/format.hxx"
+
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
 
 //////////////////////////////////////////////////////////
@@ -194,7 +196,8 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char *, ...);
+  ParseException(const char *, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
   ~ParseException() override {}
 
   const char *what() const noexcept override;

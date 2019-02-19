@@ -24,6 +24,7 @@ class Datafile;
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
+#include "bout/format.hxx"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -45,9 +46,12 @@ class Datafile {
   Datafile& operator=(Datafile &&rhs) noexcept;
   Datafile& operator=(const Datafile &rhs) = delete;
 
-  bool openr(const char *filename, ...);
-  bool openw(const char *filename, ...); // Overwrites existing file
-  bool opena(const char *filename, ...); // Appends if exists
+  bool openr(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
+  bool openw(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3); // Overwrites existing file
+  bool opena(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3); // Appends if exists
   
   bool isValid();  // Checks if the data source is valid
 
@@ -72,7 +76,8 @@ class Datafile {
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
 
-  bool write(const char *filename, ...) const; ///< Opens, writes, closes file
+  bool write(const char *filename, ...) const
+    BOUT_FORMAT_ARGS( 2, 3); ///< Opens, writes, closes file
   
   // Write a variable to the file now
   DEPRECATED(bool writeVar(const int &i, const char *name));

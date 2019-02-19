@@ -7,6 +7,8 @@ class BoutException;
 #include <exception>
 #include <string>
 
+#include "bout/format.hxx"
+
 using std::string;
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
@@ -15,7 +17,8 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char *, ...);
+  BoutException(const char *, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
   BoutException(const std::string&);
   ~BoutException() override;
 
@@ -38,12 +41,14 @@ protected:
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char *, ...);
+  BoutRhsFail(const char *, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char *, ...);
+  BoutIterationFail(const char *, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
 };
 
 #endif
