@@ -103,36 +103,42 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   xt_prime_corner.allocate();
   zt_prime_corner.allocate();
 
-  for (int x = mesh.xstart; x <= mesh.xend; x++) {
-    for (int y = mesh.ystart; y <= mesh.yend; y++) {
-      for (int z = 0; z < mesh.LocalNz - 1; z++) {
-        // Point interpolated from (x+1/2, z+1/2)
+  BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
+    // Point interpolated from (x+1/2, z+1/2)
 
-        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
-            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
-          // Hit a boundary
-          corner_boundary_mask(x, y, z) = true;
-          
-          xt_prime_corner(x, y, z) = -1.0;
-          zt_prime_corner(x, y, z) = -1.0;
-          continue;
-        }
-        
-        xt_prime_corner(x, y, z) =
-            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
-                    xt_prime(x + 1, y, z + 1));
+    // Cache the offsets
+    auto i_xplus = i.xp();
+    auto i_zplus = i.zp();
+    auto i_xzplus = i_zplus.xp();
 
-        zt_prime_corner(x, y, z) =
-            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
-                    zt_prime(x + 1, y, z + 1));
-      }
+    if ((xt_prime[i] < 0.0) || (xt_prime[i_xplus] < 0.0) || (xt_prime[i_xzplus] < 0.0) ||
+        (xt_prime[i_zplus] < 0.0)) {
+      // Hit a boundary
+      corner_boundary_mask(i.x(), i.y(), i.z()) = true;
+
+      xt_prime_corner[i] = -1.0;
+      zt_prime_corner[i] = -1.0;
+      continue;
     }
+
+    xt_prime_corner[i] =
+        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+
+    zt_prime_corner[i] =
+        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
-  
+
   interp_corner->setMask(corner_boundary_mask);
-  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  
-  interp->calcWeights(xt_prime, zt_prime);
+
+  {
+    TRACE("FCImap: calculating corner weights");
+    interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  }
+
+  {
+    TRACE("FCImap: calculating weights");
+    interp->calcWeights(xt_prime, zt_prime);
+  }
   
   int ncz = mesh.LocalNz;
   BoutReal t_x, t_z;
