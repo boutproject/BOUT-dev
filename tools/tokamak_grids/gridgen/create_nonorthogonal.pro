@@ -1318,9 +1318,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ; now have (start_ri, start_zi). For each x-point, find the radial
     ; line going through the x-point
     
-    fri = FFT(start_ri) ; for interpolating periodic functions
-    fzi = FFT(start_zi)
-
     xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
 
     pf_info = PTRARR(critical.n_xpoint)
@@ -1484,9 +1481,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), critical.xpt_f[i], color=125
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), critical.xpt_f[i], color=125
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), f_inner, color=125
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), f_inner, color=125
 
 
       ; Get tangent vector
@@ -1506,34 +1503,34 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     sol_info = PTRARR(critical.n_xpoint)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       IF i NE (critical.n_xpoint-1) THEN BEGIN
-        ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+        ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fri,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_ri,xpt_ind[ci[i+1]]) ]
         
-        zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+        zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fzi,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_zi,xpt_ind[ci[i+1]]) ]
       ENDIF ELSE BEGIN
         ; Index wraps around
         IF xpt_ind[ci[i]] GT N_ELEMENTS(start_ri)-2 THEN BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
           
         ENDIF ELSE BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
         ENDELSE
       ENDELSE
       
