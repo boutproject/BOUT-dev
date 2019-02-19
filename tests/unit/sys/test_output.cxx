@@ -54,7 +54,7 @@ TEST_F(OutputTest, OpenFile) {
 
   std::string test_output = "To stdout and file\n";
 
-  local_output.open(filename);
+  local_output.open("%s", filename);
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -76,8 +76,8 @@ TEST_F(OutputTest, JustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
-  local_output.print(test_output.c_str());
+  local_output.open("%s", filename);
+  local_output.print("%s",test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -100,7 +100,7 @@ TEST_F(OutputTest, DisableEnableStdout) {
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open(filename);
+  local_output.open("%s", filename);
   local_output.disable();
 
   local_output << file_only;
@@ -223,8 +223,8 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
-  local_output.print(test_output.c_str());
+  local_output.open("%s", filename);
+  local_output.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -297,8 +297,8 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  dummy.open(filename);
-  dummy.print(test_output.c_str());
+  dummy.open("%s", filename);
+  dummy.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
