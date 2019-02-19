@@ -94,11 +94,6 @@ public:
       throw BoutException("bad direction");
     }
 
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-
     mesh = new FakeMesh(nx, ny, nz);
 
     mesh->xstart = x_guards;
@@ -154,6 +149,11 @@ public:
     // FIXME: remove when defaults are set in the DerivativeStore ctor
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
   };
+
+  ~DerivativesTest() {
+    delete mesh;
+    mesh = nullptr;
+  }
 
   Field3D input, velocity;
   Field3D expected;
