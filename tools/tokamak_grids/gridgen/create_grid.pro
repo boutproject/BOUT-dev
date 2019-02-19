@@ -386,10 +386,24 @@ PRO oplot_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, color=color, _extra=_
 END
 
 FUNCTION line_dist, R, Z, ri, zi
-  drdi = DERIV(INTERPOLATE(R, ri))
-  dzdi = DERIV(INTERPOLATE(Z, zi))
-  dldi = SQRT(drdi^2 + dzdi^2)
-  RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
+  IF 0 THEN BEGIN
+    ; derivatives drdi and dzdi may be very inaccurate because the contour
+    ; given by ri and zi is not necessarily uniformly spaced, it may not even
+    ; have a smoothly varying grid spacing. Therefore don't use this branch
+    drdi = DERIV(INTERPOLATE(R, ri))
+    dzdi = DERIV(INTERPOLATE(Z, zi))
+    dldi = SQRT(drdi^2 + dzdi^2)
+    RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
+  ENDIF ELSE BEGIN
+    np = N_ELEMENTS(ri)
+    rpos = INTERPOLATE(R, ri)
+    zpos = INTERPOLATE(Z, zi)
+    dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
+    dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
+    result = FLTARR(np)
+    FOR i=1,np-1 DO result[i] = result[i-1] + dd[i-1]
+    RETURN, result
+  ENDELSE
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
