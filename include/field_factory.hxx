@@ -93,8 +93,11 @@ protected:
   FieldGeneratorPtr resolve(std::string &name) override;
 
 private:
-  Mesh *fieldmesh;        ///< The default mesh for create functions.
-  const Options *options; ///< Set in parse() and used in resolve()
+  /// The default mesh for create functions.
+  Mesh* fieldmesh;
+  /// The default options used in resolve(), can be overridden in
+  /// parse()/create2D()/create3D()
+  const Options* options;
 
   std::list<std::string> lookup; // Names currently being parsed
   
