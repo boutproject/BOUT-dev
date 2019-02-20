@@ -57,30 +57,49 @@ public:
   FieldFactory(Mesh *m, Options *opt = nullptr);
   ~FieldFactory() override;
 
+  /// Create a 2D field by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
   const Field2D create2D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  
+  /// Create a 3D field by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
   const Field3D create3D(const std::string &value, const Options *opt = nullptr,
                          Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
-  // Parse a string into a tree of generators
+  /// Parse a string into a tree of generators
   FieldGeneratorPtr parse(const std::string &input, const Options *opt = nullptr);
 
-  // Singleton object
-  static FieldFactory *get();
+  /// Create a 2D field from a generator, over a given mesh
+  /// at a given cell location and time. 
+  const Field2D create2D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                         CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  
+  /// Create a 3D field from a generator, over a given mesh
+  /// at a given cell location and time. 
+  const Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                         CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  
+  /// Get the Singleton object
+  static FieldFactory* get();
 
   /// clean the cache of parsed strings
   void cleanCache();
 protected:
-  // These functions called by the parser
+  /// These functions called by the parser to resolve unknown symbols.
+  /// This is used to enable options to be referred to in expressions.
   FieldGeneratorPtr resolve(std::string &name) override;
 
 private:
-  Mesh *fieldmesh;  
-  const Options *options;
+  Mesh *fieldmesh;        ///< The default mesh for create functions.
+  const Options *options; ///< Set in parse() and used in resolve()
 
   std::list<std::string> lookup; // Names currently being parsed
   
-  // Cache parsed strings
+  /// Cache parsed strings so repeated evaluations
+  /// don't result in allocating more generators.
   std::map<std::string, FieldGeneratorPtr > cache;
   
   const Options* findOption(const Options *opt, const std::string &name, std::string &val);
