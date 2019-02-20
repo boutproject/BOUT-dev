@@ -1619,6 +1619,33 @@ retrybetacalc:
   psi_bndry = mesh.faxis + mesh.fnorm
   s = file_write(handle, "psi_bndry", psi_bndry)
 
+  ; save some version information
+  ;
+  ; BOUT++ version information: this is set when BOUT++ is configured.
+  ; Hypnotoad doesn't require BOUT++ to have been configured, and IDL code may
+  ; have changed since 'configure' was run, so this is not 100% reliable, but
+  ; still worth saving as a sanity check
+  hypnotoad_info = ROUTINE_INFO('hypnotoad', /SOURCE)
+  hypnotoad_path = FILE_DIRNAME(hypnotoad_info.path)
+  SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --git']), bout_git_hash, EXIT_STATUS=status
+  IF status THEN BEGIN
+    PRINT, "WARNING: Failed to get Git hash for BOUT++, could not run '../../../bin/bout-config --git'. Have you configured BOUT++ successfully?"
+  ENDIF ELSE BEGIN
+    ; bout_git_hash as returned from SPAWN seems to have some funny character
+    ; in, maybe a trailing newline. This character causes an error when trying
+    ; to write as a NetCDF attribute. STRJOIN seems to fix this.
+    bout_git_hash = STRJOIN(bout_git_hash, '')
+
+    s = file_write_attribute(handle, "git_hash", bout_git_hash)
+  ENDELSE
+  SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --version']), bout_version, EXIT_STATUS=status
+  IF status THEN BEGIN
+    PRINT, "WARNING: Failed to get version number for BOUT++, could not run '../../../bin/bout-config --version'. Have you configured BOUT++ successfully?"
+  ENDIF ELSE BEGIN
+    bout_version_array = LONG(STRSPLIT(bout_version, '.', /EXTRACT))
+    s = file_write_attribute(handle, "BOUT_version", bout_version_array)
+  ENDELSE
+
   file_close, handle
   PRINT, "DONE"
   
