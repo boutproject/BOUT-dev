@@ -102,12 +102,14 @@ Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                      BoutReal t) {
   AUTO_TRACE();
-  
-  if (localmesh == nullptr)
+
+  if (localmesh == nullptr) {
+    if (fieldmesh == nullptr) {
+      throw BoutException("FieldFactory not created with mesh and no mesh passed in");
+    }
     localmesh = fieldmesh;
-  if (localmesh == nullptr)
-    throw BoutException("Not a valid mesh");
-  
+  }
+
   if (!gen) {
     throw BoutException("Couldn't create 2D field from null generator");
   }
@@ -161,12 +163,14 @@ Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                      BoutReal t) {
   AUTO_TRACE();
-  
-  if(localmesh == nullptr)
+
+  if (localmesh == nullptr) {
+    if (fieldmesh == nullptr) {
+      throw BoutException("FieldFactory not created with mesh and no mesh passed in");
+    }
     localmesh = fieldmesh;
-  if(localmesh == nullptr)
-    throw BoutException("Not a valid mesh");
-  
+  }
+
   if (!gen) {
     throw BoutException("Couldn't create 3D field from null generator");
   }
