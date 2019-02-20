@@ -60,28 +60,28 @@ public:
   /// Create a 2D field by parsing a string and evaluating the expression
   /// using the given options \p opt, over Mesh \p m at time \p t.
   /// The resulting field is at cell location \p loc.
-  const Field2D create2D(const std::string &value, const Options *opt = nullptr,
-                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  
+  Field2D create2D(const std::string& value, const Options* opt = nullptr,
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+
   /// Create a 3D field by parsing a string and evaluating the expression
   /// using the given options \p opt, over Mesh \p m at time \p t.
   /// The resulting field is at cell location \p loc.
-  const Field3D create3D(const std::string &value, const Options *opt = nullptr,
-                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  Field3D create3D(const std::string& value, const Options* opt = nullptr,
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
 
   /// Parse a string into a tree of generators
-  FieldGeneratorPtr parse(const std::string &input, const Options *opt = nullptr);
+  FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr);
 
   /// Create a 2D field from a generator, over a given mesh
-  /// at a given cell location and time. 
-  const Field2D create2D(FieldGeneratorPtr generator, Mesh* m = nullptr,
-                         CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  
+  /// at a given cell location and time.
+  Field2D create2D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+
   /// Create a 3D field from a generator, over a given mesh
-  /// at a given cell location and time. 
-  const Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
-                         CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  
+  /// at a given cell location and time.
+  Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+
   /// Get the Singleton object
   static FieldFactory* get();
 

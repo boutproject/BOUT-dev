@@ -94,12 +94,12 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
 }
 
-const Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
+Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
                                      Mesh* localmesh, CELL_LOC loc, BoutReal t) {
   return create2D(parse(value, opt), localmesh, loc, t);
 }
 
-const Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                      BoutReal t) {
   AUTO_TRACE();
   
@@ -152,13 +152,13 @@ const Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CEL
   return result;
 }
 
-const Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
+Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
   return create3D(parse(value, opt), localmesh, loc, t);
 }
 
-const Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                      BoutReal t) {
   AUTO_TRACE();
   
