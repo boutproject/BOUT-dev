@@ -1627,9 +1627,16 @@ retrybetacalc:
   ; still worth saving as a sanity check
   hypnotoad_info = ROUTINE_INFO('hypnotoad', /SOURCE)
   hypnotoad_path = FILE_DIRNAME(hypnotoad_info.path)
-  SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --git']), bout_git_hash, EXIT_STATUS=status
+
+  ; BOUT++ git hash
+  ;; old version got git hash from bout-config, but this may be out of date
+  ;SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --git']), bout_git_hash, EXIT_STATUS=status
+  ;IF status THEN BEGIN
+  ;  PRINT, "WARNING: Failed to get Git hash for BOUT++, could not run '../../../bin/bout-config --git'. Have you configured BOUT++ successfully?"
+  ; new version gets current git hash directly from git-describe
+  SPAWN, STRJOIN(['cd ',hypnotoad_path, '&& git describe --always --abbrev=0 --dirty --match "NOT A TAG"']), bout_git_hash, EXIT_STATUS=status
   IF status THEN BEGIN
-    PRINT, "WARNING: Failed to get Git hash for BOUT++, could not run '../../../bin/bout-config --git'. Have you configured BOUT++ successfully?"
+    PRINT, 'WARNING: Failed to get Git hash for BOUT++, could not run < git describe --always --abbrev=0 --dirty --match "NOT A TAG" > in Hypnotoads directory.'
   ENDIF ELSE BEGIN
     ; bout_git_hash as returned from SPAWN seems to have some funny character
     ; in, maybe a trailing newline. This character causes an error when trying
@@ -1638,6 +1645,8 @@ retrybetacalc:
 
     s = file_write_attribute(handle, "git_hash", bout_git_hash)
   ENDELSE
+
+  ; BOUT++ version number
   SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --version']), bout_version, EXIT_STATUS=status
   IF status THEN BEGIN
     PRINT, "WARNING: Failed to get version number for BOUT++, could not run '../../../bin/bout-config --version'. Have you configured BOUT++ successfully?"
