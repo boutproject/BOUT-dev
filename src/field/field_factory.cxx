@@ -113,19 +113,19 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   if (!gen) {
     throw BoutException("Couldn't create 2D field from null generator");
   }
-  
+
   Field2D result{localmesh};
 
   result.allocate();
   result.setLocation(loc);
-  
+
+  constexpr BoutReal z_position{0.0};
+
   switch(loc)  {
   case CELL_XLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                0.0, // Z
-                                t);  // T
+      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()), z_position, t);
     }
     break;
   }
@@ -133,23 +133,17 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                0.0, // Z
-                                t);  // T
+      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos, z_position, t);
     }
     break;
   }
-  default: {// CELL_CENTRE or CELL_ZLOW
+  default: { // CELL_CENTRE or CELL_ZLOW
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        0.0, // Z
-                        t);  // T
+      result[i] = gen->generate(localmesh->GlobalX(i.x()),
+                                TWOPI * localmesh->GlobalY(i.y()), z_position, t);
     }
   }
   };
-
-  // Don't delete the generator, as will be cached
 
   return result;
 }
@@ -174,13 +168,9 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   if (!gen) {
     throw BoutException("Couldn't create 3D field from null generator");
   }
-  
-  // Create a Field3D over mesh "localmesh"
-  Field3D result(localmesh);
-  
-  // Ensure that data is allocated and unique
-  result.allocate();
 
+  Field3D result(localmesh);
+  result.allocate();
   result.setLocation(loc);
   
   switch(loc)  {
@@ -188,9 +178,9 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
       result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
+                                TWOPI * static_cast<BoutReal>(i.z())
+                                    / static_cast<BoutReal>(localmesh->LocalNz),
+                                t);
     }
     break;
   }
@@ -199,9 +189,9 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
       result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
+                                TWOPI * static_cast<BoutReal>(i.z())
+                                    / static_cast<BoutReal>(localmesh->LocalNz),
+                                t);
     }
     break;
   }
@@ -209,24 +199,24 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
+                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5)
+                            / static_cast<BoutReal>(localmesh->LocalNz),
+                        t);
     }
     break;
   }
-  default: {// CELL_CENTRE
+  default: { // CELL_CENTRE
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * static_cast<BoutReal>(i.z()) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
+                        TWOPI * static_cast<BoutReal>(i.z())
+                            / static_cast<BoutReal>(localmesh->LocalNz),
+                        t);
     }
   }
   };
-  
-  if (localmesh->canToFromFieldAligned()){ // Ask wheter it is possible
+
+  if (localmesh->canToFromFieldAligned()) {
     // Transform from field aligned coordinates, to be compatible with
     // older BOUT++ inputs. This is not a particularly "nice" solution.
     result = localmesh->fromFieldAligned(result);
@@ -321,16 +311,12 @@ FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
     std::string value;
     const Options *section = findOption(options, name, value);
 
-    // Add to lookup list
     lookup.push_back(key);
 
-    // Parse
     FieldGeneratorPtr g = parse(value, section);
 
-    // Cache
     cache[key] = g;
 
-    // Remove from lookup list
     lookup.pop_back();
 
     return g;
@@ -349,7 +335,6 @@ FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *o
 
   auto it = cache.find(key);
   if (it != cache.end()) {
-    // Found in cache
     return it->second;
   }
 
@@ -361,13 +346,10 @@ FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *o
     options = opt;
   }
 
-  // Parse
   FieldGeneratorPtr expr = parseString(input);
 
-  // Add to cache
   cache[key] = expr;
 
-  // Restore the old options
   options = oldoptions;
 
   return expr;
