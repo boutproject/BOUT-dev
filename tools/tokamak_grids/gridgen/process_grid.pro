@@ -1655,6 +1655,9 @@ retrybetacalc:
     s = file_write_attribute(handle, "BOUT_version", bout_version_array)
   ENDELSE
 
+  ; Hypnotoad version number
+  s = file_write_attribute(handle, "Hypnotoad_version", hypnotoad_version())
+
   file_close, handle
   PRINT, "DONE"
   
