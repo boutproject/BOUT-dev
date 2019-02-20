@@ -25,8 +25,8 @@
 
 #include <cmath>
 
-#include <output.hxx>
 #include <bout/constants.hxx>
+#include <output.hxx>
 #include <utils.hxx>
 
 #include "bout/constants.hxx"
@@ -39,7 +39,7 @@ FieldGeneratorPtr generator(BoutReal value) {
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
-FieldGeneratorPtr generator(BoutReal *ptr) {
+FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
 }
 
@@ -53,7 +53,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
-  
+
   // Some standard functions
   addGenerator("sin", std::make_shared<FieldSin>(nullptr));
   addGenerator("cos", std::make_shared<FieldCos>(nullptr));
@@ -95,12 +95,12 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
-                                     Mesh* localmesh, CELL_LOC loc, BoutReal t) {
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) {
   return create2D(parse(value, opt), localmesh, loc, t);
 }
 
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
-                                     BoutReal t) {
+                               BoutReal t) {
   AUTO_TRACE();
 
   if (localmesh == nullptr) {
@@ -148,14 +148,13 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   return result;
 }
 
-Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
-                                     Mesh *localmesh, CELL_LOC loc,
-                                     BoutReal t) {
+Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) {
   return create3D(parse(value, opt), localmesh, loc, t);
 }
 
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
-                                     BoutReal t) {
+                               BoutReal t) {
   AUTO_TRACE();
 
   if (localmesh == nullptr) {
@@ -172,8 +171,8 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   Field3D result(localmesh);
   result.allocate();
   result.setLocation(loc);
-  
-  switch(loc)  {
+
+  switch (loc) {
   case CELL_XLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
@@ -225,41 +224,42 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   return result;
 }
 
-const Options* FieldFactory::findOption(const Options *opt, const std::string &name, std::string &val) {
+const Options* FieldFactory::findOption(const Options* opt, const std::string& name,
+                                        std::string& val) {
   // Find an Options object which contains the given name
 
-  const Options *result = opt;
+  const Options* result = opt;
 
   // Check if name contains a section separator ':'
   size_t pos = name.find(':');
-  if(pos == std::string::npos) {
+  if (pos == std::string::npos) {
     // No separator. Try this section, and then go through parents
 
-    while(!result->isSet(name)) {
+    while (!result->isSet(name)) {
       result = result->getParent();
       if (result == nullptr)
         throw ParseException("Cannot find variable '%s'", name.c_str());
     }
     result->get(name, val, "");
 
-  }else {
+  } else {
     // Go to the root, and go up through sections
     result = Options::getRoot();
 
     size_t lastpos = 0;
-    while(pos != std::string::npos) {
-      std::string sectionname = name.substr(lastpos,pos);
-      if( sectionname.length() > 0 ) {
+    while (pos != std::string::npos) {
+      std::string sectionname = name.substr(lastpos, pos);
+      if (sectionname.length() > 0) {
         result = result->getSection(sectionname);
       }
-      lastpos = pos+1;
+      lastpos = pos + 1;
       pos = name.find(':', lastpos);
     }
     // Now look for the name in this section
 
     std::string varname = name.substr(lastpos);
 
-    if(!result->isSet(varname)) {
+    if (!result->isSet(varname)) {
       // Not in this section
       throw ParseException("Cannot find variable '%s'", name.c_str());
     }
@@ -270,17 +270,18 @@ const Options* FieldFactory::findOption(const Options *opt, const std::string &n
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
+FieldGeneratorPtr FieldFactory::resolve(std::string& name) {
   if (options != nullptr) {
     // Check if in cache
     std::string key;
-    if(name.find(':') != std::string::npos) {
+    if (name.find(':') != std::string::npos) {
       // Already has section
       key = name;
-    }else {
+    } else {
       key = options->str();
-      if(key.length() > 0)
+      if (key.length() > 0) {
         key += ":";
+      }
       key += name;
     }
 
@@ -293,11 +294,11 @@ FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
     // Look up in options
 
     // Check if already looking up this symbol
-    for (const auto &lookup_value : lookup) {
+    for (const auto& lookup_value : lookup) {
       if (key.compare(lookup_value) == 0) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for (const auto &stack_value : lookup) {
+        for (const auto& stack_value : lookup) {
           output << stack_value << " -> ";
         }
         output << name << endl;
@@ -309,7 +310,7 @@ FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
     // Find the option, including traversing sections.
     // Throws exception if not found
     std::string value;
-    const Options *section = findOption(options, name, value);
+    const Options* section = findOption(options, name, value);
 
     lookup.push_back(key);
 
@@ -325,7 +326,7 @@ FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
   return nullptr;
 }
 
-FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *opt) {
+FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) {
 
   // Check if in the cache
   std::string key = "#" + input;
@@ -339,7 +340,7 @@ FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *o
   }
 
   // Save the current options
-  const Options *oldoptions = options;
+  const Options* oldoptions = options;
 
   // Store the options tree for token lookups
   if (opt != nullptr) {
@@ -361,6 +362,4 @@ FieldFactory* FieldFactory::get() {
   return &instance;
 }
 
-void FieldFactory::cleanCache() {
-  cache.clear();
-}
+void FieldFactory::cleanCache() { cache.clear(); }

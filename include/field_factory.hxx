@@ -1,12 +1,12 @@
 /**************************************************************************
  * Generate a field with specified values, mainly for creating
  * initial perturbations
- * 
- * 
+ *
+ *
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@
  *
  **************************************************************************/
 
-
 class FieldFactory;
 
 #ifndef __FIELD_FACTORY_H__
@@ -40,14 +39,14 @@ class FieldFactory;
 
 #include "unused.hxx"
 
-#include <string>
-#include <map>
 #include <list>
+#include <map>
+#include <string>
 
 // Utility routines to create generators from values
 
 FieldGeneratorPtr generator(BoutReal value);
-FieldGeneratorPtr generator(BoutReal *ptr);
+FieldGeneratorPtr generator(BoutReal* ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
@@ -87,10 +86,11 @@ public:
 
   /// clean the cache of parsed strings
   void cleanCache();
+
 protected:
   /// These functions called by the parser to resolve unknown symbols.
   /// This is used to enable options to be referred to in expressions.
-  FieldGeneratorPtr resolve(std::string &name) override;
+  FieldGeneratorPtr resolve(std::string& name) override;
 
 private:
   /// The default mesh for create functions.
@@ -100,12 +100,13 @@ private:
   const Options* options;
 
   std::list<std::string> lookup; // Names currently being parsed
-  
+
   /// Cache parsed strings so repeated evaluations
   /// don't result in allocating more generators.
-  std::map<std::string, FieldGeneratorPtr > cache;
-  
-  const Options* findOption(const Options *opt, const std::string &name, std::string &val);
+  std::map<std::string, FieldGeneratorPtr> cache;
+
+  const Options* findOption(const Options* opt, const std::string& name,
+                            std::string& val);
 };
 
 //////////////////////////////////////////////////////////
@@ -118,12 +119,13 @@ public:
   double generate(double x, double y, double z, double t) override {
     return func(t, x, y, z);
   }
+
 private:
   FuncPtr func;
 };
 
 //////////////////////////////////////////////////////////
-// Null generator 
+// Null generator
 
 class FieldNull : public FieldGenerator {
 public:
@@ -138,10 +140,11 @@ public:
   static FieldGeneratorPtr get() {
     static FieldGeneratorPtr instance = nullptr;
 
-    if(!instance)
+    if (!instance)
       instance = std::make_shared<FieldNull>();
     return instance;
   }
+
 private:
 };
 
