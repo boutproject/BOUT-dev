@@ -2,12 +2,21 @@
 #include <bout/assert.hxx>
 #include <map>
 
+template <typename T>
+const std::string& saveat(const std::map<T, std::string>& mymap, T t) {
+  auto found = mymap.find(t);
+  if (found == mymap.end()) {
+    throw BoutException("Did not find enum %d", static_cast<int>(t));
+  }
+  return found->second;
+}
+
 const std::string& CELL_LOC_STRING(CELL_LOC location) {
   const static std::map<CELL_LOC, std::string> CELL_LOCtoString = {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
       ENUMSTR(CELL_YLOW),    ENUMSTR(CELL_ZLOW),   ENUMSTR(CELL_VSHIFT)};
 
-  return CELL_LOCtoString.at(location);
+  return saveat(CELL_LOCtoString, location);
 }
 
 const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
@@ -16,7 +25,7 @@ const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
       {DIFF_C2, "C2"},           {DIFF_C4, "C4"},   {DIFF_S2, "S2"},      {DIFF_W2, "W2"},
       {DIFF_W3, "W3"},           {DIFF_FFT, "FFT"}, {DIFF_SPLIT, "SPLIT"}};
 
-  return DIFF_METHODtoString.at(location);
+  return saveat(DIFF_METHODtoString, location);
 }
 
 const std::string& REGION_STRING(REGION region) {
@@ -24,8 +33,7 @@ const std::string& REGION_STRING(REGION region) {
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
       ENUMSTR(RGN_NOZ)};
-
-  return REGIONtoString.at(region);
+  return saveat(REGIONtoString, region);
 }
 
 const std::string& DIRECTION_STRING(DIRECTION direction) {
@@ -36,7 +44,7 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
       {DIRECTION::YAligned, "Y - field aligned"},
       {DIRECTION::YOrthogonal, "Y - orthogonal"}};
 
-  return DIRECTIONtoString.at(direction);
+  return saveat(DIRECTIONtoString, direction);
 }
 
 const std::string& STAGGER_STRING(STAGGER stagger) {
@@ -45,7 +53,7 @@ const std::string& STAGGER_STRING(STAGGER stagger) {
       {STAGGER::C2L, "Centre to Low"},
       {STAGGER::L2C, "Low to Centre"}};
 
-  return STAGGERtoString.at(stagger);
+  return saveat(STAGGERtoString, stagger);
 }
 
 const std::string& DERIV_STRING(DERIV deriv) {
@@ -56,5 +64,5 @@ const std::string& DERIV_STRING(DERIV deriv) {
       {DERIV::Upwind, "Upwind"},
       {DERIV::Flux, "Flux"}};
 
-  return DERIVtoString.at(deriv);
+  return saveat(DERIVtoString, deriv);
 }
