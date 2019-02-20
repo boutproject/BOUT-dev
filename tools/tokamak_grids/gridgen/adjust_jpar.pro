@@ -72,7 +72,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   ; Grad_par = (Bp / (B*hthe))*d/dy
   
   gparj = -kp * data.hthe / (data.Bxy * data.Bpxy)
-  ps = data.Bxy * int_y(gparj, data, /nosmooth) * data.dy
+  ps = data.Bxy * int_y(gparj, data, /nosmooth, /simple) * data.dy
   
   
   ; In core region add divergence-free parallel current to match input at

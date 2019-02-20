@@ -125,7 +125,7 @@ PRO popup_event, event
                          boundary=boundary, strict=base_info.strict_bndry, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         fast=base_info.fast, xpt_mul=xpt_mul)
+                         fast=base_info.fast, xpt_mul=xpt_mul, /simple)
       
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
@@ -357,7 +357,7 @@ PRO event_handler, event
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
                          fast=info.fast, xpt_mul=xpt_mul, $
-                         fpsi = fpsi)
+                         fpsi = fpsi, /simple)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -416,7 +416,7 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -445,7 +445,8 @@ PRO event_handler, event
       IF info.rz_grid_valid AND info.flux_mesh_valid THEN BEGIN
         ; Get settings
         settings = {calcp:info.calcp, calcbt:info.calcbt, $
-                    calchthe:info.calchthe, calcjpar:info.calcjpar}
+                    calchthe:info.calchthe, calcjpar:info.calcjpar, $
+                    orthogonal_coordinates_output:info.orthogonal_coordinates_output}
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
@@ -543,6 +544,10 @@ PRO event_handler, event
     END
     'calcjpar' : BEGIN
       info.calcjpar = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'orthogonal_coordinates_output' : BEGIN
+      info.orthogonal_coordinates_output = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'fast': BEGIN
@@ -850,6 +855,10 @@ PRO event_handler, event
         str_set, info, "calcjpar", oldinfo.calcjpar
         Widget_Control, info.calcjpar_check, Set_Button=info.calcjpar
 
+        str_set, info, "orthogonal_coordinates_output_check", oldinfo.orthogonal_coordinates_output_check, /over      
+        str_set, info, "orthogonal_coordinates_output", oldinfo.orthogonal_coordinates_output
+        Widget_Control, info.orthogonal_coordinates_output_check, Set_Button=info.orthogonal_coordinates_output
+
         str_set, info, "radgrid_check", oldinfo.radgrid_check, /over
         str_set, info, "single_rad_grid", oldinfo.single_rad_grid
         Widget_Control, info.radgrid_check, Set_Button=info.single_rad_grid
@@ -1097,6 +1106,12 @@ PRO hypnotoad
                               tooltip="Recalculate Jpar")
   Widget_Control, calcjpar_check, Set_Button=calcjpar_default
 
+  orthogonal_coordinates_output_default = 0
+  orthogonal_coordinates_output_check = WIDGET_BUTTON(checkboxbase, $
+            VALUE="Output for orthogonal coords", uvalue='orthogonal_coordinates_output', $
+            tooltip="Output metrics for simulations in orthogonal coordinates using ShiftedMetric (i.e. with zero integrated shear, I=0, when calculating metric terms).")
+  Widget_Control, orthogonal_coordinates_output_check, Set_Button=orthogonal_coordinates_output_default
+
   process_button = WIDGET_BUTTON(tab2, VALUE='Output mesh', $
                                  uvalue='process', tooltip="Process mesh and output to file")
 
@@ -1161,6 +1176,8 @@ PRO hypnotoad
            calchthe:calchthe_default, $
            calcjpar_check:calcjpar_check, $
            calcjpar:calcjpar_default, $
+           orthogonal_coordinates_output_check:orthogonal_coordinates_output_check, $
+           orthogonal_coordinates_output:orthogonal_coordinates_output_default, $
            fast_check:fast_check, $
            fast:0, $
            $;;;

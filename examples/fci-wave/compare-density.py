@@ -25,13 +25,11 @@ data_boundary = [
 data = data_noboundary
 
 if run:
-    from boututils.run_wrapper import shell_safe, launch_safe, getmpirun
-    
+    from boututils.run_wrapper import shell_safe, launch_safe
     shell_safe("make > make.log")
-    MPIRUN=getmpirun()
-    
+
     for path,label in data:
-        launch_safe("./fci-wave -d "+path, runcmd=MPIRUN, nproc=nproc, pipe=False)
+        launch_safe("./fci-wave -d "+path, nproc=nproc, pipe=False)
 
 # Collect the results into a dictionary 
 sum_n_B = {}

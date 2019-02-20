@@ -1343,8 +1343,9 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
 
             print("Maximum density [10^20 m^-3]:", Ni_x)
 
-            Te = Te_x * pressure / numpy.max(pressure)
-            Ni = Ni_x * pressure / numpy.max(pressure)
+            shape = numpy.sqrt(pressure / numpy.max(pressure))
+            Te = Te_x * shape
+            Ni = Ni_x * shape
             if query_yes_no("Is this ok?") == 1 : break
         Ti = Te
         Ti_x =  Te_x

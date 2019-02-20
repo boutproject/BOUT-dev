@@ -231,38 +231,54 @@ FUNCTION newton_Bt, psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh
   RETURN, fxy / Rxy
 END
 
-function intx, Rxy, data
+function intx, Rxy, data, simple=simple
 
-	nx = size(data,/dimensions)
-	ny = nx[1]
-	nx = nx[0]
+  nx = size(data,/dimensions)
+  ny = nx[1]
+  nx = nx[0]
 
-	result = dblarr(nx,ny)
-	result[*,*] = 0.0
-	for i=0, ny-1 do begin
-		for j=1, nx-1 do begin
-			result[j,i] = int_tabulated(Rxy[0:j,i],data[0:j,i])
-		endfor
-	endfor
-	
-	return, result
+  result = dblarr(nx,ny)
+  result[*,*] = 0.0
+  if keyword_set(simple) then begin
+    for i=0, ny-1 do begin
+      for j=1, nx-1 do begin
+        result[j, i] = result[j-1, i] + 0.5*(Rxy[j, i] - Rxy[j-1, i])*(data[j, i] + data[j-1, i])
+      endfor
+    endfor
+  endif else begin
+    for i=0, ny-1 do begin
+      for j=1, nx-1 do begin
+        result[j,i] = int_tabulated(Rxy[0:j,i],data[0:j,i])
+      endfor
+    endfor
+  endelse
+
+  return, result
 end
 
-function inty, Zxy, data
+function inty, Zxy, data, simple=simple
 
-	nx = size(data,/dimensions)
-	ny = nx[1]
-	nx = nx[0]
+  nx = size(data,/dimensions)
+  ny = nx[1]
+  nx = nx[0]
 
-	result = dblarr(nx,ny)
-	result[*,*] = 0.0
-	for i=1, ny-1 do begin
-		for j=0, nx-1 do begin
-			result[j,i] = int_tabulated(Zxy[j,0:i],data[j,0:i])
-		endfor
-	endfor
-	
-	return, result
+  result = dblarr(nx,ny)
+  result[*,*] = 0.0
+  if keyword_set(simple) then begin
+    for i=1, ny-1 do begin
+      for j=0, nx-1 do begin
+        result[j, i] = result[j, i-1] + 0.5*(Zxy[j, i] - Zxy[j, i-1])*(data[j, i] + data[j, i-1])
+      endfor
+    endfor
+  endif else begin
+    for i=1, ny-1 do begin
+      for j=0, nx-1 do begin
+        result[j,i] = int_tabulated(Zxy[j,0:i],data[j,0:i])
+      endfor
+    endfor
+  endelse
+
+  return, result
 end
 
 ; Integrate a function over y
@@ -277,7 +293,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   REPEAT BEGIN
     yi = gen_surface(last=last, xi=xi, period=period)
     
-    f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi])
+    f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi], /simple)
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
       f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
     ENDIF
@@ -633,6 +649,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   str_check_present, settings, 'calcbt', -1
   str_check_present, settings, 'calchthe', -1
   str_check_present, settings, 'calcjpar', -1
+  str_check_present, settings, 'orthogonal_coordinates_output', -1
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -912,7 +929,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     pres = FLTARR(nx, ny)
     ; Integrate to get pressure
     FOR i=0, ny-1 DO BEGIN
-      pres[*,i] = int_func(psixy[*,i], dpdx2[*,i])
+      pres[*,i] = int_func(psixy[*,i], dpdx2[*,i], /simple)
       pres[*,i] = pres[*,i] - pres[nx-1,i]
     ENDFOR
     
@@ -1090,7 +1107,7 @@ retrybetacalc:
 
   ; Calculate eta (poloidal non-orthogonality parameter)
   eta = sin(beta) ; from geometry
-  yshift = intx(hrad, eta) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
+  yshift = intx(hrad, eta, /simple) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
   thetaxy = yxy + yshift
 
   G = 1. - dfdy_seps(yshift,thetaxy,mesh)
@@ -1139,7 +1156,21 @@ retrybetacalc:
   ENDREP UNTIL last
 
   ; Calculate metrics - check jacobian
-  I = sinty
+
+  orthogonal_coordinates_output = settings.orthogonal_coordinates_output
+  IF orthogonal_coordinates_output EQ -1 THEN orthogonal_coordinates_output = get_yesno("Output for simulations in orthogonal coordinates using ShiftedMetric?", gui=gui, dialog_parent=parent)
+  IF orthogonal_coordinates_output EQ 1 THEN BEGIN
+    print,""
+    print,"*******************WARNING****************************************"
+    print,"Calculating metrics for ShiftedMetric style orthogonal coordinates"
+    print,"******************************************************************"
+    print,""
+    ; for orthogonal coordinates
+    I = 0.
+  ENDIF ELSE BEGIN
+    ; for field-aligned coordinates
+    I = sinty
+  ENDELSE
 
   g11 = (Rxy*Bpxy)^2;
   g22 = G^2/hthe^2 + eta^2*g11;
@@ -1492,9 +1523,10 @@ retrybetacalc:
       ni_x = max(pressure) / (2.*Te_x* 1.602e-19*1.0e20)
       
       PRINT, "Maximum density [10^20 m^-3]:", ni_x
-      
-      Te = te_x * pressure / max(pressure)
-      Ni = ni_x * pressure / max(pressure)
+
+      shape = sqrt(pressure / max(pressure))
+      Te = te_x * shape
+      Ni = ni_x * shape
     ENDREP UNTIL get_yesno("Is this ok?") EQ 1
     Ti = Te
     Ti_x = Te_x
@@ -1581,6 +1613,17 @@ retrybetacalc:
   s = file_write(handle, "bxcvx", bxcvx)
   s = file_write(handle, "bxcvy", bxcvy)
   s = file_write(handle, "bxcvz", bxcvz)
+
+  ; type of coordinate system used to calculate metric tensor terms
+  IF orthogonal_coordinates_output EQ 0 THEN BEGIN
+    coordinates_type = "field_aligned"
+  ENDIF ELSE IF orthogonal_coordinates_output EQ 1 THEN BEGIN
+    coordinates_type = "orthogonal"
+  ENDIF ELSE BEGIN
+    PRINT, "ERROR: Unrecognized orthogonal_coordinates_output value", $
+           orthogonal_coordinates_output
+  ENDELSE
+  s = file_write_string(handle, "coordinates_type", coordinates_type)
 
   ; Metric tensor terms
   s = file_write(handle, "g11", g11)

@@ -124,6 +124,14 @@ class Mesh {
   
   // Get routines to request data from mesh file
   
+  /// Get a string from the input source
+  /// 
+  /// @param[out] sval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(std::string &sval, const std::string &name);
+
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable
@@ -502,6 +510,20 @@ class Mesh {
       throw BoutException("Unhandled direction encountered in getNguard");
     }
   };
+
+  /// Re-calculate staggered Coordinates, useful if CELL_CENTRE Coordinates are changed
+  void recalculateStaggeredCoordinates() {
+    for (auto& i : coords_map) {
+      CELL_LOC location = i.first;
+
+      if (location == CELL_CENTRE) {
+        // Only reset staggered locations
+        continue;
+      }
+
+      i.second = createDefaultCoordinates(location);
+    }
+  }
 
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS

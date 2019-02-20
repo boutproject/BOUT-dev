@@ -56,9 +56,10 @@ class Ncxx4;
 
 class Ncxx4 : public DataFormat {
  public:
-  Ncxx4();
-  Ncxx4(const char *name);
-  Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
+  Ncxx4(Mesh* mesh_in = nullptr);
+  Ncxx4(const char *name, Mesh* mesh_in = nullptr);
+  Ncxx4(const std::string &name, Mesh* mesh_in = nullptr)
+    : Ncxx4(name.c_str(), mesh_in) {}
   ~Ncxx4();
 
   using DataFormat::openr;

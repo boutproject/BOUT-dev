@@ -44,12 +44,15 @@ const char DEFAULT_LOG[] = "BOUT.log";
 #include "mpi.h"
 
 #include <boutcomm.hxx>
-#include <bout.hxx>
 #include <datafile.hxx>
 #include <bout/solver.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 #include <msg_stack.hxx>
+
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+#include <bout.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/sys/timer.hxx>
 
@@ -476,9 +479,9 @@ int BoutInitialise(int &argc, char **&argv) {
   try {
     /////////////////////////////////////////////
     
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
-    mesh->setParallelTransform(); ///< Set the parallel transform from options
+    bout::globals::mesh = Mesh::create();  ///< Create the mesh
+    bout::globals::mesh->load();           ///< Load from sources. Required for Field initialisation
+    bout::globals::mesh->setParallelTransform(); ///< Set the parallel transform from options
     /////////////////////////////////////////////
     /// Get some settings
 
@@ -494,24 +497,24 @@ int BoutInitialise(int &argc, char **&argv) {
     // Set up the "dump" data output file
     output << "Setting up output (dump) file\n";
 
-    dump = Datafile(options->getSection("output"));
+    bout::globals::dump = Datafile(options->getSection("output"), bout::globals::mesh);
     
     /// Open a file for the output
     if(append) {
-      dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }else {
-      dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
     }
 
     /// Add book-keeping variables to the output files
-    dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-    dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
-    run_data.outputVars(dump);          // Add wall clock time etc to dump file
-    dump.add(iteration, "iteration", false);
+    bout::globals::dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+    bout::globals::dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
+    //run_data.outputVars(dump);          // Add wall clock time etc to dump file
+    bout::globals::dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
 
-    mesh->outputVars(dump); ///< Save mesh configuration into output file
+    bout::globals::mesh->outputVars(bout::globals::dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
@@ -558,10 +561,10 @@ int BoutFinalise() {
   }
 
   // Delete the mesh
-  delete mesh;
+  delete bout::globals::mesh;
 
   // Close the output file
-  dump.close();
+  bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
@@ -622,6 +625,9 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   simtime = t;
   iteration = iter;
 
+  /// Write dump file
+  bout::globals::dump.write();
+
   /// Collect timing information
   run_data.wtime        = Timer::resetTime("run");
   run_data.ncalls       = solver->resetRHSCounter();
@@ -681,17 +687,16 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   output_progress.print(" ETA %s", (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
 
   /// Write dump file
-  dump.write();
+  bout::globals::dump.write();
 
   if (wall_limit > 0.0) {
     // Check if enough time left
 
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
-    if (t_remain < run_data.wtime) {
+    if (t_remain < run_data.wtime*2) {
       // Less than 1 time-step left
-      output_warn.write(_("Only %e seconds left. Quitting\n"), t_remain);
-
-      return 1; // Return an error code to quit
+      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,t_remain/run_data.wtime);
+      user_requested_exit=true;
     } else {
       output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
@@ -703,7 +708,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     if (f.good()) {
       output << "\n" << "File " << stopCheckName
              << " exists -- triggering exit." << endl;
-      return 1;
+      user_requested_exit=true;
     }
   }
 
