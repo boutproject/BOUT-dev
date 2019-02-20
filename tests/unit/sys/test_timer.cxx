@@ -11,18 +11,22 @@ using ms = std::chrono::duration<double, std::chrono::milliseconds::period>;
 using seconds = std::chrono::duration<double, std::chrono::seconds::period>;
 constexpr double TimerTolerance{1e-3};
 constexpr auto sleep_length = ms(0.5);
-constexpr auto sleep_length_seconds = seconds(sleep_length);
 } // namespace testing
 } // namespace bout
 
 TEST(TimerTest, GetTime) {
   using namespace bout::testing;
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   Timer timer{};
 
   std::this_thread::sleep_for(sleep_length);
 
-  EXPECT_NEAR(timer.getTime(), sleep_length_seconds.count(), TimerTolerance);
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(timer.getTime(), elapsed.count(), TimerTolerance);
 }
 
 TEST(TimerTest, GetUnknownTimeLabel) {
@@ -32,16 +36,23 @@ TEST(TimerTest, GetUnknownTimeLabel) {
 TEST(TimerTest, GetTimeLabelInScope) {
   using namespace bout::testing;
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   Timer timer{"GetTimeLabelInScope test"};
 
   std::this_thread::sleep_for(sleep_length);
 
-  EXPECT_NEAR(Timer::getTime("GetTimeLabelInScope test"), sleep_length_seconds.count(),
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelInScope test"), elapsed.count(),
               TimerTolerance);
 }
 
 TEST(TimerTest, GetTimeLabelOutOfScope) {
   using namespace bout::testing;
+
+  auto start = std::chrono::high_resolution_clock::now();
 
   {
     Timer timer{"GetTimeLabelOutOfScope test"};
@@ -49,20 +60,28 @@ TEST(TimerTest, GetTimeLabelOutOfScope) {
     std::this_thread::sleep_for(sleep_length);
   }
 
-  EXPECT_NEAR(Timer::getTime("GetTimeLabelOutOfScope test"), sleep_length_seconds.count(),
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+  
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelOutOfScope test"), elapsed.count(),
               TimerTolerance);
 }
 
 TEST(TimerTest, GetTimeLabelRepeat) {
   using namespace bout::testing;
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   {
     Timer timer{"GetTimeLabelRepeat test"};
 
     std::this_thread::sleep_for(sleep_length);
   }
 
-  EXPECT_NEAR(Timer::getTime("GetTimeLabelRepeat test"), sleep_length_seconds.count(),
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelRepeat test"), elapsed.count(),
               TimerTolerance);
 
   {
@@ -71,7 +90,10 @@ TEST(TimerTest, GetTimeLabelRepeat) {
     std::this_thread::sleep_for(sleep_length);
   }
 
-  EXPECT_NEAR(Timer::getTime("GetTimeLabelRepeat test"), 2 * sleep_length_seconds.count(),
+  auto end2 = std::chrono::high_resolution_clock::now();
+  seconds elapsed2 = end2 - start;
+
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelRepeat test"), elapsed2.count(),
               TimerTolerance);
 }
 
@@ -84,9 +106,14 @@ TEST(TimerTest, ResetTime) {
 
   timer.resetTime();
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   std::this_thread::sleep_for(sleep_length);
 
-  EXPECT_NEAR(timer.getTime(), sleep_length_seconds.count(), TimerTolerance);
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(timer.getTime(), elapsed.count(), TimerTolerance);
 }
 
 TEST(TimerTest, ResetTimeLabelInScope) {
@@ -98,9 +125,14 @@ TEST(TimerTest, ResetTimeLabelInScope) {
 
   Timer::resetTime("ResetTimeLabelInScope test");
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   std::this_thread::sleep_for(sleep_length);
 
-  EXPECT_NEAR(Timer::getTime("ResetTimeLabelInScope test"), sleep_length_seconds.count(),
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("ResetTimeLabelInScope test"), elapsed.count(),
               TimerTolerance);
 }
 
@@ -115,14 +147,19 @@ TEST(TimerTest, ResetTimeLabelOutOfScope) {
 
   Timer::resetTime("ResetTimeLabelOutOfScope test");
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   {
     Timer timer{"ResetTimeLabelOutOfScope test"};
 
     std::this_thread::sleep_for(sleep_length);
   }
 
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
   EXPECT_NEAR(Timer::getTime("ResetTimeLabelOutOfScope test"),
-              sleep_length_seconds.count(), TimerTolerance);
+              elapsed.count(), TimerTolerance);
 }
 
 TEST(TimerTest, Cleanup) {
@@ -136,12 +173,17 @@ TEST(TimerTest, Cleanup) {
 
   Timer::cleanup();
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   {
     Timer timer{"Cleanup test"};
 
     std::this_thread::sleep_for(sleep_length);
   }
 
-  EXPECT_NEAR(Timer::getTime("Cleanup test"), sleep_length_seconds.count(),
+  auto end = std::chrono::high_resolution_clock::now();
+  seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("Cleanup test"), elapsed.count(),
               TimerTolerance);
 }
