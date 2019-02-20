@@ -509,7 +509,7 @@ int BoutInitialise(int &argc, char **&argv) {
     /// Add book-keeping variables to the output files
     bout::globals::dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
     bout::globals::dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
-    //run_data.outputVars(dump);          // Add wall clock time etc to dump file
+    run_data.outputVars(bout::globals::dump);          // Add wall clock time etc to dump file
     bout::globals::dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
