@@ -136,10 +136,6 @@ struct DerivativeStore {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
 
-    // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
-        methodName);
-
     switch (derivType) {
     case (DERIV::Standard):
       if (standard.count(key) != 0) {
@@ -149,7 +145,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standard[key] = func;
-      return;
+      break;
     case (DERIV::StandardSecond):
       if (standardSecond.count(key) != 0) {
         throw BoutException("Trying to override standardSecond derivative : "
@@ -158,7 +154,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardSecond[key] = func;
-      return;
+      break;
     case (DERIV::StandardFourth):
       if (standardFourth.count(key) != 0) {
         throw BoutException("Trying to override standardFourth derivative : "
@@ -167,13 +163,17 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardFourth[key] = func;
-      return;
+      break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'standard' but derivative type %s passed",
                           DERIV_STRING(derivType).c_str());
     };
-    return;
+
+    // Register this method name in lookup of known methods
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
+        methodName);
+
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
@@ -182,10 +182,6 @@ struct DerivativeStore {
                           STAGGER stagger, std::string methodName) {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
-
-    // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
-        methodName);
 
     switch (derivType) {
     case (DERIV::Upwind):
@@ -196,7 +192,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       upwind[key] = func;
-      return;
+      break;
     case (DERIV::Flux):
       if (flux.count(key) != 0) {
         throw BoutException("Trying to override flux derivative : "
@@ -205,13 +201,16 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       flux[key] = func;
-      return;
+      break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'upwind/flux' but derivative type %s passed",
                           DERIV_STRING(derivType).c_str());
     };
-    return;
+
+    // Register this method name in lookup of known methods
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
+        methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -414,7 +413,7 @@ struct DerivativeStore {
   }
 
   /// Empty all member storage
-  void reset() {
+  void clear() {
     defaultMethods.clear();
     standard.clear();
     standardSecond.clear();
@@ -422,6 +421,13 @@ struct DerivativeStore {
     upwind.clear();
     flux.clear();
     registeredMethods.clear();
+  }
+
+  /// Reset to initial state
+  void reset() {
+    clear();
+
+    setDefaults();
   }
 
 private:
