@@ -46,10 +46,9 @@ FieldGeneratorPtr generator(BoutReal *ptr) {
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh), options(opt) {
-
-  if (options == nullptr)
-    options = Options::getRoot();
+FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
+    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+      options(opt == nullptr ? Options::getRoot() : opt) {
 
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
@@ -93,10 +92,6 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   // TanhHat function
   addGenerator("tanhhat",
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
-}
-
-FieldFactory::~FieldFactory() {
-
 }
 
 const Field2D FieldFactory::create2D(const std::string& value, const Options* opt,

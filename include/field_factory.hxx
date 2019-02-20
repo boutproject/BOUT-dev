@@ -54,8 +54,8 @@ FieldGeneratorPtr generator(BoutReal *ptr);
 
 class FieldFactory : public ExpressionParser {
 public:
-  FieldFactory(Mesh *m, Options *opt = nullptr);
-  ~FieldFactory() override;
+  FieldFactory(Mesh* mesh = nullptr, Options* opt = nullptr);
+  ~FieldFactory() override = default;
 
   /// Create a 2D field by parsing a string and evaluating the expression
   /// using the given options \p opt, over Mesh \p m at time \p t.
