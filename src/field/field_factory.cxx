@@ -281,7 +281,7 @@ const Options* FieldFactory::findOption(const Options *opt, const std::string &n
 }
 
 FieldGeneratorPtr FieldFactory::resolve(std::string &name) {
-  if (options) {
+  if (options != nullptr) {
     // Check if in cache
     std::string key;
     if(name.find(':') != std::string::npos) {
@@ -343,8 +343,9 @@ FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *o
 
   // Check if in the cache
   std::string key = "#" + input;
-  if (opt)
+  if (opt != nullptr) {
     key = opt->str() + key; // Include options context in key
+  }
 
   auto it = cache.find(key);
   if (it != cache.end()) {
@@ -356,8 +357,9 @@ FieldGeneratorPtr FieldFactory::parse(const std::string &input, const Options *o
   const Options *oldoptions = options;
 
   // Store the options tree for token lookups
-  if (opt)
+  if (opt != nullptr) {
     options = opt;
+  }
 
   // Parse
   FieldGeneratorPtr expr = parseString(input);
