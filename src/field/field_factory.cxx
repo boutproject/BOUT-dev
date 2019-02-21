@@ -226,8 +226,6 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
 
 const Options* FieldFactory::findOption(const Options* opt, const std::string& name,
                                         std::string& val) const {
-  // Find an Options object which contains the given name
-
   const Options* result = opt;
 
   // Check if name contains a section separator ':'

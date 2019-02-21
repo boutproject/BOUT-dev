@@ -107,6 +107,7 @@ private:
   /// don't result in allocating more generators.
   mutable std::map<std::string, FieldGeneratorPtr> cache;
 
+  /// Find an Options object which contains the given \p name
   const Options* findOption(const Options* opt, const std::string& name,
                             std::string& val) const;
 };
