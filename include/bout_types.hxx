@@ -49,7 +49,7 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 const std::string& REGION_STRING(REGION region);
 
 /// To identify particular directions (in index space)
-enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5, Special = 6 };
+enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5, Special = 6, Null = 7 };
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
 
