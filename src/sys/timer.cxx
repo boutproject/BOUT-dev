@@ -1,8 +1,6 @@
 #include <bout/sys/timer.hxx>
 #include <mpi.h>
 
-using namespace std;
-
 Timer::Timer() : timing(getInfo("")) {
   timing.started = MPI_Wtime();
   timing.running = true;
@@ -22,7 +20,7 @@ Timer::~Timer() {
 // Static method to clean up all memory
 void Timer::cleanup() { info.clear(); }
 
-map<std::string, Timer::timer_info> Timer::info;
+std::map<std::string, Timer::timer_info> Timer::info;
 
 Timer::timer_info& Timer::getInfo(const std::string& label) {
   auto it = info.find(label);
