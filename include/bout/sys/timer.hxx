@@ -12,19 +12,19 @@ class Timer;
  *
  * To record the time spent in a particular function, create a Timer object
  * when you wish to start timing
- * 
+ *
  *     void someFunction() {
  *       Timer timer("test"); // Starts timer
- *       
+ *
  *     } // Timer stops when goes out of scope
  *
  * Each time this function is called, the total time spent in someFunction
  * will be accumulated. To get the total time spent use getTime()
- * 
+ *
  *     Timer::getTime("test"); // Returns time in seconds as double
  *
  * To reset the timer, use resetTime
- * 
+ *
  *     Timer::resetTime("test"); // Timer reset to zero, returning time as double
  */
 class Timer {
@@ -33,18 +33,18 @@ public:
    * Create a timer. This constructor is equivalent to Timer("")
    */
   Timer();
-  
+
   /*!
    * Create a timer, continuing from last time if the same label
    * has already been used
    */
-  Timer(const std::string &label);
-  
+  Timer(const std::string& label);
+
   /*!
    * Stop the timer
    */
   ~Timer();
-  
+
   /*!
    * Get the time in seconds for time particular Timer object
    *
@@ -82,11 +82,14 @@ private:
     bool running;   ///< Is the timer currently running?
     double started; ///< Start time
   };
-  
+
+  /// Store of existing timing info objects
   static std::map<std::string, timer_info> info;
-  
-  static timer_info& getInfo(const std::string &label);
-  
+
+  /// Get a timing info object by name or return a new instance
+  static timer_info& getInfo(const std::string& label);
+
+  /// The current timing information
   timer_info& timing;
 
   /// Get the elapsed time in seconds for timing info
