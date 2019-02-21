@@ -99,8 +99,10 @@ bool NcFormat::openr(const char *name) {
     xDim = nullptr;
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
-    if(xDim->size() != mesh->LocalNx) {
-      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
+    if (xDim->size() != mesh->LocalNx) {
+      throw BoutException("X dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNx),
+                          static_cast<long unsigned>(xDim->size()));
     }
   }
   
@@ -115,7 +117,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->LocalNy) {
-      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
+      throw BoutException("Y dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNy),
+                          static_cast<long unsigned>(yDim->size()));
     }
   }
   
@@ -128,7 +132,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->LocalNz) {
-      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
+      throw BoutException("Z dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNz),
+                          static_cast<long unsigned>(zDim->size()));
     }
   }
   

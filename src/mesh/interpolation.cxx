@@ -422,8 +422,8 @@ const Field2D interp_to(const Field2D &var, CELL_LOC loc, REGION region) {
   return result;
 }
 
-void printLocation(const Field3D &var) { output.write(strLocation(var.getLocation())); }
-void printLocation(const Field2D &var) { output.write(strLocation(var.getLocation())); }
+void printLocation(const Field3D &var) { output.write("%s",strLocation(var.getLocation())); }
+void printLocation(const Field2D &var) { output.write("%s",strLocation(var.getLocation())); }
 
 const char *strLocation(CELL_LOC loc) { return CELL_LOC_STRING(loc).c_str(); }
 
