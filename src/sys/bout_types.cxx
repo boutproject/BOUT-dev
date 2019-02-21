@@ -4,7 +4,7 @@
 #include <map>
 
 template <typename T>
-const std::string& saveAt(const std::map<T, std::string>& mymap, T t) {
+const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
   AUTO_TRACE();
   auto found = mymap.find(t);
   if (found == mymap.end()) {
@@ -19,7 +19,7 @@ const std::string& CELL_LOC_STRING(CELL_LOC location) {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
       ENUMSTR(CELL_YLOW),    ENUMSTR(CELL_ZLOW),   ENUMSTR(CELL_VSHIFT)};
 
-  return saveAt(CELL_LOCtoString, location);
+  return safeAt(CELL_LOCtoString, location);
 }
 
 const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
@@ -29,7 +29,7 @@ const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
       {DIFF_C2, "C2"},           {DIFF_C4, "C4"},   {DIFF_S2, "S2"},      {DIFF_W2, "W2"},
       {DIFF_W3, "W3"},           {DIFF_FFT, "FFT"}, {DIFF_SPLIT, "SPLIT"}};
 
-  return saveAt(DIFF_METHODtoString, location);
+  return safeAt(DIFF_METHODtoString, location);
 }
 
 const std::string& REGION_STRING(REGION region) {
@@ -37,7 +37,7 @@ const std::string& REGION_STRING(REGION region) {
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
       ENUMSTR(RGN_NOZ)};
-  return saveAt(REGIONtoString, region);
+  return safeAt(REGIONtoString, region);
 }
 
 const std::string& DIRECTION_STRING(DIRECTION direction) {
@@ -49,7 +49,7 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
       {DIRECTION::YAligned, "Y - field aligned"},
       {DIRECTION::YOrthogonal, "Y - orthogonal"}};
 
-  return saveAt(DIRECTIONtoString, direction);
+  return safeAt(DIRECTIONtoString, direction);
 }
 
 const std::string& STAGGER_STRING(STAGGER stagger) {
@@ -59,7 +59,7 @@ const std::string& STAGGER_STRING(STAGGER stagger) {
       {STAGGER::C2L, "Centre to Low"},
       {STAGGER::L2C, "Low to Centre"}};
 
-  return saveAt(STAGGERtoString, stagger);
+  return safeAt(STAGGERtoString, stagger);
 }
 
 const std::string& DERIV_STRING(DERIV deriv) {
@@ -71,5 +71,5 @@ const std::string& DERIV_STRING(DERIV deriv) {
       {DERIV::Upwind, "Upwind"},
       {DERIV::Flux, "Flux"}};
 
-  return saveAt(DERIVtoString, deriv);
+  return safeAt(DERIVtoString, deriv);
 }
