@@ -44,7 +44,11 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
+Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
+                 DIRECTION xDirectionType_in, DIRECTION yDirectionType_in,
+                 DIRECTION zDirectionType_in)
+    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
+            zDirectionType_in) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -58,7 +62,7 @@ Field3D::Field3D(Mesh* localmesh) : Field(localmesh) {
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
+Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -72,7 +76,7 @@ Field3D::Field3D(const Field3D& f) : Field(f.fieldmesh), data(f.data) {
   fieldCoordinates = f.fieldCoordinates;
 }
 
-Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
+Field3D::Field3D(const Field2D& f) : Field(f) {
 
   TRACE("Field3D: Copy constructor from Field2D");
 
@@ -80,13 +84,10 @@ Field3D::Field3D(const Field2D& f) : Field(f.getMesh()) {
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
 
-  location = f.getLocation();
-  fieldCoordinates = nullptr;
-
   *this = f;
 }
 
-Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
+Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
 
   TRACE("Field3D: Copy constructor from value");
 
@@ -107,11 +108,14 @@ Field3D::~Field3D() {
 void Field3D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
-      /// If no mesh, use the global
+      // fieldmesh was not initialized when this field was initialized, so use
+      // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
       nz = fieldmesh->LocalNz;
+
+      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx*ny*nz);
 #if CHECK > 2
@@ -194,38 +198,9 @@ Field3D &Field3D::ynext(int dir) {
   return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
-void Field3D::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field3D: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field3D: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
 
   // Ensures Coordinates object is initialized for this Field's location
   getCoordinates();
-}
-
-CELL_LOC Field3D::getLocation() const {
-  AUTO_TRACE();
-  return location;
-}
-
 // Not in header because we need to access fieldmesh
 BoutReal &Field3D::operator()(const IndPerp &d, int jy) {
   return operator[](fieldmesh->indPerpto3D(d, jy));
@@ -263,13 +238,16 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
   
-  // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
-  nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
-  
-  data = rhs.data;
+  copyFieldMembers(rhs);
 
-  setLocation(rhs.location);
+  // Copy the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+  nz = rhs.nz;
+
+  ASSERT1(fieldsCompatible(*this, rhs));
+
+  data = rhs.data;
 
   return *this;
 }
@@ -280,13 +258,14 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
+    setLocation(rhs.getLocation());
+
   /// Make sure there's a unique array to copy data into
   allocate();
+  ASSERT1(fieldsCompatible(*this, rhs));
 
   /// Copy data
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
-
-  setLocation(rhs.getLocation());
 
   return *this;
 }
@@ -294,14 +273,13 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(location == rhs.getLocation());
   ASSERT1(getMesh() == rhs.getMesh());
-
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
   /// Make sure there's a unique array to copy data into
   allocate();
+  ASSERT1(fieldsCompatible(*this, rhs));
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
@@ -595,7 +573,7 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
 
-  ASSERT1(lhs.getLocation() == rhs.getLocation());
+  ASSERT1(fieldsCompatible(lhs, rhs));
 
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field3D result(lhs.getMesh());

@@ -56,18 +56,37 @@ class Coordinates;
 class Field {
  public:
   Field() = default;
-  Field(Mesh * localmesh);
+
+  Field(Mesh* localmesh, CELL_LOC location_in, DIRECTION xDirectionType_in,
+      DIRECTION yDirectionType_in, DIRECTION zDirectionType_in);
+
+  // Copy constructor
+  Field(const Field& f)
+    : name(f.name), fieldmesh(f.fieldmesh),
+      fieldCoordinates(f.fieldCoordinates), location(f.location),
+      xDirectionType(f.xDirectionType), yDirectionType(f.yDirectionType),
+      zDirectionType(f.zDirectionType) {}
+
   virtual ~Field() { }
 
-  virtual void setLocation(CELL_LOC UNUSED(loc)) {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::setLocation which is intentionally not fully implemented.");
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location);
+  /// Get variable location
+  CELL_LOC getLocation() const;
+
+  /// Getters for DIRECTION types
+  DIRECTION getDirectionX() const {
+    return xDirectionType;
   }
-  virtual CELL_LOC getLocation() const {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::getLocation which is intentionally not fully implemented.");
+  DIRECTION getDirectionY() const {
+    return yDirectionType;
+  }
+  DIRECTION getDirectionZ() const {
+    return zDirectionType;
   }
 
   std::string name;
@@ -95,6 +114,11 @@ class Field {
     if (fieldmesh){
       return fieldmesh;
     } else {
+      // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
+      // allocate() is called in one of the derived classes. fieldmesh==nullptr
+      // indicates that some initialization that would be done in the
+      // constructor if fieldmesh was a valid Mesh object still needs to be
+      // done.
       return bout::globals::mesh;
     }
   }
@@ -121,6 +145,17 @@ class Field {
    */
   virtual int getNz() const;
 
+  friend void swap(Field& first, Field& second) noexcept {
+    using std::swap;
+    swap(first.name, second.name);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.location, second.location);
+    swap(first.xDirectionType, second.xDirectionType);
+    swap(first.yDirectionType, second.yDirectionType);
+    swap(first.zDirectionType, second.zDirectionType);
+  }
+
   friend bool fieldsCompatible(const Field& field1, const Field& field2) {
     return
         // The following is a possible alternative to
@@ -140,6 +175,35 @@ class Field {
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
+
+  /// Set any direction types which are DIRECTION::Null to default values from
+  /// fieldmesh.
+  void setNullDirectionTypesToDefault();
+
+  /// Copy the members from another Field
+  void copyFieldMembers(const Field& f) {
+    name = f.name;
+    fieldmesh = f.fieldmesh;
+    fieldCoordinates = f.fieldCoordinates;
+    location = f.location;
+    xDirectionType = f.xDirectionType;
+    yDirectionType = f.yDirectionType;
+    zDirectionType = f.zDirectionType;
+  }
+
+  /// Setters for *DirectionType
+  void setDirectionX(DIRECTION d) {
+    xDirectionType = d;
+  }
+  void setDirectionY(DIRECTION d) {
+    yDirectionType = d;
+  }
+  void setDirectionZ(DIRECTION d) {
+    zDirectionType = d;
+  }
 
 private:
   DIRECTION xDirectionType{DIRECTION::Null};

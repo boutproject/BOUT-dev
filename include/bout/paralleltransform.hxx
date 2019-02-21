@@ -46,6 +46,8 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  virtual DIRECTION getDefaultYDirectionType() const = 0;
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'coordinates_type' variable, it has the correct value
@@ -92,6 +94,11 @@ public:
   bool canToFromFieldAligned() override{
     return true;
   }
+
+  DIRECTION getDefaultYDirectionType() const override {
+    return DIRECTION::YAligned;
+  }
+
 protected:
   void checkInputGrid() override;
 };
@@ -136,6 +143,10 @@ public:
 
   bool canToFromFieldAligned() override{
     return true;
+  }
+
+  DIRECTION getDefaultYDirectionType() const override {
+    return DIRECTION::YOrthogonal;
   }
 
 protected:

@@ -53,6 +53,8 @@ enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5, Speci
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
 
+void swap(DIRECTION& first, DIRECTION& second);
+
 /// To identify valid staggering combinations
 enum class STAGGER { None = 0, C2L = 1, L2C = 2};
 

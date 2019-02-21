@@ -46,7 +46,11 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
+      DIRECTION xDirectionType_in, DIRECTION yDirectionType_in, DIRECTION
+      zDirectionType_in)
+    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
+            zDirectionType_in) {
 
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -58,7 +62,7 @@ Field2D::Field2D(Mesh* localmesh) : Field(localmesh) {
 #endif
 }
 
-Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
+Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
 #ifdef TRACK
@@ -74,7 +78,7 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
   fieldCoordinates = f.fieldCoordinates;
 }
 
-Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field(localmesh) {
+Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
 
@@ -89,10 +93,13 @@ Field2D::~Field2D() {
 void Field2D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
-      /// If no mesh, use the global
+      // fieldmesh was not initialized when this field was initialized, so use
+      // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
+
+      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx*ny);
 #if CHECK > 2
@@ -117,36 +124,9 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
 };
 
-void Field2D::setLocation(CELL_LOC new_location) {
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field2D: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field2D: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggerGrids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
 
   // Ensures Coordinates object is initialized for this Field's location
   getCoordinates();
-}
-
-CELL_LOC Field2D::getLocation() const {
-  return location;
-}
-
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));
@@ -169,16 +149,14 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   name = rhs.name;
 #endif
 
+  copyFieldMembers(rhs);
+
   // Copy the data and data sizes
-  fieldmesh = rhs.fieldmesh;
   nx = rhs.nx;
   ny = rhs.ny;
 
   // Copy reference to data
   data = rhs.data;
-
-  // Copy location
-  setLocation(rhs.location);
 
   return *this;
 }

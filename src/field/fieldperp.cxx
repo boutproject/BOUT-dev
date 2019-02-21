@@ -34,26 +34,32 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
-FieldPerp::FieldPerp(Mesh *localmesh) : Field(localmesh) {
+FieldPerp::FieldPerp(Mesh *localmesh, CELL_LOC location_in, int yindex_in,
+      DIRECTION xDirectionType_in, DIRECTION yDirectionType_in,
+      DIRECTION zDirectionType_in)
+    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
+            zDirectionType_in),
+      yindex(yindex_in) {
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
   }
 }
 
-FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : Field(localmesh) {
-  nx = fieldmesh->LocalNx;
-  nz = fieldmesh->LocalNz;
+FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : FieldPerp(localmesh) {
   *this = val;
 }
 
 void FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
-      /// If no mesh, use the global
+      // fieldmesh was not initialized when this field was initialized, so use
+      // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
+
+      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx * nz);
 #if CHECK > 2
@@ -61,38 +67,7 @@ void FieldPerp::allocate() {
 #endif
   } else
     data.ensureUnique();
-}
 
-void FieldPerp::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "FieldPerp: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-    
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("FieldPerp: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
-
-  // Ensures Coordinates object is initialized for this Field's location
-  getCoordinates();
-}
-
-CELL_LOC FieldPerp::getLocation() const {
-  AUTO_TRACE();
-  return location;
 }
 
 /***************************************************************
@@ -105,12 +80,15 @@ FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
     return (*this); // skip this assignment
   }
 
+  copyFieldMembers(rhs);
+
   nx = rhs.nx;
   nz = rhs.nz;
   yindex = rhs.yindex;
   data = rhs.data;
 
-  setLocation(rhs.location);
+  ASSERT1(fieldsCompatible(*this, rhs));
+
   return *this;
 }
 

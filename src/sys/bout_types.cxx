@@ -54,6 +54,12 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
   return safeAt(DIRECTIONtoString, direction);
 }
 
+void swap(DIRECTION& first, DIRECTION& second) {
+  DIRECTION temp = first;
+  first = second;
+  second = temp;
+}
+
 const std::string& STAGGER_STRING(STAGGER stagger) {
   AUTO_TRACE();
   const static std::map<STAGGER, std::string> STAGGERtoString = {

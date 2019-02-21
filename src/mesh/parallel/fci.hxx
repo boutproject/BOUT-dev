@@ -107,6 +107,10 @@ protected:
   void checkInputGrid() override;
 
 
+  DIRECTION getDefaultYDirectionType() const override {
+    return DIRECTION::YOrthogonal;
+  }
+
 private:
   /// FCI maps for each of the parallel slices
   std::vector<FCIMap> field_line_maps;

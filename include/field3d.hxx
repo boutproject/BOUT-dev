@@ -167,7 +167,10 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *localmesh = nullptr);
+  Field3D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DIRECTION xDirectionType_in=DIRECTION::Null,
+          DIRECTION yDirectionType_in=DIRECTION::Null,
+          DIRECTION zDirectionType_in=DIRECTION::Null);
 
   /*!
    * Copy constructor
@@ -262,15 +265,6 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
 
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
-  
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -457,14 +451,15 @@ class Field3D : public Field, public FieldData {
 
   friend void swap(Field3D& first, Field3D& second) noexcept {
     using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
     swap(first.data, second.data);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.background, second.background);
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
     swap(first.nz, second.nz);
-    swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.yup_fields, second.yup_fields);
     swap(first.ydown_fields, second.ydown_fields);
@@ -484,9 +479,6 @@ private:
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
   
   /// Time derivative (may be nullptr)
   Field3D *deriv{nullptr};

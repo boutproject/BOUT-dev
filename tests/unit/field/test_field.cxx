@@ -31,7 +31,7 @@ TEST_F(FieldTest, GetGlobalMesh) {
 
 TEST_F(FieldTest, GetLocalMesh) {
   FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
-  Field field(&myMesh);
+  Field field(&myMesh, CELL_CENTRE, DIRECTION::X, DIRECTION::Y, DIRECTION::Z);
 
   auto localmesh = field.getMesh();
 
