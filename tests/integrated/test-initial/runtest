@@ -2,7 +2,7 @@
 
 # Test initial conditions
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 import configparser
@@ -155,7 +155,7 @@ tolerance = 1e-13
 cmd = "./test_initial"
 datadir = "data"
 inputfile = os.path.join(datadir, "BOUT.inp")
-MPIRUN = getmpirun()
+
 
 # Read the input file
 config = configparser.ConfigParser()
@@ -185,7 +185,7 @@ shell_safe("make > make.log")
 
 nprocs = [1, 2, 3, 4]
 for nproc in nprocs:
-    status, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True, verbose=True)
+    status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
     with open("run.log.{}".format(nproc), "w") as f:
         f.write(out)
 

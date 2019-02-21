@@ -13,7 +13,7 @@ using ParallelTransformTest = FakeMeshFixture;
 
 TEST_F(ParallelTransformTest, IdentityCalcYUpDown) {
 
-  ParallelTransformIdentity transform{};
+  ParallelTransformIdentity transform{*bout::globals::mesh};
 
   Field3D field{1.0};
 
@@ -25,7 +25,7 @@ TEST_F(ParallelTransformTest, IdentityCalcYUpDown) {
 
 TEST_F(ParallelTransformTest, IdentityCalcYUpDownTwoSlices) {
 
-  ParallelTransformIdentity transform{};
+  ParallelTransformIdentity transform{*bout::globals::mesh};
 
   bout::globals::mesh->ystart = 2;
 

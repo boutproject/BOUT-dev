@@ -124,6 +124,14 @@ class Mesh {
   
   // Get routines to request data from mesh file
   
+  /// Get a string from the input source
+  /// 
+  /// @param[out] sval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(std::string &sval, const std::string &name);
+
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable

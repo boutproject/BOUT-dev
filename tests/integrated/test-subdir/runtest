@@ -2,4 +2,6 @@
 
 make || exit
 
-mpirun -n 1 ./subdirs
+test ".$MPIRUN" = . && MPIRUN="mpirun -np"
+
+$MPIRUN 1 ./subdirs

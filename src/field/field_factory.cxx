@@ -99,30 +99,29 @@ FieldFactory::~FieldFactory() {
 
 }
 
-const Field2D FieldFactory::create2D(const std::string &value, const Options *opt,
-                                     Mesh *localmesh, CELL_LOC loc,
+const Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
+                                     Mesh* localmesh, CELL_LOC loc, BoutReal t) {
+  return create2D(parse(value, opt), localmesh, loc, t);
+}
+
+const Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                      BoutReal t) {
-
-  if(localmesh == nullptr)
+  AUTO_TRACE();
+  
+  if (localmesh == nullptr)
     localmesh = fieldmesh;
-  if(localmesh == nullptr)
+  if (localmesh == nullptr)
     throw BoutException("Not a valid mesh");
-
-  Field2D result(0.,localmesh);
-
-  if(localmesh->StaggerGrids == false){
-    loc = CELL_CENTRE ;
+  
+  if (!gen) {
+    throw BoutException("Couldn't create 2D field from null generator");
   }
+  
+  Field2D result{localmesh};
+
+  result.allocate();
   result.setLocation(loc);
-
-  FieldGeneratorPtr gen = parse(value, opt);
-  if(!gen) {
-    output << "FieldFactory error: Couldn't create 2D field from '"
-           << value
-           << "'" << endl;
-    return result;
-  }
-
+  
   switch(loc)  {
   case CELL_XLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -161,12 +160,22 @@ const Field2D FieldFactory::create2D(const std::string &value, const Options *op
 const Field3D FieldFactory::create3D(const std::string &value, const Options *opt,
                                      Mesh *localmesh, CELL_LOC loc,
                                      BoutReal t) {
+  return create3D(parse(value, opt), localmesh, loc, t);
+}
 
+const Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+                                     BoutReal t) {
+  AUTO_TRACE();
+  
   if(localmesh == nullptr)
     localmesh = fieldmesh;
   if(localmesh == nullptr)
     throw BoutException("Not a valid mesh");
-
+  
+  if (!gen) {
+    throw BoutException("Couldn't create 3D field from null generator");
+  }
+  
   // Create a Field3D over mesh "localmesh"
   Field3D result(localmesh);
   
@@ -174,13 +183,7 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
   result.allocate();
 
   result.setLocation(loc);
-
-  // Parse expression to create a tree of generators
-  FieldGeneratorPtr gen = parse(value, opt);
-  if(!gen) {
-    throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
-  }
-
+  
   switch(loc)  {
   case CELL_XLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -223,8 +226,6 @@ const Field3D FieldFactory::create3D(const std::string &value, const Options *op
     }
   }
   };
-
-  // Don't delete generator
   
   if (localmesh->canToFromFieldAligned()){ // Ask wheter it is possible
     // Transform from field aligned coordinates, to be compatible with

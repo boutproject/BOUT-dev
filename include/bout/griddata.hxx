@@ -52,6 +52,7 @@ public:
 
   virtual bool hasVar(const std::string &name) = 0; ///< Test if source can supply a variable
 
+  virtual bool get(Mesh *m, std::string &sval, const std::string &name) = 0; ///< Get a string
   virtual bool get(Mesh *m, int &ival, const std::string &name) = 0; ///< Get an integer
   virtual bool get(Mesh *m, BoutReal &rval,
                    const std::string &name) = 0; ///< Get a BoutReal number
@@ -78,6 +79,7 @@ public:
 
   bool hasVar(const std::string &name) override;
 
+  bool get(Mesh *m, std::string &sval, const std::string &name) override; ///< Get a string
   bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
            const std::string &name) override; ///< Get a BoutReal number
@@ -119,6 +121,18 @@ public:
    * Checks if the options has a given variable
    */
   bool hasVar(const std::string &name) override;
+
+  /*!
+   * Reads strings from options. Uses Options::get to handle
+   * expressions
+   *
+   * @param[in] mesh   Not used
+   * @param[in] name   Name of variable
+   * @param[out] sval  Always given a value, defaults to 0
+   *
+   * @return True if option is set, false if ival is default (0)
+   */
+  bool get(Mesh *mesh, std::string &sval, const std::string &name) override;
 
   /*!
    * Reads integers from options. Uses Options::get to handle

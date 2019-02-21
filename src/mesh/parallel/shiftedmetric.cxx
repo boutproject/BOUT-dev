@@ -15,7 +15,10 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh &m) : ParallelTransform(m), zShift(&m) {
+  // check the coordinate system used for the grid data source
+  checkInputGrid();
+
   // Read the zShift angle from the mesh
   if (mesh.get(zShift, "zShift")) {
     // No zShift variable. Try qinty in BOUT grid files
@@ -35,8 +38,22 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : mesh(m), zShift(&m) {
   cachePhases();
 }
 
-ShiftedMetric::ShiftedMetric(Mesh &m, Field2D zShift_) : mesh(m), zShift(std::move(zShift_)) {
+ShiftedMetric::ShiftedMetric(Mesh &m, Field2D zShift_) : ParallelTransform(m), zShift(std::move(zShift_)) {
+  // check the coordinate system used for the grid data source
+  checkInputGrid();
+
   cachePhases();
+}
+
+void ShiftedMetric::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (!mesh.get(coordinates_type, "coordinates_type")) {
+    if (coordinates_type != "orthogonal") {
+      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+          "to generate metric components for ShiftedMetric. Should be 'orthogonal.");
+    }
+  } // else: coordinate_system variable not found in grid input, indicates older input
+    //       file so must rely on the user having ensured the type is correct
 }
 
 void ShiftedMetric::cachePhases() {
@@ -128,6 +145,7 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f, const REGION reg
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const REGION region) const {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
@@ -163,6 +181,9 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 
 
 void ShiftedMetric::calcYUpDown(Field3D& f) {
+
+  ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
 
   auto results = shiftZ(f, parallel_slice_phases);
 
