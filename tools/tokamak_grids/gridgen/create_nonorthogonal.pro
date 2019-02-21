@@ -351,9 +351,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   FOR i=0, npar-1 DO BEGIN
 
     IF i GE npar/2 THEN BEGIN
-       IF KEYWORD_SET(vec_in_up) THEN vec_in = vec_in_up
-       IF KEYWORD_SET(vec_out_up) THEN vec_out = vec_out_up
-
        IF KEYWORD_SET(sep_up) THEN BEGIN
           sep = sep_up
        ENDIF ELSE sep = fvals[nin]
@@ -363,13 +360,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_up[1,*])), $
                 thick=2,color=3
        ENDIF ELSE sep_line = FLTARR(2,2)
-       IF NOT KEYWORD_SET(orthup) THEN orthup=0
-       IF orthup EQ 1 THEN weight = 0 ELSE weight = ((2.*i/(npar-1))-1)^1.35
     ENDIF ELSE BEGIN
 ;        PRINT, "***** DOWN *****" 
-       IF KEYWORD_SET(vec_in_down) THEN vec_in = vec_in_down
-       IF KEYWORD_SET(vec_out_down) THEN vec_out = vec_out_down
-
        IF KEYWORD_SET(sep_down) THEN BEGIN
           sep = sep_down
        ENDIF ELSE sep = fvals[nin]
@@ -380,9 +372,13 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_down[1,*])), $
                 thick=2,color=2
        ENDIF ELSE sep_line = FLTARR(2,2)
-       IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-       IF orthdown EQ 1 THEN weight = 0 ELSE weight = (1-(2.*i)/(npar-1))^1.35
     ENDELSE
+
+    IF NOT KEYWORD_SET(orthup) THEN orthup=0
+    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.))^2.7
+
+    IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^2.7
     
     ; Refine the location of the starting point
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
@@ -397,7 +393,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ftarg = fvals[nin]
       follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], $
         ftarg, rinext, zinext, status=status, $
-                       vec=vec_in, weight=weight
+                       vec_up=vec_in_up, weight_up=weight_up, $
+                       vec_down=vec_in_down, weight_down=weight_down
       rixy[nin, i] = rinext
       zixy[nin, i] = zinext
     ENDELSE
@@ -409,7 +406,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 ;          PRINT, "FOLLOWING INNER i, j = ", i, j
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           sep, rinext, zinext, status=status, $
-                          boundary=sep_line, fbndry=fbndry, vec=vec_in, weight=weight, /bndry_noperiodic
+                          boundary=sep_line, fbndry=fbndry, $
+                          vec_up=vec_in_up, weight_up=weight_up, $
+                          vec_down=vec_in_down, weight_down=weight_down, /bndry_noperiodic
          ; If hits the separatrix, should now continue from
          ; the separatrix line
          OPLOT, [INTERPOLATE(R, rinext)], [INTERPOLATE(Z, zinext)], psym=4, color=5
@@ -417,18 +416,24 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 ;          PRINT, "FOLLOWING OUTER"
          follow_gradient_nonorth, interp_data, R, Z, rinext, zinext, $
                           ftarg, rinext, zinext, status=status, $
-                          boundary=boundary, fbndry=fbndry, vec=vec_out, weight=weight
+                          boundary=boundary, fbndry=fbndry, $
+                          vec_up=vec_out_up, weight_up=weight_up, $
+                          vec_down=vec_out_down, weight_down=weight_down
       ENDIF ELSE BEGIN
          
          IF fvals[nin+j] GT sep THEN BEGIN
-            vec = vec_out
+            vec_down = vec_out_down
+            vec_up = vec_out_up
          ENDIF ELSE BEGIN
-            vec = vec_in
+            vec_down = vec_in_down
+            vec_up = vec_in_up
          ENDELSE
          
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           ftarg, rinext, zinext, status=status, $
-                          boundary=boundary, fbndry=fbndry, vec=vec, weight=weight
+                          boundary=boundary, fbndry=fbndry, $
+                          vec_up=vec_up, weight_up=weight_up, $
+                          vec_down=vec_down, weight_down=weight_down
       ENDELSE
       
       IF status EQ 1 THEN BEGIN
@@ -453,15 +458,18 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ftarg = fvals[nin-j-1]
       
       IF ftarg GT sep THEN BEGIN
-         vec = vec_out
+        vec_down = vec_out_down
+        vec_up = vec_out_up
       ENDIF ELSE BEGIN
-         vec = vec_in
+        vec_down = vec_in_down
+        vec_up = vec_in_up
       ENDELSE
       
       follow_gradient_nonorth, interp_data, R, Z, rixy[nin-j, i], zixy[nin-j, i], $
         ftarg, rinext, zinext,  status=status, $
         boundary=boundary, fbndry=fbndry, $
-        vec=vec, weight=weight
+        vec_up=vec_up, weight_up=weight_up, $
+        vec_down=vec_down, weight_down=weight_down
       
       IF status EQ 1 THEN BEGIN
         rixy[nin-j-1, i] = -1.0
@@ -520,7 +528,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF
     ENDIF ELSE BEGIN
        ; Probably not near an X-point. Follow gradient to refine location
-       follow_gradient_nonorth, interp_data, R, Z, rixy[nin,i], zixy[nin,i], f0, ri1, zi1, vec=vec_in, weight=weight
+       follow_gradient_nonorth, interp_data, R, Z, rixy[nin,i], zixy[nin,i], f0, ri1, zi1, $
+                                vec_up=vec_in_up, weight_up=weight_up, $
+                                vec_down=vec_in_down, weight_down=weight_down
        rixy[nin,i] = ri1
        zixy[nin,i] = zi1
     ENDELSE
@@ -1882,7 +1892,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       line = get_line_nonorth(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt]).core2_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt]).core2_zi, sepi), $
-                      0.95*f_cont + 0.05*faxis, npt=30, vec=vec_in_down2, weight=1)
+                      0.95*f_cont + 0.05*faxis, npt=30, vec_down=vec_in_down2, weight_down=1)
       
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=4, _extra=_extra
@@ -1914,7 +1924,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
                       0.95*f_cont + 0.05*faxis, npt=30, $
-                      vec=vec_in_up2, weight=1)
+                      vec_up=vec_in_up2, weight_up=1)
       
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=2, _extra=_extra
