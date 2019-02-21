@@ -163,6 +163,7 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
 
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) const {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
@@ -203,6 +204,9 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
 
 
 void ShiftedMetric::calcYUpDown(Field3D& f) {
+
+  ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == CELL_CENTRE); // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
 
   auto results = shiftZ(f, parallel_slice_phases);
 
@@ -265,6 +269,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
 //Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) const {
   ASSERT1(&mesh == f.getMesh());
+  ASSERT1(f.getLocation() == zangle.getLocation());
   if(mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 

@@ -58,7 +58,7 @@ public:
   BoutMask corner_boundary_mask;
   
   Field3D interpolate(Field3D& f) const {
-    ASSERT3(&map_mesh == f.getMesh());
+    ASSERT1(&map_mesh == f.getMesh());
     return interp->interpolate(f);
   }
 

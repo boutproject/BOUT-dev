@@ -256,7 +256,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
 
-  ASSERT3(&map_mesh == f.getMesh());
+  ASSERT1(&map_mesh == f.getMesh());
 
   // Cell centre values
   Field3D centre = interp->interpolate(f);
@@ -327,6 +327,10 @@ void FCITransform::checkInputGrid() {
 void FCITransform::calcYUpDown(Field3D& f) {
   TRACE("FCITransform::calcYUpDown");
 
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
 
@@ -338,6 +342,10 @@ void FCITransform::calcYUpDown(Field3D& f) {
 
 void FCITransform::integrateYUpDown(Field3D& f) {
   TRACE("FCITransform::integrateYUpDown");
+
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
