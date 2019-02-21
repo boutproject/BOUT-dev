@@ -19,41 +19,6 @@ Timer::~Timer() {
   timing.time += finished - timing.started;
 }
 
-double Timer::getTime() {
-  // If we've got a Timer by value, it must be running
-  return timing.time + (MPI_Wtime() - timing.started);
-}
-
-double Timer::resetTime() {
-  double val = timing.time;
-  timing.time = 0.0;
-  if (timing.running) {
-    double cur_time = MPI_Wtime();
-    val += cur_time - timing.started;
-    timing.started = cur_time;
-  }
-  return val;
-}
-
-double Timer::getTime(const std::string& label) {
-  timer_info& t = getInfo(label);
-  if (t.running)
-    return t.time + (MPI_Wtime() - t.started);
-  return t.time;
-}
-
-double Timer::resetTime(const std::string& label) {
-  timer_info& t = getInfo(label);
-  double val = t.time;
-  t.time = 0.0;
-  if (t.running) {
-    double cur_time = MPI_Wtime();
-    val += cur_time - t.started;
-    t.started = cur_time;
-  }
-  return val;
-}
-
 // Static method to clean up all memory
 void Timer::cleanup() { info.clear(); }
 
@@ -69,4 +34,22 @@ Timer::timer_info& Timer::getInfo(const std::string& label) {
     return timer.first->second;
   }
   return it->second;
+}
+
+double Timer::getTime(const Timer::timer_info& info) {
+  if (info.running) {
+    return info.time + (MPI_Wtime() - info.started);
+  }
+  return info.time;
+}
+
+double Timer::resetTime(Timer::timer_info& info) {
+  double val = info.time;
+  info.time = 0.0;
+  if (info.running) {
+    double cur_time = MPI_Wtime();
+    val += cur_time - info.started;
+    info.started = cur_time;
+  }
+  return val;
 }

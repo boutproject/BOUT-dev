@@ -53,28 +53,28 @@ public:
    *     output << timer.getTime();
    *     // timer still counting
    */
-  double getTime();
-  
+  double getTime() { return getTime(timing); }
+
   /*!
    * Get the time in seconds, reset timer to zero
    */
-  double resetTime();
-  
+  double resetTime() { return resetTime(timing); }
+
   /*!
-   * The total time in seconds 
+   * The total time in seconds
    */
-  static double getTime(const std::string &label);
-  
+  static double getTime(const std::string& label) { return getTime(getInfo(label)); }
+
   /*!
    * The total time in seconds, resets the timer to zero
    */
-  static double resetTime(const std::string &label);
-  
+  static double resetTime(const std::string& label) { return resetTime(getInfo(label)); }
+
   /*!
    * Clears all timers, freeing memory
    */
   static void cleanup();
-  
+
 private:
   /// Structure to contain timing information
   struct timer_info {
@@ -88,6 +88,12 @@ private:
   static timer_info& getInfo(const std::string &label);
   
   timer_info& timing;
+
+  /// Get the elapsed time in seconds for timing info
+  static double getTime(const timer_info& info);
+
+  /// Get the elapsed time, reset timing info to zero
+  static double resetTime(timer_info& info);
 };
 
 #endif // __TIMER_H__
