@@ -75,11 +75,13 @@ void ShiftedMetric::cachePhases() {
 
   //To/From field aligned phases
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+    int ix = i.x();
+    int iy = i.y();
     for(int jz=0;jz<nmodes;jz++) {
       BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      fromAlignedPhs(i.x(), i.y(), jz) =
+      fromAlignedPhs(ix, iy, jz) =
           dcomplex(cos(kwave * zShift[i]), -sin(kwave * zShift[i]));
-      toAlignedPhs(i.x(), i.y(), jz) =
+      toAlignedPhs(ix, iy, jz) =
           dcomplex(cos(kwave * zShift[i]), sin(kwave * zShift[i]));
     }
   }
@@ -113,13 +115,15 @@ void ShiftedMetric::cachePhases() {
   for (auto& slice : parallel_slice_phases) {
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
 
+      int ix = i.x();
+      int iy = i.y();
       BoutReal slice_shift = zShift[i] - zShift[i.yp(slice.y_offset)];
 
       for (int jz = 0; jz < nmodes; jz++) {
         // wave number is 1/[rad]
         BoutReal kwave = jz * 2.0 * PI / zlength;
 
-        slice.phase_shift(i.x(), i.y(), jz) =
+        slice.phase_shift(ix, iy, jz) =
             dcomplex(cos(kwave * slice_shift), -sin(kwave * slice_shift));
       }
     }
@@ -207,8 +211,10 @@ ShiftedMetric::shiftZ(const Field3D& f,
   f_fft = Array<dcomplex>(nmodes);
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
-    f_fft(i.x(), i.y()).ensureUnique();
-    rfft(&f(i, 0), mesh.LocalNz, f_fft(i.x(), i.y()).begin());
+    int ix = i.x();
+    int iy = i.y();
+    f_fft(ix, iy).ensureUnique();
+    rfft(&f(i, 0), mesh.LocalNz, f_fft(ix, iy).begin());
   }
 
   std::vector<Field3D> results{};
@@ -223,11 +229,14 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
-      Array<dcomplex> shifted_temp(f_fft(i.x(), i.y() + phase.y_offset));
+      int ix = i.x();
+      int iy = i.y();
+
+      Array<dcomplex> shifted_temp(f_fft(ix, iy + phase.y_offset));
       shifted_temp.ensureUnique();
 
       for (int jz = 1; jz < nmodes; ++jz) {
-        shifted_temp[jz] *= phase.phase_shift(i.x(), i.y(), jz);
+        shifted_temp[jz] *= phase.phase_shift(ix, iy, jz);
       }
 
       irfft(shifted_temp.begin(), mesh.LocalNz,
