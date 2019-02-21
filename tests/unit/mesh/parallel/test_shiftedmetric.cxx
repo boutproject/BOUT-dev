@@ -42,6 +42,10 @@ public:
 
     Field3D input_temp{mesh};
 
+    // input values have been slightly shuffled to ensure that input is not
+    // constant in y, as this can hide bugs. Shuffling also means the rows are
+    // different by something that is not a shift in the z-direction to ensure
+    // that this also cannot hide bugs.
     fillField(input_temp, {{{1., 2., 3., 4., 5.},
                             {2., 1., 3., 4., 5.},
                             {1., 3., 2., 4., 5.},
