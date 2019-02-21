@@ -7,9 +7,9 @@
 // The unit tests use the global mesh
 using namespace bout::globals;
 
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -122,7 +122,7 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {2., 4., 3., 5., 1.}}});
 
   EXPECT_TRUE(IsFieldEqual(shifted.toFieldAligned(input, RGN_ALL), expected, "RGN_ALL",
-                                    FFTTolerance));
+                           FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
@@ -156,7 +156,7 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(shifted.fromFieldAligned(input, RGN_ALL), expected, "RGN_ALL",
-                                    FFTTolerance));
+                           FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
@@ -290,12 +290,8 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
                               {0., 0., 0., 0., 0.},
                               {0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(
-      IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
-  EXPECT_TRUE(
-      IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
-  EXPECT_TRUE(
-      IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
-  EXPECT_TRUE(
-      IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
 }
