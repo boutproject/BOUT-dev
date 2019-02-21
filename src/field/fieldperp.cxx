@@ -50,7 +50,7 @@ FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : FieldPerp(localmesh) {
   *this = val;
 }
 
-void FieldPerp::allocate() {
+FieldPerp& FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
       // fieldmesh was not initialized when this field was initialized, so use
@@ -68,6 +68,7 @@ void FieldPerp::allocate() {
   } else
     data.ensureUnique();
 
+  return *this;
 }
 
 /***************************************************************

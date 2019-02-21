@@ -105,7 +105,7 @@ Field3D::~Field3D() {
   }
 }
 
-void Field3D::allocate() {
+Field3D& Field3D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       // fieldmesh was not initialized when this field was initialized, so use
@@ -123,6 +123,8 @@ void Field3D::allocate() {
 #endif
   } else
     data.ensureUnique();
+
+  return *this;
 }
 
 Field3D* Field3D::timeDeriv() {
@@ -198,9 +200,6 @@ Field3D &Field3D::ynext(int dir) {
   return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
-
-  // Ensures Coordinates object is initialized for this Field's location
-  getCoordinates();
 // Not in header because we need to access fieldmesh
 BoutReal &Field3D::operator()(const IndPerp &d, int jy) {
   return operator[](fieldmesh->indPerpto3D(d, jy));

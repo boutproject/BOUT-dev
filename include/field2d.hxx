@@ -40,6 +40,7 @@ class Field3D; //#include "field3d.hxx"
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
+#include "bout/empty_from.hxx"
 #include "bout/region.hxx"
 
 #include "unused.hxx"
@@ -95,7 +96,7 @@ class Field2D : public Field, public FieldData {
   using value_type = BoutReal;
 
   /// Ensure data is allocated
-  void allocate();
+  Field2D& allocate();
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -113,6 +114,16 @@ class Field2D : public Field, public FieldData {
    * Return the number of nz points
    */
   int getNz() const override {return 1;};
+
+  // these methods return Field2D to allow method chaining
+  Field2D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  Field2D& setDirectionY(DIRECTION d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
 
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {

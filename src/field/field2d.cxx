@@ -90,7 +90,7 @@ Field2D::~Field2D() {
     delete deriv;
 }
 
-void Field2D::allocate() {
+Field2D& Field2D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       // fieldmesh was not initialized when this field was initialized, so use
@@ -107,6 +107,8 @@ void Field2D::allocate() {
 #endif
   }else
     data.ensureUnique();
+
+  return *this;
 }
 
 Field2D* Field2D::timeDeriv() {
@@ -124,9 +126,6 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
 };
 
-
-  // Ensures Coordinates object is initialized for this Field's location
-  getCoordinates();
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));

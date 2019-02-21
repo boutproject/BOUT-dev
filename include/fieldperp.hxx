@@ -120,10 +120,20 @@ class FieldPerp : public Field {
    */
   void setIndex(int y) { yindex = y; }
 
+  // these methods return FieldPerp to allow method chaining
+  FieldPerp& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  FieldPerp& setDirectionY(DIRECTION d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
+
   /*!
    * Ensure that data array is allocated and unique
    */
-  void allocate();
+  FieldPerp& allocate();
 
   /*!
    * True if the underlying data array is allocated.

@@ -34,6 +34,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout_types.hxx"
 
 #include "bout/array.hxx"
+#include "bout/empty_from.hxx"
 #include "bout/region.hxx"
 
 #include "bout/assert.hxx"
@@ -192,7 +193,7 @@ class Field3D : public Field, public FieldData {
   /*!
    * Ensures that memory is allocated and unique
    */
-  void allocate();
+  Field3D& allocate();
   
   /*!
    * Test if data is allocated
@@ -219,6 +220,16 @@ class Field3D : public Field, public FieldData {
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
+
+  // these methods return Field3D to allow method chaining
+  Field3D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  Field3D& setDirectionY(DIRECTION d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
 
   /*!
    * Ensure that this field has separate fields
