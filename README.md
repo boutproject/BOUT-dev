@@ -182,8 +182,7 @@ used in the creation of [configure](configure) from
 developers. You are free to substitute them with other autoconf macros
 that provide equivalent functionality.
 
-BOUT++ links by default with gettext and fftw, both are licensed as
-GPL. Thus if you compile BOUT++ with ether of them, or any other GPLed
-code, BOUT++ will automatically be licensed as GPL. Thus if you want
-to use BOUT++ with GPL non-compatible code, make sure to compile
-without GPLed code.
+BOUT++ links by default with some GPL licensed libraries. Thus if you
+compile BOUT++ with any of them, BOUT++ will automatically be licensed
+as GPL. Thus if you want to use BOUT++ with GPL non-compatible code,
+make sure to compile without GPLed code.
