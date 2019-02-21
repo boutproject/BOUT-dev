@@ -67,7 +67,7 @@ public:
   virtual double generate(double x, double y, double z, double t) = 0;
 
   /// Create a string representation of the generator, for debugging output
-  virtual const std::string str() {return std::string("?");}
+  virtual std::string str() const { return std::string("?"); }
 };
 
 /*!
@@ -163,9 +163,9 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   double generate(double x, double y, double z, double t) override;
 
-  const std::string str() override {
-    return std::string("(") + lhs->str() + std::string(1, op) + rhs->str() +
-           std::string(")");
+  std::string str() const override {
+    return std::string("(") + lhs->str() + std::string(1, op) + rhs->str()
+           + std::string(")");
   }
 
 private:
@@ -186,7 +186,7 @@ public:
                   double UNUSED(t)) override {
     return value;
   }
-  const std::string str() override {
+  std::string str() const override {
     std::stringstream ss;
     ss << value;
     return ss.str();

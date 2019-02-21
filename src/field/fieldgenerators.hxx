@@ -39,7 +39,8 @@ public:
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
-  const std::string str() {return std::string("sin(")+gen->str()+std::string(")");}
+  std::string str() const { return std::string("sin(") + gen->str() + std::string(")"); }
+
 private:
   FieldGeneratorPtr gen;
 };
@@ -52,7 +53,8 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
 
-  const std::string str() {return std::string("cos(")+gen->str()+std::string(")");}
+  std::string str() const { return std::string("cos(") + gen->str() + std::string(")"); }
+
 private:
   FieldGeneratorPtr gen;
 };
@@ -72,7 +74,8 @@ public:
   BoutReal generate(double x, double y, double z, double t) {
     return Op(gen->generate(x,y,z,t));
   }
-  const std::string str() {return std::string("func(")+gen->str()+std::string(")");}
+  std::string str() const { return std::string("func(") + gen->str() + std::string(")"); }
+
 private:
   FieldGeneratorPtr gen;
 };
@@ -92,7 +95,10 @@ public:
   BoutReal generate(double x, double y, double z, double t) {
     return Op(A->generate(x,y,z,t), B->generate(x,y,z,t));
   }
-  const std::string str() {return std::string("cos(")+A->str()+","+B->str()+std::string(")");}
+  std::string str() const {
+    return std::string("cos(") + A->str() + "," + B->str() + std::string(")");
+  }
+
 private:
   FieldGeneratorPtr A, B;
 };
@@ -191,7 +197,8 @@ public:
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args);
   BoutReal generate(double x, double y, double z, double t);
-  const std::string str() {return std::string("H(")+gen->str()+std::string(")");}
+  std::string str() const { return std::string("H(") + gen->str() + std::string(")"); }
+
 private:
   FieldGeneratorPtr gen;
 };

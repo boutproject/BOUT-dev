@@ -44,7 +44,7 @@ namespace { // These classes only visible in this file
                     double UNUSED(t)) override {
       return x;
     }
-    const std::string str() override { return std::string("x"); }
+    std::string str() const override { return std::string("x"); }
   };
   
   class FieldY : public FieldGenerator {
@@ -56,7 +56,7 @@ namespace { // These classes only visible in this file
                     double UNUSED(t)) override {
       return y;
     }
-    const std::string str() override { return std::string("y"); }
+    std::string str() const override { return std::string("y"); }
   };
 
   class FieldZ : public FieldGenerator {
@@ -68,7 +68,7 @@ namespace { // These classes only visible in this file
                     double UNUSED(t)) override {
       return z;
     }
-    const std::string str() override { return std::string("z"); }
+    std::string str() const override { return std::string("z"); }
   };
   
   class FieldT : public FieldGenerator {
@@ -80,7 +80,7 @@ namespace { // These classes only visible in this file
                     double t) override {
       return t;
     }
-    const std::string str() override { return std::string("t"); }
+    std::string str() const override { return std::string("t"); }
   };
 }
 
