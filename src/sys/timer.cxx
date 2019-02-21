@@ -1,18 +1,17 @@
-#include <bout/sys/timer.hxx>
-#include <mpi.h>
+#include "bout/sys/timer.hxx"
 
 Timer::Timer() : timing(getInfo("")) {
-  timing.started = MPI_Wtime();
+  timing.started = clock_type::now();
   timing.running = true;
 }
 
 Timer::Timer(const std::string& label) : timing(getInfo(label)) {
-  timing.started = MPI_Wtime();
+  timing.started = clock_type::now();
   timing.running = true;
 }
 
 Timer::~Timer() {
-  double finished = MPI_Wtime();
+  auto finished = clock_type::now();
   timing.running = false;
   timing.time += finished - timing.started;
 }
@@ -26,7 +25,8 @@ Timer::timer_info& Timer::getInfo(const std::string& label) {
   auto it = info.find(label);
   if (it == info.end()) {
     // Not in map, so create it
-    auto timer = info.emplace(label, timer_info{0.0, false, 0.0});
+    auto timer = info.emplace(
+      label, timer_info{seconds{0}, false, clock_type::now()});
     // timer is a pair of an iterator and bool
     // The iterator is a pair of key, value
     return timer.first->second;
@@ -36,18 +36,18 @@ Timer::timer_info& Timer::getInfo(const std::string& label) {
 
 double Timer::getTime(const Timer::timer_info& info) {
   if (info.running) {
-    return info.time + (MPI_Wtime() - info.started);
+    return seconds{info.time + (clock_type::now() - info.started)}.count();
   }
-  return info.time;
+  return seconds{info.time}.count();
 }
 
 double Timer::resetTime(Timer::timer_info& info) {
-  double val = info.time;
-  info.time = 0.0;
+  auto val = info.time;
+  info.time = clock_type::duration{0};
   if (info.running) {
-    double cur_time = MPI_Wtime();
+    auto cur_time = clock_type::now();
     val += cur_time - info.started;
     info.started = cur_time;
   }
-  return val;
+  return seconds{val}.count();
 }

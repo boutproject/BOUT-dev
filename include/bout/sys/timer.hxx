@@ -1,11 +1,10 @@
-
-class Timer;
-
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
+#include <chrono>
 #include <map>
 #include <string>
+#include <type_traits>
 
 /*!
  * Timing class for performance benchmarking and diagnosis
@@ -29,6 +28,12 @@ class Timer;
  */
 class Timer {
 public:
+  using clock_type =
+      typename std::conditional<std::chrono::high_resolution_clock::is_steady,
+                                std::chrono::high_resolution_clock,
+                                std::chrono::steady_clock>::type;
+  using seconds = std::chrono::duration<double, std::chrono::seconds::period>;
+
   /*!
    * Create a timer. This constructor is equivalent to Timer("")
    */
@@ -78,9 +83,9 @@ public:
 private:
   /// Structure to contain timing information
   struct timer_info {
-    double time;    ///< Total time
-    bool running;   ///< Is the timer currently running?
-    double started; ///< Start time
+    seconds time;                   ///< Total time
+    bool running;                   ///< Is the timer currently running?
+    clock_type::time_point started; ///< Start time
   };
 
   /// Store of existing timing info objects
