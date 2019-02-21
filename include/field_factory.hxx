@@ -60,26 +60,26 @@ public:
   /// using the given options \p opt, over Mesh \p m at time \p t.
   /// The resulting field is at cell location \p loc.
   Field2D create2D(const std::string& value, const Options* opt = nullptr,
-                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Create a 3D field by parsing a string and evaluating the expression
   /// using the given options \p opt, over Mesh \p m at time \p t.
   /// The resulting field is at cell location \p loc.
   Field3D create3D(const std::string& value, const Options* opt = nullptr,
-                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Parse a string into a tree of generators
-  FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr);
+  FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr) const;
 
   /// Create a 2D field from a generator, over a given mesh
   /// at a given cell location and time.
   Field2D create2D(FieldGeneratorPtr generator, Mesh* m = nullptr,
-                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Create a 3D field from a generator, over a given mesh
   /// at a given cell location and time.
   Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
-                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Get the Singleton object
   static FieldFactory* get();
@@ -90,23 +90,25 @@ public:
 protected:
   /// These functions called by the parser to resolve unknown symbols.
   /// This is used to enable options to be referred to in expressions.
-  FieldGeneratorPtr resolve(std::string& name) override;
+  FieldGeneratorPtr resolve(std::string& name) const override;
 
 private:
   /// The default mesh for create functions.
   Mesh* fieldmesh;
-  /// The default options used in resolve(), can be overridden in
-  /// parse()/create2D()/create3D()
-  const Options* options;
 
-  std::list<std::string> lookup; // Names currently being parsed
+  /// The default options used in resolve(), can be *temporarily*
+  /// overridden in parse()/create2D()/create3D()
+  mutable const Options* options;
+
+  /// Names currently being parsed
+  mutable std::list<std::string> lookup;
 
   /// Cache parsed strings so repeated evaluations
   /// don't result in allocating more generators.
-  std::map<std::string, FieldGeneratorPtr> cache;
+  mutable std::map<std::string, FieldGeneratorPtr> cache;
 
   const Options* findOption(const Options* opt, const std::string& name,
-                            std::string& val);
+                            std::string& val) const;
 };
 
 //////////////////////////////////////////////////////////

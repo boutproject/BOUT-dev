@@ -95,12 +95,12 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
-                               Mesh* localmesh, CELL_LOC loc, BoutReal t) {
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) const {
   return create2D(parse(value, opt), localmesh, loc, t);
 }
 
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
-                               BoutReal t) {
+                               BoutReal t) const {
   AUTO_TRACE();
 
   if (localmesh == nullptr) {
@@ -149,12 +149,12 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
 }
 
 Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
-                               Mesh* localmesh, CELL_LOC loc, BoutReal t) {
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) const {
   return create3D(parse(value, opt), localmesh, loc, t);
 }
 
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
-                               BoutReal t) {
+                               BoutReal t) const {
   AUTO_TRACE();
 
   if (localmesh == nullptr) {
@@ -225,7 +225,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
 }
 
 const Options* FieldFactory::findOption(const Options* opt, const std::string& name,
-                                        std::string& val) {
+                                        std::string& val) const {
   // Find an Options object which contains the given name
 
   const Options* result = opt;
@@ -270,7 +270,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(std::string& name) {
+FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
   if (options != nullptr) {
     // Check if in cache
     std::string key;
@@ -326,7 +326,7 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) {
   return nullptr;
 }
 
-FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) {
+FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) const {
 
   // Check if in the cache
   std::string key = "#" + input;

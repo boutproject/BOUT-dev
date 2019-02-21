@@ -132,7 +132,7 @@ void ExpressionParser::addBinaryOp(char sym, FieldGeneratorPtr b, int precedence
   reserved_chars += sym; 
 }
 
-FieldGeneratorPtr ExpressionParser::parseString(const string &input) {
+FieldGeneratorPtr ExpressionParser::parseString(const string &input) const {
   // Allocate a new lexer
   LexInfo lex(input, reserved_chars);
 
@@ -143,7 +143,7 @@ FieldGeneratorPtr ExpressionParser::parseString(const string &input) {
 //////////////////////////////////////////////////////////
 // Private functions
 
-FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) const {
   string name = lowercase(lex.curident);
   lex.nextToken();
   
@@ -196,7 +196,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   }
 }
 
-FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo &lex) const {
   lex.nextToken(); // eat '('
   
   FieldGeneratorPtr g = parseExpression(lex);
@@ -209,7 +209,7 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo &lex) {
   return g;
 }
 
-FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo &lex) const {
   switch(lex.curtok) {
   case -1: { // a number
     lex.nextToken(); // Eat number
@@ -231,7 +231,7 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo &lex) {
                        static_cast<int>(lex.curtok), lex.curtok);
 }
 
-FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGeneratorPtr lhs) {
+FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGeneratorPtr lhs) const {
   
   while(true) {
     // Check for end of input
@@ -282,7 +282,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, Fi
   }
 }
 
-FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo &lex) {
+FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo &lex) const {
   FieldGeneratorPtr lhs = parsePrimary(lex);
   return parseBinOpRHS(lex, 0, lhs);
 }

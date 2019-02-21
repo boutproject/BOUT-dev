@@ -109,10 +109,10 @@ public:
   void addBinaryOp(char sym, FieldGeneratorPtr b, int precedence);
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) { return nullptr; }
+  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) const { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
-  FieldGeneratorPtr parseString(const std::string &input);
+  FieldGeneratorPtr parseString(const std::string &input) const;
 
   /// Characters which cannot be used in symbols; all other allowed
   /// In addition, whitespace cannot be used
@@ -138,8 +138,8 @@ private:
     char nextToken(); ///< Get the next token in the string
   };
   
-  FieldGeneratorPtr parseIdentifierExpr(LexInfo &lex);
-  FieldGeneratorPtr parseParenExpr(LexInfo &lex);
+  FieldGeneratorPtr parseIdentifierExpr(LexInfo &lex) const;
+  FieldGeneratorPtr parseParenExpr(LexInfo &lex) const;
 
   /// Parse a primary expression, one of:
   ///   - number
@@ -148,9 +148,9 @@ private:
   ///   - [ ... ]
   ///   - a unary '-', which is converted to '0 -'
   ///   A ParseException is thrown if none of these is found
-  FieldGeneratorPtr parsePrimary(LexInfo &lex);
-  FieldGeneratorPtr parseBinOpRHS(LexInfo &lex, int prec, FieldGeneratorPtr lhs);
-  FieldGeneratorPtr parseExpression(LexInfo &lex);
+  FieldGeneratorPtr parsePrimary(LexInfo &lex) const;
+  FieldGeneratorPtr parseBinOpRHS(LexInfo &lex, int prec, FieldGeneratorPtr lhs) const;
+  FieldGeneratorPtr parseExpression(LexInfo &lex) const;
 };
 
 //////////////////////////////////////////////////////
