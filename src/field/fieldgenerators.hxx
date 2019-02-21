@@ -68,7 +68,7 @@ private:
 };
 
 /// Template class to define generators around a C function
-typedef BoutReal(*single_arg_op)(BoutReal);
+using single_arg_op = BoutReal (*)(BoutReal);
 template<single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
@@ -91,7 +91,7 @@ private:
 };
 
 /// Template for a FieldGenerator with two input arguments
-typedef BoutReal (*double_arg_op)(BoutReal, BoutReal);
+using double_arg_op = BoutReal (*)(BoutReal, BoutReal);
 template <double_arg_op Op>
 class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
 public:
