@@ -206,8 +206,10 @@ private:
    *
    * @param[in] f  The field to shift
    * @param[in] phs  The phase to shift by
+   * @param[in] y_direction_out  The value to set yDirectionType of the result to
    */
   const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                       const DIRECTION y_direction_out,
                        const REGION region = RGN_NOX) const;
 
   /*!
