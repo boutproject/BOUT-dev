@@ -1,14 +1,14 @@
 /*!
  * \file fieldgenerators.hxx
- * 
+ *
  * These classes are used by FieldFactory
  */
 
 #ifndef __FIELDGENERATORS_H__
 #define __FIELDGENERATORS_H__
 
-#include <field_factory.hxx>
 #include <boutexception.hxx>
+#include <field_factory.hxx>
 #include <unused.hxx>
 
 #include <cmath>
@@ -30,7 +30,7 @@ public:
   }
 
 private:
-  BoutReal *ptr; 
+  BoutReal* ptr;
 };
 
 //////////////////////////////////////////////////////////
@@ -115,16 +115,18 @@ private:
 };
 
 /// Arc (Inverse) tangent. Either one or two argument versions
-class FieldATan : public FieldGenerator { 
+class FieldATan : public FieldGenerator {
 public:
   FieldATan(FieldGeneratorPtr a, FieldGeneratorPtr b = nullptr) : A(a), B(b) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() == 1) {
       return std::make_shared<FieldATan>(args.front());
-    }else if(args.size() == 2) {
+    } else if (args.size() == 2) {
       return std::make_shared<FieldATan>(args.front(), args.back());
     }
-    throw ParseException("Incorrect number of arguments to atan function. Expecting 1 or 2, got %d", args.size());
+    throw ParseException(
+        "Incorrect number of arguments to atan function. Expecting 1 or 2, got %d",
+        args.size());
   }
   BoutReal generate(double x, double y, double z, double t) override {
     if (B == nullptr)
@@ -248,16 +250,17 @@ public:
   }
   BoutReal generate(double x, double y, double z, double t) override {
     auto it = input.begin();
-    BoutReal result = (*it)->generate(x,y,z,t);
-    for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x,y,z,t);
-      if(val < result)
+    BoutReal result = (*it)->generate(x, y, z, t);
+    for (; it != input.end(); it++) {
+      BoutReal val = (*it)->generate(x, y, z, t);
+      if (val < result)
         result = val;
     }
     return result;
   }
+
 private:
-  std::list<FieldGeneratorPtr > input;
+  std::list<FieldGeneratorPtr> input;
 };
 
 /// Maximum
@@ -273,16 +276,17 @@ public:
   }
   BoutReal generate(double x, double y, double z, double t) override {
     auto it = input.begin();
-    BoutReal result = (*it)->generate(x,y,z,t);
-    for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x,y,z,t);
-      if(val > result)
+    BoutReal result = (*it)->generate(x, y, z, t);
+    for (; it != input.end(); it++) {
+      BoutReal val = (*it)->generate(x, y, z, t);
+      if (val > result)
         result = val;
     }
     return result;
   }
+
 private:
-  std::list<FieldGeneratorPtr > input;
+  std::list<FieldGeneratorPtr> input;
 };
 
 /// Generator to round to the nearest integer
@@ -317,14 +321,15 @@ private:
 
 class FieldBallooning : public FieldGenerator {
 public:
-  FieldBallooning(Mesh *m, FieldGeneratorPtr a = nullptr, int n = 3) : mesh(m), arg(a), ball_n(n) {}
+  FieldBallooning(Mesh* m, FieldGeneratorPtr a = nullptr, int n = 3)
+      : mesh(m), arg(a), ball_n(n) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(double x, double y, double z, double t) override;
 
 private:
-  Mesh *mesh;
+  Mesh* mesh;
   FieldGeneratorPtr arg;
-  int ball_n;   // How many times around in each direction
+  int ball_n; // How many times around in each direction
 };
 
 //////////////////////////////////////////////////////////
@@ -341,7 +346,7 @@ private:
   /// Generate a random number between 0 and 1 (exclusive)
   /// given an arbitrary seed value
   ///
-  /// This PRNG has no memory, i.e. you need to call it 
+  /// This PRNG has no memory, i.e. you need to call it
   /// with a different seed each time.
   BoutReal genRand(BoutReal seed);
 
@@ -354,11 +359,9 @@ private:
 class FieldTanhHat : public FieldGenerator {
 public:
   // Constructor
-  FieldTanhHat(FieldGeneratorPtr xin,
-               FieldGeneratorPtr widthin,
-               FieldGeneratorPtr centerin,
-               FieldGeneratorPtr steepnessin)
-        : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
+  FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
+               FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(double x, double y, double z, double t) override;
