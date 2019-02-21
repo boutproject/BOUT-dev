@@ -43,7 +43,7 @@ public:
    * Create a timer, continuing from last time if the same label
    * has already been used
    */
-  Timer(const std::string& label);
+  explicit Timer(const std::string& label);
 
   /*!
    * Stop the timer
