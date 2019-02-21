@@ -1,12 +1,12 @@
 /*!************************************************************************
  * \file expressionparser.hxx
- * 
+ *
  * Parses strings containing expressions, returning a tree of generators
- * 
+ *
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -24,23 +24,20 @@
  *
  **************************************************************************/
 
-class FieldGenerator;
-class ExpressionParser;
-class ParseException;
-
 #ifndef __EXPRESSION_PARSER_H__
 #define __EXPRESSION_PARSER_H__
 
 #include "unused.hxx"
 
-#include <string>
-#include <map>
-#include <list>
-#include <utility>
-#include <sstream>
-#include <memory>
 #include <exception>
+#include <list>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
 
+class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
 
 //////////////////////////////////////////////////////////
@@ -91,7 +88,7 @@ public:
   /// @param[in] g     The class inheriting from FieldGenerator. When recognised
   ///                  in an expression, the clone() function will be called
   ///                  to build a tree of generators
-  void addGenerator(const std::string &name, FieldGeneratorPtr g);
+  void addGenerator(const std::string& name, FieldGeneratorPtr g);
 
   /// Add a binary operator such as +,-,*,/,^
   ///
@@ -105,41 +102,42 @@ public:
   ///  +, -  precedence = 10
   ///  *, /  precedence = 20
   ///  ^     precedence = 30
-  ///                        
+  ///
   void addBinaryOp(char sym, FieldGeneratorPtr b, int precedence);
+
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(std::string &UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(std::string& UNUSED(name)) const { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
-  FieldGeneratorPtr parseString(const std::string &input) const;
+  FieldGeneratorPtr parseString(const std::string& input) const;
 
   /// Characters which cannot be used in symbols; all other allowed
   /// In addition, whitespace cannot be used
   /// Adding a binary operator adds its symbol to this string
   std::string reserved_chars = "+-*/^[](){},";
-  
+
 private:
-  
-  std::map<std::string, FieldGeneratorPtr> gen;  ///< Generators, addressed by name
+  std::map<std::string, FieldGeneratorPtr> gen; ///< Generators, addressed by name
   std::map<char, std::pair<FieldGeneratorPtr, int>> bin_op; ///< Binary operations
-  
+
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
-    
-    LexInfo(const std::string &input, const std::string &reserved_chars="");
-    
-    signed char curtok = 0;  ///< Current token. -1 for number, -2 for string, 0 for "end of input"
+
+    LexInfo(const std::string& input, const std::string& reserved_chars = "");
+
+    /// Current token. -1 for number, -2 for string, 0 for "end of input"
+    signed char curtok = 0;
     double curval; ///< Value if a number
-    std::string curident; ///< Identifier, variable or function name
-    signed char LastChar;   ///< The last character read from the string
-    std::stringstream ss; ///< Used to read values from the input string
+    std::string curident;       ///< Identifier, variable or function name
+    signed char LastChar;       ///< The last character read from the string
+    std::stringstream ss;       ///< Used to read values from the input string
     std::string reserved_chars; ///< Reserved characters, not in symbols
-    char nextToken(); ///< Get the next token in the string
+    char nextToken();           ///< Get the next token in the string
   };
-  
-  FieldGeneratorPtr parseIdentifierExpr(LexInfo &lex) const;
-  FieldGeneratorPtr parseParenExpr(LexInfo &lex) const;
+
+  FieldGeneratorPtr parseIdentifierExpr(LexInfo& lex) const;
+  FieldGeneratorPtr parseParenExpr(LexInfo& lex) const;
 
   /// Parse a primary expression, one of:
   ///   - number
@@ -148,9 +146,9 @@ private:
   ///   - [ ... ]
   ///   - a unary '-', which is converted to '0 -'
   ///   A ParseException is thrown if none of these is found
-  FieldGeneratorPtr parsePrimary(LexInfo &lex) const;
-  FieldGeneratorPtr parseBinOpRHS(LexInfo &lex, int prec, FieldGeneratorPtr lhs) const;
-  FieldGeneratorPtr parseExpression(LexInfo &lex) const;
+  FieldGeneratorPtr parsePrimary(LexInfo& lex) const;
+  FieldGeneratorPtr parseBinOpRHS(LexInfo& lex, int prec, FieldGeneratorPtr lhs) const;
+  FieldGeneratorPtr parseExpression(LexInfo& lex) const;
 };
 
 //////////////////////////////////////////////////////
@@ -191,6 +189,7 @@ public:
     ss << value;
     return ss.str();
   }
+
 private:
   double value;
 };
@@ -199,14 +198,13 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char *, ...);
+  ParseException(const char*, ...);
   ~ParseException() override = default;
 
-  const char *what() const noexcept override;
+  const char* what() const noexcept override;
 
 protected:
   std::string message;
 };
-
 
 #endif // __EXPRESSION_PARSER_H__
