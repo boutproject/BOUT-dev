@@ -16,7 +16,6 @@ Timer::~Timer() {
   timing.time += finished - timing.started;
 }
 
-// Static method to clean up all memory
 void Timer::cleanup() { info.clear(); }
 
 std::map<std::string, Timer::timer_info> Timer::info;
@@ -24,11 +23,8 @@ std::map<std::string, Timer::timer_info> Timer::info;
 Timer::timer_info& Timer::getInfo(const std::string& label) {
   auto it = info.find(label);
   if (it == info.end()) {
-    // Not in map, so create it
     auto timer = info.emplace(
       label, timer_info{seconds{0}, false, clock_type::now()});
-    // timer is a pair of an iterator and bool
-    // The iterator is a pair of key, value
     return timer.first->second;
   }
   return it->second;
