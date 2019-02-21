@@ -5,7 +5,7 @@
 ; Calculate dR/df and dZ/df for use by LSODE
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
-FUNCTION radial_differential, fcur, pos
+FUNCTION radial_differential_nonorth, fcur, pos
   COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec, weightc, bndry_periodic
   
   local_gradient, idata, pos[0], pos[1], status=status, dfdr=dfdr, dfdz=dfdz
@@ -120,7 +120,7 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
     rzold = [ri0, zi0]
     rcount = 0
     REPEAT BEGIN
-      rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
+      rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential_nonorth', lstat)
       IF lstat EQ -1 THEN BEGIN
         PRINT, "  -> Excessive work "+STR(f0)+" to "+STR(ftarget)+" Trying to continue..."
         lstat = 2 ; continue
