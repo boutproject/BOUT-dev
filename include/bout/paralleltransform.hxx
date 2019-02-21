@@ -38,11 +38,11 @@ public:
   
   /// Convert a 3D field into field-aligned coordinates
   /// so that the y index is along the magnetic field
-  virtual const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
+  virtual const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) = 0;
   
   /// Convert back from field-aligned coordinates
   /// into standard form
-  virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) = 0;
+  virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) = 0;
 
   virtual bool canToFromFieldAligned() = 0;
 
@@ -126,13 +126,13 @@ public:
    * in X-Z, and the metric tensor will need to be changed 
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+  const Field3D toFieldAligned(const Field3D &f, const REGION region=RGN_ALL) override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_NOX) override;
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region=RGN_ALL) override;
 
   bool canToFromFieldAligned() override{
     return true;

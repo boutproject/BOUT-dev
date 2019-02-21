@@ -67,7 +67,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   
   Coordinates *coord = f.getCoordinates();
 
-  Field3D alignedField = localmesh->toFieldAligned(f);
+  Field3D alignedField = localmesh->toFieldAligned(f, RGN_NOX);
 
   // Create cyclic reduction object
   CyclicReduce<dcomplex> *cr = 

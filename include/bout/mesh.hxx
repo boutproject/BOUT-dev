@@ -702,18 +702,18 @@ class Mesh {
   ///////////////////////////////////////////////////////////
 
   /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
     return getParallelTransform().toFieldAligned(f, region);
   }
-  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
     return f;
   }
   
   /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_NOX) {
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
     return getParallelTransform().fromFieldAligned(f, region);
   }
-  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_NOX) {
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
     return f;
   }
 

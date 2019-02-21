@@ -124,8 +124,8 @@ namespace FV {
 
     bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
 
-    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin);
-    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin);
+    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin, RGN_NOX);
+    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin, RGN_NOX);
 
     // K and f fields in yup and ydown directions
     const auto& Kup = use_yup_ydown ? Kin.yup() : K;
@@ -189,8 +189,8 @@ namespace FV {
     Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
-    Field3D d = mesh->toFieldAligned(d_in);
-    Field3D f = mesh->toFieldAligned(f_in);
+    Field3D d = mesh->toFieldAligned(d_in, RGN_NOX);
+    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
@@ -239,7 +239,7 @@ namespace FV {
     Mesh* mesh = f_in.getMesh();
 
     // Convert to field aligned coordinates
-    Field3D f = mesh->toFieldAligned(f_in);
+    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
     

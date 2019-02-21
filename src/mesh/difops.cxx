@@ -296,7 +296,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
     }
   } else {
     // No yup/ydown fields, so transform to cell centred
-    Field3D var_fa = mesh->toFieldAligned(var);
+    Field3D var_fa = mesh->toFieldAligned(var, RGN_NOX);
     
     for(int jx=0; jx<mesh->LocalNx;jx++) {
       for(int jy=1;jy<mesh->LocalNy;jy++) {
@@ -368,8 +368,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
     // (even if one of v and f has yup/ydown fields, it doesn't make sense to
     // multiply them with one in field-aligned and one in non-field-aligned
     // coordinates)
-    Field3D v_fa = vMesh->toFieldAligned(v);
-    Field3D f_fa = vMesh->toFieldAligned(f);
+    Field3D v_fa = vMesh->toFieldAligned(v, RGN_NOX);
+    Field3D f_fa = vMesh->toFieldAligned(f, RGN_NOX);
 
     BOUT_OMP(parallel) {
       stencil fval, vval;
@@ -415,7 +415,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = varMesh->toFieldAligned(var);
+    Field3D var_fa = varMesh->toFieldAligned(var, RGN_NOX);
 
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
