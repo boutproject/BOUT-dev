@@ -625,9 +625,6 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   simtime = t;
   iteration = iter;
 
-  /// Write dump file
-  bout::globals::dump.write();
-
   /// Collect timing information
   run_data.wtime        = Timer::resetTime("run");
   run_data.ncalls       = solver->resetRHSCounter();
