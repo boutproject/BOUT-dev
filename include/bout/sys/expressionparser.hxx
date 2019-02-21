@@ -51,7 +51,7 @@ using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
  */
 class FieldGenerator {
 public:
-  virtual ~FieldGenerator() { }
+  virtual ~FieldGenerator() = default;
 
   /// Virtual constructor. Makes a copy of this FieldGenerator,
   /// initialised with the given list of arguments. It is up to the implementations
@@ -80,7 +80,7 @@ public:
 class ExpressionParser {
 public:
   ExpressionParser();
-  virtual ~ExpressionParser() {};
+  virtual ~ExpressionParser() = default;
 
   /// Add a generator to the parser, which can then be recognised and used
   /// in expressions.
@@ -200,7 +200,7 @@ private:
 class ParseException : public std::exception {
 public:
   ParseException(const char *, ...);
-  ~ParseException() override {}
+  ~ParseException() override = default;
 
   const char *what() const noexcept override;
 

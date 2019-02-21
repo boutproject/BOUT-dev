@@ -240,7 +240,7 @@ private:
 /// Minimum
 class FieldMin : public FieldGenerator {
 public:
-  FieldMin() {}
+  FieldMin() = default;
   FieldMin(const std::list<FieldGeneratorPtr> args) : input(args) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() == 0) {
@@ -266,7 +266,7 @@ private:
 /// Maximum
 class FieldMax : public FieldGenerator {
 public:
-  FieldMax() {}
+  FieldMax() = default;
   FieldMax(const std::list<FieldGeneratorPtr> args) : input(args) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() == 0) {
