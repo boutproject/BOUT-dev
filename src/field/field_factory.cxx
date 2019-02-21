@@ -295,11 +295,11 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
     for (const auto& lookup_value : lookup) {
       if (key.compare(lookup_value) == 0) {
         // Name matches, so already looking up
-        output << "ExpressionParser lookup stack:\n";
+        output_error << "ExpressionParser lookup stack:\n";
         for (const auto& stack_value : lookup) {
-          output << stack_value << " -> ";
+          output_error << stack_value << " -> ";
         }
-        output << name << endl;
+        output_error << name << endl;
         throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
                             name.c_str());
       }
