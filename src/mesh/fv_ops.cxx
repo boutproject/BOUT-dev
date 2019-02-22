@@ -229,10 +229,9 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
-    ASSERT2(d_in.getLocation() == f_in.getLocation());
+    ASSERT1(fieldsCompatible(d_in, f_in));
 
     Mesh* mesh = d_in.getMesh();
-    ASSERT1(mesh = f_in.getMesh());
 
     Field3D result{emptyFrom(f_in)};
     result = 0.0;

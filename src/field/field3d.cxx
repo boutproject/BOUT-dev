@@ -272,13 +272,12 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(getMesh() == rhs.getMesh());
+  ASSERT1(fieldsCompatible(*this, rhs));
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
   /// Make sure there's a unique array to copy data into
   allocate();
-  ASSERT1(fieldsCompatible(*this, rhs));
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
@@ -587,7 +586,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
+  ASSERT1(fieldsCompatible(lhs, rhs));
 
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
@@ -603,8 +602,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
 
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
-  ASSERT1(lhs.getLocation() == rhs.getLocation());  
+  ASSERT1(fieldsCompatible(lhs, rhs));
 
   FieldPerp result{rhs.getMesh(), rhs.getLocation(), rhs.getIndex(), rhs.getDirectionX(),
                    rhs.getDirectionY(), rhs.getDirectionZ()};

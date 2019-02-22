@@ -73,8 +73,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  ASSERT1(apar.getMesh() == f.getMesh());
-  ASSERT2(apar.getLocation() == f.getLocation());
+  ASSERT1(fieldsCompatible(apar, f));
 
   Mesh *mesh = apar.getMesh();
 
@@ -201,8 +200,7 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 }
 
 const Field3D Div_par(const Field3D &f, const Field3D &v) {
-  ASSERT1(f.getMesh() == v.getMesh());
-  ASSERT2(v.getLocation() == f.getLocation());
+  ASSERT1(fieldsCompatible(f, v));
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
@@ -743,11 +741,11 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(fieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Field2D result{emptyFrom(f)};
 
@@ -766,11 +764,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(fieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh *mesh = f.getMesh();
 
@@ -943,11 +941,11 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(fieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation())
 
   Mesh *mesh = f.getMesh();
 
@@ -980,11 +978,11 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(fieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh *mesh = f.getMesh();
 

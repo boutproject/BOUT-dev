@@ -109,8 +109,7 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
 #define FPERP_OP_FPERP(op, bop)                                   \
   FieldPerp& FieldPerp::operator op(const FieldPerp& rhs) {       \
-    ASSERT1(getMesh() == rhs.getMesh());                          \
-    ASSERT1(location == rhs.getLocation());                       \
+    ASSERT1(fieldsCompatible(*this, rhs));                        \
     if (data.unique()) {                                          \
       checkData(rhs);                                             \
       /* Only reference to the data */                            \
@@ -130,8 +129,7 @@ FPERP_OP_FPERP(/=, /);
 
 #define FPERP_OP_FIELD(op, bop, ftype)                                               \
   FieldPerp& FieldPerp::operator op(const ftype& rhs) {                              \
-    ASSERT1(getMesh() == rhs.getMesh());                                             \
-    ASSERT1(location == rhs.getLocation());                                          \
+    ASSERT1(fieldsCompatible(*this, rhs));                                           \
     if (data.unique()) {                                                             \
       checkData(*this);                                                              \
       checkData(rhs);                                                                \
@@ -193,8 +191,7 @@ FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FPERP(op)                                               \
   const FieldPerp operator op(const FieldPerp& lhs, const FieldPerp& rhs) {    \
-    ASSERT1(lhs.getMesh() == rhs.getMesh());                                   \
-    ASSERT1(rhs.getLocation() == rhs.getLocation());                           \
+    ASSERT1(fieldsCompatible(lhs, rhs));                                       \
     checkData(lhs);                                                            \
     checkData(rhs);                                                            \
     FieldPerp result{emptyFrom(lhs)};                                          \
@@ -212,8 +209,7 @@ FPERP_FPERP_OP_FPERP(/);
 // Operator on FieldPerp and another field
 #define FPERP_FPERP_OP_FIELD(op, ftype)                                 \
   const FieldPerp operator op(const FieldPerp& lhs, const ftype& rhs) { \
-    ASSERT1(lhs.getMesh() == rhs.getMesh());                            \
-    ASSERT1(rhs.getLocation() == rhs.getLocation());                    \
+    ASSERT1(fieldsCompatible(lhs, rhs));                                \
     checkData(lhs);                                                     \
     checkData(rhs);                                                     \
     FieldPerp result{emptyFrom(lhs)};                                   \
@@ -422,9 +418,7 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
-  ASSERT1(lhs.getIndex() == rhs.getIndex());
-  ASSERT1(lhs.getLocation() == rhs.getLocation());
+  ASSERT1(fieldsCompatible(lhs, rhs));
   FieldPerp result{emptyFrom(lhs)};
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 

@@ -439,10 +439,9 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(lhs.getLocation() == rhs.getLocation());
+  ASSERT1(fieldsCompatible(lhs, rhs));
 
   // Define and allocate the output result
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
   Field2D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
