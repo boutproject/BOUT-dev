@@ -124,6 +124,11 @@ class Field {
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+
+private:
+  DIRECTION xDirectionType{DIRECTION::X};
+  DIRECTION yDirectionType{DIRECTION::Y};
+  DIRECTION zDirectionType{DIRECTION::Z};
 };
 
 /// Unary + operator. This doesn't do anything
