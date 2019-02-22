@@ -16,8 +16,11 @@
     ASSERT1(localmesh == {{rhs.name}}.getMesh());
   {% endif %}
 
-  {{out.field_type}} {{out.name}}(localmesh);
-  {{out.name}}.allocate();
+  {% if lhs.field_type == out.field_type %}
+    {{out.field_type}} {{out.name}}{emptyFrom(lhs)};
+  {% else %}
+    {{out.field_type}} {{out.name}}{emptyFrom(rhs)};
+  {% endif %}
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
@@ -42,10 +45,6 @@
     {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
 	}
-  {% endif %}
-
-  {% if out in ['Field3D','Field2D'] %}
-    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
   {% endif %}
 
   checkData({{out.name}});

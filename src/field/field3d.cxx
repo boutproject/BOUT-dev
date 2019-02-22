@@ -129,7 +129,7 @@ Field3D& Field3D::allocate() {
 
 Field3D* Field3D::timeDeriv() {
   if(deriv == nullptr) {
-    deriv = new Field3D(fieldmesh);
+    deriv = new Field3D{emptyFrom(*this)};
   }
   return deriv;
 }
@@ -149,8 +149,8 @@ void Field3D::splitYupYdown() {
   }
 
   for (int i = 0; i < fieldmesh->ystart; ++i) {
-    yup_fields.emplace_back(fieldmesh);
-    ydown_fields.emplace_back(fieldmesh);
+    yup_fields.emplace_back(emptyFrom(*this));
+    ydown_fields.emplace_back(emptyFrom(*this));
   }
 }
 
@@ -574,14 +574,10 @@ Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
 
   ASSERT1(fieldsCompatible(lhs, rhs));
 
-  ASSERT1(lhs.getMesh() == rhs.getMesh());
-  Field3D result(lhs.getMesh());
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
-  result.setLocation( lhs.getLocation() );
-  
   checkData(result);
   return result;
 }
@@ -594,13 +590,10 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   ASSERT1(lhs.getMesh() == rhs.getMesh());
 
   // Define and allocate the output result
-  Field3D result(lhs.getMesh());
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
-  result.setLocation( lhs.getLocation() );
-  
   checkData(result);
   return result;
 }
@@ -613,10 +606,9 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   ASSERT1(lhs.getLocation() == rhs.getLocation());  
 
-  FieldPerp result{rhs.getMesh()};
+  FieldPerp result{rhs.getMesh(), rhs.getLocation(), rhs.getIndex(), rhs.getDirectionX(),
+                   rhs.getDirectionY(), rhs.getDirectionZ()};
   result.allocate();
-  result.setIndex(rhs.getIndex());
-  result.setLocation(rhs.getLocation());
   
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
@@ -632,12 +624,9 @@ Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
   checkData(lhs);
   checkData(rhs);
 
-  Field3D result(lhs.getMesh());
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  result.setLocation( lhs.getLocation() );
 
   checkData(result);
   return result;
@@ -650,12 +639,9 @@ Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  Field3D result(rhs.getMesh());
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
-
-  result.setLocation( rhs.getLocation() );
 
   checkData(result);
   return result;
@@ -752,15 +738,13 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
  *
  */
 #define F3D_FUNC(name, func)                                                             \
-  Field3D name(const Field3D &f, REGION rgn) {                                     \
+  Field3D name(const Field3D &f, REGION rgn) {                                           \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
     checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
-    Field3D result(f.getMesh());                                                         \
-    result.allocate();                                                                   \
+    Field3D result{emptyFrom(f)};                                                        \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
-    result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -788,8 +772,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
 
   int ncz = localmesh->LocalNz;
 
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(var)};
 
   const auto region_str = REGION_STRING(rgn);
 
@@ -823,8 +806,6 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   result.name = "filter(" + var.name + ")";
 #endif
 
-  result.setLocation(var.getLocation());
-
   checkData(result);
   return result;
 }
@@ -842,8 +823,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
     return var;
   }
 
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(var)};
 
   const auto region_str = REGION_STRING(rgn);
 
@@ -872,8 +852,6 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
       irfft(f.begin(), ncz, result(i.x(), i.y()));
     }
   }
-
-  result.setLocation(var.getLocation());
 
   checkData(result);
   return result;
@@ -991,9 +969,8 @@ Field2D DC(const Field3D &f, REGION rgn) {
   checkData(f);
 
   Mesh *localmesh = f.getMesh();
-  Field2D result(localmesh);
+  Field2D result(localmesh, f.getLocation());
   result.allocate();
-  result.setLocation(f.getLocation());
 
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = 0.0;

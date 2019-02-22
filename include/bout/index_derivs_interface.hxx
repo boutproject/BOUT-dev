@@ -83,8 +83,8 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
   const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
-    auto tmp = T(0., localmesh);
-    tmp.setLocation(outloc);
+    T tmp{emptyFrom(f).setLocation(outloc)};
+    tmp = 0.;
     return tmp;
   }
 
@@ -93,9 +93,7 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
       method, direction, stagger, derivType);
 
   // Create the result field
-  T result(localmesh);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
+  T result{emptyFrom(f).setLocation(outloc)};
 
   // Apply method
   derivativeMethod(vel, f, result, region);
@@ -149,8 +147,8 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
-    auto tmp = T(0., localmesh);
-    tmp.setLocation(outloc);
+    T tmp{emptyFrom(f).setLocation(outloc)};
+    tmp = 0.;
     return tmp;
   }
 
@@ -159,9 +157,7 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
       method, direction, stagger, derivType);
 
   // Create the result field
-  T result(localmesh);
-  result.allocate(); // Make sure data allocated
-  result.setLocation(outloc);
+  T result{emptyFrom(f).setLocation(outloc)};
 
   // Apply method
   derivativeMethod(f, result, region);

@@ -229,8 +229,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, const std::string &method
 
 const Field2D D2DZ2(const Field2D &f, CELL_LOC UNUSED(outloc), const std::string &UNUSED(method),
                     REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
-  tmp.setLocation(f.getLocation());
+  Field2D tmp{emptyFrom(f)};
+  tmp = 0.;
   return tmp;
 }
 
@@ -300,8 +300,8 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, const std::string &metho
 
 const Field2D D2DXDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      const std::string &UNUSED(method), REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
-  tmp.setLocation(f.getLocation());
+  Field2D tmp{emptyFrom(f)};
+  tmp = 0.;
   return tmp;
 }
 
@@ -331,8 +331,8 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, const std::string &metho
 
 const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      const std::string &UNUSED(method), REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
-  tmp.setLocation(f.getLocation());
+  Field2D tmp{emptyFrom(f)};
+  tmp = 0.;
   return tmp;
 }
 
@@ -340,7 +340,7 @@ const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
                      MAYBE_UNUSED(const std::string& method), REGION UNUSED(region)) {
   Coordinates *coords = f.getCoordinates(outloc);
 
-  Field3D result(f.getMesh());
+  Field3D result{emptyFrom(f)};
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
   result.allocate();
   result.setLocation(f.getLocation());
@@ -403,22 +403,22 @@ const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const st
 // special case where both are 2D
 const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  tmp.setLocation(outloc);
+  Field2D tmp{emptyFrom(f).setLocation(outloc)};
+  tmp = 0.;
   return tmp;
 }
 
 // Note that this is zero because no compression is included
 const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  tmp.setLocation(outloc);
+  Field2D tmp{emptyFrom(f).setLocation(outloc)};
+  tmp = 0.;
   return tmp;
 }
 
@@ -457,11 +457,11 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const st
 
 const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  auto tmp = Field2D(0., f.getMesh());
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  tmp.setLocation(outloc);
+  Field2D tmp{emptyFrom(f).setLocation(outloc)};
+  tmp = 0.;
   return tmp;
 }
 

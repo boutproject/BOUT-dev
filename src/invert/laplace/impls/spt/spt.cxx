@@ -85,9 +85,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.setLocation(location);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
@@ -128,8 +126,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   ASSERT1(localmesh = b.getMesh());
 
   Timer timer("invert");
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
   
   for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
@@ -156,8 +153,6 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     finish(alldata[jy], xperp);
     x = xperp;
   }
-  
-  x.setLocation(b.getLocation());
   
   return x;
 }

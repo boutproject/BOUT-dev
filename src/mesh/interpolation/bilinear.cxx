@@ -88,8 +88,7 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const
 
 Field3D Bilinear::interpolate(const Field3D& f) const {
   ASSERT1(f.getMesh() == localmesh);
-  Field3D f_interp(f.getMesh());
-  f_interp.allocate();
+  Field3D f_interp{emptyFrom(f)};
 
   for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
     for(int y=localmesh->ystart; y<=localmesh->yend;y++) {

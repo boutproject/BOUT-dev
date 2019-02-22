@@ -197,10 +197,7 @@ FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
     ASSERT1(rhs.getLocation() == rhs.getLocation());                           \
     checkData(lhs);                                                            \
     checkData(rhs);                                                            \
-    FieldPerp result(lhs.getMesh());                                           \
-    result.allocate();                                                         \
-    result.setIndex(lhs.getIndex());                                           \
-    result.setLocation(rhs.getLocation());                                     \
+    FieldPerp result{emptyFrom(lhs)};                                          \
                                                                                \
     BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs[i] op rhs[i]; } \
     checkData(result);                                                         \
@@ -219,10 +216,7 @@ FPERP_FPERP_OP_FPERP(/);
     ASSERT1(rhs.getLocation() == rhs.getLocation());                    \
     checkData(lhs);                                                     \
     checkData(rhs);                                                     \
-    FieldPerp result(lhs.getMesh());                                    \
-    result.allocate();                                                  \
-    result.setIndex(lhs.getIndex());                                    \
-    result.setLocation(rhs.getLocation());                              \
+    FieldPerp result{emptyFrom(lhs)};                                   \
                                                                         \
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {                          \
       result[i] = lhs[i] op rhs(i.x(), lhs.getIndex(), i.z());          \
@@ -248,10 +242,7 @@ FPERP_FPERP_OP_FIELD(/, Field2D);
   const FieldPerp operator op(const FieldPerp& lhs, BoutReal rhs) {         \
     checkData(lhs);                                                         \
     checkData(rhs);                                                         \
-    FieldPerp result(lhs.getMesh());                                        \
-    result.allocate();                                                      \
-    result.setIndex(lhs.getIndex());                                        \
-    result.setLocation(lhs.getLocation());                                  \
+    FieldPerp result{emptyFrom(lhs)};                                       \
                                                                             \
     BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs[i] op rhs; } \
                                                                             \
@@ -268,10 +259,7 @@ FPERP_FPERP_OP_REAL(/);
   const FieldPerp operator op(BoutReal lhs, const FieldPerp& rhs) {         \
     checkData(lhs);                                                         \
     checkData(rhs);                                                         \
-    FieldPerp result(rhs.getMesh());                                        \
-    result.allocate();                                                      \
-    result.setIndex(rhs.getIndex());                                        \
-    result.setLocation(rhs.getLocation());                                  \
+    FieldPerp result{emptyFrom(rhs)};                                       \
                                                                             \
     BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = lhs op rhs[i]; } \
                                                                             \
@@ -309,10 +297,7 @@ FPERP_REAL_OP_FPERP(/);
     /* Check if the input is allocated */                          \
     ASSERT1(f.isAllocated());                                      \
     /* Define and allocate the output result */                    \
-    FieldPerp result(f.getMesh());                                 \
-    result.allocate();                                             \
-    result.setIndex(f.getIndex());                                 \
-    result.setLocation(f.getLocation());                           \
+    FieldPerp result{emptyFrom(f)};                                \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
     checkData(result);                                             \
     return result;                                                 \
@@ -357,12 +342,11 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   checkData(f);
 
-  FieldPerp result(f.getMesh());
+  FieldPerp result(f.getMesh(), f.getLocation(), y, f.getDirectionX(),
+                   f.getDirectionY(), f.getDirectionZ());
 
   // Allocate memory
   result.allocate();
-  result.setIndex(y);
-  result.setLocation(f.getLocation());
   BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = f(i, y); }
 
   checkData(result);
@@ -441,10 +425,7 @@ FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn) {
   ASSERT1(lhs.getMesh() == rhs.getMesh());
   ASSERT1(lhs.getIndex() == rhs.getIndex());
   ASSERT1(lhs.getLocation() == rhs.getLocation());
-  FieldPerp result(lhs.getMesh());
-  result.allocate();
-  result.setIndex(lhs.getIndex());
-  result.setLocation(lhs.getLocation());
+  FieldPerp result{emptyFrom(lhs)};
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   checkData(result);
@@ -458,10 +439,7 @@ FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  FieldPerp result(lhs.getMesh());
-  result.allocate();
-  result.setIndex(lhs.getIndex());
-  result.setLocation(lhs.getLocation());
+  FieldPerp result{emptyFrom(lhs)};
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
   checkData(result);
@@ -475,10 +453,7 @@ FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  FieldPerp result(rhs.getMesh());
-  result.allocate();
-  result.setIndex(rhs.getIndex());
-  result.setLocation(rhs.getLocation());
+  FieldPerp result{emptyFrom(rhs)};
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
   checkData(result);

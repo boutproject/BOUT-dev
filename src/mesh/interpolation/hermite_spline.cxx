@@ -115,8 +115,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
 Field3D HermiteSpline::interpolate(const Field3D &f) const {
 
   ASSERT1(f.getMesh() == localmesh);
-  Field3D f_interp(f.getMesh());
-  f_interp.allocate();
+  Field3D f_interp{emptyFrom(f)};
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates

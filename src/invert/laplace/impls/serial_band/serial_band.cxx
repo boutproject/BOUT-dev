@@ -85,12 +85,9 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.setLocation(location);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
 
   int jy = b.getIndex();
-  x.setIndex(jy);
 
   int ncz = localmesh->LocalNz;
   int ncx = localmesh->LocalNx-1;

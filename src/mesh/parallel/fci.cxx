@@ -275,9 +275,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f)};
 
   int nz = map_mesh.LocalNz;
 

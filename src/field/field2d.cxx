@@ -113,7 +113,7 @@ Field2D& Field2D::allocate() {
 
 Field2D* Field2D::timeDeriv() {
   if(deriv == nullptr)
-    deriv = new Field2D(fieldmesh);
+    deriv = new Field2D{emptyFrom(*this)};
   return deriv;
 }
 
@@ -393,10 +393,8 @@ bool finite(const Field2D &f, REGION rgn) {
     /* Check if the input is allocated */                                                \
     checkData(f);                                                                        \
     /* Define and allocate the output result */                                          \
-    Field2D result(f.getMesh());                                                         \
-    result.allocate();                                                                   \
+    Field2D result{emptyFrom(f)};                                                        \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
-    result.setLocation(f.getLocation());                                                 \
     checkData(result);                                                                   \
     return result;                                                                       \
   }
@@ -445,12 +443,9 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
 
   // Define and allocate the output result
   ASSERT1(lhs.getMesh() == rhs.getMesh());
-  Field2D result(lhs.getMesh());
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
@@ -463,12 +458,9 @@ Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  Field2D result(lhs.getMesh());
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
@@ -481,12 +473,9 @@ Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
   checkData(rhs);
 
   // Define and allocate the output result
-  Field2D result(rhs.getMesh());
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
 
   BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;

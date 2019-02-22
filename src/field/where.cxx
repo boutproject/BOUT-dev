@@ -30,9 +30,7 @@
 // Versions taking Field2D and returning Field3D
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(gt0)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -45,9 +43,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(gt0)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -60,9 +56,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
 }
 
 const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(le0)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -76,9 +70,7 @@ const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(gt0)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -92,9 +84,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(le0)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -111,9 +101,7 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
 // Versions taking Field2D and returning Field2D
 
 const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0) {
-  const auto testMesh = test.getMesh();
-  Field2D result(testMesh);
-  result.allocate();
+  Field2D result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -127,9 +115,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0)
 }
 
 const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
-  const auto testMesh = test.getMesh();
-  Field2D result(testMesh);
-  result.allocate();
+  Field2D result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -143,9 +129,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
-  const auto testMesh = test.getMesh();
-  Field2D result(testMesh);
-  result.allocate();
+  Field2D result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -159,9 +143,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
-  const auto testMesh = test.getMesh();
-  Field2D result(testMesh);
-  result.allocate();
+  Field2D result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
@@ -178,9 +160,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
 // Versions taking Field3D and returning Field3D
 
 const Field3D where(const Field3D &test, BoutReal gt0, const Field3D &le0) {
-  const auto testMesh = test.getMesh();
-  Field3D result(testMesh);
-  result.allocate();
+  Field3D result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     if(test[i] > 0.0) {
