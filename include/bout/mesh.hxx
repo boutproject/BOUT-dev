@@ -822,6 +822,9 @@ protected:
   /// Mesh options section
   Options *options{nullptr};
 
+  /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
+  bool calcYUpDown_on_communicate{true};
+
   /// Handles calculation of yup and ydown
   PTptr transform{nullptr};
 
