@@ -57,8 +57,8 @@ PRO popup_event, event
   
   IF N_ELEMENTS(uvalue) EQ 0 THEN RETURN ; Undefined
   
-  CASE uvalue OF
-    'mesh': BEGIN
+  CASE 1 OF
+    uvalue EQ 'mesh' OR uvalue EQ 'mesh2': BEGIN
       IF base_info.rz_grid_valid EQ 0 THEN BEGIN
         PRINT, "ERROR: No valid equilibrium data. Read from file first"
         a = DIALOG_MESSAGE("No valid equilibrium data. Read from file first", /error)
@@ -109,7 +109,7 @@ PRO popup_event, event
       
       ; Delete the window, as number of fields may change
       WIDGET_CONTROL, event.top, /destroy
-      
+
       ; Check if a simplified boundary should be used
       IF base_info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -118,7 +118,13 @@ PRO popup_event, event
                                [MIN(boundary[1,*]), MIN(boundary[1,*]), $
                                 MAX(boundary[1,*]), MAX(boundary[1,*])] ])
       ENDIF
+    END
+  ENDCASE
       
+  CASE uvalue OF
+    'mesh': BEGIN
+      ; Orthogonal mesh button was pushed
+
       ; Create the mesh
       mesh = create_grid((*(base_info.rz_grid)).psi, (*(base_info.rz_grid)).r, (*(base_info.rz_grid)).z, $
                          settings, $
@@ -126,7 +132,23 @@ PRO popup_event, event
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
                          fast=base_info.fast, xpt_mul=xpt_mul, /simple)
+    END
+    'mesh2': BEGIN
+      ; Non-orthogonal mesh button was pushed
+
+      ; Create the mesh
+      mesh = create_nonorthogonal((*(base_info.rz_grid)).psi, (*(base_info.rz_grid)).r, $
+                         (*(base_info.rz_grid)).z, settings, $
+                         boundary=boundary, strict=base_info.strict_bndry, $
+                         /nrad_flexible, $
+                         single_rad_grid=base_info.single_rad_grid, $
+                         critical=(*(base_info.rz_grid)).critical, $
+                         xpt_only=base_info.xpt_only, /simple)
+    END
+  ENDCASE
       
+  CASE 1 OF
+    uvalue EQ 'mesh' OR uvalue EQ 'mesh2': BEGIN
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, base_info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -766,6 +788,9 @@ PRO event_handler, event
       
       mesh_button = WIDGET_BUTTON(popup, VALUE='Generate mesh', $
                                   uvalue='mesh', tooltip="Generate a new mesh")
+      
+      mesh2_button = WIDGET_BUTTON(popup, VALUE='Generate non-orthogonal mesh', $
+                                   uvalue='mesh2', tooltip="Generate a new non-orthogonal mesh")
       
       popup_info = {info:info, $ ; Store the main info too
                     nrad_field:nrad_field, $
