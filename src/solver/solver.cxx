@@ -706,7 +706,10 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     throw;
   }
 
-  if ( iter == NOUT ){
+  // Check if any of the monitors has asked to quit
+  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
+
+  if ( iter == NOUT || abort ){
     for (const auto &it : monitors){
       it->cleanup();
     }
@@ -714,10 +717,10 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
 
   if (abort) {
     // restart file should be written by physics model
-    output.write("User signalled to quit. Returning\n");
+    output.write(_("User signalled to quit. Returning\n"));
     return 1;
   }
-  
+
   return 0;
 }
 

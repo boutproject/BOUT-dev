@@ -12,7 +12,7 @@ class Mesh;
 class InterpolationFactory {
 public:
   /// Callback function definition for creating Interpolation objects
-  typedef Interpolation* (*CreateInterpCallback)(Mesh*);
+  using CreateInterpCallback = Interpolation* (*)(Mesh*);
 private:
   /// Add the available interpolation methods to the internal map
   ///

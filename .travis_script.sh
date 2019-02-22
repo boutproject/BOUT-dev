@@ -115,8 +115,9 @@ then
     # It still won't include, e.g. any solvers we don't build with though
     find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
 
-    #Upload for codecov
-    bash <(curl -s https://codecov.io/bash)
+    # Use lcov to generate a report, upload it to codecov.io
+    make code-coverage-capture
+    bash <(curl -s https://codecov.io/bash) -f bout-coverage.info
 
     #For codacy
     bash ./.codacy_coverage.sh

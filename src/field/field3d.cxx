@@ -100,23 +100,8 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field(localmesh) {
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {
-    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
-    // only delete once
-    // Also need to check that separate yup_field exists
-    if ((yup_field != this) && (yup_field != nullptr))
-      yup_field->deriv = nullptr;
-    if ((ydown_field != this) && (ydown_field != nullptr))
-      ydown_field->deriv = nullptr;
-
-    // Now delete them as part of the deriv vector
     delete deriv;
   }
-  
-  if((yup_field != this) && (yup_field != nullptr))
-    delete yup_field;
-  
-  if((ydown_field != this) && (ydown_field != nullptr))
-    delete ydown_field;
 }
 
 void Field3D::allocate() {
@@ -146,52 +131,67 @@ Field3D* Field3D::timeDeriv() {
 void Field3D::splitYupYdown() {
   TRACE("Field3D::splitYupYdown");
   
-  if((yup_field != this) && (yup_field != nullptr))
-    return;
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
 
-  // yup_field and ydown_field null
-  yup_field = new Field3D(fieldmesh);
-  ydown_field = new Field3D(fieldmesh);
+  if (!yup_fields.empty()) {
+    return;
+  }
+
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields.emplace_back(fieldmesh);
+    ydown_fields.emplace_back(fieldmesh);
+  }
 }
 
 void Field3D::mergeYupYdown() {
   TRACE("Field3D::mergeYupYdown");
-  
-  if(yup_field == this && ydown_field == this)
+
+#if CHECK > 2
+  if (yup_fields.size() != ydown_fields.size()) {
+    throw BoutException("Field3D::mergeYupYdown: forward/backward parallel slices not in sync.\n"
+                        "    This is an internal library error");
+  }
+#endif
+
+  if (yup_fields.empty() && ydown_fields.empty()) {
     return;
-
-  if(yup_field != nullptr){
-    delete yup_field;
   }
 
-  if(ydown_field != nullptr) {
-    delete ydown_field;
-  }
-
-  yup_field = this;
-  ydown_field = this;
-}
-
-Field3D& Field3D::ynext(int dir) {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
-  }
+  yup_fields.clear();
+  ydown_fields.clear();
 }
 
 const Field3D& Field3D::ynext(int dir) const {
-  switch(dir) {
-  case +1:
-    return yup();
-  case -1:
-    return ydown();
-  default:
-    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+#if CHECK > 0
+  // Asked for more than yguards
+  if (std::abs(dir) > fieldmesh->ystart) {
+    throw BoutException(
+        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
+        fieldmesh->ystart);
   }
+#endif
+
+  // ynext uses 1-indexing, but yup wants 0-indexing
+  if (dir > 0) {
+    return yup(dir - 1);
+  } else if (dir < 0) {
+    return ydown(std::abs(dir) - 1);
+  } else {
+    return *this;
+  }
+}
+
+Field3D &Field3D::ynext(int dir) {
+  // Call the `const` version: need to add `const` to `this` to call
+  // it, then throw it away after. This is ok because `this` wasn't
+  // `const` to begin with.
+  // See Effective C++, Scott Meyers, p23, for a better explanation
+  return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
 void Field3D::setLocation(CELL_LOC new_location) {

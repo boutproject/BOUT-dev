@@ -262,9 +262,10 @@ class FieldRound : public FieldGenerator {
 public:
   FieldRound(FieldGeneratorPtr g) : gen(g) {}
 
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr > args) {
-    if(args.size() != 1)
-      throw BoutException("round function must have one input");
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) {
+    if (args.size() != 1) {
+      throw ParseException("round function must have one input");
+    }
     return std::make_shared<FieldRound>(args.front());
   }
   BoutReal generate(double x, double y, double z, double t) {
@@ -274,6 +275,7 @@ public:
     }
     return static_cast<int>(val - 0.5);
   }
+
 private:
   FieldGeneratorPtr gen;
 };

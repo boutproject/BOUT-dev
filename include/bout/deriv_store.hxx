@@ -136,10 +136,6 @@ struct DerivativeStore {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
 
-    // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
-        methodName);
-
     switch (derivType) {
     case (DERIV::Standard):
       if (standard.count(key) != 0) {
@@ -149,7 +145,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standard[key] = func;
-      return;
+      break;
     case (DERIV::StandardSecond):
       if (standardSecond.count(key) != 0) {
         throw BoutException("Trying to override standardSecond derivative : "
@@ -158,7 +154,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardSecond[key] = func;
-      return;
+      break;
     case (DERIV::StandardFourth):
       if (standardFourth.count(key) != 0) {
         throw BoutException("Trying to override standardFourth derivative : "
@@ -167,13 +163,17 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       standardFourth[key] = func;
-      return;
+      break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'standard' but derivative type %s passed",
                           DERIV_STRING(derivType).c_str());
     };
-    return;
+
+    // Register this method name in lookup of known methods
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
+        methodName);
+
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
@@ -182,10 +182,6 @@ struct DerivativeStore {
                           STAGGER stagger, std::string methodName) {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
-
-    // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
-        methodName);
 
     switch (derivType) {
     case (DERIV::Upwind):
@@ -196,7 +192,7 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       upwind[key] = func;
-      return;
+      break;
     case (DERIV::Flux):
       if (flux.count(key) != 0) {
         throw BoutException("Trying to override flux derivative : "
@@ -205,13 +201,16 @@ struct DerivativeStore {
                             STAGGER_STRING(stagger).c_str(), methodName.c_str());
       }
       flux[key] = func;
-      return;
+      break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
                           "signature 'upwind/flux' but derivative type %s passed",
                           DERIV_STRING(derivType).c_str());
     };
-    return;
+
+    // Register this method name in lookup of known methods
+    registeredMethods[getKey(direction, stagger, DERIV_STRING(derivType))].insert(
+        methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -329,12 +328,6 @@ struct DerivativeStore {
     //"dd?" and if the option isn't in there we search a section called "diff"
     auto backupSection = options->getSection("diff");
 
-    std::map<DERIV, std::string> initialDefaultMethods = {{DERIV::Standard, "C2"},
-                                                          {DERIV::StandardSecond, "C2"},
-                                                          {DERIV::StandardFourth, "C2"},
-                                                          {DERIV::Upwind, "U1"},
-                                                          {DERIV::Flux, "U1"}};
-
     std::map<DIRECTION, std::string> directions = {{DIRECTION::X, "ddx"},
                                                    {DIRECTION::Y, "ddy"},
                                                    {DIRECTION::YOrthogonal, "ddy"},
@@ -348,14 +341,16 @@ struct DerivativeStore {
 
     for (const auto& direction : directions) {
       for (const auto& deriv : derivTypes) {
-        std::string theDefault;
-
         // This corresponds to the key in the input file
         auto derivName = deriv.second;
 
         const auto theDirection = direction.first;
         const auto theDerivType = deriv.first;
         const auto theDerivTypeString = DERIV_STRING(theDerivType);
+
+        // Note both staggered and unstaggered have the same fallback default currently
+        std::string theDefault{
+            defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)]};
 
         //-------------------------------------------------------------
         // Unstaggered
@@ -367,12 +362,12 @@ struct DerivativeStore {
         // Find the appropriate value for theDefault either from
         // the input file or if not found then use the value in
         // initialDefaultMethods
+        // If neither branch matched (i.e. not in options) then we use
+        // the hard-coded default already in the defaultMethods section
         if (specificSection->isSet(derivName)) {
           specificSection->get(derivName, theDefault, "");
         } else if (backupSection->isSet(derivName)) {
           backupSection->get(derivName, theDefault, "");
-        } else {
-          theDefault = initialDefaultMethods[theDerivType];
         }
 
         // Now we have the default method we should store it in defaultMethods
@@ -418,7 +413,7 @@ struct DerivativeStore {
   }
 
   /// Empty all member storage
-  void reset() {
+  void clear() {
     defaultMethods.clear();
     standard.clear();
     standardSecond.clear();
@@ -428,10 +423,21 @@ struct DerivativeStore {
     registeredMethods.clear();
   }
 
+  /// Reset to initial state
+  void reset() {
+    clear();
+
+    setDefaults();
+  }
+
 private:
   // Make empty constructor private so we can't make instances outside
   // of the struct
-  DerivativeStore() = default;
+  DerivativeStore() {
+    // Ensure the default methods are set on construction
+    // This populates the defaultMethods map
+    setDefaults();
+  }
 
   storageType<std::size_t, standardFunc> standard;
   storageType<std::size_t, standardFunc> standardSecond;
@@ -448,6 +454,45 @@ private:
   /// currently assume the default method is independent of staggering --
   /// it might be useful to relax this assumption!
   storageType<std::size_t, std::string> defaultMethods;
+
+  void setDefaults() {
+    std::map<DERIV, std::string> initialDefaultMethods = {{DERIV::Standard, "C2"},
+                                                          {DERIV::StandardSecond, "C2"},
+                                                          {DERIV::StandardFourth, "C2"},
+                                                          {DERIV::Upwind, "U1"},
+                                                          {DERIV::Flux, "U1"}};
+
+    std::map<DIRECTION, std::string> directions = {{DIRECTION::X, "ddx"},
+                                                   {DIRECTION::Y, "ddy"},
+                                                   {DIRECTION::YOrthogonal, "ddy"},
+                                                   {DIRECTION::Z, "ddz"}};
+
+    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "First"},
+                                               {DERIV::StandardSecond, "Second"},
+                                               {DERIV::StandardFourth, "Fourth"},
+                                               {DERIV::Upwind, "Upwind"},
+                                               {DERIV::Flux, "Flux"}};
+
+    for (const auto& direction : directions) {
+      for (const auto& deriv : derivTypes) {
+        const auto theDirection = direction.first;
+        const auto theDerivTypeString = DERIV_STRING(deriv.first);
+        const std::string theDefault{uppercase(initialDefaultMethods[deriv.first])};
+
+        //-------------------------------------------------------------
+        // Unstaggered and Staggered -- both get same default currently
+        //-------------------------------------------------------------
+
+        // Now we have the default method we should store it in defaultMethods
+        defaultMethods[getKey(theDirection, STAGGER::None, theDerivTypeString)] =
+            theDefault;
+        defaultMethods[getKey(theDirection, STAGGER::L2C, theDerivTypeString)] =
+            theDefault;
+        defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
+            theDefault;
+      }
+    }
+  };
 
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {

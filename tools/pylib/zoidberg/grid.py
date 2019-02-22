@@ -184,8 +184,8 @@ class Grid(object):
 
         # Note: These y metrics are for Cartesian coordinates
         # If in cylindrical coordinates then these should be different
-        g_yy = 1.0   # Rmaj**2
-        gyy = 1.0    # 1/Rmaj**2
+        g_yy = np.ones(self.shape)
+        gyy = np.ones(self.shape)
 
         return {"dx":dx, "dy":dy3d, "dz": dz,
                 "gyy": gyy,  "g_yy":g_yy,

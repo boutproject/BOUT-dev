@@ -15,6 +15,16 @@ bool GridFromOptions::hasVar(const std::string &name) {
   return options->isSet(name);
 }
 
+bool GridFromOptions::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) {
+  if(!hasVar(name)) {
+    sval = "";
+    return false;
+  }
+  
+  options->get(name, sval, "");
+  return true;
+}
+
 bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
   if(!hasVar(name)) {
     ival = 0;

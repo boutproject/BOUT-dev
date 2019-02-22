@@ -64,7 +64,7 @@ protected:
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_ZLOW);
-    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>());
+    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();
