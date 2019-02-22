@@ -714,6 +714,14 @@ Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 /// @param[in] rgn   The region to calculate the result over
 Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn = RGN_ALL);
 
+/// The argument \p keep_zonal used to be integer "zmin" -- this was a
+/// misnomer. Please use the version above which uses a bool instead
+DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
+                                  REGION rgn = RGN_ALL)) {
+  ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
+  return lowPass(var, zmax, static_cast<bool>(keep_zonal), rgn);
+}
+
 /// Fourier low pass filtering. Removes modes higher than \p zmax
 ///
 /// @param[in] var   Variable to apply filter to

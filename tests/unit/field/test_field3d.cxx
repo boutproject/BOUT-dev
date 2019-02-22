@@ -2147,6 +2147,10 @@ TEST_F(Field3DTest, LowPassTwoArg) {
   auto output2 = lowPass(input, 2, 0);
 
   EXPECT_TRUE(IsFieldEqual(output2, expected));
+
+  // Calling lowPass with an int that is not 0 or 1 is an error
+  EXPECT_THROW(lowPass(input, 2, -1), BoutException);
+  EXPECT_THROW(lowPass(input, 2, 2), BoutException);
 }
 
 TEST_F(Field3DTest, LowPassTwoArgKeepZonal) {
