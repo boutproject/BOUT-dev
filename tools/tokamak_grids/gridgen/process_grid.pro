@@ -1619,6 +1619,74 @@ retrybetacalc:
   psi_bndry = mesh.faxis + mesh.fnorm
   s = file_write(handle, "psi_bndry", psi_bndry)
 
+  ; save some version information
+  ;
+  ; BOUT++ version information: this is set when BOUT++ is configured.
+  ; Hypnotoad doesn't require BOUT++ to have been configured, and IDL code may
+  ; have changed since 'configure' was run, so this is not 100% reliable, but
+  ; still worth saving as a sanity check
+  hypnotoad_info = ROUTINE_INFO('hypnotoad', /SOURCE)
+  hypnotoad_path = FILE_DIRNAME(hypnotoad_info.path)
+
+  ; BOUT++ git hash
+  SPAWN, STRJOIN(['cd ',hypnotoad_path, '&& git describe --always --abbrev=0 --dirty --match "NOT A TAG"']), bout_git_hash, EXIT_STATUS=status
+  IF status THEN BEGIN
+    ; hyponotoad_path is not in a git repository.
+    ; BOUT++ may have been downloaded as a .tar: try to get git hash from
+    ; bout-config at location relative to Hypnotoad.
+    SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --git']), bout_git_hash, EXIT_STATUS=status
+    IF status THEN BEGIN
+      ; bout-config not found at relative path.
+      ; BOUT++ may have been installed as a library, then bout-config should be in the $PATH
+      SPAWN, 'bout-config --git', bout_git_hash, EXIT_STATUS=status
+      IF status THEN BEGIN
+        PRINT, '---------------------------------------------------------------'
+        PRINT, 'WARNING: could not find git hash of BOUT++, not saving.'
+        PRINT, 'If your BOUT++ is a git repository, something has gone wrong'
+        PRINT, 'with "git describe".'
+        PRINT, 'If your BOUT++ was extracted from a .tar, the bin/bout-config'
+        PRINT, 'executable has failed.'
+        PRINT, 'If you have installed BOUT++ as a library, "bout-config" should'
+        PRINT, 'be in your $PATH, but cannot be found.'
+        PRINT, '---------------------------------------------------------------'
+        bout_git_hash = 0
+      ENDIF
+    ENDIF
+  ENDIF
+  IF bout_git_hash THEN BEGIN
+    ; bout_git_hash as returned from SPAWN seems to have some funny character
+    ; in, maybe a trailing newline. This character causes an error when trying
+    ; to write as a NetCDF attribute. STRJOIN seems to fix this.
+    bout_git_hash = STRJOIN(bout_git_hash, '')
+
+    s = file_write_attribute(handle, "git_hash", bout_git_hash)
+  ENDIF
+
+  ; BOUT++ version number
+  SPAWN, STRJOIN([hypnotoad_path, PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), '..', PATH_SEP(), 'bin/bout-config --version']), bout_version, EXIT_STATUS=status
+  IF status THEN BEGIN
+    ; bout-config not found at relative path.
+    ; BOUT++ may have been installed as a library, then bout-config should be in the $PATH
+    SPAWN, 'bout-config --version', bout_version, EXIT_STATUS=status
+    IF status THEN BEGIN
+      PRINT, '---------------------------------------------------------------'
+      PRINT, 'WARNING: could not find version number of BOUT++, not saving.'
+      PRINT, 'Could not find bin/bout-config in BOUT++ directory containing'
+      PRINT, 'Hypnotoad.'
+      PRINT, 'If you have installed BOUT++ as a library, "bout-config" should'
+      PRINT, 'be in your $PATH, but cannot be found.'
+      PRINT, '---------------------------------------------------------------'
+      bout_version = 0
+    ENDIF
+  ENDIF
+  IF bout_version THEN BEGIN
+    bout_version_array = LONG(STRSPLIT(bout_version, '.', /EXTRACT))
+    s = file_write_attribute(handle, "BOUT_version", bout_version_array)
+  ENDIF
+
+  ; Hypnotoad version number
+  s = file_write_attribute(handle, "Hypnotoad_version", hypnotoad_version())
+
   file_close, handle
   PRINT, "DONE"
   
