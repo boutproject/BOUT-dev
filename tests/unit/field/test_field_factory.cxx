@@ -28,6 +28,8 @@ public:
     // un-field-align the result
     mesh->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+    mesh_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }
 
   FieldFactory factory;
@@ -164,8 +166,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("x", nullptr, bout::globals::mesh, CELL_XLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("x", nullptr, this->mesh_staggered, CELL_XLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() - 0.5; },
@@ -176,8 +179,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateYStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("y", nullptr, bout::globals::mesh, CELL_YLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("y", nullptr, this->mesh_staggered, CELL_YLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
@@ -190,8 +194,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateYStaggered) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("z", nullptr, bout::globals::mesh, CELL_ZLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("z", nullptr, this->mesh_staggered, CELL_ZLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
