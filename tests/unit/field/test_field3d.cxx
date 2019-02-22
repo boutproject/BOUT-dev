@@ -256,6 +256,7 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
 TEST_F(Field3DTest, MultipleYupYdown) {
   FakeMesh newmesh{3, 5, 7};
   newmesh.ystart = 2;
+  newmesh.createDefaultRegions();
 
   Field3D field{&newmesh};
 
