@@ -101,9 +101,13 @@ PRO popup_event, event
       
       widget_control, base_info.xpt_dist_field, get_value=xpt_mul
 
+      widget_control, info.nonorthogonal_weight_decay_power, get_value=nonorthogonal_weight_decay_power
+
       PRINT, "HYP: psi_inner =", psi_inner
 
-      settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
+      settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, $
+                  rad_peaking:rad_peak, $
+                  nonorthogonal_weight_decay_power:nonorthogonal_weight_decay_power}
       
       WIDGET_CONTROL, base_info.status, set_value="Generating mesh ..."
       
@@ -417,7 +421,9 @@ PRO event_handler, event
 
         widget_control, info.parweight_field, get_value=parweight
 
-        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak, parweight:parweight}
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, $
+                    rad_peaking:rad_peak, parweight:parweight, $
+                    nonorthogonal_weight_decay_power:info.nonorthogonal_weight_decay_power}
       ENDELSE
       
 
@@ -430,8 +436,6 @@ PRO event_handler, event
                                 MAX(boundary[1,*]), MAX(boundary[1,*])] ])
       ENDIF
       
-      IF info.xptonly_check EQ 0 THEN xpt_only = 0 ELSE xpt_only = 1
-        
       WIDGET_CONTROL, info.status, set_value="Generating non-orthogonal mesh ..."
       
       mesh = create_nonorthogonal((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
@@ -785,6 +789,18 @@ PRO event_handler, event
                                   xsize=8                         $
                                 )
       ENDELSE
+
+      l = WIDGET_LABEL(popup, value='Strength of decay of non-orthogonality away from grid section boundary')
+      l = WIDGET_LABEL(popup, value='(Larger exponent pushes the grid back toward orthogonality faster)')
+      nonorthogonal_decay_base = WIDGET_BASE(popup, /ROW, EVENT_PRO='popup_event')
+      nonorthogonal_weight_decay_power = $
+          CW_FIELD( nonorthogonal_decay_base, $
+                    title = 'Exponent: ', $
+                    uvalue = 'nonorthogonal_weight_decay_power', $
+                    /double, $
+                    value = 2.7, $
+                    xsize = 8 $
+                  )
       
       mesh_button = WIDGET_BUTTON(popup, VALUE='Generate mesh', $
                                   uvalue='mesh', tooltip="Generate a new mesh")
@@ -797,6 +813,7 @@ PRO event_handler, event
                     in_psi_field:in_psi_field, $
                     out_psi_field:out_psi_field, $
                     npol_field:npol_field, $
+                    nonorthogonal_weight_decay_power:nonorthogonal_weight_decay_power, $
                     top:event.top}
 
       WIDGET_CONTROL, popup, set_uvalue=popup_info 
@@ -835,6 +852,7 @@ PRO event_handler, event
         str_set, info, "psi_outer_field", oldinfo.psi_outer_field, /over
         str_set, info, "rad_peak_field", oldinfo.rad_peak_field, /over
         str_set, info, "xpt_dist_field", oldinfo.xpt_dist_field, /over
+        str_set, info, "nonorthogonal_weight_decay_power", oldinfo.nonorthogonal_weight_decay_power, /over
         
         str_set, info, "status", oldinfo.status, /over
         str_set, info, "leftbargeom", oldinfo.leftbargeom, /over
@@ -1185,6 +1203,7 @@ PRO hypnotoad
            simple_bndry:0, $ ; Use simplified boundary?
            xptonly_check:xptonly_check, $ ; 
            xpt_only:0, $ ; x-point only non-orthogonal
+           nonorthogonal_weight_decay_power:2.7, $ ; how fast to decay towards orthogonal mesh
            radgrid_check:radgrid_check, $
            single_rad_grid:1, $
            smoothP_check:smoothP_check, $
