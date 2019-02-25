@@ -48,7 +48,7 @@ class Coordinates;
 class Coordinates {
 public:
   /// Standard constructor from input
-  Coordinates(Mesh *mesh);
+  Coordinates(Mesh* mesh, Options& options_in);
 
   /// Constructor interpolating from another Coordinates object
   Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
@@ -56,11 +56,11 @@ public:
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
   /// calculate the non-uniform variables, Christoffel symbols
-  Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J, Field2D Bxy,
-              Field2D g11, Field2D g22, Field2D g33, Field2D g12, Field2D g13,
-              Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
-              Field2D g_13, Field2D g_23, Field2D ShiftTorsion, Field2D IntShiftTorsion,
-              bool calculate_geometry = true);
+  Coordinates(Mesh* mesh, Options& options_in, Field2D dx, Field2D dy, BoutReal dz,
+              Field2D J, Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
+              Field2D g13, Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33,
+              Field2D g_12, Field2D g_13, Field2D g_23, Field2D ShiftTorsion,
+              Field2D IntShiftTorsion, bool calculate_geometry = true);
 
   ~Coordinates() = default;
 
@@ -208,6 +208,7 @@ public:
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
+  Options& options;
   CELL_LOC location;
 };
 

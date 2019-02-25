@@ -70,10 +70,10 @@ public:
     input = std::move(input_temp);
 
     dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
-        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+        mesh, Options::root(), Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
   }
 
   ~ShiftedMetricTest() {

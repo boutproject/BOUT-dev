@@ -19,20 +19,20 @@ using CoordinatesTest = FakeMeshFixture;
 
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{1.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+      mesh, Options::root(),      Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false};
 
   EXPECT_DOUBLE_EQ(coords.zlength(), 7.0);
 }
 
 TEST_F(CoordinatesTest, Jacobian) {
   Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{1.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+      mesh, Options::root(),      Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false};
 
   EXPECT_NO_THROW(coords.jacobian());
 
@@ -42,10 +42,10 @@ TEST_F(CoordinatesTest, Jacobian) {
 
 TEST_F(CoordinatesTest, CalcContravariant) {
   Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+      mesh, Options::root(),      Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false};
 
   output_info.disable();
   coords.calcCovariant();
@@ -61,10 +61,10 @@ TEST_F(CoordinatesTest, CalcContravariant) {
 
 TEST_F(CoordinatesTest, CalcCovariant) {
   Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+      mesh, Options::root(),      Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false};
 
   output_info.disable();
   coords.calcContravariant();
