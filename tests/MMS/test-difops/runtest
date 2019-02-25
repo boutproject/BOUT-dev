@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#requires boutcore
+#requires all_tests
+#requires not make
+
+PYTHONPATH=../../../tools/pylib/boutdata:$PYTHONPATH python3 runtest.py
+
+exit 0
