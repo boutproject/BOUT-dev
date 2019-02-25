@@ -11,25 +11,21 @@ class DifopsMMS:
     """
     Common methods/data for MMS testing of differential operators
     """
-    def __init__(self, metric, fullTest=True):
+    def __init__(self, metric, fullTest=True, plotError=False):
         """
         Input metric is a Metric object as defined in boutdata.mms_alternate
         """
 
-        self.test_throw = fullTest
-        #if self.test_throw:
-        #    if boutcore.bout_CHECK < 1:
-        #        print('Warning: CHECK='+str(boutcore.bout_CHECK)+' so exceptions will '
-        #            'not be thrown for unsupported locations. Setting '
-        #            'test_throw=False...')
-        #        self.test_throw = False
-
-        boutcore.init('-q -q -q -q')
+        self.testThrow = fullTest
+        self.plotError = plotError
 
         self.metric = metric
         self.fullTest = fullTest
         self.meshDict = {}
         self.inputDict = {}
+        self.inputDict2 = {}
+        self.dimStaggerDict = {}
+        self.dimStaggerExpectThrowDict = {}
         self.mxg = 2
         self.myg = 2
 
@@ -44,8 +40,28 @@ class DifopsMMS:
         self.analytic_input = sympy.sympify(self.testfunc)
         self.analytic_input2 = sympy.sympify(self.testfunc2)
 
+        self.locations = ['CENTRE', 'XLOW', 'YLOW', 'ZLOW']
+        #self.ftypes = ['3D', '2D']
+        self.ftypes = ['3D']
+
+        # list of test results
+        self.results = []
+
         # search pattern for splitKey
         self.keyRE = re.compile('(nx)([0-9]+)(ny)([0-9]+)(nz)([0-9]+)(.*)')
+
+        if self.testThrow:
+            if boutcore.bout_CHECK < 1:
+                print('Warning: CHECK='+str(boutcore.bout_CHECK)+' so exceptions will '
+                    'not be thrown for unsupported locations. Setting '
+                    'testThrow=False...')
+                self.testThrow = False
+            else:
+                # add small mesh and inputs to test for expected exceptions
+                self.meshDict['expectThrow'] = self.makeMesh(64, 64, 3)
+                for location in self.locations:
+                    for ftype in self.ftypes:
+                        self.inputDict['expectThrow'+location+ftype] = self.makeField(self.testfunc, 'expectThrow', location, ftype)
 
     def getKeyBase(self, n, dimensions, loc):
         """
@@ -108,6 +124,7 @@ class DifopsMMS:
         except KeyError:
             mesh = self.makeMesh(*self.splitKey(key))
             self.meshDict[key] = mesh
+            return mesh
 
     def makeMesh(self, nx, ny, nz, stagger=''):
         if nx > 1:
@@ -176,7 +193,52 @@ class DifopsMMS:
         else:
             raise ValueError('Unexpected ftype argument '+str(ftype))
 
-    def testOperator(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger):
+    def getDimStagger(self, base_dimensions, stagger_directions):
+        try:
+            return self.dimStaggerDict[base_dimensions][stagger_directions]
+        except KeyError:
+            # all derivatives at same inloc/outloc should work
+            dimensions_staggers = [(base_dimensions, ('CENTRE', 'CENTRE')),
+                                   (base_dimensions+'x', ('XLOW', 'XLOW')),
+                                   (base_dimensions+'y', ('YLOW', 'YLOW')),
+                                   (base_dimensions+'z', ('ZLOW', 'ZLOW'))]
+            if 'x' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'x', ('CENTRE', 'XLOW')),
+                                        (base_dimensions+'x', ('XLOW', 'CENTRE'))]
+            if 'y' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'y', ('CENTRE', 'YLOW')),
+                                        (base_dimensions+'y', ('YLOW', 'CENTRE'))]
+            if 'z' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'z', ('CENTRE', 'ZLOW')),
+                                        (base_dimensions+'z', ('ZLOW', 'CENTRE'))]
+            try:
+                self.dimStaggerDict[base_dimensions][stagger_directions] = dimensions_staggers
+            except KeyError:
+                self.dimStaggerDict[base_dimensions] = {}
+                self.dimStaggerDict[base_dimensions][stagger_directions] = dimensions_staggers
+
+            return dimensions_staggers
+
+    def getDimStaggerExpectThrow(self, base_dimensions, stagger_directions):
+        try:
+            return self.dimStaggerExpectThrowDict[base_dimensions][stagger_directions]
+        except KeyError:
+            # first make a list of all permutations
+            fail_staggers = [(x,y) for x in self.locations for y in self.locations]
+            dimensions_staggers = self.getDimStagger(base_dimensions, stagger_directions)
+            for dimensions, stagger in dimensions_staggers:
+                if stagger is not None:
+                    index = fail_staggers.index(stagger)
+                    del fail_staggers[index]
+            fail_dimensions_staggers = [('xyz', s) for s in fail_staggers]
+            try:
+                self.dimStaggerExpectThrowDict[base_dimensions][stagger_directions] = fail_dimensions_staggers
+            except KeyError:
+                self.dimStaggerExpectThrowDict[base_dimensions] = {}
+                self.dimStaggerExpectThrowDict[base_dimensions][stagger_directions] = fail_dimensions_staggers
+            return fail_dimensions_staggers
+
+    def testOperatorAtLocation(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger):
         error_list = []
         if full_test:
             print('testing',boutcore_operator, ftype, stagger)
@@ -215,23 +277,53 @@ class DifopsMMS:
 
             # calculate max error
             error = bout_result - analytic_result # as Field3D/Field2D
-            error = error.get()[self.mxg:-self.mxg, self.myg:-self.myg] # numpy array, without guard cells
+            error = error.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1] # numpy array, without guard cells
             error_list.append(numpy.max(numpy.abs(error))) # max error
 
         logerrors = numpy.log(error_list[-2]/error_list[-1])
-        logspacing = numpy.log(ngrids[-1]/ngrids[-2])
+        logspacing = numpy.log(self.ngrids[-1]/self.ngrids[-2])
         convergence = logerrors/logspacing
 
         if order-.1 < convergence < order+.2:
-            return ['pass']
+            return 'pass'
         else:
-            if plot_error:
+            if self.plotError:
                 from matplotlib import pyplot
                 pyplot.loglog(1./ngrids, error_list)
                 pyplot.show()
                 from boututils.showdata import showdata
                 showdata(error)
-            return [str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.']
+            return str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.'
+
+    def expectThrowAtLocation(self, boutcore_operator, ftype, method, stagger):
+        inloc = stagger[0]
+        outloc = stagger[1]
+
+        print('testing',boutcore_operator, ftype, stagger)
+
+        try:
+            boutcore_operator(self.getInput('expectThrow', inloc, ftype), outloc=outloc)
+        except RuntimeError:
+            return 'pass'
+        else:
+            return 'Expected '+str(boutcore_operator)+' to throw for '+stagger[0]+'->'+stagger[1]+' '+' '+str(ftype)+' '+str(method)+' but it did not.'
+
+    def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, method=None):
+        for dimensions,stagger in self.getDimStagger(base_dimensions, stagger_directions):
+            self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger))
+
+        if self.testThrow:
+            for dimensions,stagger in self.getDimStaggerExpectThrow(base_dimensions, stagger_directions):
+                self.results.append(self.expectThrowAtLocation(boutcore_operator, ftype, method, stagger))
+
+    def checkResults(self):
+        fail = False
+        for result in self.results:
+            if result is not 'pass':
+                print(result)
+                fail = True
+        return not fail
+
 
 if __name__ == "__main__":
     from sys import exit
@@ -240,6 +332,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--short', action='store_true', default=False)
+    parser.add_argument('--plot', action='store_true', default=False)
     args = parser.parse_args()
     full_test = not args.short
 
@@ -252,12 +345,15 @@ if __name__ == "__main__":
     # re-calculate metric terms
     tokamak.metric()
 
-    driver = DifopsMMS(metric, full_test)
-    #identity = Metric()
-    #identity.psiwidth = 1.
-    #driver = DifopsMMS(identity, full_test)
+    boutcore.init('-q -q -q -q')
 
-    result = driver.testOperator('y', boutcore.Grad_par, Grad_par, 2, '3D', None, ['CENTRE', 'CENTRE'])
-    print(result)
+    driver = DifopsMMS(metric, full_test, args.plot)
 
-    exit(3)
+    driver.testOperator('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D')
+
+    if driver.checkResults():
+        print('pass')
+        exit(0)
+    else:
+        print('fail')
+        exit(1)
