@@ -31,9 +31,6 @@ public:
     mesh->createDefaultRegions();
     output_info.enable();
 
-    // Make sure fft functions are quiet by setting fft_measure to false
-    bout::fft::fft_init(false);
-
     zShift = Field2D{mesh};
 
     fillField(zShift, {{1., 2., 3., 4., 5., 6., 7.},
