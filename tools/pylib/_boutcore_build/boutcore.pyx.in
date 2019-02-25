@@ -797,6 +797,22 @@ cdef class Mesh:
             self._coords = coordsFromObj(self.cobj.getCoordinates())
         return self._coords
 
+    @property
+    def xstart(self):
+        return self.cobj.xstart
+
+    @property
+    def xend(self):
+        return self.cobj.xend
+
+    @property
+    def ystart(self):
+        return self.cobj.ystart
+
+    @property
+    def yend(self):
+        return self.cobj.yend
+
 cdef Coordinates coordsFromObj(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj

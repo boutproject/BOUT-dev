@@ -75,7 +75,9 @@ cdef extern from "bout/mesh.hxx":
         int getXProcIndex()
         int getYProcIndex()
         int xstart
+        int xend
         int ystart
+        int yend
         int LocalNx
         int LocalNy
         Coordinates * getCoordinates()
