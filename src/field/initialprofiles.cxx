@@ -54,11 +54,6 @@ void initial_profile(const std::string &name, Field3D &var) {
 
   Mesh *localmesh = var.getMesh();
 
-  CELL_LOC loc = CELL_DEFAULT;
-  if (localmesh->StaggerGrids) {
-    loc = var.getLocation();
-  }
-  
   // Get the section for this specific variable 
   Options *varOpts = Options::getRoot()->getSection(name);
   
@@ -70,7 +65,7 @@ void initial_profile(const std::string &name, Field3D &var) {
   VAROPTION(varOpts, function, "0.0");
   
   // Create a 3D variable
-  var = f.create3D(function, varOpts, nullptr, loc);
+  var = f.create3D(function, varOpts, nullptr, var.getLocation());
 
   // Optionally scale the variable
   BoutReal scale;
@@ -82,8 +77,6 @@ void initial_profile(const std::string &name, Field3D &var) {
 void initial_profile(const std::string &name, Field2D &var) {
   AUTO_TRACE();
   
-  CELL_LOC loc = var.getLocation();
-
   Mesh *localmesh = var.getMesh();
 
   // Get the section for this variable
@@ -97,7 +90,7 @@ void initial_profile(const std::string &name, Field2D &var) {
   std::string function;
   VAROPTION(varOpts, function, "0.0");
 
-  var = f.create2D(function, varOpts, nullptr, loc);
+  var = f.create2D(function, varOpts, nullptr, var.getLocation());
 
   // Optionally scale the variable
   BoutReal scale;
