@@ -339,6 +339,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--short', action='store_true', default=False)
     parser.add_argument('--plot', action='store_true', default=False)
+    parser.add_argument('--operator', default=None)
     args = parser.parse_args()
     full_test = not args.short
 
@@ -356,25 +357,39 @@ if __name__ == "__main__":
     # create the testing class
     driver = DifopsMMS(metric, full_test, args.plot)
 
+    # store the inputs in a dict so we can look them up or iterate through them
+    operator_inputs = {
+            'Grad_par':('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D'),
+            'Div_par':('y', 'y', boutcore.Div_par, Div_par, 2, '3D'),
+            #'Grad2_par2':('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D'),
+            #'Laplace':('xyz', 'xyz', boutcore.Laplace, Laplace, 2, '3D'),
+            #'Laplace_par':('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D'),
+            #'Laplace_perp':('xyz', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D'),
+            'DDX':('x', 'x', boutcore.DDX, DDX, 2, '3D'),
+            'DDY':('y', 'y', boutcore.DDY, DDY, 2, '3D'),
+            'DDZ':('z', 'z', boutcore.DDZ, DDZ, 2, '3D'),
+            'D2DX2':('x', 'x', boutcore.D2DX2, D2DX2, 2, '3D'),
+            'D2DY2':('y', 'y', boutcore.D2DY2, D2DY2, 2, '3D'),
+            'D2DZ2':('z', 'z', boutcore.D2DZ2, D2DZ2, 2, '3D'),
+            #'D4DX4':('x', 'x', boutcore.D4DX4, D4DX4, 2, '3D'),
+            #'D4DY4':('y', 'y', boutcore.D4DY4, D4DY4, 2, '3D'),
+            #'D4DZ4':('z', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D'),
+            #'D2DXDY':('xy', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D'),
+            #'D2DXDZ':('xz', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D'),
+            #'D2DYDZ':('yz', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D'),
+            }
+
     # test operators...
-    driver.testOperator('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D')
-    driver.testOperator('y', 'y', boutcore.Div_par, Div_par, 2, '3D')
-    #driver.testOperator('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D')
-    #driver.testOperator('xyz', 'xyz', boutcore.Laplace, Laplace, 2, '3D')
-    #driver.testOperator('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D')
-    #driver.testOperator('xyz', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D')
-    driver.testOperator('x', 'x', boutcore.DDX, DDX, 2, '3D')
-    driver.testOperator('y', 'y', boutcore.DDY, DDY, 2, '3D')
-    driver.testOperator('z', 'z', boutcore.DDZ, DDZ, 2, '3D')
-    driver.testOperator('x', 'x', boutcore.D2DX2, D2DX2, 2, '3D')
-    driver.testOperator('y', 'y', boutcore.D2DY2, D2DY2, 2, '3D')
-    driver.testOperator('z', 'z', boutcore.D2DZ2, D2DZ2, 2, '3D')
-    #driver.testOperator('x', 'x', boutcore.D4DX4, D4DX4, 2, '3D')
-    #driver.testOperator('y', 'y', boutcore.D4DY4, D4DY4, 2, '3D')
-    #driver.testOperator('z', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D')
-    #driver.testOperator('xy', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D')
-    #driver.testOperator('xz', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D')
-    #driver.testOperator('yz', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D')
+    if args.operator is not None:
+        try:
+            driver.testOperator(*operator_inputs[args.operator])
+        except KeyError:
+            print('Operator '+parser.operator+' not found. Available operators for this test are:')
+            print(operator_inputs.keys())
+            raise
+    else:
+        for op_input in operator_inputs.values():
+            driver.testOperator(*op_input)
 
     if driver.checkResults():
         print('pass')
