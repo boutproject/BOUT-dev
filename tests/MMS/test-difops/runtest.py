@@ -17,6 +17,7 @@ class DifopsMMS:
         """
 
         self.testThrow = fullTest
+        self.test3D = fullTest
         self.plotError = plotError
 
         self.metric = metric
@@ -310,6 +311,8 @@ class DifopsMMS:
 
     def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, method=None):
         for dimensions,stagger in self.getDimStagger(base_dimensions, stagger_directions):
+            if not self.test3D and dimensions=='xyz':
+                continue
             self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger))
 
         if self.testThrow:
@@ -347,9 +350,28 @@ if __name__ == "__main__":
 
     boutcore.init('-q -q -q -q')
 
+    # create the testing class
     driver = DifopsMMS(metric, full_test, args.plot)
 
+    # test operators...
     driver.testOperator('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D')
+    driver.testOperator('y', 'y', boutcore.Div_par, Div_par, 2, '3D')
+    #driver.testOperator('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D')
+    #driver.testOperator('xyz', 'xyz', boutcore.Laplace, Laplace, 2, '3D')
+    #driver.testOperator('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D')
+    #driver.testOperator('xyz', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D')
+    driver.testOperator('x', 'x', boutcore.DDX, DDX, 2, '3D')
+    driver.testOperator('y', 'y', boutcore.DDY, DDY, 2, '3D')
+    driver.testOperator('z', 'z', boutcore.DDZ, DDZ, 2, '3D')
+    driver.testOperator('x', 'x', boutcore.D2DX2, D2DX2, 2, '3D')
+    driver.testOperator('y', 'y', boutcore.D2DY2, D2DY2, 2, '3D')
+    driver.testOperator('z', 'z', boutcore.D2DZ2, D2DZ2, 2, '3D')
+    #driver.testOperator('x', 'x', boutcore.D4DX4, D4DX4, 2, '3D')
+    #driver.testOperator('y', 'y', boutcore.D4DY4, D4DY4, 2, '3D')
+    #driver.testOperator('z', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D')
+    #driver.testOperator('xy', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D')
+    #driver.testOperator('xz', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D')
+    #driver.testOperator('yz', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D')
 
     if driver.checkResults():
         print('pass')
