@@ -46,6 +46,10 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  /// Does the coordinate system have a branch cut on closed field lines at the
+  /// theta=2pi -> theta=0 transition
+  virtual bool hasBranchCut() const { return false; }
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'coordinates_type' variable, it has the correct value
@@ -92,6 +96,9 @@ public:
   bool canToFromFieldAligned() override{
     return true;
   }
+
+  bool hasBranchCut() const override { return true; }
+
 protected:
   void checkInputGrid() override;
 };

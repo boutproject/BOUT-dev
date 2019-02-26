@@ -24,7 +24,7 @@ namespace {
   /// Boundary guard cells are set by extrapolating from the grid, like
   /// 'free_o3' boundary conditions
   /// Corner guard cells are set to BoutNaN
-  Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location, bool extrapolate_periodic_boundary) {
+  Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
     Mesh* localmesh = f.getMesh();
     Field2D result = interp_to(f, location, RGN_NOBNDRY);
     // Ensure result's data is unique. Otherwise result might be a duplicate of
@@ -92,7 +92,10 @@ namespace {
       }
     }
 
-    if (extrapolate_periodic_boundary) {
+    if (localmesh->getParallelTransform().hasBranchCut()) {
+      // Coordinate system has a discontinuity at a poloidal branch cut.
+      // Extrapolate to the guard cells at the branch cut to ensure derivatives
+      // of metric components are smooth.
       if (localmesh->firstY()) {
         for (int i=0; i<localmesh->LocalNx; i++) {
           if (localmesh->periodicY(i)) {
@@ -174,9 +177,6 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), options(options_in), location(CELL_CENTRE) {
 
-  std::string paralleltransform = options["paralleltransform"].withDefault(std::string("identity"));
-  bool extrapolate_periodic_boundary = (paralleltransform == "identity");
-
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
@@ -214,19 +214,19 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
-  g11 = interpolateAndExtrapolate(g11, location, extrapolate_periodic_boundary);
+  g11 = interpolateAndExtrapolate(g11, location);
   mesh->get(g22, "g22", 1.0);
-  g22 = interpolateAndExtrapolate(g22, location, extrapolate_periodic_boundary);
+  g22 = interpolateAndExtrapolate(g22, location);
   mesh->get(g33, "g33", 1.0);
-  g33 = interpolateAndExtrapolate(g33, location, extrapolate_periodic_boundary);
+  g33 = interpolateAndExtrapolate(g33, location);
 
   // Off-diagonal elements. Default to 0
   mesh->get(g12, "g12", 0.0);
-  g12 = interpolateAndExtrapolate(g12, location, extrapolate_periodic_boundary);
+  g12 = interpolateAndExtrapolate(g12, location);
   mesh->get(g13, "g13", 0.0);
-  g13 = interpolateAndExtrapolate(g13, location, extrapolate_periodic_boundary);
+  g13 = interpolateAndExtrapolate(g13, location);
   mesh->get(g23, "g23", 0.0);
-  g23 = interpolateAndExtrapolate(g23, location, extrapolate_periodic_boundary);
+  g23 = interpolateAndExtrapolate(g23, location);
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
@@ -249,17 +249,17 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
         mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
         mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
       mesh->get(g_11, "g_11");
-      g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_periodic_boundary);
+      g_11 = interpolateAndExtrapolate(g_11, location);
       mesh->get(g_22, "g_22");
-      g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_periodic_boundary);
+      g_22 = interpolateAndExtrapolate(g_22, location);
       mesh->get(g_33, "g_33");
-      g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_periodic_boundary);
+      g_33 = interpolateAndExtrapolate(g_33, location);
       mesh->get(g_12, "g_12");
-      g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_periodic_boundary);
+      g_12 = interpolateAndExtrapolate(g_12, location);
       mesh->get(g_13, "g_13");
-      g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_periodic_boundary);
+      g_13 = interpolateAndExtrapolate(g_13, location);
       mesh->get(g_23, "g_23");
-      g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_periodic_boundary);
+      g_23 = interpolateAndExtrapolate(g_23, location);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -342,25 +342,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), options(coords_in->options), location(loc) {
 
-  std::string paralleltransform = options["paralleltransform"].withDefault(std::string("identity"));
-  bool extrapolate_periodic_boundary = (paralleltransform == "identity");
-
-  dx = interpolateAndExtrapolate(coords_in->dx, location, false);
-  dy = interpolateAndExtrapolate(coords_in->dy, location, false);
+  dx = interpolateAndExtrapolate(coords_in->dx, location);
+  dy = interpolateAndExtrapolate(coords_in->dy, location);
 
   nz = mesh->LocalNz;
 
   dz = coords_in->dz;
 
   // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndExtrapolate(coords_in->g11, location, extrapolate_periodic_boundary);
-  g22 = interpolateAndExtrapolate(coords_in->g22, location, extrapolate_periodic_boundary);
-  g33 = interpolateAndExtrapolate(coords_in->g33, location, extrapolate_periodic_boundary);
+  g11 = interpolateAndExtrapolate(coords_in->g11, location);
+  g22 = interpolateAndExtrapolate(coords_in->g22, location);
+  g33 = interpolateAndExtrapolate(coords_in->g33, location);
 
   // Off-diagonal elements.
-  g12 = interpolateAndExtrapolate(coords_in->g12, location, extrapolate_periodic_boundary);
-  g13 = interpolateAndExtrapolate(coords_in->g13, location, extrapolate_periodic_boundary);
-  g23 = interpolateAndExtrapolate(coords_in->g23, location, extrapolate_periodic_boundary);
+  g12 = interpolateAndExtrapolate(coords_in->g12, location);
+  g13 = interpolateAndExtrapolate(coords_in->g13, location);
+  g23 = interpolateAndExtrapolate(coords_in->g23, location);
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
@@ -389,12 +386,12 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Differential geometry failed\n");
   }
 
-  ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, false);
+  ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location, false);
+    IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location);
   }
 }
 
