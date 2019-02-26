@@ -154,8 +154,6 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   int ncz = map_mesh.LocalNz;
   BoutReal t_x, t_z;
 
-  Coordinates &coord = *(map_mesh.getCoordinates());
-
   for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
     for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
       for (int z = 0; z < ncz; z++) {
@@ -231,9 +229,11 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+          Field2D dy;
+          map_mesh.get(dy, "dy");
           boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+                              0.5*dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
                               PI   // Right-angle intersection
                               );
         }
