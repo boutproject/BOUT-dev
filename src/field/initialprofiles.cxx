@@ -54,17 +54,13 @@ void initial_profile(const std::string &name, Field3D &var) {
 
   Mesh *localmesh = var.getMesh();
 
-  // Get the section for this specific variable 
   Options *varOpts = Options::getRoot()->getSection(name);
   
-  // Use FieldFactory to generate values
-
   FieldFactory f(localmesh);
 
   std::string function;
   VAROPTION(varOpts, function, "0.0");
   
-  // Create a 3D variable
   var = f.create3D(function, varOpts, nullptr, var.getLocation());
 
   // Optionally scale the variable
@@ -73,17 +69,13 @@ void initial_profile(const std::string &name, Field3D &var) {
   var *= scale;
 }
 
-// For 2D variables almost identical, just no z dependence
 void initial_profile(const std::string &name, Field2D &var) {
   AUTO_TRACE();
   
   Mesh *localmesh = var.getMesh();
 
-  // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
   
-  // Use FieldFactory to generate values
-
   FieldFactory f(localmesh);
 
   std::string function;
