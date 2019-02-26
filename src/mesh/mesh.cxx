@@ -310,6 +310,7 @@ void Mesh::setParallelTransform() {
   }else if(ptstr == "shifted") {
     // Shifted metric method
     transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    static_cast<ShiftedMetric*>(transform.get())->cachePhases();
       
   }else if(ptstr == "fci") {
 

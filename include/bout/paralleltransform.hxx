@@ -145,6 +145,10 @@ public:
     return true;
   }
 
+  /// Calculate and store the phases for to/from field aligned and for
+  /// the parallel slices using zShift
+  void cachePhases();
+
 protected:
   void checkInputGrid() override;
 
@@ -224,10 +228,6 @@ private:
    * @param[out] out  A 1D array of length mesh.LocalNz, already allocated
    */
   void shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const;
-
-  /// Calculate and store the phases for to/from field aligned and for
-  /// the parallel slices using zShift
-  void cachePhases();
 
   /// Shift a 3D field \p f in Z to all the parallel slices in \p phases
   ///

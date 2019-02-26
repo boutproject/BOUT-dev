@@ -34,8 +34,6 @@ ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
         "ShiftedMetric usually requires the option TwistShift=true\n"
         "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
   }
-
-  cachePhases();
 }
 
 ShiftedMetric::ShiftedMetric(Mesh& m, Field2D zShift_)
