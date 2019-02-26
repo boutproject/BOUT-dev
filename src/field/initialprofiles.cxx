@@ -41,12 +41,8 @@
 #include <field3d.hxx>
 #include <globals.hxx>
 #include <initialprofiles.hxx>
-#include <boutexception.hxx>
 #include <field_factory.hxx>
-#include <output.hxx>
-#include <bout/constants.hxx>
 #include <msg_stack.hxx>
-#include "unused.hxx"
 
 
 void initial_profile(const std::string &name, Field3D &var) {
