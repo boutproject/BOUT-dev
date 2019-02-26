@@ -313,7 +313,7 @@ endif
 # http://owen.sj.ca.us/~rk/howto/slides/make/slides/makecolon.html
 ####################################################################
 
-clean::
+clean:: clean-unit-tests
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
