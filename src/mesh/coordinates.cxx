@@ -249,17 +249,11 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
         mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
         mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
       mesh->get(g_11, "g_11");
-      g_11 = interpolateAndExtrapolate(g_11, location);
       mesh->get(g_22, "g_22");
-      g_22 = interpolateAndExtrapolate(g_22, location);
       mesh->get(g_33, "g_33");
-      g_33 = interpolateAndExtrapolate(g_33, location);
       mesh->get(g_12, "g_12");
-      g_12 = interpolateAndExtrapolate(g_12, location);
       mesh->get(g_13, "g_13");
-      g_13 = interpolateAndExtrapolate(g_13, location);
       mesh->get(g_23, "g_23");
-      g_23 = interpolateAndExtrapolate(g_23, location);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -278,6 +272,14 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
       throw BoutException("Error in calcCovariant call");
     }
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  g_11 = interpolateAndExtrapolate(g_11, location);
+  g_22 = interpolateAndExtrapolate(g_22, location);
+  g_33 = interpolateAndExtrapolate(g_33, location);
+  g_12 = interpolateAndExtrapolate(g_12, location);
+  g_13 = interpolateAndExtrapolate(g_13, location);
+  g_23 = interpolateAndExtrapolate(g_23, location);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -309,6 +311,10 @@ Coordinates::Coordinates(Mesh* mesh, Options& options_in)
       throw BoutException("\tERROR: Bxy not finite everywhere!\n");
     }
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  J = interpolateAndExtrapolate(J, location);
+  Bxy = interpolateAndExtrapolate(Bxy, location);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -375,10 +381,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   if (calcCovariant()) {
     throw BoutException("Error in calcCovariant call");
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  g_11 = interpolateAndExtrapolate(g_11, location);
+  g_22 = interpolateAndExtrapolate(g_22, location);
+  g_33 = interpolateAndExtrapolate(g_33, location);
+  g_12 = interpolateAndExtrapolate(g_12, location);
+  g_13 = interpolateAndExtrapolate(g_13, location);
+  g_23 = interpolateAndExtrapolate(g_23, location);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
     throw BoutException("Error in jacobian call");
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  J = interpolateAndExtrapolate(J, location);
+  Bxy = interpolateAndExtrapolate(Bxy, location);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
