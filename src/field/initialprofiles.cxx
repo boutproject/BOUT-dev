@@ -50,7 +50,7 @@
 
 
 void initial_profile(const std::string &name, Field3D &var) {
-  TRACE("initial_profile(string, Field3D)");
+  AUTO_TRACE();
 
   Mesh *localmesh = var.getMesh();
 
@@ -80,6 +80,7 @@ void initial_profile(const std::string &name, Field3D &var) {
 
 // For 2D variables almost identical, just no z dependence
 void initial_profile(const std::string &name, Field2D &var) {
+  AUTO_TRACE();
   
   CELL_LOC loc = var.getLocation();
 
@@ -105,6 +106,8 @@ void initial_profile(const std::string &name, Field2D &var) {
 }
 
 void initial_profile(const std::string &name, Vector2D &var) {
+  AUTO_TRACE();
+
   if(var.covariant) {
     initial_profile(name + "_x", var.x);
     initial_profile(name + "_y", var.y);
@@ -117,6 +120,8 @@ void initial_profile(const std::string &name, Vector2D &var) {
 }
 
 void initial_profile(const std::string &name, Vector3D &var) {
+  AUTO_TRACE();
+
   if(var.covariant) {
     initial_profile(name + "_x", var.x);
     initial_profile(name + "_y", var.y);
