@@ -53,7 +53,7 @@ TEST_F(InitialProfileTest, Field3D) {
   EXPECT_TRUE(IsFieldEqual(result, TWOPI));
 }
 
-TEST_F(InitialProfileTest, Vector2D) {
+TEST_F(InitialProfileTest, Vector2DCovariant) {
   Vector2D result{mesh};
 
   Options::root()["f_x"]["function"] = "1";
@@ -67,7 +67,7 @@ TEST_F(InitialProfileTest, Vector2D) {
   EXPECT_TRUE(IsFieldEqual(result.z, 3));
 }
 
-TEST_F(InitialProfileTest, Vector3D) {
+TEST_F(InitialProfileTest, Vector3DCovariant) {
   Vector3D result{mesh};
 
   Options::root()["g_x"]["function"] = "4";
@@ -79,6 +79,36 @@ TEST_F(InitialProfileTest, Vector3D) {
   EXPECT_TRUE(IsFieldEqual(result.x, 4));
   EXPECT_TRUE(IsFieldEqual(result.y, 5));
   EXPECT_TRUE(IsFieldEqual(result.z, 6));
+}
+
+TEST_F(InitialProfileTest, Vector2DContravariant) {
+  Vector2D result{mesh};
+  result.covariant = false;
+
+  Options::root()["fx"]["function"] = "7";
+  Options::root()["fy"]["function"] = "8";
+  Options::root()["fz"]["function"] = "9";
+
+  initial_profile("f", result);
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 7));
+  EXPECT_TRUE(IsFieldEqual(result.y, 8));
+  EXPECT_TRUE(IsFieldEqual(result.z, 9));
+}
+
+TEST_F(InitialProfileTest, Vector3DContravariant) {
+  Vector3D result{mesh};
+  result.covariant = false;
+
+  Options::root()["gx"]["function"] = "10";
+  Options::root()["gy"]["function"] = "11";
+  Options::root()["gz"]["function"] = "12";
+
+  initial_profile("g", result);
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 10));
+  EXPECT_TRUE(IsFieldEqual(result.y, 11));
+  EXPECT_TRUE(IsFieldEqual(result.z, 12));
 }
 
 TEST_F(InitialProfileTest, Field2DWithScale) {
