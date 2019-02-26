@@ -79,10 +79,8 @@ $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) bout_test_main.a
 TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/null)
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
-$(TEST_SOURCES): checklib
-$(TEST_OBJECTS): $(LIB) $(GTEST_SENTINEL)
-
-serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
+serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) checklib \
+              $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
 	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)
 
