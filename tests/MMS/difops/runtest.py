@@ -16,12 +16,10 @@ class DifopsMMS:
         Input metric is a Metric object as defined in boutdata.mms_alternate
         """
 
-        self.testThrow = fullTest
-        self.test3D = fullTest
-        self.plotError = plotError
-
         self.metric = metric
         self.fullTest = fullTest
+        self.testThrow = fullTest
+        self.plotError = plotError
         self.meshDict = {}
         self.inputDict = {}
         self.inputDict2 = {}
@@ -241,7 +239,7 @@ class DifopsMMS:
 
     def testOperatorAtLocation(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger):
         error_list = []
-        if full_test:
+        if self.fullTest:
             print('testing',boutcore_operator, ftype, stagger)
         inloc = stagger[0]
         outloc = stagger[1]
@@ -252,10 +250,9 @@ class DifopsMMS:
         else:
             stag = inloc
 
-        print('testing',boutcore_operator, ftype, stagger)
         error_list = []
         for n in self.ngrids:
-            if full_test:
+            if self.fullTest:
                 print('n =',n)
             keyBase = self.getKeyBase(n, dimensions, stag)
             mesh = self.getMesh(keyBase)
@@ -311,8 +308,6 @@ class DifopsMMS:
 
     def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, method=None):
         for dimensions,stagger in self.getDimStagger(base_dimensions, stagger_directions):
-            if not self.test3D and dimensions=='xyz':
-                continue
             self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger))
 
         if self.testThrow:
