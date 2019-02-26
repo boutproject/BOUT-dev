@@ -285,13 +285,21 @@ class DifopsMMS:
         if order-.1 < convergence < order+.2:
             return 'pass'
         else:
+            error_string = str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.'
             if self.plotError:
+                print(error_string)
                 from matplotlib import pyplot
-                pyplot.loglog(1./ngrids, error_list)
+                pyplot.loglog(1./self.ngrids, error_list, label="sim")
+                pyplot.loglog(1./self.ngrids, self.ngrids[-1]**order/self.ngrids**order*error_list[-1], 'k--', label="expected order")
+                pyplot.legend()
                 pyplot.show()
                 from boututils.showdata import showdata
-                showdata(error)
-            return str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.'
+                plot_error = copy(error)
+                plot_error = numpy.squeeze(plot_error)
+                if len(plot_error.shape) == 1:
+                    plot_error = plot_error[numpy.newaxis, :]
+                showdata(plot_error)
+            return error_string
 
     def expectThrowAtLocation(self, boutcore_operator, ftype, method, stagger):
         inloc = stagger[0]
