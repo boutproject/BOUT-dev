@@ -237,6 +237,14 @@ Coordinates::Coordinates(Mesh *mesh)
       throw BoutException("Error in calcCovariant call");
     }
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  g_11 = interpolateAndExtrapolate(g_11, location);
+  g_22 = interpolateAndExtrapolate(g_22, location);
+  g_33 = interpolateAndExtrapolate(g_33, location);
+  g_12 = interpolateAndExtrapolate(g_12, location);
+  g_13 = interpolateAndExtrapolate(g_13, location);
+  g_23 = interpolateAndExtrapolate(g_23, location);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -268,6 +276,10 @@ Coordinates::Coordinates(Mesh *mesh)
       throw BoutException("\tERROR: Bxy not finite everywhere!\n");
     }
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  J = interpolateAndExtrapolate(J, location);
+  Bxy = interpolateAndExtrapolate(Bxy, location);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -336,10 +348,22 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
   if (calcCovariant()) {
     throw BoutException("Error in calcCovariant call");
   }
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  g_11 = interpolateAndExtrapolate(g_11, location);
+  g_22 = interpolateAndExtrapolate(g_22, location);
+  g_33 = interpolateAndExtrapolate(g_33, location);
+  g_12 = interpolateAndExtrapolate(g_12, location);
+  g_13 = interpolateAndExtrapolate(g_13, location);
+  g_23 = interpolateAndExtrapolate(g_23, location);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
     throw BoutException("Error in jacobian call");
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  J = interpolateAndExtrapolate(J, location);
+  Bxy = interpolateAndExtrapolate(Bxy, location);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
