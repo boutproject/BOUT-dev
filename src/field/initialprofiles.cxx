@@ -81,7 +81,6 @@ void initial_profile(const std::string &name, Field2D &var) {
 
   // Get the section for this variable
   Options *varOpts = Options::getRoot()->getSection(name);
-  output << name;
   
   // Use FieldFactory to generate values
 
