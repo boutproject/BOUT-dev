@@ -402,6 +402,82 @@ class DifopsMMS:
                 fail = True
         return not fail
 
+    def testField(self, boutcore_field, symbolic_field, order, ftype, stagger):
+        error_list = []
+        print('testing',boutcore_field, ftype, stagger)
+
+        error_list = []
+        errors = []
+        boutfields = []
+        sympyfields = []
+        for n in self.ngrids:
+            if self.fullTest:
+                print('n =',n)
+            keyBase = self.getKeyBase(n, 'xy', stagger)
+            mesh = self.getMesh(keyBase)
+
+            # result using BOUT++ implementation
+            if boutcore_field == 'g11':
+                bout_result = mesh.getCoordinates(stagger).g11
+            elif boutcore_field == 'g22':
+                bout_result = mesh.getCoordinates(stagger).g22
+            elif boutcore_field == 'g33':
+                bout_result = mesh.getCoordinates(stagger).g33
+            elif boutcore_field == 'g12':
+                bout_result = mesh.getCoordinates(stagger).g12
+            elif boutcore_field == 'g13':
+                bout_result = mesh.getCoordinates(stagger).g13
+            elif boutcore_field == 'g23':
+                bout_result = mesh.getCoordinates(stagger).g23
+            elif boutcore_field == 'dx':
+                bout_result = mesh.getCoordinates(stagger).dx
+            elif boutcore_field == 'dy':
+                bout_result = mesh.getCoordinates(stagger).dy
+            elif boutcore_field == 'J':
+                bout_result = mesh.getCoordinates(stagger).J
+            elif boutcore_field == 'G1':
+                bout_result = mesh.getCoordinates(stagger).G1
+            elif boutcore_field == 'G2':
+                bout_result = mesh.getCoordinates(stagger).G2
+            elif boutcore_field == 'G3':
+                bout_result = mesh.getCoordinates(stagger).G3
+            else:
+                raise ValueError("unsupported field")
+
+            # result using symbolic input, then convert to boutcore.Field3D/Field2D
+            if ftype == '2D':
+                analytic_result = boutcore.create2D(exprToStr(symbolic_field), mesh, outloc=stagger)
+            elif ftype == '3D':
+                analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh, outloc=stagger)
+            else:
+                raise ValueError('Unexpected ftype argument '+str(ftype))
+
+            # calculate max error
+            error = bout_result - analytic_result # as Field3D/Field2D
+            save_inds = numpy.index_exp[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1]
+            errors.append(error.get()[save_inds])
+            boutfields.append(bout_result.get()[save_inds])
+            sympyfields.append(analytic_result.get()[save_inds])
+            error = error.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1] # numpy array, without guard cells
+            error_list.append(numpy.max(numpy.abs(error))) # max error
+            #errors.append(error)
+
+        logerrors = numpy.log(error_list[-2]/error_list[-1])
+        logspacing = numpy.log(self.ngrids[-1]/self.ngrids[-2])
+        convergence = logerrors/logspacing
+
+        if order-.1 < convergence < order+.2:
+            return 'pass'
+        else:
+            error_string = str(boutcore_field)+' is not working for '+stagger+' '+str(ftype)+'. Expected '+str(order)+', got '+str(convergence)+'.'
+            if self.plotError:
+                print(error_string)
+                from matplotlib import pyplot
+                pyplot.loglog(1./self.ngrids, error_list, label="sim")
+                pyplot.loglog(1./self.ngrids, self.ngrids[-1]**order/self.ngrids**order*error_list[-1], 'k--', label="expected order")
+                pyplot.legend()
+                pyplot.show()
+            return error_string
 
 if __name__ == "__main__":
     from sys import exit
@@ -463,6 +539,25 @@ if __name__ == "__main__":
             ( 'D4DY4_2D', ('', 'y', boutcore.D4DY4, D4DY4, 2, '2D') ),
             ( 'D2DXDY_2D', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
             ])
+
+    if args.operator in ['CENTRE', 'XLOW', 'YLOW', 'ZLOW']:
+        stag = args.operator
+        if stag == 'ZLOW':
+            raise ValueError('No interpolation of Field2D for ZLOW, so does not make sense to check convergence')
+        driver.testField('g11', metric.g11, 3, '2D', stag)
+        # constant, so BOUT++ field is exact, so don't test #driver.testField('g22', metric.g22, 3, '2D', stag)
+        driver.testField('g33', metric.g33, 3, '2D', stag)
+        # zero, so don't test #driver.testField('g12', metric.g12, 3, '2D', stag)
+        driver.testField('g13', metric.g13, 3, '2D', stag)
+        if stag != 'XLOW':
+            # quadratic in x, does not show convergence for XLOW as only
+            # floating-point errors in XLOW interpolation
+            driver.testField('g23', metric.g23, 3, '2D', stag)
+        driver.testField('J', metric.J, 3, '2D', stag)
+        driver.testField('G1', metric.G1, 2, '2D', stag)
+        driver.testField('G2', metric.G2, 2, '2D', stag)
+        driver.testField('G3', metric.G3, 2, '2D', stag)
+        exit(0)
 
     # test operators...
     if args.operator is not None:
