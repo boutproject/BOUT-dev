@@ -260,6 +260,9 @@ class DifopsMMS:
             stag = inloc
 
         error_list = []
+        errors = []
+        boutfields = []
+        sympyfields = []
         for n in self.ngrids:
             if self.fullTest:
                 print('n =',n)
@@ -284,6 +287,10 @@ class DifopsMMS:
 
             # calculate max error
             error = bout_result - analytic_result # as Field3D/Field2D
+            save_inds = numpy.index_exp[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1]
+            errors.append(error.get()[save_inds])
+            boutfields.append(bout_result.get()[save_inds])
+            sympyfields.append(analytic_result.get()[save_inds])
             error = error.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1] # numpy array, without guard cells
             error_list.append(numpy.max(numpy.abs(error))) # max error
 
@@ -313,9 +320,55 @@ class DifopsMMS:
                 from boututils.showdata import showdata
                 plot_error = copy(error)
                 plot_error = numpy.squeeze(plot_error)
+                pb = numpy.squeeze(bout_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
+                ps = numpy.squeeze(analytic_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
                 if len(plot_error.shape) == 1:
                     plot_error = plot_error[numpy.newaxis, :]
-                showdata(plot_error)
+                    pb = pb[numpy.newaxis, :]
+                    ps = ps[numpy.newaxis, :]
+                #showdata(plot_error)
+                showdata([plot_error,pb,ps],titles=['error','bout','sympy'])
+                #showdata([plot_error, numpy.squeeze(mesh.getCoordinates().g_22.get())[None,:], numpy.squeeze(mesh.getCoordinates('YLOW').g_22.get())[None,:]])
+                #for f in [(metric.g_22, mesh.getCoordinates().g_22)]:
+                #for fa,fb,name in [(metric.g11, mesh.getCoordinates().g11, 'g11'),
+                #                   (metric.g22, mesh.getCoordinates().g22, 'g22'),
+                #                   (metric.g33, mesh.getCoordinates().g33, 'g33'),
+                #                   (metric.g12, mesh.getCoordinates().g12, 'g12'),
+                #                   (metric.g13, mesh.getCoordinates().g13, 'g13'),
+                #                   (metric.g23, mesh.getCoordinates().g23, 'g23'),
+                #                   (metric.G1, mesh.getCoordinates().G1, 'G1'),
+                #                   (metric.G2, mesh.getCoordinates().G2, 'G2'),
+                #                   (metric.G3, mesh.getCoordinates().G3, 'G3')
+                #                  ]:
+                #    fa=boutcore.create2D(exprToStr(fa), mesh, outloc=outloc)
+                #    fa=numpy.squeeze(fa.get()[mesh.xstart:mesh.xend+1,mesh.ystart:mesh.yend+1])[None,:]
+                #    fb=numpy.squeeze(fb.get()[mesh.xstart:mesh.xend+1,mesh.ystart:mesh.yend+1])[None,:]
+                #    print(fa.shape, fb.shape)
+                #    showdata([fb, fa, fb-fa], titles=[name+' bout',name+' sympy',name+' diff'])
+                pyplot.figure()
+                for e,b,s in zip(errors,boutfields,sympyfields):
+                    inds = numpy.index_exp[:,2]
+                    e = e[inds]
+                    b = b[inds]
+                    s = s[inds]
+                    x = numpy.linspace(0.,1.,e.shape[0])
+                    pyplot.subplot(131)
+                    pyplot.semilogy(x,numpy.abs(e), label=x.shape[0])
+                    pyplot.subplot(132)
+                    pyplot.plot(x, b, label=x.shape[0])
+                    pyplot.subplot(133)
+                    pyplot.plot(x, s, label=x.shape[0])
+                pyplot.title(str(boutcore_operator))
+                pyplot.subplot(131)
+                pyplot.title('error')
+                pyplot.legend()
+                pyplot.subplot(132)
+                pyplot.title('bout')
+                pyplot.legend()
+                pyplot.subplot(133)
+                pyplot.title('sympy')
+                pyplot.legend()
+                pyplot.show()
             return error_string
 
     def expectThrowAtLocation(self, boutcore_operator, ftype, method, stagger):
