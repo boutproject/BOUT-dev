@@ -96,7 +96,7 @@ const Vector3D DEPRECATED(Grad_perp(const Field3D &f, CELL_LOC outloc_x,
 const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
 
-const Field2D Div(const Vector2D &v, const Field2D &f);
+const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D Div(const Vector3D &v, const Field3D &f);
