@@ -343,19 +343,16 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
   }
 
-  /// Always calculate contravariant metric components so that they are
-  /// consistent with the interpolated covariant components
-  if (calcCovariant()) {
-    throw BoutException("Error in calcCovariant call");
-  }
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  g_11 = interpolateAndExtrapolate(g_11, location);
-  g_22 = interpolateAndExtrapolate(g_22, location);
-  g_33 = interpolateAndExtrapolate(g_33, location);
-  g_12 = interpolateAndExtrapolate(g_12, location);
-  g_13 = interpolateAndExtrapolate(g_13, location);
-  g_23 = interpolateAndExtrapolate(g_23, location);
+  // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
+  // more robust to interpolate and extrapolate derived quantities directly,
+  // rather than deriving from interpolated/extrapolated covariant metric
+  // components
+  g_11 = interpolateAndExtrapolate(coords_in->g_11, location);
+  g_22 = interpolateAndExtrapolate(coords_in->g_22, location);
+  g_33 = interpolateAndExtrapolate(coords_in->g_33, location);
+  g_12 = interpolateAndExtrapolate(coords_in->g_12, location);
+  g_13 = interpolateAndExtrapolate(coords_in->g_13, location);
+  g_23 = interpolateAndExtrapolate(coords_in->g_23, location);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
