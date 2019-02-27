@@ -11,7 +11,7 @@ class DifopsMMS:
     """
     Common methods/data for MMS testing of differential operators
     """
-    def __init__(self, metric, fullTest=True, plotError=False):
+    def __init__(self, metric, fullTest=True, test3D=True, plotError=False):
         """
         Input metric is a Metric object as defined in boutdata.mms_alternate
         """
@@ -19,7 +19,7 @@ class DifopsMMS:
         self.metric = metric
         self.fullTest = fullTest
         self.testThrow = fullTest
-        self.test3D = fullTest
+        self.test3D = test3D
         self.plotError = plotError
         self.meshDict = {}
         self.inputDict = {}
@@ -340,6 +340,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--short', action='store_true', default=False)
+    parser.add_argument('--test3D', action='store_true', default=False)
     parser.add_argument('--plot', action='store_true', default=False)
     parser.add_argument('--operator', default=None)
     args = parser.parse_args()
@@ -357,7 +358,7 @@ if __name__ == "__main__":
     boutcore.init('-q -q -q -q')
 
     # create the testing class
-    driver = DifopsMMS(metric, full_test, args.plot)
+    driver = DifopsMMS(metric, full_test, args.test3D, args.plot)
 
     # store the inputs in a dict so we can look them up or iterate through them
     operator_inputs = {
