@@ -393,7 +393,7 @@ if __name__ == "__main__":
             'D4DX4':('', 'x', boutcore.D4DX4, D4DX4, 2, '3D'),
             'D4DY4':('', 'y', boutcore.D4DY4, D4DY4, 2, '3D'),
             'D4DZ4':('', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D'),
-            'D2DXDY':('', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D'),
+            'D2DXDY':('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D'),
             'D2DXDZ':('', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D'),
             'D2DYDZ':('', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D'),
             'Grad_par':('y', 'y', boutcore.Grad_par, Grad_par, 2, '2D'),
@@ -407,7 +407,7 @@ if __name__ == "__main__":
             'D2DY2':('y', 'y', boutcore.D2DY2, D2DY2, 2, '2D'),
             'D4DX4':('x', 'x', boutcore.D4DX4, D4DX4, 2, '2D'),
             'D4DY4':('y', 'y', boutcore.D4DY4, D4DY4, 2, '2D'),
-            'D2DXDY':('', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D'),
+            'D2DXDY':('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D'),
             }
 
     # test operators...
