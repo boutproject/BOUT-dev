@@ -45,72 +45,122 @@ namespace FV {
 	  result(i+1,j,k) -= fout / (coord->dx(i+1,j)*coord->J(i+1,j));
 	}
       }
-  
-    // Y flux
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart-1;j<=mesh->yend;j++) {
-      
-	BoutReal coef = 0.5*(coord->g_23(i,j)/SQ(coord->J(i,j)*coord->Bxy(i,j)) + coord->g_23(i,j+1)/SQ(coord->J(i,j+1)*coord->Bxy(i,j+1)));
-      
-	for(int k=0;k<mesh->LocalNz;k++) {
-	  // Calculate flux between j and j+1
-	  int kp = (k + 1) % (mesh->LocalNz);
-	  int km = (k - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
-          
-	  // Calculate Z derivative at y boundary
-	  BoutReal dfdz = 0.25*(f(i,j,kp) - f(i,j,km)
-				+ f.yup()(i,j+1,kp) - f.yup()(i,j+1,km))/coord->dz;
-	
-	  // Y derivative
-	  BoutReal dfdy = 2.*(f.yup()(i,j+1,k) - f(i,j,k))/(coord->dy(i,j+1) + coord->dy(i,j));
-	
-	  BoutReal fout = 0.5*(coord->J(i,j)*a(i,j,k)*coord->g23(i,j) + coord->J(i,j+1)*a.yup()(i,j+1,k)*coord->g23(i,j+1))
-	    * ( dfdz - coef*dfdy );
+    
 
-	  result(i,j,k) += fout / (coord->dy(i,j)*coord->J(i,j));
+    // Y and Z fluxes require Y derivatives
+    
+    // Fields containing values along the magnetic field
+    Field3D fup(mesh), fdown(mesh);
+    Field3D aup(mesh), adown(mesh);
+
+    // Values on this y slice (centre).
+    // This is needed because toFieldAligned may modify the field
+    Field3D fc = f;
+    Field3D ac = a;
+
+    // Result of the Y and Z fluxes
+    Field3D yzresult(mesh);
+    yzresult.allocate();
+
+    if (f.hasYupYdown() && a.hasYupYdown()) {
+      // Both inputs have yup and ydown
+
+      fup = f.yup();
+      fdown = f.ydown();
+
+      aup = a.yup();
+      adown = a.ydown();
+    } else {
+      // At least one input doesn't have yup/ydown fields.
+      // Need to shift to/from field aligned coordinates
+
+      fup = fdown = fc = mesh->toFieldAligned(f);
+      aup = adown = ac = mesh->toFieldAligned(a);
+    }
+
+    // Y flux
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++) {
+      for (int j = mesh->ystart - 1; j <= mesh->yend; j++) {
+
+        BoutReal coef =
+            0.5 * (coord->g_23(i, j) / SQ(coord->J(i, j) * coord->Bxy(i, j)) +
+                   coord->g_23(i, j + 1) / SQ(coord->J(i, j + 1) * coord->Bxy(i, j + 1)));
+
+        for (int k = 0; k < mesh->LocalNz; k++) {
+          // Calculate flux between j and j+1
+          int kp = (k + 1) % (mesh->LocalNz);
+          int km = (k - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+
+          // Calculate Z derivative at y boundary
+          BoutReal dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) -
+                                  fup(i, j + 1, km)) /
+                          coord->dz;
+
+          // Y derivative
+          BoutReal dfdy = 2. * (fup(i, j + 1, k) - fc(i, j, k)) /
+                          (coord->dy(i, j + 1) + coord->dy(i, j));
+
+          BoutReal fout = 0.5 *
+                          (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
+                           coord->J(i, j + 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+                          (dfdz - coef * dfdy);
+
+          yzresult(i, j, k) = fout / (coord->dy(i, j) * coord->J(i, j));
 
           // Calculate flux between j and j-1
-          dfdz = 0.25*(f(i,j,kp) - f(i,j,km)
-                       + f.ydown()(i,j-1,kp) - f.ydown()(i,j-1,km))/coord->dz;
-          
-          dfdy = 2.*(f(i,j,k) - f.ydown()(i,j-1,k))/(coord->dy(i,j) + coord->dy(i,j-1));
-          
-          
-          fout = 0.5*(coord->J(i,j)*a(i,j,k)*coord->g23(i,j) + coord->J(i,j-1)*a.yup()(i,j+1,k)*coord->g23(i,j+1))
-	    * ( dfdz - coef*dfdy );
+          dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fdown(i, j - 1, kp) -
+                         fdown(i, j - 1, km)) /
+                 coord->dz;
 
-          result(i,j,k) -= fout / (coord->dy(i,j)*coord->J(i,j));
-	}
+          dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k)) /
+                 (coord->dy(i, j) + coord->dy(i, j - 1));
+
+          fout = 0.5 * (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
+                        coord->J(i, j - 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+                 (dfdz - coef * dfdy);
+
+          yzresult(i, j, k) -= fout / (coord->dy(i, j) * coord->J(i, j));
+        }
       }
-  
+    }
+
     // Z flux
     // Easier since all metrics constant in Z
-  
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++) {
-	// Coefficient in front of df/dy term
-	BoutReal coef = coord->g_23(i,j)
-	  / (coord->dy(i,j+1) + 2.*coord->dy(i,j) + coord->dy(i,j-1))
-	  / SQ(coord->J(i,j)*coord->Bxy(i,j));
-	
-	for(int k=0;k<mesh->LocalNz;k++) {
-	  // Calculate flux between k and k+1
-	  int kp = (k + 1) % (mesh->LocalNz);
-	
-	  BoutReal fout = 0.5*(a(i,j,k) + a(i,j,kp)) * coord->g33(i,j)*
-	    ( 
-	     // df/dz
-	     (f(i,j,kp) - f(i,j,k))/coord->dz 
-	   
-	     // - g_yz * df/dy / SQ(J*B)
-	     - coef*(f.yup()(i,j+1,k) + f.yup()(i,j+1,kp) - f.ydown()(i,j-1,k) - f.ydown()(i,j-1,kp))
-	      );
-	
-	  result(i,j,k) += fout / coord->dz;
-	  result(i,j,kp) -= fout / coord->dz;
-	}
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++) {
+      for (int j = mesh->ystart; j <= mesh->yend; j++) {
+        // Coefficient in front of df/dy term
+        BoutReal coef = coord->g_23(i, j) / (coord->dy(i, j + 1) + 2. * coord->dy(i, j) +
+                                             coord->dy(i, j - 1)) /
+                        SQ(coord->J(i, j) * coord->Bxy(i, j));
+
+        for (int k = 0; k < mesh->LocalNz; k++) {
+          // Calculate flux between k and k+1
+          int kp = (k + 1) % mesh->LocalNz;
+
+          BoutReal fout = 0.5 * (ac(i, j, k) + ac(i, j, kp)) * coord->g33(i, j) *
+                          (
+                              // df/dz
+                              (fc(i, j, kp) - fc(i, j, k)) / coord->dz
+
+                              // - g_yz * df/dy / SQ(J*B)
+                              -
+                              coef * (fup(i, j + 1, k) + fup(i, j + 1, kp) -
+                                      fdown(i, j - 1, k) - fdown(i, j - 1, kp)));
+
+          yzresult(i, j, k) += fout / coord->dz;
+          yzresult(i, j, kp) -= fout / coord->dz;
+        }
       }
-  
+    }
+    // Check if we need to transform back
+    if (f.hasYupYdown() && a.hasYupYdown()) {
+      result += yzresult;
+    } else {
+      result += mesh->fromFieldAligned(yzresult);
+    }
+    
     return result;
   }
 
@@ -155,11 +205,11 @@ namespace FV {
 
       if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
 
-        BoutReal c = 0.5*(K[i] + K.yup()[iyp]); // K at the upper boundary
+        BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[iyp]);
         
-        BoutReal gradient = 2.*(f.yup()[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+        BoutReal gradient = 2.*(fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
         
         BoutReal flux = c * J * gradient / g_22;
             
@@ -168,12 +218,12 @@ namespace FV {
       
       // Calculate flux at lower surface
       if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
-        BoutReal c = 0.5*(K[i] + K.ydown()[iym]); // K at the lower boundary
+        BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
         BoutReal g_22 = 0.5*(coord->g_22[i] + coord->g_22[i]);
         
-        BoutReal gradient = 2.*(f[i] - f.ydown()[iym]) / (coord->dy[i] + coord->dy[iym]);
+        BoutReal gradient = 2.*(f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
         
         BoutReal flux = c * J * gradient / g_22;
         
