@@ -272,7 +272,9 @@ class Mesh {
   // X communications
   virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
   virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
-  bool periodicX; ///< Domain is periodic in X?
+
+  /// Domain is periodic in X?
+  bool periodicX{false};
 
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
@@ -425,9 +427,12 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
   
-  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
   
-  bool IncIntShear; ///< Include integrated shear (if shifting X)
+  /// Include integrated shear (if shifting X)
+  bool IncIntShear{false};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
@@ -460,7 +465,10 @@ class Mesh {
   // First derivatives in index space
   // Implemented in src/mesh/index_derivs.hxx
 
-  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  /// Fraction of modes to filter. This is set in derivs_init from
+  /// option "ddz:fft_filter"
+  BoutReal fft_derivs_filter{0.0};
+
   /// First derivative in X direction, in index space
   const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
                          REGION region=RGN_NOBNDRY);
@@ -716,16 +724,19 @@ class Mesh {
    */
   ParallelTransform& getParallelTransform();
   
- protected:
+protected:
   
-  GridDataSource *source; ///< Source for grid data
-  
-  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+  /// Source for grid data
+  GridDataSource *source{nullptr};
 
-  Options *options; ///< Mesh options section
-  
+  /// Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates>> coords_map;
 
-  PTptr transform; ///< Handles calculation of yup and ydown
+  /// Mesh options section
+  Options *options{nullptr};
+
+  /// Handles calculation of yup and ydown
+  PTptr transform{nullptr};
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
