@@ -19,6 +19,7 @@ class DifopsMMS:
         self.metric = metric
         self.fullTest = fullTest
         self.testThrow = fullTest
+        self.test3D = fullTest
         self.plotError = plotError
         self.meshDict = {}
         self.inputDict = {}
@@ -316,6 +317,8 @@ class DifopsMMS:
 
     def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, method=None):
         for dimensions,stagger in self.getDimStagger(base_dimensions, stagger_directions):
+            if not self.test3D and dimensions=='xyz':
+                continue
             self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger))
 
         if self.testThrow:
