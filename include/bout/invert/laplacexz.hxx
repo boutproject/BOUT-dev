@@ -38,7 +38,8 @@
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh *UNUSED(m), Options *UNUSED(options), const CELL_LOC UNUSED(loc)) {}
+  LaplaceXZ(Mesh *UNUSED(m), Options *UNUSED(options), const CELL_LOC loc)
+      : location(loc) {}
   virtual ~LaplaceXZ() {}
 
   virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;
