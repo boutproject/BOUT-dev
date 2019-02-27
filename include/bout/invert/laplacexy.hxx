@@ -49,11 +49,13 @@
  */
 class LaplaceXY {
  public:
-  LaplaceXY(Mesh *m, Options *opt = nullptr, const CELL_LOC = CELL_CENTRE) {
+  LaplaceXY(Mesh *UNUSED(m), Options *UNUSED(opt) = nullptr, const CELL_LOC = CELL_CENTRE) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
-  void setCoefs(const Field2D &A, const Field2D &B) {}
-  const Field2D solve(const Field2D &rhs, const Field2D &x0) {}
+  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) {}
+  const Field2D solve(const Field2D &UNUSED(rhs), const Field2D &UNUSED(x0)) {
+    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
+  }
 };
 
 #else // BOUT_HAS_PETSC
