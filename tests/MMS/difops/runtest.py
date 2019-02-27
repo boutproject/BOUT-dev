@@ -410,7 +410,6 @@ if __name__ == "__main__":
             ( 'D4DY4_2D', ('', 'y', boutcore.D4DY4, D4DY4, 2, '2D') ),
             ( 'D2DXDY_2D', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
             ])
-    print(operator_inputs)
 
     # test operators...
     if args.operator is not None:
