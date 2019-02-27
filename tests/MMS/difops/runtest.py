@@ -477,6 +477,45 @@ class DifopsMMS:
                 pyplot.loglog(1./self.ngrids, self.ngrids[-1]**order/self.ngrids**order*error_list[-1], 'k--', label="expected order")
                 pyplot.legend()
                 pyplot.show()
+                from boututils.showdata import showdata
+                #plot_error = copy(error)
+                #plot_error = numpy.squeeze(plot_error)
+                #pb = numpy.squeeze(bout_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
+                #ps = numpy.squeeze(analytic_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
+                #if len(plot_error.shape) == 1:
+                #    plot_error = plot_error[numpy.newaxis, :]
+                #    pb = pb[numpy.newaxis, :]
+                #    ps = ps[numpy.newaxis, :]
+                #else:
+                #    plot_error = plot_error[:3]
+                #    pb = pb[:3]
+                #    ps = ps[:3]
+                ##showdata(plot_error)
+                #showdata([plot_error,pb,ps],titles=['error','bout','sympy'])
+                pyplot.figure()
+                for e,b,s in zip(errors,boutfields,sympyfields):
+                    inds = numpy.index_exp[:,2]
+                    e = e[inds]
+                    b = b[inds]
+                    s = s[inds]
+                    x = numpy.linspace(0.,1.,e.shape[0])
+                    pyplot.subplot(131)
+                    pyplot.semilogy(x,numpy.abs(e), label=x.shape[0])
+                    pyplot.subplot(132)
+                    pyplot.plot(x, b, label=x.shape[0])
+                    pyplot.subplot(133)
+                    pyplot.plot(x, s, label=x.shape[0])
+                pyplot.title(boutcore_field)
+                pyplot.subplot(131)
+                pyplot.title('error')
+                pyplot.legend()
+                pyplot.subplot(132)
+                pyplot.title('bout')
+                pyplot.legend()
+                pyplot.subplot(133)
+                pyplot.title('sympy')
+                pyplot.legend()
+                pyplot.show()
             return error_string
 
 if __name__ == "__main__":
