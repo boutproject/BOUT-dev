@@ -17,6 +17,115 @@
 
 #include <globals.hxx>
 
+// use anonymous namespace so this utility function is not available outside this file
+namespace {
+/// Interpolate a Field2D to a new CELL_LOC with interp_to.
+/// Communicates to set internal guard cells.
+/// Boundary guard cells are set by extrapolating from the grid, like
+/// 'free_o3' boundary conditions
+/// Corner guard cells are set to BoutNaN
+Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
+  Mesh* localmesh = f.getMesh();
+  Field2D result = interp_to(f, location, RGN_NOBNDRY);
+  // Ensure result's data is unique. Otherwise result might be a duplicate of
+  // f (if no interpolation is needed, e.g. if interpolation is in the
+  // z-direction); then f would be communicated. Since this function is used
+  // on geometrical quantities that might not be periodic in y even on closed
+  // field lines (due to dependence on integrated shear), we don't want to
+  // communicate f. We will sort out result's boundary guard cells below, but
+  // not f's so we don't want to change f.
+  result.allocate();
+  localmesh->communicate(result);
+
+  // Extrapolate into boundaries so that differential geometry terms can be
+  // interpolated if necessary
+  // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
+  // would try to create a new Coordinates object since we have not finished
+  // initializing yet, leading to an infinite recursion.
+  // Also, here we interpolate for the boundary points at xstart/ystart and
+  // (xend+1)/(yend+1) instead of extrapolating.
+  for (auto bndry : localmesh->getBoundaries()) {
+    int extrap_start = 0;
+    if ( (location == CELL_XLOW) && (bndry->bx>0) ) {
+      extrap_start = 1;
+    }
+    else if ( (location == CELL_YLOW) && (bndry->by>0) ) {
+      extrap_start = 1;
+    }
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      // interpolate extra boundary point that is missed by interp_to, if
+      // necessary
+      if (extrap_start>0) {
+        // note that either bx or by is >0 here
+        result(bndry->x, bndry->y) =
+          ( 9.*(f(bndry->x-bndry->bx, bndry->y-bndry->by)
+                + f(bndry->x, bndry->y))
+            - f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)
+            - f(bndry->x+bndry->bx, bndry->y+bndry->by)
+          )/16.;
+      }
+
+      // set boundary guard cells
+      if ((bndry->bx != 0 && localmesh->GlobalNx-2*bndry->width >= 3) || (bndry->by != 0 && localmesh->GlobalNy-2*bndry->width >= 3)) {
+        if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
+          throw BoutException("Not enough points in the x-direction on this "
+              "processor for extrapolation needed to use staggered grids. "
+              "Increase number of x-guard cells MXG or decrease number of "
+              "processors in the x-direction NXPE.");
+        }
+        if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
+          throw BoutException("Not enough points in the y-direction on this "
+              "processor for extrapolation needed to use staggered grids. "
+              "Increase number of y-guard cells MYG or decrease number of "
+              "processors in the y-direction NYPE.");
+        }
+        // extrapolate into boundary guard cells if there are enough grid points
+        for(int i=extrap_start;i<bndry->width;i++) {
+          int xi = bndry->x + i*bndry->bx;
+          int yi = bndry->y + i*bndry->by;
+          result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
+        }
+      } else {
+        // not enough grid points to extrapolate, set equal to last grid point
+        for(int i=extrap_start;i<bndry->width;i++) {
+          result(bndry->x + i*bndry->bx, bndry->y + i*bndry->by) = result(bndry->x - bndry->bx, bndry->y - bndry->by);
+        }
+      }
+    }
+  }
+
+  // Set corner guard cells
+  for (int i=0; i<localmesh->xstart; i++) {
+    for (int j=0; j<localmesh->ystart; j++) {
+      result(i, j) = BoutNaN;
+      result(i, localmesh->LocalNy-1-j) = BoutNaN;
+      result(localmesh->LocalNx-1-i, j) = BoutNaN;
+      result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = BoutNaN;
+    }
+  }
+
+  return result;
+}
+
+// If the CELL_CENTRE variable was read, the staggered version is required to
+// also exist for consistency
+void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
+  if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name+suffix)) {
+    throw BoutException("Attempting to read staggered fields from grid, but " + name
+        + " is not present in both CELL_CENTRE and staggered versions.");
+  }
+}
+
+// convenience function for repeated code
+void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
+    CELL_LOC location, BoutReal default_value = 0.) {
+
+  checkStaggeredGet(mesh, name, suffix);
+  mesh->get(var, name+suffix, default_value);
+  var.setLocation(location);
+}
+}
+
 Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
                          Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
                          Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
@@ -48,10 +157,14 @@ Coordinates::Coordinates(Mesh *mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
+  // Note: use 'interpolateAndExtrapolate' to set the boundary cells of the
+  // loaded fields. Ensures that derivatives are smooth at all the boundaries.
+
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
   }
+  dx = interpolateAndExtrapolate(dx, location);
 
   if (mesh->periodicX) {
     mesh->communicate(dx);
@@ -61,6 +174,7 @@ Coordinates::Coordinates(Mesh *mesh)
     output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
+  dy = interpolateAndExtrapolate(dy, location);
 
   nz = mesh->LocalNz;
 
@@ -83,22 +197,28 @@ Coordinates::Coordinates(Mesh *mesh)
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
+  g11 = interpolateAndExtrapolate(g11, location);
   mesh->get(g22, "g22", 1.0);
+  g22 = interpolateAndExtrapolate(g22, location);
   mesh->get(g33, "g33", 1.0);
+  g33 = interpolateAndExtrapolate(g33, location);
 
   // Off-diagonal elements. Default to 0
   mesh->get(g12, "g12", 0.0);
+  g12 = interpolateAndExtrapolate(g12, location);
   mesh->get(g13, "g13", 0.0);
+  g13 = interpolateAndExtrapolate(g13, location);
   mesh->get(g23, "g23", 0.0);
+  g23 = interpolateAndExtrapolate(g23, location);
 
   // Check input metrics
-  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
+  if ((min(g11, RGN_NOBNDRY) <= 0.0) || (min(g22, RGN_NOBNDRY) <= 0.0) || (min(g33, RGN_NOBNDRY) <= 0.0)) {
     throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
-  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
     throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
@@ -177,6 +297,7 @@ Coordinates::Coordinates(Mesh *mesh)
     output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
+  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location);
 
   //////////////////////////////////////////////////////
 
@@ -185,116 +306,10 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
+    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location);
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
-  }
-}
-
-// use anonymous namespace so this utility function is not available outside this file
-namespace {
-  /// Interpolate a Field2D to a new CELL_LOC with interp_to.
-  /// Communicates to set internal guard cells.
-  /// Boundary guard cells are set by extrapolating from the grid, like
-  /// 'free_o3' boundary conditions
-  /// Corner guard cells are set to BoutNaN
-  Field2D interpolateAndExtrapolate(const Field2D &f, CELL_LOC location) {
-    Mesh* localmesh = f.getMesh();
-    Field2D result = interp_to(f, location, RGN_NOBNDRY);
-    // Ensure result's data is unique. Otherwise result might be a duplicate of
-    // f (if no interpolation is needed, e.g. if interpolation is in the
-    // z-direction); then f would be communicated. Since this function is used
-    // on geometrical quantities that might not be periodic in y even on closed
-    // field lines (due to dependence on integrated shear), we don't want to
-    // communicate f. We will sort out result's boundary guard cells below, but
-    // not f's so we don't want to change f.
-    result.allocate();
-    localmesh->communicate(result);
-
-    // Extrapolate into boundaries so that differential geometry terms can be
-    // interpolated if necessary
-    // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
-    // would try to create a new Coordinates object since we have not finished
-    // initializing yet, leading to an infinite recursion.
-    // Also, here we interpolate for the boundary points at xstart/ystart and
-    // (xend+1)/(yend+1) instead of extrapolating.
-    for (auto bndry : localmesh->getBoundaries()) {
-      int extrap_start = 0;
-      if ( (location == CELL_XLOW) && (bndry->bx>0) )
-        extrap_start = 1;
-      else if ( (location == CELL_YLOW) && (bndry->by>0) )
-        extrap_start = 1;
-      for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        // interpolate extra boundary point that is missed by interp_to, if
-        // necessary
-        if (extrap_start>0) {
-          // note that either bx or by is >0 here
-          result(bndry->x, bndry->y) =
-            ( 9.*(f(bndry->x-bndry->bx, bndry->y-bndry->by)
-                  + f(bndry->x, bndry->y))
-              - f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)
-              - f(bndry->x+bndry->bx, bndry->y+bndry->by)
-            )/16.;
-        }
-
-        // set boundary guard cells
-        if ((bndry->bx != 0 && localmesh->GlobalNx-2*bndry->width >= 3) || (bndry->by != 0 && localmesh->GlobalNy-2*bndry->width >= 3)) {
-          if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
-            throw BoutException("Not enough points in the x-direction on this "
-                "processor for extrapolation needed to use staggered grids. "
-                "Increase number of x-guard cells MXG or decrease number of "
-                "processors in the x-direction NXPE.");
-          }
-          if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
-            throw BoutException("Not enough points in the y-direction on this "
-                "processor for extrapolation needed to use staggered grids. "
-                "Increase number of y-guard cells MYG or decrease number of "
-                "processors in the y-direction NYPE.");
-          }
-          // extrapolate into boundary guard cells if there are enough grid points
-          for(int i=extrap_start;i<bndry->width;i++) {
-            int xi = bndry->x + i*bndry->bx;
-            int yi = bndry->y + i*bndry->by;
-            result(xi, yi) = 3.0*result(xi - bndry->bx, yi - bndry->by) - 3.0*result(xi - 2*bndry->bx, yi - 2*bndry->by) + result(xi - 3*bndry->bx, yi - 3*bndry->by);
-          }
-        } else {
-          // not enough grid points to extrapolate, set equal to last grid point
-          for(int i=extrap_start;i<bndry->width;i++) {
-            result(bndry->x + i*bndry->bx, bndry->y + i*bndry->by) = result(bndry->x - bndry->bx, bndry->y - bndry->by);
-          }
-        }
-      }
-    }
-
-    // Set corner guard cells
-    for (int i=0; i<localmesh->xstart; i++) {
-      for (int j=0; j<localmesh->ystart; j++) {
-        result(i, j) = BoutNaN;
-        result(i, localmesh->LocalNy-1-j) = BoutNaN;
-        result(localmesh->LocalNx-1-i, j) = BoutNaN;
-        result(localmesh->LocalNx-1-i, localmesh->LocalNy-1-j) = BoutNaN;
-      }
-    }
-
-    return result;
-  }
-
-  // If the CELL_CENTRE variable was read, the staggered version is required to
-  // also exist for consistency
-  void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
-    if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name+suffix)) {
-      throw BoutException("Attempting to read staggered fields from grid, but " + name
-          + " is not present in both CELL_CENTRE and staggered versions.");
-    }
-  }
-
-  // convenience function for repeated code
-  void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
-      CELL_LOC location, BoutReal default_value = 0.) {
-
-    checkStaggeredGet(mesh, name, suffix);
-    mesh->get(var, name+suffix, default_value);
-    var.setLocation(location);
   }
 }
 
