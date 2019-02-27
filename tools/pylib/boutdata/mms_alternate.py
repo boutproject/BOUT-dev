@@ -4,13 +4,10 @@
 """
 from __future__ import print_function
 from __future__ import division
-#from builtins import str
-#from builtins import object
 
 from sympy import symbols, cos, sin, diff, sqrt, pi, simplify, trigsimp, Wild, integrate
 
-from numpy import arange, newaxis
-#from numpy import arange, zeros
+from numpy import arange, newaxis, pi
 
 global metric
 
@@ -41,6 +38,9 @@ class Metric(object):
 
         self.J = 1.0
         self.B = 1.0
+
+        self.psiwidth = 1.0
+        self.zperiod = 1.0
 
         # coordinate transformations for 'mesh refinement'
         # expressions for these must average to 1.
@@ -589,6 +589,162 @@ class SimpleTokamak(BaseTokamak):
         # Toroidal angle of a field-line as function
         # of poloidal angle y
         self.zShift = self.q*(self.y-pi + eps * sin(y-pi))
+
+        # Toroidal shift of field line at branch cut where poloidal angle goes 2pi->0
+        self.shiftAngle = 2*pi*self.q
+
+        # Field-line pitch
+        self.nu = self.q*(1 + eps*cos(y-pi)) #diff(self.zShift, y)
+
+        # Coordinates of grid points
+        self.Rxy = R - self.r*self.psiN0 * cos(y-pi)
+        self.Zxy = self.r*self.psiN0 * sin(y-pi)
+
+        # Poloidal arc length
+        self.hthe = self.r*self.psiN0 + 0.*y
+
+        # Toroidal magnetic field
+        self.Btxy = Bt * R / self.Rxy
+
+        # Poloidal magnetic field
+        self.Bpxy = self.Btxy * self.hthe / (self.nu * self.Rxy)
+
+        # Total magnetic field
+        self.Bxy = sqrt(self.Btxy**2 + self.Bpxy**2)
+
+        # Integrated shear
+        if shifted:
+            self.sinty = 0*y
+        else:
+            self.sinty = diff(self.zShift, x)
+
+        # Convert all "x" symbols from flux to [0,1]
+        xsub = metric.x * self.psiwidth
+
+        self.q = self.q.subs(x, xsub)
+        self.zShift = self.zShift.subs(x, xsub)
+        self.shiftAngle = self.shiftAngle.subs(x, xsub)
+        self.nu = self.nu.subs(x, xsub)
+        self.Rxy = self.Rxy.subs(x, xsub)
+        self.Zxy = self.Zxy.subs(x, xsub)
+        self.hthe = self.hthe.subs(x, xsub)
+        self.Btxy = self.Btxy.subs(x, xsub)
+        self.Bpxy = self.Bpxy.subs(x, xsub)
+        self.Bxy = self.Bxy.subs(x, xsub)
+        self.sinty = self.sinty.subs(x, xsub)
+
+        # calculating grid spacing needs grid szie: initialize as None
+        self.dx = None
+        self.dy = None
+        self.dz = None
+
+        # calculating topology parameters needs grid size: initialize as None
+        self.ixseps1 = None
+        self.ixseps2 = None
+        self.jyseps1_1 = None
+        self.jyseps1_2 = None
+        self.jyseps2_1 = None
+        self.jyseps2_2 = None
+
+        # Extra expressions to add to grid file
+        self._extra = {}
+
+        # Calculate metric terms
+        self.metric()
+
+    def setNs(self, nx=None, ny=None, nz=None, mxg=2):
+        """
+        Pass in the grid sizes and hence calculate grid spacing and topology parameters
+        """
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+
+        core_fraction = 1.-2.*self.lower_legs_fraction-2.*self.upper_legs_fraction
+
+        # calculate grid spacings
+        self.dx = metric.psiwidth*metric.scalex/self.nx
+        self.dy = 2.*pi * metric.scaley / (core_fraction * self.ny)
+        self.dz = 2.*pi/self.nz
+
+        # find position of separatrix (uniform grid in x), i.e. x-index for which psiN=1
+        self.ixseps1 = int(self.nx * (1. - self.psiN0)*self.psi0/self.psiwidth)-1 + mxg # numbering for ixseps* includes x-guard cells
+        self.ixseps2 = self.nx+2*mxg # assume connected double-null if double-null: set ixseps2 to BoutMesh default
+
+        if self.ixseps1 < 0 or self.ixseps1 >= self.nx:
+            # no separatrix, so no branch cuts: make everywhere 'core', like BoutMesh defaults
+            self.jyseps1_1 = -1
+            self.jyseps1_2 = self.nx/2
+            self.jyseps2_1 = self.jyseps1_2
+            self.jyseps2_2 = self.ny-1
+        else:
+            self.jyseps1_1 = int(self.lower_legs_fraction*self.ny)-1
+            self.jyseps2_2 = int((1.-self.lower_legs_fraction)*self.ny)-1
+            self.jyseps1_2 = int(self.ny//2 - self.upper_legs_fraction*self.ny)-1
+            self.jyseps2_1 = int(self.ny//2 + self.upper_legs_fraction*self.ny)-1
+
+class PeriodicGeometry(BaseTokamak):
+    """
+    Periodic Geometry for tests, with no branch cut in integrated shear
+    """
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda psiN:2+psiN**2, lower_legs_fraction=0., upper_legs_fraction=0., shifted=False):
+        """
+        R    - Major radius [metric]
+
+        Bt   - Toroidal field [T]
+
+        eps  - Inverse aspect ratio
+
+        dr   - Width of the radial region [metric]
+
+        q(psiN) - A function which returns the safety factor
+               as a function of psiN in range [0,1]
+
+        psiN0- Normalized poloidal flux of inner edge of grid
+
+        r0   - Length-scale to normalize metric components (default 1m)
+
+        lower_legs_fraction - what fraction of the poloidal grid is in the lower divertor legs (per leg, so lower_legs_fraction+upper_legs_fraction<=0.5)
+
+        upper_legs_fraction - what fraction of the poloidal grid is in the upper divertor legs (per leg, so lower_legs_fraction+upper_legs_fraction<=0.5)
+
+        Coordinates:
+        x - Radial, [0,psiwidth], x=psi-psi_inner so dx=dpsi but x=0 at the inner edge of the grid
+        y - Poloidal, [0,2pi]. Origin is at inboard midplane.
+
+
+        """
+
+        # Have we calculated metric components yet?
+        self.metric_is_set = False
+
+        self.x = x
+        self.y = y
+        self.zperiod = zperiod
+        self.r0 = r0
+        self.R = R
+        self.dr = dr
+        self.psiN0 = psiN0
+        self.lower_legs_fraction = lower_legs_fraction
+        self.upper_legs_fraction = upper_legs_fraction
+        self.shifted = shifted
+
+        # Minor radius
+        self.r = R * eps
+
+        # Approximate poloidal field for radial width calculation
+        Bp0 = Bt * self.r*self.psiN0 / (q(self.psiN0) * self.R)
+
+        # dpsi = Bp * R * dr  -- width of the box in psi space
+        self.psiwidth = Bp0 * self.R * self.dr
+        self.psi0 = Bp0 * R * self.r # value of psi at 'separatrix' taken to be at r, psi=0 at magnetic axis
+
+        # Get safety factor
+        self.q = q((x + self.psiN0*self.psi0)/self.psi0)
+
+        # Toroidal angle of a field-line as function
+        # of poloidal angle y
+        self.zShift = self.q*sin(y-pi)
 
         # Toroidal shift of field line at branch cut where poloidal angle goes 2pi->0
         self.shiftAngle = 2*pi*self.q
