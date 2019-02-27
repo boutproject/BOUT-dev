@@ -532,13 +532,13 @@ if __name__ == "__main__":
     full_test = not args.short
 
     # geometry for simple circular tokamak
-    tokamak = PeriodicGeometry()
+    geometry = PeriodicGeometry()
 
     # rescale x and y coordinates so dx and dy are not constants
-    tokamak.set_scalex(1 + .1*sin(2*pi*metric.x+metric.y))
-    tokamak.set_scaley(1 + .1*sin(2*pi*metric.x-metric.y))
+    geometry.set_scalex(1 + .1*sin(2*pi*metric.x+metric.y))
+    geometry.set_scaley(1 + .1*sin(2*pi*metric.x-metric.y))
     # re-calculate metric terms
-    tokamak.metric()
+    geometry.metric()
 
     boutcore.init('-q -q -q -q')
 
