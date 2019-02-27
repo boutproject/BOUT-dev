@@ -358,6 +358,10 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
   ])
 
   AS_IF([test $works = yes], [
+    AC_SEARCH_LIBS([dladdr], [dl], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works = yes], [
     AC_MSG_NOTICE([Native backtrace enabled])
     CXXFLAGS="$CXXFLAGS -DBACKTRACE"
   ], [
