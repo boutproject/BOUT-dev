@@ -17,179 +17,6 @@
 
 #include <globals.hxx>
 
-Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
-                         Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
-                         Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
-                         Field2D g_33, Field2D g_12, Field2D g_13, Field2D g_23,
-                         Field2D ShiftTorsion, Field2D IntShiftTorsion,
-                         bool calculate_geometry)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
-      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
-      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
-      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {
-  if (calculate_geometry) {
-    if (geometry()) {
-      throw BoutException("Differential geometry failed\n");
-    }
-  }
-}
-
-Coordinates::Coordinates(Mesh *mesh)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
-      // Identity metric tensor
-      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
-      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
-      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
-      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
-      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
-      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
-
-  if (mesh->get(dx, "dx")) {
-    output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
-    dx = 1.0;
-  }
-
-  if (mesh->periodicX) {
-    mesh->communicate(dx);
-  }
-
-  if (mesh->get(dy, "dy")) {
-    output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
-    dy = 1.0;
-  }
-
-  nz = mesh->LocalNz;
-
-  if (mesh->get(dz, "dz")) {
-    // Couldn't read dz from input
-    int zperiod;
-    BoutReal ZMIN, ZMAX;
-    Options *options = Options::getRoot();
-    if (options->isSet("zperiod")) {
-      OPTION(options, zperiod, 1);
-      ZMIN = 0.0;
-      ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
-    } else {
-      OPTION(options, ZMIN, 0.0);
-      OPTION(options, ZMAX, 1.0);
-
-      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-    }
-
-    dz = (ZMAX - ZMIN) * TWOPI / nz;
-  }
-
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  mesh->get(g11, "g11", 1.0);
-  mesh->get(g22, "g22", 1.0);
-  mesh->get(g33, "g33", 1.0);
-
-  // Off-diagonal elements. Default to 0
-  mesh->get(g12, "g12", 0.0);
-  mesh->get(g13, "g13", 0.0);
-  mesh->get(g23, "g23", 0.0);
-
-  // Check input metrics
-  if ((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
-  }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
-  }
-  if ((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
-  }
-
-  /// Find covariant metric components
-  // Check if any of the components are present
-  if (mesh->sourceHasVar("g_11") or mesh->sourceHasVar("g_22") or
-      mesh->sourceHasVar("g_33") or mesh->sourceHasVar("g_12") or
-      mesh->sourceHasVar("g_13") or mesh->sourceHasVar("g_23")) {
-    // Check that all components are present
-    if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22") and
-        mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
-        mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
-      mesh->get(g_11, "g_11");
-      mesh->get(g_22, "g_22");
-      mesh->get(g_33, "g_33");
-      mesh->get(g_12, "g_12");
-      mesh->get(g_13, "g_13");
-      mesh->get(g_23, "g_23");
-
-      output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
-                        "Contravariant components NOT recalculated\n");
-
-    } else {
-      output_warn.write("Not all covariant components of metric tensor found. "
-                        "Calculating all from the contravariant tensor\n");
-      /// Calculate contravariant metric components if not found
-      if (calcCovariant()) {
-        throw BoutException("Error in calcCovariant call");
-      }
-    }
-  } else {
-    /// Calculate contravariant metric components if not found
-    if (calcCovariant()) {
-      throw BoutException("Error in calcCovariant call");
-    }
-  }
-
-  /// Calculate Jacobian and Bxy
-  if (jacobian())
-    throw BoutException("Error in jacobian call");
-
-  // Attempt to read J from the grid file
-  Field2D Jcalc = J;
-  if (mesh->get(J, "J")) {
-    output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
-  } else {
-    // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
-
-    // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22) / J;
-  }
-
-  // Attempt to read Bxy from the grid file
-  Field2D Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy")) {
-    output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
-                      "metric tensor\n");
-    Bxy = Bcalc;
-  } else {
-    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-    // Check Bxy
-    if (!finite(Bxy)) {
-      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
-    }
-  }
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
-  if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
-    output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
-  }
-
-  //////////////////////////////////////////////////////
-
-  if (mesh->IncIntShear) {
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
-      output_warn.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
-    }
-  }
-}
-
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
   /// Interpolate a Field2D to a new CELL_LOC with interp_to.
@@ -276,6 +103,192 @@ namespace {
     }
 
     return result;
+  }
+}
+
+Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
+                         Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
+                         Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
+                         Field2D g_33, Field2D g_12, Field2D g_13, Field2D g_23,
+                         Field2D ShiftTorsion, Field2D IntShiftTorsion,
+                         bool calculate_geometry)
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
+      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
+      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
+      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
+      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
+      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
+      location(CELL_CENTRE) {
+  if (calculate_geometry) {
+    if (geometry()) {
+      throw BoutException("Differential geometry failed\n");
+    }
+  }
+}
+
+Coordinates::Coordinates(Mesh *mesh)
+    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+      // Identity metric tensor
+      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
+      G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
+      G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
+      G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+
+  // Note: use 'interpolateAndExtrapolate' to set the boundary cells of the
+  // loaded fields. Ensures that derivatives are smooth at all the boundaries.
+
+  if (mesh->get(dx, "dx")) {
+    output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
+    dx = 1.0;
+  }
+  dx = interpolateAndExtrapolate(dx, location);
+
+  if (mesh->periodicX) {
+    mesh->communicate(dx);
+  }
+
+  if (mesh->get(dy, "dy")) {
+    output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
+    dy = 1.0;
+  }
+  dy = interpolateAndExtrapolate(dy, location);
+
+  nz = mesh->LocalNz;
+
+  if (mesh->get(dz, "dz")) {
+    // Couldn't read dz from input
+    int zperiod;
+    BoutReal ZMIN, ZMAX;
+    Options *options = Options::getRoot();
+    if (options->isSet("zperiod")) {
+      OPTION(options, zperiod, 1);
+      ZMIN = 0.0;
+      ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
+    } else {
+      OPTION(options, ZMIN, 0.0);
+      OPTION(options, ZMAX, 1.0);
+
+      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
+    }
+
+    dz = (ZMAX - ZMIN) * TWOPI / nz;
+  }
+
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  mesh->get(g11, "g11", 1.0);
+  g11 = interpolateAndExtrapolate(g11, location);
+  mesh->get(g22, "g22", 1.0);
+  g22 = interpolateAndExtrapolate(g22, location);
+  mesh->get(g33, "g33", 1.0);
+  g33 = interpolateAndExtrapolate(g33, location);
+
+  // Off-diagonal elements. Default to 0
+  mesh->get(g12, "g12", 0.0);
+  g12 = interpolateAndExtrapolate(g12, location);
+  mesh->get(g13, "g13", 0.0);
+  g13 = interpolateAndExtrapolate(g13, location);
+  mesh->get(g23, "g23", 0.0);
+  g23 = interpolateAndExtrapolate(g23, location);
+
+  // Check input metrics
+  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
+    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
+  }
+  if ((min(g11, RGN_NOBNDRY) <= 0.0) || (min(g22, RGN_NOBNDRY) <= 0.0) || (min(g33, RGN_NOBNDRY) <= 0.0)) {
+    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
+  }
+  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
+    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
+  }
+
+  /// Find covariant metric components
+  // Check if any of the components are present
+  if (mesh->sourceHasVar("g_11") or mesh->sourceHasVar("g_22") or
+      mesh->sourceHasVar("g_33") or mesh->sourceHasVar("g_12") or
+      mesh->sourceHasVar("g_13") or mesh->sourceHasVar("g_23")) {
+    // Check that all components are present
+    if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22") and
+        mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12") and
+        mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
+      mesh->get(g_11, "g_11");
+      mesh->get(g_22, "g_22");
+      mesh->get(g_33, "g_33");
+      mesh->get(g_12, "g_12");
+      mesh->get(g_13, "g_13");
+      mesh->get(g_23, "g_23");
+
+      output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
+                        "Contravariant components NOT recalculated\n");
+
+    } else {
+      output_warn.write("Not all covariant components of metric tensor found. "
+                        "Calculating all from the contravariant tensor\n");
+      /// Calculate contravariant metric components if not found
+      if (calcCovariant()) {
+        throw BoutException("Error in calcCovariant call");
+      }
+    }
+  } else {
+    /// Calculate contravariant metric components if not found
+    if (calcCovariant()) {
+      throw BoutException("Error in calcCovariant call");
+    }
+  }
+
+  /// Calculate Jacobian and Bxy
+  if (jacobian())
+    throw BoutException("Error in jacobian call");
+
+  // Attempt to read J from the grid file
+  Field2D Jcalc = J;
+  if (mesh->get(J, "J")) {
+    output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    J = Jcalc;
+  } else {
+    // Compare calculated and loaded values
+    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+
+    // Re-evaluate Bxy using new J
+    Bxy = sqrt(g_22) / J;
+  }
+
+  // Attempt to read Bxy from the grid file
+  Field2D Bcalc = Bxy;
+  if (mesh->get(Bxy, "Bxy")) {
+    output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
+                      "metric tensor\n");
+    Bxy = Bcalc;
+  } else {
+    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    // Check Bxy
+    if (!finite(Bxy)) {
+      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
+    }
+  }
+
+  //////////////////////////////////////////////////////
+  /// Calculate Christoffel symbols. Needs communication
+  if (geometry()) {
+    throw BoutException("Differential geometry failed\n");
+  }
+
+  if (mesh->get(ShiftTorsion, "ShiftTorsion")) {
+    output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+    ShiftTorsion = 0.0;
+  }
+  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location);
+
+  //////////////////////////////////////////////////////
+
+  if (mesh->IncIntShear) {
+    if (mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+      output_warn.write("\tWARNING: No Integrated torsion specified\n");
+      IntShiftTorsion = 0.0;
+    }
+    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location);
   }
 }
 
