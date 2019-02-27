@@ -53,8 +53,12 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location) {
     }
     for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
       // interpolate extra boundary point that is missed by interp_to, if
-      // necessary
-      if (extrap_start > 0) {
+      // necessary.
+      // Only interpolate this point if we are actually changing location. E.g.
+      // when we use this function to extrapolate J and Bxy on staggered grids,
+      // this point should already be set correctly because the metric
+      // components have been interpolated to here.
+      if (extrap_start > 0 and f.getLocation() != location) {
         // note that either bx or by is >0 here
         result(bndry->x, bndry->y) =
             (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by) + f(bndry->x, bndry->y))
