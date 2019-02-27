@@ -29,8 +29,16 @@ class DifopsMMS:
         self.mxg = 2
         self.myg = 2
 
-        self.min_exponent = 6
-        self.max_exponent = 7
+        if self.fullTest:
+            # Use high enough resolution for all tests to reach expected order
+            self.min_exponent = 8
+            self.max_exponent = 9
+        else:
+            # run at low resolution, and allow faster than expected convergence
+            # for some tests where this is expected behaviour
+            self.min_exponent = 6
+            self.max_exponent = 7
+
         self.ngrids = numpy.logspace(self.min_exponent, self.max_exponent, num=self.max_exponent-self.min_exponent+1, base=2).astype(int)
 
         # functions to use as input to operators
@@ -238,7 +246,7 @@ class DifopsMMS:
                 self.dimStaggerExpectThrowDict[base_dimensions][stagger_directions] = fail_dimensions_staggers
             return fail_dimensions_staggers
 
-    def testOperatorAtLocation(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger):
+    def testOperatorAtLocation(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order, method, stagger):
         error_list = []
         print('testing',boutcore_operator, ftype, stagger)
         inloc = stagger[0]
@@ -282,7 +290,15 @@ class DifopsMMS:
         logspacing = numpy.log(self.ngrids[-1]/self.ngrids[-2])
         convergence = logerrors/logspacing
 
-        if order-.1 < convergence < order+.2:
+        if self.fullTest or fudged_max_order is None:
+            # full, strict test for convergence order
+            max_order = order+.2
+        else:
+            # allow some tests to expect a higher order of convergence for
+            # quick tests at lower resolution
+            max_order = fudged_max_order
+
+        if order-.1 < convergence < max_order:
             return 'pass'
         else:
             error_string = str(boutcore_operator)+' is not working for '+inloc+'->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.'
@@ -314,11 +330,11 @@ class DifopsMMS:
         else:
             return 'Expected '+str(boutcore_operator)+' to throw for '+stagger[0]+'->'+stagger[1]+' '+' '+str(ftype)+' '+str(method)+' but it did not.'
 
-    def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, method=None):
+    def testOperator(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order=None, method=None):
         for dimensions,stagger in self.getDimStagger(base_dimensions, stagger_directions):
             if (not self.test3D) and 'x' in dimensions and 'y' in dimensions and 'z' in dimensions:
                 continue
-            self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger))
+            self.results.append(self.testOperatorAtLocation(dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order, method, stagger))
 
         if self.testThrow:
             for dimensions,stagger in self.getDimStaggerExpectThrow(base_dimensions, stagger_directions):
@@ -363,10 +379,10 @@ if __name__ == "__main__":
     # store the inputs in a dict so we can look them up or iterate through them
     operator_inputs = {
             'Grad_par':('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D'),
-            'Div_par':('y', 'y', boutcore.Div_par, Div_par, 2, '3D'),
+            'Div_par':('y', 'y', boutcore.Div_par, Div_par, 2, '3D', 3.6),
             'Grad2_par2':('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D'),
             'Laplace':('', 'xyz', boutcore.Laplace, Laplace, 2, '3D'),
-            'Laplace_par':('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D'),
+            'Laplace_par':('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D', 2.5),
             'Laplace_perp':('', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D'),
             'DDX':('x', 'x', boutcore.DDX, DDX, 2, '3D'),
             'DDY':('y', 'y', boutcore.DDY, DDY, 2, '3D'),
