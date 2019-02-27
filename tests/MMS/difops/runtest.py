@@ -6,6 +6,7 @@ import numpy
 import sympy
 import re
 from copy import copy
+from collections import OrderedDict
 
 class DifopsMMS:
     """
@@ -377,38 +378,39 @@ if __name__ == "__main__":
     driver = DifopsMMS(metric, full_test, args.test3D, args.plot)
 
     # store the inputs in a dict so we can look them up or iterate through them
-    operator_inputs = {
-            'Grad_par':('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D'),
-            'Div_par':('y', 'y', boutcore.Div_par, Div_par, 2, '3D', 3.6),
-            'Grad2_par2':('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D'),
-            'Laplace':('', 'xyz', boutcore.Laplace, Laplace, 2, '3D'),
-            'Laplace_par':('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D', 2.5),
-            'Laplace_perp':('', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D'),
-            'DDX':('x', 'x', boutcore.DDX, DDX, 2, '3D'),
-            'DDY':('y', 'y', boutcore.DDY, DDY, 2, '3D'),
-            'DDZ':('z', 'z', boutcore.DDZ, DDZ, 2, '3D'),
-            'D2DX2':('x', 'x', boutcore.D2DX2, D2DX2, 2, '3D'),
-            'D2DY2':('y', 'y', boutcore.D2DY2, D2DY2, 2, '3D'),
-            'D2DZ2':('z', 'z', boutcore.D2DZ2, D2DZ2, 2, '3D'),
-            'D4DX4':('', 'x', boutcore.D4DX4, D4DX4, 2, '3D'),
-            'D4DY4':('', 'y', boutcore.D4DY4, D4DY4, 2, '3D'),
-            'D4DZ4':('', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D'),
-            'D2DXDY':('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D'),
-            'D2DXDZ':('', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D'),
-            'D2DYDZ':('', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D'),
-            'Grad_par':('y', 'y', boutcore.Grad_par, Grad_par, 2, '2D'),
-            'Div_par':('y', 'y', boutcore.Div_par, Div_par, 2, '2D'),
-            'Grad2_par2':('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '2D'),
-            'Laplace':('xyz', '', boutcore.Laplace, Laplace, 2, '2D'),
-            'Laplace_par':('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '2D'),
-            'DDX':('x', 'x', boutcore.DDX, DDX, 2, '2D'),
-            'DDY':('y', 'y', boutcore.DDY, DDY, 2, '2D'),
-            'D2DX2':('x', 'x', boutcore.D2DX2, D2DX2, 2, '2D'),
-            'D2DY2':('y', 'y', boutcore.D2DY2, D2DY2, 2, '2D'),
-            'D4DX4':('x', 'x', boutcore.D4DX4, D4DX4, 2, '2D'),
-            'D4DY4':('y', 'y', boutcore.D4DY4, D4DY4, 2, '2D'),
-            'D2DXDY':('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D'),
-            }
+    operator_inputs = OrderedDict([
+            ( 'Grad_par', ('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D') ),
+            ( 'Div_par', ('y', 'y', boutcore.Div_par, Div_par, 2, '3D', 3.6) ),
+            ( 'Grad2_par2', ('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '3D') ),
+            ( 'Laplace', ('', 'xyz', boutcore.Laplace, Laplace, 2, '3D') ),
+            ( 'Laplace_par', ('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '3D', 2.5) ),
+            ( 'Laplace_perp', ('', 'xyz', boutcore.Laplace_perp, Laplace_perp, 2, '3D') ),
+            ( 'DDX', ('x', 'x', boutcore.DDX, DDX, 2, '3D') ),
+            ( 'DDY', ('y', 'y', boutcore.DDY, DDY, 2, '3D') ),
+            ( 'DDZ', ('z', 'z', boutcore.DDZ, DDZ, 2, '3D') ),
+            ( 'D2DX2', ('x', 'x', boutcore.D2DX2, D2DX2, 2, '3D') ),
+            ( 'D2DY2', ('y', 'y', boutcore.D2DY2, D2DY2, 2, '3D') ),
+            ( 'D2DZ2', ('z', 'z', boutcore.D2DZ2, D2DZ2, 2, '3D') ),
+            ( 'D4DX4', ('', 'x', boutcore.D4DX4, D4DX4, 2, '3D') ),
+            ( 'D4DY4', ('', 'y', boutcore.D4DY4, D4DY4, 2, '3D') ),
+            ( 'D4DZ4', ('', 'z', boutcore.D4DZ4, D4DZ4, 2, '3D') ),
+            ( 'D2DXDY', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '3D') ),
+            ( 'D2DXDZ', ('', 'xz', boutcore.D2DXDZ, D2DXDZ, 2, '3D') ),
+            ( 'D2DYDZ', ('', 'yz', boutcore.D2DYDZ, D2DYDZ, 2, '3D') ),
+            ( 'Grad_par_2D', ('y', 'y', boutcore.Grad_par, Grad_par, 2, '2D') ),
+            ( 'Div_par_2D', ('y', 'y', boutcore.Div_par, Div_par, 2, '2D') ),
+            ( 'Grad2_par2_2D', ('y', 'y', boutcore.Grad2_par2, Grad2_par2, 2, '2D') ),
+            ( 'Laplace_2D', ('', 'xyz', boutcore.Laplace, Laplace, 2, '2D') ),
+            ( 'Laplace_par_2D', ('y', 'y', boutcore.Laplace_par, Laplace_par, 2, '2D') ),
+            ( 'DDX_2D', ('x', 'x', boutcore.DDX, DDX, 2, '2D') ),
+            ( 'DDY_2D', ('y', 'y', boutcore.DDY, DDY, 2, '2D') ),
+            ( 'D2DX2_2D', ('x', 'x', boutcore.D2DX2, D2DX2, 2, '2D') ),
+            ( 'D2DY2_2D', ('y', 'y', boutcore.D2DY2, D2DY2, 2, '2D') ),
+            ( 'D4DX4_2D', ('x', 'x', boutcore.D4DX4, D4DX4, 2, '2D') ),
+            ( 'D4DY4_2D', ('y', 'y', boutcore.D4DY4, D4DY4, 2, '2D') ),
+            ( 'D2DXDY_2D', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
+            ])
+    print(operator_inputs)
 
     # test operators...
     if args.operator is not None:
