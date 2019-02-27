@@ -240,8 +240,7 @@ class DifopsMMS:
 
     def testOperatorAtLocation(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, method, stagger):
         error_list = []
-        if self.fullTest:
-            print('testing',boutcore_operator, ftype, stagger)
+        print('testing',boutcore_operator, ftype, stagger)
         inloc = stagger[0]
         outloc = stagger[1]
 
