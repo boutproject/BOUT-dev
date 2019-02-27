@@ -406,9 +406,9 @@ if __name__ == "__main__":
             ( 'DDY_2D', ('y', 'y', boutcore.DDY, DDY, 2, '2D') ),
             ( 'D2DX2_2D', ('x', 'x', boutcore.D2DX2, D2DX2, 2, '2D') ),
             ( 'D2DY2_2D', ('y', 'y', boutcore.D2DY2, D2DY2, 2, '2D') ),
-            ( 'D4DX4_2D', ('x', 'x', boutcore.D4DX4, D4DX4, 2, '2D') ),
-            ( 'D4DY4_2D', ('y', 'y', boutcore.D4DY4, D4DY4, 2, '2D') ),
-            ( 'D2DXDY_2D', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
+            ( 'D4DX4_2D', ('', 'x', boutcore.D4DX4, D4DX4, 2, '2D') ),
+            ( 'D4DY4_2D', ('', 'y', boutcore.D4DY4, D4DY4, 2, '2D') ),
+            ( 'D2DXDY_2D', ('', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
             ])
     print(operator_inputs)
 
