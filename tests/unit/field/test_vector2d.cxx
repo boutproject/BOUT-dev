@@ -124,6 +124,20 @@ TEST_F(Vector2DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
+TEST_F(Vector2DTest, TimeDerivComponents) {
+  Vector2D vector;
+
+  // Make time derivatives for components first, then check we rectify
+  vector.x.timeDeriv();
+  vector.y.timeDeriv();
+  vector.z.timeDeriv();
+  vector.timeDeriv();
+
+  EXPECT_EQ(&(ddt(vector).x), &(ddt(vector.x)));
+  EXPECT_EQ(&(ddt(vector).y), &(ddt(vector.y)));
+  EXPECT_EQ(&(ddt(vector).z), &(ddt(vector.z)));
+}
+
 TEST_F(Vector2DTest, SetLocationNonStaggered) {
   Vector2D vector;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
@@ -431,6 +445,51 @@ TEST_F(Vector2DTest, MultiplyVector2DField3D) {
   Field3D field{4.0};
 
   Vector3D result = vector * field;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 8.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 12.0));
+}
+
+TEST_F(Vector2DTest, MultiplyBoutRealVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  BoutReal real {2.0};
+
+  Vector2D result = real * vector;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 2.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 6.0));
+}
+
+TEST_F(Vector2DTest, MultiplyField2DVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  Field2D field{3.0};
+
+  Vector2D result = field * vector;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 3.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 6.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 9.0));
+}
+
+TEST_F(Vector2DTest, MultiplyField3DVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  Field3D field{4.0};
+
+  Vector3D result = field * vector;
 
   EXPECT_TRUE(IsFieldEqual(result.x, 4.0));
   EXPECT_TRUE(IsFieldEqual(result.y, 8.0));

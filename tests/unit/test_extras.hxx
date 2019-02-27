@@ -225,10 +225,10 @@ public:
   void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
   std::vector<BoundaryRegion *> getBoundaries() { return boundaries; }
   std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
-  BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
-  BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
+  BoutReal GlobalX(int jx) const { return jx; }
+  BoutReal GlobalY(int jy) const { return jy; }
+  BoutReal GlobalX(BoutReal jx) const { return jx; }
+  BoutReal GlobalY(BoutReal jy) const { return jy; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
 
@@ -259,7 +259,7 @@ public:
     output_info.enable();
   }
 
-  ~FakeMeshFixture() {
+  virtual ~FakeMeshFixture() {
     delete bout::globals::mesh;
     bout::globals::mesh = nullptr;
   }

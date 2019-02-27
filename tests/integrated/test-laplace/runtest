@@ -17,12 +17,12 @@ vars = ['flag0', 'flag3', 'flagis', 'flagos',
         'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-MPIRUN = getmpirun()
+
 
 print("Making Laplacian inversion test")
 shell("rm test_laplace")
@@ -47,7 +47,7 @@ for nproc in [1,2,4]:
   shell("rm data/BOUT.dmp.*.nc")
 
   print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+  s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

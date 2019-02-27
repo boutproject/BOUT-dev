@@ -43,7 +43,7 @@ public:
   BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return a->generate(x, y, z, t) + b->generate(x, y, z, t);
   }
-  const std::string str() {
+  std::string str() const {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
   }
 
@@ -69,7 +69,7 @@ public:
   BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return gen->generate(x, y, z, t) + 1;
   }
-  const std::string str() { return std::string{"increment(" + gen->str() + ")"}; }
+  std::string str() const { return std::string{"increment(" + gen->str() + ")"}; }
 
 private:
   std::shared_ptr<FieldGenerator> gen;
