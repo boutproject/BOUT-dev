@@ -363,7 +363,7 @@ if __name__ == "__main__":
     full_test = not args.short
 
     # geometry for simple circular tokamak
-    tokamak = SimpleTokamak()
+    tokamak = PeriodicGeometry()
 
     # rescale x and y coordinates so dx and dy are not constants
     tokamak.set_scalex(1 + .1*sin(2*pi*metric.x+metric.y))
