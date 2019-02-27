@@ -46,15 +46,10 @@
  *     }
  */
 class BoutMask {
-  // Dimensions of mask
-  int nx;
-  int ny;
-  int nz;
   // Internal data
   Tensor<bool> mask;
 public:
   BoutMask(int nx, int ny, int nz, bool value=false) :
-    nx(nx), ny(ny), nz(nz),
     mask(nx, ny, nz) {
     mask = value;
   }
