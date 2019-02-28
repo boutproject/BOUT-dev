@@ -16,8 +16,11 @@ bool GridFromOptions::hasVar(const std::string &name) {
 }
 
 bool GridFromOptions::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) {
-  if(!hasVar(name)) {
-    sval = "";
+  if (!hasVar(name)) {
+    const std::string def{};
+    output_warn.write("Variable '%s' not in mesh options. Setting to \"%s\"\n",
+                      name.c_str(), def.c_str());
+    sval = def;
     return false;
   }
   
@@ -26,8 +29,11 @@ bool GridFromOptions::get(Mesh *UNUSED(m), std::string &sval, const std::string 
 }
 
 bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
-  if(!hasVar(name)) {
-    ival = 0;
+  if (!hasVar(name)) {
+    constexpr int def{0};
+    output_warn.write("Variable '%s' not in mesh options. Setting to %d\n", name.c_str(),
+                      def);
+    ival = def;
     return false;
   }
   
@@ -36,8 +42,11 @@ bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
 }
 
 bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
-  if(!hasVar(name)) {
-    rval = 0.0;
+  if (!hasVar(name)) {
+    constexpr BoutReal def{0.0};
+    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+                      def);
+    rval = def;
     return false;
   }
   
@@ -64,7 +73,9 @@ bool GridFromOptions::get(Mesh *m, Field2D &var, const std::string &name, BoutRe
 }
 
 bool GridFromOptions::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def) {
-  if(!hasVar(name)) {
+  if (!hasVar(name)) {
+    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+                      def);
     var = def;
     return false;
   }
