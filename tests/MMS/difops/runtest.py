@@ -259,6 +259,12 @@ class DifopsMMS:
         else:
             stag = inloc
 
+        if ftype == '2D':
+            # cannot have z-dependence
+            analytic_input = self.analytic_input.replace('z', '0')
+        else:
+            analytic_input = self.analytic_input
+
         error_list = []
         errors = []
         boutfields = []
@@ -277,7 +283,7 @@ class DifopsMMS:
                 bout_result = boutcore_operator(bout_input, outloc=outloc, method=method)
 
             # calculate result of differential operator symbolically, then convert to boutcore.Field3D/Field2D
-            analytic_func = symbolic_operator(self.analytic_input)
+            analytic_func = symbolic_operator(analytic_input)
             if ftype == '2D':
                 analytic_result = boutcore.create2D(exprToStr(analytic_func), mesh, outloc=outloc)
             elif ftype == '3D':
