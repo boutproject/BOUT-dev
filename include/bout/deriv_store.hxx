@@ -284,7 +284,7 @@ struct DerivativeStore {
                              DERIV derivType = DERIV::Upwind) const {
     AUTO_TRACE();
     const auto realName = nameLookup(
-        name, defaultMethods.at(getKey(direction, stagger, DERIV_STRING(DERIV::Upwind))));
+        name, defaultMethods.at(getKey(direction, stagger, DERIV_STRING(derivType))));
     const auto key = getKey(direction, stagger, realName);
 
     const storageType<std::size_t, flowFunc>* theMap = nullptr;
