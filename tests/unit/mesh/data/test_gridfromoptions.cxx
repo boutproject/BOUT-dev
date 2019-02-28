@@ -183,6 +183,26 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealX) {
   EXPECT_EQ(result, expected);
 }
 
+TEST_F(GridFromOptionsTest, GetVectorBoutRealXOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{4., 5., 6.};
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", nx, 1, GridDataSource::Direction::X));
+  EXPECT_EQ(result, expected);
+}
+
+TEST_F(GridFromOptionsTest, GetVectorBoutRealXMeshOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{2., 3., 4.};
+
+  mesh->OffsetX = 1;
+  mesh->OffsetY = 100;
+  mesh->OffsetZ = 100;
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", nx, 0, GridDataSource::Direction::X));
+  EXPECT_EQ(result, expected);
+}
+
 TEST_F(GridFromOptionsTest, GetVectorBoutRealXNone) {
   std::vector<BoutReal> result{};
   std::vector<BoutReal> default_expected{};
@@ -192,10 +212,32 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealXNone) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealY) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3., 3. + TWOPI, 3. + 2. * TWOPI, 3. + 3. * TWOPI,
-                                 3. + 4. * TWOPI};
+  std::vector<BoutReal> expected{3., 3. + TWOPI, 3. + (2. * TWOPI), 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI)};
 
-  EXPECT_TRUE(griddata.get(mesh, result, "f", ny, 0., GridDataSource::Direction::Y));
+  EXPECT_TRUE(griddata.get(mesh, result, "f", ny, 0, GridDataSource::Direction::Y));
+  EXPECT_EQ(result, expected);
+}
+
+TEST_F(GridFromOptionsTest, GetVectorBoutRealYOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{3. + TWOPI, 3. + (2. * TWOPI), 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI), 3. + (5. * TWOPI)};
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", ny, 1, GridDataSource::Direction::Y));
+  EXPECT_EQ(result, expected);
+}
+
+TEST_F(GridFromOptionsTest, GetVectorBoutRealYMeshOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{3. - TWOPI, 3., 3. + TWOPI, 3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI)};
+
+  mesh->OffsetX = 100;
+  mesh->OffsetY = 1;
+  mesh->OffsetZ = 100;
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", ny, 0, GridDataSource::Direction::Y));
   EXPECT_EQ(result, expected);
 }
 
@@ -216,7 +258,33 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
                                  3. + (5. * TWOPI / nz),
                                  3. + (6. * TWOPI / nz)};
 
-  EXPECT_TRUE(griddata.get(mesh, result, "f", nz, 0., GridDataSource::Direction::Z));
+  EXPECT_TRUE(griddata.get(mesh, result, "f", nz, 0, GridDataSource::Direction::Z));
+  EXPECT_EQ(result, expected);
+}
+
+TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{3. + (1. * TWOPI / nz), 3. + (2. * TWOPI / nz),
+                                 3. + (3. * TWOPI / nz), 3. + (4. * TWOPI / nz),
+                                 3. + (5. * TWOPI / nz), 3. + (6. * TWOPI / nz),
+                                 3. + (7. * TWOPI / nz)};
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", nz, 1, GridDataSource::Direction::Z));
+  EXPECT_EQ(result, expected);
+}
+
+TEST_F(GridFromOptionsTest, GetVectorBoutRealZMeshOffset) {
+  std::vector<BoutReal> result{};
+  std::vector<BoutReal> expected{3. + (-1. * TWOPI / nz), 3.,
+                                 3. + (1. * TWOPI / nz),  3. + (2. * TWOPI / nz),
+                                 3. + (3. * TWOPI / nz),  3. + (4. * TWOPI / nz),
+                                 3. + (5. * TWOPI / nz)};
+
+  mesh->OffsetX = 100;
+  mesh->OffsetY = 100;
+  mesh->OffsetZ = 1;
+
+  EXPECT_TRUE(griddata.get(mesh, result, "f", nz, 0, GridDataSource::Direction::Z));
   EXPECT_EQ(result, expected);
 }
 
