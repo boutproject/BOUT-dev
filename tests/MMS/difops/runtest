@@ -4,6 +4,10 @@
 #requires all_tests
 #requires not make
 
-PYTHONPATH=../../../tools/pylib/boutdata:$PYTHONPATH python3 runtest.py $@
+# With no aruments, this script runs the test at high resolution, but skipping
+# cases that would require 3D grids. Checking is performed that exceptions are
+# thrown for inputs, e.g. combinations of locations, that are not allowed.
+
+PYTHONPATH=../../../tools/pylib/:$PYTHONPATH python3 runtest.py $@
 
 exit 0
