@@ -47,9 +47,6 @@ public:
   Interpolation *create(Mesh *mesh) {
     return create(nullptr, mesh);
   }
-  Interpolation *create(Options *options) {
-    return create(options, nullptr);
-  }
   Interpolation *create(Options *options = nullptr, Mesh *mesh = nullptr);
 
   /// Create an Interpolation object
