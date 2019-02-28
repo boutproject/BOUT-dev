@@ -79,6 +79,29 @@ TYPED_TEST(FieldFactoryCreationTest, CreateFromPointerGenerator) {
   EXPECT_TRUE(IsFieldEqual(output, value));
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateFromFunction) {
+  FuncPtr function = [](BoutReal, BoutReal x, BoutReal, BoutReal) -> BoutReal {
+    return x + 1.;
+  };
+
+  auto generator = std::make_shared<FieldFunction>(FieldFunction{function});
+
+  auto output = this->create(generator);
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() + 1.; },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateNull) {
+  FieldNull null{};
+  auto output = this->create(null.clone({}));
+
+  EXPECT_TRUE(IsFieldEqual(output, 0.0));
+}
+
 TYPED_TEST(FieldFactoryCreationTest, CreatePi) {
   auto output = this->create("pi");
 
