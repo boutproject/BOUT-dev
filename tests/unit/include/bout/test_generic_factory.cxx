@@ -4,6 +4,7 @@
 #include "bout/generic_factory.hxx"
 
 #include <exception>
+#include <memory>
 #include <string>
 #include <vector>
 
