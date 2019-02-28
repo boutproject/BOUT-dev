@@ -49,13 +49,9 @@ bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &na
     rval = def;
     return false;
   }
-  
-  // Fetch expression as a string 
-  std::string expr;
-  options->get(name, expr, "0");
 
-  // Parse, and evaluate with x,y,z,t = 0
-  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
+  auto expr = (*options)[name].withDefault(std::string{"0"});
+  auto gen = FieldFactory::get()->parse(expr, options);
   rval = gen->generate(0.0, 0.0, 0.0, 0.0);
 
   return true;
@@ -114,12 +110,8 @@ bool GridFromOptions::get(Mesh *m, std::vector<BoutReal> &var, const std::string
     return false;
   }
 
-  // Fetch expression as a string
-  std::string expr;
-  options->get(name, expr, "0");
-
-  // Parse, and evaluate with x,y,z,t = 0
-  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
+  auto expr = (*options)[name].withDefault(std::string{"0"});
+  auto gen = FieldFactory::get()->parse(expr, options);
 
   var.resize(len);
 
