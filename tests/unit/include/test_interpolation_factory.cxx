@@ -79,8 +79,8 @@ TEST_F(InterpolationFactoryTest, CreateInterpolation) {
       [](Mesh* mesh) -> Interpolation* { return new TestInterpolation(mesh); },
       "test_interpolation");
 
-  Interpolation* interpolation{nullptr};
-  EXPECT_NO_THROW(interpolation = InterpolationFactory::getInstance()->create("test_interpolation"));
+  std::unique_ptr<Interpolation> interpolation{nullptr};
+  EXPECT_NO_THROW(interpolation.reset(InterpolationFactory::getInstance()->create("test_interpolation")));
 
   EXPECT_TRUE(IsFieldEqual(interpolation->interpolate(Field3D{}), -1));
 }
@@ -92,8 +92,8 @@ TEST_F(InterpolationFactoryTest, CreateInterpolationFromOptions) {
 
   Options::root()["interpolation"]["type"] = "test_interpolation";
 
-  Interpolation* interpolation{nullptr};
-  EXPECT_NO_THROW(interpolation = InterpolationFactory::getInstance()->create());
+  std::unique_ptr<Interpolation> interpolation{nullptr};
+  EXPECT_NO_THROW(interpolation.reset(InterpolationFactory::getInstance()->create()));
 
   EXPECT_TRUE(IsFieldEqual(interpolation->interpolate(Field3D{}), -1));
 }

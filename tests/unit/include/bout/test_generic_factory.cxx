@@ -73,25 +73,25 @@ RegisterInFactory<BaseComplicated, DerivedComplicated2>
 
 TEST(GenericFactory, RegisterAndCreate) {
 
-  auto base_ = Factory<Base>::getInstance().create("base");
+  std::unique_ptr<Base> base_{Factory<Base>::getInstance().create("base")};
   EXPECT_EQ(base_->foo(), "Base");
 
-  auto derived1_ = Factory<Base>::getInstance().create("derived1");
+  std::unique_ptr<Base> derived1_{Factory<Base>::getInstance().create("derived1")};
   EXPECT_EQ(derived1_->foo(), "Derived1");
 
-  auto derived2_ = Factory<Base>::getInstance().create("derived2");
+  std::unique_ptr<Base> derived2_{Factory<Base>::getInstance().create("derived2")};
   EXPECT_EQ(derived2_->foo(), "Derived2");
 }
 
 TEST(GenericFactory, ListAvailable) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available{Factory<Base>::getInstance().listAvailable()};
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
 }
 
 TEST(GenericFactory, Remove) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available{Factory<Base>::getInstance().listAvailable()};
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
@@ -118,15 +118,15 @@ TEST(GenericFactory, GetUnknownType) {
 
 TEST(GenericFactory, Complicated) {
 
-  auto base_ =
-      ComplicatedFactory::getInstance().create("basecomplicated", "BaseComplicated");
+  std::unique_ptr<BaseComplicated> base_{
+      ComplicatedFactory::getInstance().create("basecomplicated", "BaseComplicated")};
   EXPECT_EQ(base_->foo(), "BaseComplicated");
 
-  auto derived1_ = ComplicatedFactory::getInstance().create("derivedcomplicated1",
-                                                            "DerivedComplicated1");
+  std::unique_ptr<BaseComplicated> derived1_{ComplicatedFactory::getInstance().create(
+      "derivedcomplicated1", "DerivedComplicated1")};
   EXPECT_EQ(derived1_->foo(), "DerivedComplicated1");
 
-  auto derived2_ = ComplicatedFactory::getInstance().create("derivedcomplicated2",
-                                                            "DerivedComplicated2");
+  std::unique_ptr<BaseComplicated> derived2_{ComplicatedFactory::getInstance().create(
+      "derivedcomplicated2", "DerivedComplicated2")};
   EXPECT_EQ(derived2_->foo(), "DerivedComplicated2");
 }
