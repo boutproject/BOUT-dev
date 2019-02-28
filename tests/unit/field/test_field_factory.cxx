@@ -564,12 +564,14 @@ TEST_F(FieldFactoryTest, ParseSelfReference) {
 
   output.disable();
   output_info.disable();
+  output_error.disable();
 
   auto options = Options{};
   options["a"] = "a";
 
   EXPECT_THROW(factory.parse("a", &options), BoutException);
 
+  output_error.enable();
   output_info.enable();
   output.enable();
 }
