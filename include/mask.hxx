@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
 #include "globals.hxx"
+#include "msg_stack.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds
@@ -64,32 +64,14 @@ public:
     return *this;
   }
 
-  inline bool& operator()(int jx,int jy,int jz) {
-#if CHECK > 2
-    // Perform bounds checking
-    if((jx < 0) || (jx >= nx) ||
-       (jy < 0) || (jy >= ny) ||
-       (jz < 0) || (jz >= nz))
-      throw BoutException("BoutMask: (%d, %d, %d) operator out of bounds (%d, %d, %d)",
-                          jx, jy, jz, nx, ny, nz);
-#endif
+  inline bool& operator()(int jx, int jy, int jz) {
+    TRACE("BoutMask::operator()(%d, %d, %d)", jx, jy, jz);
     return mask(jx, jy, jz);
   }
-  inline const bool& operator()(int jx,int jy,int jz) const {
-#if CHECK > 2
-    // Perform bounds checking
-    if((jx < 0) || (jx >= nx) ||
-       (jy < 0) || (jy >= ny) ||
-       (jz < 0) || (jz >= nz))
-      throw BoutException("BoutMask: (%d, %d, %d) operator out of bounds (%d, %d, %d)",
-                          jx, jy, jz, nx, ny, nz);
-#endif
+  inline const bool& operator()(int jx, int jy, int jz) const {
+    TRACE("BoutMask::operator()(%d, %d, %d)", jx, jy, jz);
     return mask(jx, jy, jz);
   }
-
 };
-
-
-
 
 #endif //__MASK_H__
