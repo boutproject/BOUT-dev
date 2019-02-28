@@ -753,6 +753,7 @@ if __name__ == "__main__":
     parser.add_argument('--test3D', action='store_true', default=False)
     parser.add_argument('--plot', action='store_true', default=False)
     parser.add_argument('--operator', default=None)
+    parser.add_argument('-v', action='store_true', default=False)
     args = parser.parse_args()
     full_test = not args.short
 
@@ -765,7 +766,11 @@ if __name__ == "__main__":
     # re-calculate metric terms
     geometry.metric()
 
-    boutcore.init('-q -q -q -q')
+    if args.v:
+        # verbose output
+        boutcore.init('-v -v')
+    else:
+        boutcore.init('-q -q -q -q')
 
     # create the testing class
     driver = DifopsMMS(metric, full_test, args.test3D, args.plot)
