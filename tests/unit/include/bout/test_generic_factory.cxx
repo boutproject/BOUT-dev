@@ -85,14 +85,14 @@ TEST(GenericFactory, RegisterAndCreate) {
 }
 
 TEST(GenericFactory, ListAvailable) {
-  auto available{Factory<Base>::getInstance().listAvailable()};
+  auto available = Factory<Base>::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
 }
 
 TEST(GenericFactory, Remove) {
-  auto available{Factory<Base>::getInstance().listAvailable()};
+  auto available = Factory<Base>::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
