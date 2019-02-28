@@ -8,9 +8,12 @@ nz = 1
 
 [testmesh:ddx]
 upwind = U2
+flux = U2
 
 [testmesh:ddy]
 upwind = U2
+flux = U2
 
 [testmesh:ddz]
 upwind = U2
+flux = U2

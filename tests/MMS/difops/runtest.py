@@ -24,9 +24,11 @@ class DifopsMMS:
         self.plotError = plotError
         self.meshDict = {}
         self.inputDict = {}
-        self.inputDict2 = {}
         self.dimStaggerDict = {}
         self.dimStaggerExpectThrowDict = {}
+        self.inputDict2 = {}
+        self.dimStaggerDict2 = {}
+        self.dimStaggerExpectThrowDict2 = {}
         self.mxg = 2
         self.myg = 2
 
@@ -180,12 +182,12 @@ class DifopsMMS:
             self.inputDict[keyBase+loc+ftype] = inputField
             return inputField
 
-    def getInput2(self, key, ftype):
+    def getInput2(self, keyBase, loc, ftype):
         try:
-            return self.inputDict2[key+loc+ftype]
+            return self.inputDict2[keyBase+loc+ftype]
         except KeyError:
             inputField = self.makeField(self.testfunc2, keyBase, loc, ftype)
-            self.inputDict2[key+loc+ftype] = inputField
+            self.inputDict2[keyBase+loc+ftype] = inputField
             return inputField
 
     def makeField(self, func, keyBase, loc, ftype):
@@ -234,11 +236,13 @@ class DifopsMMS:
         except KeyError:
             # first make a list of all permutations
             fail_staggers = [(x,y) for x in self.locations for y in self.locations]
+
+            # now remove the ones that should NOT throw
             dimensions_staggers = self.getDimStagger(base_dimensions, stagger_directions)
             for dimensions, stagger in dimensions_staggers:
-                if stagger is not None:
-                    index = fail_staggers.index(stagger)
-                    del fail_staggers[index]
+                index = fail_staggers.index(stagger)
+                del fail_staggers[index]
+
             fail_dimensions_staggers = [('xyz', s) for s in fail_staggers]
             try:
                 self.dimStaggerExpectThrowDict[base_dimensions][stagger_directions] = fail_dimensions_staggers
@@ -399,6 +403,221 @@ class DifopsMMS:
         if self.testThrow:
             for dimensions,stagger in self.getDimStaggerExpectThrow(base_dimensions, stagger_directions):
                 self.results.append(self.expectThrowAtLocation(boutcore_operator, ftype, method, stagger))
+
+    def getDimStagger2(self, base_dimensions, stagger_directions):
+        try:
+            return self.dimStaggerDict2[base_dimensions][stagger_directions]
+        except KeyError:
+            # all derivatives at same inloc/outloc should work
+            dimensions_staggers = [(base_dimensions, ('CENTRE', 'CENTRE', 'CENTRE')),
+                                   (base_dimensions+'x', ('XLOW', 'XLOW', 'XLOW')),
+                                   (base_dimensions+'y', ('YLOW', 'YLOW', 'YLOW')),
+                                   (base_dimensions+'z', ('ZLOW', 'ZLOW', 'ZLOW'))]
+            if 'xx' in stagger_directions:
+                # for xx include all permutations of XLOW and CENTRE
+                dimensions_staggers += [(base_dimensions+'x', ('CENTRE', 'CENTRE', 'XLOW')),
+                                        (base_dimensions+'x', ('CENTRE', 'XLOW', 'CENTRE')),
+                                        (base_dimensions+'x', ('XLOW', 'CENTRE', 'CENTRE')),
+                                        (base_dimensions+'x', ('XLOW', 'XLOW', 'CENTRE')),
+                                        (base_dimensions+'x', ('XLOW', 'CENTRE', 'XLOW')),
+                                        (base_dimensions+'x', ('CENTRE', 'XLOW', 'XLOW'))]
+            elif 'x' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'x', ('CENTRE', 'XLOW', 'XLOW')),
+                                        (base_dimensions+'x', ('XLOW', 'CENTRE', 'CENTRE'))]
+            if 'yy' in stagger_directions:
+                # for yy include all permutations of YLOW and CENTRE
+                dimensions_staggers += [(base_dimensions+'y', ('CENTRE', 'CENTRE', 'YLOW')),
+                                        (base_dimensions+'y', ('CENTRE', 'YLOW', 'CENTRE')),
+                                        (base_dimensions+'y', ('YLOW', 'CENTRE', 'CENTRE')),
+                                        (base_dimensions+'y', ('YLOW', 'YLOW', 'CENTRE')),
+                                        (base_dimensions+'y', ('YLOW', 'CENTRE', 'YLOW')),
+                                        (base_dimensions+'y', ('CENTRE', 'YLOW', 'YLOW'))]
+            elif 'y' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'y', ('CENTRE', 'YLOW', 'YLOW')),
+                                        (base_dimensions+'y', ('YLOW', 'CENTRE', 'CENTRE'))]
+            if 'zz' in stagger_directions:
+                # for zz include all permutations of ZLOW and CENTRE
+                dimensions_staggers += [(base_dimensions+'z', ('CENTRE', 'CENTRE', 'ZLOW')),
+                                        (base_dimensions+'z', ('CENTRE', 'ZLOW', 'CENTRE')),
+                                        (base_dimensions+'z', ('ZLOW', 'CENTRE', 'CENTRE')),
+                                        (base_dimensions+'z', ('ZLOW', 'ZLOW', 'CENTRE')),
+                                        (base_dimensions+'z', ('ZLOW', 'CENTRE', 'ZLOW')),
+                                        (base_dimensions+'z', ('CENTRE', 'ZLOW', 'ZLOW'))]
+            elif 'z' in stagger_directions:
+                dimensions_staggers += [(base_dimensions+'z', ('CENTRE', 'ZLOW', 'ZLOW')),
+                                        (base_dimensions+'z', ('ZLOW', 'CENTRE', 'CENTRE'))]
+            try:
+                self.dimStaggerDict2[base_dimensions][stagger_directions] = dimensions_staggers
+            except KeyError:
+                self.dimStaggerDict2[base_dimensions] = {}
+                self.dimStaggerDict2[base_dimensions][stagger_directions] = dimensions_staggers
+
+            return dimensions_staggers
+
+    def getDimStaggerExpectThrow2(self, base_dimensions, stagger_directions):
+        try:
+            return self.dimStaggerExpectThrowDict2[base_dimensions][stagger_directions]
+        except KeyError:
+            # first make a list of all permutations
+            fail_staggers = [(x,y,z) for x in self.locations for y in self.locations for z in self.locations]
+
+            # now remove the ones that should NOT throw
+            dimensions_staggers = self.getDimStagger2(base_dimensions, stagger_directions)
+            for dimensions, stagger in dimensions_staggers:
+                index = fail_staggers.index(stagger)
+                del fail_staggers[index]
+
+            fail_dimensions_staggers = [('xyz', s) for s in fail_staggers]
+            try:
+                self.dimStaggerExpectThrowDict2[base_dimensions][stagger_directions] = fail_dimensions_staggers
+            except KeyError:
+                self.dimStaggerExpectThrowDict2[base_dimensions] = {}
+                self.dimStaggerExpectThrowDict2[base_dimensions][stagger_directions] = fail_dimensions_staggers
+            return fail_dimensions_staggers
+
+    def testOperatorAtLocation2(self, dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order, method, stagger):
+        error_list = []
+        print('testing',boutcore_operator, ftype, stagger)
+        inloc1 = stagger[0]
+        inloc2 = stagger[1]
+        outloc = stagger[2]
+
+        # stag records if any of the locations is staggered
+        stag = 'CENTRE'
+        if inloc1 != 'CENTRE':
+            stag = inloc1
+        elif inloc2 != 'CENTRE':
+            stag = inloc2
+        elif outloc != 'CENTRE':
+            stag = outloc
+
+        if ftype == '2D':
+            # cannot have z-dependence
+            analytic_input1 = self.analytic_input.replace('z', '0')
+            analytic_input2 = self.analytic_input2.replace('z', '0')
+        else:
+            analytic_input1 = self.analytic_input
+            analytic_input2 = self.analytic_input2
+
+        error_list = []
+        errors = []
+        boutfields = []
+        sympyfields = []
+        for n in self.ngrids:
+            if self.fullTest:
+                print('n =',n)
+            keyBase = self.getKeyBase(n, dimensions, stag)
+            mesh = self.getMesh(keyBase)
+
+            # calculate result of differential operator using BOUT++ implementation
+            bout_input1 = self.getInput(keyBase, inloc1, ftype)
+            bout_input2 = self.getInput2(keyBase, inloc2, ftype)
+            if method is None:
+                bout_result = boutcore_operator(bout_input1, bout_input2, outloc=outloc)
+            else:
+                bout_result = boutcore_operator(bout_input1, bout_input2, outloc=outloc, method=method)
+
+            # calculate result of differential operator symbolically, then convert to boutcore.Field3D/Field2D
+            analytic_func = symbolic_operator(analytic_input1, analytic_input2)
+            if ftype == '2D':
+                analytic_result = boutcore.create2D(exprToStr(analytic_func), mesh, outloc=outloc)
+            elif ftype == '3D':
+                analytic_result = boutcore.create3D(exprToStr(analytic_func), mesh, outloc=outloc)
+            else:
+                raise ValueError('Unexpected ftype argument '+str(ftype))
+
+            # calculate max error
+            error = bout_result - analytic_result # as Field3D/Field2D
+            save_inds = numpy.index_exp[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1]
+            errors.append(error.get()[save_inds])
+            boutfields.append(bout_result.get()[save_inds])
+            sympyfields.append(analytic_result.get()[save_inds])
+            error = error.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1] # numpy array, without guard cells
+            error_list.append(numpy.max(numpy.abs(error))) # max error
+
+        logerrors = numpy.log(error_list[-2]/error_list[-1])
+        logspacing = numpy.log(self.ngrids[-1]/self.ngrids[-2])
+        convergence = logerrors/logspacing
+
+        if self.fullTest or fudged_max_order is None:
+            # full, strict test for convergence order
+            max_order = order+.2
+        else:
+            # allow some tests to expect a higher order of convergence for
+            # quick tests at lower resolution
+            max_order = fudged_max_order
+
+        if order-.1 < convergence < max_order:
+            return 'pass'
+        else:
+            error_string = str(boutcore_operator)+' is not working for {'+inloc1+','+inloc2+'}->'+outloc+' '+str(ftype)+' '+str(method)+'. Expected '+str(order)+', got '+str(convergence)+'.'
+            if self.plotError:
+                print(error_string)
+                from matplotlib import pyplot
+                pyplot.loglog(1./self.ngrids, error_list, label="sim")
+                pyplot.loglog(1./self.ngrids, self.ngrids[-1]**order/self.ngrids**order*error_list[-1], 'k--', label="expected order")
+                pyplot.legend()
+                pyplot.show()
+                from boututils.showdata import showdata
+                plot_error = copy(error)
+                plot_error = numpy.squeeze(plot_error)
+                pb = numpy.squeeze(bout_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
+                ps = numpy.squeeze(analytic_result.get()[mesh.xstart:mesh.xend+1, mesh.ystart:mesh.yend+1])
+                if len(plot_error.shape) == 1:
+                    plot_error = plot_error[numpy.newaxis, :]
+                    pb = pb[numpy.newaxis, :]
+                    ps = ps[numpy.newaxis, :]
+                #showdata(plot_error)
+                showdata([plot_error,pb,ps],titles=['error','bout','sympy'])
+                pyplot.figure()
+                for e,b,s in zip(errors,boutfields,sympyfields):
+                    inds = numpy.index_exp[:,2]
+                    e = e[inds]
+                    b = b[inds]
+                    s = s[inds]
+                    x = numpy.linspace(0.,1.,e.shape[0])
+                    pyplot.subplot(131)
+                    pyplot.semilogy(x,numpy.abs(e), label=x.shape[0])
+                    pyplot.subplot(132)
+                    pyplot.plot(x, b, label=x.shape[0])
+                    pyplot.subplot(133)
+                    pyplot.plot(x, s, label=x.shape[0])
+                pyplot.title(str(boutcore_operator))
+                pyplot.subplot(131)
+                pyplot.title('error')
+                pyplot.legend()
+                pyplot.subplot(132)
+                pyplot.title('bout')
+                pyplot.legend()
+                pyplot.subplot(133)
+                pyplot.title('sympy')
+                pyplot.legend()
+                pyplot.show()
+            return error_string
+
+    def expectThrowAtLocation2(self, boutcore_operator, ftype, method, stagger):
+        inloc1 = stagger[0]
+        inloc2 = stagger[1]
+        outloc = stagger[2]
+
+        print('testing',boutcore_operator, ftype, stagger)
+
+        try:
+            boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc)
+        except RuntimeError:
+            return 'pass'
+        else:
+            return 'Expected '+str(boutcore_operator)+' to throw for {'+inloc1+','+inloc2+'}->'+outloc+' '+' '+str(ftype)+' '+str(method)+' but it did not.'
+
+    def testOperator2(self, stagger_directions, base_dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order=None, method=None):
+        for dimensions,stagger in self.getDimStagger2(base_dimensions, stagger_directions):
+            if (not self.test3D) and 'x' in dimensions and 'y' in dimensions and 'z' in dimensions:
+                continue
+            self.results.append(self.testOperatorAtLocation2(dimensions, boutcore_operator, symbolic_operator, order, ftype, fudged_max_order, method, stagger))
+
+        if self.testThrow:
+            for dimensions,stagger in self.getDimStaggerExpectThrow2(base_dimensions, stagger_directions):
+                self.results.append(self.expectThrowAtLocation2(boutcore_operator, ftype, method, stagger))
 
     def checkResults(self):
         fail = False
@@ -586,6 +805,21 @@ if __name__ == "__main__":
             ( 'D2DXDY_2D', ('y', 'xy', boutcore.D2DXDY, D2DXDY, 2, '2D') ),
             ])
 
+    operator_inputs2 = OrderedDict([
+            ( 'Vpar_Grad_par', ('y', 'y', boutcore.Vpar_Grad_par, Vpar_Grad_par, 2, '3D') ),
+            ( 'Div_par_K_Grad_par', ('yy', 'y', boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 2, '3D') ),
+            ( 'Div_par_flux', ('y', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D') ), # uses first-order upwind method
+            ( 'Div_par_flux_C2', ('', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D', None, 'C2') ), # centred differencing
+            ( 'bracket', ('', 'xz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_ARAKAWA') ),
+            ( 'bracket', ('', 'xyz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_STD') ),
+            ( 'VDDX', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '3D') ),
+            ( 'VDDY', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '3D') ),
+            ( 'VDDZ', ('z', 'z', boutcore.VDDZ, lambda v,f: v*DDZ(f), 2, '3D') ),
+            ( 'FDDX', ('x', 'x', boutcore.FDDX, lambda v,f: DDX(v*f), 2, '3D') ),
+            ( 'FDDY', ('y', 'y', boutcore.FDDY, lambda v,f: DDY(v*f), 2, '3D') ),
+            ( 'FDDZ', ('z', 'z', boutcore.FDDZ, lambda v,f: DDZ(v*f), 2, '3D') ),
+            ])
+
     if args.operator in ['CENTRE', 'XLOW', 'YLOW', 'ZLOW']:
         stag = args.operator
         if stag == 'ZLOW':
@@ -610,12 +844,17 @@ if __name__ == "__main__":
         try:
             driver.testOperator(*operator_inputs[args.operator])
         except KeyError:
-            print('Operator '+parser.operator+' not found. Available operators for this test are:')
-            print(operator_inputs.keys())
-            raise
+            try:
+                driver.testOperator2(*operator_inputs2[args.operator])
+            except KeyError:
+                print('Operator '+parser.operator+' not found. Available operators for this test are:')
+                print(operator_inputs.keys())
+                raise
     else:
         for op_input in operator_inputs.values():
             driver.testOperator(*op_input)
+        for op_input in operator_inputs2.values():
+            driver.testOperator2(*op_input)
 
     if driver.checkResults():
         print('pass')
