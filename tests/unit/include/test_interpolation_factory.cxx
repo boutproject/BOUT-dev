@@ -2,9 +2,9 @@
 
 #include "interpolation.hxx"
 #include "interpolation_factory.hxx"
+#include "options.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
-#include "options.hxx"
 
 #include "test_extras.hxx"
 
@@ -14,18 +14,6 @@ namespace testing {
 bool sentinel_set{false};
 } // namespace testing
 } // namespace bout
-
-class InterpolationFactoryTest : public FakeMeshFixture {
-public:
-  InterpolationFactoryTest() : FakeMeshFixture() {
-    output_info.disable();
-  }
-  ~InterpolationFactoryTest() {
-    output_info.enable();
-    InterpolationFactory::getInstance()->cleanup();
-    bout::testing::sentinel_set = false;
-  }
-};
 
 class TestInterpolation : public Interpolation {
 public:
@@ -60,6 +48,24 @@ public:
   };
 };
 
+class InterpolationFactoryTest : public FakeMeshFixture {
+public:
+  InterpolationFactoryTest() : FakeMeshFixture() {
+    output_info.disable();
+    output_warn.disable();
+  }
+  ~InterpolationFactoryTest() {
+    output_warn.enable();
+    output_info.enable();
+    InterpolationFactory::getInstance()->cleanup();
+    bout::testing::sentinel_set = false;
+  }
+};
+
+auto test_interpolation(Mesh* mesh) -> Interpolation* {
+  return new TestInterpolation(mesh);
+};
+
 TEST_F(InterpolationFactoryTest, GetInstance) {
   EXPECT_NE(InterpolationFactory::getInstance(), nullptr);
 }
@@ -69,26 +75,23 @@ TEST_F(InterpolationFactoryTest, GetDefaultInterpType) {
 }
 
 TEST_F(InterpolationFactoryTest, AddInterpolation) {
-  EXPECT_NO_THROW(InterpolationFactory::getInstance()->add(
-      [](Mesh* mesh) -> Interpolation* { return new TestInterpolation(mesh); },
-      "test_interpolation"));
+  EXPECT_NO_THROW(
+      InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation"));
+}
 }
 
 TEST_F(InterpolationFactoryTest, CreateInterpolation) {
-  InterpolationFactory::getInstance()->add(
-      [](Mesh* mesh) -> Interpolation* { return new TestInterpolation(mesh); },
-      "test_interpolation");
+  InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation");
 
   std::unique_ptr<Interpolation> interpolation{nullptr};
-  EXPECT_NO_THROW(interpolation.reset(InterpolationFactory::getInstance()->create("test_interpolation")));
+  EXPECT_NO_THROW(interpolation.reset(
+      InterpolationFactory::getInstance()->create("test_interpolation")));
 
   EXPECT_TRUE(IsFieldEqual(interpolation->interpolate(Field3D{}), -1));
 }
 
 TEST_F(InterpolationFactoryTest, CreateInterpolationFromOptions) {
-  InterpolationFactory::getInstance()->add(
-      [](Mesh* mesh) -> Interpolation* { return new TestInterpolation(mesh); },
-      "test_interpolation");
+  InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation");
 
   Options::root()["interpolation"]["type"] = "test_interpolation";
 
@@ -103,11 +106,10 @@ TEST_F(InterpolationFactoryTest, CreateUnknownInterpolation) {
 }
 
 TEST_F(InterpolationFactoryTest, Cleanup) {
-  InterpolationFactory::getInstance()->add(
-      [](Mesh* mesh) -> Interpolation* { return new TestInterpolation(mesh); },
-      "to be removed");
+  InterpolationFactory::getInstance()->add(test_interpolation, "to be removed");
 
   InterpolationFactory::getInstance()->cleanup();
 
-  EXPECT_THROW(InterpolationFactory::getInstance()->create("to be removed"), BoutException);
+  EXPECT_THROW(InterpolationFactory::getInstance()->create("to be removed"),
+               BoutException);
 }
