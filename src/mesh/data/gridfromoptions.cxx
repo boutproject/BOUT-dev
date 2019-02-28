@@ -77,10 +77,16 @@ bool GridFromOptions::get(Mesh *m, std::vector<int> &var, const std::string &nam
                           int UNUSED(offset), GridDataSource::Direction UNUSED(dir)) {
   // Integers not expressions yet
 
-  int ival;
-  if(!get(m, ival, name))
+  if (!hasVar(name)) {
+    std::vector<int> def{};
+    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
+                      name.c_str());
+    var = def;
     return false;
+  }
 
+  int ival;
+  get(m, ival, name);
   var.resize(len, ival);
 
   return true;
@@ -90,6 +96,10 @@ bool GridFromOptions::get(Mesh *m, std::vector<BoutReal> &var, const std::string
                           int offset, GridDataSource::Direction dir) {
 
   if(!hasVar(name)) {
+    std::vector<BoutReal> def{};
+    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
+                      name.c_str());
+    var = def;
     return false;
   }
 
