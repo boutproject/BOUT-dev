@@ -305,6 +305,18 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAtanX) {
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateAtanX2) {
+  auto output = this->create("atan(x, 2)");
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::atan2(index.x(), 2.);
+      },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
 TYPED_TEST(FieldFactoryCreationTest, CreateSinhX) {
   auto output = this->create("sinh(x)");
 
@@ -565,6 +577,16 @@ public:
 
   FieldFactory factory;
 };
+
+TEST_F(FieldFactoryTest, RequireMesh) {
+  delete bout::globals::mesh;
+  bout::globals::mesh = nullptr;
+
+  FieldFactory local_factory{nullptr, nullptr};
+
+  EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
+  EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+}
 
 TEST_F(FieldFactoryTest, CleanCache) {
 
