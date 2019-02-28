@@ -78,6 +78,12 @@ TEST_F(InterpolationFactoryTest, AddInterpolation) {
   EXPECT_NO_THROW(
       InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation"));
 }
+
+TEST_F(InterpolationFactoryTest, AddInterpolationTwice) {
+  EXPECT_NO_THROW(
+      InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation"));
+  EXPECT_NO_THROW(
+      InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation"));
 }
 
 TEST_F(InterpolationFactoryTest, CreateInterpolation) {
@@ -99,6 +105,21 @@ TEST_F(InterpolationFactoryTest, CreateInterpolationFromOptions) {
   EXPECT_NO_THROW(interpolation.reset(InterpolationFactory::getInstance()->create()));
 
   EXPECT_TRUE(IsFieldEqual(interpolation->interpolate(Field3D{}), -1));
+}
+
+TEST_F(InterpolationFactoryTest, CreateInterpolationOnMesh) {
+  InterpolationFactory::getInstance()->add(test_interpolation, "test_interpolation");
+
+  Options::root()["interpolation"]["type"] = "test_interpolation";
+
+  FakeMesh localmesh{2, 2, 2};
+  std::unique_ptr<Interpolation> interpolation{nullptr};
+  EXPECT_NO_THROW(
+      interpolation.reset(InterpolationFactory::getInstance()->create(&localmesh)));
+
+  interpolation->calcWeights({}, {});
+
+  EXPECT_TRUE(bout::testing::sentinel_set);
 }
 
 TEST_F(InterpolationFactoryTest, CreateUnknownInterpolation) {
