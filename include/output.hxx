@@ -65,7 +65,7 @@ public:
   Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
+    Output::enable();
   }
 
   /// Specify a log file to open
@@ -73,7 +73,7 @@ public:
       : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
+    Output::enable();
     open("%s",fname);
   }
   ~Output() override {

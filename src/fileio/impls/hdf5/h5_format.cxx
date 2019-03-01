@@ -102,11 +102,11 @@ H5Format::H5Format(const char *name, bool parallel_in) {
   if (H5Eset_auto(H5E_DEFAULT, nullptr, nullptr) < 0)
     throw BoutException("Failed to set error stack to not print errors");
 
-  openr(name);
+  H5Format::openr(name);
 }
 
 H5Format::~H5Format() {
-  close();
+  H5Format::close();
   H5Pclose(dataFile_plist);
 }
 
@@ -154,7 +154,7 @@ bool H5Format::is_valid() {
 void H5Format::close() {
   TRACE("H5Format::close");
   
-  if (is_valid()) {
+  if (H5Format::is_valid()) {
     H5Fclose(dataFile);
     dataFile = -1;
   }
