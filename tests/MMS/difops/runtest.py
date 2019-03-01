@@ -388,7 +388,10 @@ class DifopsMMS:
         print('testing',boutcore_operator, ftype, stagger)
 
         try:
-            boutcore_operator(self.getInput('expectThrow', inloc, ftype), outloc=outloc)
+            if method is None:
+                boutcore_operator(self.getInput('expectThrow', inloc, ftype), outloc=outloc)
+            else:
+                boutcore_operator(self.getInput('expectThrow', inloc, ftype), outloc=outloc, method=method)
         except RuntimeError:
             return 'pass'
         else:
@@ -603,7 +606,10 @@ class DifopsMMS:
         print('testing',boutcore_operator, ftype, stagger)
 
         try:
-            boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc)
+            if method is None:
+                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc)
+            else:
+                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc, method=method)
         except RuntimeError:
             return 'pass'
         else:
