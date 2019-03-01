@@ -781,7 +781,10 @@ if __name__ == "__main__":
     # create the testing class
     driver = DifopsMMS(metric, full_test, args.test3D, args.plot)
 
-    # store the inputs in a dict so we can look them up or iterate through them
+    # Store the inputs in a dict so we can look them up or iterate through them.
+    # Note: Several operators on Field2D give exactly zero, so they have no
+    # discretization error and we cannot test them with MMS. They are therefore
+    # excluded from this script.
     operator_inputs = OrderedDict([
             ( 'Grad_par', ('y', 'y', boutcore.Grad_par, Grad_par, 2, '3D') ),
             ( 'Div_par', ('y', 'y', boutcore.Div_par, Div_par, 2, '3D', 3.6) ),
@@ -821,8 +824,8 @@ if __name__ == "__main__":
             ( 'Div_par_K_Grad_par', ('yy', 'y', boutcore.Div_par_K_Grad_par, Div_par_K_Grad_par, 2, '3D') ),
             ( 'Div_par_flux', ('y', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D') ), # uses first-order upwind method
             ( 'Div_par_flux_C2', ('', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D', None, 'C2') ), # centred differencing
-            ( 'bracket', ('', 'xz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_ARAKAWA') ),
-            ( 'bracket_STD', ('', 'xyz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_STD') ),
+            ( 'bracket', ('', 'xz', boutcore.bracket, lambda f,g: bracket(f, g, include_yderivs=False), 2, '3D', None, 'BRACKET_ARAKAWA') ),
+            ( 'bracket_STD', ('', 'xyz', boutcore.bracket, bracket, 2, '3D', 2.7, 'BRACKET_STD') ),
             ( 'VDDX', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '3D') ),
             ( 'VDDY', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '3D') ),
             ( 'VDDZ', ('z', 'z', boutcore.VDDZ, lambda v,f: v*DDZ(f), 2, '3D') ),
@@ -830,8 +833,7 @@ if __name__ == "__main__":
             ( 'FDDY', ('y', 'y', boutcore.FDDY, lambda v,f: DDY(v*f), 2, '3D') ),
             ( 'FDDZ', ('z', 'z', boutcore.FDDZ, lambda v,f: DDZ(v*f), 2, '3D') ),
             ( 'Vpar_Grad_par_2D', ('y', 'y', boutcore.Vpar_Grad_par, Vpar_Grad_par, 2, '2D') ),
-            ( 'bracket_2D', ('', 'xz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_ARAKAWA') ),
-            ( 'bracket_2D_STD', ('', 'xyz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_STD') ),
+            ( 'bracket_STD_2D', ('', 'xyz', boutcore.bracket, bracket, 2, '2D', 2.8, 'BRACKET_STD') ),
             ( 'VDDX_2D', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '2D') ),
             ( 'VDDY_2D', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '2D') ),
             ( 'FDDX_2D', ('x', 'x', boutcore.FDDX, lambda v,f: DDX(v*f), 2, '2D') ),
