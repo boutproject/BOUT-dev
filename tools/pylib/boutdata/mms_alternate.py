@@ -99,18 +99,22 @@ def D2DYDZ(f):
 
 # Operators
 
-def bracket(f, g):
+def bracket(f, g, include_yderivs=True):
     """
     Calculates [f,g] symbolically
     """
 
-    dfdx = DDX(f)
-    dfdz = DDZ(f)
+    if include_yderivs:
+        return b0xGrad_dot_Grad(f, g)/metric.B
+    else:
+        # neglect y-derivatives, like BRACKET_ARAKAWA implementation in BOUT++
+        dfdx = DDX(f)
+        dfdz = DDZ(f)
 
-    dgdx = DDX(g)
-    dgdz = DDZ(g)
+        dgdx = DDX(g)
+        dgdz = DDZ(g)
 
-    return dfdz * dgdx - dfdx * dgdz
+        return dfdz * dgdx - dfdx * dgdz
 
 def b0xGrad_dot_Grad(phi, A):
     """
