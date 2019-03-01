@@ -829,6 +829,13 @@ if __name__ == "__main__":
             ( 'FDDX', ('x', 'x', boutcore.FDDX, lambda v,f: DDX(v*f), 2, '3D') ),
             ( 'FDDY', ('y', 'y', boutcore.FDDY, lambda v,f: DDY(v*f), 2, '3D') ),
             ( 'FDDZ', ('z', 'z', boutcore.FDDZ, lambda v,f: DDZ(v*f), 2, '3D') ),
+            ( 'Vpar_Grad_par_2D', ('y', 'y', boutcore.Vpar_Grad_par, Vpar_Grad_par, 2, '2D') ),
+            ( 'bracket_2D', ('', 'xz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_ARAKAWA') ),
+            ( 'bracket_2D', ('', 'xyz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_STD') ),
+            ( 'VDDX_2D', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '2D') ),
+            ( 'VDDY_2D', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '2D') ),
+            ( 'FDDX_2D', ('x', 'x', boutcore.FDDX, lambda v,f: DDX(v*f), 2, '2D') ),
+            ( 'FDDY_2D', ('y', 'y', boutcore.FDDY, lambda v,f: DDY(v*f), 2, '2D') ),
             ])
 
     if args.operator in ['CENTRE', 'XLOW', 'YLOW', 'ZLOW']:
