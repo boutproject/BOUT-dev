@@ -17,5 +17,7 @@ GTEST_API_ int main(int argc, char** argv) {
   // Clean up the array store, so valgrind doesn't report false
   // positives
   Array<double>::cleanup();
+  Array<int>::cleanup();
+  Array<bool>::cleanup();
   return result;
 }

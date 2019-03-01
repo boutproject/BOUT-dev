@@ -119,7 +119,7 @@ class FieldFunction : public FieldGenerator {
 public:
   FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  double generate(double x, double y, double z, double t) override {
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
     return func(t, x, y, z);
   }
 
@@ -132,8 +132,9 @@ private:
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) override {
+  FieldNull() = default;
+  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
+                    BoutReal UNUSED(t)) override {
     return 0.0;
   }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
@@ -141,14 +142,9 @@ public:
   }
   /// Singeton
   static FieldGeneratorPtr get() {
-    static FieldGeneratorPtr instance = nullptr;
-
-    if (!instance)
-      instance = std::make_shared<FieldNull>();
+    static FieldGeneratorPtr instance = std::make_shared<FieldNull>();
     return instance;
   }
-
-private:
 };
 
 #endif // __FIELD_FACTORY_H__
