@@ -48,9 +48,7 @@ bool GridFromOptions::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& na
     return false;
   }
 
-  auto expr = (*options)[name].withDefault(std::string{"0"});
-  auto gen = FieldFactory::get()->parse(expr, options);
-  rval = gen->generate(0.0, 0.0, 0.0, 0.0);
+  rval = (*options)[name].withDefault(0.0);
 
   return true;
 }
