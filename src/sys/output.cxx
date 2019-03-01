@@ -41,7 +41,7 @@ void Output::disable() {
 
 int Output::open(const char *fname, ...) {
 
-  if (fname == (const char *)nullptr) {
+  if (fname == nullptr) {
     return 1;
   }
 

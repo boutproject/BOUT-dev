@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.1],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.2],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -355,6 +355,10 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 
   AS_IF([test $works = yes], [
     AC_CHECK_HEADERS([execinfo.h dlfcn.h], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works = yes], [
+    AC_SEARCH_LIBS([dladdr], [dl], [works=yes], [works=no; break])
   ])
 
   AS_IF([test $works = yes], [
