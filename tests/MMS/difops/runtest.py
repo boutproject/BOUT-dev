@@ -822,7 +822,7 @@ if __name__ == "__main__":
             ( 'Div_par_flux', ('y', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D') ), # uses first-order upwind method
             ( 'Div_par_flux_C2', ('', 'y', boutcore.Div_par_flux, lambda v,f: Div_par(v*f), 2, '3D', None, 'C2') ), # centred differencing
             ( 'bracket', ('', 'xz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_ARAKAWA') ),
-            ( 'bracket', ('', 'xyz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_STD') ),
+            ( 'bracket_STD', ('', 'xyz', boutcore.bracket, bracket, 2, '3D', None, 'BRACKET_STD') ),
             ( 'VDDX', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '3D') ),
             ( 'VDDY', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '3D') ),
             ( 'VDDZ', ('z', 'z', boutcore.VDDZ, lambda v,f: v*DDZ(f), 2, '3D') ),
@@ -831,7 +831,7 @@ if __name__ == "__main__":
             ( 'FDDZ', ('z', 'z', boutcore.FDDZ, lambda v,f: DDZ(v*f), 2, '3D') ),
             ( 'Vpar_Grad_par_2D', ('y', 'y', boutcore.Vpar_Grad_par, Vpar_Grad_par, 2, '2D') ),
             ( 'bracket_2D', ('', 'xz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_ARAKAWA') ),
-            ( 'bracket_2D', ('', 'xyz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_STD') ),
+            ( 'bracket_2D_STD', ('', 'xyz', boutcore.bracket, bracket, 2, '2D', None, 'BRACKET_STD') ),
             ( 'VDDX_2D', ('x', 'x', boutcore.VDDX, lambda v,f: v*DDX(f), 2, '2D') ),
             ( 'VDDY_2D', ('y', 'y', boutcore.VDDY, lambda v,f: v*DDY(f), 2, '2D') ),
             ( 'FDDX_2D', ('x', 'x', boutcore.FDDX, lambda v,f: DDX(v*f), 2, '2D') ),
