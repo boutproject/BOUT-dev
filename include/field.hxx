@@ -30,6 +30,7 @@ class Field;
 #define __FIELD_H__
 
 #include <cstdio>
+#include <memory>
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
@@ -122,7 +123,7 @@ class Field {
 
 protected:
   Mesh* fieldmesh{nullptr};
-  mutable Coordinates* fieldCoordinates{nullptr};
+  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
 };
 
 /// Unary + operator. This doesn't do anything

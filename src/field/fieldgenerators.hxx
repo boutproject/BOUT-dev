@@ -74,8 +74,10 @@ class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument
 public:
   FieldGenOneArg(FieldGeneratorPtr g) : gen(g) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
-    if(args.size() != 1) {
-      throw ParseException("Incorrect number of arguments to function. Expecting 1, got %d", args.size());
+    if (args.size() != 1) {
+      throw ParseException(
+          "Incorrect number of arguments to function. Expecting 1, got %lu",
+          static_cast<unsigned long>(args.size()));
     }
     return std::make_shared<FieldGenOneArg<Op>>(args.front());
   }
@@ -99,7 +101,8 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 2) {
       throw ParseException(
-          "Incorrect number of arguments to function. Expecting 2, got %d", args.size());
+          "Incorrect number of arguments to function. Expecting 2, got %lu",
+          static_cast<unsigned long>(args.size()));
     }
     return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back());
   }
@@ -125,8 +128,8 @@ public:
       return std::make_shared<FieldATan>(args.front(), args.back());
     }
     throw ParseException(
-        "Incorrect number of arguments to atan function. Expecting 1 or 2, got %d",
-        args.size());
+        "Incorrect number of arguments to atan function. Expecting 1 or 2, got %lu",
+        static_cast<unsigned long>(args.size()));
   }
   BoutReal generate(double x, double y, double z, double t) override {
     if (B == nullptr)
