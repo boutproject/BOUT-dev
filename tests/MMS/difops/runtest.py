@@ -607,9 +607,9 @@ class DifopsMMS:
 
         try:
             if method is None:
-                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc)
+                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput2('expectThrow', inloc2, ftype), outloc=outloc)
             else:
-                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput('expectThrow', inloc2, ftype), outloc=outloc, method=method)
+                boutcore_operator(self.getInput('expectThrow', inloc1, ftype), self.getInput2('expectThrow', inloc2, ftype), outloc=outloc, method=method)
         except RuntimeError:
             return 'pass'
         else:
