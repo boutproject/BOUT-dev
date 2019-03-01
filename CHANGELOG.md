@@ -6,6 +6,10 @@
 
 **Merged pull requests:**
 
+- Fix some clang-tidy warnings [\#1612](https://github.com/boutproject/BOUT-dev/pull/1612) ([ZedThree](https://github.com/ZedThree))
+- Check if we need to link against libdl for dladdr [\#1611](https://github.com/boutproject/BOUT-dev/pull/1611) ([ZedThree](https://github.com/ZedThree))
+- Fix unclean exit [\#1610](https://github.com/boutproject/BOUT-dev/pull/1610) ([dschwoerer](https://github.com/dschwoerer))
+- Fix a couple of small(ish) bugs in FV::Div\_par\_K\_Grad\_par [\#1609](https://github.com/boutproject/BOUT-dev/pull/1609) ([bendudson](https://github.com/bendudson))
 - Fix FV::Div\_a\_Laplace\_perp and FV::Div\_par\_K\_Grad\_par [\#1606](https://github.com/boutproject/BOUT-dev/pull/1606) ([bendudson](https://github.com/bendudson))
 - Bugfix laplacexz [\#1605](https://github.com/boutproject/BOUT-dev/pull/1605) ([bendudson](https://github.com/bendudson))
 - Initialise some mesh variables to sensible defaults [\#1604](https://github.com/boutproject/BOUT-dev/pull/1604) ([ZedThree](https://github.com/ZedThree))
@@ -18,7 +22,7 @@
 - More printf [\#1581](https://github.com/boutproject/BOUT-dev/pull/1581) ([dschwoerer](https://github.com/dschwoerer))
 - Provide argument for printf [\#1580](https://github.com/boutproject/BOUT-dev/pull/1580) ([dschwoerer](https://github.com/dschwoerer))
 - Ensure Coordinates is a complete type when trying to swap [\#1574](https://github.com/boutproject/BOUT-dev/pull/1574) ([ZedThree](https://github.com/ZedThree))
-- Compile with BOUT\_FLAGS [\#1573](https://github.com/boutproject/BOUT-dev/pull/1573) ([dschwoerer](https://github.com/dschwoerer))
+- Compile with BOUT_FLAGS [\#1573](https://github.com/boutproject/BOUT-dev/pull/1573) ([dschwoerer](https://github.com/dschwoerer))
 - Swap coordinates when adding - to master [\#1549](https://github.com/boutproject/BOUT-dev/pull/1549) ([johnomotani](https://github.com/johnomotani))
 
 ## [v4.2.1](https://github.com/boutproject/BOUT-dev/tree/v4.2.1) (2019-01-23)
