@@ -862,13 +862,12 @@ if __name__ == "__main__":
         try:
             driver.testOperator(*operator_inputs[args.operator])
         except KeyError:
-            pass
-        try:
-            driver.testOperator2(*operator_inputs2[args.operator])
-        except KeyError:
-            print('Operator '+args.operator+' not found. Available operators for this test are:')
-            print(operator_inputs.keys())
-            raise
+            try:
+                driver.testOperator2(*operator_inputs2[args.operator])
+            except KeyError:
+                print('Operator '+args.operator+' not found. Available operators for this test are:')
+                print(operator_inputs.keys())
+                raise
     else:
         for op_input in operator_inputs.values():
             driver.testOperator(*op_input)
