@@ -69,7 +69,7 @@ class DifopsMMS:
                 self.testThrow = False
             else:
                 # add small mesh and inputs to test for expected exceptions
-                self.meshDict['expectThrow'] = self.makeMesh(64, 64, 3)
+                self.meshDict['expectThrow'] = self.makeMesh(2, 12, 3)
                 for location in self.locations:
                     for ftype in self.ftypes:
                         self.inputDict['expectThrow'+location+ftype] = self.makeField(self.testfunc, 'expectThrow', location, ftype)
