@@ -1,14 +1,8 @@
-
-#include <bout/griddata.hxx>
-
-#include <field_factory.hxx>
-
 #include <bout/constants.hxx>
-
+#include <bout/griddata.hxx>
 #include <boutexception.hxx>
-
+#include <field_factory.hxx>
 #include <output.hxx>
-
 #include <unused.hxx>
 
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
