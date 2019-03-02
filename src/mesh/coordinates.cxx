@@ -66,18 +66,16 @@ Coordinates::Coordinates(Mesh *mesh)
 
   if (mesh->get(dz, "dz")) {
     // Couldn't read dz from input
-    int zperiod;
     BoutReal ZMIN, ZMAX;
     Options *options = Options::getRoot();
     if (options->isSet("zperiod")) {
+      int zperiod;
       OPTION(options, zperiod, 1);
       ZMIN = 0.0;
       ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
     } else {
       OPTION(options, ZMIN, 0.0);
       OPTION(options, ZMAX, 1.0);
-
-      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
     }
 
     dz = (ZMAX - ZMIN) * TWOPI / nz;
@@ -187,6 +185,9 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -299,6 +300,9 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   if (mesh->IncIntShear) {
     IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 

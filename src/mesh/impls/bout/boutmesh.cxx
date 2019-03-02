@@ -117,7 +117,7 @@ int BoutMesh::load() {
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
+                          "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
                         MZ);
     }
   } else {

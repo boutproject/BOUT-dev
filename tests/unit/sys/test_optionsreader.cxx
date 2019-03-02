@@ -259,7 +259,7 @@ bool_key = false
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  reader.read(options, filename);
+  reader.read(options, "%s", filename);
 
   ASSERT_TRUE(options->isSet("flag"));
 
@@ -302,7 +302,7 @@ TEST_F(OptionsReaderTest, ReadBadFile) {
   char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
@@ -318,7 +318,7 @@ int_key = 34
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
 };
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
@@ -334,7 +334,7 @@ int_key = 34
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
 };
 
 TEST_F(OptionsReaderTest, WriteFile) {
@@ -349,7 +349,7 @@ TEST_F(OptionsReaderTest, WriteFile) {
   Options *subsection2 = section1->getSection("subsection2");
   subsection2->set("string_key", "BOUT++", "test");
 
-  reader.write(options, filename);
+  reader.write(options, "%s", filename);
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -377,7 +377,7 @@ TEST_F(OptionsReaderTest, WriteBadFile) {
   Options *section1 = options->getSection("section1");
   section1->set("int_key", 17, "test");
 
-  EXPECT_THROW(reader.write(options, filename.c_str()), BoutException);
+  EXPECT_THROW(reader.write(options, "%s", filename.c_str()), BoutException);
 
   std::remove(filename.c_str());
 }
@@ -395,7 +395,7 @@ value =
   Options opt;
   OptionsReader reader;
 
-  reader.read(&opt, filename);
+  reader.read(&opt, "%s", filename);
 
   std::string val = opt["value"];
   EXPECT_TRUE(val.empty());
