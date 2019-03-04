@@ -683,7 +683,7 @@ const Field2D Coordinates::Grad_par(const Field2D &var, MAYBE_UNUSED(CELL_LOC ou
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var) / (J * Bxy);
 }
 
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
@@ -691,7 +691,7 @@ const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return ::DDY(var, outloc, method) / sqrt(g_22);
+  return ::DDY(var, outloc, method) / (J * Bxy);
 }
 
 /////////////////////////////////////////////////////////
@@ -702,13 +702,13 @@ const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f,
                                          MAYBE_UNUSED(CELL_LOC outloc),
                                          const std::string &UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
-  return VDDY(v, f) / sqrt(g_22);
+  return VDDY(v, f) / (J*Bxy);
 }
 
 const Field3D Coordinates::Vpar_Grad_par(const Field3D &v, const Field3D &f, CELL_LOC outloc,
                                          const std::string &method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return VDDY(v, f, outloc, method) / sqrt(g_22);
+  return VDDY(v, f, outloc, method) / (J * Bxy);
 }
 
 /////////////////////////////////////////////////////////
@@ -763,7 +763,7 @@ const Field2D Coordinates::Grad2_par2(const Field2D &f, CELL_LOC outloc, const s
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  Field2D sg = sqrt(g_22);
+  Field2D sg = J * Bxy;
   Field2D result = DDY(1. / sg, outloc, method) * DDY(f, outloc, method) / sg + D2DY2(f, outloc, method) / g_22;
 
   return result;
@@ -779,7 +779,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const s
   Field2D sg(localmesh);
   Field3D result(localmesh), r2(localmesh);
 
-  sg = sqrt(g_22);
+  sg = J * Bxy;
   sg = DDY(1. / sg, outloc, method) / sg;
 
 
