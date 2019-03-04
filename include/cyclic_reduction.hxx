@@ -56,14 +56,9 @@
 
 template <class T> class CyclicReduce {
 public:
-  CyclicReduce() {
-    nprocs = 0;
-    myproc = -1;
-    N = 0;
-    Nsys = 0;
-  }
+  CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0), periodic(false) {
+  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0) {
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
   }
@@ -438,15 +433,15 @@ public:
   }
 
 private:
-  MPI_Comm comm;      ///< Communicator
-  int nprocs, myproc; ///< Number of processors and ID of my processor
+  MPI_Comm comm;             ///< Communicator
+  int nprocs{0}, myproc{-1}; ///< Number of processors and ID of my processor
 
-  int N;    ///< Total size of the problem
-  int Nsys; ///< Number of independent systems to solve
-  int myns; ///< Number of systems for interface solve on this processor
-  int sys0; ///< Starting system index for interface solve
+  int N{0};    ///< Total size of the problem
+  int Nsys{0}; ///< Number of independent systems to solve
+  int myns;    ///< Number of systems for interface solve on this processor
+  int sys0;    ///< Starting system index for interface solve
 
-  bool periodic; ///< Is the domain periodic?
+  bool periodic{false}; ///< Is the domain periodic?
 
   Matrix<T> coefs; ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
   Matrix<T> myif;  ///< Interface equations for this processor
