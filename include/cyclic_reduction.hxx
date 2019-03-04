@@ -86,7 +86,7 @@ public:
   /// By default not periodic
   void setPeriodic(bool p = true) { periodic = p; }
 
-  void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
+  void setCoefs(const Array<T> &a, const Array<T> &b, const Array<T> &c) {
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
     ASSERT2(a.size() == N);
@@ -95,7 +95,6 @@ public:
     Matrix<T> bMatrix(1, N);
     Matrix<T> cMatrix(1, N);
 
-    // Copy data into matrices
     BOUT_OMP(parallel for)    
     for (int i = 0; i < N; ++i) {
       aMatrix(0, i) = a[i];
@@ -104,8 +103,6 @@ public:
     }
 
     setCoefs(aMatrix, bMatrix, cMatrix);
-    // Don't copy ?Matrix back into ? as setCoefs
-    // doesn't modify these. Could copy out if we really wanted.
   }
 
   /// Set the entries in the matrix to be inverted
@@ -114,7 +111,7 @@ public:
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
-  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+  void setCoefs(const Matrix<T>& a, const Matrix<T>& b, const Matrix<T>& c) {
     TRACE("CyclicReduce::setCoefs");
 
     int nsys = std::get<0>(a.shape());
@@ -124,20 +121,21 @@ public:
 
     // Fill coefficient array
     BOUT_OMP(parallel for)
-    for (int j = 0; j < Nsys; j++)
+    for (int j = 0; j < Nsys; j++) {
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i) = a(j, i);
         coefs(j, 4 * i + 1) = b(j, i);
         coefs(j, 4 * i + 2) = c(j, i);
         // 4*i + 3 will contain RHS
       }
+    }
   }
 
   /// Solve a set of tridiagonal systems
   ///
   /// @param[in] rhs Array storing Values of the rhs for a single system
   /// @param[out] x  Array storing the result for a single system
-  void solve(Array<T> &rhs, Array<T> &x) {
+  void solve(const Array<T> &rhs, Array<T> &x) {
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
@@ -164,7 +162,7 @@ public:
   ///
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
-  void solve(Matrix<T> &rhs, Matrix<T> &x) {
+  void solve(const Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
     ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
@@ -179,11 +177,12 @@ public:
 
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < Nsys; j++)
+    BOUT_OMP(parallel for)
+    for (int j = 0; j < Nsys; j++) {
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i + 3) = rhs(j, i);
       }
+    }
 
     ///////////////////////////////////////
     // Reduce local part of the matrix to interface equations
@@ -591,8 +590,8 @@ private:
 
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn,
-                  Matrix<T> &xa) {
+  void back_solve(int ns, int nloc, const Matrix<T>& co, const Array<T>& x1,
+                  const Array<T>& xn, Matrix<T>& xa) {
 
     xa.ensureUnique(); // Going to be modified, so call this outside parallel region
     
