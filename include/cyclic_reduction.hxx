@@ -146,27 +146,22 @@ public:
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
-    int nrhs = rhs.size();
     Matrix<T> rhsMatrix(1, N);
     Matrix<T> xMatrix(1, N);
 
     // Copy input data into matrix
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        rhsMatrix(j, i) = rhs[j][i];
-      }
+    BOUT_OMP(parallel for)
+    for (int i = 0; i < N; ++i) {
+      rhsMatrix(0, i) = rhs[i];
     }
 
     // Solve
     solve(rhsMatrix, xMatrix);
 
     // Copy result back into argument
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        x[j][i] = xMatrix(j, i);
-      }
+    BOUT_OMP(parallel for)
+    for (int i = 0; i < N; ++i) {
+      x[i] = xMatrix(0, i);
     }
   };
 
