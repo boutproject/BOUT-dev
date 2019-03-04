@@ -157,7 +157,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     interp->calcWeights(xt_prime, zt_prime);
   }
   
-  int ncz = mesh.LocalNz;
+  int ncz = map_mesh.LocalNz;
   BoutReal t_x, t_z;
 
   Coordinates &coord = *(map_mesh.getCoordinates());
