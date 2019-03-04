@@ -85,7 +85,7 @@ public:
     myproc = myp;
   }
 
-  ~CyclicReduce() { N = Nsys = 0; }
+  ~CyclicReduce() = default;
 
   /// Specify that the tridiagonal system is periodic
   /// By default not periodic
