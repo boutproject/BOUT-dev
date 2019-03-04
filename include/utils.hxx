@@ -135,11 +135,9 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2); };
 
-  bool empty(){
-    return n1*n2 == 0;
-  }
+  bool empty() const { return n1 * n2 == 0; }
 
   /*!
    * Ensures that this Matrix does not share data with another
@@ -207,13 +205,13 @@ public:
   const T* begin() const { return std::begin(data);};
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
-  
-  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
-  
-  bool empty(){
-    return n1*n2*n3 == 0;
-  }
-  
+
+  std::tuple<size_type, size_type, size_type> shape() const {
+    return std::make_tuple(n1, n2, n3);
+  };
+
+  bool empty() const { return n1 * n2 * n3 == 0; }
+
   /*!
    * Ensures that this Tensor does not share data with another
    * This should be called before performing any write operations
