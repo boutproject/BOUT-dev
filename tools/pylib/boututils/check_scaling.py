@@ -36,7 +36,7 @@ def check_order(actual_order, expected_order, tolerance=2.e-1):
     expected_order within a given tolerance
 
     """
-    return isclose(actual_order, expected_order, rtol=tolerance)
+    return isclose(actual_order, expected_order, atol=tolerance, rtol=0)
 
 
 def error_rate_table(errors, grid_sizes, label):
