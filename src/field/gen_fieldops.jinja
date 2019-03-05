@@ -4,11 +4,7 @@
     ASSERT1(fieldsCompatible(lhs, rhs));
   {% endif %}
 
-  {% if lhs.field_type == out.field_type %}
-    {{out.field_type}} {{out.name}}{emptyFrom(lhs)};
-  {% else %}
-    {{out.field_type}} {{out.name}}{emptyFrom(rhs)};
-  {% endif %}
+  {{out.field_type}} {{out.name}}{emptyFrom({{lhs.name if lhs.field_type == out.field_type else rhs.name}})};
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
