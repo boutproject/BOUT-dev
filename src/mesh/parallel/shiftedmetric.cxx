@@ -143,13 +143,10 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION regio
     // f is already in field-aligned coordinates
     return f;
   default:
-#if CHECK > 0
     throw BoutException("Unrecognized y-direction type for Field3D passed to "
                         "ShiftedMetric::toFieldAligned");
-#else
     // This should never happen, but use 'return f' to avoid compiler warnings
     return f;
-#endif
   }
 }
 
@@ -165,13 +162,10 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION reg
     // f is already in orthogonal coordinates
     return f;
   default:
-#if CHECK > 0
     throw BoutException("Unrecognized y-direction type for Field3D passed to "
                         "ShiftedMetric::toFieldAligned");
-#else
     // This should never happen, but use 'return f' to avoid compiler warnings
     return f;
-#endif
   }
 }
 
