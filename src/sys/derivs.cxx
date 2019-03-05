@@ -401,20 +401,24 @@ const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const st
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDZ(const Field2D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  // Should we take location from v or f?
-  auto tmp = Field2D(0., v.getMesh());
-  tmp.setLocation(v.getLocation());
+  auto tmp = Field2D(0., f.getMesh());
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  tmp.setLocation(outloc);
   return tmp;
 }
 
 // Note that this is zero because no compression is included
-const Field2D VDDZ(const Field3D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  // Should we take location from v or f?
-  auto tmp = Field2D(0., v.getMesh());
-  tmp.setLocation(v.getLocation());
+  auto tmp = Field2D(0., f.getMesh());
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  tmp.setLocation(outloc);
   return tmp;
 }
 
@@ -451,11 +455,13 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const st
 
 /////////////////////////////////////////////////////////////////////////
 
-const Field2D FDDZ(const Field2D &v, const Field2D &UNUSED(f), CELL_LOC UNUSED(outloc),
+const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
                    const std::string &UNUSED(method), REGION UNUSED(region)) {
-  // Should we take location from v or f?
-  auto tmp = Field2D(0., v.getMesh());
-  tmp.setLocation(v.getLocation());
+  auto tmp = Field2D(0., f.getMesh());
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  tmp.setLocation(outloc);
   return tmp;
 }
 

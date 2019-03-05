@@ -117,7 +117,7 @@ int BoutMesh::load() {
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
+                          "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
                         MZ);
     }
   } else {
@@ -849,20 +849,8 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Initialize Coordinates at all locations, temporary fix for bug causing
-  // BOUT++ to hang
-  getCoordinates(CELL_CENTRE);
-  if (StaggerGrids) {
-    if (xstart >= 2) {
-      getCoordinates(CELL_XLOW);
-    }
-    if (ystart >= 2) {
-      getCoordinates(CELL_YLOW);
-    }
-    if (LocalNz > 3) {
-      getCoordinates(CELL_ZLOW);
-    }
-  }
+  // Initialize default coordinates
+  getCoordinates();
 
   output_info.write(_("\tdone\n"));
 

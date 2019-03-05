@@ -147,6 +147,8 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+
+    setCoordinates(nullptr);
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -225,10 +227,10 @@ public:
   void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
   std::vector<BoundaryRegion *> getBoundaries() { return boundaries; }
   std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
-  BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
-  BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
+  BoutReal GlobalX(int jx) const { return jx; }
+  BoutReal GlobalY(int jy) const { return jy; }
+  BoutReal GlobalX(BoutReal jx) const { return jx; }
+  BoutReal GlobalY(BoutReal jy) const { return jy; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
 
@@ -241,7 +243,8 @@ private:
 };
 
 /// Test fixture to make sure the global mesh is our fake
-/// one. Multiple tests have exactly the same fixture, so use a type
+/// one. Also initialize the global mesh_staggered for use in tests with
+/// staggering. Multiple tests have exactly the same fixture, so use a type
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
@@ -257,16 +260,34 @@ public:
     output_info.disable();
     bout::globals::mesh->createDefaultRegions();
     output_info.enable();
+
+    // Delete any existing mesh_staggered
+    if (mesh_staggered != nullptr) {
+      delete mesh_staggered;
+      mesh_staggered = nullptr;
+    }
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
+    output_info.disable();
+    mesh_staggered->createDefaultRegions();
+    output_info.enable();
   }
 
-  ~FakeMeshFixture() {
+  virtual ~FakeMeshFixture() {
     delete bout::globals::mesh;
     bout::globals::mesh = nullptr;
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
   static constexpr int nx = 3;
   static constexpr int ny = 5;
   static constexpr int nz = 7;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 #endif //  TEST_EXTRAS_H__

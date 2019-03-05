@@ -15,9 +15,6 @@ public:
   FFTTest()
       : size(GetParam()), nmodes((size / 2) + 1), real_signal(size), fft_signal(nmodes) {
 
-    // Make sure fft functions are quiet by setting fft_measure to false
-    bout::fft::fft_init(false);
-
     // Make grid indices from [0, size - 1]
     Array<BoutReal> indices{size};
     std::iota(indices.begin(), indices.end(), 0.0);

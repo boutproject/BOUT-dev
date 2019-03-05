@@ -120,46 +120,41 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   xt_prime_corner.allocate();
   zt_prime_corner.allocate();
 
-  for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
-    for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
-      for (int z = 0; z < map_mesh.LocalNz - 1; z++) {
-        // Point interpolated from (x+1/2, z+1/2)
+  BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
+    // Point interpolated from (x+1/2, z+1/2)
 
-        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
-            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
-          // Hit a boundary
-          corner_boundary_mask(x, y, z) = true;
+    // Cache the offsets
+    auto i_xplus = i.xp();
+    auto i_zplus = i.zp();
+    auto i_xzplus = i_zplus.xp();
 
-          xt_prime_corner(x, y, z) = -1.0;
-          zt_prime_corner(x, y, z) = -1.0;
-          continue;
-        }
+    if ((xt_prime[i] < 0.0) || (xt_prime[i_xplus] < 0.0) || (xt_prime[i_xzplus] < 0.0) ||
+        (xt_prime[i_zplus] < 0.0)) {
+      // Hit a boundary
+      corner_boundary_mask(i.x(), i.y(), i.z()) = true;
 
-        xt_prime_corner(x, y, z) =
-            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
-                    xt_prime(x + 1, y, z + 1));
-
-        zt_prime_corner(x, y, z) =
-            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
-                    zt_prime(x + 1, y, z + 1));
-      }
+      xt_prime_corner[i] = -1.0;
+      zt_prime_corner[i] = -1.0;
+      continue;
     }
+
+    xt_prime_corner[i] =
+        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+
+    zt_prime_corner[i] =
+        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
 
   interp_corner->setMask(corner_boundary_mask);
 
-  try {
+  {
+    TRACE("FCImap: calculating corner weights");
     interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  } catch (BoutException& e) {
-    output_error << "Error while calculating corner interpolation weights for FCI\n";
-    throw;
   }
 
-  try {
+  {
+    TRACE("FCImap: calculating weights");
     interp->calcWeights(xt_prime, zt_prime);
-  } catch (BoutException& e) {
-    output_error << "Error while calculating interpolation weights for FCI\n";
-    throw;
   }
 
   int ncz = map_mesh.LocalNz;
@@ -272,7 +267,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
 
-  ASSERT3(&map_mesh == f.getMesh());
+  ASSERT1(&map_mesh == f.getMesh());
 
   // Cell centre values
   Field3D centre = interp->interpolate(f);
@@ -329,8 +324,23 @@ Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
+void FCITransform::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (!mesh.get(coordinates_type, "coordinates_type")) {
+    if (coordinates_type != "fci") {
+      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+          "to generate metric components for FCITransform. Should be 'fci.");
+    }
+  } // else: coordinate_system variable not found in grid input, indicates older input
+    //       file so must rely on the user having ensured the type is correct
+}
+
 void FCITransform::calcYUpDown(Field3D& f) {
   TRACE("FCITransform::calcYUpDown");
+
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
@@ -343,6 +353,10 @@ void FCITransform::calcYUpDown(Field3D& f) {
 
 void FCITransform::integrateYUpDown(Field3D& f) {
   TRACE("FCITransform::integrateYUpDown");
+
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();

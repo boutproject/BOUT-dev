@@ -1,0 +1,705 @@
+# Language spa translations for BOUT++ package.
+# Copyright (C) 2019 THE BOUT++'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the BOUT++ package.
+# Marta <mpee500@york.ac.uk>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BOUT++ 4.2.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-02-11 12:46+0900\n"
+"PO-Revision-Date: 2019-02-11 12:46+0900\n"
+"Last-Translator: Marta <mpee500@york.ac.uk>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:334
+#, c-format
+msgid ""
+"\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must be a multiple of "
+"MYSUB (%d)\n"
+msgstr ""
+"\t -> La región `Core` jyseps2_1-jyseps1_1 (%d-%d = %d) debe ser un múltiplo de "
+"MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:363
+#, c-format
+msgid ""
+"\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must be a multiple of "
+"MYSUB (%d)\n"
+msgstr ""
+"\t -> La región `Core` jyseps2_2-jyseps1_1 (%d-%d = %d) debe ser un múltiplo de "
+"MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:341
+#, c-format
+msgid ""
+"\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must be a multiple of "
+"MYSUB (%d)\n"
+msgstr ""
+"\t -> La región `Core` jyseps2_2-jyseps1_2 (%d-%d = %d) debe ser un múltiplo de "
+"MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:376
+msgid "\t -> Good value\n"
+msgstr "\t -> El valor es bueno\n"
+
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:325
+#, c-format
+msgid "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"
+msgstr "\t -> La región `Leg` jyseps1_1+1 (%d) debe ser un múltiplo de MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:355
+#, c-format
+msgid ""
+"\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must be a multiple of "
+"MYSUB (%d)\n"
+msgstr ""
+"\t -> La región `Leg` jyseps1_2-ny_inner+1 (%d-%d+1 = %d) debe ser un múltiplo de "
+"MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:371
+#, c-format
+msgid ""
+"\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB "
+"(%d)\n"
+msgstr ""
+"\t -> La región `Leg` ny-jyseps2_2-1 (%d-%d-1 = %d) debe ser un múltiplo de MYSUB "
+"(%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:349
+#, c-format
+msgid ""
+"\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of "
+"MYSUB (%d)\n"
+msgstr ""
+"\t -> La región `Leg` ny_inner-jyseps2_1-1 (%d-%d-1 = %d) debe ser un múltiplo de "
+"MYSUB (%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:318
+#, c-format
+msgid "\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"
+msgstr "\t -> ny/NYPE (%d/%d = %d) debe ser >= MYG (%d)\n"
+
+#. Loop over all possibilities
+#. Processors divide equally
+#. Mesh in X divides equally
+#. Mesh in Y divides equally
+#: ..//src/mesh/impls/bout/boutmesh.cxx:311
+#, c-format
+msgid "\tCandidate value: %d\n"
+msgstr "\tValor candidato: %d\n"
+
+#: ..//src/bout++.cxx:390
+msgid "\tChecking disabled\n"
+msgstr "\tComprobación desactivada\n"
+
+#: ..//src/bout++.cxx:388
+#, c-format
+msgid "\tChecking enabled, level %d\n"
+msgstr "\tComprobación activada, nivel %d\n"
+
+#. Print command line options
+#: ..//src/bout++.cxx:434
+msgid "\tCommand line options for this run : "
+msgstr "\tParámetros de línea de comandos para esta ejecución :"
+
+#. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+#. which could cause problems (e.g. terminate strings).
+#: ..//src/bout++.cxx:431
+#, c-format
+msgid "\tCompiled with flags : %s\n"
+msgstr "\tCompilado con las opciones `flags` : %s\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:390
+#, c-format
+msgid ""
+"\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"
+msgstr ""
+"\tDominio separado (NXPE=%d, NYPE=%d) en los dominios (localNx=%d, localNy=%d)\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:415
+#, c-format
+msgid "\tERROR: Cannot split %d Y points equally between %d processors\n"
+msgstr "\tERROR: No se pueden separar %d Y puntos entre %d procesadores por igual\n"
+
+#: ..//src/sys/options/options_ini.cxx:173
+#, c-format
+msgid ""
+"\tEmpty key\n"
+"\tLine: %s"
+msgstr ""
+"\tEntrada vacía\n"
+"\tLínea: %s"
+
+#: ..//src/sys/optionsreader.cxx:140
+#, c-format
+msgid "\tEmpty key or value in command line '%s'\n"
+msgstr "\tEntrada o valor vacío en la línea de comandos '%s'\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:127
+msgid "\tGrid size: "
+msgstr "\tTamaño de la malla (`grid`): "
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:143
+msgid "\tGuard cells (x,y): "
+msgstr "\tProteger celdas (x,y): "
+
+#: ..//src/sys/options/options_ini.cxx:177
+#, c-format
+msgid ""
+"\tKey must not contain ':' character\n"
+"\tLine: %s"
+msgstr ""
+"\tLa entrada no debe contener el carácter ':'\n"
+"\tLínea: %s"
+
+#: ..//src/sys/optionsreader.cxx:127
+#, c-format
+msgid "\tMultiple '=' in command-line argument '%s'\n"
+msgstr "\tMutilples '=' en el argumento de la línea de comandos '%s'\n"
+
+#: ..//src/bout++.cxx:418
+msgid "\tOpenMP parallelisation disabled\n"
+msgstr "\tParalelización en OpenMP desactivada\n"
+
+#: ..//src/bout++.cxx:416
+#, c-format
+msgid "\tOpenMP parallelisation enabled, using %d threads\n"
+msgstr "\tParalelización en OpenMP activada, usando %d procesos (`threads`)\n"
+
+#. Mark the option as used
+#. Option not found
+#: ..//include/options.hxx:298 ..//include/options.hxx:319
+#: ..//src/sys/options.cxx:136 ..//src/sys/options.cxx:172
+#: ..//src/sys/options.cxx:200 ..//src/sys/options.cxx:221
+#: ..//src/sys/options.cxx:224
+msgid "\tOption "
+msgstr "\tOpción "
+
+#: ..//src/sys/options.cxx:97
+#, c-format
+msgid ""
+"\tOption %s = %s (%s) overwritten with:\n"
+"\t\t%s = %s (%s)\n"
+msgstr ""
+"\tOpción %s = %s (%s) sobreescrita con:\n"
+"\t\t%s = %s (%s)\n"
+
+#: ..//src/sys/options.cxx:226
+#, c-format
+msgid "\tOption '%s': Boolean expected. Got '%s'\n"
+msgstr "\tOpción '%s': valor Booleano esperado. Se obtuvo '%s'\n"
+
+#: ..//src/sys/options/options_ini.cxx:74
+#, c-format
+msgid "\tOptions file '%s' not found\n"
+msgstr "\tOpciones de archivo '%s' no encontrados\n"
+
+#: ..//src/bout++.cxx:412
+msgid "\tParallel NetCDF support disabled\n"
+msgstr "\tSoporte para NetCDF paralelo desactivado\n"
+
+#: ..//src/bout++.cxx:410
+msgid "\tParallel NetCDF support enabled\n"
+msgstr "\tSoporte para NetCDF paralelo activado\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:124
+msgid "\tRead nz from input grid file\n"
+msgstr "\tLeer nz del archivo input de la malla `grid`\n"
+
+#: ..//src/mesh/mesh.cxx:124
+msgid "\tReading contravariant vector "
+msgstr "\tLeyendo vector contravariante "
+
+#: ..//src/mesh/mesh.cxx:117 ..//src/mesh/mesh.cxx:138
+msgid "\tReading covariant vector "
+msgstr "\tLeyendo vector covariante "
+
+#: ..//src/bout++.cxx:396
+msgid "\tSignal handling disabled\n"
+msgstr "\tGestión de señal desactivada\n"
+
+#: ..//src/bout++.cxx:394
+msgid "\tSignal handling enabled\n"
+msgstr "\tGestión de señal activada\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:857
+msgid "\tdone\n"
+msgstr "\tlisto\n"
+
+#: ..//src/bout++.cxx:405
+msgid "\tnetCDF support disabled\n"
+msgstr "\tSoporte netCDF desactivado\n"
+
+#: ..//src/bout++.cxx:400
+msgid "\tnetCDF support enabled\n"
+msgstr "\tSoporte netCDF activado\n"
+
+#: ..//src/bout++.cxx:403
+msgid "\tnetCDF4 support enabled\n"
+msgstr "\tSoporte netCDF4 activado\n"
+
+#: ..//src/bout++.cxx:169
+#, c-format
+msgid ""
+"\n"
+"  -d <data directory>\tLook in <data directory> for input/output files\n"
+"  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+"  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+"  -l, --log <log filename>\tPrint log to <log filename>\n"
+"  -v, --verbose\t\tIncrease verbosity\n"
+"  -q, --quiet\t\tDecrease verbosity\n"
+msgstr ""
+"\n"
+"  -d <data directory>\tBuscar en <data directory> los archivos input/output\n"
+"  -f <options filename>\tUsar OPCIONES descritas en <options filename>\n"
+"  -o <settings filename>\tGuardar OPCIONES usadas descritas en <options filename>\n"
+"  -l, --log <log filename>\tImprimir registro `log` en <log filename>\n"
+"  -v, --verbose\t\tAumentar verbosidad\n"
+"  -q, --quiet\t\tDisminuir verbosidad\n"
+
+#: ..//src/solver/solver.cxx:565
+#, c-format
+msgid ""
+"\n"
+"Run finished at  : %s\n"
+msgstr ""
+"\n"
+"Ejecución finalizada en  : %s\n"
+
+#: ..//src/solver/solver.cxx:536
+#, c-format
+msgid ""
+"\n"
+"Run started at  : %s\n"
+msgstr ""
+"\n"
+"Ejecución iniciada en  : %s\n"
+
+#: ..//src/bout++.cxx:178
+#, c-format
+msgid "  -c, --color\t\tColor output using bout-log-color\n"
+msgstr "  -c, --color\t\tSalida de color usando bout-log-color\n"
+
+#: ..//src/bout++.cxx:181
+#, c-format
+msgid ""
+"  -h, --help\t\tThis message\n"
+"  restart [append]\tRestart the simulation. If append is specified, append "
+"to the existing output files, otherwise overwrite them\n"
+"  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+"\n"
+"For all possible input parameters, see the user manual and/or the physics "
+"model source (e.g. %s.cxx)\n"
+msgstr ""
+"  -h, --help\t\tEste mensaje\n"
+"  restart [append]\tReiniciar la simulación. Si se especificó `append`, "
+"agregar a los archivos de salida existentes, de lo contrario sobreescribirlos\n"
+"  VAR=VALUE\t\tEspecificar un VALOR para el parámetro input VAR\n"
+"\n"
+"Para todos los possibles parámetros input, vea el manual de usuario y/o el modelo "
+"físico fuente (ej. %s.cxx)\n"
+
+#: ..//src/sys/options.cxx:248
+msgid "All options used\n"
+msgstr "Usando todas las opciones\n"
+
+#. / Print intro
+#: ..//src/bout++.cxx:368
+#, c-format
+msgid "BOUT++ version %s\n"
+msgstr "Versión de BOUT++ %s\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:827
+msgid "Boundary regions in this processor: "
+msgstr "Regiones frontera en este procesador: "
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:406
+#, c-format
+msgid "Cannot split %d X points equally between %d processors\n"
+msgstr "No se pueden dividir %d X points entre %d procesadores por igual\n"
+
+#: ..//src/bout++.cxx:375
+#, c-format
+msgid ""
+"Code compiled on %s at %s\n"
+"\n"
+msgstr ""
+"Código compilado en %s en %s\n"
+"\n"
+
+#: ..//src/sys/optionsreader.cxx:142
+msgid "Command line"
+msgstr "Línea de comandos"
+
+#. / Print compile-time options
+#: ..//src/bout++.cxx:385
+msgid "Compile-time options:\n"
+msgstr "Opciones de tiempo de compilación:\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:836
+msgid "Constructing default regions"
+msgstr "Construyendo regiones por defecto"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:384
+msgid ""
+"Could not find a valid value for NXPE. Try a different number of processors."
+msgstr ""
+"No se pudo encontrar un valor válido para NXPE. Intente usar un número diferente de procesadores."
+
+#: ..//src/sys/options/options_ini.cxx:132
+#, c-format
+msgid "Could not open output file '%s'\n"
+msgstr "No se pudo abrir el archivo de salida `output` '%s'\n"
+
+#. Error reading
+#: ..//src/mesh/mesh.cxx:278
+#, c-format
+msgid "Could not read integer array '%s'\n"
+msgstr "No se pudo leer la matriz de enteros '%s'\n"
+
+#. Failed . Probably not important enough to stop the simulation
+#: ..//src/bout++.cxx:327
+#, c-format
+msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
+msgstr "No se pudo ejecutar bout-log-color. Asegúrese de que se encuentre en su PATH\n"
+
+#: ..//src/solver/solver.cxx:644
+#, c-format
+msgid "Couldn't add Monitor: %g is not a multiple of %g!"
+msgstr "No se pudo añadir el Monitor: %g no és multiplo de %g!"
+
+#: ..//src/mesh/mesh.cxx:349
+#, c-format
+msgid "Couldn't find region %s in regionMap2D"
+msgstr "No se pudo encontrar la región %s en regionMap2D"
+
+#: ..//src/mesh/mesh.cxx:341
+#, c-format
+msgid "Couldn't find region %s in regionMap3D"
+msgstr "No se pudo encontrar la región %s en regionMap2D"
+
+#: ..//src/mesh/mesh.cxx:357
+#, c-format
+msgid "Couldn't find region %s in regionMapPerp"
+msgstr "No se pudo encontrar la región %s en regionMapPerp"
+
+#: ..//src/sys/options.cxx:192
+#, c-format
+msgid "Couldn't get BoutReal from option %s = '%s'"
+msgstr "No se pudo recuperar BoutReal de la opción %s = '%s'"
+
+#: ..//src/sys/options.cxx:156
+#, c-format
+msgid "Couldn't get integer from option %s = '%s'"
+msgstr "No se pudo recuperar el entero de la opción %s = '%s'"
+
+#: ..//src/bout++.cxx:284
+#, c-format
+msgid "DataDir \"%s\" does not exist or is not accessible\n"
+msgstr "DataDir \"%s\" no existe o no es accessible\n"
+
+#: ..//src/bout++.cxx:281
+#, c-format
+msgid "DataDir \"%s\" is not a directory\n"
+msgstr "DataDir \"%s\" no es un directorio\n"
+
+#: ..//src/solver/solver.cxx:599
+msgid "ERROR: Solver is already initialised\n"
+msgstr "ERROR: el Solver ya se encuentra inicializado\n"
+
+#: ..//src/bout++.cxx:473
+msgid "Error encountered during initialisation\n"
+msgstr "Error encontrado durante la inicialización\n"
+
+#: ..//src/bout++.cxx:518
+#, c-format
+msgid "Error encountered during initialisation: %s\n"
+msgstr "Error encontrado durante la inicialización:%s\n"
+
+#: ..//src/bout++.cxx:557
+msgid "Error whilst writing settings"
+msgstr "Error durante el paso de opciones"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:147
+#, c-format
+msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
+msgstr "Error: nx debe ser mayor que 2 veces MXG (2 * %d)"
+
+#: ..//src/solver/solver.cxx:528
+msgid "Failed to initialise solver-> Aborting\n"
+msgstr "Fallo en inicializar el solver-> Abortando\n"
+
+#. Best option
+#. Results in square domains
+#: ..//src/mesh/impls/bout/boutmesh.cxx:304
+#, c-format
+msgid "Finding value for NXPE (ideal = %f)\n"
+msgstr "Encontrando valor para NXPE (ideal = %f)\n"
+
+#: ..//src/solver/solver.cxx:601
+msgid "Initialising solver\n"
+msgstr "Initializando el solver\n"
+
+#: ..//src/bout++.cxx:273
+msgid ""
+"Input and output file for settings must be different.\n"
+"Provide -o <settings file> to avoid this issue.\n"
+msgstr ""
+"Archivos de entrada y salida (`input/output`) para las opciones deben ser diferentes.\n"
+"Añada -o <settings file> para evitar este problema.\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:91
+msgid "Loading mesh"
+msgstr "Cargando malla `mesh`"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:106
+msgid "Mesh must contain nx"
+msgstr "La malla `mesh` debe contener nx"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:109
+msgid "Mesh must contain ny"
+msgstr "La malla `mesh` debe contener ny"
+
+#. Not found
+#: ..//src/mesh/mesh.cxx:282
+#, c-format
+msgid "Missing integer array %s\n"
+msgstr "Fala la matriz entera %s\n"
+
+#: ..//src/solver/solver.cxx:698
+msgid "Monitor signalled to quit"
+msgstr "Monitor indicó salir"
+
+#: ..//src/solver/solver.cxx:705
+msgid "Monitor signalled to quit\n"
+msgstr "Monitor indicó salir\n"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:833
+msgid "No boundary regions in this processor"
+msgstr "Sin regiones de frontera en este procesador"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:234
+#, c-format
+msgid "Number of processors (%d) not divisible by NPs in x direction (%d)\n"
+msgstr "Número de procesadores (%d) no divisible para NPs en la dirección x (%d)\n"
+
+#. Less than 1 time-step left
+#: ..//src/bout++.cxx:707
+#, c-format
+msgid "Only %e seconds left. Quitting\n"
+msgstr "Solo faltan %e segundos. Saliendo\n"
+
+#: ..//src/sys/options.cxx:130 ..//src/sys/options.cxx:148
+#: ..//src/sys/options.cxx:184 ..//src/sys/options.cxx:212
+#, c-format
+msgid "Option %s has no value"
+msgstr "Opción %s sin valor"
+
+#: ..//src/sys/options.cxx:59
+#, c-format
+msgid "Option %s is not a section"
+msgstr "Opción %s no es una sección"
+
+#. Doesn't exist
+#: ..//src/sys/options.cxx:70
+#, c-format
+msgid "Option %s:%s does not exist"
+msgstr "Opción %s:%s no existe"
+
+#: ..//src/sys/options.cxx:101
+#, c-format
+msgid ""
+"Options: Setting a value from same source (%s) to new value '%s' - old value "
+"was '%s'."
+msgstr ""
+"Opciones: Cambiando valor de la misma fuente (%s) al valor nuevo '%s' - valor anterior "
+"era '%s'."
+
+#: ..//src/bout++.cxx:379
+#, c-format
+msgid ""
+"Processor number: %d of %d\n"
+"\n"
+msgstr ""
+"Procesador número: %d de %d\n"
+"\n"
+
+#: ..//src/mesh/mesh.cxx:388
+#, c-format
+msgid "Registered region 2D %s"
+msgstr "Región 2D registrada %s"
+
+#: ..//src/mesh/mesh.cxx:379
+#, c-format
+msgid "Registered region 3D %s"
+msgstr "Región 3D registrada %s"
+
+#: ..//src/mesh/mesh.cxx:397
+#, c-format
+msgid "Registered region Perp %s"
+msgstr "Región Perp registrada %s"
+
+#: ..//src/bout++.cxx:370
+#, c-format
+msgid "Revision: %s\n"
+msgstr "Revisión: %s\n"
+
+#: ..//src/solver/solver.cxx:566
+msgid "Run time : "
+msgstr "Tiempo de ejecución : "
+
+#. / Run the solver
+#: ..//src/solver/solver.cxx:533
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+"Ejecutando simulación\n"
+"\n"
+
+#: ..//src/bout++.cxx:668
+msgid ""
+"Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"Tiempo Sim  |  RHS eval.  | Tiempo Wall |  Calc    Inv   Com    I/O   SOLVER\n"
+"\n"
+
+#: ..//src/bout++.cxx:671
+msgid ""
+"Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
+"Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"Tiempo Sim  |  RHS_e eval.  | RHS_I eval.  | Tiempo Wall |  Calc    Inv   "
+"Com    I/O   SOLVER\n"
+"\n"
+
+#: ..//src/solver/solver.cxx:523
+#, c-format
+msgid "Solver running for %d outputs with monitor timestep of %e\n"
+msgstr "Solver corriendo para %d outputs con intervalos de tiempo de monitor de %e\n"
+
+#: ..//src/solver/solver.cxx:521
+#, c-format
+msgid "Solver running for %d outputs with output timestep of %e\n"
+msgstr "Solver corriendo para %d outputs con intervalos de tiempo de output de %e\n"
+
+#: ..//src/solver/solver.cxx:650
+#, c-format
+msgid ""
+"Solver::addMonitor: Cannot reduce timestep (from %g to %g) after init is "
+"called!"
+msgstr ""
+"Solver::addMonitor: No se puedo reducir el intervalo de tiempo (de %g a %g) después de que init fuera " 
+"llamado!"
+
+#: ..//src/solver/solver.cxx:1072
+#, c-format
+msgid ""
+"Time derivative at wrong location - Field is at %s, derivative is at %s for "
+"field '%s'\n"
+msgstr ""
+"Derivada del tiempo en lugar erróneo - El field se encuentra en  %s, la derivada se encuentra en %s para "
+"el field '%s'\n"
+
+#: ..//src/solver/solver.cxx:1281
+#, c-format
+msgid "Time derivative for variable '%s' not set"
+msgstr "Derivada del tiempo para la variable '%s' no fijada"
+
+#: ..//src/mesh/mesh.cxx:385
+#, c-format
+msgid "Trying to add an already existing region %s to regionMap2D"
+msgstr "Intentando añadir una región ya existente %s a regionMap2D"
+
+#: ..//src/mesh/mesh.cxx:376
+#, c-format
+msgid "Trying to add an already existing region %s to regionMap3D"
+msgstr "Intentando añadir una región ya existente %s a regionMap3D"
+
+#: ..//src/mesh/mesh.cxx:394
+#, c-format
+msgid "Trying to add an already existing region %s to regionMapPerp"
+msgstr "Intentando añadir una región ya existente %s a regionMapPerp"
+
+#: ..//src/mesh/mesh.cxx:313
+msgid ""
+"Unrecognised paralleltransform option.\n"
+"Valid choices are 'identity', 'shifted', 'fci'"
+msgstr ""
+"Opción paralleltransform desconocida.\n"
+"Opciones válidas son 'identity', 'shifted', 'fci'"
+
+#: ..//src/sys/options.cxx:250
+msgid "Unused options:\n"
+msgstr "Opciones sin usar:\n"
+
+#: ..//src/bout++.cxx:205
+#, c-format
+msgid "Usage is %s -d <data directory>\n"
+msgstr "Correcto uso es %s -d <data directory>\n"
+
+#: ..//src/bout++.cxx:217
+#, c-format
+msgid "Usage is %s -f <options filename>\n"
+msgstr "Correcto uso es %s -f <options filename>\n"
+
+#: ..//src/bout++.cxx:240
+#, c-format
+msgid "Usage is %s -l <log filename>\n"
+msgstr "Correcto uso es %s -l <log filename>\n"
+
+#: ..//src/bout++.cxx:229
+#, c-format
+msgid "Usage is %s -o <settings filename>\n"
+msgstr "Correcto uso es %s -o <settings filename>\n"
+
+#. Print help message -- note this will be displayed once per processor as we've not started MPI yet.
+#: ..//src/bout++.cxx:167
+#, c-format
+msgid ""
+"Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
+"[VAR=VALUE]\n"
+msgstr ""
+"Uso: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
+"[VAR=VALUE]\n"
+
+#: ..//src/sys/options.cxx:166
+#, c-format
+msgid "Value for option %s = %e is not an integer"
+msgstr "Valor para la opción %s = %e no es un entero"
+
+#: ..//src/solver/solver.cxx:1031 ..//src/solver/solver.cxx:1035
+#, c-format
+msgid "Variable '%s' not initialised"
+msgstr "Variable '%s' sin inicializar"
+
+#. Should be a power of 2 for efficient FFTs
+#: ..//src/mesh/impls/bout/boutmesh.cxx:119
+msgid ""
+"WARNING: Number of toroidal points should be 2^n for efficient FFT "
+"performance -- consider changing MZ if using FFTs\n"
+msgstr ""
+"WARNING: el número de puntos toroidales debería ser 2^n para una FFT eficiente "
+"-- considere cambiar MZ si se usan FFTs\n"
+
+#: ..//src/sys/optionsreader.cxx:60
+#, c-format
+msgid "Writing options to file %s\n"
+msgstr "Escribiendo opciones a archivo %s\n"
+
+#. / The source label given to default values
+#: ..//src/sys/options.cxx:11
+msgid "default"
+msgstr "por defecto"
+
+#: ..//src/mesh/impls/bout/boutmesh.cxx:156
+msgid "nx must be greater than 2*MXG"
+msgstr "nx debe ser mayor que 2*MXG"

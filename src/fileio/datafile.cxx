@@ -1002,7 +1002,7 @@ bool Datafile::write(const char *format, ...) const {
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw("%s",filename);
   bool ret = tmp.write();
   tmp.close();
 
@@ -1156,7 +1156,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   
   if (shiftInput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = mesh->fromFieldAligned(*f);
+    *f = mesh->fromFieldAligned(*f, RGN_ALL);
   }
   
   return true;

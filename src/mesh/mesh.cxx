@@ -48,6 +48,16 @@ Mesh::~Mesh() {
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
+
 /// Get an integer
 int Mesh::get(int &ival, const std::string &name) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
@@ -295,11 +305,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -326,12 +336,13 @@ ParallelTransform& Mesh::getParallelTransform() {
 }
 
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this);
-  else
+  } else {
     // Interpolate coordinates from CELL_CENTRE version
     return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+  }
 }
 
 
@@ -437,5 +448,18 @@ void Mesh::createDefaultRegions(){
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+}
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    std::swap(*coords_map[location], *createDefaultCoordinates(location));
   }
 }

@@ -186,6 +186,41 @@ TEST_F(Field2DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(field)), deriv);
 }
 
+TEST_F(Field2DTest, SetGetLocation) {
+  Field2D field(mesh_staggered);
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field2DTest, SetGetLocationNonStaggered) {
+  Field2D field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
+}
+
 /// This test is split into two parts: a very basic sanity check first
 /// (do we visit the right number of elements?), followed by a
 /// slightly more complex check one which checks certain indices are
@@ -1087,11 +1122,8 @@ TEST_F(Field2DTest, Max) {
 }
 
 TEST_F(Field2DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1129,7 +1161,7 @@ TEST_F(Field2DTest, Swap) {
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1144,16 +1176,11 @@ TEST_F(Field2DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1168,7 +1195,7 @@ TEST_F(Field2DTest, MoveCtor) {
   EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field2DTest::nx);
   EXPECT_EQ(second.getNy(), Field2DTest::ny);
@@ -1178,8 +1205,6 @@ TEST_F(Field2DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, FillField) {

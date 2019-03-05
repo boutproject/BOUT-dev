@@ -10,6 +10,9 @@ public:
   FakeGridDataSource(){};
   ~FakeGridDataSource(){};
   bool hasVar(const std::string &UNUSED(name)) { return false; };
+  bool get(Mesh *UNUSED(m), std::string &UNUSED(sval), const std::string &UNUSED(name)) {
+    return true;
+  };
   bool get(Mesh *UNUSED(m), int &UNUSED(ival), const std::string &UNUSED(name)) {
     return true;
   };

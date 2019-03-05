@@ -61,7 +61,10 @@ protected:
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
-    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>());
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_ZLOW);
+    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();
