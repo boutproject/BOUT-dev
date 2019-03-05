@@ -604,8 +604,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   checkData(rhs);
   ASSERT1(fieldsCompatible(lhs, rhs));
 
-  FieldPerp result{rhs.getMesh(), rhs.getLocation(), rhs.getIndex(), rhs.getDirectionX(),
-                   rhs.getDirectionY(), rhs.getDirectionZ()};
+  FieldPerp result{emptyFrom(rhs)};
   result.allocate();
   
   BOUT_FOR(i, result.getRegion(rgn)) {
