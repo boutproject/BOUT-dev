@@ -13,6 +13,7 @@ from builtins import str
 from builtins import range
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils import check_scaling
 from boutdata.collect import collect
 
 from numpy import array, log, pi
@@ -64,23 +65,16 @@ for opts, label, sym, exp_ord in options:
     error_inf = []  # The maximum error
 
     for nx in nxlist:
-        # Set the X and Z mesh size
-        dx = 2.*pi / (nx)
-
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx)
-
-        print("  Running with " + args)
-
-        # Delete old data
         shell("rm data/BOUT.dmp.*.nc")
 
-        # Command to run
+        # Set the X and Z mesh size
+        dx = 2.*pi / (nx)
+        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx)
+        print("  Running with " + args)
         cmd = "./advection "+args
-        # Launch using MPI
         s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc,
                              mthread=mthread, pipe=True)
 
-        # Save output to log file
         with open("run.log."+str(nx), "w") as f:
             f.write(out)
 
@@ -94,23 +88,19 @@ for opts, label, sym, exp_ord in options:
 
         print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
 
-    # Append to list of all results
     err_2_all.append((error_2, label, sym))
     err_inf_all.append((error_inf, label, sym))
 
-    # Calculate grid spacing
     dx = 1. / array(nxlist)
 
-    # Calculate convergence order
+    order = check_scaling.get_order(dx, error_2)
+    print("Convergence order = {:f} ({:f} at small spacing)".format(*order))
 
-    order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
-    print("Convergence order = %f" % (order))
-
-    if not (exp_ord + .2 > order > exp_ord - .2):
-        success = False
-        print("... Failure")
-    else:
+    success = check_scaling.check_order(order[0], exp_ord)
+    if success:
         print("... Success")
+    else:
+        print("... Failure")
 
     # plot errors
     if cli_args.plot:
@@ -181,23 +171,13 @@ if cli_args.plot:
     plt.close()
 
 
-def print_error_rate(e, nxlist, dx):
-    print("{}: {:>4} points | Error: {:f}".format(label, nxlist[i], e[i]), end="")
-    if i > 0:
-        print(" -> Rate {:f} ".format(log(e[i] / e[i-1]) / log(dx[i] / dx[i-1])))
-    else:
-        print()
+print("\n==== l-infinity norm ====")
+for e, label, _ in err_inf_all:
+    print(check_scaling.error_rate_table(e, nxlist, label))
 
-
-print("\n\n==== l-infinity norm ====")
-for e, label, sym in err_inf_all:
-    for i in range(len(dx)):
-        print_error_rate(e, nxlist, dx)
-
-print("\n\n==== l-2 norm ====")
-for e, label, sym in err_2_all:
-    for i in range(len(dx)):
-        print_error_rate(e, nxlist, dx)
+print("==== l-2 norm ====")
+for e, label, _ in err_2_all:
+    print(check_scaling.error_rate_table(e, nxlist, label))
 
 if success:
     print(" => All tests passed")
