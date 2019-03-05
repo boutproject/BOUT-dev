@@ -187,9 +187,7 @@ TEST_F(Field2DTest, TimeDeriv) {
 }
 
 TEST_F(Field2DTest, SetGetLocation) {
-  Field2D field;
-
-  field.getMesh()->StaggerGrids = true;
+  Field2D field(mesh_staggered);
 
   field.setLocation(CELL_XLOW);
   EXPECT_EQ(field.getLocation(), CELL_XLOW);
