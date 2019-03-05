@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e
+
 export PATH=${HOME}/.local/bin:${PATH}
 pip3 install --user --upgrade pip==18.1 setuptools==40.6.3
 pip3 install --user --upgrade scipy==1.2.0 numpy==1.15
