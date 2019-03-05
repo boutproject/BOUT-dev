@@ -1002,7 +1002,7 @@ bool Datafile::write(const char *format, ...) const {
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw("%s",filename);
   bool ret = tmp.write();
   tmp.close();
 

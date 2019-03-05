@@ -142,7 +142,6 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then

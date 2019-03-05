@@ -336,12 +336,13 @@ ParallelTransform& Mesh::getParallelTransform() {
 }
 
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this);
-  else
+  } else {
     // Interpolate coordinates from CELL_CENTRE version
     return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+  }
 }
 
 
@@ -447,5 +448,18 @@ void Mesh::createDefaultRegions(){
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+}
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    std::swap(*coords_map[location], *createDefaultCoordinates(location));
   }
 }

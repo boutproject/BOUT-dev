@@ -817,7 +817,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   BoutReal existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%f'",
           attrname.c_str(), varname.c_str(), value, existing_att);
     }
   }

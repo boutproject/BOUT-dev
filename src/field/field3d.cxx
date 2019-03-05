@@ -775,7 +775,7 @@ BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
  *
  */
 #define F3D_FUNC(name, func)                                                             \
-  const Field3D name(const Field3D &f, REGION rgn) {                                     \
+  Field3D name(const Field3D &f, REGION rgn) {                                     \
     TRACE(#name "(Field3D)");                                                            \
     /* Check if the input is allocated */                                                \
     checkData(f);                                                                        \
@@ -802,7 +802,7 @@ F3D_FUNC(sinh, ::sinh);
 F3D_FUNC(cosh, ::cosh);
 F3D_FUNC(tanh, ::tanh);
 
-const Field3D filter(const Field3D &var, int N0, REGION rgn) {
+Field3D filter(const Field3D &var, int N0, REGION rgn) {
   TRACE("filter(Field3D, int)");
   
   checkData(var);
@@ -852,62 +852,15 @@ const Field3D filter(const Field3D &var, int N0, REGION rgn) {
   return result;
 }
 
-// Fourier filter in z
-const Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
-  TRACE("lowPass(Field3D, %d)", zmax);
-
-  checkData(var);
-
-  Mesh *localmesh = var.getMesh();
-  const int ncz = localmesh->LocalNz;
-
-  if ((zmax >= ncz / 2) || (zmax < 0)) {
-    // Removing nothing
-    return var;
-  }
-
-  Field3D result(localmesh);
-  result.allocate();
-
-  const auto region_str = REGION_STRING(rgn);
-
-  // Only allow a whitelist of regions for now
-  ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
-          region_str == "RGN_NOX" || region_str == "RGN_NOY");
-
-  const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
-
-  BOUT_OMP(parallel) {
-    Array<dcomplex> f(ncz / 2 + 1);
-
-    BOUT_FOR_INNER(i, region) {
-      // Take FFT in the Z direction
-      rfft(var(i.x(), i.y()), ncz, f.begin());
-
-      // Filter in z
-      for (int jz = zmax + 1; jz <= ncz / 2; jz++) {
-        f[jz] = 0.0;
-      }
-
-      // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
-    }
-  }
-  result.setLocation(var.getLocation());
-
-  checkData(result);
-  return result;
-}
-
 // Fourier filter in z with zmin
-const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
-  TRACE("lowPass(Field3D, %d, %d)", zmax, zmin);
+Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
+  TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
   Mesh *localmesh = var.getMesh();
   int ncz = localmesh->LocalNz;
 
-  if (((zmax >= ncz / 2) || (zmax < 0)) && (zmin < 0)) {
+  if (((zmax >= ncz / 2) || (zmax < 0)) && keep_zonal) {
     // Removing nothing
     return var;
   }
@@ -935,7 +888,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn) {
         f[jz] = 0.0;
 
       // Filter zonal mode
-      if (zmin == 0) {
+      if (!keep_zonal) {
         f[0] = 0.0;
       }
       // Reverse FFT
@@ -1036,13 +989,13 @@ void checkData(const Field3D &f, REGION region) {
 }
 #endif
 
-const Field3D copy(const Field3D &f) {
+Field3D copy(const Field3D &f) {
   Field3D result = f;
   result.allocate();
   return result;
 }
 
-const Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
+Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
   checkData(var);
   Field3D result = copy(var);
 

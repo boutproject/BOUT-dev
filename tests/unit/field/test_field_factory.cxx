@@ -81,6 +81,29 @@ TYPED_TEST(FieldFactoryCreationTest, CreateFromPointerGenerator) {
   EXPECT_TRUE(IsFieldEqual(output, value));
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateFromFunction) {
+  FuncPtr function = [](BoutReal, BoutReal x, BoutReal, BoutReal) -> BoutReal {
+    return x + 1.;
+  };
+
+  auto generator = std::make_shared<FieldFunction>(FieldFunction{function});
+
+  auto output = this->create(generator);
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() + 1.; },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateNull) {
+  FieldNull null{};
+  auto output = this->create(null.clone({}));
+
+  EXPECT_TRUE(IsFieldEqual(output, 0.0));
+}
+
 TYPED_TEST(FieldFactoryCreationTest, CreatePi) {
   auto output = this->create("pi");
 
@@ -281,6 +304,18 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAtanX) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         return std::atan(index.x());
+      },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateAtanX2) {
+  auto output = this->create("atan(x, 2)");
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::atan2(index.x(), 2.);
       },
       mesh);
 
@@ -548,6 +583,16 @@ public:
   FieldFactory factory;
 };
 
+TEST_F(FieldFactoryTest, RequireMesh) {
+  delete bout::globals::mesh;
+  bout::globals::mesh = nullptr;
+
+  FieldFactory local_factory{nullptr, nullptr};
+
+  EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
+  EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+}
+
 TEST_F(FieldFactoryTest, CleanCache) {
 
   auto a_value = int{6};
@@ -569,12 +614,14 @@ TEST_F(FieldFactoryTest, ParseSelfReference) {
 
   output.disable();
   output_info.disable();
+  output_error.disable();
 
   auto options = Options{};
   options["a"] = "a";
 
   EXPECT_THROW(factory.parse("a", &options), BoutException);
 
+  output_error.enable();
   output_info.enable();
   output.enable();
 }
