@@ -44,10 +44,10 @@ Field::Field(Mesh *localmesh)
 
 Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
-    return fieldCoordinates;    
+    return fieldCoordinates.get();
   } else {
-    fieldCoordinates = getMesh()->getCoordinates(getLocation());
-    return fieldCoordinates;
+    fieldCoordinates = getMesh()->getCoordinatesSmart(getLocation());
+    return fieldCoordinates.get();
   }
 }
 

@@ -1525,7 +1525,7 @@ cdef class Options:
         cdef char * file_
         file__=file.encode('ascii')
         file_=file__
-        c.OptionsReader.getInstance().read(opt.cobj, file_)
+        c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
         return opt
 
 

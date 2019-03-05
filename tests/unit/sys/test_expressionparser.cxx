@@ -60,7 +60,7 @@ public:
     if (args.size() != 1) {
       throw ParseException(
           "Incorrect number of arguments to increment function. Expecting 1, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<IncrementGenerator>(args.front());
@@ -85,7 +85,7 @@ public:
     if (args.size() != 0) {
       throw ParseException(
           "Incorrect number of arguments to nullary function. Expecting 0, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<NullaryGenerator>();
