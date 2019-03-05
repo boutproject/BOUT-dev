@@ -34,7 +34,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 #include "bout_types.hxx"
 
 #include "bout/array.hxx"
-#include "bout/empty_from.hxx"
 #include "bout/region.hxx"
 
 #include "bout/assert.hxx"

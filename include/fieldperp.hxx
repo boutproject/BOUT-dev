@@ -418,6 +418,14 @@ BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
 /// default (can be changed using the \p rgn argument)
 bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
 
+// Specialize newEmptyField templates for FieldPerp
+/// Return an empty shell field of some type derived from Field, with metadata
+/// copied but empty data array
+template<>
+inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
+  return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), f.getDirectionX(), f.getDirectionY(), f.getDirectionZ()).allocate();
+}
+
 #if CHECK > 0
 void checkData(const FieldPerp &f, REGION region = RGN_NOX);
 #else

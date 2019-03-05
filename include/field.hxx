@@ -211,6 +211,14 @@ private:
   DIRECTION zDirectionType{DIRECTION::Null};
 };
 
+/// Return an empty shell field of some type derived from Field, with metadata
+/// copied but empty data array
+template<typename T>
+inline T emptyFrom(const T& f) {
+  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  return T(f.getMesh(), f.getLocation(), f.getDirectionX(), f.getDirectionY(), f.getDirectionZ()).allocate();
+}
+
 /// Unary + operator. This doesn't do anything
 template<typename T>
 T operator+(const T& f) {return f;}

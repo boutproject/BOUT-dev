@@ -40,7 +40,6 @@ class Field3D; //#include "field3d.hxx"
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
-#include "bout/empty_from.hxx"
 #include "bout/region.hxx"
 
 #include "unused.hxx"
