@@ -30,9 +30,11 @@ class Field;
 #define __FIELD_H__
 
 #include <cstdio>
+#include <memory>
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
+#include <globals.hxx>
 #include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
@@ -41,7 +43,6 @@ class Field;
 
 class Mesh;
 class Coordinates;
-extern Mesh * mesh; ///< Global mesh
 
 #ifdef TRACK
 #include <string>
@@ -94,7 +95,7 @@ class Field {
     if (fieldmesh){
       return fieldmesh;
     } else {
-      return mesh;
+      return bout::globals::mesh;
     }
   }
 
@@ -122,7 +123,7 @@ class Field {
 
 protected:
   Mesh* fieldmesh{nullptr};
-  mutable Coordinates* fieldCoordinates{nullptr};
+  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
 };
 
 /// Unary + operator. This doesn't do anything

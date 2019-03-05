@@ -57,7 +57,7 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   bout_vsnprintf(filename,buf_len, file);
   
-  output_info << _("Writing options to file ") << filename << "\n";
+  output_info.write(_("Writing options to file %s\n"),filename);
 
   // Need to decide what file format to use
   OptionParser *parser = new OptionINI();
@@ -74,46 +74,50 @@ void OptionsReader::write(Options *options, const char *file, ...) {
   delete parser;
 }
 
-void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
+void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
 
   std::string buffer;
 
   // Go through command-line arguments
-  for (int i=1;i<argc;i++) {
+  for (int i = 1; i < argc; i++) {
 
     // Reset the section
     options = options->getRoot();
 
     buffer = argv[i];
+    if (buffer.length() == 0) {
+      continue;
+    }
     // Test if name starts with a '-', and remove if found
-    if (buffer[0] == '-')
-      buffer = buffer.substr(1);  // Remove the first character (-)
-    
+    if (buffer[0] == '-') {
+      buffer = buffer.substr(1); // Remove the first character (-)
+      if (buffer.length() == 0) {
+        throw BoutException(_("Invalid command line option '-' found - maybe check whitespace?"));
+      }
+    }
     // Test to see if the user put spaces around the '=' sign
-    if (i < argc-1) {
-      if(buffer[buffer.length()-1] == '=') {
+    if (i < argc - 1) {
+      if (buffer[buffer.length() - 1] == '=') {
         // Space after '=' sign
-        
+
         i++;
         buffer.append(argv[i]);
-        
-      }else if(argv[i+1][0] == '=') {
+      } else if (argv[i + 1][0] == '=') {
         // Space before '=' sign
-        
+
         i++;
         buffer.append(argv[i]);
-        
-        if((argv[i][1] == 0) && (i < argc-1)) {
+
+        if ((argv[i][1] == 0) && (i < argc - 1)) {
           // End of string, so space after '=' sign too
-          
           i++;
           buffer.append(argv[i]);
         }
       }
     }
-    
+
     size_t startpos = buffer.find_first_of('=');
 
     if (startpos == std::string::npos) {

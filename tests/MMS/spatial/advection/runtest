@@ -12,7 +12,7 @@ from __future__ import print_function
 from builtins import str
 from builtins import range
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boututils import check_scaling
 from boutdata.collect import collect
 
@@ -28,8 +28,6 @@ parser.add_argument("-n", "--no-show", action="store_false", dest="show",
                     help="Don't show the plots, just save to file")
 
 cli_args = parser.parse_args()
-
-MPIRUN = getmpirun()
 
 print("Making MMS steady-state advection test")
 shell_safe("make > make.log")
@@ -72,8 +70,7 @@ for opts, label, sym, exp_ord in options:
         args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx)
         print("  Running with " + args)
         cmd = "./advection "+args
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc,
-                             mthread=mthread, pipe=True)
+        s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
         with open("run.log."+str(nx), "w") as f:
             f.write(out)

@@ -12,14 +12,14 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 nproc = 1
 
-MPIRUN=getmpirun()
+
 
 print("Making stopCheck test")
 shell("make > make.log")
@@ -38,7 +38,7 @@ for j, dat in enumerate(dats):
   for i, check in enumerate(checkVal):
     cmd = "./test_stopCheck"
 
-    s, out = launch(cmd+" -d "+dat+" stopCheck="+str(check)+" stopCheckName="+datStopFiles[j], runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch(cmd+" -d "+dat+" stopCheck="+str(check)+" stopCheckName="+datStopFiles[j], nproc=nproc, pipe=True)
     f = open("run.log."+dat+"."+str(check).lower(), "w")
     f.write(out)
     f.close()
