@@ -257,7 +257,7 @@ class FieldPerp : public Field {
   
 private:
   /// The Y index at which this FieldPerp is defined
-  int yindex;
+  int yindex{-1};
 
   /// The size of the data array
   int nx{-1}, nz{-1};
