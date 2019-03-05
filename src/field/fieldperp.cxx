@@ -28,6 +28,7 @@
 
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <fieldperp.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -50,7 +51,7 @@ void FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
     }
@@ -72,14 +73,8 @@ void FieldPerp::setLocation(CELL_LOC new_location) {
     if (new_location == CELL_DEFAULT) {
       new_location = CELL_CENTRE;
     }
-
-    // Invalidate the coordinates pointer
-    if (new_location != location) {
-      fieldCoordinates = nullptr;
-    }
-
+    
     location = new_location;
-
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -90,6 +85,9 @@ void FieldPerp::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  // Ensures Coordinates object is initialized for this Field's location
+  getCoordinates();
 }
 
 CELL_LOC FieldPerp::getLocation() const {
@@ -107,8 +105,6 @@ FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
     return (*this); // skip this assignment
   }
 
-  checkData(rhs);
-
   nx = rhs.nx;
   nz = rhs.nz;
   yindex = rhs.yindex;
@@ -122,8 +118,6 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
   TRACE("FieldPerp = BoutReal");
 
   allocate();
-
-  checkData(rhs);
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
@@ -542,8 +536,6 @@ void checkData(const FieldPerp &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(FieldPerp &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

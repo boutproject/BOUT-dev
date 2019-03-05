@@ -22,6 +22,15 @@ Start a new translation:
     make locale-XX
 
 where XX is the language e.g. "de" for German, or a language_country code e.g. "de_DE".
-This will update a .po file if it already exists.
-Edit the .po file, translating or deleting new entries, then remake the .mo files.
+Edit the .po file, translating or deleting new entries:
+ * Make sure to set the charset (around line 16) to utf-8.
+ * msgid is the original text. Write in msgstr the translated string.
+ * You can reorder arguments using %n$s like this::
+     msgid ""
+     "Options: Setting a value from same source (%s) to new value '%s' - old value "
+     "was '%s'."
+     msgstr ""
+     "Options: The Value %3$s is overwritten with %2$s from the same source (%1%s)"
+There are also editors for editing .po files, e.g. poeditor.
 
+Calling `make locale-XX` again will update the .po file.

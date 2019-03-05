@@ -35,3 +35,4 @@ BOUT.settings
 /test-petsc_laplace_MAST-grid/test_petsc_laplace_MAST_grid
 /test-stopCheck/test_stopCheck
 /test-yupdown/test_yupdown
+/test-coordinates-initialization/test-coordinates-initialization

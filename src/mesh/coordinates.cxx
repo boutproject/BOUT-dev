@@ -66,18 +66,16 @@ Coordinates::Coordinates(Mesh *mesh)
 
   if (mesh->get(dz, "dz")) {
     // Couldn't read dz from input
-    int zperiod;
     BoutReal ZMIN, ZMAX;
     Options *options = Options::getRoot();
     if (options->isSet("zperiod")) {
+      int zperiod;
       OPTION(options, zperiod, 1);
       ZMIN = 0.0;
       ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
     } else {
       OPTION(options, ZMIN, 0.0);
       OPTION(options, ZMAX, 1.0);
-
-      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
     }
 
     dz = (ZMAX - ZMIN) * TWOPI / nz;
@@ -187,6 +185,9 @@ Coordinates::Coordinates(Mesh *mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -299,6 +300,9 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 
   if (mesh->IncIntShear) {
     IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -462,13 +466,16 @@ int Coordinates::geometry() {
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Field2D d2x, d2y; // d^2 x / d i^2
+  Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if (localmesh->get(d2x, "d2x")) {
     output_warn.write(
         "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
     d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
   } else {
+    // Shift d2x to our location
+    d2x = interp_to(d2x, location);
+
     d1_dx = -d2x / (dx * dx);
   }
 
@@ -477,7 +484,15 @@ int Coordinates::geometry() {
         "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
     d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
   } else {
+    // Shift d2y to our location
+    d2y = interp_to(d2y, location);
+
     d1_dy = -d2y / (dy * dy);
+  }
+
+  if (location == CELL_CENTRE) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
   }
 
   return 0;
@@ -653,7 +668,7 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, const std::string
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), CELL_LOC loc,
+const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), MAYBE_UNUSED(CELL_LOC loc),
                                const std::string &UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
@@ -788,7 +803,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc, const s
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-const Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
+const Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 

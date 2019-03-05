@@ -12,7 +12,7 @@ locale: $(MO_FILES)
 
 # Create the template file, combining all source files
 libbout.pot: FORCE
-	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find ../ -name "*.[ch]xx"`
+	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find ../ -name "[^.#]*.[ch]xx"`
 
 # Update a .po file
 # If it doesn't exist then create; if it exists then update

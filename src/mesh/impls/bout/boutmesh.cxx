@@ -117,7 +117,7 @@ int BoutMesh::load() {
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
+                          "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
                         MZ);
     }
   } else {
@@ -201,9 +201,9 @@ int BoutMesh::load() {
     jyseps1_1 = -1;
   }
 
-  if (jyseps2_1 <= jyseps1_1) {
+  if (jyseps2_1 < jyseps1_1) {
     output_warn.write(
-        "\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
+        "\tWARNING: jyseps2_1 (%d) must be >= jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
         jyseps1_1, jyseps1_1 + 1);
     jyseps2_1 = jyseps1_1 + 1;
   }
@@ -301,7 +301,7 @@ int BoutMesh::load() {
     
     BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
 
-    output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
+    output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
 
     for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
       if ((NPES % i == 0) &&          // Processors divide equally
@@ -315,14 +315,14 @@ int BoutMesh::load() {
 
         // Check size of Y mesh
         if (ysub < MYG) {
-          output_info.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+          output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
         }
         // Check branch cuts
         if ((jyseps1_1 + 1) % ysub != 0) {
           output_info.write(
-              "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+			    _("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"),
               jyseps1_1 + 1, ysub);
           continue;
         }
@@ -331,45 +331,45 @@ int BoutMesh::load() {
           // Double Null
 
           if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
             continue;
           }
 
           if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
             continue;
           }
 
           // Check upper legs
           if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-            output_info.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
+                              "be a multiple of MYSUB (%d)\n"),
                               ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
             continue;
           }
           if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-            output_info.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
             continue;
           }
         } else {
           // Single Null
           if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
             continue;
           }
         }
 
         if ((ny - jyseps2_2 - 1) % ysub != 0) {
-          output_info.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-                            "multiple of MYSUB (%d)\n",
+          output_info.write(_("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
+			      "multiple of MYSUB (%d)\n"),
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
@@ -689,24 +689,34 @@ int BoutMesh::load() {
 
     // Core region
     TRACE("Creating core communicators");
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
+    if (jyseps2_1 > jyseps1_1) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 
-    output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
+      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
 
-    if ((proc[0] < 0) || (proc[1] < 0))
-      throw BoutException("Invalid processor range for core processors");
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-    output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-    if ((proc[0] < 0) || (proc[1] < 0)) {
-      group_tmp2 = MPI_GROUP_EMPTY;
+      if ((proc[0] < 0) || (proc[1] < 0))
+        throw BoutException("Invalid processor range for core processors");
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
     } else {
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      // no core region between jyseps1_1 and jyseps2_1
+      group_tmp1 = MPI_GROUP_EMPTY;
+    }
+
+    if (jyseps2_2 > jyseps1_2) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+
+      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
+
+      if ((proc[0] < 0) || (proc[1] < 0)) {
+        group_tmp2 = MPI_GROUP_EMPTY;
+      } else {
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      }
+    } else {
+      // no core region between jyseps1_2 and jyseps2_2
+      group_tmp2 = MPI_GROUP_EMPTY;
     }
 
     MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -838,6 +848,9 @@ int BoutMesh::load() {
 
   // Add boundary regions
   addBoundaryRegions();
+
+  // Initialize default coordinates
+  getCoordinates();
 
   output_info.write(_("\tdone\n"));
 
@@ -2208,7 +2221,7 @@ void BoutMesh::addBoundaryRegions() {
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2225,7 +2238,7 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   // Outer X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,

@@ -10,6 +10,7 @@
 #include "../vector2d.hxx"
 
 #include "../utils.hxx"
+#include <bout/mesh.hxx>
 
 namespace FV {
   /*!
@@ -182,10 +183,14 @@ namespace FV {
 
     ASSERT2(f_in.getLocation() == v_in.getLocation());
 
+    Mesh* mesh = f_in.getMesh();
+    ASSERT1(mesh == v_in.getMesh());
+    ASSERT1(mesh == wave_speed.getMesh());
+
     CellEdges cellboundary;
     
-    Field3D f = mesh->toFieldAligned(f_in);
-    Field3D v = mesh->toFieldAligned(v_in);
+    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
+    Field3D v = mesh->toFieldAligned(v_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
 
@@ -322,7 +327,7 @@ namespace FV {
         }
       }
     }
-    return mesh->fromFieldAligned(result);
+    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
   }
   
   /*!
@@ -340,6 +345,9 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     ASSERT2(n_in.getLocation() == v.getLocation());
+
+    Mesh* mesh = n_in.getMesh();
+    ASSERT1(mesh == v.x.getMesh());
 
     CellEdges cellboundary;
     
@@ -463,8 +471,8 @@ namespace FV {
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
     
-    n = mesh->toFieldAligned(n_in);
-    Field3D vy = mesh->toFieldAligned(v.y);
+    n = mesh->toFieldAligned(n_in, RGN_NOX);
+    Field3D vy = mesh->toFieldAligned(v.y, RGN_NOX);
     
     Field3D yresult = 0.0;    
     for(int i=mesh->xstart;i<=mesh->xend;i++)
@@ -483,7 +491,7 @@ namespace FV {
           yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
         }
     
-    return result + mesh->fromFieldAligned(yresult);
+    return result + mesh->fromFieldAligned(yresult, RGN_NOBNDRY);
   }
 }
 

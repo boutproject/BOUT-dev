@@ -38,6 +38,7 @@
 #include <globals.hxx>
 #include <dcomplex.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 #ifdef LAPACK
 

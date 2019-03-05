@@ -32,6 +32,7 @@
  */
 
 #include "shoot_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>

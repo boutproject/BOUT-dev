@@ -39,6 +39,7 @@
 
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
+#include <bout/mesh.hxx>
 
 #include <cmath>
 #include <output.hxx>
@@ -62,10 +63,6 @@ Field2D::Field2D(const Field2D& f) : Field(f.fieldmesh), data(f.data) {
 
 #ifdef TRACK
   name = f.name;
-#endif
-
-#if CHECK > 2
-  checkData(f);
 #endif
 
   if (fieldmesh) {
@@ -93,7 +90,7 @@ void Field2D::allocate() {
   if(data.empty()) {
     if(!fieldmesh) {
       /// If no mesh, use the global
-      fieldmesh = mesh;
+      fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
@@ -130,13 +127,7 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
 
-    // Invalidate the coordinates pointer
-    if (new_location != location) {
-      fieldCoordinates = nullptr;
-    }
-
     location = new_location;
-
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -147,6 +138,9 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  // Ensures Coordinates object is initialized for this Field's location
+  getCoordinates();
 }
 
 CELL_LOC Field2D::getLocation() const {
@@ -170,8 +164,6 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
     return (*this); // skip this assignment
 
   TRACE("Field2D: Assignment from Field2D");
-
-  checkData(rhs);
 
 #ifdef TRACK
   name = rhs.name;
@@ -198,11 +190,6 @@ Field2D &Field2D::operator=(const BoutReal rhs) {
 
   TRACE("Field2D = BoutReal");
   allocate();
-
-#if CHECK > 0
-  if (!finite(rhs))
-    throw BoutException("Field2D: Assignment from non-finite BoutReal\n");
-#endif
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
@@ -532,18 +519,18 @@ namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-  void checkDataIsFiniteOnRegion(const Field2D &f, REGION region) {
-    // Do full checks
-    BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-      if (!::finite(f[i])) {
-	throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
-			    i.y());
-      }
+void checkDataIsFiniteOnRegion(const Field2D& f, REGION region) {
+  // Do full checks
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (!::finite(f[i])) {
+      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
+                          i.y());
     }
   }
-#elif CHECK > 1
-  // No-op for no checking
-  void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+}
+#elif CHECK > 0
+// No-op for no checking
+void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 }
 
@@ -560,8 +547,6 @@ void checkData(const Field2D &f, REGION region) {
 
 #if CHECK > 2
 void invalidateGuards(Field2D &var) {
-  Mesh *localmesh = var.getMesh();
-
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
