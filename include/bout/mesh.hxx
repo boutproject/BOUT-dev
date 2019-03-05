@@ -465,7 +465,8 @@ class Mesh {
     // No coordinate system set. Create default
     // Note that this can't be allocated here due to incomplete type
     // (circular dependency between Mesh and Coordinates)
-    auto inserted = coords_map.emplace(location, createDefaultCoordinates(location));
+    auto inserted = coords_map.emplace(location, nullptr);
+    inserted.first->second = createDefaultCoordinates(location);
     return inserted.first->second;
   }
 
