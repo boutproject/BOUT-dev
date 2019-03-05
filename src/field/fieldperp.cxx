@@ -55,7 +55,7 @@ void FieldPerp::allocate() {
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
     }
-    data.resize(nx * nz);
+    data.reallocate(nx * nz);
 #if CHECK > 2
     invalidateGuards(*this);
 #endif

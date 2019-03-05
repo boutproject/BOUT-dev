@@ -1869,17 +1869,17 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
       i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
-      ch->umsg_sendbuff.resize(ylen);
-      ch->dmsg_sendbuff.resize(ylen);
-      ch->umsg_recvbuff.resize(ylen);
-      ch->dmsg_recvbuff.resize(ylen);
+      ch->umsg_sendbuff.reallocate(ylen);
+      ch->dmsg_sendbuff.reallocate(ylen);
+      ch->umsg_recvbuff.reallocate(ylen);
+      ch->dmsg_recvbuff.reallocate(ylen);
     }
 
     if (xlen > 0) {
-      ch->imsg_sendbuff.resize(xlen);
-      ch->omsg_sendbuff.resize(xlen);
-      ch->imsg_recvbuff.resize(xlen);
-      ch->omsg_recvbuff.resize(xlen);
+      ch->imsg_sendbuff.reallocate(xlen);
+      ch->omsg_sendbuff.reallocate(xlen);
+      ch->imsg_recvbuff.reallocate(xlen);
+      ch->omsg_recvbuff.reallocate(xlen);
     }
 
     ch->xbufflen = xlen;
@@ -1896,18 +1896,18 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
-    ch->umsg_sendbuff.resize(ylen);
-    ch->dmsg_sendbuff.resize(ylen);
-    ch->umsg_recvbuff.resize(ylen);
-    ch->dmsg_recvbuff.resize(ylen);
+    ch->umsg_sendbuff.reallocate(ylen);
+    ch->dmsg_sendbuff.reallocate(ylen);
+    ch->umsg_recvbuff.reallocate(ylen);
+    ch->dmsg_recvbuff.reallocate(ylen);
 
     ch->ybufflen = ylen;
   }
   if (ch->xbufflen < xlen) {
-    ch->imsg_sendbuff.resize(xlen);
-    ch->omsg_sendbuff.resize(xlen);
-    ch->imsg_recvbuff.resize(xlen);
-    ch->omsg_recvbuff.resize(xlen);
+    ch->imsg_sendbuff.reallocate(xlen);
+    ch->omsg_sendbuff.reallocate(xlen);
+    ch->imsg_recvbuff.reallocate(xlen);
+    ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
   }

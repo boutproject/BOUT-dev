@@ -262,8 +262,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
   //Also create vector for derivs etc. if SLEPc in charge of solving
   if(selfSolve && !ddtMode){
     // Allocate memory
-    f0.resize(localSize);
-    f1.resize(localSize);
+    f0.reallocate(localSize);
+    f1.reallocate(localSize);
   }
 
   // Get total problem size

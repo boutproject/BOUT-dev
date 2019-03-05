@@ -31,14 +31,14 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
-  acoef.resize(nsys, nloc);
-  bcoef.resize(nsys, nloc);
-  ccoef.resize(nsys, nloc);
-  xcmplx.resize(nsys, nloc);
-  rhscmplx.resize(nsys, nloc);
+  acoef.reallocate(nsys, nloc);
+  bcoef.reallocate(nsys, nloc);
+  ccoef.reallocate(nsys, nloc);
+  xcmplx.reallocate(nsys, nloc);
+  rhscmplx.reallocate(nsys, nloc);
 
-  k1d.resize((m->LocalNz) / 2 + 1);
-  k1d_2.resize((m->LocalNz) / 2 + 1);
+  k1d.reallocate((m->LocalNz) / 2 + 1);
+  k1d_2.reallocate((m->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);

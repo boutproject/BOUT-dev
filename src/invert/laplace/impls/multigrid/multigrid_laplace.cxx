@@ -173,8 +173,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x.resize((Nx_local + 2) * (Nz_local + 2));
-  b.resize((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";

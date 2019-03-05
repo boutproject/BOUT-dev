@@ -488,8 +488,8 @@ private:
       sys0 += nsextra;
     }
 
-    coefs.resize(Nsys, 4 * N);
-    myif.resize(Nsys, 8);
+    coefs.reallocate(Nsys, 4 * N);
+    myif.reallocate(Nsys, 8);
 
     // Note: The recvbuffer is used to receive data in both stages of the solve:
     //  1. In the gather step, this processor will receive myns interface equations
@@ -498,22 +498,22 @@ private:
     //     from each processor. The number of systems of equations received will
     //     vary from myns to myns+1 (if myproc >= nsextra).
     // The size of the array reserved is therefore (myns+1)
-    recvbuffer.resize(nprocs, (myns + 1) * 8);
+    recvbuffer.reallocate(nprocs, (myns + 1) * 8);
 
     // Some interface systems to be solved on this processor
     // Note that the interface equations are organised by system (myns as first argument)
     // but communication buffers are organised by processor (nprocs first).
-    ifcs.resize(myns, 2 * 4 * nprocs); // Coefficients for interface solve
+    ifcs.reallocate(myns, 2 * 4 * nprocs); // Coefficients for interface solve
     if (nprocs > 1) {
-      if2x2.resize(myns, 2 * 4); // 2x2 interface equations on this processor
+      if2x2.reallocate(myns, 2 * 4); // 2x2 interface equations on this processor
     }
-    ifx.resize(myns, 2 * nprocs); // Solution of interface equations
-    ifp.resize(myns * 2);         // Solution to be sent to processor p
+    ifx.reallocate(myns, 2 * nprocs); // Solution of interface equations
+    ifp.reallocate(myns * 2);         // Solution to be sent to processor p
     // Each system to be solved on this processor has two interface equations from each
     // processor
 
-    x1.resize(Nsys);
-    xn.resize(Nsys);
+    x1.reallocate(Nsys);
+    xn.reallocate(Nsys);
   }
 
   /// Calculate interface equations

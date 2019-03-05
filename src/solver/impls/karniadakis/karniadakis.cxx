@@ -74,16 +74,16 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   
   // Allocate memory
 
-  f1.resize(nlocal);
-  f0.resize(nlocal);
-  fm1.resize(nlocal);
-  fm2.resize(nlocal);
+  f1.reallocate(nlocal);
+  f0.reallocate(nlocal);
+  fm1.reallocate(nlocal);
+  fm2.reallocate(nlocal);
 
-  S0.resize(nlocal);
-  Sm1.resize(nlocal);
-  Sm2.resize(nlocal);
+  S0.reallocate(nlocal);
+  Sm1.reallocate(nlocal);
+  Sm2.reallocate(nlocal);
 
-  D0.resize(nlocal);
+  D0.reallocate(nlocal);
 
   first_time = true;
 

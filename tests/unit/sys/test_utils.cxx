@@ -21,12 +21,12 @@ TEST(MatrixTest, CreateGivenSize) {
   EXPECT_EQ(shape1, 5);
 }
 
-TEST(MatrixTest, Resize) {
+TEST(MatrixTest, Reallocate) {
   Matrix<int> matrix{};
 
   ASSERT_TRUE(matrix.empty());
 
-  matrix.resize(3, 5);
+  matrix.reallocate(3, 5);
 
   int shape0, shape1;
   std::tie(shape0, shape1) = matrix.shape();
@@ -34,7 +34,7 @@ TEST(MatrixTest, Resize) {
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
 
-  matrix.resize(5, 3);
+  matrix.reallocate(5, 3);
   std::tie(shape0, shape1) = matrix.shape();
 
   EXPECT_EQ(shape0, 5);
@@ -183,12 +183,12 @@ TEST(TensorTest, CreateGivenSize) {
   EXPECT_EQ(shape2, 7);
 }
 
-TEST(TensorTest, Resize) {
+TEST(TensorTest, Reallocate) {
   Tensor<int> tensor{};
 
   ASSERT_TRUE(tensor.empty());
 
-  tensor.resize(3, 5, 7);
+  tensor.reallocate(3, 5, 7);
 
   int shape0, shape1, shape2;
   std::tie(shape0, shape1, shape2) = tensor.shape();
@@ -197,7 +197,7 @@ TEST(TensorTest, Resize) {
   EXPECT_EQ(shape1, 5);
   EXPECT_EQ(shape2, 7);
 
-  tensor.resize(5, 7, 3);
+  tensor.reallocate(5, 7, 3);
   std::tie(shape0, shape1, shape2) = tensor.shape();
 
   EXPECT_EQ(shape0, 5);

@@ -33,8 +33,8 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
       h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner.resize(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
-  k_corner.resize(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   // Allocate Field3D members
   h00_x.allocate();

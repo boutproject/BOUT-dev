@@ -113,7 +113,7 @@ void Field3D::allocate() {
       ny = fieldmesh->LocalNy;
       nz = fieldmesh->LocalNz;
     }
-    data.resize(nx*ny*nz);
+    data.reallocate(nx * ny * nz);
 #if CHECK > 2
     invalidateGuards(*this);
 #endif

@@ -87,11 +87,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   nloc = xend - xstart + 1;                       // Number of X points on this processor
   nsys = localmesh->yend - localmesh->ystart + 1; // Number of separate Y slices
 
-  acoef.resize(nsys, nloc);
-  bcoef.resize(nsys, nloc);
-  ccoef.resize(nsys, nloc);
-  xvals.resize(nsys, nloc);
-  bvals.resize(nsys, nloc);
+  acoef.reallocate(nsys, nloc);
+  bcoef.reallocate(nsys, nloc);
+  ccoef.reallocate(nsys, nloc);
+  xvals.reallocate(nsys, nloc);
+  bvals.reallocate(nsys, nloc);
 
   // Create a cyclic reduction object
   cr = bout::utils::make_unique<CyclicReduce<BoutReal>>(localmesh->getXcomm(), nloc);

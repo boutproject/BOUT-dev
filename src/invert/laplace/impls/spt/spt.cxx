@@ -68,7 +68,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   // Temporary array for taking FFTs
   int ncz = localmesh->LocalNz;
-  dc1d.resize(ncz / 2 + 1);
+  dc1d.reallocate(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
@@ -511,16 +511,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  bk.resize(mm, nx);
-  xk.resize(mm, nx);
+  bk.reallocate(mm, nx);
+  xk.reallocate(mm, nx);
 
-  gam.resize(mm, nx);
+  gam.reallocate(mm, nx);
 
   // Matrix to be solved
-  avec.resize(mm, nx);
-  bvec.resize(mm, nx);
-  cvec.resize(mm, nx);
+  avec.reallocate(mm, nx);
+  bvec.reallocate(mm, nx);
+  cvec.reallocate(mm, nx);
 
-  buffer.resize(4 * mm);
+  buffer.reallocate(4 * mm);
 }
 

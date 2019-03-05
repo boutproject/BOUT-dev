@@ -52,16 +52,16 @@ int RK4Solver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0.resize(nlocal);
-  f1.resize(nlocal);
-  f2.resize(nlocal);
+  f0.reallocate(nlocal);
+  f1.reallocate(nlocal);
+  f2.reallocate(nlocal);
 
   // memory for taking a single time step
-  k1.resize(nlocal);
-  k2.resize(nlocal);
-  k3.resize(nlocal);
-  k4.resize(nlocal);
-  k5.resize(nlocal);
+  k1.reallocate(nlocal);
+  k2.reallocate(nlocal);
+  k3.reallocate(nlocal);
+  k4.reallocate(nlocal);
+  k5.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));

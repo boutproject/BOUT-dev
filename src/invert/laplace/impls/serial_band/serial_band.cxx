@@ -53,8 +53,8 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
   // Allocate memory
 
   int ncz = localmesh->LocalNz;
-  bk.resize(localmesh->LocalNx, ncz / 2 + 1);
-  bk1d.resize(localmesh->LocalNx);
+  bk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
+  bk1d.reallocate(localmesh->LocalNx);
 
   //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
   for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
@@ -63,8 +63,8 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  xk.resize(localmesh->LocalNx, ncz / 2 + 1);
-  xk1d.resize(localmesh->LocalNx);
+  xk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
+  xk1d.reallocate(localmesh->LocalNx);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
@@ -73,7 +73,7 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  A.resize(localmesh->LocalNx, 5);
+  A.reallocate(localmesh->LocalNx, 5);
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
