@@ -42,7 +42,8 @@ Field::Field(Mesh *localmesh, CELL_LOC location_in,
   // Need to check for nullptr again, because the fieldmesh might still be
   // nullptr if the global mesh hasn't been initialized yet
   if (fieldmesh != nullptr) {
-    // get Coordinates for our location from fieldmesh
+    // sets fieldCoordinates by getting Coordinates for our location from
+    // fieldmesh
     getCoordinates();
 
     // Get default values for xDirectionType, yDirectionType and
@@ -76,7 +77,7 @@ void Field::setLocation(CELL_LOC new_location) {
   }
 
   fieldCoordinates = nullptr;
-  // Sets correct Coordinates pointer and ensures Coordinates object is
+  // Sets correct fieldCoordinates pointer and ensures Coordinates object is
   // initialized for this Field's location
   getCoordinates();
 }
