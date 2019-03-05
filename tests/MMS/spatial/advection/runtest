@@ -54,7 +54,7 @@ nxlist = [16, 32, 64, 128, 256]
 nproc = 2
 mthread = 2
 
-success = True
+failures = []
 
 err_2_all = []
 err_inf_all = []
@@ -93,10 +93,10 @@ for opts, label, sym, exp_ord in options:
     order = check_scaling.get_order(dx, error_2)
     print("Convergence order = {:f} ({:f} at small spacing)".format(*order))
 
-    success = check_scaling.check_order(order[0], exp_ord)
-    if success:
+    if check_scaling.check_order(order[0], exp_ord):
         print("... Success")
     else:
+        failures.append(label)
         print("... Failure")
 
     # plot errors
@@ -176,9 +176,11 @@ print("==== l-2 norm ====")
 for e, label, _ in err_2_all:
     print(check_scaling.error_rate_table(e, nxlist, label))
 
-if success:
+if not failures:
     print(" => All tests passed")
     exit(0)
 else:
     print(" => Some failed tests")
+    for failure in failures:
+        print("   -", failure)
     exit(1)
