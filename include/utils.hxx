@@ -88,6 +88,9 @@ using std::make_unique;
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If either \p n1 or \p n2 are 0, the Matrix is empty and should not
+/// be indexed
 template <typename T>
 class Matrix {
 public:
@@ -173,6 +176,9 @@ private:
 /// Helper class for 3D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If any of \p n1, \p n2 or \p n3 are 0, the Tensor is empty and
+/// should not be indexed
 template <typename T>
 class Tensor {
 public:
