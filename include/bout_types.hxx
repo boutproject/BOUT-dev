@@ -48,7 +48,17 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
 const std::string& REGION_STRING(REGION region);
 
-/// To identify particular directions (in index space)
+/// To identify particular directions (in index space):
+///   - X, Y, Z are the coordinate directions
+///   - YAligned is a special case of Y, indicating a field-aligned grid, where
+///     the x- and z- axes are not necessarily orthogonal
+///   - YOrthogonal is a special case of Y, indicating a grid where the x and z
+///     axes are orthogonal but the y-direction is not necessarily
+///     field-aligned
+///   - Special is used when the DIRECTION is an attribute of a Field,
+///     indicating that that field does not have that direction, e.g. Field2D
+///     does not have a z-direction
+///   - Null indicates an uninitialized DIRECTION
 enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5, Special = 6, Null = 7 };
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
