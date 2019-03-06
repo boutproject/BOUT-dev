@@ -420,7 +420,7 @@ bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
 
 // Specialize newEmptyField templates for FieldPerp
 /// Return an empty shell field of some type derived from Field, with metadata
-/// copied but empty data array
+/// copied and a data array that is allocated but not initialised.
 template<>
 inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
   return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
