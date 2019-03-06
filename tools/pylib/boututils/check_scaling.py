@@ -35,12 +35,25 @@ def get_order(grid_spacing, errors):
     return (full_range[0], small_spacing)
 
 
-def check_order(actual_order, expected_order, tolerance=2.e-1):
+def check_order(error_list, expected_order, tolerance=2.e-1, spacing=None):
     """Check if the actual_order is sufficiently close to the
     expected_order within a given tolerance
 
     """
-    return isclose(actual_order, expected_order, atol=tolerance, rtol=0)
+
+    if len(error_list) < 2:
+        raise RuntimeError("Expected at least 2 data points to calculate error")
+
+    success=True
+    for i in range(len(error_list)-1):
+        if spacing is None:
+            actual_order = log(errors[i] / errors[i+1]) / log(2)
+        else:
+            actual_order = log(errors[i] / errors[i+1]) / log(grid_spacing[i] / grid_spacing[i+1])
+
+        if not isclose(actual_order, expected_order, atol=tolerance, rtol=0):
+            success=False
+    return success
 
 
 def error_rate_table(errors, grid_sizes, label):
