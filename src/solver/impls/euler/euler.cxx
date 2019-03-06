@@ -49,8 +49,8 @@ int EulerSolver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal);
-  f1 = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal);
+  f1.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));

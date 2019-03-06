@@ -88,6 +88,9 @@ using std::make_unique;
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If either \p n1 or \p n2 are 0, the Matrix is empty and should not
+/// be indexed
 template <typename T>
 class Matrix {
 public:
@@ -96,11 +99,26 @@ public:
   
   Matrix() : n1(0), n2(0){};
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
-    data = Array<T>(n1*n2);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+
+    data.reallocate(n1 * n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
+  }
+
+  /// Reallocate the Matrix to shape \p new_size_1 by \p new_size_2
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    data.reallocate(new_size_1 * new_size_2);
   }
 
   Matrix& operator=(const Matrix &other) {
@@ -156,6 +174,9 @@ private:
 /// Helper class for 3D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If any of \p n1, \p n2 or \p n3 are 0, the Tensor is empty and
+/// should not be indexed
 template <typename T>
 class Tensor {
 public:
@@ -164,11 +185,28 @@ public:
 
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
-    data = Array<T>(n1*n2*n3);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+    ASSERT2(n3 >= 0);
+    data.reallocate(n1 * n2 * n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
+  }
+
+  /// Reallocate the Tensor with shape \p new_size_1 by \p new_size_2 by \p new_size_3
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+    ASSERT2(new_size_3 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    n3 = new_size_3;
+    data.reallocate(new_size_1 * new_size_2 * new_size_3);
   }
 
   Tensor& operator=(const Tensor &other) {

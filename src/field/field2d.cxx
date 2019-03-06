@@ -94,7 +94,7 @@ void Field2D::allocate() {
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
-    data = Array<BoutReal>(nx*ny);
+    data.reallocate(nx*ny);
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
