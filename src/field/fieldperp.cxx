@@ -84,8 +84,6 @@ FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
   yindex = rhs.yindex;
   data = rhs.data;
 
-  ASSERT1(areFieldsCompatible(*this, rhs));
-
   return *this;
 }
 

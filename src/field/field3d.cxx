@@ -238,8 +238,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   ny = rhs.ny;
   nz = rhs.nz;
 
-  ASSERT1(areFieldsCompatible(*this, rhs));
-
   data = rhs.data;
 
   return *this;
