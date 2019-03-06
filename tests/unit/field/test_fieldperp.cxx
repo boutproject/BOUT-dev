@@ -198,9 +198,7 @@ TEST_F(FieldPerpTest, CreateCopyOnNullMesh) {
 #endif
 
 TEST_F(FieldPerpTest, SetGetLocation) {
-  FieldPerp field;
-
-  field.getMesh()->StaggerGrids = true;
+  FieldPerp field(mesh_staggered);
 
   field.setLocation(CELL_XLOW);
   EXPECT_EQ(field.getLocation(), CELL_XLOW);

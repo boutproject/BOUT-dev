@@ -332,7 +332,7 @@ TEST_F(Field3DTest, GetLocalMesh) {
 }
 
 TEST_F(Field3DTest, SetGetLocation) {
-  Field3D field;
+  Field3D field(mesh_staggered);
 
   field.getMesh()->StaggerGrids = true;
 
@@ -1139,9 +1139,7 @@ TEST_F(Field3DTest, AddEqualsField3D) {
 }
 
 TEST_F(Field3DTest, AddEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.0;
   b = 3.0;
@@ -1208,9 +1206,7 @@ TEST_F(Field3DTest, AddField3DField3D) {
 }
 
 TEST_F(Field3DTest, AddField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1286,9 +1282,7 @@ TEST_F(Field3DTest, MultiplyEqualsField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.5;
   b = 4.0;
@@ -1355,9 +1349,7 @@ TEST_F(Field3DTest, MultiplyField3DField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1433,9 +1425,7 @@ TEST_F(Field3DTest, SubtractEqualsField3D) {
 }
 
 TEST_F(Field3DTest, SubtractEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.0;
   b = 7.0;
@@ -1502,9 +1492,7 @@ TEST_F(Field3DTest, SubtractField3DField3D) {
 }
 
 TEST_F(Field3DTest, SubtractField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1580,9 +1568,7 @@ TEST_F(Field3DTest, DivideEqualsField3D) {
 }
 
 TEST_F(Field3DTest, DivideEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 5.0;
   b = 2.5;
@@ -1649,9 +1635,7 @@ TEST_F(Field3DTest, DivideField3DField3D) {
 }
 
 TEST_F(Field3DTest, DivideField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1902,11 +1886,8 @@ TEST_F(Field3DTest, DC) {
 }
 
 TEST_F(Field3DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field3D first(1., mesh);
+  Field3D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1958,7 +1939,7 @@ TEST_F(Field3DTest, Swap) {
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1973,16 +1954,11 @@ TEST_F(Field3DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field3D first(1., mesh);
+  Field3D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -2004,7 +1980,7 @@ TEST_F(Field3DTest, MoveCtor) {
   EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field3DTest::nx);
   EXPECT_EQ(second.getNy(), Field3DTest::ny);
@@ -2014,8 +1990,6 @@ TEST_F(Field3DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, FillField) {

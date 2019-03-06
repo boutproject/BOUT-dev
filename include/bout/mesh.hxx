@@ -456,15 +456,18 @@ class Mesh {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location];
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location];
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
     }
+
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    auto inserted = coords_map.emplace(location, nullptr);
+    inserted.first->second = createDefaultCoordinates(location);
+    return inserted.first->second;
   }
 
   /// Returns the non-CELL_CENTRE location

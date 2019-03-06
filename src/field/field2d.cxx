@@ -94,7 +94,7 @@ void Field2D::allocate() {
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
-    data = Array<BoutReal>(nx*ny);
+    data.reallocate(nx*ny);
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
@@ -127,13 +127,7 @@ void Field2D::setLocation(CELL_LOC new_location) {
       new_location = CELL_CENTRE;
     }
 
-    // Invalidate the coordinates pointer
-    if (new_location != location) {
-      fieldCoordinates = nullptr;
-    }
-
     location = new_location;
-
   } else {
 #if CHECK > 0
     if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
@@ -144,6 +138,9 @@ void Field2D::setLocation(CELL_LOC new_location) {
 #endif
     location = CELL_CENTRE;
   }
+
+  // Ensures Coordinates object is initialized for this Field's location
+  getCoordinates();
 }
 
 CELL_LOC Field2D::getLocation() const {
