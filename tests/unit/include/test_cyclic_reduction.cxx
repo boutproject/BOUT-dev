@@ -11,7 +11,8 @@
 namespace bout {
 namespace testing {
 constexpr int reduction_size{5};
-}
+constexpr BoutReal CyclicReduceTolerance{1.e-14};
+} // namespace testing
 } // namespace bout
 
 Array<BoutReal> makeArrayFromVector(const std::vector<BoutReal>& values) {
@@ -50,11 +51,11 @@ TEST(CyclicReduction, SerialSolveSingleArray) {
 
   reduce.solve(rhs, x);
 
-  EXPECT_NEAR(x[0], -1., BoutRealTolerance);
-  EXPECT_NEAR(x[1], 2.5, BoutRealTolerance);
-  EXPECT_NEAR(x[2], -4., BoutRealTolerance);
-  EXPECT_NEAR(x[3], 5.75, BoutRealTolerance);
-  EXPECT_NEAR(x[4], -2.75, BoutRealTolerance);
+  EXPECT_NEAR(x[0], -1., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x[1], 2.5, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x[2], -4., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x[3], 5.75, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x[4], -2.75, bout::testing::CyclicReduceTolerance);
 }
 
 TEST(CyclicReduction, SerialSolveSingleMatrix) {
@@ -71,11 +72,11 @@ TEST(CyclicReduction, SerialSolveSingleMatrix) {
 
   reduce.solve(rhs, x);
 
-  EXPECT_NEAR(x(0, 0), -1., BoutRealTolerance);
-  EXPECT_NEAR(x(0, 1), 2.5, BoutRealTolerance);
-  EXPECT_NEAR(x(0, 2), -4., BoutRealTolerance);
-  EXPECT_NEAR(x(0, 3), 5.75, BoutRealTolerance);
-  EXPECT_NEAR(x(0, 4), -2.75, BoutRealTolerance);
+  EXPECT_NEAR(x(0, 0), -1., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 1), 2.5, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 2), -4., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 3), 5.75, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 4), -2.75, bout::testing::CyclicReduceTolerance);
 }
 
 TEST(CyclicReduction, SerialSolveDoubleMatrix) {
@@ -92,14 +93,14 @@ TEST(CyclicReduction, SerialSolveDoubleMatrix) {
 
   reduce.solve(rhs, x);
 
-  EXPECT_NEAR(x(0, 0), -1., BoutRealTolerance);
-  EXPECT_NEAR(x(0, 1), 2.5, BoutRealTolerance);
-  EXPECT_NEAR(x(0, 2), -4., BoutRealTolerance);
-  EXPECT_NEAR(x(0, 3), 5.75, BoutRealTolerance);
-  EXPECT_NEAR(x(0, 4), -2.75, BoutRealTolerance);
-  EXPECT_NEAR(x(1, 0), 3.4, BoutRealTolerance);
-  EXPECT_NEAR(x(1, 1), 0.8, BoutRealTolerance);
-  EXPECT_NEAR(x(1, 2), 5., BoutRealTolerance);
-  EXPECT_NEAR(x(1, 3), 0.8, BoutRealTolerance);
-  EXPECT_NEAR(x(1, 4), 6.6, BoutRealTolerance);
+  EXPECT_NEAR(x(0, 0), -1., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 1), 2.5, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 2), -4., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 3), 5.75, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(0, 4), -2.75, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(1, 0), 3.4, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(1, 1), 0.8, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(1, 2), 5., bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(1, 3), 0.8, bout::testing::CyclicReduceTolerance);
+  EXPECT_NEAR(x(1, 4), 6.6, bout::testing::CyclicReduceTolerance);
 }
