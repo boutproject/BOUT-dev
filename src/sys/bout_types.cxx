@@ -66,16 +66,28 @@ bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2)
   }
 
   if (d2.z == ZDirectionType::Average && d2.y == YDirectionType::Standard
-      && (d1.y == YDirectionType::Standard || d1.y == YDirectionType::Aligned)) {
-    // If a field has ZDirectionType::Average, then it's compatible with
-    // YDirectionType::Aligned as well as YDirectionType::Standard
+      && (d1.y == YDirectionType::Standard || d1.y == YDirectionType::Aligned)
+      && d1.z == ZDirectionType::Standard) {
+    // If d2 has ZDirectionType::Average, then it's compatible with d1 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d1 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d1 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd1.z == ZDirectionType::Standard' here.
     return true;
   }
 
   if (d1.z == ZDirectionType::Average && d1.y == YDirectionType::Standard
-      && (d2.y == YDirectionType::Standard || d2.y == YDirectionType::Aligned)) {
-    // If a field has ZDirectionType::Average, then it's compatible with
-    // YDirectionType::Aligned as well as YDirectionType::Standard
+      && (d2.y == YDirectionType::Standard || d2.y == YDirectionType::Aligned)
+      && d2.z == ZDirectionType::Standard) {
+    // If d1 has ZDirectionType::Average, then it's compatible with d2 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d2 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d2 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd2.z == ZDirectionType::Standard' here.
     return true;
   }
 
