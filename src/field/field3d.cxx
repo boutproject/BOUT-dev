@@ -141,8 +141,10 @@ void Field3D::splitYupYdown() {
   }
 
   for (int i = 0; i < fieldmesh->ystart; ++i) {
-    yup_fields.emplace_back(emptyFrom(*this));
-    ydown_fields.emplace_back(emptyFrom(*this));
+    // Note the fields constructed here will be fully overwritten by the
+    // ParallelTransform, so we don't need a full constructor
+    yup_fields.emplace_back(fieldmesh);
+    ydown_fields.emplace_back(fieldmesh);
   }
 }
 
