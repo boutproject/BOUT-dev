@@ -59,20 +59,19 @@ const std::string& REGION_STRING(REGION region);
 ///     indicating that that field does not have that direction, e.g. Field2D
 ///     does not have a z-direction
 ///   - Null indicates an uninitialized DIRECTION
-enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5, Special = 6, Null = 7 };
+enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal, Special, Null };
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
 
 void swap(DIRECTION& first, DIRECTION& second);
 
 /// To identify valid staggering combinations
-enum class STAGGER { None = 0, C2L = 1, L2C = 2};
+enum class STAGGER { None, C2L, L2C };
 
 const std::string& STAGGER_STRING(STAGGER stagger);
 
 /// To identify types of derivative method combinations
-enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
-		   Upwind = 3, Flux = 4 };
+enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 
 const std::string& DERIV_STRING(DERIV deriv);
 
