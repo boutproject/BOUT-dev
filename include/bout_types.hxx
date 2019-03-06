@@ -80,7 +80,7 @@ struct DirectionTypes {
 
 /// Check whether direction types are compatible, so two fields with attributes
 /// d1 and d2 respectively can be added, subtracted, etc.
-bool compatibleDirections(const DirectionTypes& d1, const DirectionTypes& d2);
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2);
 
 void swap(const DirectionTypes& first, const DirectionTypes& second);
 

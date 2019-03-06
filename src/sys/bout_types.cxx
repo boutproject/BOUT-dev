@@ -59,7 +59,7 @@ void swap(DirectionTypes& first, DirectionTypes& second) {
   second = temp;
 }
 
-bool compatibleDirections(const DirectionTypes& d1, const DirectionTypes& d2) {
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2) {
   if (d1.y == d2.y && d1.z == d2.z) {
     // direction types are the same, most common case, return immediately
     return true;

@@ -161,7 +161,7 @@ class Field {
         field1.getMesh() == field2.getMesh() &&
         field1.getLocation() == field2.getLocation() &&
         // Compatible directions
-        compatibleDirections(field1.directions, field2.directions);
+        areDirectionsCompatible(field1.directions, field2.directions);
   }
 protected:
   Mesh* fieldmesh{nullptr};
