@@ -89,10 +89,6 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
 
   TRACE("Field3D: Copy constructor from value");
 
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
-
   *this = val;
 }
 

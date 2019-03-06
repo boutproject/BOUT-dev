@@ -77,9 +77,6 @@ Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-
   *this = val;
 }
 
