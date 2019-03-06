@@ -93,6 +93,7 @@ public:
 
 TEST_F(ShiftedMetricTest, ToFieldAligned) {
   Field3D expected{mesh};
+  expected.setDirectionY(YDirectionType::Aligned);
 
   fillField(expected, {{{2., 3., 4., 5., 1.},
                         {3., 4., 5., 2., 1.},
@@ -118,8 +119,13 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), expected, "RGN_ALL",
+  Field3D result = mesh->toFieldAligned(input);
+
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), input));
+  EXPECT_TRUE(fieldsCompatible(result, expected));
+  EXPECT_FALSE(fieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
@@ -157,10 +163,23 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   Field3D result = mesh->fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), expected, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), input));
   EXPECT_TRUE(fieldsCompatible(result, expected));
   EXPECT_FALSE(fieldsCompatible(result, input));
+}
+
+TEST_F(ShiftedMetricTest, FromToFieldAligned) {
+  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(mesh->toFieldAligned(input)), input, "RGN_ALL",
+                           FFTTolerance));
+}
+
+TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
+  input.setDirectionY(YDirectionType::Aligned);
+
+  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(mesh->fromFieldAligned(input)), input, "RGN_ALL",
+                           FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, CalcYUpDown) {
