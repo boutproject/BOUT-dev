@@ -73,7 +73,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  ASSERT1(fieldsCompatible(apar, f));
+  ASSERT1(areFieldsCompatible(apar, f));
 
   Mesh *mesh = apar.getMesh();
 
@@ -200,7 +200,7 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 }
 
 const Field3D Div_par(const Field3D &f, const Field3D &v) {
-  ASSERT1(fieldsCompatible(f, v));
+  ASSERT1(areFieldsCompatible(f, v));
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
@@ -741,7 +741,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(fieldsCompatible(f, g));
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -764,7 +764,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(fieldsCompatible(f, g));
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -941,7 +941,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(fieldsCompatible(f, g));
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -978,7 +978,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(fieldsCompatible(f, g));
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }

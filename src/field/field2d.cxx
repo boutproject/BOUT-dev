@@ -435,7 +435,7 @@ Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   // Define and allocate the output result
   Field2D result{emptyFrom(lhs)};

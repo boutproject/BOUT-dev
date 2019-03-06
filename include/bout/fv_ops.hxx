@@ -181,8 +181,8 @@ namespace FV {
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
                         const Field3D &wave_speed, bool fixflux=true) {
 
-    ASSERT1(fieldsCompatible(f_in, v_in));
-    ASSERT1(fieldsCompatible(f_in, wave_speed));
+    ASSERT1(areFieldsCompatible(f_in, v_in));
+    ASSERT1(areFieldsCompatible(f_in, wave_speed));
 
     Mesh* mesh = f_in.getMesh();
 
@@ -345,7 +345,7 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     ASSERT1(n_in.getLocation() == v.getLocation());
-    ASSERT1(fieldsCompatible(n_in, v.x));
+    ASSERT1(areFieldsCompatible(n_in, v.x));
 
     Mesh* mesh = n_in.getMesh();
 

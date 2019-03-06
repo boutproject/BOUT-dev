@@ -77,6 +77,9 @@ class Field {
   CELL_LOC getLocation() const;
 
   /// Getters for DIRECTION types
+  DirectionTypes getDirections() const {
+    return directions;
+  }
   YDirectionType getDirectionY() const {
     return directions.y;
   }
@@ -148,21 +151,6 @@ class Field {
     swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
-
-  friend bool fieldsCompatible(const Field& field1, const Field& field2) {
-    return
-        // The following is a possible alternative to
-        // checking the two meshes and location are the same
-        // It is slightly stricter if we decide that coordinates
-        // could differ in more than just location.
-        field1.getCoordinates() == field2.getCoordinates() &&
-        // In the unit tests fieldCoordinates get set to nullptr, so we still
-        // need to check fieldmesh and location, at least for now
-        field1.getMesh() == field2.getMesh() &&
-        field1.getLocation() == field2.getLocation() &&
-        // Compatible directions
-        areDirectionsCompatible(field1.directions, field2.directions);
-  }
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
@@ -190,6 +178,15 @@ protected:
 private:
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
+
+/// Check if Fields have compatible meta-data
+inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
+  return
+      field1.getCoordinates() == field2.getCoordinates() &&
+      field1.getMesh() == field2.getMesh() &&
+      field1.getLocation() == field2.getLocation() &&
+      areDirectionsCompatible(field1.getDirections(), field2.getDirections());
+}
 
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied but empty data array

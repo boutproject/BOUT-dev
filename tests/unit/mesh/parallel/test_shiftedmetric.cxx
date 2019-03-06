@@ -124,8 +124,8 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), input));
-  EXPECT_TRUE(fieldsCompatible(result, expected));
-  EXPECT_FALSE(fieldsCompatible(result, input));
+  EXPECT_TRUE(areFieldsCompatible(result, expected));
+  EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
@@ -166,8 +166,8 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), input));
-  EXPECT_TRUE(fieldsCompatible(result, expected));
-  EXPECT_FALSE(fieldsCompatible(result, input));
+  EXPECT_TRUE(areFieldsCompatible(result, expected));
+  EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromToFieldAligned) {

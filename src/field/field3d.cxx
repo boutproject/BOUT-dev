@@ -240,7 +240,7 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   ny = rhs.ny;
   nz = rhs.nz;
 
-  ASSERT1(fieldsCompatible(*this, rhs));
+  ASSERT1(areFieldsCompatible(*this, rhs));
 
   data = rhs.data;
 
@@ -257,7 +257,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Make sure there's a unique array to copy data into
   allocate();
-  ASSERT1(fieldsCompatible(*this, rhs));
+  ASSERT1(areFieldsCompatible(*this, rhs));
 
   /// Copy data
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
@@ -268,7 +268,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(fieldsCompatible(*this, rhs));
+  ASSERT1(areFieldsCompatible(*this, rhs));
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
@@ -567,7 +567,7 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
 
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
 
@@ -582,7 +582,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
@@ -598,7 +598,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
 
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   FieldPerp result{emptyFrom(rhs)};
   result.allocate();

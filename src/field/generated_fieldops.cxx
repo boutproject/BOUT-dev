@@ -8,7 +8,7 @@
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -27,7 +27,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -44,7 +44,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and Field3D
 Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -63,7 +63,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -80,7 +80,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and Field3D
 Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -99,7 +99,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -116,7 +116,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and Field3D
 Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -135,7 +135,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -152,7 +152,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
 Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -176,7 +176,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -198,7 +198,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and Field2D
 Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -223,7 +223,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -246,7 +246,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
 Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -270,7 +270,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -292,7 +292,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
 Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -316,7 +316,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -466,7 +466,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
 Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -487,7 +487,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -508,7 +508,7 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
 Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -529,7 +529,7 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
 Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -550,7 +550,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
 Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -569,7 +569,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -586,7 +586,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field2D
 Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -605,7 +605,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -622,7 +622,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
 Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -641,7 +641,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -658,7 +658,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
 Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(fieldsCompatible(lhs, rhs));
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -677,7 +677,7 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(fieldsCompatible(*this, rhs));
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);

@@ -30,8 +30,8 @@
 // Versions taking Field2D and returning Field3D
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field3D result{emptyFrom(gt0)};
 
@@ -46,7 +46,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, gt0));
 
   Field3D result{emptyFrom(gt0)};
 
@@ -61,7 +61,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
 }
 
 const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field3D result{emptyFrom(le0)};
 
@@ -77,8 +77,8 @@ const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
 }
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field3D result{emptyFrom(gt0)};
 
@@ -94,8 +94,8 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
 }
 
 const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field3D result{emptyFrom(le0)};
 
@@ -114,8 +114,8 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
 // Versions taking Field2D and returning Field2D
 
 const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field2D result{emptyFrom(test)};
 
@@ -131,7 +131,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0)
 }
 
 const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
-  ASSERT1(fieldsCompatible(test, gt0));
+  ASSERT1(areFieldsCompatible(test, gt0));
 
   Field2D result{emptyFrom(test)};
 
@@ -147,7 +147,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
 }
 
 const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field2D result{emptyFrom(test)};
 
@@ -180,7 +180,7 @@ const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
 // Versions taking Field3D and returning Field3D
 
 const Field3D where(const Field3D &test, BoutReal gt0, const Field3D &le0) {
-  ASSERT1(fieldsCompatible(test, le0));
+  ASSERT1(areFieldsCompatible(test, le0));
 
   Field3D result{emptyFrom(test)};
 
