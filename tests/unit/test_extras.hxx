@@ -133,6 +133,10 @@ public:
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
+    OffsetX = 0;
+    OffsetY = 0;
+    OffsetZ = 0;
+
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;

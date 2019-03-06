@@ -47,13 +47,13 @@ int RK3SSP::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f = Array<BoutReal>(nlocal);
+  f.reallocate(nlocal);
 
   // memory for taking a single time step
-  u1 = Array<BoutReal>(nlocal);
-  u2 = Array<BoutReal>(nlocal);
-  u3 = Array<BoutReal>(nlocal);
-  L = Array<BoutReal>(nlocal);
+  u1.reallocate(nlocal);
+  u2.reallocate(nlocal);
+  u3.reallocate(nlocal);
+  L.reallocate(nlocal);
 
   // Put starting values into f
   save_vars(std::begin(f));

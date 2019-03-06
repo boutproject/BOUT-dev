@@ -1,5 +1,6 @@
-NOUT = 1
-TIMESTEP = 50
+g = sin(6.0*x^2 - z)
+f = cos(4.0*x^2 + z)
+solution = 3.18309886183791*x*sin(4.0*x^2 + z)*cos(6.0*x^2 - z)
 
 MZ = 16
 
@@ -18,36 +19,12 @@ symmetricGlobalX = true
 ny = 1
 
 [mesh:ddx]
-upwind=c2
+first = c4
+second = c4
+upwind = c2
 
 [mesh:ddz]
-upwind=c2
+first = c4
+second = c4
+upwind = c2
 
-[solver]
-
-#type = rk4
-
-ATOL = 1.0e-15  # absolute tolerance
-RTOL = 1.0e-15   # relative tolerance
-mxstep = 10000  # Maximum internal steps per output
-
-mms = true  # -> Enable MMS testing
-mms_initialise = false  # Don't initialise with MMS solution
-
-[output]
-floats = false # -> Output in double precision
-
-[g]
-solution = sin(6.0*x^2 - z)
-
-[f]
-scale = 0
-function = 0
-
-solution = cos(4.0*x^2 + z)
-
-ddx = -1.27323954473516*x*sin(4.0*x^2 + z)
-
-source = 3.18309886183791*x*sin(4.0*x^2 + z)*cos(6.0*x^2 - z)
-
-bndry_all = dirichlet_o2(f:solution)

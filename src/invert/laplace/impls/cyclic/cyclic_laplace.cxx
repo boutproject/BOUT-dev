@@ -74,11 +74,11 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   int n = xe - xs + 1;  // Number of X points on this processor,
                         // including boundaries but not guard cells
 
-  a = Matrix<dcomplex>(nmode, n);
-  b = Matrix<dcomplex>(nmode, n);
-  c = Matrix<dcomplex>(nmode, n);
-  xcmplx = Matrix<dcomplex>(nmode, n);
-  bcmplx = Matrix<dcomplex>(nmode, n);
+  a.reallocate(nmode, n);
+  b.reallocate(nmode, n);
+  c.reallocate(nmode, n);
+  xcmplx.reallocate(nmode, n);
+  bcmplx.reallocate(nmode, n);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n);
