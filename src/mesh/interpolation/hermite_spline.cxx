@@ -29,14 +29,8 @@
 
 HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
     : Interpolation(y_offset, mesh),
-      h00_x(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h01_x(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h10_x(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h11_x(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h00_z(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h01_z(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h10_z(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      h11_z(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z) {
+      h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
+      h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);

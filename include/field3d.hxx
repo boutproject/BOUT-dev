@@ -168,9 +168,8 @@ class Field3D : public Field, public FieldData {
    * fields may be created before the mesh is.
    */
   Field3D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
-          DIRECTION xDirectionType_in=DIRECTION::Null,
-          DIRECTION yDirectionType_in=DIRECTION::Null,
-          DIRECTION zDirectionType_in=DIRECTION::Null);
+          DirectionTypes directions_in =
+            {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor
@@ -225,7 +224,7 @@ class Field3D : public Field, public FieldData {
     Field::setLocation(location);
     return *this;
   }
-  Field3D& setDirectionY(DIRECTION d) {
+  Field3D& setDirectionY(YDirectionType d) {
     Field::setDirectionY(d);
     return *this;
   }

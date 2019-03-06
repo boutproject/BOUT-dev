@@ -53,9 +53,9 @@ class FieldPerp : public Field {
    * Constructor
    */
   FieldPerp(Mesh * fieldmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
-            int yindex_in=-1, DIRECTION xDirectionType_in=DIRECTION::Null,
-            DIRECTION yDirectionType_in=DIRECTION::Null,
-            DIRECTION zDirectionType_in=DIRECTION::Null);
+            int yindex_in=-1,
+            DirectionTypes directions_in =
+              {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor. After this the data
@@ -125,7 +125,7 @@ class FieldPerp : public Field {
     Field::setLocation(location);
     return *this;
   }
-  FieldPerp& setDirectionY(DIRECTION d) {
+  FieldPerp& setDirectionY(YDirectionType d) {
     Field::setDirectionY(d);
     return *this;
   }
@@ -423,7 +423,7 @@ bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
 /// copied but empty data array
 template<>
 inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
-  return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), f.getDirectionX(), f.getDirectionY(), f.getDirectionZ()).allocate();
+  return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
 
 #if CHECK > 0

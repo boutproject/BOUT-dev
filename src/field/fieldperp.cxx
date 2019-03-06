@@ -35,10 +35,8 @@
 #include <msg_stack.hxx>
 
 FieldPerp::FieldPerp(Mesh *localmesh, CELL_LOC location_in, int yindex_in,
-      DIRECTION xDirectionType_in, DIRECTION yDirectionType_in,
-      DIRECTION zDirectionType_in)
-    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
-            zDirectionType_in),
+      DirectionTypes directions)
+    : Field(localmesh, location_in, directions),
       yindex(yindex_in) {
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -58,8 +56,6 @@ FieldPerp& FieldPerp::allocate() {
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       nz = fieldmesh->LocalNz;
-
-      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx * nz);
 #if CHECK > 2
@@ -338,8 +334,8 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
   // Source field should be valid
   checkData(f);
 
-  FieldPerp result(f.getMesh(), f.getLocation(), y, f.getDirectionX(),
-                   f.getDirectionY(), f.getDirectionZ());
+  FieldPerp result(f.getMesh(), f.getLocation(), y,
+                   {f.getDirectionY(), f.getDirectionZ()});
 
   // Allocate memory
   result.allocate();

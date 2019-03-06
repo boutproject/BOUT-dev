@@ -125,10 +125,10 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
 TEST_F(ShiftedMetricTest, FromFieldAligned) {
   // reset input.yDirectionType so that fromFieldAligned is not a null
   // operation
-  input.setDirectionY(DIRECTION::YAligned);
+  input.setDirectionY(YDirectionType::Aligned);
 
   Field3D expected{mesh, CELL_CENTRE};
-  expected.setDirectionY(DIRECTION::YOrthogonal);
+  expected.setDirectionY(YDirectionType::Standard);
 
   fillField(expected, {{{5., 1., 2., 3., 4.},
                         {4., 5., 2., 1., 3.},

@@ -137,9 +137,9 @@ void ShiftedMetric::cachePhases() {
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION region) {
   switch (f.getDirectionY()) {
-  case (DIRECTION::YOrthogonal):
-    return shiftZ(f, toAlignedPhs, DIRECTION::YAligned, region);
-  case (DIRECTION::YAligned):
+  case (YDirectionType::Standard):
+    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
+  case (YDirectionType::Aligned):
     // f is already in field-aligned coordinates
     return f;
   default:
@@ -156,9 +156,9 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION regio
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION region) {
   switch (f.getDirectionY()) {
-  case (DIRECTION::YAligned):
-    return shiftZ(f, fromAlignedPhs, DIRECTION::YOrthogonal, region);
-  case (DIRECTION::YOrthogonal):
+  case (YDirectionType::Aligned):
+    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
+  case (YDirectionType::Standard):
     // f is already in orthogonal coordinates
     return f;
   default:
@@ -170,7 +170,7 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION reg
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
-                                    const DIRECTION y_direction_out,
+                                    const YDirectionType y_direction_out,
                                     const REGION region) const {
   ASSERT1(&mesh == f.getMesh());
   // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
@@ -208,7 +208,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 
 void ShiftedMetric::calcYUpDown(Field3D& f) {
 
-  ASSERT1(f.getDirectionY() == DIRECTION::YOrthogonal);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&mesh == f.getMesh());
   // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);

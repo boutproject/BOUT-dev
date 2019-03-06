@@ -48,16 +48,39 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
       {DIRECTION::Y, "Y"},
       {DIRECTION::Z, "Z"},
       {DIRECTION::YAligned, "Y - field aligned"},
-      {DIRECTION::YOrthogonal, "Y - orthogonal"},
-      {DIRECTION::Special, "Special"}};
+      {DIRECTION::YOrthogonal, "Y - orthogonal"}};
 
   return safeAt(DIRECTIONtoString, direction);
 }
 
-void swap(DIRECTION& first, DIRECTION& second) {
-  DIRECTION temp = first;
+void swap(DirectionTypes& first, DirectionTypes& second) {
+  DirectionTypes temp = first;
   first = second;
   second = temp;
+}
+
+bool compatibleDirections(const DirectionTypes& d1, const DirectionTypes& d2) {
+  if (d1.y == d2.y && d1.z == d2.z) {
+    // direction types are the same, most common case, return immediately
+    return true;
+  }
+
+  if (d2.z == ZDirectionType::Average && d2.y == YDirectionType::Standard
+      && (d1.y == YDirectionType::Standard || d1.y == YDirectionType::Aligned)) {
+    // If a field has ZDirectionType::Average, then it's compatible with
+    // YDirectionType::Aligned as well as YDirectionType::Standard
+    return true;
+  }
+
+  if (d1.z == ZDirectionType::Average && d1.y == YDirectionType::Standard
+      && (d2.y == YDirectionType::Standard || d2.y == YDirectionType::Aligned)) {
+    // If a field has ZDirectionType::Average, then it's compatible with
+    // YDirectionType::Aligned as well as YDirectionType::Standard
+    return true;
+  }
+
+  // No compatible cases found
+  return false;
 }
 
 const std::string& STAGGER_STRING(STAGGER stagger) {
@@ -80,89 +103,4 @@ const std::string& DERIV_STRING(DERIV deriv) {
       {DERIV::Flux, "Flux"}};
 
   return safeAt(DERIVtoString, deriv);
-}
-
-bool isXDirectionType(DIRECTION x) {
-  switch (x) {
-  case (DIRECTION::X):
-    return true;
-  default:
-    return false;
-  }
-}
-
-bool isYDirectionType(DIRECTION y) {
-  switch (y) {
-  case (DIRECTION::Y):
-  case (DIRECTION::YAligned):
-  case (DIRECTION::YOrthogonal):
-    return true;
-  default:
-    return false;
-  }
-}
-
-bool isZDirectionType(DIRECTION z) {
-  switch (z) {
-  case (DIRECTION::Z):
-    return true;
-  default:
-    return false;
-  }
-}
-
-bool compatibleDirections(DIRECTION d1, DIRECTION d2) {
-  switch (d1) {
-  case (DIRECTION::X): {
-    switch (d2) {
-    case (DIRECTION::X):
-    case (DIRECTION::Special):
-      return true;
-    default:
-      return false;
-    }
-  }
-  case (DIRECTION::Y):
-    switch (d2) {
-    case (DIRECTION::Y):
-    case (DIRECTION::YAligned):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::Special):
-      return true;
-    default:
-      return false;
-    }
-  case (DIRECTION::YAligned):
-    switch (d2) {
-    case (DIRECTION::Y):
-    case (DIRECTION::YAligned):
-    case (DIRECTION::Special):
-      return true;
-    default:
-      return false;
-    }
-  case (DIRECTION::YOrthogonal):
-    switch (d2) {
-    case (DIRECTION::Y):
-    case (DIRECTION::YOrthogonal):
-    case (DIRECTION::Special):
-      return true;
-    default:
-      return false;
-    }
-  case (DIRECTION::Z):
-    switch (d2) {
-    case (DIRECTION::Z):
-    case (DIRECTION::Special):
-      return true;
-    default:
-      return false;
-    }
-  case (DIRECTION::Special):
-    return true;
-  default:
-    // Shouldn't reach this due to checks at start but in case
-    // of future changes good to handle here.
-    throw BoutException("Invalid y direction value");
-  }
 }

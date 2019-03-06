@@ -47,10 +47,8 @@
 #include <bout/assert.hxx>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
-      DIRECTION xDirectionType_in, DIRECTION yDirectionType_in, DIRECTION
-      zDirectionType_in)
-    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
-            zDirectionType_in) {
+      DirectionTypes directions_in)
+    : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
@@ -98,8 +96,6 @@ Field2D& Field2D::allocate() {
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
-
-      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx*ny);
 #if CHECK > 2

@@ -57,15 +57,13 @@ class Field {
  public:
   Field() = default;
 
-  Field(Mesh* localmesh, CELL_LOC location_in, DIRECTION xDirectionType_in,
-      DIRECTION yDirectionType_in, DIRECTION zDirectionType_in);
+  Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
 
   // Copy constructor
   Field(const Field& f)
     : name(f.name), fieldmesh(f.fieldmesh),
       fieldCoordinates(f.fieldCoordinates), location(f.location),
-      xDirectionType(f.xDirectionType), yDirectionType(f.yDirectionType),
-      zDirectionType(f.zDirectionType) {}
+      directions(f.directions) {}
 
   virtual ~Field() { }
 
@@ -79,14 +77,11 @@ class Field {
   CELL_LOC getLocation() const;
 
   /// Getters for DIRECTION types
-  DIRECTION getDirectionX() const {
-    return xDirectionType;
+  YDirectionType getDirectionY() const {
+    return directions.y;
   }
-  DIRECTION getDirectionY() const {
-    return yDirectionType;
-  }
-  DIRECTION getDirectionZ() const {
-    return zDirectionType;
+  ZDirectionType getDirectionZ() const {
+    return directions.z;
   }
 
   std::string name;
@@ -151,9 +146,7 @@ class Field {
     swap(first.fieldmesh, second.fieldmesh);
     swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.location, second.location);
-    swap(first.xDirectionType, second.xDirectionType);
-    swap(first.yDirectionType, second.yDirectionType);
-    swap(first.zDirectionType, second.zDirectionType);
+    swap(first.directions, second.directions);
   }
 
   friend bool fieldsCompatible(const Field& field1, const Field& field2) {
@@ -168,9 +161,7 @@ class Field {
         field1.getMesh() == field2.getMesh() &&
         field1.getLocation() == field2.getLocation() &&
         // Compatible directions
-        compatibleDirections(field1.xDirectionType, field2.xDirectionType)
-        && compatibleDirections(field1.yDirectionType, field2.yDirectionType)
-        && compatibleDirections(field1.zDirectionType, field2.zDirectionType);
+        compatibleDirections(field1.directions, field2.directions);
   }
 protected:
   Mesh* fieldmesh{nullptr};
@@ -179,36 +170,25 @@ protected:
   /// Location of the variable in the cell
   CELL_LOC location{CELL_CENTRE};
 
-  /// Set any direction types which are DIRECTION::Null to default values from
-  /// fieldmesh.
-  void setNullDirectionTypesToDefault();
-
   /// Copy the members from another Field
   void copyFieldMembers(const Field& f) {
     name = f.name;
     fieldmesh = f.fieldmesh;
     fieldCoordinates = f.fieldCoordinates;
     location = f.location;
-    xDirectionType = f.xDirectionType;
-    yDirectionType = f.yDirectionType;
-    zDirectionType = f.zDirectionType;
+    directions = f.directions;
   }
 
   /// Setters for *DirectionType
-  void setDirectionX(DIRECTION d) {
-    xDirectionType = d;
+  void setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
   }
-  void setDirectionY(DIRECTION d) {
-    yDirectionType = d;
-  }
-  void setDirectionZ(DIRECTION d) {
-    zDirectionType = d;
+  void setDirectionZ(ZDirectionType z_type) {
+    directions.z = z_type;
   }
 
 private:
-  DIRECTION xDirectionType{DIRECTION::Null};
-  DIRECTION yDirectionType{DIRECTION::Null};
-  DIRECTION zDirectionType{DIRECTION::Null};
+  DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
 
 /// Return an empty shell field of some type derived from Field, with metadata
@@ -216,7 +196,7 @@ private:
 template<typename T>
 inline T emptyFrom(const T& f) {
   static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), f.getDirectionX(), f.getDirectionY(), f.getDirectionZ()).allocate();
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
 
 /// Unary + operator. This doesn't do anything

@@ -55,15 +55,34 @@ const std::string& REGION_STRING(REGION region);
 ///   - YOrthogonal is a special case of Y, indicating a grid where the x and z
 ///     axes are orthogonal but the y-direction is not necessarily
 ///     field-aligned
-///   - Special is used when the DIRECTION is an attribute of a Field,
-///     indicating that that field does not have that direction, e.g. Field2D
-///     does not have a z-direction
-///   - Null indicates an uninitialized DIRECTION
-enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal, Special, Null };
+enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
 
-void swap(DIRECTION& first, DIRECTION& second);
+/// Identify kind of a field's y-direction
+/// - Standard is the default for the Mesh/Coordinates/ParallelTransform
+/// - Aligned indicates that the field has been transformed to field-aligned
+///   coordinates
+enum class YDirectionType { Standard, Aligned };
+
+/// Identify kind of a field's z-direction
+/// - Standard is the default
+/// - Average indicates that the field represents an average over the
+///   z-direction, rather than having a particular z-position (i.e. is a
+///   Field2D)
+enum class ZDirectionType { Standard, Average };
+
+/// Container for direction types
+struct DirectionTypes {
+  YDirectionType y;
+  ZDirectionType z;
+};
+
+/// Check whether direction types are compatible, so two fields with attributes
+/// d1 and d2 respectively can be added, subtracted, etc.
+bool compatibleDirections(const DirectionTypes& d1, const DirectionTypes& d2);
+
+void swap(const DirectionTypes& first, const DirectionTypes& second);
 
 /// To identify valid staggering combinations
 enum class STAGGER { None, C2L, L2C };
@@ -87,10 +106,5 @@ struct enumWrapper {
 
 /// Boundary condition function
 using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
-
-bool compatibleDirections(DIRECTION d1, DIRECTION d2);
-bool isXDirectionType(DIRECTION x);
-bool isYDirectionType(DIRECTION y);
-bool isZDirectionType(DIRECTION z);
 
 #endif // __BOUT_TYPES_H__

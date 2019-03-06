@@ -45,10 +45,8 @@
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
-                 DIRECTION xDirectionType_in, DIRECTION yDirectionType_in,
-                 DIRECTION zDirectionType_in)
-    : Field(localmesh, location_in, xDirectionType_in, yDirectionType_in,
-            zDirectionType_in) {
+                 DirectionTypes directions_in)
+    : Field(localmesh, location_in, directions_in) {
 #ifdef TRACK
   name = "<F3D>";
 #endif
@@ -114,8 +112,6 @@ Field3D& Field3D::allocate() {
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
       nz = fieldmesh->LocalNz;
-
-      setNullDirectionTypesToDefault();
     }
     data = Array<BoutReal>(nx*ny*nz);
 #if CHECK > 2
@@ -257,7 +253,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
-    setLocation(rhs.getLocation());
+  setLocation(rhs.getLocation());
 
   /// Make sure there's a unique array to copy data into
   allocate();

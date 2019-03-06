@@ -46,8 +46,6 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
-  virtual DIRECTION getDefaultYDirectionType() const = 0;
-
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'coordinates_type' variable, it has the correct value
@@ -95,10 +93,6 @@ public:
     return true;
   }
 
-  DIRECTION getDefaultYDirectionType() const override {
-    return DIRECTION::YAligned;
-  }
-
 protected:
   void checkInputGrid() override;
 };
@@ -143,10 +137,6 @@ public:
 
   bool canToFromFieldAligned() override{
     return true;
-  }
-
-  DIRECTION getDefaultYDirectionType() const override {
-    return DIRECTION::YOrthogonal;
   }
 
 protected:
@@ -209,7 +199,7 @@ private:
    * @param[in] y_direction_out  The value to set yDirectionType of the result to
    */
   const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
-                       const DIRECTION y_direction_out,
+                       const YDirectionType y_direction_out,
                        const REGION region = RGN_NOX) const;
 
   /*!

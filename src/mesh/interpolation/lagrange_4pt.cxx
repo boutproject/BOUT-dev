@@ -27,9 +27,7 @@
 #include <vector>
 
 Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset, mesh),
-      t_x(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z),
-      t_z(localmesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z) {
+    : Interpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);

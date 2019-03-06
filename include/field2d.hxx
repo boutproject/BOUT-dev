@@ -64,9 +64,8 @@ class Field2D : public Field, public FieldData {
    * By default the global Mesh pointer (mesh) is used.
    */ 
   Field2D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
-          DIRECTION xDirectionType_in=DIRECTION::Null,
-          DIRECTION yDirectionType_in=DIRECTION::Y,
-          DIRECTION zDirectionType_in=DIRECTION::Special);
+          DirectionTypes directions_in =
+          {YDirectionType::Standard, ZDirectionType::Average});
 
   /*!
    * Copy constructor. After this both fields
@@ -117,10 +116,6 @@ class Field2D : public Field, public FieldData {
   // these methods return Field2D to allow method chaining
   Field2D& setLocation(CELL_LOC location) {
     Field::setLocation(location);
-    return *this;
-  }
-  Field2D& setDirectionY(DIRECTION d) {
-    Field::setDirectionY(d);
     return *this;
   }
 

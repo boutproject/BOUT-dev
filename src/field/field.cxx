@@ -33,11 +33,9 @@
 #include <bout/mesh.hxx>
 
 Field::Field(Mesh *localmesh, CELL_LOC location_in,
-             DIRECTION xDirectionType_in, DIRECTION yDirectionType_in,
-             DIRECTION zDirectionType_in)
+             DirectionTypes directions_in)
     : fieldmesh(localmesh==nullptr ? bout::globals::mesh : localmesh),
-      location(location_in), xDirectionType(xDirectionType_in),
-      yDirectionType(yDirectionType_in), zDirectionType(zDirectionType_in) {
+      location(location_in), directions(directions_in) {
 
   // Need to check for nullptr again, because the fieldmesh might still be
   // nullptr if the global mesh hasn't been initialized yet
@@ -45,11 +43,6 @@ Field::Field(Mesh *localmesh, CELL_LOC location_in,
     // sets fieldCoordinates by getting Coordinates for our location from
     // fieldmesh
     getCoordinates();
-
-    // Get default values for xDirectionType, yDirectionType and
-    // zDirectionType, if explicit values have not been passed to the
-    // constructor
-    setNullDirectionTypesToDefault();
   }
 }
 
@@ -112,17 +105,3 @@ int Field::getNy() const{
 int Field::getNz() const{
   return getMesh()->LocalNz;
 };
-
-void Field::setNullDirectionTypesToDefault() {
-  ASSERT1(fieldmesh != nullptr);
-
-  if (xDirectionType == DIRECTION::Null) {
-    xDirectionType = DIRECTION::X;
-  }
-  if (yDirectionType == DIRECTION::Null) {
-    yDirectionType = fieldmesh->getParallelTransform().getDefaultYDirectionType();
-  }
-  if (zDirectionType == DIRECTION::Null) {
-    zDirectionType = DIRECTION::Z;
-  }
-}

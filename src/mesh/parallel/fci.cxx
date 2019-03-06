@@ -73,7 +73,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   auto k_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
 
   // Index-space coordinates of forward/backward points
-  Field3D xt_prime(&map_mesh, CELL_CENTRE, DIRECTION::X, DIRECTION::YOrthogonal, DIRECTION::Z);
+  Field3D xt_prime(&map_mesh);
   Field3D zt_prime{emptyFrom(xt_prime)};
 
   // Real-space coordinates of grid points
@@ -266,7 +266,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
 
-  ASSERT1(f.getDirectionY() == DIRECTION::YOrthogonal);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&map_mesh == f.getMesh());
 
   // Cell centre values
@@ -336,7 +336,7 @@ void FCITransform::checkInputGrid() {
 void FCITransform::calcYUpDown(Field3D& f) {
   TRACE("FCITransform::calcYUpDown");
 
-  ASSERT1(f.getDirectionY() == DIRECTION::YOrthogonal);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
   // CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);
@@ -353,7 +353,7 @@ void FCITransform::calcYUpDown(Field3D& f) {
 void FCITransform::integrateYUpDown(Field3D& f) {
   TRACE("FCITransform::integrateYUpDown");
 
-  ASSERT1(f.getDirectionY() == DIRECTION::YOrthogonal);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
   // CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);
