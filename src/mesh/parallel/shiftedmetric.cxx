@@ -138,7 +138,7 @@ void ShiftedMetric::cachePhases() {
 const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION region) {
   switch (f.getDirectionY()) {
   case (DIRECTION::YOrthogonal):
-    return shiftZ(f, toAlignedPhs, DIRECTION::YOrthogonal, region);
+    return shiftZ(f, toAlignedPhs, DIRECTION::YAligned, region);
   case (DIRECTION::YAligned):
     // f is already in field-aligned coordinates
     return f;
