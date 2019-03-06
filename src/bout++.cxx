@@ -688,10 +688,11 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     // Check if enough time left
 
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
-    if (t_remain < run_data.wtime*2) {
-      // Less than 1 time-step left
-      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,t_remain/run_data.wtime);
-      user_requested_exit=true;
+    if (t_remain < run_data.wtime * 2) {
+      // Less than 2 time-steps left
+      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
+                        t_remain / run_data.wtime);
+      user_requested_exit = true;
     } else {
       output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }

@@ -1,21 +1,21 @@
 /*
  * Implements the shifted metric method for parallel derivatives
- * 
+ *
  * By default fields are stored so that X-Z are orthogonal,
  * and so not aligned in Y.
  *
  */
 
-#include <bout/paralleltransform.hxx>
-#include <bout/mesh.hxx>
-#include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
+#include <bout/paralleltransform.hxx>
+#include <fft.hxx>
 
 #include <cmath>
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh &m) : ParallelTransform(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
   // check the coordinate system used for the grid data source
   checkInputGrid();
 
@@ -38,7 +38,8 @@ ShiftedMetric::ShiftedMetric(Mesh &m) : ParallelTransform(m), zShift(&m) {
   cachePhases();
 }
 
-ShiftedMetric::ShiftedMetric(Mesh &m, Field2D zShift_) : ParallelTransform(m), zShift(std::move(zShift_)) {
+ShiftedMetric::ShiftedMetric(Mesh& m, Field2D zShift_)
+    : ParallelTransform(m), zShift(std::move(zShift_)) {
   // check the coordinate system used for the grid data source
   checkInputGrid();
 
@@ -49,8 +50,9 @@ void ShiftedMetric::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
     if (coordinates_type != "orthogonal") {
-      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
-          "to generate metric components for ShiftedMetric. Should be 'orthogonal.");
+      throw BoutException("Incorrect coordinate system type " + coordinates_type
+                          + " used to generate metric components for ShiftedMetric. "
+                            "Should be 'orthogonal.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
@@ -66,35 +68,22 @@ void ShiftedMetric::cachePhases() {
   // As we're attached to a mesh we can expect the z direction to
   // not change once we've been created so precalculate the complex
   // phases used in transformations
-  int nmodes = mesh.LocalNz / 2 + 1;
+  nmodes = mesh.LocalNz / 2 + 1;
   BoutReal zlength = mesh.getCoordinates()->zlength();
 
-  // Allocate storage for our 3d vector structures.
-  // This could be made more succinct but this approach is fairly
-  // verbose --> transparent
-  fromAlignedPhs.resize(mesh.LocalNx);
-  toAlignedPhs.resize(mesh.LocalNx);
-
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    fromAlignedPhs[jx].resize(mesh.LocalNy);
-    toAlignedPhs[jx].resize(mesh.LocalNy);
-
-    for (int jy = 0; jy < mesh.LocalNy; jy++) {
-      fromAlignedPhs[jx][jy].resize(nmodes);
-      toAlignedPhs[jx][jy].resize(nmodes);
-    }
-  }
+  // Allocate storage for our 3d phase information.
+  fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
+  toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
   // To/From field aligned phases
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    for (int jy = 0; jy < mesh.LocalNy; jy++) {
-      for (int jz = 0; jz < nmodes; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
-        fromAlignedPhs[jx][jy][jz] =
-            dcomplex(cos(kwave * zShift(jx, jy)), -sin(kwave * zShift(jx, jy)));
-        toAlignedPhs[jx][jy][jz] =
-            dcomplex(cos(kwave * zShift(jx, jy)), sin(kwave * zShift(jx, jy)));
-      }
+  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+    int ix = i.x();
+    int iy = i.y();
+    for (int jz = 0; jz < nmodes; jz++) {
+      BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
+      fromAlignedPhs(ix, iy, jz) =
+          dcomplex(cos(kwave * zShift[i]), -sin(kwave * zShift[i]));
+      toAlignedPhs(ix, iy, jz) = dcomplex(cos(kwave * zShift[i]), sin(kwave * zShift[i]));
     }
   }
 
@@ -114,32 +103,29 @@ void ShiftedMetric::cachePhases() {
     // Array! We *must* call `Array::ensureUnique` on each element
     // before using it!
     parallel_slice_phases[i].phase_shift =
-        arr3Dvec(mesh.LocalNx,
-                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+        Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
     parallel_slice_phases[i].y_offset = i + 1;
 
     // Backwards parallel slices
     parallel_slice_phases[mesh.ystart + i].phase_shift =
-        arr3Dvec(mesh.LocalNx,
-                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+        Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
     parallel_slice_phases[mesh.ystart + i].y_offset = -(i + 1);
   }
 
   // Parallel slice phases -- note we don't shift in the boundaries/guards
   for (auto& slice : parallel_slice_phases) {
-    for (int jx = 0; jx < mesh.LocalNx; jx++) {
-      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
 
-        slice.phase_shift[jx][jy].ensureUnique();
-        BoutReal slice_shift = zShift(jx, jy) - zShift(jx, jy + slice.y_offset);
+      int ix = i.x();
+      int iy = i.y();
+      BoutReal slice_shift = zShift[i] - zShift[i.yp(slice.y_offset)];
 
-        for (int jz = 0; jz < nmodes; jz++) {
-          // wave number is 1/[rad]
-          BoutReal kwave = jz * 2.0 * PI / zlength;
+      for (int jz = 0; jz < nmodes; jz++) {
+        // wave number is 1/[rad]
+        BoutReal kwave = jz * 2.0 * PI / zlength;
 
-          slice.phase_shift[jx][jy][jz] =
-              dcomplex(cos(kwave * slice_shift), -sin(kwave * slice_shift));
-        }
+        slice.phase_shift(ix, iy, jz) =
+            dcomplex(cos(kwave * slice_shift), -sin(kwave * slice_shift));
       }
     }
   }
@@ -149,41 +135,39 @@ void ShiftedMetric::cachePhases() {
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
  */
-const Field3D ShiftedMetric::toFieldAligned(const Field3D &f) {
-  return shiftZ(f, toAlignedPhs);
+const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION region) {
+  return shiftZ(f, toAlignedPhs, region);
 }
 
 /*!
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetric::fromFieldAligned(const Field3D &f) {
-  return shiftZ(f, fromAlignedPhs);
+const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION region) {
+  return shiftZ(f, fromAlignedPhs, region);
 }
 
-const Field3D ShiftedMetric::shiftZ(const Field3D &f, const arr3Dvec &phs) const {
+const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                                    const REGION region) const {
   ASSERT1(&mesh == f.getMesh());
-  if(mesh.LocalNz == 1)
+  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
+  if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
   result.setLocation(f.getLocation());
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), phs[jx][jy], result(jx,jy));
-    }
+  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
-  
-  return result;
 
+  return result;
 }
 
-void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
-                           BoutReal* out) const {
-
-  int nmodes = mesh.LocalNz / 2 + 1;
+void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const {
   Array<dcomplex> cmplx(nmodes);
 
   // Take forward FFT
@@ -201,8 +185,11 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const Array<dcomplex>& phs,
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
-
 void ShiftedMetric::calcYUpDown(Field3D& f) {
+
+  ASSERT1(&mesh == f.getMesh());
+  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   auto results = shiftZ(f, parallel_slice_phases);
 
@@ -222,14 +209,14 @@ ShiftedMetric::shiftZ(const Field3D& f,
   const int nmodes = mesh.LocalNz / 2 + 1;
 
   // FFT in Z of input field at each (x, y) point
-  arr3Dvec f_fft(mesh.LocalNx,
-                 std::vector<Array<dcomplex>>(mesh.LocalNy, Array<dcomplex>(nmodes)));
+  Matrix<Array<dcomplex>> f_fft(mesh.LocalNx, mesh.LocalNy);
+  f_fft = Array<dcomplex>(nmodes);
 
-  for (int jx = 0; jx < mesh.LocalNx; jx++) {
-    for (int jy = 0; jy < mesh.LocalNy; jy++) {
-      f_fft[jx][jy].ensureUnique();
-      rfft(f(jx, jy), mesh.LocalNz, f_fft[jx][jy].begin());
-    }
+  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+    int ix = i.x();
+    int iy = i.y();
+    f_fft(ix, iy).ensureUnique();
+    rfft(&f(i, 0), mesh.LocalNz, f_fft(ix, iy).begin());
   }
 
   std::vector<Field3D> results{};
@@ -242,46 +229,52 @@ ShiftedMetric::shiftZ(const Field3D& f,
     current_result.allocate();
     current_result.setLocation(f.getLocation());
 
-    for (int jx = 0; jx < mesh.LocalNx; jx++) {
-      for (int jy = mesh.ystart; jy <= mesh.yend; jy++) {
+    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+      // Deep copy the FFT'd field
+      int ix = i.x();
+      int iy = i.y();
 
-        // Deep copy the FFT'd field
-        Array<dcomplex> shifted_temp(f_fft[jx][jy + phase.y_offset]);
-        shifted_temp.ensureUnique();
+      Array<dcomplex> shifted_temp(f_fft(ix, iy + phase.y_offset));
+      shifted_temp.ensureUnique();
 
-        for (int jz = 1; jz < nmodes; ++jz) {
-          shifted_temp[jz] *= phase.phase_shift[jx][jy][jz];
-        }
-
-        irfft(shifted_temp.begin(), mesh.LocalNz,
-              current_result(jx, jy + phase.y_offset));
+      for (int jz = 1; jz < nmodes; ++jz) {
+        shifted_temp[jz] *= phase.phase_shift(ix, iy, jz);
       }
+
+      irfft(shifted_temp.begin(), mesh.LocalNz, &current_result(i.yp(phase.y_offset), 0));
     }
   }
 
   return results;
 }
 
-//Old approach retained so we can still specify a general zShift
-const Field3D ShiftedMetric::shiftZ(const Field3D &f, const Field2D &zangle) const {
+// Old approach retained so we can still specify a general zShift
+const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
+                                    const REGION region) const {
   ASSERT1(&mesh == f.getMesh());
-  if(mesh.LocalNz == 1)
+  ASSERT1(f.getLocation() == zangle.getLocation());
+  if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
   Field3D result(&mesh);
   result.allocate();
   result.setLocation(f.getLocation());
 
-  for(int jx=0;jx<mesh.LocalNx;jx++) {
-    for(int jy=0;jy<mesh.LocalNy;jy++) {
-      shiftZ(f(jx,jy), mesh.LocalNz, zangle(jx,jy), result(jx,jy));
-    }
+  // We only use methods in ShiftedMetric to get fields for parallel operations
+  // like interp_to or DDY.
+  // Therefore we don't need x-guard cells, so do not set them.
+  // (Note valgrind complains about corner guard cells if we try to loop over
+  // the whole grid, because zShift is not initialized in the corner guard
+  // cells.)
+  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+    shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
   }
-  
+
   return result;
 }
 
-void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle, BoutReal* out) const {
+void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle,
+                           BoutReal* out) const {
   int nmodes = len / 2 + 1;
 
   // Complex array used for FFTs

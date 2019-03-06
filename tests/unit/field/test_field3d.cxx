@@ -332,7 +332,7 @@ TEST_F(Field3DTest, GetLocalMesh) {
 }
 
 TEST_F(Field3DTest, SetGetLocation) {
-  Field3D field;
+  Field3D field(mesh_staggered);
 
   field.getMesh()->StaggerGrids = true;
 
@@ -754,6 +754,18 @@ TEST_F(Field3DTest, IndexingInd2D) {
   EXPECT_DOUBLE_EQ(field(ix, iy, iz), -sentinel);
 }
 
+TEST_F(Field3DTest, ConstIndexingInd2D) {
+  Field3D field(0.0);
+  const BoutReal sentinel = 2.0;
+  int ix = 1, iy = 2, iz = 3;
+  field(ix, iy, iz) = sentinel;
+
+  Ind2D ind{iy + ny * ix, ny, 1};
+  const Field3D field2{field};
+
+  EXPECT_DOUBLE_EQ(field2(ind, iz), sentinel);
+}
+
 TEST_F(Field3DTest, IndexingIndPerp) {
   Field3D field(0.0);
   const BoutReal sentinel = 2.0;
@@ -1127,9 +1139,7 @@ TEST_F(Field3DTest, AddEqualsField3D) {
 }
 
 TEST_F(Field3DTest, AddEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.0;
   b = 3.0;
@@ -1196,9 +1206,7 @@ TEST_F(Field3DTest, AddField3DField3D) {
 }
 
 TEST_F(Field3DTest, AddField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1274,9 +1282,7 @@ TEST_F(Field3DTest, MultiplyEqualsField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.5;
   b = 4.0;
@@ -1343,9 +1349,7 @@ TEST_F(Field3DTest, MultiplyField3DField3D) {
 }
 
 TEST_F(Field3DTest, MultiplyField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1421,9 +1425,7 @@ TEST_F(Field3DTest, SubtractEqualsField3D) {
 }
 
 TEST_F(Field3DTest, SubtractEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 2.0;
   b = 7.0;
@@ -1490,9 +1492,7 @@ TEST_F(Field3DTest, SubtractField3DField3D) {
 }
 
 TEST_F(Field3DTest, SubtractField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1568,9 +1568,7 @@ TEST_F(Field3DTest, DivideEqualsField3D) {
 }
 
 TEST_F(Field3DTest, DivideEqualsField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b;
+  Field3D a(mesh_staggered), b(mesh_staggered);
 
   a = 5.0;
   b = 2.5;
@@ -1637,9 +1635,7 @@ TEST_F(Field3DTest, DivideField3DField3D) {
 }
 
 TEST_F(Field3DTest, DivideField3DField3DStagger) {
-  mesh->StaggerGrids = true; // Force staggering
-
-  Field3D a, b, c;
+  Field3D a(mesh_staggered), b(mesh_staggered), c(mesh_staggered);
 
   a = 1.0;
   b = 2.0;
@@ -1890,11 +1886,8 @@ TEST_F(Field3DTest, DC) {
 }
 
 TEST_F(Field3DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field3D first(1., mesh);
+  Field3D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1946,7 +1939,7 @@ TEST_F(Field3DTest, Swap) {
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1961,16 +1954,11 @@ TEST_F(Field3DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field3D first(1., mesh);
+  Field3D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1992,7 +1980,7 @@ TEST_F(Field3DTest, MoveCtor) {
   EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field3DTest::nx);
   EXPECT_EQ(second.getNy(), Field3DTest::ny);
@@ -2002,8 +1990,6 @@ TEST_F(Field3DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field3DTest, FillField) {
@@ -2052,6 +2038,126 @@ TEST_F(Field3DTest, FillField) {
   BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.z(); }
 
   EXPECT_TRUE(IsFieldEqual(f, g));
+}
+
+namespace bout {
+namespace testing {
+
+// Amplitudes for the nth wavenumber
+constexpr int k0{1};
+constexpr int k1{2};
+constexpr int k2{3};
+
+const BoutReal box_size{TWOPI / Field3DTest::nz};
+
+// Helper function for the filter and lowpass tests
+BoutReal zWaves(Field3D::ind_type& i) {
+  return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size)
+         + std::sin(k2 * i.z() * box_size);
+}
+} // namespace testing
+} // namespace bout
+
+TEST_F(Field3DTest, Filter) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) { return std::cos(k1 * i.z() * box_size); },
+      bout::globals::mesh);
+
+  auto output = filter(input, 2);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(Field3DTest, LowPassOneArg) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(Field3DTest, LowPassOneArgNothing) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto output = lowPass(input, 20);
+
+  EXPECT_TRUE(IsFieldEqual(output, input));
+}
+
+TEST_F(Field3DTest, LowPassTwoArg) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2, false);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+
+  // Check passing int still works
+  auto output2 = lowPass(input, 2, 0);
+
+  EXPECT_TRUE(IsFieldEqual(output2, expected));
+
+  // Calling lowPass with an int that is not 0 or 1 is an error
+  EXPECT_THROW(lowPass(input, 2, -1), BoutException);
+  EXPECT_THROW(lowPass(input, 2, 2), BoutException);
+}
+
+TEST_F(Field3DTest, LowPassTwoArgKeepZonal) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto expected = makeField<Field3D>(
+      [&](Field3D::ind_type& i) {
+        return 1.0 + std::sin(k0 * i.z() * box_size) + std::cos(k1 * i.z() * box_size);
+      },
+      bout::globals::mesh);
+
+  auto output = lowPass(input, 2, true);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+
+  // Check passing int still works
+  auto output2 = lowPass(input, 2, 1);
+
+  EXPECT_TRUE(IsFieldEqual(output2, expected));
+}
+
+TEST_F(Field3DTest, LowPassTwoArgNothing) {
+
+  using namespace bout::testing;
+
+  auto input = makeField<Field3D>(zWaves, bout::globals::mesh);
+
+  auto output = lowPass(input, 20, true);
+
+  EXPECT_TRUE(IsFieldEqual(output, input));
 }
 
 // Restore compiler warnings

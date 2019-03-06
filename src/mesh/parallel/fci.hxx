@@ -58,7 +58,7 @@ public:
   BoutMask corner_boundary_mask;
   
   Field3D interpolate(Field3D& f) const {
-    ASSERT3(&map_mesh == f.getMesh());
+    ASSERT1(&map_mesh == f.getMesh());
     return interp->interpolate(f);
   }
 
@@ -93,11 +93,11 @@ public:
   
   void integrateYUpDown(Field3D &f) override;
   
-  const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
+  const Field3D toFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &UNUSED(f)) override {
+  const Field3D fromFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
