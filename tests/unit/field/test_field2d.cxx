@@ -118,6 +118,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), 1);
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
 }
 
 #if CHECK > 0
@@ -1221,6 +1222,24 @@ TEST_F(Field2DTest, FillField) {
   BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.y(); }
 
   EXPECT_TRUE(IsFieldEqual(f, g));
+}
+
+TEST_F(Field2DTest, OperatorEqualsField2D) {
+  Field2D field;
+
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field2{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+
+  field = field2;
+
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
+  EXPECT_EQ(field.getMesh(), field2.getMesh());
+  EXPECT_EQ(field.getLocation(), field2.getLocation());
+  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
 }
 
 #pragma GCC diagnostic pop
