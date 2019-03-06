@@ -116,8 +116,15 @@ int bout_run(Solver *solver, rhsfunc physics_run);
  * This is added to the solver in bout_run (for C-style models)
  * or in bout/physicsmodel.hxx
  */
-class BoutMonitor: public Monitor{
-  int call(Solver *solver, BoutReal t, int iter, int NOUT) override;
+class BoutMonitor: public Monitor {
+public:
+  BoutMonitor(BoutReal timestep = -1) : Monitor(timestep) {
+    // Add wall clock time etc to dump file
+    run_data.outputVars(bout::globals::dump);
+  }
+private:
+  int call(Solver* solver, BoutReal t, int iter, int NOUT) override;
+  RunMetrics run_data;
 };
 
 /*!

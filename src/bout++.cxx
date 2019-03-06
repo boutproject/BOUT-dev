@@ -87,7 +87,6 @@ void bout_signal_handler(int sig);  // Handles signals
 #include <output.hxx>
 
 BoutReal simtime;
-RunMetrics run_data;
 int iteration;
 bool user_requested_exit=false;
 
@@ -509,7 +508,6 @@ int BoutInitialise(int &argc, char **&argv) {
     /// Add book-keeping variables to the output files
     bout::globals::dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
     bout::globals::dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
-    run_data.outputVars(bout::globals::dump);          // Add wall clock time etc to dump file
     bout::globals::dump.add(iteration, "iteration", false);
 
     ////////////////////////////////////////////
