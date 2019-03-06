@@ -72,10 +72,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
 
   if (var.getLocation() == loc) {
     // Nothing to do - just return unchanged
-    // Copying into result to return as returning var may increase the number of
-    // references to the var data whilst returning result doesn't
-    T result = var;
-    return result;
+    return var;
   }
 
 
