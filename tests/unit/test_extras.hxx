@@ -149,7 +149,7 @@ public:
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
     setCoordinates(nullptr);
-    setParallelTransform(PTptr(new ParallelTransformIdentity(*this)));
+    setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>(*this));
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {

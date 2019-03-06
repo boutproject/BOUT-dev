@@ -43,7 +43,7 @@ public:
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
-    mesh->setParallelTransform(Mesh::PTptr(new ShiftedMetric(*mesh, zShift)));
+    mesh->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(*mesh, zShift));
 
     Field3D input_temp{mesh};
 
