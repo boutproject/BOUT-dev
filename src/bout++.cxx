@@ -793,7 +793,6 @@ char get_spin() {
  * Adds variables to the output file, for post-processing
  */
 void RunMetrics::outputVars(Datafile &file) {
-
   file.add(t_elapsed, "wall_time", true);
   file.add(wtime, "wtime", true);
   file.add(ncalls, "ncalls", true);
@@ -809,30 +808,29 @@ void RunMetrics::outputVars(Datafile &file) {
 }
 
 void RunMetrics::calculateDerivedMetrics() {
-
   wtime_per_rhs = wtime / ncalls;
   wtime_per_rhs_e = wtime / ncalls_e;
   wtime_per_rhs_i = wtime / ncalls_i;
 }
 
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
-
   if (!output_split) {
-    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
-               simtime, ncalls, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+    output_progress.write(
+        "%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", simtime, ncalls,
+        wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        100. * wtime_invert / wtime,                    // Inversions
+        100. * wtime_comms / wtime,                     // Communications
+        100. * wtime_io / wtime,                        // I/O
+        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
 
   } else {
-    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
-               simtime, ncalls_e, ncalls_i, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+    output_progress.write(
+        "%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+        simtime, ncalls_e, ncalls_i, wtime,
+        100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        100. * wtime_invert / wtime,                    // Inversions
+        100. * wtime_comms / wtime,                     // Communications
+        100. * wtime_io / wtime,                        // I/O
+        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
   }
 }
