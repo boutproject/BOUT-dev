@@ -22,6 +22,7 @@ using namespace bout::globals;
 class Vector3DTest : public ::testing::Test {
 protected:
   Vector3DTest() {
+    WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -33,9 +34,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
 
     mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
     mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
@@ -54,7 +53,6 @@ protected:
     }
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    output_info.disable();
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     mesh_staggered->createDefaultRegions();
   }

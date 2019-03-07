@@ -21,15 +21,14 @@ public:
       delete mesh;
       mesh = nullptr;
     }
+    WithQuietOutput quiet{output_info};
     mesh = new FakeMesh(nx, ny, nz);
 
     // Use two y-guards to test multiple parallel slices
     mesh->ystart = 2;
     mesh->yend = mesh->LocalNy - 3;
 
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
 
     zShift = Field2D{mesh};
 

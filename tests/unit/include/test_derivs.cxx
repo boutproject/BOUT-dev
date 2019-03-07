@@ -45,6 +45,7 @@ class DerivativesTest
     : public ::testing::TestWithParam<std::tuple<DIRECTION, DERIV, std::string>> {
 public:
   DerivativesTest() : input{mesh}, expected{mesh} {
+    WithQuietOutput quiet{output_info};
 
     using Index = Field3D::ind_type;
 
@@ -98,9 +99,7 @@ public:
     mesh->ystart = y_guards;
     mesh->yend = ny - (y_guards + 1);
 
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
 
     // Make the input and expected output fields
     // Weird `(i.*dir)()` syntax here in order to call the direction method

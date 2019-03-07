@@ -270,10 +270,9 @@ public:
       delete bout::globals::mesh;
       bout::globals::mesh = nullptr;
     }
+    WithQuietOutput quiet{output_info};
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
     bout::globals::mesh->createDefaultRegions();
-    output_info.enable();
 
     // Delete any existing mesh_staggered
     if (mesh_staggered != nullptr) {
@@ -285,9 +284,7 @@ public:
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
-    output_info.disable();
     mesh_staggered->createDefaultRegions();
-    output_info.enable();
   }
 
   virtual ~FakeMeshFixture() {

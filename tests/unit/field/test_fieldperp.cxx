@@ -105,14 +105,14 @@ TEST_F(FieldPerpTest, GetSetIndex) {
 }
 
 TEST_F(FieldPerpTest, CreateOnGivenMesh) {
+  WithQuietOutput quiet{output_info};
+
   int test_nx = FieldPerpTest::nx + 2;
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  output_info.disable();
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   FieldPerp field{&fieldmesh};
 
@@ -124,14 +124,14 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
 }
 
 TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
+  WithQuietOutput quiet{output_info};
+
   int test_nx = FieldPerpTest::nx + 2;
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  output_info.disable();
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   FieldPerp field{&fieldmesh};
   field = 1.0;

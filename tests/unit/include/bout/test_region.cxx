@@ -1670,10 +1670,9 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    WithQuietOutput quiet{output_info};
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
   }
 
   ~IndexOffsetTest() {

@@ -55,6 +55,7 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    WithQuietOutput quiet{output_info};
     mesh = new FakeMesh(nx, ny, nz);
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
@@ -65,9 +66,7 @@ protected:
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_ZLOW);
     mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
   }
 
   static void TearDownTestCase() {

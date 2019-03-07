@@ -103,14 +103,14 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
 }
 
 TEST_F(Field3DTest, CopyCheckFieldmesh) {
+  WithQuietOutput quiet{output_info};
+
   int test_nx = Field3DTest::nx + 2;
   int test_ny = Field3DTest::ny + 2;
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  output_info.disable();
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   Field3D field{0.0, &fieldmesh};
 
@@ -1886,6 +1886,8 @@ TEST_F(Field3DTest, DC) {
 }
 
 TEST_F(Field3DTest, Swap) {
+  WithQuietOutput quiet{output_info};
+
   // First field
   Field3D first(1., mesh_staggered);
 
@@ -1904,9 +1906,7 @@ TEST_F(Field3DTest, Swap) {
 
   FakeMesh second_mesh{second_nx, second_ny, second_nz};
   second_mesh.StaggerGrids = false;
-  output_info.disable();
   second_mesh.createDefaultRegions();
-  output_info.enable();
 
   // Second field
   Field3D second(2., &second_mesh);
