@@ -97,6 +97,6 @@ check: $(GTEST_SENTINEL) serial_tests
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.
-%.o: $(BOUT_TOP)/make.config %.cxx
+%.o: $(BOUT_TOP)/make.config $($(GTEST_SENTINEL) %.cxx
 	@echo "  Compiling " $(@:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $(@)
