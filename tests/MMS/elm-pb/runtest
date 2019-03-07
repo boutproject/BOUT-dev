@@ -12,7 +12,7 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boututils.datafile import DataFile
 from boutdata.collect import collect
 
@@ -51,7 +51,7 @@ shape.add(P0, "pressure")
 shape.add(J0, "Jpar0")
 shape.add(bxcvz, "bxcvz")
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS elm-pb test")
 shell_safe("make > make.log")
@@ -107,7 +107,7 @@ for nx,nproc in zip(nxlist, nprocs):
         # Command to run
         cmd = "./elm_pb "+args
         # Launch using MPI
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         
         # Save output to log file
         f = open("run.log."+str(nx), "w")

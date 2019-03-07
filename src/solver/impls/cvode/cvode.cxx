@@ -131,15 +131,26 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   bool use_precon, use_jacobian, use_vector_abstol, stablimdet;
   BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (auto fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
+
   int mxsteps; // Maximum number of steps to take between outputs
   int mxorder; // Maximum lmm order to be used by the solver
   int lmm = CV_BDF;
   int iter = CV_NEWTON;
 
   {TRACE("Getting options");
-    options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
-    options->get("mldq", mldq, n3Dvars()*(MXSUB+2));
+    options->get("mudq", mudq, band_width_default);
+    options->get("mldq", mldq, band_width_default);
     options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
     options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
     options->get("ATOL", abstol, 1.0e-12);
@@ -371,13 +382,13 @@ int CvodeSolver::run() {
       long int nonlin_fails;
       CVodeGetNumNonlinSolvConvFails(cvode_mem, &nonlin_fails);
       
-      output.write("    -> Local error fails: %d, nonlinear convergence fails: %d\n", num_fails, nonlin_fails);
+      output.write("    -> Local error fails: %ld, nonlinear convergence fails: %ld\n", num_fails, nonlin_fails);
 
       // Stability limit order reductions
       long int stab_lims;
       CVodeGetNumStabLimOrderReds(cvode_mem, &stab_lims);
       
-      output.write("    -> Stability limit order reductions: %d\n", stab_lims);
+      output.write("    -> Stability limit order reductions: %ld\n", stab_lims);
       
     }
 
@@ -581,11 +592,11 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutRe
   int p = 0; // Counter for location in abstolvec_data array
 
   // All boundaries
-  for (const auto &i2d : mesh->getRegion2D("RGN_BNDRY")) {
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
   }
   // Bulk of points
-  for (const auto &i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+  for (const auto &i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
   }
 }
@@ -603,7 +614,7 @@ void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d),
     p++;
   }
   
-  for (int jz=0; jz < mesh->LocalNz; jz++) {
+  for (int jz=0; jz < bout::globals::mesh->LocalNz; jz++) {
     // Loop over 3D variables
     for(std::vector<BoutReal>::size_type i=0; i<f3dtols.size(); i++) {
       if(bndry && !f3d[i].evolve_bndry) {

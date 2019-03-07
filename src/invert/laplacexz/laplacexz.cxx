@@ -9,7 +9,7 @@
 LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
   if (m == nullptr) {
     // use global mesh
-    m = mesh;
+    m = bout::globals::mesh;
   }
 
   if (options == nullptr) {

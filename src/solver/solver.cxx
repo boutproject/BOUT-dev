@@ -158,7 +158,7 @@ void Solver::add(Field2D &v, const std::string name) {
     
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
+    v = fact->create2D("solution", Options::getRoot()->getSection(name), v.getMesh());
   } else {
     initial_profile(name, v);
   }
@@ -183,6 +183,8 @@ void Solver::add(Field2D &v, const std::string name) {
 
 void Solver::add(Field3D &v, const std::string name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
+
+  Mesh* mesh = v.getMesh();
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -704,7 +706,10 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     throw;
   }
 
-  if ( iter == NOUT ){
+  // Check if any of the monitors has asked to quit
+  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
+
+  if ( iter == NOUT || abort ){
     for (const auto &it : monitors){
       it->cleanup();
     }
@@ -712,10 +717,10 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
 
   if (abort) {
     // restart file should be written by physics model
-    output.write("User signalled to quit. Returning\n");
+    output.write(_("User signalled to quit. Returning\n"));
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -771,6 +776,9 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  **************************************************************************/
 
 int Solver::getLocalN() {
+
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
 
   /// Cache the value, so this is not repeatedly called.
   /// This value should not change after initialisation
@@ -828,6 +836,9 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
+
   int nz = mesh->LocalNz;
   
   switch(op) {
@@ -962,6 +973,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
 
 /// Loop over variables and domain. Used for all data operations for consistency
 void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
+
   int p = 0; // Counter for location in udata array
   
   // All boundaries
@@ -1075,6 +1089,9 @@ void Solver::set_id(BoutReal *udata) {
  *
  */
 const Field3D Solver::globalIndex(int localStart) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
+
   Field3D index(-1, mesh); // Set to -1, indicating out of domain
 
   int n2d = f2d.size();
@@ -1358,11 +1375,11 @@ void Solver::add_mms_sources(BoutReal t) {
     
   // Iterate over 2D variables
   for(const auto& f : f2d) {
-    *f.F_var += fact->create2D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    *f.F_var += fact->create2D("source", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
   }
   
   for(const auto& f : f3d) {
-    *f.F_var += fact->create3D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    *f.F_var += fact->create3D("source", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
   }
 }
 
@@ -1371,7 +1388,7 @@ void Solver::calculate_mms_error(BoutReal t) {
   FieldFactory *fact = FieldFactory::get();
   
   for(const auto& f : f3d) {
-    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
     
     *(f.MMS_err) = *(f.var) - solution;
   }

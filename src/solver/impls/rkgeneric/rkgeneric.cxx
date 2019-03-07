@@ -66,9 +66,9 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   OPTION(options, adaptive, true); // Prefer adaptive scheme
 
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal); // Input
-  f2 = Array<BoutReal>(nlocal); // Result--follow order
-  tmpState = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal); // Input
+  f2.reallocate(nlocal); // Result--follow order
+  tmpState.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));

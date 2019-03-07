@@ -32,6 +32,7 @@
  */
 
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -67,7 +68,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   // Temporary array for taking FFTs
   int ncz = localmesh->LocalNz;
-  dc1d = Array<dcomplex>(ncz / 2 + 1);
+  dc1d.reallocate(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
@@ -510,16 +511,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  bk = Matrix<dcomplex>(mm, nx);
-  xk = Matrix<dcomplex>(mm, nx);
+  bk.reallocate(mm, nx);
+  xk.reallocate(mm, nx);
 
-  gam = Matrix<dcomplex>(mm, nx);
+  gam.reallocate(mm, nx);
 
   // Matrix to be solved
-  avec = Matrix<dcomplex>(mm, nx);
-  bvec = Matrix<dcomplex>(mm, nx);
-  cvec = Matrix<dcomplex>(mm, nx);
+  avec.reallocate(mm, nx);
+  bvec.reallocate(mm, nx);
+  cvec.reallocate(mm, nx);
 
-  buffer = Array<BoutReal>(4 * mm);
+  buffer.reallocate(4 * mm);
 }
 

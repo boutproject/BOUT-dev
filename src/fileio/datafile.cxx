@@ -36,9 +36,11 @@
 //#include "mpi.h" // For MPI_Wtime()
 
 #include <globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <datafile.hxx>
 #include <boutexception.hxx>
+#include <options.hxx>
 #include <output.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
@@ -46,10 +48,12 @@
 #include <cstring>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true),
-  floats(false), openclose(true), enabled(true), shiftOutput(false),
-  shiftInput(false), flushFrequencyCounter(0), flushFrequency(1),
-  file(nullptr), writable(false), appending(false), first_time(true)
+Datafile::Datafile(Options *opt, Mesh* mesh_in)
+  : mesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in),
+    parallel(false), flush(true), guards(true), floats(false), openclose(true),
+    enabled(true), shiftOutput(false), shiftInput(false),
+    flushFrequencyCounter(0), flushFrequency(1), file(nullptr), writable(false),
+    appending(false), first_time(true)
 {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
@@ -91,7 +95,7 @@ Datafile::Datafile(Datafile &&other) noexcept
 }
 
 Datafile::Datafile(const Datafile &other) :
-  parallel(other.parallel), flush(other.flush), guards(other.guards),
+  mesh(other.mesh), parallel(other.parallel), flush(other.flush), guards(other.guards),
   floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
   enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(nullptr), writable(other.writable), appending(other.appending), first_time(other.first_time),
@@ -106,6 +110,7 @@ Datafile::Datafile(const Datafile &other) :
 }
 
 Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
+  mesh         = rhs.mesh;
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
@@ -189,7 +194,7 @@ bool Datafile::openw(const char *format, ...) {
   bout_vsnprintf(filename, filenamelen, format);
   
   // Get the data format
-  file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
+  file = FormatFactory::getInstance()->createDataFormat(filename, parallel, mesh);
   
   if(!file)
     throw BoutException("Datafile::open: Factory failed to create a DataFormat!");
@@ -997,7 +1002,7 @@ bool Datafile::write(const char *format, ...) const {
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw("%s",filename);
   bool ret = tmp.write();
   tmp.close();
 
@@ -1151,7 +1156,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   
   if (shiftInput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = mesh->fromFieldAligned(*f);
+    *f = mesh->fromFieldAligned(*f, RGN_ALL);
   }
   
   return true;

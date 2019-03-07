@@ -30,8 +30,8 @@ Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
     : Interpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
-  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   t_x.allocate();
   t_z.allocate();
@@ -63,11 +63,16 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
         }
 
         // Check that t_x and t_z are in range
-        if ((t_x(x, y, z) < 0.0) || (t_x(x, y, z) > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x(x, y, z), x, y, z);
-
-        if ((t_z(x, y, z) < 0.0) || (t_z(x, y, z) > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z(x, y, z), x, y, z);
+        if ((t_x(x, y, z) < 0.0) || (t_x(x, y, z) > 1.0)) {
+          throw BoutException(
+            "t_x=%e out of range at (%d,%d,%d) (delta_x=%e, i_corner=%d)", t_x(x, y, z), x, y,
+              z, delta_x(x, y, z), i_corner(x, y, z));
+        }
+        if ((t_z(x, y, z) < 0.0) || (t_z(x, y, z) > 1.0)) {
+          throw BoutException(
+            "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z(x, y, z), x, y,
+              z, delta_z(x, y, z), k_corner(x, y, z));
+        }
       }
     }
   }

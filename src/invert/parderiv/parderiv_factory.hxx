@@ -11,9 +11,9 @@ class ParDerivFactory {
   /// Return a pointer to the only instance
   static ParDerivFactory* getInstance();
   
-  InvertPar* createInvertPar(Mesh* mesh_in = mesh);
-  InvertPar *createInvertPar(const char *type, Options *opt = nullptr, Mesh* mesh_in = mesh);
-  InvertPar* createInvertPar(Options *opts, Mesh* mesh_in = mesh);
+  InvertPar* createInvertPar(Mesh* mesh_in = bout::globals::mesh);
+  InvertPar *createInvertPar(const char *type, Options *opt = nullptr, Mesh* mesh_in = bout::globals::mesh);
+  InvertPar* createInvertPar(Options *opts, Mesh* mesh_in = bout::globals::mesh);
  private:
   ParDerivFactory() {} // Prevent instantiation of this class
   static ParDerivFactory* instance; ///< The only instance of this class (Singleton)

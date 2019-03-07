@@ -75,6 +75,6 @@ struct enumWrapper {
 };
 
 /// Boundary condition function
-typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

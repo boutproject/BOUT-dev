@@ -41,7 +41,7 @@
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-PncFormat::PncFormat() {
+PncFormat::PncFormat(Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;
@@ -51,7 +51,7 @@ PncFormat::PncFormat() {
   fname = nullptr;
 }
 
-PncFormat::PncFormat(const char *name) {
+PncFormat::PncFormat(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;

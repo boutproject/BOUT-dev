@@ -161,9 +161,9 @@ bool nogradparj;
 bool filter_z;
 int filter_z_mode;
 int low_pass_z;
-int zonal_flow;
-int zonal_field;
-int zonal_bkgd;
+bool zonal_flow;
+bool zonal_field;
+bool zonal_bkgd;
 bool relax_j_vac;
 BoutReal relax_j_tconst; // Time-constant for j relax
 Field3D Psitarget;       // The (moving) target to relax to
@@ -467,10 +467,10 @@ int physics_init(bool restarting) {
   // Toroidal filtering
   filter_z = options["filter_z"].withDefault(false); // Filter a single n
   filter_z_mode = options["filter_z_mode"].withDefault(1);
-  low_pass_z = options["low_pass_z"].withDefault(-1);   // Low-pass filter
-  zonal_flow = options["zonal_flow"].withDefault(-1);   // zonal flow filter
-  zonal_field = options["zonal_field"].withDefault(-1); // zonal field filter
-  zonal_bkgd = options["zonal_bkgd"].withDefault(-1);   // zonal background P filter
+  low_pass_z = options["low_pass_z"].withDefault(false);   // Low-pass filter
+  zonal_flow = options["zonal_flow"].withDefault(false);   // zonal flow filter
+  zonal_field = options["zonal_field"].withDefault(false); // zonal field filter
+  zonal_bkgd = options["zonal_bkgd"].withDefault(false);   // zonal background P filter
 
   // Radial smoothing
   smooth_j_x = options["smooth_j_x"].withDefault(false); // Smooth Jpar in x
@@ -528,21 +528,21 @@ int physics_init(bool restarting) {
 
   // heating factor in pressure
   heating_P = options["heating_P"].withDefault(-1.0); //  heating power in pressure
-  hp_width = options["hp_width"].withDefault(
-      0.1); //  the percentage of radial grid points for heating
-            //  profile radial width in pressure
+  hp_width =
+      options["hp_width"].withDefault(0.1); //  the percentage of radial grid points for
+                                            //  heating profile radial width in pressure
   hp_length = options["hp_length"].withDefault(
       0.04); //  the percentage of radial grid points for heating
              //  profile radial domain in pressure
 
   // sink factor in pressure
   sink_P = options["sink_P"].withDefault(-1.0); //  sink in pressure
-  sp_width = options["sp_width"].withDefault(
-      0.05); //  the percentage of radial grid points for sink
-             //  profile radial width in pressure
-  sp_length = options["sp_length"].withDefault(
-      0.04); //  the percentage of radial grid points for sink
-             //  profile radial domain in pressure
+  sp_width =
+      options["sp_width"].withDefault(0.05); //  the percentage of radial grid points for
+                                             //  sink profile radial width in pressure
+  sp_length =
+      options["sp_length"].withDefault(0.04); //  the percentage of radial grid points for
+                                              //  sink profile radial domain in pressure
 
   // left edge sink factor in vorticity
   sink_Ul = options["sink_Ul"].withDefault(-1.0); //  left edge sink in vorticity
@@ -606,8 +606,9 @@ int physics_init(bool restarting) {
         // Divide n by the size of the domain
         int zperiod = globalOptions["zperiod"].withDefault(1);
         if ((rmp_n % zperiod) != 0)
-          output_warn.write("     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n,
-                            zperiod);
+          output_warn.write(
+              "     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n,
+              zperiod);
 
         output.write("\tMagnetic perturbation: n = %d, m = %d, magnitude %e Tm\n", rmp_n,
                      rmp_m, rmp_factor);
@@ -1004,7 +1005,8 @@ int physics_init(bool restarting) {
     // Implicit Phi solve using IDA
 
     if (!bout_constrain(phi, C_phi, "phi")) {
-      output_error.write("ERROR: Cannot constrain. Run again with phi_constraint=false\n");
+      output_error.write(
+          "ERROR: Cannot constrain. Run again with phi_constraint=false\n");
       throw BoutException("Aborting.\n");
     }
 
@@ -1049,7 +1051,7 @@ int physics_init(bool restarting) {
   aparSolver = Laplacian::create();
   aparSolver->setFlags(apar_flags);
   aparSolver->setCoefA(-delta_e_inv * N0 * N0);
-  
+
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero
 
@@ -1274,7 +1276,7 @@ int physics_run(BoutReal t) {
       // Recommunicate now smoothed
       mesh->communicate(Jpar);
     }
-    
+
     // Get Delp2(J) from J
     Jpar2 = Delp2(Jpar);
 
@@ -1411,7 +1413,8 @@ int physics_run(BoutReal t) {
       Psitarget = aparSolver->solve(Jtarget);
 
       // Add a relaxation term in the vacuum
-      ddt(Psi) = ddt(Psi) * (1. - vac_mask) - (Psi - Psitarget) * vac_mask / relax_j_tconst;
+      ddt(Psi) =
+          ddt(Psi) * (1. - vac_mask) - (Psi - Psitarget) * vac_mask / relax_j_tconst;
     }
   }
 

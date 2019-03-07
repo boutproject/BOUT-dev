@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -172,8 +173,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
-  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";

@@ -8,6 +8,7 @@
 #include <bout/assert.hxx>
 
 #include <boutcomm.hxx>
+#include <globals.hxx>
 #include <utils.hxx>
 #include <bout/sys/timer.hxx>
 
@@ -26,7 +27,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : localmesh(m==nullptr ? mesh : m), location(loc) {
+    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -82,15 +83,15 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   //////////////////////////////////////////////////
   // Allocate storage for preconditioner
-  
-  nloc    = xend - xstart + 1; // Number of X points on this processor
+
+  nloc = xend - xstart + 1;                       // Number of X points on this processor
   nsys = localmesh->yend - localmesh->ystart + 1; // Number of separate Y slices
 
-  acoef = Matrix<BoutReal>(nsys, nloc);
-  bcoef = Matrix<BoutReal>(nsys, nloc);
-  ccoef = Matrix<BoutReal>(nsys, nloc);
-  xvals = Matrix<BoutReal>(nsys, nloc);
-  bvals = Matrix<BoutReal>(nsys, nloc);
+  acoef.reallocate(nsys, nloc);
+  bcoef.reallocate(nsys, nloc);
+  ccoef.reallocate(nsys, nloc);
+  xvals.reallocate(nsys, nloc);
+  bvals.reallocate(nsys, nloc);
 
   // Create a cyclic reduction object
   cr = bout::utils::make_unique<CyclicReduce<BoutReal>>(localmesh->getXcomm(), nloc);

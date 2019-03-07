@@ -161,9 +161,9 @@ bool nogradparj;
 bool filter_z;
 int filter_z_mode;
 int low_pass_z;
-int zonal_flow;
-int zonal_field;
-int zonal_bkgd;
+bool zonal_flow;
+bool zonal_field;
+bool zonal_bkgd;
 bool relax_j_vac;
 BoutReal relax_j_tconst; // Time-constant for j relax
 Field3D Psitarget;       // The (moving) target to relax to
@@ -516,10 +516,10 @@ int physics_init(bool restarting) {
   // Toroidal filtering
   filter_z = options["filter_z"].withDefault(false); // Filter a single n
   filter_z_mode = options["filter_z_mode"].withDefault(1);
-  low_pass_z = options["low_pass_z"].withDefault(-1);   // Low-pass filter
-  zonal_flow = options["zonal_flow"].withDefault(-1);   // zonal flow filter
-  zonal_field = options["zonal_field"].withDefault(-1); // zonal field filter
-  zonal_bkgd = options["zonal_bkgd"].withDefault(-1);   // zonal background P filter
+  low_pass_z = options["low_pass_z"].withDefault(false);   // Low-pass filter
+  zonal_flow = options["zonal_flow"].withDefault(false);   // zonal flow filter
+  zonal_field = options["zonal_field"].withDefault(false); // zonal field filter
+  zonal_bkgd = options["zonal_bkgd"].withDefault(false);   // zonal background P filter
 
   filter_nl = options["filter_nl"].withDefault(-1); // zonal background P filter
 
