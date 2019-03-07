@@ -109,6 +109,16 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
+class WithQuietOutput {
+public:
+  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    output.disable();
+  }
+
+  ~WithQuietOutput() { output.enable(); }
+  ConditionalOutput& output;
+};
+
 class Options;
 
 /// FakeMesh has just enough information to create fields
