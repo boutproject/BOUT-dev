@@ -12,6 +12,7 @@
 #include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
+#include "../src/mesh/parallel/identity.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions

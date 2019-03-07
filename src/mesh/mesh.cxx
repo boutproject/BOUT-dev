@@ -12,6 +12,8 @@
 
 #include <output.hxx>
 
+#include "parallel/identity.hxx"
+#include "parallel/shiftedmetric.hxx"
 #include "parallel/fci.hxx"
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {

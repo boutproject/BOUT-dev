@@ -1,6 +1,6 @@
 #include <bout.hxx>
 
-#include <bout/paralleltransform.hxx>
+#include <../src/mesh/parallel/shiftedmetric.hxx>
 
 #include <derivs.hxx>
 

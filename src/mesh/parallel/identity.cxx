@@ -6,8 +6,9 @@
  *
  */
 
-#include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
+#include "identity.hxx"
+
+#include "bout/mesh.hxx"
 
 void ParallelTransformIdentity::calcYUpDown(Field3D& f) {
   f.splitYupYdown();
