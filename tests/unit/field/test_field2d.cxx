@@ -1242,4 +1242,36 @@ TEST_F(Field2DTest, OperatorEqualsField2D) {
   EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
 }
 
+TEST_F(Field2DTest, EmptyFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{emptyFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+}
+
+TEST_F(Field2DTest, ZeroFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{zeroFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+  EXPECT_TRUE(IsFieldEqual(field2, 0.));
+}
 #pragma GCC diagnostic pop
