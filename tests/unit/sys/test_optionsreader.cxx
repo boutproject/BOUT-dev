@@ -423,7 +423,7 @@ test6 = h2`+`:on`e-`more             # Escape sequences in the middle
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), "%s", filename);
   std::remove(filename);
 
   auto options = Options::root()["tests"];
@@ -451,7 +451,7 @@ some:value = 3
 
   OptionsReader reader;
   
-  EXPECT_THROW(reader.read(Options::getRoot(), filename), BoutException);
+  EXPECT_THROW(reader.read(Options::getRoot(), "%s", filename), BoutException);
   std::remove(filename);
 }
 
@@ -473,7 +473,7 @@ twopi = 2 * π   # Unicode symbol defined for pi
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), "%s", filename);
   std::remove(filename);
 
   auto options = Options::root()["tests"];
