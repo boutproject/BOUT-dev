@@ -110,9 +110,7 @@ public:
   }
   const Field3D solve(const Field3D &b, const Field3D &x0) override;
   const Field3D solve(const Field3D &b) override {
-    Field3D x0{emptyFrom(b)};
-    x0 = 0.;
-    return solve(b, x0);
+    return solve(b, zeroFrom(b));
   }
 
   // Override flag-setting methods to set delp2solver's flags as well

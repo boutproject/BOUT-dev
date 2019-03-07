@@ -193,8 +193,7 @@ namespace FV {
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result{emptyFrom(f_in)};
-    result = 0.0;
+    Field3D result{zeroFrom(f_in)};
     
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
@@ -358,8 +357,7 @@ namespace FV {
       throw BoutException("Div_f_v_XPPM passed a covariant v");
     }
     
-    Field3D result{emptyFrom(n_in)};
-    result = 0.0;
+    Field3D result{zeroFrom(n_in)};
     
     Field3D vx = v.x;
     Field3D vz = v.z;

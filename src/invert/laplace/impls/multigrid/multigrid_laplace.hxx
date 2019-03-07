@@ -195,9 +195,7 @@ public:
   const FieldPerp solve(const FieldPerp &b) override {
     ASSERT1(localmesh == b.getMesh());
 
-    FieldPerp zero{emptyFrom(b)};
-    zero = 0.;
-    return solve(b, zero);
+    return solve(b, zeroFrom(b));
   }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 

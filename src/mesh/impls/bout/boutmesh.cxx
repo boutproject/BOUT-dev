@@ -2404,7 +2404,6 @@ void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    result.allocate();
     if (XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
       for (int y = 0; y < LocalNy; y++)
@@ -2421,7 +2420,6 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     }
   }
   if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    result.allocate();
     if (XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
       for (int y = 0; y < LocalNy; y++)

@@ -672,8 +672,7 @@ const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), MAYBE_UNUSED(CELL
                                const std::string &UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
-  Field2D result{emptyFrom(f)};
-  result = 0.;
+  Field2D result{zeroFrom(f)};
   return result;
 }
 

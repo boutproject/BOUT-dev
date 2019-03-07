@@ -165,8 +165,7 @@ void Solver::add(Field2D &v, const std::string name) {
   
   if (mms) {
     // Allocate storage for error variable
-    d.MMS_err = new Field2D{emptyFrom(v)};
-    (*d.MMS_err) = 0.;
+    d.MMS_err = new Field2D{zeroFrom(v)};
   } else {
     d.MMS_err = nullptr;
   }
@@ -228,8 +227,7 @@ void Solver::add(Field3D &v, const std::string name) {
   }
   
   if (mms) {
-    d.MMS_err = new Field3D{emptyFrom(v)};
-    (*d.MMS_err) = 0.0;
+    d.MMS_err = new Field3D{zeroFrom(v)};
   } else {
     d.MMS_err = nullptr;
   }

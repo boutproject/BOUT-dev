@@ -196,6 +196,16 @@ inline T emptyFrom(const T& f) {
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
 
+/// Return a field of some type derived from Field, with metadata copied from
+/// another field and a data array allocated and initialised to zero.
+template<typename T>
+inline T zeroFrom(const T& f) {
+  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  T result{emptyFrom(f)};
+  result = 0.;
+  return result;
+}
+
 /// Unary + operator. This doesn't do anything
 template<typename T>
 T operator+(const T& f) {return f;}

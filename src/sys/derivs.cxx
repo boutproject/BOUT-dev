@@ -229,8 +229,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, const std::string &method
 
 const Field2D D2DZ2(const Field2D &f, CELL_LOC UNUSED(outloc), const std::string &UNUSED(method),
                     REGION UNUSED(region)) {
-  Field2D tmp{emptyFrom(f)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f)};
   return tmp;
 }
 
@@ -300,8 +299,7 @@ const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, const std::string &metho
 
 const Field2D D2DXDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      const std::string &UNUSED(method), REGION UNUSED(region)) {
-  Field2D tmp{emptyFrom(f)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f)};
   return tmp;
 }
 
@@ -331,8 +329,7 @@ const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, const std::string &metho
 
 const Field2D D2DYDZ(const Field2D &f, CELL_LOC UNUSED(outloc),
                      const std::string &UNUSED(method), REGION UNUSED(region)) {
-  Field2D tmp{emptyFrom(f)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f)};
   return tmp;
 }
 
@@ -406,8 +403,7 @@ const Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  Field2D tmp{emptyFrom(f).setLocation(outloc)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f).setLocation(outloc)};
   return tmp;
 }
 
@@ -417,8 +413,7 @@ const Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  Field2D tmp{emptyFrom(f).setLocation(outloc)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f).setLocation(outloc)};
   return tmp;
 }
 
@@ -460,8 +455,7 @@ const Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  Field2D tmp{emptyFrom(f).setLocation(outloc)};
-  tmp = 0.;
+  Field2D tmp{zeroFrom(f).setLocation(outloc)};
   return tmp;
 }
 
