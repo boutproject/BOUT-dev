@@ -347,29 +347,29 @@ int physics_init(bool restarting) {
   auto options = globalOptions["highbeta"];
 
   constn0 = options["constn0"].withDefault(true);
-  n0_fake_prof = options["n0_fake_prof"].withDefault(
-      false); // use the hyperbolic profile of n0. If both  n0_fake_prof and
-              // T0_fake_prof are false, use the profiles from grid file
-  n0_height = options["n0_height"].withDefault(
-      0.4); // the total height of profile of N0, in percentage of Ni_x
-  n0_ave = options["n0_ave"].withDefault(
-      0.01); // the center or average of N0, in percentage of Ni_x
-  n0_width = options["n0_width"].withDefault(
-      0.1); // the width of the gradient of N0,in percentage of x
-  n0_center = options["n0_center"].withDefault(
-      0.633); // the grid number of the center of N0, in percentage of x
-  n0_bottom_x = options["n0_bottom_x"].withDefault(
-      0.81); // the start of flat region of N0 on SOL side, in percentage of x
+  // use the hyperbolic profile of n0. If both  n0_fake_prof and
+  // T0_fake_prof are false, use the profiles from grid file
+  n0_fake_prof = options["n0_fake_prof"].withDefault(false);
+  // the total height of profile of N0, in percentage of Ni_x
+  n0_height = options["n0_height"].withDefault(0.4);
+  // the center or average of N0, in percentage of Ni_x
+  n0_ave = options["n0_ave"].withDefault(0.01);
+  // the width of the gradient of N0,in percentage of x
+  n0_width = options["n0_width"].withDefault(0.1);
+  // the grid number of the center of N0, in percentage of x
+  n0_center = options["n0_center"].withDefault(0.633);
+  // the start of flat region of N0 on SOL side, in percentage of x
+  n0_bottom_x = options["n0_bottom_x"].withDefault(0.81);
   T0_fake_prof = options["T0_fake_prof"].withDefault(false);
-  Tconst = options["Tconst"].withDefault(
-      -1.0); // the amplitude of constant temperature, in percentage
+  // the amplitude of constant temperature, in percentage
+  Tconst = options["Tconst"].withDefault(-1.0);
 
   density = options["density"].withDefault(1.0e19); // Number density [m^-3]
 
-  evolve_jpar =
-      options["evolve_jpar"].withDefault(false); // If true, evolve J raher than Psi
-  phi_constraint =
-      options["phi_constraint"].withDefault(false); // Use solver constraint for phi
+  // If true, evolve J raher than Psi
+  evolve_jpar = options["evolve_jpar"].withDefault(false);
+  // Use solver constraint for phi
+  phi_constraint = options["phi_constraint"].withDefault(false);
 
   // Effects to include/exclude
   include_curvature = options["include_curvature"].withDefault(true);
@@ -437,25 +437,33 @@ int physics_init(bool restarting) {
     return 1;
   }
 
-  eHall = options["eHall"].withDefault(
-      false); // electron Hall or electron parallel pressue gradient effects?
+  // electron Hall or electron parallel pressue gradient effects?
+  eHall = options["eHall"].withDefault(false);
   AA = options["AA"].withDefault(1.0); // ion mass in units of proton mass
 
-  diamag = options["diamag"].withDefault(false); // Diamagnetic effects?
-  diamag_grad_t =
-      options["diamag_grad_t"].withDefault(diamag); // Grad_par(Te) term in Psi equation
-  diamag_phi0 = options["diamag_phi0"].withDefault(diamag); // Include equilibrium phi0
-  dia_fact =
-      options["dia_fact"].withDefault(1.0); // Scale diamagnetic effects by this factor
+  // Diamagnetic effects?
+  diamag = options["diamag"].withDefault(false);
+  // Grad_par(Te) term in Psi equation
+  diamag_grad_t = options["diamag_grad_t"].withDefault(diamag);
+  // Include equilibrium phi0
+  diamag_phi0 = options["diamag_phi0"].withDefault(diamag);
+  // Scale diamagnetic effects by this factor
+  dia_fact = options["dia_fact"].withDefault(1.0);
 
-  withflow = options["withflow"].withDefault(false); // withflow or not
-  K_H_term = options["K_H_term"].withDefault(true);  // keep K-H term
-  D_0 = options["D_0"].withDefault(0.0);             // velocity magnitude
-  D_s = options["D_s"].withDefault(0.0);             // flowshear
-  x0 = options["x0"].withDefault(0.0);               // flow location
-  sign = options["sign"].withDefault(
-      1.0); // flow direction, -1 means negative electric field
-  D_min = options["D_min"].withDefault(3000.0); // a constant
+  // withflow or not
+  withflow = options["withflow"].withDefault(false);
+  // keep K-H term
+  K_H_term = options["K_H_term"].withDefault(true);
+  // velocity magnitude
+  D_0 = options["D_0"].withDefault(0.0);
+  // flowshear
+  D_s = options["D_s"].withDefault(0.0);
+  // flow location
+  x0 = options["x0"].withDefault(0.0);
+  // flow direction, -1 means negative electric field
+  sign = options["sign"].withDefault(1.0);
+  // a constant
+  D_min = options["D_min"].withDefault(3000.0);
 
   experiment_Er = options["experiment_Er"].withDefault(false);
 
@@ -493,19 +501,19 @@ int physics_init(bool restarting) {
   rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
   // Vacuum region control
-  vacuum_pressure =
-      options["vacuum_pressure"].withDefault(0.02); // Fraction of peak pressure
-  vacuum_trans =
-      options["vacuum_trans"].withDefault(0.005); // Transition width in pressure
+  // Fraction of peak pressure
+  vacuum_pressure = options["vacuum_pressure"].withDefault(0.02);
+  // Transition width in pressure
+  vacuum_trans = options["vacuum_trans"].withDefault(0.005);
 
   // Resistivity and hyper-resistivity options
   vac_lund = options["vac_lund"].withDefault(0.0);   // Lundquist number in vacuum region
   core_lund = options["core_lund"].withDefault(0.0); // Lundquist number in core region
   hyperresist = options["hyperresist"].withDefault(-1.0);
   ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-  spitzer_resist =
-      options["spitzer_resist"].withDefault(false); // Use Spitzer resistivity
-  Zeff = options["Zeff"].withDefault(2.0);          // Z effective
+  // Use Spitzer resistivity
+  spitzer_resist = options["spitzer_resist"].withDefault(false);
+  Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
   // Inner boundary damping
   damp_width = options["damp_width"].withDefault(0);
@@ -517,50 +525,54 @@ int physics_init(bool restarting) {
   hyperviscos = options["hyperviscos"].withDefault(-1.0); // Radial hyperviscosity
 
   // parallel pressure diffusion
-  diffusion_par =
-      options["diffusion_par"].withDefault(-1.0); // Parallel pressure diffusion
-  diffusion_p4 = options["diffusion_p4"].withDefault(
-      -1.0); // xqx: parallel hyper-viscous diffusion for pressure
-  diffusion_u4 = options["diffusion_u4"].withDefault(
-      -1.0); // xqx: parallel hyper-viscous diffusion for vorticity
-  diffusion_a4 = options["diffusion_a4"].withDefault(
-      -1.0); // xqx: parallel hyper-viscous diffusion for vector potential
+  // Parallel pressure diffusion
+  diffusion_par = options["diffusion_par"].withDefault(-1.0);
+  // xqx: parallel hyper-viscous diffusion for pressure
+  diffusion_p4 = options["diffusion_p4"].withDefault(-1.0);
+  // xqx: parallel hyper-viscous diffusion for vorticity
+  diffusion_u4 = options["diffusion_u4"].withDefault(-1.0);
+  // xqx: parallel hyper-viscous diffusion for vector potential
+  diffusion_a4 = options["diffusion_a4"].withDefault(-1.0);
 
   // heating factor in pressure
-  heating_P = options["heating_P"].withDefault(-1.0); //  heating power in pressure
-  hp_width =
-      options["hp_width"].withDefault(0.1); //  the percentage of radial grid points for
-                                            //  heating profile radial width in pressure
-  hp_length = options["hp_length"].withDefault(
-      0.04); //  the percentage of radial grid points for heating
-             //  profile radial domain in pressure
+  // heating power in pressure
+  heating_P = options["heating_P"].withDefault(-1.0);
+  // the percentage of radial grid points for heating profile radial
+  // width in pressure
+  hp_width = options["hp_width"].withDefault(0.1);
+  // the percentage of radial grid points for heating profile radial
+  // domain in pressure
+  hp_length = options["hp_length"].withDefault(0.04);
 
   // sink factor in pressure
-  sink_P = options["sink_P"].withDefault(-1.0); //  sink in pressure
-  sp_width =
-      options["sp_width"].withDefault(0.05); //  the percentage of radial grid points for
-                                             //  sink profile radial width in pressure
-  sp_length =
-      options["sp_length"].withDefault(0.04); //  the percentage of radial grid points for
-                                              //  sink profile radial domain in pressure
+  // sink in pressure
+  sink_P = options["sink_P"].withDefault(-1.0);
+  // the percentage of radial grid points for sink profile radial
+  // width in pressure
+  sp_width = options["sp_width"].withDefault(0.05);
+  // the percentage of radial grid points for sink profile radial
+  // domain in pressure
+  sp_length = options["sp_length"].withDefault(0.04);
 
   // left edge sink factor in vorticity
-  sink_Ul = options["sink_Ul"].withDefault(-1.0); //  left edge sink in vorticity
-  su_widthl = options["su_widthl"].withDefault(
-      0.06); //  the percentage of left edge radial grid points for
-             //  sink profile radial width in vorticity
-  su_lengthl = options["su_lengthl"].withDefault(
-      0.15); //  the percentage of left edge radial grid points
-             //  for sink profile radial domain in vorticity
+  // left edge sink in vorticity
+  sink_Ul = options["sink_Ul"].withDefault(-1.0);
+  // the percentage of left edge radial grid points for sink profile
+  // radial width in vorticity
+  su_widthl = options["su_widthl"].withDefault(0.06);
+  // the percentage of left edge radial grid points for sink profile
+  // radial domain in vorticity
+  su_lengthl = options["su_lengthl"].withDefault(0.15);
 
   // right edge sink factor in vorticity
-  sink_Ur = options["sink_Ur"].withDefault(-1.0); //  right edge sink in vorticity
-  su_widthr = options["su_widthr"].withDefault(
-      0.06); //  the percentage of right edge radial grid points
-             //  for sink profile radial width in vorticity
-  su_lengthr = options["su_lengthr"].withDefault(
-      0.15); //  the percentage of right edge radial grid points
-             //  for sink profile radial domain in vorticity
+  // right edge sink in vorticity
+  sink_Ur = options["sink_Ur"].withDefault(-1.0);
+  // the percentage of right edge radial grid points for sink profile
+  // radial width in vorticity
+  su_widthr = options["su_widthr"].withDefault(0.06);
+  // the percentage of right edge radial grid points for sink profile
+  // radial domain in vorticity
+  su_lengthr = options["su_lengthr"].withDefault(0.15);
 
   // Compressional terms
   phi_curv = options["phi_curv"].withDefault(true);
