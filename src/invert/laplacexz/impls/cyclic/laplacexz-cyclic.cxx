@@ -250,9 +250,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   // FFT back to real space
 
-  Field3D result(localmesh);
-  result.allocate();
-  result.setLocation(location);
+  Field3D result{emptyFrom(rhs)};
 
   ind = 0;
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {

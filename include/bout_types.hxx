@@ -48,19 +48,49 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
 const std::string& REGION_STRING(REGION region);
 
-/// To identify particular directions (in index space)
-enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5 };
+/// To identify particular directions (in index space):
+///   - X, Y, Z are the coordinate directions
+///   - YAligned is a special case of Y, indicating a field-aligned grid, where
+///     the x- and z- axes are not necessarily orthogonal
+///   - YOrthogonal is a special case of Y, indicating a grid where the x and z
+///     axes are orthogonal but the y-direction is not necessarily
+///     field-aligned
+enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 
 const std::string& DIRECTION_STRING(DIRECTION direction);
 
+/// Identify kind of a field's y-direction
+/// - Standard is the default for the Mesh/Coordinates/ParallelTransform
+/// - Aligned indicates that the field has been transformed to field-aligned
+///   coordinates
+enum class YDirectionType { Standard, Aligned };
+
+/// Identify kind of a field's z-direction
+/// - Standard is the default
+/// - Average indicates that the field represents an average over the
+///   z-direction, rather than having a particular z-position (i.e. is a
+///   Field2D)
+enum class ZDirectionType { Standard, Average };
+
+/// Container for direction types
+struct DirectionTypes {
+  YDirectionType y;
+  ZDirectionType z;
+};
+
+/// Check whether direction types are compatible, so two fields with attributes
+/// d1 and d2 respectively can be added, subtracted, etc.
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2);
+
+void swap(const DirectionTypes& first, const DirectionTypes& second);
+
 /// To identify valid staggering combinations
-enum class STAGGER { None = 0, C2L = 1, L2C = 2};
+enum class STAGGER { None, C2L, L2C };
 
 const std::string& STAGGER_STRING(STAGGER stagger);
 
 /// To identify types of derivative method combinations
-enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
-		   Upwind = 3, Flux = 4 };
+enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 
 const std::string& DERIV_STRING(DERIV deriv);
 

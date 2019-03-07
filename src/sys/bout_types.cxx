@@ -1,6 +1,7 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 #include <map>
 
 template <typename T>
@@ -50,6 +51,48 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
       {DIRECTION::YOrthogonal, "Y - orthogonal"}};
 
   return safeAt(DIRECTIONtoString, direction);
+}
+
+void swap(DirectionTypes& first, DirectionTypes& second) {
+  DirectionTypes temp = first;
+  first = second;
+  second = temp;
+}
+
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2) {
+  if (d1.y == d2.y && d1.z == d2.z) {
+    // direction types are the same, most common case, return immediately
+    return true;
+  }
+
+  if (d2.z == ZDirectionType::Average && d2.y == YDirectionType::Standard
+      && (d1.y == YDirectionType::Standard || d1.y == YDirectionType::Aligned)
+      && d1.z == ZDirectionType::Standard) {
+    // If d2 has ZDirectionType::Average, then it's compatible with d1 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d1 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d1 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd1.z == ZDirectionType::Standard' here.
+    return true;
+  }
+
+  if (d1.z == ZDirectionType::Average && d1.y == YDirectionType::Standard
+      && (d2.y == YDirectionType::Standard || d2.y == YDirectionType::Aligned)
+      && d2.z == ZDirectionType::Standard) {
+    // If d1 has ZDirectionType::Average, then it's compatible with d2 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d2 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d2 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd2.z == ZDirectionType::Standard' here.
+    return true;
+  }
+
+  // No compatible cases found
+  return false;
 }
 
 const std::string& STAGGER_STRING(STAGGER stagger) {

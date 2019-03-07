@@ -55,8 +55,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
 
   Mesh *mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(delta_x)};
 
   // Loop over output grid points
   for (int jx = 0; jx < mesh->LocalNx; jx++) {

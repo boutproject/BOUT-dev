@@ -165,7 +165,7 @@ void Solver::add(Field2D &v, const std::string name) {
   
   if (mms) {
     // Allocate storage for error variable
-    d.MMS_err = new Field2D(0.0);
+    d.MMS_err = new Field2D{zeroFrom(v)};
   } else {
     d.MMS_err = nullptr;
   }
@@ -227,8 +227,7 @@ void Solver::add(Field3D &v, const std::string name) {
   }
   
   if (mms) {
-    d.MMS_err = new Field3D(v.getMesh());
-    (*d.MMS_err) = 0.0;
+    d.MMS_err = new Field3D{zeroFrom(v)};
   } else {
     d.MMS_err = nullptr;
   }
@@ -1298,10 +1297,9 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
       v.F_var->toContravariant();
   }
 
-  // Make sure 3D fields are at the correct cell location
+  // Make sure 3D fields are at the correct cell location, etc.
   for (MAYBE_UNUSED(const auto& f) : f3d) {
-    ASSERT1(f.var->getLocation() == f.F_var->getLocation());
-    ASSERT1(f.var->getMesh() == f.F_var->getMesh());
+    ASSERT1(areFieldsCompatible(*f.var, *f.F_var));
   }
 
   // Apply boundary conditions to the time-derivatives

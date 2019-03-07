@@ -95,8 +95,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh); // Result
-  x.allocate();
+  FieldPerp x{emptyFrom(rhs)}; // Result
 
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
@@ -256,9 +255,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   Timer timer("invert");
 
-  Field3D x(localmesh); // Result
-  x.allocate();
-  x.setLocation(location);
+  Field3D x{emptyFrom(rhs)}; // Result
 
   // Get the width of the boundary
 

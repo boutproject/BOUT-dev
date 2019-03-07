@@ -425,10 +425,7 @@ BOUT_OMP(for)
     }
   }
 
-  FieldPerp result(localmesh);
-  result.setLocation(location);
-  result.allocate();
-  result.setIndex(yindex);
+  FieldPerp result{emptyFrom(b_in)};
 
 #if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them

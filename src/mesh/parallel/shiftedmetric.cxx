@@ -136,7 +136,18 @@ void ShiftedMetric::cachePhases() {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION region) {
-  return shiftZ(f, toAlignedPhs, region);
+  switch (f.getDirectionY()) {
+  case (YDirectionType::Standard):
+    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
+  case (YDirectionType::Aligned):
+    // f is already in field-aligned coordinates
+    return f;
+  default:
+    throw BoutException("Unrecognized y-direction type for Field3D passed to "
+                        "ShiftedMetric::toFieldAligned");
+    // This should never happen, but use 'return f' to avoid compiler warnings
+    return f;
+  }
 }
 
 /*!
@@ -144,10 +155,22 @@ const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION regio
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION region) {
-  return shiftZ(f, fromAlignedPhs, region);
+  switch (f.getDirectionY()) {
+  case (YDirectionType::Aligned):
+    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
+  case (YDirectionType::Standard):
+    // f is already in orthogonal coordinates
+    return f;
+  default:
+    throw BoutException("Unrecognized y-direction type for Field3D passed to "
+                        "ShiftedMetric::toFieldAligned");
+    // This should never happen, but use 'return f' to avoid compiler warnings
+    return f;
+  }
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                                    const YDirectionType y_direction_out,
                                     const REGION region) const {
   ASSERT1(&mesh == f.getMesh());
   // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
@@ -156,9 +179,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
   if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
-  Field3D result(&mesh);
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
   BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
@@ -187,6 +208,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 
 void ShiftedMetric::calcYUpDown(Field3D& f) {
 
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&mesh == f.getMesh());
   // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);
@@ -256,9 +278,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
   if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
 
-  Field3D result(&mesh);
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f)};
 
   // We only use methods in ShiftedMetric to get fields for parallel operations
   // like interp_to or DDY.

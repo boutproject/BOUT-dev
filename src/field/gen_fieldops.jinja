@@ -1,27 +1,16 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
-  {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
-#if CHECK > 0
-  if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
-    throw BoutException(
-        "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation({{lhs.name}}.getLocation()), strLocation({{rhs.name}}.getLocation()));
-  }
-#endif
-  {% endif %}
-
-  Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
-
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-    ASSERT1(localmesh == {{rhs.name}}.getMesh());
+    ASSERT1(areFieldsCompatible(lhs, rhs));
   {% endif %}
 
-  {{out.field_type}} {{out.name}}(localmesh);
-  {{out.name}}.allocate();
+  {{out.field_type}} {{out.name}}{emptyFrom({{lhs.name if lhs.field_type == out.field_type else rhs.name}})};
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
+    Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+
     {% if (lhs == "Field2D") %}
     {{region_loop}}({{index_var}}, {{lhs.name}}.getRegion({{region_name}})) {
     {% else %}
@@ -44,10 +33,6 @@
 	}
   {% endif %}
 
-  {% if out in ['Field3D','Field2D'] %}
-    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
-  {% endif %}
-
   checkData({{out.name}});
   return {{out.name}};
 }
@@ -58,18 +43,8 @@
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}    
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException(
-        "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(this->getLocation()), strLocation({{rhs.name}}.getLocation()));
-    }
-#endif
-    {% endif %}
-
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-      ASSERT1(fieldmesh == {{rhs.name}}.getMesh());
+      ASSERT1(areFieldsCompatible(*this, rhs));
     {% endif %}
 
     checkData(*this);

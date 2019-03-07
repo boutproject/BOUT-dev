@@ -72,6 +72,7 @@ TEST_F(FieldPerpTest, SliceXZ) {
   auto result = sliceXZ(masterField, yindex);
 
   EXPECT_EQ(result.getIndex(), yindex);
+  EXPECT_TRUE(areFieldsCompatible(masterField, result));
 
   for (const auto &i : result) {
     EXPECT_EQ(result[i], 1.0);
@@ -141,6 +142,7 @@ TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), 1);
   EXPECT_EQ(field2.getNz(), test_nz);
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
 }
 
 #if CHECK > 0
@@ -1433,5 +1435,58 @@ TEST_F(FieldPerpTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
+  FieldPerp field;
+
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field2{mesh_staggered, CELL_XLOW, 2, {YDirectionType::Aligned, ZDirectionType::Average}};
+
+  field = field2;
+
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
+  EXPECT_EQ(field.getMesh(), field2.getMesh());
+  EXPECT_EQ(field.getLocation(), field2.getLocation());
+  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(FieldPerpTest, EmptyFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  FieldPerp field2{emptyFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getIndex(), 3);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+}
+
+TEST_F(FieldPerpTest, ZeroFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  FieldPerp field2{zeroFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getIndex(), 3);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+  EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
 #pragma GCC diagnostic pop
