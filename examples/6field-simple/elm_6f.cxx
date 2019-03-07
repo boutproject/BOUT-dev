@@ -772,10 +772,10 @@ int physics_init(bool restarting) {
     output.write("    sink_vp(rate): %e\n", sink_vp);
     dump.add(sink_vp, "sink_vp", 1);
 
-    output.write("    sp_width(%): %e\n", sp_width);
+    output.write("    sp_width(%%): %e\n", sp_width);
     dump.add(sp_width, "sp_width", 1);
 
-    output.write("    sp_length(%): %e\n", sp_length);
+    output.write("    sp_length(%%): %e\n", sp_length);
     dump.add(sp_length, "sp_length", 1);
   }
 
@@ -966,8 +966,7 @@ int physics_init(bool restarting) {
 
   if (spitzer_resist) {
     // Use Spitzer resistivity
-    output.write("");
-    output.write("\tSpizter parameters");
+    output.write("\n\tSpizter parameters");
     // output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
     eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
                   * pow(Te0 * Tebar, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20

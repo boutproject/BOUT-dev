@@ -781,10 +781,10 @@ int physics_init(bool restarting) {
     output.write("    heating_P(watts): %e\n", heating_P);
     dump.add(heating_P, "heating_P", 1);
 
-    output.write("    hp_width(%): %e\n", hp_width);
+    output.write("    hp_width(%%): %e\n", hp_width);
     dump.add(hp_width, "hp_width", 1);
 
-    output.write("    hp_length(%): %e\n", hp_length);
+    output.write("    hp_length(%%): %e\n", hp_length);
     dump.add(hp_length, "hp_length", 1);
   }
 
@@ -792,10 +792,10 @@ int physics_init(bool restarting) {
     output.write("    sink_P(rate): %e\n", sink_P);
     dump.add(sink_P, "sink_P", 1);
 
-    output.write("    sp_width(%): %e\n", sp_width);
+    output.write("    sp_width(%%): %e\n", sp_width);
     dump.add(sp_width, "sp_width", 1);
 
-    output.write("    sp_length(%): %e\n", sp_length);
+    output.write("    sp_length(%%): %e\n", sp_length);
     dump.add(sp_length, "sp_length", 1);
   }
 
