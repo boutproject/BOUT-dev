@@ -67,7 +67,7 @@ public:
 
 using Fields = ::testing::Types<Field2D, Field3D>;
 
-TYPED_TEST_CASE(FieldFactoryCreationTest, Fields);
+TYPED_TEST_SUITE(FieldFactoryCreationTest, Fields);
 
 TYPED_TEST(FieldFactoryCreationTest, CreateFromValueGenerator) {
   auto value = BoutReal{4.};

@@ -41,7 +41,7 @@ public:
 };
 
 // Test the FFT functions with both even- and odd-length real signals
-INSTANTIATE_TEST_CASE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
+INSTANTIATE_TEST_SUITE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
 
 TEST_P(FFTTest, rfft) {
 

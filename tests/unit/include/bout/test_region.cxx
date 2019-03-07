@@ -1174,7 +1174,7 @@ public:
 };
 
 typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
-TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
+TYPED_TEST_SUITE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{
@@ -1493,7 +1493,7 @@ public:
 };
 
 typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
-TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
+TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
   TypeParam index(1);
