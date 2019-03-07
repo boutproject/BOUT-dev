@@ -16,12 +16,9 @@ extern Mesh* mesh;
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
     WithQuietOutput quiet{output_info};
+
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
 
     // Use two y-guards to test multiple parallel slices

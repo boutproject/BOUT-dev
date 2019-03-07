@@ -1661,12 +1661,8 @@ TYPED_TEST(FieldIndexTest, Modulus) {
 class IndexOffsetTest : public ::testing::Test {
 protected:
   IndexOffsetTest() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
     WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
     mesh->createDefaultRegions();
   }

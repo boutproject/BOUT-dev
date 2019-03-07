@@ -265,20 +265,13 @@ private:
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    // Delete any existing mesh
-    if (bout::globals::mesh != nullptr) {
-      delete bout::globals::mesh;
-      bout::globals::mesh = nullptr;
-    }
     WithQuietOutput quiet{output_info};
+
+    delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->createDefaultRegions();
 
-    // Delete any existing mesh_staggered
-    if (mesh_staggered != nullptr) {
-      delete mesh_staggered;
-      mesh_staggered = nullptr;
-    }
+    delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);

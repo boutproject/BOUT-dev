@@ -49,13 +49,8 @@ protected:
   }
 
   static void SetUpTestCase() {
-
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
     WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
