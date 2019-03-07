@@ -142,9 +142,6 @@ public:
     ParallelTransformIdentity identity{*mesh};
     identity.calcYUpDown(input);
     identity.calcYUpDown(velocity);
-
-    // FIXME: remove when defaults are set in the DerivativeStore ctor
-    DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
   };
 
   virtual ~DerivativesTest() {
