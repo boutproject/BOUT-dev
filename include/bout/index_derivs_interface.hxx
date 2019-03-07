@@ -83,8 +83,7 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
   const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
-    T tmp{zeroFrom(f).setLocation(outloc)};
-    return tmp;
+    return zeroFrom(f).setLocation(outloc);
   }
 
   // Lookup the method
@@ -146,8 +145,7 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   const int nPoint = localmesh->getNpoints(direction);
 
   if (nPoint == 1) {
-    T tmp{zeroFrom(f).setLocation(outloc)};
-    return tmp;
+    return zeroFrom(f).setLocation(outloc);
   }
 
   // Lookup the method

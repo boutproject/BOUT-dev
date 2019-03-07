@@ -668,12 +668,14 @@ const Field2D Coordinates::DDY(const Field2D &f, CELL_LOC loc, const std::string
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), MAYBE_UNUSED(CELL_LOC loc),
+const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D &f), CELL_LOC loc,
                                const std::string &UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
-  Field2D result{zeroFrom(f)};
-  return result;
+  if (loc == CELL_DEFAULT) {
+    loc = f.getLocation();
+  }
+  return zeroFrom(f).setLocation(loc);
 }
 
 #include <derivs.hxx>
