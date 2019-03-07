@@ -135,6 +135,11 @@ class Datafile {
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
 
+  /// Write out the meta-data of a field as attributes of the variable in
+  /// 'file'.
+  template <typename T>
+  void writeFieldAttributes(const std::string name, T* f);
+
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);
 
