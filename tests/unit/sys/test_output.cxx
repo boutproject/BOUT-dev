@@ -194,18 +194,22 @@ TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
   EXPECT_EQ(buffer.str(), "warn output\n");
 
   buffer.str("");
+  output_info.enable();
   output_info << "info output\n";
   EXPECT_EQ(buffer.str(), "info output\n");
 
   buffer.str("");
+  output_progress.enable();
   output_progress << "progress output\n";
   EXPECT_EQ(buffer.str(), "progress output\n");
 
   buffer.str("");
+  output_error.enable();
   output_error << "error output\n";
   EXPECT_EQ(buffer.str(), "error output\n");
 
   buffer.str("");
+  output_debug.enable();
   output_debug << "debug output\n";
 #ifdef DEBUG_ENABLED
   EXPECT_EQ(buffer.str(), "debug output\n");
