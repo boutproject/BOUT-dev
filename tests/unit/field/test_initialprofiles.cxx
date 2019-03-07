@@ -27,7 +27,7 @@ public:
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
   }
 
-  ~InitialProfileTest() { Options::cleanup(); }
+  virtual ~InitialProfileTest() { Options::cleanup(); }
   WithQuietOutput quiet{output_info};
 };
 
