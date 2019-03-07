@@ -6,11 +6,11 @@
 
 class ESEL : public PhysicsModel {
 private:
-  Field3D n/*, T*/, vort;                   // Evolving density, temp and vorticity
+  Field3D n, vort;                   // Evolving density, temp and vorticity
   Field3D N; // ln(n)
   Field3D phi ; 
   Field2D B ;                           // Magnetic field
-  BoutReal D/*, chi*/, mu ;                 // Diffusion coefficients
+  BoutReal D, mu ;                 // Diffusion coefficients
   Field2D sigma_n, sigma_T, sigma_vort; // dissipation terms 
   BoutReal zeta ;                       // rho/R0   
   BRACKET_METHOD bm;               // Bracket method for advection terms
@@ -25,10 +25,8 @@ protected:
 
     zeta = options["zeta"].withDefault(2.15e-3);
     D = options["D"].withDefault(1.97e-3);
-    //   chi = options["chi"].withDefault(4.61e-3) ;
     mu = options["mu"].withDefault(3.88e-2);
-    int bracket;
-    bracket = options["bracket"].withDefault(2);
+    int bracket = options["bracket"].withDefault(2);
     test_laplacian = options["test_laplacian"].withDefault(false);
 
     // Set sources and sinks from input profile
@@ -72,7 +70,6 @@ protected:
     Coordinates *coord = mesh->getCoordinates();
     
     // generate coordinate system 
-    // coord->J = R0/B0 ;
     coord->Bxy = 1 ;
     
     coord->g11 = 1.0 ;
@@ -91,8 +88,6 @@ protected:
     
     coord->geometry();
     
-    //   SOLVE_FOR3(n, T, vort);
-    //   SOLVE_FOR(n);
     SOLVE_FOR(N);
     SOLVE_FOR(vort);
     SAVE_REPEAT(phi);
@@ -110,19 +105,11 @@ protected:
   }
   
   int rhs(BoutReal time) {
-    //   output<<"\r"<<time<<std::flush;
-    //   output<<"\r"<<time-1.e5<<std::flush;
-    //  output<<time-1.e4<<endl;
+    mesh->communicate(N, vort);
     
-    //   mesh->communicate(n/*, T*/, vort);
-    mesh->communicate(N/*, T*/, vort);
-    
-    // Solve for potential
-    //   phiSolver->setCoefC(n);
     phiSolver->setCoefC2(N);
     phi = phiSolver->solve(vort, phi);
     
-    // Communicate variables
     mesh->communicate(phi);
     
     if (test_laplacian) {
@@ -134,20 +121,14 @@ protected:
       
       MPI_Barrier(BoutComm::get());
       
-      return 1; // Abort execution
+      return 1;
     }
     
     // Continuity equation:  
-    //   ddt(n) = bracket(phi,n,bm) + n*C(phi) - C(n/**T*/) + D*Delp2(n) - sigma_n*n ; 
-    ddt(N) = bracket(phi,N,bm) + C(phi) - C(N/**T*/) + D*Delp2(N) - sigma_n ; 
-    
-    // Energy equation:
-    //   ddt(T) = bracket(phi,T,bm) + (2/3)*T*C(phi) - (7/3)*T*C(T) - (2/3)*(T*T/n)*C(n) + chi*Delp2(T) - sigma_T*T ;
+    ddt(N) = bracket(phi,N,bm) + C(phi) - C(N) + D*Delp2(N) - sigma_n ; 
     
     // Vorticity equation:
-    //   ddt(vort) = bracket(phi, vort, bm) - C(n/**T*/) + mu*Delp2(vort) - sigma_vort*vort ; 
-    ddt(vort) = bracket(phi, vort, bm) - C(exp(N)/**T*/) + mu*Delp2(vort) - sigma_vort*vort ; 
-    // ddt(vort) += phi/1.e4; // Sheath dissipation term to try to stop potential getting too large...
+    ddt(vort) = bracket(phi, vort, bm) - C(exp(N)) + mu*Delp2(vort) - sigma_vort*vort ; 
     
     // n.b bracket terms do not have minus sign before them because 
     // B is pointing in -ve y direction in BOUT coordinates.  
