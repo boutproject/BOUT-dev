@@ -31,6 +31,8 @@ public:
     fft_signal[2] = dcomplex{0.5, 0.};
   };
 
+  virtual ~FFTTest() = default;
+
   const int size;
   const int nmodes;
 

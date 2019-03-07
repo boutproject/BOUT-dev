@@ -1170,9 +1170,7 @@ TEST(RegionIndex3DTest, NonMemberSize) {
 
 template <typename T> class RegionIndexTest : public ::testing::Test {
 public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+  virtual ~RegionIndexTest() = default;
 };
 
 typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
@@ -1490,10 +1488,8 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
- public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+public:
+  virtual ~FieldIndexTest() = default;
 };
 
 typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
@@ -1675,7 +1671,7 @@ protected:
     mesh->createDefaultRegions();
   }
 
-  ~IndexOffsetTest() {
+  virtual ~IndexOffsetTest() {
     delete mesh;
     mesh = nullptr;
   }

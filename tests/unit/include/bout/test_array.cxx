@@ -14,7 +14,7 @@ class ArrayTest : public ::testing::Test {
 public:
   ArrayTest() { Array<double>::useStore(true); }
   // Note: Calling cleanup() disables the store
-  ~ArrayTest() { }
+  virtual ~ArrayTest() = default;
 };
 
 TEST_F(ArrayTest, ArraySize) {

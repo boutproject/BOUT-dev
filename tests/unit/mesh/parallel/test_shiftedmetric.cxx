@@ -75,7 +75,7 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
   }
 
-  ~ShiftedMetricTest() {
+  virtual ~ShiftedMetricTest() {
     delete mesh;
     mesh = nullptr;
   }

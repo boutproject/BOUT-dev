@@ -20,7 +20,7 @@ public:
     std::cout.rdbuf(buffer.rdbuf());
   }
 
-  ~OptionsReaderTest() {
+  virtual ~OptionsReaderTest() {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self

@@ -147,7 +147,7 @@ public:
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());
   };
 
-  ~DerivativesTest() {
+  virtual ~DerivativesTest() {
     delete mesh;
     mesh = nullptr;
   }

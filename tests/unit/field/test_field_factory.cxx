@@ -577,6 +577,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
 class FieldFactoryTest : public FakeMeshFixture {
 public:
   FieldFactoryTest() : FakeMeshFixture{}, factory{mesh} {}
+  virtual ~FieldFactoryTest() {}
 
   FieldFactory factory;
 

@@ -13,7 +13,7 @@ public:
     std::cout.rdbuf(buffer.rdbuf());
   }
 
-  ~OutputTest() {
+  virtual ~OutputTest() {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self

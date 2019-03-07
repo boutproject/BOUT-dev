@@ -45,7 +45,7 @@ public:
     region = new BoundaryRegionXIn{"test_region", 0, 1, mesh};
   }
 
-  ~BoundaryFactoryTest() {
+  virtual ~BoundaryFactoryTest() {
     delete mesh;
     mesh = nullptr;
 

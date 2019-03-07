@@ -15,6 +15,7 @@ public:
 
 class ExpressionParserTest : public ::testing::Test {
 public:
+  virtual ~ExpressionParserTest() = default;
   ExpressionParserSubClass parser;
   std::vector<double> x_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> y_array = {-1., 0., 1., 5., 10., 3.14e8};
