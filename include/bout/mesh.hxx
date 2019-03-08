@@ -775,8 +775,8 @@ protected:
   /// Mesh options section
   Options *options{nullptr};
 
-  /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
-  bool calcYUpDown_on_communicate{true};
+  /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
+  bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string &name, int n);

@@ -822,7 +822,7 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
   // Coordinates object
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasYupYdown()) {
+  if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
@@ -830,15 +830,9 @@ const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc,
 
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
-  if (&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  } else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy_floc;
-    f_B.ydown() = f.ydown() / Bxy_floc;
-  }
+  f_B.splitParallelSlices();
+  f_B.yup() = f.yup() / Bxy_floc;
+  f_B.ydown() = f.ydown() / Bxy_floc;
   return Bxy * Grad_par(f_B, outloc, method);
 }
 

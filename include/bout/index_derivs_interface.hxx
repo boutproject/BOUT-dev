@@ -199,7 +199,7 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (std::is_base_of<Field3D, T>::value && f.hasParallelSlices()) {
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
   } else {
@@ -214,7 +214,7 @@ template <typename T>
 T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (std::is_base_of<Field3D, T>::value && f.hasParallelSlices()) {
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
         f, outloc, method, region);
   } else {
@@ -229,7 +229,7 @@ template <typename T>
 T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (std::is_base_of<Field3D, T>::value && f.hasParallelSlices()) {
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
         f, outloc, method, region);
   } else {
@@ -301,8 +301,8 @@ template <typename T>
 T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown());
-  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown());
+  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasParallelSlices());
+  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Upwind>(vel, f, outloc,
                                                                     method, region);
@@ -319,8 +319,8 @@ template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown());
-  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown());
+  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasParallelSlices());
+  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Flux>(vel, f, outloc, method,
                                                                   region);

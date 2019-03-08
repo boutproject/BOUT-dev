@@ -120,7 +120,7 @@ class Field2D : public Field, public FieldData {
   }
 
   /// Check if this field has yup and ydown fields
-  bool hasYupYdown() const {
+  bool hasParallelSlices() const {
     return true;
   }
   

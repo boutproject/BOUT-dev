@@ -195,13 +195,13 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
-void ShiftedMetric::calcYUpDown(Field3D& f) {
+void ShiftedMetric::calcParallelSlices(Field3D& f) {
 
   auto results = shiftZ(f, parallel_slice_phases);
 
   ASSERT3(results.size() == parallel_slice_phases.size());
 
-  f.splitYupYdown();
+  f.splitParallelSlices();
 
   for (std::size_t i = 0; i < results.size(); ++i) {
     f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);

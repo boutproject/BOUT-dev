@@ -46,7 +46,7 @@ public:
    * Merges the yup and ydown() fields of f, so that
    * f.yup() = f.ydown() = f
    */
-  void calcYUpDown(Field3D& f) override;
+  void calcParallelSlices(Field3D& f) override;
 
   /*!
    * The field is already aligned in Y, so this

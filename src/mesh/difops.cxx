@@ -74,6 +74,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   ASSERT1(areFieldsCompatible(apar, f));
+  ASSERT1(f.hasParallelSlices());
 
   Mesh *mesh = apar.getMesh();
 
@@ -201,6 +202,8 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 
 const Field3D Div_par(const Field3D &f, const Field3D &v) {
   ASSERT1(areFieldsCompatible(f, v));
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(v.hasParallelSlices());
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
@@ -241,21 +244,16 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, 
 
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasYupYdown()) {
+  if (!f.hasParallelSlices()) {
     return metric->Bxy*FDDY(v, f/Bxy_floc, outloc, method)/sqrt(metric->g_22);
   }
 
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
-  if (&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  } else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy_floc;
-    f_B.ydown() = f.ydown() / Bxy_floc;
-  }
+  // Distinct fields
+  f_B.splitParallelSlices();
+  f_B.yup() = f.yup() / Bxy_floc;
+  f_B.ydown() = f.ydown() / Bxy_floc;
   return metric->Bxy*FDDY(v, f_B, outloc, method)/sqrt(metric->g_22);
 }
 
@@ -277,7 +275,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);
 
-  if (var.hasYupYdown()) {
+  if (var.hasParallelSlices()) {
     // NOTE: Need to calculate one more point than centred vars
     for(int jx=0; jx<mesh->LocalNx;jx++) {
       for(int jy=1;jy<mesh->LocalNy;jy++) {
@@ -324,10 +322,10 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
 
   Field3D result{emptyFrom(f).setLocation(CELL_CENTRE)};
 
-  bool vUseUpDown = v.hasYupYdown();
-  bool fUseUpDown = f.hasYupYdown();
+  bool vUseParallelSlices = v.hasParallelSlices();
+  bool fUseParallelSlices = f.hasParallelSlices();
 
-  if (vUseUpDown && fUseUpDown) {
+  if (vUseParallelSlices && fUseParallelSlices) {
     // Both v and f have up/down fields
     BOUT_OMP(parallel) {
       stencil fval, vval;
@@ -390,7 +388,7 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
-  if (var.hasYupYdown()) {
+  if (var.hasParallelSlices()) {
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }

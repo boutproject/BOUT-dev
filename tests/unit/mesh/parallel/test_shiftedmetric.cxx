@@ -192,7 +192,7 @@ TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
                            FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, CalcYUpDown) {
+TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
@@ -213,7 +213,7 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
   output_info.enable();
 
   // Actual interesting bit here!
-  input.getCoordinates()->getParallelTransform().calcYUpDown(input);
+  input.getCoordinates()->getParallelTransform().calcParallelSlices(input);
   // Expected output values
 
   Field3D expected_up_1{mesh};

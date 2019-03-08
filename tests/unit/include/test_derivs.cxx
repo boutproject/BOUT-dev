@@ -141,8 +141,8 @@ public:
 
     // We need the parallel slices for the y-direction
     ParallelTransformIdentity identity{*mesh};
-    identity.calcYUpDown(input);
-    identity.calcYUpDown(velocity);
+    identity.calcParallelSlices(input);
+    identity.calcParallelSlices(velocity);
 
     // FIXME: remove when defaults are set in the DerivativeStore ctor
     DerivativeStore<Field3D>::getInstance().initialise(Options::getRoot());

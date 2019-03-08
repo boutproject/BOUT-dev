@@ -29,7 +29,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, calcYUpDown_on_communicate, true);
+  OPTION(options, calcParallelSlices_on_communicate, true);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -192,9 +192,9 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  if (calcYUpDown_on_communicate) {
+  if (calcParallelSlices_on_communicate) {
     for(const auto& fptr : g.field3d()) {
-      fptr->getCoordinates()->getParallelTransform().calcYUpDown(*fptr);
+      fptr->getCoordinates()->getParallelTransform().calcParallelSlices(*fptr);
     }
   }
 }

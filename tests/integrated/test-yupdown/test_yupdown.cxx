@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
-  s.calcYUpDown(var);
+  s.calcParallelSlices(var);
   
   // Calculate d/dy using yup() and ydown() fields
   Field3D ddy = DDY(var);

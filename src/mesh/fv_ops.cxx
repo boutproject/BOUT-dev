@@ -61,7 +61,7 @@ namespace FV {
     Field3D yzresult(mesh);
     yzresult.allocate();
 
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       // Both inputs have yup and ydown
 
       fup = f.yup();
@@ -154,7 +154,7 @@ namespace FV {
       }
     }
     // Check if we need to transform back
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       result += yzresult;
     } else {
       result += yzresult.getCoordinates()->fromFieldAligned(yzresult);
@@ -171,16 +171,16 @@ namespace FV {
     Mesh *mesh = Kin.getMesh();
     Field3D result{zeroFrom(fin)};
 
-    bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
+    bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
 
-    const auto& K = use_yup_ydown ? Kin : Kin.getCoordinates()->toFieldAligned(Kin, RGN_NOX);
-    const auto& f = use_yup_ydown ? fin : fin.getCoordinates()->toFieldAligned(fin, RGN_NOX);
+    const auto& K = use_parallel_slices ? Kin : Kin.getCoordinates()->toFieldAligned(Kin, RGN_NOX);
+    const auto& f = use_parallel_slices ? fin : fin.getCoordinates()->toFieldAligned(fin, RGN_NOX);
 
     // K and f fields in yup and ydown directions
-    const auto& Kup = use_yup_ydown ? Kin.yup() : K;
-    const auto& Kdown = use_yup_ydown ? Kin.ydown() : K;
-    const auto& fup = use_yup_ydown ? fin.yup() : f;
-    const auto& fdown = use_yup_ydown ? fin.ydown() : f;
+    const auto& Kup = use_parallel_slices ? Kin.yup() : K;
+    const auto& Kdown = use_parallel_slices ? Kin.ydown() : K;
+    const auto& fup = use_parallel_slices ? fin.yup() : f;
+    const auto& fdown = use_parallel_slices ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
 
@@ -218,7 +218,7 @@ namespace FV {
       }
     }
     
-    if (!use_yup_ydown) {
+    if (!use_parallel_slices) {
       // Shifted to field aligned coordinates, so need to shift back
       result = result.getCoordinates()->fromFieldAligned(result, RGN_NOBNDRY);
     }

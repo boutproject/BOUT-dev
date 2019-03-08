@@ -126,12 +126,12 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
-  TRACE("Field3D::splitYupYdown");
+void Field3D::splitParallelSlices() {
+  TRACE("Field3D::splitParallelSlices");
   
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
                         "    This is an internal library error");
   }
 #endif
@@ -148,8 +148,8 @@ void Field3D::splitYupYdown() {
   }
 }
 
-void Field3D::mergeYupYdown() {
-  TRACE("Field3D::mergeYupYdown");
+void Field3D::clearParallelSlices() {
+  TRACE("Field3D::clearParallelSlices");
 
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {

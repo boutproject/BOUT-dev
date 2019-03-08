@@ -47,7 +47,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by taking FFTs in Z and applying a phase shift.
    */
-  void calcYUpDown(Field3D& f) override;
+  void calcParallelSlices(Field3D& f) override;
 
   /*!
    * Uses FFTs and a phase shift to align the grid points
