@@ -480,7 +480,6 @@ int BoutInitialise(int &argc, char **&argv) {
     
     bout::globals::mesh = Mesh::create();  ///< Create the mesh
     bout::globals::mesh->load();           ///< Load from sources. Required for Field initialisation
-    bout::globals::mesh->setParallelTransform(); ///< Set the parallel transform from options
     /////////////////////////////////////////////
     /// Get some settings
 

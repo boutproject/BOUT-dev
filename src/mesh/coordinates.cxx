@@ -17,6 +17,10 @@
 
 #include <globals.hxx>
 
+#include "parallel/identity.hxx"
+#include "parallel/shiftedmetric.hxx"
+#include "parallel/fci.hxx"
+
 Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
                          Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
                          Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
@@ -37,7 +41,7 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
   }
 }
 
-Coordinates::Coordinates(Mesh *mesh)
+Coordinates::Coordinates(Mesh *mesh, Options* options)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -189,6 +193,8 @@ Coordinates::Coordinates(Mesh *mesh)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  setParallelTransform(options);
 }
 
 // use anonymous namespace so this utility function is not available outside this file
@@ -239,7 +245,7 @@ namespace {
   }
 }
 
-Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in)
+Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -304,6 +310,8 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  setParallelTransform(options);
 }
 
 void Coordinates::outputVars(Datafile &file) {
@@ -651,6 +659,80 @@ int Coordinates::jacobian() {
   Bxy = sqrt(g_22) / J;
 
   return 0;
+}
+
+void Coordinates::setParallelTransform(Options* options) {
+
+  std::string ptstr;
+  options->get("paralleltransform", ptstr, "identity");
+
+  // Convert to lower case for comparison
+  ptstr = lowercase(ptstr);
+
+  if(ptstr == "identity") {
+    // Identity method i.e. no transform needed
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+
+  } else if (ptstr == "shifted") {
+    // Shifted metric method
+
+    Field2D zShift{localmesh};
+
+    // Read the zShift angle from the mesh
+    if (localmesh->get(zShift, "zShift")) {
+      // No zShift variable. Try qinty in BOUT grid files
+      localmesh->get(zShift, "qinty");
+    }
+
+    zShift = interpolateAndNeumann(zShift, location);
+
+    // make sure zShift has been communicated
+    localmesh->communicate(zShift);
+
+    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+        zlength());
+
+  } else if (ptstr == "fci") {
+
+    if (location != CELL_CENTRE) {
+      throw BoutException("FCITransform is not available on staggered grids.");
+    }
+
+    Options *fci_options = Options::getRoot()->getSection("fci");
+    // Flux Coordinate Independent method
+    bool fci_zperiodic;
+    fci_options->get("z_periodic", fci_zperiodic, true);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+
+  } else {
+    throw BoutException(_("Unrecognised paralleltransform option.\n"
+                          "Valid choices are 'identity', 'shifted', 'fci'"));
+  }
+}
+
+ParallelTransform& Coordinates::getParallelTransform() {
+  // Return a reference to the ParallelTransform object
+  return *transform;
+}
+
+/// Transform a field into field-aligned coordinates
+const Field3D Coordinates::toFieldAligned(const Field3D &f, const REGION region) {
+  return getParallelTransform().toFieldAligned(f, region);
+}
+const Field2D Coordinates::toFieldAligned(const Field2D &f, const REGION UNUSED(region)) {
+  return f;
+}
+
+/// Convert back into standard form
+const Field3D Coordinates::fromFieldAligned(const Field3D &f, const REGION region) {
+  return getParallelTransform().fromFieldAligned(f, region);
+}
+const Field2D Coordinates::fromFieldAligned(const Field2D &f, const REGION UNUSED(region)) {
+  return f;
+}
+
+bool Coordinates::canToFromFieldAligned() {
+  return getParallelTransform().canToFromFieldAligned();
 }
 
 /*******************************************************************************

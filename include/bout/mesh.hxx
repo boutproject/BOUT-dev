@@ -67,8 +67,6 @@ class Mesh;
 
 #include "coordinates.hxx"    // Coordinates class
 
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
 
 #include <bout/region.hxx>
@@ -700,52 +698,7 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
-  ///////////////////////////////////////////////////////////
-  // PARALLEL TRANSFORMS
-  ///////////////////////////////////////////////////////////
 
-  /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return getParallelTransform().toFieldAligned(f, region);
-  }
-  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
-    return f;
-  }
-  
-  /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return getParallelTransform().fromFieldAligned(f, region);
-  }
-  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
-    return f;
-  }
-
-  bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
-  }
-
-  /*!
-   * Unique pointer to ParallelTransform object
-   */
-  typedef std::unique_ptr<ParallelTransform> PTptr;
-  
-  /*!
-   * Set the parallel (y) transform for this mesh.
-   * Unique pointer used so that ParallelTransform will be deleted
-   */
-  void setParallelTransform(PTptr pt) {
-    transform = std::move(pt);
-  }
-  /*!
-   * Set the parallel (y) transform from the options file
-   */
-  void setParallelTransform();
-
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
-  
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
@@ -824,9 +777,6 @@ protected:
 
   /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
   bool calcYUpDown_on_communicate{true};
-
-  /// Handles calculation of yup and ydown
-  PTptr transform{nullptr};
 
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string &name, int n);

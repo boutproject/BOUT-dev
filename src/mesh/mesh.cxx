@@ -12,10 +12,6 @@
 
 #include <output.hxx>
 
-#include "parallel/identity.hxx"
-#include "parallel/shiftedmetric.hxx"
-#include "parallel/fci.hxx"
-
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
@@ -301,53 +297,13 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   return result;
 }
 
-void Mesh::setParallelTransform() {
-
-  std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
-
-  // Convert to lower case for comparison
-  ptstr = lowercase(ptstr);
-    
-  if(ptstr == "identity") {
-    // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
-      
-  }else if(ptstr == "shifted") {
-    // Shifted metric method
-    transform = bout::utils::make_unique<ShiftedMetric>(*this);
-      
-  }else if(ptstr == "fci") {
-
-    Options *fci_options = Options::getRoot()->getSection("fci");
-    // Flux Coordinate Independent method
-    bool fci_zperiodic;
-    fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
-      
-  }else {
-    throw BoutException(_("Unrecognised paralleltransform option.\n"
-                          "Valid choices are 'identity', 'shifted', 'fci'"));
-  }
-}
-
-ParallelTransform& Mesh::getParallelTransform() {
-  if(!transform) {
-    // No ParallelTransform object yet. Set from options
-    setParallelTransform();
-  }
-  
-  // Return a reference to the ParallelTransform object
-  return *transform;
-}
-
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this);
+    return std::make_shared<Coordinates>(this, options);
   } else {
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+    return std::make_shared<Coordinates>(this, options, location, getCoordinates(CELL_CENTRE));
   }
 }
 

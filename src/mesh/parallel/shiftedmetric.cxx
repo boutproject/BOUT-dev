@@ -16,15 +16,12 @@
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
+    BoutReal zlength_in)
+    : ParallelTransform(m), location(location_in), zShift(std::move(zShift_)),
+      zlength(zlength_in) {
   // check the coordinate system used for the grid data source
   checkInputGrid();
-
-  // Read the zShift angle from the mesh
-  if (mesh.get(zShift, "zShift")) {
-    // No zShift variable. Try qinty in BOUT grid files
-    mesh.get(zShift, "qinty");
-  }
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0
@@ -35,14 +32,6 @@ ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
         "ShiftedMetric usually requires the option TwistShift=true\n"
         "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
   }
-
-  cachePhases();
-}
-
-ShiftedMetric::ShiftedMetric(Mesh& m, Field2D zShift_)
-    : ParallelTransform(m), zShift(std::move(zShift_)) {
-  // check the coordinate system used for the grid data source
-  checkInputGrid();
 
   cachePhases();
 }
@@ -70,7 +59,6 @@ void ShiftedMetric::cachePhases() {
   // not change once we've been created so precalculate the complex
   // phases used in transformations
   nmodes = mesh.LocalNz / 2 + 1;
-  BoutReal zlength = mesh.getCoordinates()->zlength();
 
   // Allocate storage for our 3d phase information.
   fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
@@ -305,7 +293,6 @@ void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle,
   rfft(in, len, &cmplxLoc[0]);
 
   // Apply phase shift
-  BoutReal zlength = mesh.getCoordinates()->zlength();
   for (int jz = 1; jz < nmodes; jz++) {
     BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
     cmplxLoc[jz] *= dcomplex(cos(kwave * zangle), -sin(kwave * zangle));

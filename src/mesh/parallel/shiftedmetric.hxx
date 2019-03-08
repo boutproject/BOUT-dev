@@ -41,10 +41,7 @@
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  /// Read zShift from the mesh
-  ShiftedMetric(Mesh& mesh);
-  /// Use an existing zShift
-  ShiftedMetric(Mesh& mesh, Field2D zShift);
+  ShiftedMetric(Mesh& mesh, CELL_LOC location, Field2D zShift, BoutReal zlength_in);
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -75,9 +72,14 @@ protected:
   void checkInputGrid() override;
 
 private:
+  CELL_LOC location{CELL_CENTRE};
+
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
+
+  /// Length of the z-domain in radians
+  BoutReal zlength{0.};
 
   int nmodes;
 

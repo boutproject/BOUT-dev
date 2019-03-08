@@ -33,6 +33,7 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
+#include "bout/paralleltransform.hxx"
 #include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
@@ -49,10 +50,10 @@ class Mesh;
 class Coordinates {
 public:
   /// Standard constructor from input
-  Coordinates(Mesh *mesh);
+  Coordinates(Mesh *mesh, Options* options);
 
   /// Constructor interpolating from another Coordinates object
-  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
+  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -110,7 +111,35 @@ public:
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
 
+
+  ///////////////////////////////////////////////////////////
+  // Parallel transforms
+  ///////////////////////////////////////////////////////////
+
+  /// Set the parallel (y) transform for this mesh.
+  /// Unique pointer used so that ParallelTransform will be deleted.
+  /// Mostly useful for tests.
+  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+    transform = std::move(pt);
+  }
+
+  /// Return the parallel transform, setting it if need be
+  ParallelTransform& getParallelTransform();
+
+  /// Transform a field into field-aligned coordinates
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL);
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL);
+
+  /// Convert back into standard form
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL);
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL);
+
+  bool canToFromFieldAligned();
+
+
+  ///////////////////////////////////////////////////////////
   // Operators
+  ///////////////////////////////////////////////////////////
 
   const Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
@@ -212,6 +241,13 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
+
+  /// Handles calculation of yup and ydown
+  std::unique_ptr<ParallelTransform> transform{nullptr};
+
+  /// Set the parallel (y) transform from the options file.
+  /// Usual way to create the transform object.
+  void setParallelTransform(Options* options);
 };
 
 /*
