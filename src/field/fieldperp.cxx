@@ -169,7 +169,7 @@ FPERP_OP_REAL(*=, *);
 FPERP_OP_REAL(/=, /);
 
 const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
-  return fieldmesh->getRegionPerp(REGION_STRING(region));
+  return fieldmesh->getRegionPerp(toString(region));
 };
 const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegionPerp(region_name);

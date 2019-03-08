@@ -421,7 +421,7 @@ public:
     ASSERT2((std::is_base_of<Field3D,
                              T>::value)); // Should never need to call this with Field2D
 
-    const auto region_str = REGION_STRING(region);
+    const auto region_str = toString(region);
 
     // Only allow a whitelist of regions for now
     ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
@@ -493,7 +493,7 @@ public:
     ASSERT2((std::is_base_of<Field3D,
                              T>::value)); // Should never need to call this with Field2D
 
-    const auto region_str = REGION_STRING(region);
+    const auto region_str = toString(region);
 
     // Only allow a whitelist of regions for now
     ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
