@@ -24,12 +24,28 @@ template <typename T>
 class FieldFactoryCreationTest : public FakeMeshFixture {
 public:
   FieldFactoryCreationTest() : FakeMeshFixture{}, factory{mesh} {
-    // We need a parallel transform as FieldFactory::create3D wants to
-    // un-field-align the result
-    mesh->setParallelTransform(
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+    mesh->getCoordinates()->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
-    mesh_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+
+    for (const auto& location : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+      static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(std::make_shared<Coordinates>(
+          mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+          Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+          Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+          Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false),
+          location);
+
+      mesh_staggered->getCoordinates(location)->setParallelTransform(
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    }
   }
 
   FieldFactory factory;
@@ -557,7 +573,13 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
 
   FakeMesh localmesh{nx, ny, nz};
   localmesh.createDefaultRegions();
-  localmesh.setParallelTransform(
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+  localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
 
   auto output = this->create("x", nullptr, &localmesh);

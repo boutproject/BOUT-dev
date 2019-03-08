@@ -61,13 +61,27 @@ protected:
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
-    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_ZLOW);
-    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+
     output_info.disable();
     mesh->createDefaultRegions();
     output_info.enable();
+
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, CELL_ZLOW);
+
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    for (const auto& location : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+          mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+          Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+          Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+          Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false),
+          location);
+      mesh->getCoordinates(location)->setParallelTransform(
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+    }
   }
 
   static void TearDownTestCase() {

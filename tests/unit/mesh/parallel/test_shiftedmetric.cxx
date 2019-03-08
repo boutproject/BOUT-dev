@@ -16,6 +16,7 @@ extern Mesh* mesh;
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
+    Options::root()["TwistShift"] = true;
     // Delete any existing mesh
     if (mesh != nullptr) {
       delete mesh;
@@ -43,7 +44,10 @@ public:
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
-    mesh->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(*mesh, zShift));
+    auto coords = mesh->getCoordinates();
+    coords->setParallelTransform(
+        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
+            coords->zlength()));
 
     Field3D input_temp{mesh};
 
@@ -119,11 +123,13 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  Field3D result = mesh->toFieldAligned(input);
+  auto coords = expected.getCoordinates();
+
+  Field3D result = coords->toFieldAligned(input);
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(coords->fromFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -160,25 +166,29 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  Field3D result = mesh->fromFieldAligned(input);
+  auto coords = input.getCoordinates();
+
+  Field3D result = coords->fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(coords->toFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromToFieldAligned) {
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(mesh->toFieldAligned(input)), input, "RGN_ALL",
+  auto coords = input.getCoordinates();
+  EXPECT_TRUE(IsFieldEqual(coords->fromFieldAligned(coords->toFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
+  auto coords = input.getCoordinates();
   input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(mesh->fromFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(coords->toFieldAligned(coords->fromFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
@@ -203,7 +213,7 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
   output_info.enable();
 
   // Actual interesting bit here!
-  mesh->getParallelTransform().calcYUpDown(input);
+  input.getCoordinates()->getParallelTransform().calcYUpDown(input);
   // Expected output values
 
   Field3D expected_up_1{mesh};

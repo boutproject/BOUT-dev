@@ -262,8 +262,6 @@ public:
       bout::globals::mesh = nullptr;
     }
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
-    bout::globals::mesh->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
     output_info.disable();
     bout::globals::mesh->createDefaultRegions();
     output_info.enable();
@@ -275,8 +273,6 @@ public:
     }
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    mesh_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);

@@ -21,9 +21,15 @@ using namespace bout::globals;
 class InitialProfileTest : public FakeMeshFixture {
 public:
   InitialProfileTest() : FakeMeshFixture() {
-    // We need a parallel transform as FieldFactory::create3D wants to
-    // un-field-align the result
-    mesh->setParallelTransform(
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+    mesh->getCoordinates()->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
 
     output_info.disable();

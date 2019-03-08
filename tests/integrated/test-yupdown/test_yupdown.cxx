@@ -37,7 +37,10 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  ShiftedMetric s(*mesh);
+  Field2D zShift;
+  mesh->get(zShift, "zShift");
+
+  ShiftedMetric s(*mesh, CELL_CENTRE, zShift, mesh->getCoordinates()->zlength());
 
   // Read variable from mesh
   Field3D var;
@@ -58,13 +61,13 @@ int main(int argc, char** argv) {
   Field3D ddy2 = DDY(var2);
 
   // Change into field-aligned coordinates
-  Field3D var_aligned = mesh->toFieldAligned(var);
+  Field3D var_aligned = var.getCoordinates()->toFieldAligned(var);
   
   // var now field aligned
   Field3D ddy_check = DDY_aligned(var_aligned);
   
   // Shift back to orthogonal X-Z coordinates
-  ddy_check = mesh->fromFieldAligned(ddy_check);
+  ddy_check = var.getCoordinates()->fromFieldAligned(ddy_check);
   
   SAVE_ONCE3(ddy, ddy2, ddy_check);
   dump.write();
