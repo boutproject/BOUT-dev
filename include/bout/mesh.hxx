@@ -330,6 +330,20 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Is there a branch cut at this processor's lower boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
+  ///                           non-zero if there is a branch-cut
+  virtual bool hasBranchCutLower(int jx, BoutReal& global_shift) const = 0;
+
+  /// Is there a branch cut at this processor's upper boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
+  ///                           non-zero if there is a branch-cut
+  virtual bool hasBranchCutUpper(int jx, BoutReal& global_shift) const = 0;
   
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 

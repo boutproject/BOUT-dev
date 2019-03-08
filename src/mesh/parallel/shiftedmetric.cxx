@@ -24,14 +24,12 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
   // check the coordinate system used for the grid data source
   checkInputGrid();
 
-  // TwistShift needs to be set for derivatives to be correct at the jump where
-  // poloidal angle theta goes 2pi->0
+  // TwistShift should not be set for derivatives to be correct at the jump where
+  // poloidal angle theta goes 2pi->0. zShift has been corrected for the jump
+  // already in Coordinates::Coordinates
   bool twistshift = Options::root()["TwistShift"].withDefault(false);
-  bool shift_without_twist = Options::root()["ShiftWithoutTwist"].withDefault(false);
-  if (!twistshift and !shift_without_twist) {
-    throw BoutException(
-        "ShiftedMetric usually requires the option TwistShift=true\n"
-        "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
+  if (twistshift) {
+    throw BoutException("ShiftedMetric requires the option TwistShift=false");
   }
 
   cachePhases();

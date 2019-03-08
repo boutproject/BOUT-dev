@@ -105,6 +105,20 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const;
 
+  /// Is there a branch cut at this processor's lower boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
+  ///                           non-zero if there is a branch-cut
+  bool hasBranchCutLower(int jx, BoutReal& global_shift) const override;
+
+  /// Is there a branch cut at this processor's upper boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
+  ///                           non-zero if there is a branch-cut
+  bool hasBranchCutUpper(int jx, BoutReal& global_shift) const override;
+
   int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////

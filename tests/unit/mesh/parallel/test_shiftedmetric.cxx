@@ -16,7 +16,6 @@ extern Mesh* mesh;
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
-    Options::root()["TwistShift"] = true;
     // Delete any existing mesh
     if (mesh != nullptr) {
       delete mesh;

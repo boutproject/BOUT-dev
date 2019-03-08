@@ -689,6 +689,21 @@ void Coordinates::setParallelTransform(Options* options) {
     // make sure zShift has been communicated
     localmesh->communicate(zShift);
 
+    // Correct guard cells for discontinuity of zShift at poloidal branch cut
+    for (int x = 0; x < localmesh->LocalNx; x++) {
+      BoutReal global_shift = 0.;
+      if (localmesh->hasBranchCutLower(x, global_shift)) {
+        for (int y = 0; y < localmesh->ystart; y++) {
+          zShift(x, y) -= global_shift;
+        }
+      }
+      if (localmesh->hasBranchCutUpper(x, global_shift)) {
+        for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
+          zShift(x, y) += global_shift;
+        }
+      }
+    }
+
     transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
         zlength());
 
