@@ -117,7 +117,7 @@ const std::string& DERIV_STRING(DERIV deriv) {
   return safeAt(DERIVtoString, deriv);
 }
 
-const std::string& convertYDirectionTypeToString(YDirectionType d) {
+std::string toString(YDirectionType d) {
   AUTO_TRACE();
   const static std::map<YDirectionType, std::string> YDirectionTypeToString = {
       {YDirectionType::Standard, "Standard"},
@@ -126,7 +126,7 @@ const std::string& convertYDirectionTypeToString(YDirectionType d) {
   return safeAt(YDirectionTypeToString, d);
 }
 
-const std::string& convertZDirectionTypeToString(ZDirectionType d) {
+std::string toString(ZDirectionType d) {
   AUTO_TRACE();
   const static std::map<ZDirectionType, std::string> ZDirectionTypeToString = {
       {ZDirectionType::Standard, "Standard"},

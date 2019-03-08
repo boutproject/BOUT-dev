@@ -852,8 +852,8 @@ bool Datafile::read() {
 template <typename T>
 void Datafile::writeFieldAttributes(const std::string name, T* f) {
   file->setAttribute(name, "cell_location", CELL_LOC_STRING(f->getLocation()));
-  file->setAttribute(name, "direction_y", convertYDirectionTypeToString(f->getDirectionY()));
-  file->setAttribute(name, "direction_z", convertZDirectionTypeToString(f->getDirectionZ()));
+  file->setAttribute(name, "direction_y", toString(f->getDirectionY()));
+  file->setAttribute(name, "direction_z", toString(f->getDirectionZ()));
 }
 
 bool Datafile::write() {
