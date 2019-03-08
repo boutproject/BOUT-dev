@@ -73,8 +73,8 @@ namespace FV {
       // At least one input doesn't have yup/ydown fields.
       // Need to shift to/from field aligned coordinates
 
-      fup = fdown = fc = mesh->toFieldAligned(f);
-      aup = adown = ac = mesh->toFieldAligned(a);
+      fup = fdown = fc = f.getCoordinates()->toFieldAligned(f);
+      aup = adown = ac = a.getCoordinates()->toFieldAligned(a);
     }
 
     // Y flux
@@ -157,7 +157,7 @@ namespace FV {
     if (f.hasYupYdown() && a.hasYupYdown()) {
       result += yzresult;
     } else {
-      result += mesh->fromFieldAligned(yzresult);
+      result += yzresult.getCoordinates()->fromFieldAligned(yzresult);
     }
     
     return result;
@@ -173,8 +173,8 @@ namespace FV {
 
     bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
 
-    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin, RGN_NOX);
-    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin, RGN_NOX);
+    const auto& K = use_yup_ydown ? Kin : Kin.getCoordinates()->toFieldAligned(Kin, RGN_NOX);
+    const auto& f = use_yup_ydown ? fin : fin.getCoordinates()->toFieldAligned(fin, RGN_NOX);
 
     // K and f fields in yup and ydown directions
     const auto& Kup = use_yup_ydown ? Kin.yup() : K;
@@ -220,7 +220,7 @@ namespace FV {
     
     if (!use_yup_ydown) {
       // Shifted to field aligned coordinates, so need to shift back
-      result = mesh->fromFieldAligned(result, RGN_NOBNDRY);
+      result = result.getCoordinates()->fromFieldAligned(result, RGN_NOBNDRY);
     }
     
     return result;
@@ -236,8 +236,8 @@ namespace FV {
     Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
-    Field3D d = mesh->toFieldAligned(d_in, RGN_NOX);
-    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
+    Field3D d = d_in.getCoordinates()->toFieldAligned(d_in, RGN_NOX);
+    Field3D f = f_in.getCoordinates()->toFieldAligned(f_in, RGN_NOX);
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
@@ -276,7 +276,7 @@ namespace FV {
       }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
+    return result.getCoordinates()->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
@@ -285,7 +285,7 @@ namespace FV {
     Mesh* mesh = f_in.getMesh();
 
     // Convert to field aligned coordinates
-    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
+    Field3D f = f_in.getCoordinates()->toFieldAligned(f_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
     
@@ -386,7 +386,7 @@ namespace FV {
     }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
+    return result.getCoordinates()->fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   void communicateFluxes(Field3D &f) {

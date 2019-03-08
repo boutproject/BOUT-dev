@@ -1156,7 +1156,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   
   if (shiftInput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = mesh->fromFieldAligned(*f, RGN_ALL);
+    *f = f->getCoordinates()->fromFieldAligned(*f, RGN_ALL);
   }
   
   return true;
@@ -1202,7 +1202,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
   //Deal with shifting the output
   Field3D f_out{emptyFrom(*f)};
   if(shiftOutput) {
-    f_out = mesh->toFieldAligned(*f);
+    f_out = f->getCoordinates()->toFieldAligned(*f);
   }else {
     f_out = *f;
   }
