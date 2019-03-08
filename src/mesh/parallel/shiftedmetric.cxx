@@ -20,6 +20,7 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
     BoutReal zlength_in)
     : ParallelTransform(m), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
+  ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
   checkInputGrid();
 
@@ -161,9 +162,8 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION reg
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const YDirectionType y_direction_out,
                                     const REGION region) const {
-  ASSERT1(&mesh == f.getMesh());
-  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
-  ASSERT1(f.getLocation() == CELL_CENTRE);
+  ASSERT1(f.getMesh() == &mesh);
+  ASSERT1(f.getLocation() == location);
 
   if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
@@ -197,11 +197,6 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 
 void ShiftedMetric::calcYUpDown(Field3D& f) {
 
-  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
-  ASSERT1(&mesh == f.getMesh());
-  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
-  ASSERT1(f.getLocation() == CELL_CENTRE);
-
   auto results = shiftZ(f, parallel_slice_phases);
 
   ASSERT3(results.size() == parallel_slice_phases.size());
@@ -216,6 +211,9 @@ void ShiftedMetric::calcYUpDown(Field3D& f) {
 std::vector<Field3D>
 ShiftedMetric::shiftZ(const Field3D& f,
                       const std::vector<ParallelSlicePhase>& phases) const {
+  ASSERT1(f.getMesh() == &mesh);
+  ASSERT1(f.getLocation() == location);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
 
   const int nmodes = mesh.LocalNz / 2 + 1;
 
