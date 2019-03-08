@@ -715,25 +715,6 @@ ParallelTransform& Coordinates::getParallelTransform() {
   return *transform;
 }
 
-/// Transform a field into field-aligned coordinates
-const Field3D Coordinates::toFieldAligned(const Field3D &f, const REGION region) {
-  return getParallelTransform().toFieldAligned(f, region);
-}
-const Field2D Coordinates::toFieldAligned(const Field2D &f, const REGION UNUSED(region)) {
-  return f;
-}
-
-/// Convert back into standard form
-const Field3D Coordinates::fromFieldAligned(const Field3D &f, const REGION region) {
-  return getParallelTransform().fromFieldAligned(f, region);
-}
-const Field2D Coordinates::fromFieldAligned(const Field2D &f, const REGION UNUSED(region)) {
-  return f;
-}
-
-bool Coordinates::canToFromFieldAligned() {
-  return getParallelTransform().canToFromFieldAligned();
-}
 
 /*******************************************************************************
  * Operators

@@ -126,16 +126,6 @@ public:
   /// Return the parallel transform, setting it if need be
   ParallelTransform& getParallelTransform();
 
-  /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL);
-  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL);
-
-  /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL);
-  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL);
-
-  bool canToFromFieldAligned();
-
 
   ///////////////////////////////////////////////////////////
   // Operators

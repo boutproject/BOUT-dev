@@ -285,6 +285,11 @@ Field3D & Field3D::operator=(const BoutReal val) {
   return *this;
 }
 
+Field3D& Field3D::calcParallelSlices() {
+  fieldCoordinates->getParallelTransform().calcParallelSlices(*this);
+  return *this;
+}
+
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field3D::applyBoundary(bool init) {
@@ -559,6 +564,14 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
+
+Field3D toFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
+}
+
+Field3D fromFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
+}
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");

@@ -438,6 +438,8 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
+  Field3D& calcParallelSlices();
+
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const std::string &condition);
@@ -531,6 +533,9 @@ Field3D operator/(BoutReal lhs, const Field3D &rhs);
 Field3D operator-(const Field3D &f);
 
 // Non-member functions
+
+Field3D toFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
+Field3D fromFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
 
 /// Calculates the minimum of a field, excluding the boundary/guard
 /// cells by default (can be changed with \p rgn argument).

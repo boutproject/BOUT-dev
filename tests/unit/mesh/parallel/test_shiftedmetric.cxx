@@ -123,13 +123,11 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  auto coords = expected.getCoordinates();
-
-  Field3D result = coords->toFieldAligned(input);
+  Field3D result = toFieldAligned(input);
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->fromFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -166,29 +164,25 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  auto coords = input.getCoordinates();
-
-  Field3D result = coords->fromFieldAligned(input);
+  Field3D result = fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(coords->toFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromToFieldAligned) {
-  auto coords = input.getCoordinates();
-  EXPECT_TRUE(IsFieldEqual(coords->fromFieldAligned(coords->toFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
-  auto coords = input.getCoordinates();
   input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(coords->toFieldAligned(coords->fromFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 

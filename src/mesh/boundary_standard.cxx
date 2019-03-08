@@ -3316,16 +3316,14 @@ void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
   ASSERT1(bndry->localmesh = f.getMesh());
 
-  auto coords = f.getCoordinates();
-
   //NOTE: This is not very efficient... updating entire field
-  f = coords->fromFieldAligned(f);
+  f = fromFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = coords->toFieldAligned(f);
+  f = toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3339,12 +3337,10 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
   ASSERT1(bndry->localmesh = f.getMesh());
 
-  auto coords = f.getCoordinates();
-
-  f = coords->fromFieldAligned(f);
-  ddt(f) = coords->fromFieldAligned(ddt(f));
+  f = fromFieldAligned(f);
+  ddt(f) = fromFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = coords->toFieldAligned(ddt(f));
+  ddt(f) = toFieldAligned(ddt(f));
 }
 
 
@@ -3367,16 +3363,14 @@ void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
   ASSERT1(bndry->localmesh = f.getMesh());
 
-  auto coords = f.getCoordinates();
-
   //NOTE: This is not very efficient... shifting entire field
-  f = coords->toFieldAligned(f);
+  f = toFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = coords->fromFieldAligned(f);
+  f = fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3390,10 +3384,8 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
   ASSERT1(bndry->localmesh = f.getMesh());
 
-  auto coords = f.getCoordinates();
-
-  f = coords->toFieldAligned(f);
-  ddt(f) = coords->toFieldAligned(ddt(f));
+  f = toFieldAligned(f);
+  ddt(f) = toFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = coords->fromFieldAligned(ddt(f));
+  ddt(f) = fromFieldAligned(ddt(f));
 }

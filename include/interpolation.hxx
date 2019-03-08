@@ -126,7 +126,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       // We can't interpolate in y unless we're field-aligned
       // FIXME: Add check once we label fields as orthogonal/aligned
 
-      const T var_fa = var.getCoordinates()->toFieldAligned(var, RGN_NOX);
+      const T var_fa = toFieldAligned(var, RGN_NOX);
       if (region != RGN_NOBNDRY) {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
@@ -153,7 +153,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         }
       }
 
-      result = result.getCoordinates()->fromFieldAligned(result, RGN_NOBNDRY);
+      result = fromFieldAligned(result, RGN_NOBNDRY);
 
       break;
     }
