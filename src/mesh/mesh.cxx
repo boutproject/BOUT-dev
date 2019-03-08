@@ -466,6 +466,6 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    std::swap(*coords_map[location], *createDefaultCoordinates(location));
+    *coords_map[location] = std::move(*createDefaultCoordinates(location));
   }
 }

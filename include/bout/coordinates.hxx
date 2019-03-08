@@ -63,6 +63,8 @@ public:
               Field2D g_13, Field2D g_23, Field2D ShiftTorsion, Field2D IntShiftTorsion,
               bool calculate_geometry = true);
 
+  Coordinates& operator=(Coordinates&&) = default;
+
   ~Coordinates() = default;
 
   /*!
