@@ -712,6 +712,43 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
+  const DEPRECATED(Field3D toFieldAligned(const Field3D &f,
+        const REGION region = RGN_ALL)) {
+    return ::toFieldAligned(f, region);
+  }
+
+  const DEPRECATED(Field3D fromFieldAligned(const Field3D &f,
+        const REGION region = RGN_ALL)) {
+    return ::fromFieldAligned(f, region);
+  }
+
+  const DEPRECATED(Field2D toFieldAligned(const Field2D &f,
+        const REGION region = RGN_ALL)) {
+    return ::toFieldAligned(f, region);
+  }
+
+  const DEPRECATED(Field2D fromFieldAligned(const Field2D &f,
+        const REGION region = RGN_ALL)) {
+    return ::fromFieldAligned(f, region);
+  }
+
+  bool DEPRECATED(canToFromFieldAligned()) {
+    return getCoordinates()->getParallelTransform().canToFromFieldAligned();
+  }
+
+  void DEPRECATED(setParallelTransform(std::unique_ptr<ParallelTransform> pt)) {
+    getCoordinates()->setParallelTransform(std::move(pt));
+  }
+
+  void DEPRECATED(setParallelTransform()) {
+    // The ParallelTransform is set from options in the Coordinates
+    // constructor, so this method doesn't need to do anything
+  }
+
+  ParallelTransform& DEPRECATED(getParallelTransform()) {
+    return getCoordinates()->getParallelTransform();
+  }
+
 
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
