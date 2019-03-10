@@ -153,11 +153,36 @@ END
 FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parweight, $
                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
                         ydown_space=ydown_space, yup_space=yup_space, $
-                        sp_loc=sp_loc
+                        sp_loc=sp_loc, $
+                        y_boundary_guards=y_boundary_guards, $
+                        ydown_firstind=ydown_firstind, $
+                        yup_lastind=yup_lastind
 
   IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0  ; Default is poloidal distance
 
   np = N_ELEMENTS(ri)
+
+  IF NOT KEYWORD_SET(y_boundary_guards) THEN y_boundary_guards = 0
+
+  IF NOT KEYWORD_SET(ydown_firstind) THEN BEGIN
+    ; Index of location of wall not given => no wall at ydown end
+    ; Default to starting at beginning of ri, zi arrays.
+    ydown_firstind = 0
+    boundary_guards_ydown = 0
+  ENDIF ELSE BEGIN
+    ; There is a wall at ydown
+    boundary_guards_ydown = y_boundary_guards
+  ENDELSE
+
+  IF NOT KEYWORD_SET(yup_lastind) THEN BEGIN
+    ; Index of location of wall not given => no wall at yup end
+    ; Default to finishing at end of ri, zi arrays.
+    yup_lastind = np - 1
+    boundary_guards_yup = 0
+  ENDIF ELSE BEGIN
+    ; There is a wall at yup
+    boundary_guards_yup = y_boundary_guards
+  ENDELSE
 
   IF 0 THEN BEGIN ; Always false
     ; Calculate poloidal distance along starting line
@@ -166,6 +191,9 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     
     dldi = SQRT(drdi^2 + dzdi^2)
     poldist = int_func(findgen(np), dldi, /simple) ; Poloidal distance along line
+
+    ; reset poldist to start at zero at the ydown wall (if one is present)
+    poldist = poldist - poldist[ydown_firstind]
   ENDIF ELSE BEGIN
     rpos = INTERPOLATE(R, ri)
     zpos = INTERPOLATE(Z, zi)
@@ -173,6 +201,9 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
     poldist = FLTARR(np)
     FOR i=1,np-1 DO poldist[i] = poldist[i-1] + dd[i-1]
+
+    ; reset poldist to start at zero at the ydown wall (if one is present)
+    poldist = poldist - poldist[ydown_firstind]
   ENDELSE
 
   IF SIZE(fpsi, /n_dim) EQ 2 THEN BEGIN
@@ -205,6 +236,9 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
       ip = (i + 1) MOD np
       pardist[i] = pardist[i-1] + ddpar[i] ;0.5*(ddpar[i-1] + ddpar[ip])
     ENDFOR
+
+    ; reset pardist to start at zero at the ydown wall (if one is present)
+    pardist = pardist - pardist[ydown_firstind]
   ENDIF ELSE pardist = poldist ; Just use the same poloidal distance
 
   PRINT, "PARWEIGHT: ", parweight
@@ -213,8 +247,10 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
 
   ; Divide up distance. No points at the end (could be x-point)
   IF n GE 2 THEN BEGIN
-    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = dist[np-1]* 0.5 / FLOAT(n)
-    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = dist[np-1] * 0.5 / FLOAT(n)
+    ; note dist[ydown_firstind] should be 0., but include here anyway
+    total_dist = dist[yup_lastind] - dist[ydown_firstind]
+    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = total_dist * 0.5 / FLOAT(n)
+    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = total_dist * 0.5 / FLOAT(n)
 
     IF SIZE(ydown_space, /TYPE) EQ 0 THEN BEGIN
        IF ydown_dist LT 1e-5 THEN BEGIN
@@ -230,8 +266,11 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     ;dloc = (dist[np-1] - ydown_dist - yup_dist) * FINDGEN(n)/FLOAT(n-1) + ydown_dist  ; Distance locations
 
     fn = FLOAT(n-1)
-    d = (dist[np-1] - ydown_dist - yup_dist) ; Distance between first and last
-    i = FINDGEN(n)
+    d = (total_dist - ydown_dist - yup_dist) ; Distance between first and last
+    i = FINDGEN(n + boundary_guards_ydown + boundary_guards_yup)
+
+    ; igrid starts at zero in the first grid cell (excludes boundary guard cells)
+    igrid = i - boundary_guards_ydown
     
     yd = ydown_space < 0.5*d/fn
     yu = yup_space < 0.5*d/fn
@@ -239,8 +278,9 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     a = yd*2.
     b = (2.*yu - a) / fn
     c = d/fn - a - 0.5*b*fn
-    dloc = ydown_dist + a*i + 0.5*b*i^2 + c*[i - SIN(2.*!PI*i / fn)*fn/(2.*!PI)]
-    ddloc = a + b*i + c*[1 - COS(2.*!PI*i / fn)]
+    dloc = ydown_dist + a*igrid + 0.5*b*igrid^2 + c*[igrid - SIN(2.*!PI*igrid / fn)*fn/(2.*!PI)]
+    ddloc = a + b*igrid + c*[1 - COS(2.*!PI*igrid / fn)]
+
     
     ; Fit to dist = a*i^3 + b*i^2 + c*i
     ;; c = ydown_dist*2.
@@ -289,9 +329,21 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       vec_in_up=vec_in_up, vec_out_up=vec_out_up, $         ;
                       sep_up=sep_up, sep_line_up=sep_line_up, $             ;
                       sp_loc=sp_loc, orthdown=orthdown, orthup=orthup, $
-                      nonorthogonal_weight_decay_power=nonorthogonal_weight_decay_power
-                      
+                      nonorthogonal_weight_decay_power=nonorthogonal_weight_decay_power, $
+                      y_boundary_guards=y_boundary_guards, $ ; number of guard cells at y-boundaries
+                      ydown_firstind=ydown_firstind, $ ; if given, include y_boundary_guards before this point
+                      yup_lastind=yup_lastind ; if given, include y_boundary_guards after this point
   
+  IF KEYWORD_SET(ydown_firstind) THEN BEGIN
+    ; add boundary guard cells at ydown
+    nguards_ydown = y_boundary_guards
+  ENDIF ELSE nguards_ydown = 0
+  IF KEYWORD_SET(yup_lastind) THEN BEGIN
+    ; add boundary guard cells at yup
+    nguards_yup = y_boundary_guards
+  ENDIF ELSE nguards_yup = 0
+  npar_total = npar + nguards_ydown + nguards_yup
+
   nsurf = N_ELEMENTS(fvals)
   
   IF sind GE 0 THEN BEGIN
@@ -329,7 +381,10 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
-                      parweight=parweight)
+                      parweight=parweight, $
+                      y_boundary_guards=y_boundary_guards, $
+                      ydown_firstind=ydown_firstind, $
+                      yup_lastind=yup_lastind)
   
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
@@ -339,7 +394,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   ;STOP
   
   ; Refine the location of the starting point
-  ;FOR i=0, npar-1 DO BEGIN
+  ;FOR i=0, npar_total-1 DO BEGIN
   ;  follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1
   ;  rii[i] = ri1
   ;  zii[i] = zi1
@@ -347,11 +402,15 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 
   ; From each starting point, follow gradient in both directions
   
-  rixy = FLTARR(nsurf, npar)
-  zixy = FLTARR(nsurf, npar)
-  FOR i=0, npar-1 DO BEGIN
+  rixy = FLTARR(nsurf, npar_total)
+  zixy = FLTARR(nsurf, npar_total)
+  FOR i=0, npar_total-1 DO BEGIN
+    
+    ; igrid is the index starting from zero on the first grid point after any
+    ; guard cells
+    igrid = i - nguards_ydown
 
-    IF i GE npar/2 THEN BEGIN
+    IF igrid GE npar/2 THEN BEGIN
        IF KEYWORD_SET(sep_up) THEN BEGIN
           sep = sep_up
        ENDIF ELSE sep = fvals[nin]
@@ -375,12 +434,17 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF ELSE sep_line = FLTARR(2,2)
     ENDELSE
 
+    ; 0 <= iweight <= npar-1
+    iweight = igrid
+    IF iweight LT 0 THEN iweight = 0
+    IF iweight GT npar - 1 THEN iweight = npar - 1
+
     IF NOT KEYWORD_SET(nonorthogonal_weight_decay_power) THEN nonorthogonal_weight_decay_power = 0
     IF NOT KEYWORD_SET(orthup) THEN orthup=0
-    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.))^nonorthogonal_weight_decay_power
+    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (iweight/(npar-1.))^nonorthogonal_weight_decay_power
 
     IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^nonorthogonal_weight_decay_power
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-iweight/(npar-1.))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, $
@@ -843,7 +907,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       nrad_flexible=nrad_flexible, $
                       single_rad_grid=single_rad_grid, fast=fast, $
                       xpt_mindist=xpt_mindist, xpt_mul=xpt_mul, xpt_only=xpt_only, $
-                      simple = simple
+                      simple=simple, y_boundary_guards=y_boundary_guards
 
 
   strictbndry=0
@@ -1356,8 +1420,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       ;; set nflux_* here to the minimum of the number of points in the leg and core
       ;; lines, because we need elements from both at each step when we loop below
-      nflux_leg1 = min([n_elements(legsep.leg1[*,0]), n_elements(legsep.core2[*,0])])
-      nflux_leg2 = min([n_elements(legsep.leg2[*,0]), n_elements(legsep.core1[*,0])])
+      nflux_leg1 = min([n_elements(legsep.leg1[0:legsep.leg1_lastind,0]), n_elements(legsep.core2[*,0])])
+      nflux_leg2 = min([n_elements(legsep.leg2[0:legsep.leg2_lastind,0]), n_elements(legsep.core1[*,0])])
       meanr1 = fltarr(nflux_leg1)
       meanz1 = fltarr(nflux_leg1)
 
@@ -1590,7 +1654,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_nonorthogonal(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
-                            single_rad_grid=single_rad_grid, fast=fast, simple=simple)
+                            single_rad_grid=single_rad_grid, fast=fast, simple=simple, $
+                            y_boundary_guards=y_boundary_guards)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1664,6 +1729,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
       mini = N_ELEMENTS(legsep.leg1[*,0])
+      ; need to take account of reversing leg1 in calculating pf_wallind1
+      pf_wallind1 = mini - 1 - legsep.leg1_lastind
+      ; need to take account of extra array elements before leg2
+      pf_wallind2 = mini + 1 + legsep.leg2_lastind
 
       ; Use the tangent vector to determine direction
       ; relative to core and so get direction of positive theta
@@ -1676,15 +1745,23 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         pf_ri = REVERSE(pf_ri)
         pf_zi = REVERSE(pf_zi)
         mini = N_ELEMENTS(pf_ri) - 1. - mini
+        temp = N_ELEMENTS(pf_ri) - 1 - pf_wallind2
+        pf_wallind2 = N_ELEMENTS(pf_ri) - 1 - pf_wallind1
+        pf_wallind1 = temp
 
         ; Structure for x-point grid spacing info
-        xpt_sep = {leg1_ri:[xpt_ri[i], legsep.leg2[*,0]], leg1_zi:[xpt_zi[i], legsep.leg2[*,1]], $
-                   leg2_ri:[xpt_ri[i], legsep.leg1[*,0]], leg2_zi:[xpt_zi[i], legsep.leg1[*,1]], $
+        ; don't keep boundary points here, this structure will only be used for
+        ; calculating the lengths of divertor legs
+        xpt_sep = {leg1_ri:[xpt_ri[i], legsep.leg2[0:legsep.leg2_lastind,0]], leg1_zi:[xpt_zi[i], legsep.leg2[0:legsep.leg2_lastind,1]], $
+                   leg2_ri:[xpt_ri[i], legsep.leg1[0:legsep.leg1_lastind,0]], leg2_zi:[xpt_zi[i], legsep.leg1[0:legsep.leg1_lastind,1]], $
                    core1_ri:[xpt_ri[i], legsep.core2[*,0]], core1_zi:[xpt_zi[i], legsep.core2[*,1]], $
                    core2_ri:[xpt_ri[i], legsep.core1[*,0]], core2_zi:[xpt_zi[i], legsep.core1[*,1]]}
       ENDIF ELSE BEGIN
-        xpt_sep = {leg1_ri:[xpt_ri[i], legsep.leg1[*,0]], leg1_zi:[xpt_zi[i], legsep.leg1[*,1]], $
-                   leg2_ri:[xpt_ri[i], legsep.leg2[*,0]], leg2_zi:[xpt_zi[i], legsep.leg2[*,1]], $
+        ; Structure for x-point grid spacing info
+        ; don't keep boundary points here, this structure will only be used for
+        ; calculating the lengths of divertor legs
+        xpt_sep = {leg1_ri:[xpt_ri[i], legsep.leg1[0:legsep.leg1_lastind,0]], leg1_zi:[xpt_zi[i], legsep.leg1[0:legsep.leg1_lastind,1]], $
+                   leg2_ri:[xpt_ri[i], legsep.leg2[0:legsep.leg2_lastind,0]], leg2_zi:[xpt_zi[i], legsep.leg2[0:legsep.leg2_lastind,1]], $
                    core1_ri:[xpt_ri[i], legsep.core1[*,0]], core1_zi:[xpt_zi[i], legsep.core1[*,1]], $
                    core2_ri:[xpt_ri[i], legsep.core2[*,0]], core2_zi:[xpt_zi[i], legsep.core2[*,1]]}
       ENDELSE
@@ -1717,17 +1794,19 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                           'npf', npf, $ ; Number of radial points in this PF region
                           'ri0', [pf_ri[0:mini], INTERPOLATE(pf_ri, mini)], $
                           'zi0', [pf_zi[0:mini], INTERPOLATE(pf_zi, mini)], $
+                          'wallind0', pf_wallind1, $
                           'ri1', [INTERPOLATE(pf_ri, mini), pf_ri[(mini+1):*]], $
-                          'zi1', [INTERPOLATE(pf_zi, mini), pf_zi[(mini+1):*]])
+                          'zi1', [INTERPOLATE(pf_zi, mini), pf_zi[(mini+1):*]], $
+                          'wallind1', pf_wallind2 - mini)
 
       ; Calculate length of each section
-      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0))^2 + DERIV(INTERPOLATE(Z, tmp.zi0))^2)
+      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0[tmp.wallind0:*]))^2 + DERIV(INTERPOLATE(Z, tmp.zi0[tmp.wallind0:*]))^2)
       IF KEYWORD_SET(simple) THEN BEGIN
         len0 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDIF ELSE BEGIN
         len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDELSE
-      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1))^2 + DERIV(INTERPOLATE(Z, tmp.zi1))^2)
+      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1[0:tmp.wallind1]))^2 + DERIV(INTERPOLATE(Z, tmp.zi1[0:tmp.wallind1]))^2)
       IF KEYWORD_SET(simple) THEN BEGIN
         len1 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDIF ELSE BEGIN
@@ -1746,9 +1825,19 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     
     npol = settings.npol
     nnpol = N_ELEMENTS(npol)
-    IF nnpol EQ 1 THEN npol = npol[0]
+    n_y_boundary_guards = LONARR(nnpol)
+    IF nnpol EQ 1 THEN BEGIN
+      npol = npol[0]
+      n_y_boundary_guards = 2*y_boundary_guards
+    ENDIF
     
-    IF nnpol NE 3*critical.n_xpoint THEN BEGIN
+    IF nnpol EQ 3*critical.n_xpoint THEN BEGIN
+      ; Get number of y-boundary guard cells where necessary
+      FOR i=0, critical.n_xpoint-1 DO BEGIN
+        n_y_boundary_guards[3*i] = y_boundary_guards  ; PF part 0
+        n_y_boundary_guards[3*i+2] = y_boundary_guards ; PF part 1
+      ENDFOR
+    ENDIF ELSE BEGIN
       IF nnpol GT 1 THEN BEGIN
         PRINT, "WARNING: npol has wrong number of elements ("+STR(nnpol)+")"
         PRINT, "         Should have 1 or "+STR(3*critical.n_xpoint)+" elements"
@@ -1764,6 +1853,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       n_update = npol - 6*critical.n_xpoint ; Extra points to divide up
       npol = LONARR(3*critical.n_xpoint) + 2
       nnpol = N_ELEMENTS(npol)
+      n_y_boundary_guards = LONARR(3*critical.n_xpoint)
       
       ; Get lengths
       length = FLTARR(3*critical.n_xpoint)
@@ -1793,6 +1883,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       xpt = si[0] ; X-point index to start with
       FOR i=0, critical.n_xpoint-1 DO BEGIN
         npol2[3*i] = npol[xpt]  ; PF part 0
+        n_y_boundary_guards[3*i] = y_boundary_guards  ; PF part 0
         
         ; Get the SOL ID
         solid = (*pf_info[xpt]).sol[0]
@@ -1805,10 +1896,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         ; Get the next x-point
         xpt = (*sol_info[solid]).xpt2
         npol2[3*i+2] = npol[critical.n_xpoint + xpt] ; PF part 1
+        n_y_boundary_guards[3*i+2] = y_boundary_guards  ; PF part 1
       ENDFOR
       
       npol = npol2
-    ENDIF
+    ENDELSE
+
+    npol_total = TOTAL(npol+n_y_boundary_guards, /int)
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Poloidal spacing. Need to ensure regular spacing
@@ -1819,9 +1913,16 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     xpt_dist = FLTARR(critical.n_xpoint, 4) ; Distance between x-point and first grid point
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       ; Grid the lower PF region
-      
+
       ; Calculate poloidal distance along starting line
-      poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
+      ; NOTE: (ri0, zi0) is the line going from x-point down the leg
+      ; to the left, if the core is at the top.
+      ; - If xpt is the lower x-point, then this corresponds to the
+      ;   lower inner leg.
+      ; - If xpt is the upper x-point then this is the upper outer leg
+      
+      wallind = (*pf_info[xpt]).wallind0
+      poldist = line_dist(R, Z, (*pf_info[xpt]).ri0[wallind:*], (*pf_info[xpt]).zi0[wallind:*]) ; Poloidal distance along line
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
 
       xpt_dist[xpt, 0] = xdist
@@ -1840,7 +1941,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Second PF region
       xpt = xpt2
       
-      poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0)
+      wallind = (*pf_info[xpt]).wallind1
+      poldist = line_dist(R, Z, (*pf_info[xpt]).ri1[0:wallind], (*pf_info[xpt]).zi1[0:wallind])
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i])
       
       xpt_dist[xpt, 3] = xdist
@@ -1972,7 +2074,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ENDIF
     
     ; Create 2D arrays for the grid
-    Rxy = FLTARR(TOTAL(nrad,/int), TOTAL(npol,/int))
+    Rxy = FLTARR(TOTAL(nrad,/int), npol_total)
     Zxy = Rxy
     Rixy = Rxy
     Zixy = Rxy
@@ -1993,8 +2095,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     FOR i=0, critical.n_xpoint-1 DO BEGIN
        ; This section grids the first divertor leg associated with this X-point
 
-       pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]] 
-       pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]] 
+       pvtfluxliner = [R[(*pf_info[i]).ri0[-1]], R[(*pf_info[i]).ri0[(*pf_info[i]).wallind0]]] 
+       pvtfluxlinez = [Z[(*pf_info[i]).zi0[-1]], Z[(*pf_info[i]).zi0[(*pf_info[i]).wallind0]]] 
 
        pvtr1 = pvtfluxliner[1]
        pvtz1 = pvtfluxlinez[1]
@@ -2059,13 +2161,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       vec_in_up=vec_in_up1, vec_out_up=vec_out_up1, sep_up=critical.xpt_f[xpt], $
                       vec_in_down=-vec_in_down1, vec_out_down=vec_out_down1, $
                       ydown_dist=0,orthup=orthup,orthdown=orthdown, $
-                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
-      Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
-      Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
-      Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
-      Zixy[*, ypos:(ypos+npol[3*i]-1)] = a.Zixy
-      FOR j=ypos, ypos+npol[3*i]-1 DO Psixy[*, j] = pf_psi_vals[xpt,0,*]
-      ypos = ypos + npol[3*i]
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power, $
+                      y_boundary_guards=y_boundary_guards, $
+                      ydown_firstind=(*pf_info[xpt]).wallind0)
+      Rxy[*, ypos:(ypos+npol[3*i]+n_y_boundary_guards[3*i]-1)] = a.Rxy
+      Zxy[*, ypos:(ypos+npol[3*i]+n_y_boundary_guards[3*i]-1)] = a.Zxy
+      Rixy[*, ypos:(ypos+npol[3*i]+n_y_boundary_guards[3*i]-1)] = a.Rixy
+      Zixy[*, ypos:(ypos+npol[3*i]+n_y_boundary_guards[3*i]-1)] = a.Zixy
+      FOR j=ypos, ypos+npol[3*i]+n_y_boundary_guards[3*i]-1 DO Psixy[*, j] = pf_psi_vals[xpt,0,*]
+      ypos = ypos + npol[3*i]+n_y_boundary_guards[3*i]
       
       ; Set topology
       ydown_xsplit[3*i] = (*pf_info[xpt]).npf
@@ -2170,12 +2274,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up, $
                       nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       
-      Rxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rxy
-      Zxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zxy
-      Rixy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rixy
-      Zixy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zixy
-      FOR j=ypos, ypos+npol[3*i+1]-1 DO Psixy[*, j] = sol_psi_vals[solid,*]
-      ypos = ypos + npol[3*i+1]
+      Rxy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Rxy
+      Zxy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Zxy
+      Rixy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Rixy
+      Zixy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Zixy
+      FOR j=ypos, ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1 DO Psixy[*, j] = sol_psi_vals[solid,*]
+      ypos = ypos + npol[3*i+1]+n_y_boundary_guards[3*i+1]
 
       ydown_xsplit[3*i+1] = (*pf_info[xpt]).npf
       yup_xsplit[3*i+1]   = (*pf_info[(*sol_info[solid]).xpt2]).npf
@@ -2211,8 +2315,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; This section grids the second divertor leg associated with this X-point
       xpt = (*sol_info[solid]).xpt2
 
-      pvtfluxliner = [R[(*pf_info[xpt]).ri1[N_ELEMENTS((*pf_info[xpt]).ri1)-1]], R[(*pf_info[xpt]).ri1[0]]] 
-      pvtfluxlinez = [Z[(*pf_info[xpt]).zi1[N_ELEMENTS((*pf_info[xpt]).zi1)-1]], Z[(*pf_info[xpt]).zi1[0]]] 
+      pvtfluxliner = [R[(*pf_info[xpt]).ri1[(*pf_info[xpt]).wallind1]], R[(*pf_info[xpt]).ri1[0]]] 
+      pvtfluxlinez = [Z[(*pf_info[xpt]).zi1[(*pf_info[xpt]).wallind1]], Z[(*pf_info[xpt]).zi1[0]]] 
 
        pvtr1 = pvtfluxliner[1]
        pvtz1 = pvtfluxlinez[1]
@@ -2292,13 +2396,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=critical.xpt_f[xpt], $
                       vec_in_up=vec_in_up3, vec_out_up=vec_out_up3, $
                       yup_dist=0,orthup=orthup,orthdown=orthdown, $
-                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
-      Rxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rxy
-      Zxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zxy
-      Rixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rixy
-      Zixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zixy
-      FOR j=ypos, ypos+npol[3*i+2]-1 DO Psixy[*, j] = pf_psi_vals[xpt,1,*]
-      ypos = ypos + npol[3*i+2]
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power, $
+                      y_boundary_guards=y_boundary_guards, $
+                      yup_lastind=(*pf_info[xpt]).wallind1)
+      Rxy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Rxy
+      Zxy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Zxy
+      Rixy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Rixy
+      Zixy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Zixy
+      FOR j=ypos, ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1 DO Psixy[*, j] = pf_psi_vals[xpt,1,*]
+      ypos = ypos + npol[3*i+2]+n_y_boundary_guards[3*i+2]
 
       ; Set topology
       ydown_xsplit[3*i+2] = (*pf_info[xpt]).npf
@@ -2372,7 +2478,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
-                          single_rad_grid=single_rad_grid, fast=fast, simple=simple)
+                          single_rad_grid=single_rad_grid, fast=fast, simple=simple, $
+                          y_boundary_guards=y_boundary_guards)
       
     ENDIF
     
@@ -2383,13 +2490,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                     rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
     
     ; Calculate magnetic field components
-    dpsidR = FLTARR(TOTAL(nrad, /int), TOTAL(npol, /int))
+    dpsidR = FLTARR(TOTAL(nrad, /int), npol_total)
     dpsidZ = dpsidR
 
     interp_data.method = 2
 
     FOR i=0,TOTAL(nrad,/int)-1 DO BEGIN
-      FOR j=0,TOTAL(npol,/int)-1 DO BEGIN
+      FOR j=0,npol_total-1 DO BEGIN
         local_gradient, interp_data, Rixy[i,j], Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
@@ -2401,6 +2508,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     result = {error:0, $ ; Signals success
               psi_inner:psi_inner, psi_outer:psi_outer, $ ; Range of psi
               nrad:nrad, npol:npol, $  ; Number of points in each domain
+              n_y_boundary_guards:n_y_boundary_guards, $ ; Number of y-boundary cells in each domain
+              y_boundary_guards:y_boundary_guards, $ ; Number of boundary cells included at y-boundaries
               Rixy:Rixy, Zixy:Zixy, $  ; Indices into R and Z of each point
               Rxy:Rxy, Zxy:Zxy, $ ; Location of each grid point
               psixy:psixy, $ ; Normalised psi for each point

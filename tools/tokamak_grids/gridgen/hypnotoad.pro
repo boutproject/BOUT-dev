@@ -37,8 +37,8 @@ PRO oplot_mesh, rz_mesh, flux_mesh
   
   ypos = 0
   FOR i=0, N_ELEMENTS(flux_mesh.npol)-1 DO BEGIN
-    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]-1, color=i+1
-    ypos = ypos + flux_mesh.npol[i]
+    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]-1, color=i+1
+    ypos = ypos + flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]
   ENDFOR
 END
 
@@ -103,6 +103,8 @@ PRO popup_event, event
 
       widget_control, info.nonorthogonal_weight_decay_power, get_value=nonorthogonal_weight_decay_power
 
+      widget_control, base_info.y_boundary_guards_field, get_value=y_boundary_guards
+
       PRINT, "HYP: psi_inner =", psi_inner
 
       settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, $
@@ -135,7 +137,8 @@ PRO popup_event, event
                          boundary=boundary, strict=base_info.strict_bndry, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         fast=base_info.fast, xpt_mul=xpt_mul, /simple)
+                         fast=base_info.fast, xpt_mul=xpt_mul, /simple, $
+                         y_boundary_guards=y_boundary_guards)
     END
     'mesh2': BEGIN
       ; Non-orthogonal mesh button was pushed
@@ -147,7 +150,8 @@ PRO popup_event, event
                          /nrad_flexible, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         xpt_only=base_info.xpt_only, /simple)
+                         xpt_only=base_info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
     END
   ENDCASE
       
@@ -362,6 +366,9 @@ PRO event_handler, event
       
       widget_control, info.xpt_dist_field, get_value=xpt_mul
       PRINT, "xpt_mul = ", xpt_mul
+
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
+
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -383,7 +390,7 @@ PRO event_handler, event
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
                          fast=info.fast, xpt_mul=xpt_mul, $
-                         fpsi = fpsi, /simple)
+                         fpsi = fpsi, /simple, y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -426,6 +433,7 @@ PRO event_handler, event
                     nonorthogonal_weight_decay_power:info.nonorthogonal_weight_decay_power}
       ENDELSE
       
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
 
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
@@ -442,7 +450,8 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -472,7 +481,8 @@ PRO event_handler, event
         ; Get settings
         settings = {calcp:info.calcp, calcbt:info.calcbt, $
                     calchthe:info.calchthe, calcjpar:info.calcjpar, $
-                    orthogonal_coordinates_output:info.orthogonal_coordinates_output}
+                    orthogonal_coordinates_output:info.orthogonal_coordinates_output, $
+                    y_boundary_guards:(*info.flux_mesh).y_boundary_guards}
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
@@ -590,8 +600,8 @@ PRO event_handler, event
       
       m = MIN( (REFORM((*info.flux_mesh).rxy - r))^2 + $
                (REFORM((*info.flux_mesh).zxy - r))^2 , ind)
-      xi = FIX(ind / TOTAL((*info.flux_mesh).npol))
-      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol))
+      xi = FIX(ind / TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
+      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
       PRINT, xi, yi
     END
     'detail': BEGIN
@@ -767,12 +777,12 @@ PRO event_handler, event
         ENDIF ELSE BEGIN
           FOR i=0, nnpol-1 DO BEGIN
             IF i MOD 3 EQ 1 THEN title='Core: ' ELSE title  = 'Private Flux: '
-            npol_field[i] = CW_FIELD( pol_base,                          $
-                                      title  = title,                    $ 
-                                      uvalue = 'npol',                   $ 
-                                      /long,                             $ 
-                                      value = (*info.flux_mesh).npol[i], $
-                                      xsize=8                            $
+            npol_field[i] = CW_FIELD( pol_base,                           $
+                                      title  = title,                     $
+                                      uvalue = 'npol',                    $
+                                      /long,                              $
+                                      value = (*info.flux_mesh).npol[i],  $
+                                      xsize=8                             $
                                     )
           ENDFOR
         ENDELSE
@@ -853,7 +863,8 @@ PRO event_handler, event
         str_set, info, "rad_peak_field", oldinfo.rad_peak_field, /over
         str_set, info, "xpt_dist_field", oldinfo.xpt_dist_field, /over
         str_set, info, "nonorthogonal_weight_decay_power", oldinfo.nonorthogonal_weight_decay_power, /over
-        
+        str_set, info, "y_boundary_guards_field", oldinfo.y_boundary_guards_field, /over
+
         str_set, info, "status", oldinfo.status, /over
         str_set, info, "leftbargeom", oldinfo.leftbargeom, /over
 
@@ -1049,6 +1060,19 @@ PRO hypnotoad
                              value = 1,                    $
                              xsize=8                         $
                            )
+
+  y_boundary_guards_field = CW_FIELD( tab1,                               $
+                                      title = '# y-boundary guard cells', $
+                                      uvalue = 'y_boundary_guards',       $
+                                      /long,                              $
+                                      value = 0,                          $
+                                      xsize = 3                           $
+                                    )
+
+  l = WIDGET_LABEL(tab1, value = '(default 0 for backward compatibility,' + STRING(10B) $
+                                 + 'recommended to set to number of' + STRING(10B)      $
+                                 + 'y-guards in your simulation, e.g. 2)',              $
+                                 /ALIGN_LEFT)
   
   detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
                                 uvalue='detail', $
@@ -1192,6 +1216,7 @@ PRO hypnotoad
            rad_peak_field:rad_peak_field, $
            parweight_field:parweight_field, $
            xpt_dist_field:xpt_dist_field, $
+           y_boundary_guards_field:y_boundary_guards_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
            $;;; Options tab 

@@ -117,7 +117,8 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 		endfor	
 
 	endif else if(method EQ 1) then begin
-		npol = round(total(mesh.npol,/cumulative))
+		npol_withguards = mesh.npol + mesh.n_y_boundary_guards
+		npol = round(total(npol_withguards,/cumulative))
 		Nnpol = n_elements(npol)
 		status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
 		REPEAT BEGIN
@@ -132,7 +133,7 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
 					endif
 				endfor
-				loc = where(yi LT mesh.npol[0])
+				loc = where(yi LT npol_withguards[0])
 				if(total(loc) NE -1) then begin
 					yi_curr = yi[loc]
 					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
@@ -338,9 +339,9 @@ function dfdy_seps, f, y, mesh
 	for j=0,nx-1 do begin
 		ylow = 0
 		for i=0,N_ints-1 do begin
-			ylocs = indgen(mesh.npol[i])+ylow
+			ylocs = indgen(mesh.npol[i] + mesh.n_y_boundary_guards[i])+ylow
 			result[j,ylocs] = DERIV(y[j,ylocs],f[j,ylocs])
-			ylow += mesh.npol[i]
+			ylow += mesh.npol[i] + mesh.n_y_boundary_guards[i]
 		endfor
 	endfor
 	return, result
@@ -657,6 +658,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   str_check_present, settings, 'calchthe', -1
   str_check_present, settings, 'calcjpar', -1
   str_check_present, settings, 'orthogonal_coordinates_output', -1
+  ; settings.y_boundary_guards is required, so don't set default value
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -675,6 +677,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; Size of the mesh
   nx = FIX(TOTAL(mesh.nrad))
   ny = FIX(TOTAL(mesh.npol))
+  ny_total = FIX(TOTAL(mesh.npol+mesh.n_y_boundary_guards)) ; including y-boundary cells
 
   ; Find the midplane
   ymid = 0
@@ -697,7 +700,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   psixy = mesh.psixy*mesh.fnorm + mesh.faxis                              ; Non-normalised psi
   psixy_eq = (psixy - rz_grid.simagx) / (rz_grid.sibdry - rz_grid.simagx) ; Normalised using EQDSK file conventions
   
-  pressure = FLTARR(nx, ny)
+  pressure = FLTARR(nx, ny_total)
   
   ; Use splines to interpolate pressure profile
   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
@@ -774,8 +777,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;ENDIF
 
   ; Grid spacing
-  dx = FLTARR(nx, ny)
-  FOR y=0, ny-1 DO BEGIN
+  dx = FLTARR(nx, ny_total)
+  FOR y=0, ny_total-1 DO BEGIN
     dx[0:(nx-2),y] = psixy[1:*,y] - psixy[0:(nx-2),y]
     dx[nx-1,y] = dx[nx-2,y]
   ENDFOR
@@ -790,7 +793,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDIF
 
   dtheta = 2.*!PI / FLOAT(ny)
-  dy = FLTARR(nx, ny) + dtheta
+  dy = FLTARR(nx, ny_total) + dtheta
   
   ; B field components
   ; Following signs mean that psi increasing outwards from
@@ -817,7 +820,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDELSE
 
   ; Get toroidal field from poloidal current function fpol
-  Btxy = FLTARR(nx, ny)
+  Btxy = FLTARR(nx, ny_total)
   fprime = Btxy
   fp = DERIV(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
@@ -844,7 +847,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Go through the domains to get a starting estimate
   ; of hthe
-  hthe = FLTARR(nx, ny)
+  hthe = FLTARR(nx, ny_total)
 
   ; Pick a midplane index
   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
@@ -933,9 +936,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Surface average
     dpdx2 = surface_average(dpdx, mesh)
     
-    pres = FLTARR(nx, ny)
+    pres = FLTARR(nx, ny_total)
     ; Integrate to get pressure
-    FOR i=0, ny-1 DO BEGIN
+    FOR i=0, ny_total-1 DO BEGIN
       pres[*,i] = int_func(psixy[*,i], dpdx2[*,i], /simple)
       pres[*,i] = pres[*,i] - pres[nx-1,i]
     ENDFOR
@@ -1044,7 +1047,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDIF ELSE BEGIN
       ; Just use smooth in both directions
       
-      FOR i=0, ny-1 DO BEGIN
+      FOR i=0, ny_total-1 DO BEGIN
         hthe[*,i] = SMOOTH(SMOOTH(hthe[*,i],10),10)
       ENDFOR
       
@@ -1065,18 +1068,24 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDIF
 
   ; Need yxy values at all points for nonorthogonal calculations
-  yxy = FLTARR(nx, ny)
+  yxy = FLTARR(nx, ny_total)
   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
     yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
-    yxy[xi,yi] = DINDGEN(N_ELEMENTS(yi))*dtheta
+    IF period EQ 0 THEN BEGIN
+      ; not periodic, set yxy to zero after y-boundary guard cells
+      yxy[xi,yi] = (DINDGEN(N_ELEMENTS(yi)) - settings.y_boundary_guards)*dtheta
+    ENDIF ELSE BEGIN
+      ; periodic, no y-boundary guard cells
+      yxy[xi,yi] = (DINDGEN(N_ELEMENTS(yi)))*dtheta
+    ENDELSE
   ENDREP UNTIL last
 
   ; Calculate hrad and dhrad for thetaxy calculation
-  hrad = dblarr(nx,ny) 
-  dhrad = dblarr(nx,ny) 
-  for j=0,ny-1 do begin
+  hrad = dblarr(nx,ny_total) 
+  dhrad = dblarr(nx,ny_total) 
+  for j=0,ny_total-1 do begin
     for i=0, nx-1 do begin
       if(i eq 0) then begin
         r2 = Rxy[i,j]
@@ -1138,7 +1147,7 @@ retrybetacalc:
   H = pitch*(1.D + dyshiftdy)
 
   ; NOTE: This is only valid in the core
-  pol_angle = FLTARR(nx,ny)
+  pol_angle = FLTARR(nx,ny_total)
   FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
   
   ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
@@ -1229,7 +1238,7 @@ retrybetacalc:
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
     
-    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
+    curvature, nx, ny_total, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
       FLOAT(psixy), FLOAT(thetaxy), hthe, $
       bxcv=bxcv, mesh=mesh
 
@@ -1277,9 +1286,9 @@ retrybetacalc:
     
     PRINT, "*** Calculating curvature in flux coordinates"
     
-    dpb = DBLARR(nx, ny)      ; quantity used for y and z components
+    dpb = DBLARR(nx, ny_total)      ; quantity used for y and z components
     
-    FOR i=0, ny-1 DO BEGIN
+    FOR i=0, ny_total-1 DO BEGIN
       dpb[*,i] = MU*dpdpsi/Bxy[*,i]
     ENDFOR
     dpb = dpb + DDX(xcoord, Bxy)
@@ -1373,7 +1382,7 @@ retrybetacalc:
     
     ; Try smoothing jpar0 in psi, preserving zero points and maxima
     jps = jpar0
-    FOR y=0,ny-1 DO BEGIN
+    FOR y=0,ny_total-1 DO BEGIN
       j = jpar0[*,y]
       js = j
       ma = MAX(ABS(j), ip)
@@ -1505,7 +1514,7 @@ retrybetacalc:
       done = get_yesno("Is this ok?")
     ENDREP UNTIL done EQ 1
     
-    Te = FLTARR(nx, ny)+Te_x
+    Te = FLTARR(nx, ny_total)+Te_x
     Ti = Te
     Ni_x = MAX(Ni)
     Ti_x = Te_x
@@ -1522,7 +1531,7 @@ retrybetacalc:
     ENDREP UNTIL get_yesno("Is this ok?") EQ 1
     
     Ti = Te
-    Ni = FLTARR(nx, ny) + ni_x
+    Ni = FLTARR(nx, ny_total) + ni_x
     Te_x = MAX(Te)
     Ti_x = Te_x
   ENDIF ELSE BEGIN
@@ -1542,10 +1551,12 @@ retrybetacalc:
     Ti_x = Te_x
   ENDELSE
   
-  rmag = MAX(ABS(Rxy))
+  ; excluding y-boundary guard cells
+  rmag = MAX(ABS([[Rxy[*,settings.y_boundary_guards:ny_inner+settings.y_boundary_guards-1]], [Rxy[*,ny_inner+3*settings.y_boundary_guards:-settings.y_boundary_guards-1]]]))
   PRINT, "Setting rmag = ", rmag
   
-  bmag = MAX(ABS(Bxy))
+  ; excluding y-boundary guard cells
+  bmag = MAX(ABS([[Bxy[*,settings.y_boundary_guards:ny_inner+settings.y_boundary_guards-1]], [Bxy[*,ny_inner+3*settings.y_boundary_guards:-settings.y_boundary_guards-1]]]))
   PRINT, "Setting bmag = ", bmag
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1559,6 +1570,7 @@ retrybetacalc:
 
   s = file_write(handle, "nx", nx)
   s = file_write(handle, "ny", ny)
+  s = file_write(handle, "y_boundary_guards", settings.y_boundary_guards)
 
   ; Topology for original scheme
   s = file_write(handle, "ixseps1", ixseps1)
