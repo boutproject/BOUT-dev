@@ -420,14 +420,12 @@ std::string toString(const T& val) {
 /// Simple case where input is already a string
 /// This is so that toString can be used in templates
 /// where the type may be std::string.
-template <>
-inline std::string toString<>(const std::string& val) {
+inline std::string toString(const std::string& val) {
   return val;
 }
 
 /// Convert a bool to "true" or "false"
-template <>
-inline std::string toString<>(const bool& val) {
+inline std::string toString(const bool& val) {
   if (val) {
     return "true";
   }
@@ -436,8 +434,7 @@ inline std::string toString<>(const bool& val) {
 
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
-template <>
-std::string toString<>(const time_t& time);
+std::string toString(const time_t& time);
 
 /*!
  * Convert a string to lower case

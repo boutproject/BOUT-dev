@@ -113,7 +113,7 @@ Field2D* Field2D::timeDeriv() {
 ////////////// Indexing ///////////////////
 
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
-  return fieldmesh->getRegion2D(REGION_STRING(region));
+  return fieldmesh->getRegion2D(toString(region));
 };
 const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);

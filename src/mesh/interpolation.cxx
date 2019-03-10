@@ -36,7 +36,7 @@ void printLocation(const Field2D& var) {
   output.write("%s", strLocation(var.getLocation()));
 }
 
-const char* strLocation(CELL_LOC loc) { return CELL_LOC_STRING(loc).c_str(); }
+const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
