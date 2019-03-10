@@ -180,18 +180,39 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
         cpos = line_crossings(sepri, sepzi, 0, $
                               bndry[0,*], bndry[1,*], 1, $
                               ncross=ncross, inds1=in)
+
+        ; Find where it crosses the edge of the grid
+        cpos = line_crossings(sepri, sepzi, 0, $
+                              [0, 0, nr, nr], [0, nz, nz, 0], 1, $
+                              ncross=ncrossgrid, inds1=ingrid)
         
         IF ncross GT 0 THEN BEGIN
-          sepri = [sepri[0:FLOOR(in[0])], INTERPOLATE(sepri, in[0])]
-          sepzi = [sepzi[0:FLOOR(in[0])], INTERPOLATE(sepzi, in[0])]
-        ENDIF
+          ; Keep points past the boundary in case we want to include y-boundary
+          ; guard cells
+          IF ncrossgrid GT 0 THEN BEGIN
+            ; never go further than the edge of the grid
+            lastgridind = FLOOR(ingrid[0])
+          ENDIF ELSE BEGIN
+            lastgridind = N_ELEMENTS(sepri)-1
+          ENDELSE
+
+          lastind = FLOOR(in[0])
+          sepri = [sepri[0:lastind], INTERPOLATE(sepri, in[0]), sepri[lastind+1:lastgridind]]
+          sepzi = [sepzi[0:lastind], INTERPOLATE(sepzi, in[0]), sepzi[lastind+1:lastgridind]]
+        ENDIF ELSE BEGIN
+          lastind = N_ELEMENTS(sepri)-1
+        ENDELSE
         
         IF KEYWORD_SET(debug) THEN OPLOT, sepri, sepzi, color=3
         
         IF npf EQ 0 THEN BEGIN
           pf1 = [[sepri], [sepzi]]
+          pf1_lastind = lastind+1
           npf = 1
-        ENDIF ELSE pf2 = [[sepri], [sepzi]]
+        ENDIF ELSE BEGIN
+          pf2 = [[sepri], [sepzi]]
+          pf2_lastind = lastind+1
+        ENDELSE
         
       ENDELSE
     ENDFOR
@@ -208,12 +229,12 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   IF KEYWORD_SET(debug) THEN BEGIN
     STOP
   ENDIF ELSE BEGIN
-    OPLOT, INTERPOLATE(R, pf1[*,0]), INTERPOLATE(Z, pf1[*,1]), color=3, thick=2
-    OPLOT, INTERPOLATE(R, pf2[*,0]), INTERPOLATE(Z, pf2[*,1]), color=4, thick=2
+    OPLOT, INTERPOLATE(R, pf1[0:pf1_lastind,0]), INTERPOLATE(Z, pf1[0:pf1_lastind,1]), color=3, thick=2
+    OPLOT, INTERPOLATE(R, pf2[0:pf2_lastind,0]), INTERPOLATE(Z, pf2[0:pf2_lastind,1]), color=4, thick=2
     
     OPLOT, INTERPOLATE(R, core1[*,0]), INTERPOLATE(Z, core1[*,1]), color=3, thick=2
     OPLOT, INTERPOLATE(R, core2[*,0]), INTERPOLATE(Z, core2[*,1]), color=4, thick=2
   ENDELSE
 
-  RETURN, {leg1:pf1, leg2:pf2, core1:core1, core2:core2, ri:xpt_ri, zi:xpt_zi}
+  RETURN, {leg1:pf1, leg1_lastind:pf1_lastind, leg2:pf2, leg2_lastind:pf2_lastind, core1:core1, core2:core2, ri:xpt_ri, zi:xpt_zi}
 END

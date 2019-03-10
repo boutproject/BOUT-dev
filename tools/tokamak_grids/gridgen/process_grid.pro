@@ -657,6 +657,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   str_check_present, settings, 'calchthe', -1
   str_check_present, settings, 'calcjpar', -1
   str_check_present, settings, 'orthogonal_coordinates_output', -1
+  str_check_present, settings, 'y_boundary_guards', -1
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -1556,6 +1557,7 @@ retrybetacalc:
 
   s = file_write(handle, "nx", nx)
   s = file_write(handle, "ny", ny)
+  s = file_write(handle, "y_boundary_guards", settings.y_boundary_guards)
 
   ; Topology for original scheme
   s = file_write(handle, "ixseps1", ixseps1)
