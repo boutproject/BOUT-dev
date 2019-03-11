@@ -383,9 +383,11 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
-;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
-;     rii[i] = ri1
-;     zii[i] = zi1
+    follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, $
+                      vec_up=vec_in_up, weight_up=weight_up, $
+                      vec_down=vec_in_down, weight_down=weight_down
+    rii[i] = ri1
+    zii[i] = zi1
 
     IF sind GE 0 THEN BEGIN
       rixy[nin, i] = rii[i]
@@ -1080,11 +1082,11 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     start_ri = (SMOOTH([start_ri[(np-s):(np-1)], start_ri, start_ri[0:(s-1)]], s))[s:(np-1+s)]
     start_zi = (SMOOTH([start_zi[(np-s):(np-1)], start_zi, start_zi[0:(s-1)]], s))[s:(np-1+s)]
     
-    FOR i=0, np-1 DO BEGIN
-      follow_gradient_nonorth, interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1
-      start_ri[i] = ri1
-      start_zi[i] = zi1
-    ENDFOR
+    ;FOR i=0, np-1 DO BEGIN
+    ;  follow_gradient_nonorth, interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1
+    ;  start_ri[i] = ri1
+    ;  start_zi[i] = zi1
+    ;ENDFOR
     
     oplot_contour, info, xy, R, Z, /periodic, color=2, thick=1.5
     
